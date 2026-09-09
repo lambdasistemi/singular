@@ -16,5 +16,11 @@
       "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a theme toggle and section read-aloud controls using browser voices.",
       "pause": 400
     }
+  ],
+  "documentation-releases": [
+    {
+      "text": "At this bootstrap revision, no documentation version is released. The unreleased baseline is zero point zero point zero. Release-please proposes version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built documentation archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "pause": 400
+    }
   ]
 }

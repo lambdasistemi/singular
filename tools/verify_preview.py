@@ -10,7 +10,7 @@ source = Path(source)
 revision = urlopen(base + "candidate.txt").read().decode().strip()
 assert revision == expected, (revision, expected)
 verified = {}
-for name in ("index.html", "docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/naming-demo.speech.json"):
+for name in ("index.html", "docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/naming-demo.speech.json", "docs/building/index.html", "docs/building.speech.json"):
     local = (source / name).read_bytes()
     remote = urlopen(base + name).read()
     assert local == remote, f"published bytes differ: {name}"

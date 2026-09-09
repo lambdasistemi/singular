@@ -1,5 +1,6 @@
 name: Documentation CI
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -19,7 +20,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix flake check --no-eval-cache
   rendered-docs:
     if: github.event.action != 'closed'
@@ -30,7 +34,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#docs-check
   dev-shell:
     if: github.event.action != 'closed'
@@ -40,8 +47,21 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix develop --quiet -c just ci
+  release-check:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Documentation release checks
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: nix run --quiet .#release-check
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
@@ -50,7 +70,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Build candidate
         env:
           CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
@@ -79,7 +102,7 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, rendered-docs, dev-shell]
+    needs: [build-gate, rendered-docs, dev-shell, release-check]
     runs-on: nixos
     permissions:
       contents: read
@@ -93,7 +116,10 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
-      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet .#docs -o result-docs
       - uses: actions/upload-pages-artifact@v5
         with:

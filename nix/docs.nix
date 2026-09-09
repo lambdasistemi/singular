@@ -3,7 +3,7 @@ let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
   docs = pkgs.stdenvNoCC.mkDerivation {
     pname = "singular-docs";
-    version = "0.1.0";
+    version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
     inherit src;
     nativeBuildInputs = tools;
     DOCS_SHARED_SOURCE = "${sharedSource}";
@@ -15,6 +15,7 @@ let
       cp -r site "$out"
     '';
   };
+  release = import ./release.nix { inherit pkgs src docs; };
   checker = pkgs.writeShellApplication {
     name = "docs-check";
     runtimeInputs = [ pkgs.python3 ];
@@ -32,11 +33,15 @@ let
   };
 in {
   inherit docs;
+  releaseArchive = release.archive;
+  releaseCheck = release.check;
   check = pkgs.runCommand "singular-docs-check" { } ''
     ${pkgs.lib.getExe checker}
     touch "$out"
   '';
   apps = {
+    release-check = { type = "app"; program = pkgs.lib.getExe release.checker; };
+    publish-docs = { type = "app"; program = pkgs.lib.getExe release.publisher; };
     docs-check = { type = "app"; program = pkgs.lib.getExe checker; };
     preview-check = { type = "app"; program = pkgs.lib.getExe previewCheck; };
     docs-serve = { type = "app"; program = pkgs.lib.getExe serve; };

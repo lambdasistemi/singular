@@ -13,8 +13,8 @@
         sharedSource = dev-assets-mkdocs;
       };
     in {
-      packages = each (system: { default = (project system).docs; docs = (project system).docs; });
-      checks = each (system: { docs = (project system).check; });
+      packages = each (system: { default = (project system).docs; docs = (project system).docs; docs-release = (project system).releaseArchive; });
+      checks = each (system: { docs = (project system).check; release = (project system).releaseCheck; });
       apps = each (system: (project system).apps);
       devShells = each (system: { default = (project system).shell; });
     };
