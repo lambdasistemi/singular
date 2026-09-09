@@ -1,7 +1,69 @@
 {
+  "what-singular-is-trying-to-be": [
+    {
+      "text": "Singular is a component, not an application. A third party supplies one parameter, its application policy ID, and receives its own registry of unique keys with the representative NFT lifecycle managed end to end.",
+      "pause": 400
+    },
+    {
+      "text": "That is the axis on which the prior art has to be read. A registry welded to one application is not reusable by anyone else short of forking it. MPFS is the exception and the model: application-agnostic, created by anyone, blocked only by its owner gate.",
+      "pause": 400
+    }
+  ],
+  "mpfs": [
+    {
+      "text": "MPFS is the nearest system to Singular, and the one whose reuse has to be answered explicitly. Its cage is an owner-held Merkle Patricia Forestry root, changed by folding request UTxOs that carry insert, delete or update operations over opaque byte values.",
+      "pause": 400
+    },
+    {
+      "text": "Four facts from the pinned source decide the comparison. Every state spend requires the owner's signature. Only one token exists, the cage state NFT. A request commits to no application policy or output. Requests are governed by time windows rather than application authorization.",
+      "pause": 400
+    }
+  ],
+  "why-singular-cannot-adopt-mpfs-unchanged": [
+    {
+      "text": "The gaps are the registry contract, not the map. An owner gate contradicts the permissionless requirement, no representative NFT exists per key, retirement would be a value convention rather than an enforced terminal state, and nothing binds a request to an approved application output.",
+      "pause": 400
+    },
+    {
+      "text": "MPFS resolves races between the oracle and requesters with exclusive time phases. Singular has no oracle, so it resolves them inside the fold, where an insert is checked against absence in the applicable successive state.",
+      "pause": 400
+    }
+  ],
+  "what-remains-reusable-from-mpfs": [
+    {
+      "text": "The map layer and its off-chain machinery transfer: the fold shape of one proof per request, the cage indexer, the proof-bearing API, client transaction builders and verifiers. The authorization model does not transfer, and component reuse still needs its own evaluation.",
+      "pause": 400
+    }
+  ],
   "evidence-and-useful-boundaries": [
     {
       "text": "The comparison acknowledges AdaDomains, DeMi, Distributed Set, CIP113, Masumi and CIP89. Their mechanisms are relevant precedents, but the bounded inspection established no complete ready-made Singular replacement.",
+      "pause": 400
+    },
+    {
+      "text": "Each entry records what its pinned source actually checks: registry sharding and pooled minting for AdaDomains, minter-gated mints and burns for DeMi, membership preservation left to a configured hook for Distributed Set, insert-only nodes for CIP113, and identity derived from a spent output reference for Masumi.",
+      "pause": 400
+    }
+  ],
+  "the-authenticated-map-layer": [
+    {
+      "text": "This layer already has implementations: the Aiken Merkle Patricia Forestry library on-chain and haskell-mts off-chain. Choosing among them resolves none of the open decisions, which are about certification, custody and retirement rather than about how membership is proved.",
+      "pause": 400
+    }
+  ],
+  "retirement-and-reuse-of-a-key": [
+    {
+      "text": "Singular needs two ways for a registration to end. Delete burns the representative and returns the key to absence, so it can be registered again. Update burns the representative and writes Over, which is terminal.",
+      "pause": 400
+    },
+    {
+      "text": "That requirement is not local to this project. CIP113 arrives at permanence from the other direction, since its nodes are never removed, and MPFS supplies deletion but no retirement. No inspected system offers both modes under one contract.",
+      "pause": 400
+    }
+  ],
+  "coverage-boundary": [
+    {
+      "text": "Component-level evaluation, licensing, toolchain fit and correctness require their own checks, and reading a validator establishes what its source says rather than what a deployment does.",
       "pause": 400
     }
   ]
