@@ -64,11 +64,13 @@ Sending an output to a script address does not execute that receiving spending v
 | Release NFT into Update/Delete request | Application spending validator authorizes the exact operation and enforces the request output's binding and custody |
 | Fold request | Singular request/registry spending validators check consumption, native bindings and map transition; representative mint/burn policy couples NFT supply to the transition |
 | Withdraw pending Insert | Application policy approves the Withdraw asset; Singular's spending validator checks the consumed Insert, action binding and refund effects |
-| Burn an application action asset | That asset's application policy executes because its mint quantity is negative |
+| Net mint/burn of an application action asset | Its policy executes for the nonzero mint-field change; moving an existing token alone does not invoke it |
 
 The division among concrete Singular scripts remains an implementation decision; no extra creation-time request policy is assumed. Recognizing the configured issuer proves where approval came from. It does not prove that an arbitrary application's minting/spending scripts correctly implement their claimed semantics. End-to-end application properties are conditional on those contracts.
 
-If folding burns an application action asset, its policy executes in that transaction. A cheap burn branch could avoid repeating expensive semantic checks, but disposal and that branch's contract are still open. Certification can move checks earlier; it does not establish zero application-policy execution or a speedup. [Cardano minting policies](https://developers.cardano.org/docs/developers/curriculum/native-tokens/minting-policies/)
+If folding has a nonzero net burn under an application action policy, that policy executes in the transaction. A cheap burn branch could avoid repeating expensive semantic checks, but disposal and that branch's contract are still open. Certification can move checks earlier; it does not establish zero application-policy execution or a speedup. [Cardano minting policies](https://developers.cardano.org/docs/developers/curriculum/native-tokens/minting-policies/)
+
+The mint field records net quantities per asset, not one ledger action per logical fold operation. If a future construction reuses a representative's asset identity and combines Delete with Insert, their negative/positive quantities could cancel. The fold/request witnesses must still enforce both logical transitions and custody; a mint policy alone cannot be assumed to run when its mint-field entries vanish. This is an inference for Singular's open construction, not a discovered implementation bug. [CIP89 discusses net-zero beacon updates and spending-side enforcement](https://cips.cardano.org/cip/CIP-0089). Moving an existing application action token likewise does not rerun its minting policy; token scope and custody must account for that.
 
 ## Decisions still required
 
