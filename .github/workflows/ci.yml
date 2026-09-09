@@ -1,0 +1,22 @@
+name: Bootstrap CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-gate:
+    name: Build Gate
+    runs-on: nixos
+    steps:
+      - name: Bootstrap only
+        run: echo "Bootstrap stub only. No application build or tests are configured."
