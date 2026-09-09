@@ -97,8 +97,8 @@ These scenarios are specification obligations. **They have not been executed as 
 | Scenario | Required outcome | Requirements |
 | --- | --- | --- |
 | Approved Insert, absent key, correct initial output | Fold creates one representative and an `Active` entry together | R1, R3, R4 |
-| Well-formed Insert with no accepted application approval | Native request minting refuses it | R2, R3 |
-| Requester supplies its own unaccepted certification policy | Native request minting refuses it | R3 |
+| Well-formed Insert with no accepted application approval | Configured application policy refuses approval; no valid Insert authorization | R2, R3 |
+| Requester supplies its own unaccepted certification policy | Singular refuses to recognize/admit its token as Insert authorization | R3 |
 | Registry, key, operation, initial datum or destination changed after certification | Altered proposal/output cannot be accepted using that approval | R3, R4 |
 | Two certified pending Inserts target one key | Only an Insert seeing absence may succeed; certification reserves neither request's place | R4, R7 |
 | Withdraw action token binds exact pending Insert and required effects | Consume that Insert with no representative mint or registry mutation; concrete refund/disposal cases require D2/D3 | R2, R4 |
