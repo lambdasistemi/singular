@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block extrahead %}
+  {{ super() }}
+  {% if page %}<link rel="speech" href="{{ (page.file.src_uri | replace('.md', '.speech.json')) | url }}">{% endif %}
+{% endblock %}

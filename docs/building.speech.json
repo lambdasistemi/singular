@@ -1,0 +1,26 @@
+{
+  "build-and-check": [
+    {
+      "text": "Build the pinned documentation package with Nix. Flake checks validate rendered links, anchors, speech data and required pages, not protocol behavior.",
+      "pause": 400
+    }
+  ],
+  "edit-and-serve": [
+    {
+      "text": "Use the Nix development shell for a strict MkDocs build or live local server. A separate CI build verifies that shell.",
+      "pause": 400
+    }
+  ],
+  "publication-and-accessibility": [
+    {
+      "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a theme toggle and section read-aloud controls using browser voices.",
+      "pause": 400
+    }
+  ],
+  "documentation-releases": [
+    {
+      "text": "At this bootstrap revision, no documentation version is released. The unreleased baseline is zero point zero point zero. Release-please proposes version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built documentation archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "pause": 400
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "design-status": [
+    {
+      "text": "Singular is an early protocol design. Documentation builds are checked, but the application and its proofs are not implemented.",
+      "pause": 400
+    }
+  ]
+}

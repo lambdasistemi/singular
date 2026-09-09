@@ -1,0 +1,32 @@
+{
+  "mint-move-and-burn": [
+    {
+      "text": "Insert certification mints an action token. Folding Insert mints the representative. Application changes move it. Terminal requests hold it, then folding burns it. Withdraw cancels only a pending Insert.",
+      "pause": 400
+    }
+  ],
+  "insert-certify-first-check-absence-when-folded": [
+    {
+      "text": "The application approves the exact initial state and destination before folding. The request does not reserve the key. Singular checks absence and creates the certified output when folding succeeds.",
+      "pause": 400
+    }
+  ],
+  "application-evolution-keep-the-same-representative": [
+    {
+      "text": "The application validator can move its existing NFT to a successor state without changing the registry.",
+      "pause": 400
+    }
+  ],
+  "update-and-delete-transfer-authority-into-a-pending-request": [
+    {
+      "text": "The application authorizes transfer into the exact request. Its NFT stays there until completion. Update permanently retires the key. Delete permits reuse.",
+      "pause": 400
+    }
+  ],
+  "what-batching-establishes": [
+    {
+      "text": "Requests apply to successive map states. Certificate disposal may still invoke the application minting policy. No performance result or universal application coverage is claimed.",
+      "pause": 400
+    }
+  ]
+}

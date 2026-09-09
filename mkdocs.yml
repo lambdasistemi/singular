@@ -1,0 +1,55 @@
+site_name: Singular
+site_description: A permissionless registry on Cardano for unique identities and independent application state.
+site_url: https://lambdasistemi.github.io/singular/
+repo_url: https://github.com/lambdasistemi/singular
+repo_name: lambdasistemi/singular
+docs_dir: .docs-source
+site_dir: site
+nav:
+  - Home: index.md
+  - Design:
+      - Responsibilities: docs/overview.md
+      - Lifecycle and custody: docs/lifecycle.md
+      - Certification: docs/certification.md
+  - Naming walkthrough: docs/naming-demo.md
+  - Prior art: docs/prior-art.md
+  - Protocol specification: specs/protocol/spec.md
+  - Building the documentation: docs/building.md
+theme:
+  name: material
+  custom_dir: overrides
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+plugins:
+  - search
+markdown_extensions:
+  - tables
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+extra_javascript:
+  - assets/read-aloud.js
+validation:
+  links:
+    not_found: warn
+    anchors: warn
