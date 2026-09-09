@@ -1,0 +1,54 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "A reviewer who wants to play a naming claim in the docs, not read a proposed walkthrough.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Choose the labelled first-release naming profile, claim alice, queue a competing claim, and fold each request. The first valid absent-key fold succeeds; the duplicate is refused because the key is occupied.",
+      "pause": 400
+    }
+  ],
+  "what-you-see-when-it-is-refused": [
+    {
+      "text": "Every refusal names its intended condition. Approval never occupies a spelling. Uniqueness is decided only when a certified Insert folds.",
+      "pause": 400
+    }
+  ],
+  "first-release-naming-profile": [
+    {
+      "text": "The playable surface is an explicit naming profile labelled as an unaccepted candidate. Certification proves allowed construction only. The spelling alice is a frozen demo fixture.",
+      "pause": 400
+    }
+  ],
+  "registry-uniqueness-at-fold": [
+    {
+      "text": "The state diagram shows absent, pending, and active. The first valid fold of an absent key becomes active. A competing fold is refused.",
+      "pause": 400
+    }
+  ],
+  "application-fixture-fields": [
+    {
+      "text": "The initial application record has an optional payment destination, a control address, a next-control commitment, and a fixed retirement quorum. This slice stores them as structure only.",
+      "pause": 400
+    }
+  ],
+  "generic-profile-stays-generic": [
+    {
+      "text": "A separate generic profile remains labelled generic and can still delete. It cannot silently become the naming profile.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "Natural numbers, no ledger execution, and no maintenance, recovery, retirement, or consumer scenarios. Naming theorems are a new inventory. The preview states the candidate is unaccepted.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/spec.md",
+    "sha256": "be1d4750a95edea9fe5aed079f6a75dff33b5478855bd19a5b00e5049d67df08"
+  }
+}

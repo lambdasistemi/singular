@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Add a naming layer on the generic registry model. Do not rewrite the generic machine or its forty-one statements.",
+      "pause": 400
+    }
+  ],
+  "model-then-simulator": [
+    {
+      "text": "The Lean naming layer is the authority. The simulator is derived from it. Naming fixtures are first-class fields, not a packed encoding.",
+      "pause": 400
+    }
+  ],
+  "topology-and-budget": [
+    {
+      "text": "One owner slice, glm commit owner, sol auditor, at most two candidates and two auditor launches, ten executions.",
+      "pause": 400
+    }
+  ],
+  "file-fence": [
+    {
+      "text": "The commit owner may write naming modules, the naming simulator, and the naming docs page. Four documentation files and release metadata are reserved or forbidden.",
+      "pause": 400
+    }
+  ],
+  "live-preview": [
+    {
+      "text": "The existing preview job binds candidate.txt to the pull-request head. A localhost URL is not the preview.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/plan.md",
+    "sha256": "c28b8111686129f558bebbd137456ae66aa4f13bb430df186e31d2884141e62a"
+  }
+}

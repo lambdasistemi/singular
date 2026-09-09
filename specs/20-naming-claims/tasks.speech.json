@@ -1,0 +1,12 @@
+{
+  "slice": [
+    {
+      "text": "One owner slice. Untracked gate.sh. Final subject: make first-release naming claims playable in the docs.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/tasks.md",
+    "sha256": "688b910f0a6b4f86e2bc62b9720f4c06a5a1fc1e9fa3c44abb0c86a5ec548c78"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "naming-fixture": [
+    {
+      "text": "Four separate fixture fields: optional payment destination, control address, next-control commitment, and retirement quorum. No economic policy.",
+      "pause": 400
+    }
+  ],
+  "profile-registry": [
+    {
+      "text": "identity.json lists generic and naming profiles. Existing generic file hashes stay byte-identical.",
+      "pause": 400
+    }
+  ],
+  "claim-and-observation": [
+    {
+      "text": "Two pending claims may share a spelling. Observation is unauthenticated, absent, active, or pending.",
+      "pause": 400
+    }
+  ],
+  "demo-spelling": [
+    {
+      "text": "alice maps to one frozen natural-number key as a demo fixture.",
+      "pause": 400
+    }
+  ],
+  "generic-preservation": [
+    {
+      "text": "The generic theorem inventory, corpus, statements, and model files remain byte-identical.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/data-model.md",
+    "sha256": "9b1c326ff4d94a21676ed9798eb57c3c605b2573ab38e71a0df21df7f18da67d"
+  }
+}
