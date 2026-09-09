@@ -1,18 +1,18 @@
 {
   "exact-declaration-inventory": [
     {
-      "text": "All forty-one declarations are stated with one intentional sorry each. The source-derived checker verifies exact identities and statement hashes. It does not inspect compiled axioms or establish proofs.",
+      "text": "All forty-one declarations are proved. Every statement keeps the text and digest it was frozen with. The source-derived checker verifies exact identities and statement hashes and derives each status from the proof text. A compiled gate collects the axioms of every theorem while the library builds and fails the build if any depends on sorry or an axiom outside the standard three. Re-admitting one theorem was shown to turn the build red.",
       "pause": 400
     }
   ],
   "inversions-and-statement-domain": [
     {
-      "text": "All inversions remain admitted. A general statement that terminal request custody can leave only through completion is missing. Escape refusal, reachable supply claims and finite terminal withdrawal cases do not replace that obligation.",
+      "text": "All inversions are proved. The reachable-state obligations go through an invariant stronger than well-formed supply: every custody record carries the current representative of its key, and every custody identifier is recorded and unique. A general statement that terminal request custody can leave only through completion is still missing.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "112e8f671fad95237195d45f572d9c5589fe5e222d568e2f95d36b8fdad292aa"
+    "sha256": "61e0ee6d865f589dc71fc079d35932b86ab40776c558d7ac78ad9d78f77cfff2"
   }
 }

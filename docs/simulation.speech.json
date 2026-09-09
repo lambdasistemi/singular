@@ -11,7 +11,7 @@
   ],
   "what-the-evidence-establishes": [
     {
-      "text": "This simulator candidate replays fifty eight frozen Lean rows and thirty two story actions. All forty one declarations remain stated with admitted proofs: twelve controlled finite checks, seventeen action exhibits only, and twelve explicit gaps. The gate also exercises one thousand seven hundred and sixty four numeric boundary probes and twenty two negative controls. Seventeen of twenty eight refusal reasons have exhibits.",
+      "text": "This simulator candidate replays fifty eight frozen Lean rows and thirty two story actions. All forty one declarations are proved from the standard axioms; the simulator checks measure this transcription, not the proofs: twelve controlled finite checks, seventeen action exhibits only, and twelve explicit gaps. The gate also exercises one thousand seven hundred and sixty four numeric boundary probes and twenty two negative controls. Seventeen of twenty eight refusal reasons have exhibits.",
       "pause": 400
     }
   ],
@@ -29,6 +29,6 @@
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "df14e141642e930556e771348b92d5f866f5dce1bfd5dadecbdbe4178d68dd1e"
+    "sha256": "0347b8c57238e1b0a256f4f198e47c55ed631493ad2f4fde27c449b43252de8a"
   }
 }

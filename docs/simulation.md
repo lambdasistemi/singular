@@ -18,13 +18,13 @@ The **Advanced free play** drawer exposes exact action JSON for every modeled ac
 
 ## What the evidence establishes
 
-This is a **SIMULATOR-CANDIDATE**. All **41** Lean theorem declarations are **STATED**, with admitted `sorryAx` proof debt. No theorem proof or acceptance is claimed.
+This is a **SIMULATOR-CANDIDATE**. All **41** Lean theorem declarations are **PROVED** from the standard axioms. The simulator's finite checks measure this transcription of the model, not the proofs; no acceptance is claimed.
 
 The focused gate replays **58 frozen Lean rows**: 52 transitions and 6 resolutions. The eight story trees contain **32 action steps**, including refusal forks. Story and manual steps outside the exact corpus input set exercise the transcription only; they do not acquire Lean parity by resemblance to a corpus row.
 
 The theorem ledger has **12 controlled finite checks**, **17 action exhibits only**, and **12 explicit gaps**. Each controlled check has a fabricated intended-result failure. An action exhibit does not check its full quantified theorem. The page displays these distinctions; it does not turn unexhibited rows into passing lamps.
 
-The Node gate also exercises **1,764 numeric-boundary probes** and **22 negative controls**. The source-derived refusal inventory currently exhibits **17 of 28 distinct model reasons**. Missing reason exhibits and theorem gaps remain in the [clarity record](LEAN-CLARITY.md), with exact names in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/feat/model-simulation-s1/simulator/coverage.json).
+The Node gate also exercises **1,764 numeric-boundary probes** and **22 negative controls**. The source-derived refusal inventory currently exhibits **17 of 28 distinct model reasons**. Missing reason exhibits and theorem gaps remain in the [clarity record](LEAN-CLARITY.md), with exact names in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/main/simulator/coverage.json).
 
 ## Model and assumptions
 

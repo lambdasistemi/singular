@@ -2,7 +2,7 @@
 
 As a future audit planner, use this register to match a proposed fault to a concrete witness candidate and its intended obligation. The rows describe work still to commission; they do not report observed mutation kills.
 
-No semantic mutation campaign or independent checker-control campaign was commissioned or executed. Every row below is **PROPOSED / NOT EXECUTED**. Intentional theorem debt means mutating the model and merely recompiling its `sorry` statements cannot establish a mutation kill. A later proof/audit phase must fix the exact mutants, commands, non-vacuous witnesses and capacity before claiming coverage.
+No semantic mutation campaign or independent checker-control campaign was commissioned or executed. Every row below is **PROPOSED / NOT EXECUTED**. With every statement proved, a mutant is killed only when the mutated model no longer builds the proofs; a mutant that still builds shows that the proofs never constrained the mutated definition. A later audit phase must fix the exact mutants, commands, non-vacuous witnesses and capacity before claiming coverage.
 
 ## Proposed fault atoms
 
@@ -37,6 +37,6 @@ No semantic mutation campaign or independent checker-control campaign was commis
 
 ## Coverage boundary
 
-These are author proposals, not an exact externally accepted denominator. A proposed compound family such as M04 must be split into individual field mutations before audit accounting. No row is KILLED, PROVED, AUDITED or ACCEPTED. Wire-level, hash collision, MPF authentication, real script invocation and naming-profile conformance need separate instruments after D1–D7 are resolved.
+These are author proposals, not an exact externally accepted denominator. A proposed compound family such as M04 must be split into individual field mutations before audit accounting. No row is KILLED, AUDITED or ACCEPTED. Wire-level, hash collision, MPF authentication, real script invocation and naming-profile conformance need separate instruments after D1–D7 are resolved.
 
 The whole-transition completion-only terminal-custody statement is missing. M08 and M24 identify distinct candidate probes; neither closes that statement-coverage obligation. Fresh identity and a fixed certified assetScope limit each proposal to one incarnation despite a broader scope list. Deliberate approval reuse belongs to the reused-identity profile, with D4 unresolved.

@@ -402,21 +402,21 @@
   "properties": [
     {
       "name": "Singular.Statements.insert_commitment_injective",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.action_domain_separation",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.createInsert_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -437,11 +437,11 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.mintWithdraw_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S07d-mint-second-withdraw",
@@ -449,11 +449,11 @@
         "story/compete/5",
         "story/cancel/9"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.release_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -463,32 +463,32 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.evolve_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S08-local-evolution",
         "N06-change-address-B",
         "story/address/13"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.outsider_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S17-outsider-output-creation",
         "story/forged/30"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.withdraw_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S07e-valid-second-target",
@@ -496,11 +496,11 @@
         "story/compete/6",
         "story/cancel/10"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.fold_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13d-fresh-insert-folded",
@@ -525,72 +525,72 @@
         "story/batch/25",
         "story/batch/28"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.moveAction_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S20-existing-action-movement"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.escape_refused",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S11-custody-escape",
         "story/delete/23"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.foldOne_insert_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.foldOne_terminal_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.sequential_fold_cons",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.supply_conservation",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.over_terminal",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.over_no_representative",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.pending_insert_no_representative",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -611,11 +611,11 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.minting_requires_configured_issuer",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -636,11 +636,11 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.withdrawal_preserves_registry_supply",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S07e-valid-second-target",
@@ -648,11 +648,11 @@
         "story/compete/6",
         "story/cancel/10"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.exact_withdraw_scope",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S07e-valid-second-target",
@@ -660,22 +660,22 @@
         "story/compete/6",
         "story/cancel/10"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.local_evolution_registry_unchanged",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S08-local-evolution",
         "N06-change-address-B",
         "story/address/13"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.release_is_operation_specific",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -685,11 +685,11 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.release_removes_application_custody",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -699,104 +699,104 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.request_single_spend",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.approval_scope_checked",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.outsider_not_admitted",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S17-outsider-output-creation",
         "story/forged/30"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.native_witness_even_zero_net",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S21-zero-net-delete-insert",
         "story/batch/28"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.nonzero_action_invokes_policy",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S19b-action-burn-executes"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.existing_action_does_not_refresh_scope",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "S20-existing-action-movement"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.resolve_unauthenticated",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "N07b-forged-view"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.resolve_absent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "N05-resolve-absent"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.resolve_over",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "controlled-check",
       "exhibits": [
         "N05b-resolve-over"
       ],
-      "notes": "Finite consequent checks only."
+      "notes": "Finite consequent checks only; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.resolve_address_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.resolve_pending_iff",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "gap",
       "exhibits": [],
-      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+      "notes": "No executable nonvacuous exhibit; the quantified statement is proved in Lean."
     },
     {
       "name": "Singular.Statements.release_registry_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -806,11 +806,11 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.insert_creation_registry_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -831,11 +831,11 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.whole_release_acceptance_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -845,11 +845,11 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.whole_release_refusal_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S13e-fresh-delete-released",
@@ -859,11 +859,11 @@
         "story/delete/21",
         "story/batch/26"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.whole_insert_acceptance_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -884,11 +884,11 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     },
     {
       "name": "Singular.Statements.whole_insert_refusal_independent",
-      "status": "STATED / sorryAx",
+      "status": "PROVED / none",
       "coverage": "exhibits-only",
       "exhibits": [
         "S03b-configured-issuer-control",
@@ -909,7 +909,7 @@
         "story/batch/24",
         "story/batch/27"
       ],
-      "notes": "Action exhibit; full quantified statement not checked."
+      "notes": "Action exhibit; the quantified statement is proved in Lean, not checked here."
     }
   ]
 }

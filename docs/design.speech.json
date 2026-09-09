@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "A general whole-transition completion-only custody theorem is still missing. Escape refusal, supply statements and finite terminal withdrawal cases do not close that gap.",
+      "text": "A general whole-transition completion-only custody theorem is still missing. The proved escape refusal, supply statements and finite terminal withdrawal cases do not close that gap.",
       "pause": 400
     }
   ],
@@ -29,7 +29,7 @@
       "pause": 400
     },
     {
-      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, theorem inventory and mutation proposals retain the exact evidence and its limits.",
+      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, the theorem inventory with its proofs, and the mutation proposals retain the exact evidence and its limits.",
       "pause": 400
     }
   ],
@@ -49,7 +49,7 @@
   ],
   "candidate-status": [
     {
-      "text": "The executable source, admitted statements and exported corpus belong to this candidate. All forty-one declarations remain stated with intentional proof debt. There is no deployed Singular validator, completed proof campaign, accepted statement audit or production release.",
+      "text": "The executable source, proved statements, supporting lemmas and exported corpus belong to this candidate. All forty-one declarations are proved from the standard axioms without changing any statement, and a compiled gate fails the build if one is admitted again. There is no deployed Singular validator, accepted statement audit or production release.",
       "pause": 400
     },
     {
@@ -59,6 +59,6 @@
   ],
   "_source": {
     "file": "design.md",
-    "sha256": "93b910d577d1617f15764c7275cabdc8a8f4f3349032dc74c92f6c926064b286"
+    "sha256": "840255e63c8dc4072947cd7b7718172ffffb0eecca679240cb4f7b3280edffb2"
   }
 }

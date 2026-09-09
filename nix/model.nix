@@ -10,18 +10,19 @@ let
     nativeBuildInputs = [ pkgs.lean4 pkgs.python3 ];
     buildPhase = ''
       lake build
-      python3 tools/check_model.py
+      lake env lean tools/axioms.lean > axioms-report.txt
+      python3 tools/check_model.py --axioms-report axioms-report.txt
     '';
     installPhase = ''
       mkdir -p "$out/bin" "$out/share"
       cp .lake/build/bin/singular-corpus "$out/bin/"
-      cp lean/corpus.json lean/theorem-debt.json "$out/share/"
+      cp lean/corpus.json lean/theorem-debt.json axioms-report.txt "$out/share/"
     '';
   };
   checker = pkgs.writeShellApplication {
     name = "model-check";
     runtimeInputs = [ pkgs.python3 ];
-    text = ''python3 ${src}/tools/check_model.py --binary ${package}/bin/singular-corpus --root ${src}'';
+    text = ''python3 ${src}/tools/check_model.py --binary ${package}/bin/singular-corpus --axioms-report ${package}/share/axioms-report.txt --root ${src}'';
   };
 in {
   inherit package;

@@ -2,7 +2,7 @@
 
 As a model reviewer, use this register to locate the exact requirement or finite scenario behind a behavior you observe, and check its conditions and omissions. The lookup identifiers below preserve links to executable evidence; the [design stories](design.md) explain the same behavior as a journey.
 
-This is a **CANDIDATE at MODEL + STATEMENTS stage**. The executable Lean machine is `Singular.step` in [the model source](../model/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is intentionally STATED with `sorry`; there is no completed proof, audit verdict or acceptance claim.
+This is a **CANDIDATE at MODEL + PROOFS stage**. The executable Lean machine is `Singular.step` in [the model source](../model/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is PROVED from the standard axioms without changing its statement; there is no audit verdict or acceptance claim.
 
 ## Authority and domain
 
@@ -14,12 +14,12 @@ The current protocol specification is the behavioral baseline. Its direct applic
 
 | Requirement | Executable decision and effect | Status and limits |
 | --- | --- | --- |
-| R1 | `foldOne`: absent→Active/+1; Active→Over/−1; Active→absent/−1; payload-free `Value`; `supply` counts both custody forms | Modeled; conservation and terminality STATED |
+| R1 | `foldOne`: absent→Active/+1; Active→Over/−1; Active→absent/−1; payload-free `Value`; `supply` counts both custody forms | Modeled; conservation and terminality PROVED |
 | R2 | `insertNative`, `releaseNative`, `approved`, `recognized`; creation differs from later consumption; outsider output retains unauthenticated origin | Modeled with authenticated logical provenance/configuration abstraction; no physical receiving-validator execution |
 | R3 | `Commitment.insert Proposal`, configured policy, `Approval.accepted`, exact initial Output; no current absence check at creation | Conditional on supplied application contract evidence; conformance bit is diagnostic and never inferred from issuer recognition |
 | R4 | pending Insert holds no representative; absence/output/scope checked at fold; separate Withdraw commitment binds exact id and Refund | Modeled under explicit logical refund parameters; economics/disposal abstract |
 | R5 | release evidence binds source and entire selected request; application spending witness; source NFT moves into request | Conditional on supplied legal-release evidence; request creation reads config and application NFT, not mutable registry entries |
-| R6 | release removes application UTxO; escape always refused; completion consumes request and burns coupled NFT | Modeled; supply and single-spend guarantees STATED; whole-transition completion-only terminal-custody statement missing |
+| R6 | release removes application UTxO; escape always refused; completion consumes request and burns coupled NFT | Modeled; supply and single-spend guarantees PROVED; whole-transition completion-only terminal-custody statement missing |
 | R7 | sequential `foldItems`; actor identity absent from Action; explicit output fields | Modeled atomic selected-batch profile; no automatic skipping, arbitrary semantic callback, capacity or fairness claim |
 | R8 | permanent used ids; exact request consumption; explicit list of allowed incarnations; configurable asset reuse | Modeled proposed scope profile, not selected certificate encoding/lifecycle |
 | R9 | witness fields checked at mint/release/consume; per-asset net quantity equality and nonzero policy checks | Modeled logical witness assignment; concrete ledger script partition remains abstract |
@@ -42,7 +42,7 @@ A deliberately nonconforming configured application can approve a structurally r
 
 With fresh representative identity (`reuseIdentity = false`), the certified initial output fixes one `assetScope`. A proposal therefore fits one incarnation even when its approval scope list contains several incarnations. Deliberately reusable approval across incarnations is represented by the reused-identity profile; fresh identity requires a newly certified output. D4 remains open: these executable profiles do not select a deployed identity or certificate lifecycle.
 
-Completion-only terminal custody remains a statement-coverage gap across the whole transition function. The admitted escape refusal and Reachable supply statements do not replace that general theorem. The corpus separately exercises terminal Withdraw refusal, with a recognized, exact-target Withdraw approval, while preserving all 41 admitted declarations unchanged.
+Completion-only terminal custody remains a statement-coverage gap across the whole transition function. The proved escape refusal and Reachable supply statements do not replace that general theorem. The corpus separately exercises terminal Withdraw refusal, with a recognized, exact-target Withdraw approval, while preserving all 41 declarations unchanged.
 
 ## Scenario inventory
 
@@ -109,7 +109,7 @@ The checked [corpus](../model/corpus.json) carries the exact model, statements, 
 | N06b-resolve-new-address | Proposed naming profile; authenticated logical view | `{"address": {"datum": 200}}` |
 | N07b-forged-view | Proposed naming profile; authenticated logical view | `"unauthenticated"` |
 
-There are 58 finite rows: 52 transition cases and 6 resolver cases. S10 and S10b hold configuration/application custody fixed while varying mutable registry entries; S10c additionally demonstrates Insert staging under an occupied/retired raw registry view. These raw-state cases test independence, not reachability. Whole-step acceptance and exact refusal independence are separately STATED. Per-action-asset quantities net only identical assets: S19c refuses opposite changes to distinct names without the application mint witness.
+There are 58 finite rows: 52 transition cases and 6 resolver cases. S10 and S10b hold configuration/application custody fixed while varying mutable registry entries; S10c additionally demonstrates Insert staging under an occupied/retired raw registry view. These raw-state cases test independence, not reachability. Whole-step acceptance and exact refusal independence are separately PROVED. Per-action-asset quantities net only identical assets: S19c refuses opposite changes to distinct names without the application mint witness.
 
 S03 binds proposal, token and approval consistently to substitute issuer99 while configuration remains issuer7; S03b accepts the configured issuer. S07c–S07e create a second pending Insert, mint its recognized Withdraw and accept the correct target, while S07b refuses that same approval against the first request. S17 places an outsider at the configured request address90 carrying an existing approved Insert-shaped token; its origin remains unauthenticated and both fold and withdrawal are refused.
 

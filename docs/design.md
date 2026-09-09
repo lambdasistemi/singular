@@ -4,7 +4,7 @@ As an application designer, follow a registration from an approved request into 
 
 <a href="../../simulator/">Open the playable Singular simulator</a> or follow the [simulation walkthrough](simulation.md).
 
-This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 41 theorem and inversion declarations remain **STATED**, deliberately admitted with `sorry`. Building checks elaboration; it does not prove the statements or accept the design.
+This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 41 theorem and inversion declarations are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
 
 ## Story: register and use an application output
 
@@ -43,13 +43,13 @@ sequenceDiagram
     Note over Registry: Update produces Over, Delete produces absence
 ```
 
-These are executable behaviors and admitted obligations. A general whole-transition theorem that terminal custody leaves only through completion is still missing. Escape-refusal and supply statements, or a finite terminal-Withdraw refusal, do not close that gap.
+These are executable behaviors and proved obligations. A general whole-transition theorem that terminal custody leaves only through completion is still missing. Escape-refusal and supply statements, or a finite terminal-Withdraw refusal, do not close that gap.
 
 ## Story: fold a selected batch
 
 Any submitter can select an ordered batch. Each item sees the registry produced by the previous item; a failure refuses the selected batch atomically. There is no native privileged folder gate, automatic skipping, capacity guarantee or fairness claim. Executing witnesses remain required even when mint and burn quantities for the same asset net to zero; distinct identities do not cancel each other.
 
-The [model ledger](model-ledger.md) maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The [theorem inventory](theorems.md) records exact admitted statements. The [mutation proposals](mutants.md) describe candidate fault coverage; no mutation campaign or independent audit result is claimed.
+The [model ledger](model-ledger.md) maps requirements and finite scenarios to modeled behavior, conditions, abstractions and omissions. The [theorem inventory](theorems.md) records the exact statements, each proved. The [mutation proposals](mutants.md) describe candidate fault coverage; no mutation campaign or independent audit result is claimed.
 
 ## Reading the application trust boundary
 
@@ -82,9 +82,9 @@ The simulation is a separate author's transcription of the frozen Lean interface
 
 ## Candidate status
 
-The same published candidate includes the [executable Lean source](../model/Singular/Model.lean), [admitted statements](../model/Singular/Statements.lean) and [exported finite corpus](../model/corpus.json). Their identity belongs to this candidate, independently of whether its proofs have been completed.
+The same published candidate includes the [executable Lean source](../model/Singular/Model.lean), [proved statements](../model/Singular/Statements.lean), their [supporting lemmas](../model/Singular/Lemmas.lean) and [exported finite corpus](../model/corpus.json). Their identity belongs to this candidate; the proofs were completed without changing any statement.
 
-The repository carries no deployed Singular validator, completed proof campaign, accepted statement audit or production release. The proof holes are intentional and individually inventoried. The requested review surface is the draft PR and its exact candidate preview; later proof and independent audit stages remain separate work.
+The repository carries no deployed Singular validator, accepted statement audit or production release. The proofs are complete and individually inventoried, with a compiled axiom gate on every build. The requested review surface is the draft PR and its exact candidate preview; independent audit stages remain separate work.
 
 Two blind source reviews preceded simulator authoring and both recommended proceeding. Their source reasoning did not execute an audit or prove the model. The resulting corpus refinements preserve the reviewed model and statement definitions. The general whole-transition terminal-custody theorem remains an explicit statement-coverage gap in the model ledger.
 
