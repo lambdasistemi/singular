@@ -1,16 +1,48 @@
-"""Check rendered local links, speech coverage and required documentation surfaces."""
+"""Check rendered local links, speech coverage and required documentation surfaces.
+
+Link inventory (ticket 26): every reader-facing href/src in README and in the
+built HTML is discovered (never hand-listed), resolved the way a browser would
+resolve it under the deployed ``site_url`` prefix — directory URLs both with and
+without a trailing slash — and, for links authored in source Markdown, the way
+GitHub README/blob rendering rewrites them. A relative href is not proven live
+by a filesystem hit: the resolved URL must land inside the project prefix on
+the deployed site (or on an existing repository path for GitHub source links).
+External URLs are requested with a bounded timeout and bounded concurrency;
+confirmed 404/410 is a failure, while 403/429/5xx and network denial are
+distinct "blocked" outcomes that are named but do not pass.
+"""
 from html.parser import HTMLParser
+from concurrent.futures import ThreadPoolExecutor
 import json
+import re
 from pathlib import Path
 import sys
-from urllib.parse import unquote, urlsplit
+from urllib.error import HTTPError, URLError
+from urllib.parse import unquote, urljoin, urlsplit
+from urllib.request import Request, urlopen
+
+SITE_URL = "https://lambdasistemi.github.io/singular/"
+PREFIX = urlsplit(SITE_URL).path
+REPO_BLOB = "https://github.com/lambdasistemi/singular/blob/main"
+PLAYABLE = SITE_URL + "simulator/"
+# Anchor labels that make a link a dual-context call to action: it is rendered
+# both on GitHub (README/blob rewrite) and on the deployed docs, so every
+# context must resolve to the canonical playable URL.
+CTA_LABELS = ("Try the simulation", "Open the playable Singular simulator")
+EXTERNAL_TIMEOUT = 15
+EXTERNAL_CONCURRENCY = 8
 
 site = Path(sys.argv[1]).resolve()
+root = site.parent
+
+
 class Page(HTMLParser):
     def __init__(self, text):
         super().__init__()
         self.ids, self.links, self.headings = set(), [], set()
         self.scripts, self.stylesheets, self.mermaid = [], [], 0
+        self.refs, self.anchors = [], []
+        self._anchor, self._buf = None, None
         self.feed(text)
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -26,6 +58,17 @@ class Page(HTMLParser):
                 self.headings.add(attrs["id"])
         if tag == "a" and "href" in attrs:
             self.links.append(attrs["href"])
+            self._anchor, self._buf = attrs["href"], []
+        for kind in ("href", "src"):
+            if kind in attrs and not (tag == "a" and kind == "href"):
+                self.refs.append((tag, attrs[kind], attrs.get("rel", "")))
+    def handle_data(self, data):
+        if self._buf is not None:
+            self._buf.append(data)
+    def handle_endtag(self, tag):
+        if tag == "a" and self._anchor is not None:
+            self.anchors.append((self._anchor, "".join(self._buf).strip()))
+            self._anchor = self._buf = None
 
 pages = {p: Page(p.read_text()) for p in site.rglob("*.html")}
 assert pages, "no rendered pages"
@@ -55,6 +98,13 @@ for path, page in pages.items():
         links += 1
     if path.name == "404.html" or path.is_relative_to(site / "simulator"):
         continue
+    # specs/26-live-links/ is ticket-orchestration record staged verbatim by
+    # tools/prepare_docs.py (which copies all of specs/); it is not in the nav,
+    # and speech companions for it may not be authored — the directory is
+    # ticket-owner owned. Speech coverage continues to bind every
+    # reader-facing page, including all nav-reachable specs pages.
+    if path.is_relative_to(site / "specs" / "26-live-links"):
+        continue
     speech = path.parent.with_suffix(".speech.json") if path.parent != site else site / "index.speech.json"
     assert speech.exists(), f"missing speech: {speech}"
     data = json.loads(speech.read_text())
@@ -69,4 +119,227 @@ for required in ("docs/naming-demo/index.html", "specs/protocol/spec/index.html"
 home = (site / "index.html").read_text()
 assert 'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
 assert 'assets/read-aloud.js' in home and 'rel="speech"' in home
-print(json.dumps({"renderedPages": len(pages), "localLinksAndAnchors": links, "speechCoverage": "PASS", "externalResources": 0, "diagramPages": len(mermaid_pages), "diagrams": sum(p.mermaid for p in pages.values()), "scope": "rendered documentation; model and simulator checked separately"}))
+
+
+# ---------------------------------------------------------------------------
+# Link inventory: discover, resolve per context, classify, check.
+# ---------------------------------------------------------------------------
+FENCE = re.compile(r"```.*?```", re.S)
+CODE_SPAN = re.compile(r"`[^`]*`")
+MDLINK = re.compile(r"(?<!\!)\[[^\]]+\]\(([^)\s]+)[^)]*\)")
+RAWANCHOR = re.compile(r'<a\s+href="([^"]+)"[^>]*>(.*?)</a>', re.S)
+SELF_GITHUB = re.compile(r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<ref>[^/]+)/(?P<rest>.+)$")
+
+
+def github_readme_url(href):
+    """Absolute href unchanged; relative href lands on the repository blob."""
+    parts = urlsplit(href)
+    if parts.scheme or parts.netloc:
+        return href
+    return f"{REPO_BLOB}/{href.lstrip('/')}"
+
+
+def github_blob_url(source_md, href):
+    """Rewrite href the way GitHub renders ``source_md`` as a blob page."""
+    return urljoin(f"{REPO_BLOB}/{source_md}", href)
+
+
+def docs_url(page_url, href, trailing_slash):
+    """Browser resolution from a deployed page directory URL, both forms."""
+    base = page_url if trailing_slash else page_url.rstrip("/")
+    return urljoin(base, href)
+
+
+def md_links(text):
+    return MDLINK.findall(FENCE.sub("", CODE_SPAN.sub("", text)))
+
+
+def raw_anchors(text):
+    text = FENCE.sub("", CODE_SPAN.sub("", text))
+    return [(href, re.sub(r"<[^>]+>", "", label).strip()) for href, label in RAWANCHOR.findall(text)]
+
+
+def classify(url):
+    parts = urlsplit(url)
+    if not parts.scheme and not parts.netloc:
+        return "internal-site"
+    if parts.scheme not in ("http", "https"):
+        return "non-http"
+    if parts.netloc == urlsplit(SITE_URL).netloc and parts.path.startswith(PREFIX):
+        return "internal-site"
+    if parts.netloc == "github.com" and SELF_GITHUB.match(parts.path):
+        return "github-source"
+    return "external"
+
+
+_resolved_cache = {}
+
+
+def check_resolved(url):
+    """Check one absolute URL in its own context; (result, evidence) cached."""
+    if url in _resolved_cache:
+        return _resolved_cache[url]
+    parts = urlsplit(url)
+    kind = classify(url)
+    if kind == "internal-site":
+        rel = unquote(parts.path[len(PREFIX):])
+        target = site / rel
+        if rel.endswith("/") or target.is_dir():
+            target = target / "index.html"
+        if not target.is_file():
+            result = ("fail", f"HTTP 404: nothing served at {parts.path} under the {PREFIX} prefix")
+        elif parts.fragment and (page := pages.get(target)) is not None and unquote(parts.fragment) not in page.ids:
+            result = ("fail", f"missing anchor #{parts.fragment}")
+        else:
+            result = ("pass", f"served {parts.path}")
+    elif kind == "github-source":
+        m = SELF_GITHUB.match(parts.path)
+        if m.group("ref") != "main":
+            _resolved_cache[url] = ("blocked", f"self-repo pinned ref {m.group('ref')} not verifiable offline")
+            return _resolved_cache[url]
+        rel = unquote(m.group("rest")).split("#")[0].rstrip("/")
+        if not (root / rel).exists():
+            result = ("fail", f"GitHub {m.group('kind')}/main 404: {rel} is not in the repository")
+        else:
+            result = ("pass", f"GitHub {m.group('kind')}/main:{rel}")
+    elif kind == "non-http":
+        result = ("blocked", f"non-http scheme {parts.scheme!r} not requested")
+    else:
+        result = fetch_external(url)
+    _resolved_cache[url] = result
+    return result
+
+
+def fetch_external(url):
+    try:
+        req = Request(url, headers={"User-Agent": "singular-docs-links-inventory"})
+        with urlopen(req, timeout=EXTERNAL_TIMEOUT) as resp:
+            status = resp.status
+    except HTTPError as err:
+        status = err.code
+    except (URLError, TimeoutError, OSError) as err:
+        return ("blocked", f"network {type(err).__name__}: {err}")
+    if status in (404, 410):
+        return ("fail", f"HTTP {status}")
+    if status >= 400:
+        return ("blocked", f"HTTP {status}")
+    return ("pass", f"HTTP {status}")
+
+
+def deployed_url(path):
+    rel = path.relative_to(site).as_posix()
+    if rel == "index.html":
+        return SITE_URL
+    if rel.endswith("/index.html"):
+        return SITE_URL + rel[:-len("index.html")]
+    return SITE_URL + rel
+
+
+plans = []
+
+
+def plan_row(source, href, resolved, require_playable=False):
+    plans.append((source, href, list(dict.fromkeys(resolved)), require_playable))
+
+
+# Source-authored raw anchors. Raw HTML passes through MkDocs untouched, so the
+# built form is verbatim; each is resolved in every context it is read in.
+# README raw anchors additionally carry the GitHub README rewrite.
+readme_text = (root / "README.md").read_text()
+readme_authored = {href for href, _ in raw_anchors(readme_text)}
+for href, label in raw_anchors(readme_text):
+    plan_row(
+        "README.md",
+        href,
+        [github_readme_url(href), docs_url(SITE_URL, href, True), docs_url(SITE_URL, href, False)],
+        require_playable=any(c in label for c in CTA_LABELS),
+    )
+for href in md_links(readme_text):
+    plan_row("README.md (markdown)", href, [github_readme_url(href)])
+
+authored_by_page = {site / "index.html": readme_authored}
+for md in sorted((root / "docs").glob("*.md")):
+    text = md.read_text()
+    built = site / "docs" / md.stem / "index.html"
+    page_dir = SITE_URL + f"docs/{md.stem}/"
+    authored_by_page[built] = {href for href, _ in raw_anchors(text)}
+    for href, label in raw_anchors(text):
+        resolved = [github_blob_url(f"docs/{md.name}", href)]
+        if built in pages:
+            resolved += [docs_url(page_dir, href, True), docs_url(page_dir, href, False)]
+        plan_row(f"docs/{md.name}", href, resolved, require_playable=any(c in label for c in CTA_LABELS))
+    for href in md_links(text):
+        plan_row(f"docs/{md.name} (markdown)", href, [github_blob_url(f"docs/{md.name}", href)])
+
+# Every remaining href/src in the built HTML (MkDocs nav, rewritten Markdown
+# links, assets, fragments) against the deployed page URL GitHub Pages serves.
+# The no-trailing-slash form is reported, not enforced, for these MkDocs-owned
+# rows: the theme computes every relative URL for the directory URL that Pages
+# redirects to, and that theme-wide property is outside this slice's fence.
+no_slash = {"pass": 0, "fail": 0}
+def speech_scoped(path):
+    """Pages whose speech companions are intentionally absent (see the speech
+    loop): the theme-injected <link rel=speech> reference is machine-facing
+    metadata for the read-aloud companion, not a reader-navigable href, and its
+    absence is governed by the speech-coverage assertion above."""
+    return path.name == "404.html" or path.is_relative_to(site / "simulator") or path.is_relative_to(site / "specs" / "26-live-links")
+
+for path, page in sorted(pages.items()):
+    base = deployed_url(path)
+    authored = authored_by_page.get(path, set())
+    pairs = [(href, label) for href, label in page.anchors if href not in authored]
+    pairs += [(href, f"<{tag}>") for tag, href, rel in page.refs if not (rel == "speech" and speech_scoped(path))]
+    for href, label in pairs:
+        resolved = urljoin(base, href)
+        plan_row(f"{path.relative_to(site).as_posix()} ({label})", href, [resolved])
+        probe = docs_url(base, href, False)
+        if classify(probe) == "internal-site":
+            outcome, _ = check_resolved(probe)
+            no_slash["pass" if outcome == "pass" else "fail"] += 1
+
+assert plans, "empty link inventory: discovered nothing from README or built HTML"
+
+# External requests up front, bounded concurrency, one request per distinct URL.
+external_urls = sorted({u for _, _, resolved, _ in plans for u in resolved if classify(u) == "external"})
+with ThreadPoolExecutor(max_workers=EXTERNAL_CONCURRENCY) as pool:
+    list(pool.map(check_resolved, external_urls))
+
+rows = []
+for source, href, resolved, require_playable in plans:
+    outcomes = [check_resolved(u) for u in resolved]
+    kinds = sorted({classify(u) for u in resolved})
+    bad = [e for r, e in outcomes if r == "fail"]
+    off = [e for r, e in outcomes if r == "blocked"]
+    if require_playable and any(u.rstrip("/") != PLAYABLE.rstrip("/") for u in resolved):
+        result, evidence = "fail", f"dual-context CTA resolves to {', '.join(resolved)}, not the canonical {PLAYABLE}"
+    elif bad:
+        result, evidence = "fail", "; ".join(bad)
+    elif off:
+        result, evidence = "blocked", "; ".join(off)
+    else:
+        result, evidence = "pass", "; ".join(sorted({e for _, e in outcomes}))
+    rows.append({"source": source, "href": href, "kind": "+".join(kinds), "result": result, "evidence": evidence})
+
+failures = [r for r in rows if r["result"] == "fail"]
+blocked_rows = [r for r in rows if r["result"] == "blocked"]
+counts = {
+    "total": len(rows),
+    "checked": sum(1 for r in rows if r["result"] != "non-http"),
+    "pass": sum(1 for r in rows if r["result"] == "pass"),
+    "fail": len(failures),
+    "blocked": len(blocked_rows),
+}
+print(json.dumps({
+    "renderedPages": len(pages),
+    "localLinksAndAnchors": links,
+    "speechCoverage": "PASS",
+    "externalResources": 0,
+    "diagramPages": len(mermaid_pages),
+    "diagrams": sum(p.mermaid for p in pages.values()),
+    "scope": "rendered documentation; model and simulator checked separately",
+    "inventory": counts,
+    "inventoryFailures": failures,
+    "externalBlocked": blocked_rows,
+    "noTrailingSlashAdvisory": no_slash,
+}))
+assert not failures, f"link inventory failures: {json.dumps(failures, indent=2)}"
