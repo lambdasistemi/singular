@@ -17,7 +17,7 @@ The Insert/Withdraw action token certifies the exact action under the configured
 
 ## Insert: certify first, check absence when folded
 
-The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. Request minting must establish this application approval together with the native format, binding and custody requirements. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Its configured policy mints the Insert action token directly. Singular recomputes the expected asset name from the Insert tag and necessary proposal parameters and recognizes it under that policy ID. No second mandatory native request policy/token is introduced.
+The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. The application minting policy must establish approval and enforce the required request format, binding and custody in that minting transaction. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Its configured policy mints the Insert action token directly. When consuming the request, Singular recomputes the expected asset name from the Insert tag and necessary proposal parameters and recognizes it under that policy ID. No second mandatory native request policy/token is introduced.
 
 The pending Insert request contains its Insert action token but **no representative NFT**. Request creation need not observe the mutable registry state. Certification approves the proposed creation, not a claim that the key will remain absent.
 
@@ -39,7 +39,7 @@ The application can observe its own inputs and transaction context. Avoiding obs
 
 To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. Any additional Update/Delete request token and its issuer remain a construction detail; the existing NFT and exact authorized request binding are the adopted authority path.
 
-The application validator must authorize **that exact release**: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. Native request admission checks format, binding and custody; it does not repeat arbitrary application validation. No second application attestation token is required merely to repeat the approved release.
+The application validator must authorize **that exact release**: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. The releasing application validator enforces the request format, binding and custody at creation. Singular checks the native conditions at consumption; receiving the output alone does not execute Singular. No second application attestation token is required merely to repeat the approved release.
 
 These checks need no observation of the mutable registry state when the request is created. The registry remains `Active` during the pending interval, and the NFT remains outstanding in the request. It cannot continue rotating as an application UTxO while held there.
 
@@ -54,7 +54,7 @@ The representative stays in request custody until that completion. Exact request
 
 ## What batching establishes
 
-A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition let the fold check bounded native obligations without repeating the application's full validation at every operation. This is a design objective, not a measured performance result.
+A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition aim to keep the fold's own checks to explicit native obligations. Burning an application action token during folding still invokes its minting policy; whether that branch repeats expensive checks depends on the disposal contract. This is a design objective, not a measured performance result or a guarantee that every application fits.
 
 One authentic representative cannot be held in two simultaneously pending Update/Delete requests for the same key. Consuming a request UTxO prevents consuming that UTxO again. These facts do not settle authorization replay across Delete followed by a fresh Insert, or all possible conflicts between different keys.
 

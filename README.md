@@ -21,7 +21,9 @@ Read the design in order:
 1. [Responsibilities and terminology](docs/overview.md)
 2. [Requests, folding and NFT custody](docs/lifecycle.md)
 3. [Certification and identity binding](docs/certification.md)
-4. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
+4. [Naming walkthrough: register, resolve, change address](docs/naming-demo.md)
+5. [Prior art and reuse candidates](docs/prior-art.md)
+6. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
 
 ## Design status
 

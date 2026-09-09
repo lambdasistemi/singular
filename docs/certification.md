@@ -33,7 +33,7 @@ The logical Insert proposal must expose enough information for certification and
 | Application destination | The required application spending script and address constraints |
 | Representative/output requirements | The representative identity and quantity required by registry rules, plus any other output value constraints that the proposal requires |
 
-The registry target, operation, key, initial state and destination must not be substitutable after certification. Native folding verifies that the created NFT output satisfies the certified requirements. This is a native check of explicit parameters, not a call to arbitrary application logic.
+The registry target, operation, key, initial state and destination must not be substitutable after certification. Native folding verifies that the created NFT output satisfies the certified requirements. These are explicit native output parameters: NFT identity/quantity, destination, datum and value constraints supported by the eventual schema. 'Required effects' is not an unspecified language of arbitrary transaction predicates. Applications needing fresh observations or additional effects at folding fall outside demonstrated precertification coverage unless the native contract explicitly supports them.
 
 The action-token asset name is a hash of a canonical, domain-separated action and its necessary parameters:
 
@@ -48,11 +48,27 @@ Unambiguous canonical encoding and domain separation are required. The specific 
 
 ## Validation without mutable registry observation
 
-The certifier validates application facts and the request proposal, and Singular requires that accepted approval at Insert request minting. Native format alone cannot authorize Insert; otherwise arbitrary non-application datums could claim keys. It need not read the current registry root or promise that Insert will succeed. Singular checks the current key state when applying the operation.
+The configured application minting policy validates application facts, approval and the required construction when it mints the Insert asset. Singular checks the resulting certificate and native conditions when it consumes a request. Native format alone cannot authorize Insert; otherwise arbitrary non-application datums could claim keys. It need not read the current registry root or promise that Insert will succeed. Singular checks the current key state when applying the operation.
 
-For Update/Delete, the application spending validator approves the operation-specific transfer of the existing NFT. Native request admission validates the resulting request. Neither step needs the mutable registry UTxO merely to establish that release authorization.
+For Update/Delete, the application spending validator approves the operation-specific transfer of the existing NFT. That spending validator must enforce the resulting request's required format, binding and custody in the release transaction. Singular rechecks its native conditions when consuming the request. Establishing the release need not read the mutable registry UTxO.
 
 Authenticated registry configuration may still be needed. The design must bind the registry, request/representative policies, certifier and application destination without circular script-hash dependencies. No concrete configuration layout or hash-cycle solution has been selected.
+
+## Which script actually executes
+
+Sending an output to a script address does not execute that receiving spending validator. It runs when the output is later consumed. A malformed outsider output can exist at the address without being a valid Singular request. [Cardano validation](https://docs.cardano.org/about-cardano/learn/transaction-costs-determinism#validation)
+
+| Transaction or action | Executing witness and obligation |
+| --- | --- |
+| Mint Insert action asset | Application minting policy approves the proposal and enforces certified request construction |
+| Release NFT into Update/Delete request | Application spending validator authorizes the exact operation and enforces the request output's binding and custody |
+| Fold request | Singular request/registry spending validators check consumption, native bindings and map transition; representative mint/burn policy couples NFT supply to the transition |
+| Withdraw pending Insert | Application policy approves the Withdraw asset; Singular's spending validator checks the consumed Insert, action binding and refund effects |
+| Burn an application action asset | That asset's application policy executes because its mint quantity is negative |
+
+The division among concrete Singular scripts remains an implementation decision; no extra creation-time request policy is assumed. Recognizing the configured issuer proves where approval came from. It does not prove that an arbitrary application's minting/spending scripts correctly implement their claimed semantics. End-to-end application properties are conditional on those contracts.
+
+If folding burns an application action asset, its policy executes in that transaction. A cheap burn branch could avoid repeating expensive semantic checks, but disposal and that branch's contract are still open. Certification can move checks earlier; it does not establish zero application-policy execution or a speedup. [Cardano minting policies](https://developers.cardano.org/docs/developers/curriculum/native-tokens/minting-policies/)
 
 ## Decisions still required
 
