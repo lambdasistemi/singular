@@ -9,7 +9,7 @@ Singular recognizes native requests. Applications decide whether the requested a
 | Registry identity | Which registry and its rules this request belongs to |
 | Singular representative policy | Creation and destruction of representative NFTs coupled to registry transitions |
 | Configured application policy | Application authorization, including approval of the particular Insert proposal and the source of cancellation authorization |
-| Request-token issuing policy | Mints recognized requests; direct use of the application policy versus a separate native request policy remains open |
+| Application action-token issuer | The configured application policy mints Insert and Withdraw tokens; their names commit to distinct actions and parameters |
 | Application spending script | Future legal spends of the representative's application UTxO |
 
 The configured application policy ID and an application spending script hash are different roles. One multipurpose script could implement both roles, but sharing a hash is neither required nor forbidden. The same distinction applies to the native policy roles. The eventual implementation must say which roles share code and parameters; this document does not assume separate hashes for all of them.
@@ -18,7 +18,7 @@ Writing a policy ID into a request is not enough to make it trusted. The accepte
 
 The interface target is **one application-specific parameter: the application policy ID**. Registry identity and native policy settings are separate protocol configuration. Insert initial state and application destination are approved per-request values, not additional fixed application parameters. This target is not yet proved sufficient for a concrete protocol.
 
-The token arrangement is unresolved: the configured application policy may mint the request token itself, or it may provide certification required by a separate native request policy. Both must establish the required approval at request creation. A distinct representative NFT and request token are still required roles; a separate certificate token is not yet selected.
+Insert and Withdraw use tokens minted directly under this configured application policy. Singular checks the policy ID and recomputes the action-bound asset name. No second mandatory Singular request policy/token is selected for these actions. Update/Delete retain their NFT-based release authorization; any additional request token or issuer for them remains open.
 
 ## What Insert exposes and binds
 
@@ -35,7 +35,16 @@ The logical Insert proposal must expose enough information for certification and
 
 The registry target, operation, key, initial state and destination must not be substitutable after certification. Native folding verifies that the created NFT output satisfies the certified requirements. This is a native check of explicit parameters, not a call to arbitrary application logic.
 
-A certificate asset name committing to a canonical request digest is one possible encoding. It has not been selected. Field encoding, hashing, datum representation and certificate minting/consumption rules are not yet a wire protocol.
+The action-token asset name is a hash of a canonical, domain-separated action and its necessary parameters:
+
+| Action token | Committed content |
+| --- | --- |
+| Insert | Insert tag, registry, key, initial application datum, application destination, declared required effects |
+| Withdraw | Withdraw tag, registry, exact pending Insert UTxO, required refund terms/effects |
+
+The configured application policy approves minting. Singular checks the expected action-bound name. Separate tags prevent treating Insert approval as Withdraw approval. Withdrawal consumes the bound pending Insert without representative minting or a registry update.
+
+Unambiguous canonical encoding and domain separation are required. The specific hash function, binary schema, datum representation, refund economics and token disposal remain open.
 
 ## Validation without mutable registry observation
 
@@ -50,9 +59,9 @@ Authenticated registry configuration may still be needed. The design must bind t
 | Decision | Constraint already fixed |
 | --- | --- |
 | Registry and policy configuration | Accepted certification must be authentic; arbitrary self-selected issuers are insufficient |
-| Request-token issuer and certificate arrangement | Choose direct application-policy minting or certification required by a native request policy |
+| Update/Delete request-token construction | Existing NFT release is the authorization path; do not add an attestation solely to repeat it |
 | Request/certificate encoding and lifecycle | Bind the exact operation and effects; prevent request acceptance after completion |
-| Insert withdrawal and refunds | Withdrawal is allowed; authorization comes from the configured application policy, not a native owner/signature rule; specify fresh action/binding/refunds without assuming original Insert approval permits cancellation |
+| Insert withdrawal and refunds | Separate application-minted Withdraw token binds the exact pending Insert and refund effects; concrete economics, approval conditions and disposal remain open |
 | Representative identity across Delete/reinsert | A deleted key may be registered again; old signatures or certificates must not silently authorize a fresh incarnation |
 | Batch selection and limits | Operations follow successive MPF states; no arbitrary skip semantics or capacity claim is assumed |
 | Implementation and shared libraries | Singular owns these application semantics; old MPFS code or proofs do not automatically establish them |

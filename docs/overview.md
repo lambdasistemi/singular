@@ -22,6 +22,7 @@ Singular has no native owner, privileged requester or privileged folder. Permiss
 | Request token | An action token distinct from the representative; Insert/Withdraw use the configured application policy, while Update/Delete token construction remains open |
 | Application certificate | An action token under the configured application policy whose asset name commits to the approved action and parameters |
 | Application state | Datum and other application information carried by application UTxOs |
+| Withdraw | Cancellation of a pending Insert; neither registry Delete nor a staking-reward withdrawal/plugin invocation |
 | Registry Update | The sole retirement operation `Active → Over` |
 | Application update | An application-defined transition that can move the existing NFT to a successor application UTxO without changing the registry |
 | Fold | Apply a sequence of registry requests with the corresponding MPF proofs and native NFT effects in a transaction |
