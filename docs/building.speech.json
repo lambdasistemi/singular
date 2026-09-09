@@ -1,7 +1,7 @@
 {
   "build-and-check": [
     {
-      "text": "Build the pinned documentation package with Nix. Flake checks validate rendered links, anchors, speech data and required pages, not protocol behavior.",
+      "text": "Build the documentation with Nix. The documentation check validates rendered links, anchors, speech and theme assets. Separate model and simulator checks exercise the admitted Lean candidate and finite corpus; no application proof is claimed.",
       "pause": 400
     }
   ],

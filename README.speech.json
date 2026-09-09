@@ -33,7 +33,7 @@
   ],
   "design-status": [
     {
-      "text": "These documents record the adopted design and the decisions still needed. There is no implementation and no proof in this repository; its CI checks the documentation only. MPF is the registry data structure; MPFS is a separate application with reusable mechanics.",
+      "text": "This is the S1 executable design candidate, with a logical Lean model and deliberately admitted theorem statements. Simulation is held until separate blind model reviews are reconciled. No independent acceptance, completed proof or production validator is claimed.",
       "pause": 400
     }
   ],

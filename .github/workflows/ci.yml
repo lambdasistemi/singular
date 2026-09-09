@@ -25,6 +25,20 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix flake check --no-eval-cache
+  model:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Lean model and exact statement debt
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix run --quiet .#model-check
   rendered-docs:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -103,7 +117,7 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, rendered-docs, dev-shell, release-check]
+    needs: [build-gate, model, rendered-docs, dev-shell, release-check]
     runs-on: nixos
     permissions:
       contents: read

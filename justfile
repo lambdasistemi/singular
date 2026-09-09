@@ -15,7 +15,12 @@ check-presentation:
 stamp-speech +pages:
     python3 tools/stamp_speech.py {{pages}}
 
+model:
+    lake build
+    python3 tools/check_model.py
+
 ci:
+    just model
     just build-docs
     python3 tools/check_site.py site
     just check-presentation

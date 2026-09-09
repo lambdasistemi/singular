@@ -1,0 +1,14 @@
+{
+  "proposed-fault-atoms": [
+    {
+      "text": "Proposed fault atoms. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "pause": 400
+    }
+  ],
+  "coverage-boundary": [
+    {
+      "text": "Coverage boundary. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "pause": 400
+    }
+  ]
+}

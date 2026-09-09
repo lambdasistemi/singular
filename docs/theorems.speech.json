@@ -1,0 +1,14 @@
+{
+  "exact-declaration-inventory": [
+    {
+      "text": "Exact declaration inventory. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "pause": 400
+    }
+  ],
+  "inversions-and-statement-domain": [
+    {
+      "text": "Inversions and statement domain. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "pause": 400
+    }
+  ]
+}

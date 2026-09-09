@@ -12,7 +12,7 @@ nix flake check --no-eval-cache
 nix run .#docs-check
 ```
 
-The documentation package and checks use the locked shared MkDocs toolchain. The checks inspect rendered internal links, section anchors, navigation, speech data and theme assets. They do not execute protocol acceptance scenarios or prove application behavior.
+The documentation package and checks use the locked shared MkDocs toolchain. The documentation check inspects rendered internal links, section anchors, navigation, speech data and theme assets. Separate model and simulator checks exercise the admitted Lean candidate and its finite corpus; none proves application behavior. See the [model ledger](model-ledger.md) and [simulation](simulation.md) for their exact scope.
 
 ## Edit and serve
 

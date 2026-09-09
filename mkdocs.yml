@@ -12,6 +12,14 @@ nav:
       - Lifecycle and custody: docs/lifecycle.md
       - Certification: docs/certification.md
   - Naming walkthrough: docs/naming-demo.md
+  - Executable candidate:
+      - Review guide: docs/design.md
+      - Play the simulation: docs/simulation.md
+      - Decisions and abstractions: docs/decisions.md
+      - Model coverage: docs/model-ledger.md
+      - Admitted statements: docs/theorems.md
+      - Mutation proposals: docs/mutants.md
+      - Lean clarity: docs/LEAN-CLARITY.md
   - Prior art: docs/prior-art.md
   - Protocol specification: specs/protocol/spec.md
   - Building the documentation: docs/building.md

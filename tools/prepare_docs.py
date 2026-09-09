@@ -11,6 +11,14 @@ if stage.exists():
 stage.mkdir()
 for directory in ("docs", "specs"):
     shutil.copytree(root / directory, stage / directory)
+# Ship the actual candidate sources and static simulator with the same site.
+# Generated build trees never become part of the publication.
+for directory, target in (("lean", "model"), ("simulator", "simulator")):
+    source = root / directory
+    if source.is_dir():
+        shutil.copytree(source, stage / target, ignore=shutil.ignore_patterns(
+            ".lake", "node_modules", "__pycache__", "*.olean", "*.ilean", "*.c", "*.o"
+        ))
 shutil.copyfile(root / "README.md", stage / "index.md")
 shutil.copyfile(root / "README.speech.json", stage / "index.speech.json")
 # The shared reader assumes a root deployment when locating home-page speech.
