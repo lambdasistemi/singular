@@ -7,19 +7,19 @@
   ],
   "requirements-and-semantic-atoms": [
     {
-      "text": "Requirements and semantic atoms. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "The logical model has forty-one intentionally admitted statements. A whole-transition completion-only terminal-custody statement remains missing; escape refusal and supply claims do not close that gap.",
       "pause": 400
     }
   ],
   "proposed-abstractions-and-omissions": [
     {
-      "text": "Proposed abstractions and omissions. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "Fresh representative identity fixes the certified asset scope to one incarnation, even with a broader approval scope list. Deliberate approval reuse uses the reused-identity profile. Decision D4 remains open.",
       "pause": 400
     }
   ],
   "scenario-inventory": [
     {
-      "text": "Scenario inventory. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "The Lean corpus has fifty-eight finite rows: fifty-two transitions and six resolver cases. Corrected issuer, exact withdrawal target and same-address outsider probes have valid controls. Fresh-identity Delete and reinsert, stale identity, wrong zero net and terminal withdrawal are exercised. These are finite examples, not proof or completeness acceptance.",
       "pause": 400
     }
   ]

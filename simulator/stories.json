@@ -1,0 +1,5134 @@
+[
+  {
+    "id": "register",
+    "title": "Register a name",
+    "goal": "Make name 42 resolve to address A (100).",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the approved Insert; no NFT exists yet.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the request; the application holds one representative NFT and resolves to address A.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 2,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "compete",
+    "title": "Two requests, one name",
+    "goal": "Fold one Insert and withdraw the competing request with separate approval.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the first approved Insert.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Queue a competing Insert for address B.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 2,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 200,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 200,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 200,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 2,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                },
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the first request; the second remains pending.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 3,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 3,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [
+                {
+                  "id": 2,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "say": "Mint a separate approval bound to the competing request and exact refund.",
+        "action": {
+          "mintWithdraw": {
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "withdraw": {
+                    "registry": 1,
+                    "request": 2,
+                    "refund": {
+                      "destination": 60,
+                      "value": 20
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 3,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [
+                {
+                  "id": 2,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "withdraw": {
+                        "registry": 1,
+                        "request": 2,
+                        "refund": {
+                          "destination": 60,
+                          "value": 20
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Withdraw the competing Insert; address A remains live.",
+        "action": {
+          "withdraw": {
+            "request": 2,
+            "asset": {
+              "policy": 7,
+              "name": {
+                "withdraw": {
+                  "registry": 1,
+                  "request": 2,
+                  "refund": {
+                    "destination": 60,
+                    "value": 20
+                  }
+                }
+              }
+            },
+            "refund": {
+              "destination": 60,
+              "value": 20
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 3,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "withdraw": {
+                        "registry": 1,
+                        "request": 2,
+                        "refund": {
+                          "destination": 60,
+                          "value": 20
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      }
+    ],
+    "forks": [
+      {
+        "at": 2,
+        "title": "Try folding both: the entire batch is refused",
+        "steps": [
+          {
+            "say": "The second item sees the first item’s active key. Neither item commits.",
+            "action": {
+              "fold": {
+                "items": [
+                  {
+                    "request": 1,
+                    "outputId": 3,
+                    "output": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    }
+                  },
+                  {
+                    "request": 2,
+                    "outputId": 4,
+                    "output": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    }
+                  }
+                ],
+                "mint": [
+                  {
+                    "asset": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1
+                  },
+                  {
+                    "asset": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1
+                  }
+                ],
+                "actionNet": [],
+                "witness": {
+                  "applicationMint": false,
+                  "applicationSpend": false,
+                  "nativeSpend": true,
+                  "representativeMint": true
+                }
+              }
+            },
+            "expect": {
+              "accepted": false,
+              "reason": "occupied-key"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cancel",
+    "title": "Cancel a pending Insert",
+    "goal": "Remove the request before it creates a representative NFT.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue an approved Insert.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Approve this request’s exact withdrawal and refund.",
+        "action": {
+          "mintWithdraw": {
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "withdraw": {
+                    "registry": 1,
+                    "request": 1,
+                    "refund": {
+                      "destination": 60,
+                      "value": 20
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "withdraw": {
+                        "registry": 1,
+                        "request": 1,
+                        "refund": {
+                          "destination": 60,
+                          "value": 20
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Withdraw the pending Insert. The name is still absent.",
+        "action": {
+          "withdraw": {
+            "request": 1,
+            "asset": {
+              "policy": 7,
+              "name": {
+                "withdraw": {
+                  "registry": 1,
+                  "request": 1,
+                  "refund": {
+                    "destination": 60,
+                    "value": 20
+                  }
+                }
+              }
+            },
+            "refund": {
+              "destination": 60,
+              "value": 20
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "withdraw": {
+                        "registry": 1,
+                        "request": 1,
+                        "refund": {
+                          "destination": 60,
+                          "value": 20
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "address",
+    "title": "Change address A to B",
+    "goal": "Use application approval to change the address while keeping the same representative.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the approved Insert; no NFT exists yet.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the request; the application holds one representative NFT and resolves to address A.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 2,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "say": "The application accepts the exact successor; the name now resolves to B (200).",
+        "action": {
+          "evolve": {
+            "source": 2,
+            "successor": {
+              "id": 3,
+              "key": 42,
+              "output": {
+                "representative": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1,
+                "destination": 50,
+                "datum": 200,
+                "value": 20
+              }
+            },
+            "evidence": {
+              "source": 2,
+              "successor": {
+                "id": 3,
+                "key": 42,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 200,
+                  "value": 20
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": true,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 3,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 200,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      }
+    ],
+    "forks": [
+      {
+        "at": 2,
+        "title": "Try an unapproved address change",
+        "steps": [
+          {
+            "say": "Without accepted application evidence, the address cannot change.",
+            "action": {
+              "evolve": {
+                "source": 2,
+                "successor": {
+                  "id": 3,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 200,
+                    "value": 20
+                  }
+                },
+                "evidence": {
+                  "source": 2,
+                  "successor": {
+                    "id": 3,
+                    "key": 42,
+                    "output": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    }
+                  },
+                  "accepted": false,
+                  "conforms": true
+                },
+                "witness": {
+                  "applicationMint": false,
+                  "applicationSpend": true,
+                  "nativeSpend": false,
+                  "representativeMint": false
+                }
+              }
+            },
+            "expect": {
+              "accepted": false,
+              "reason": "application-evolution-authorization"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "retire",
+    "title": "Retire the name",
+    "goal": "Queue Update, observe pending resolution, then complete retirement.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the approved Insert; no NFT exists yet.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the request; the application holds one representative NFT and resolves to address A.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 2,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "say": "Application-approved Update moves the NFT into request custody. Resolution is pending.",
+        "action": {
+          "release": {
+            "source": 2,
+            "request": {
+              "id": 3,
+              "operation": "update",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": null,
+              "held": {
+                "registry": 1,
+                "key": 42,
+                "policy": 8,
+                "assetScope": 0
+              },
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "evidence": {
+              "source": 2,
+              "request": {
+                "id": 3,
+                "operation": "update",
+                "proposal": {
+                  "registry": 1,
+                  "key": 42,
+                  "applicationPolicy": 7,
+                  "initial": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  },
+                  "scope": [
+                    0
+                  ]
+                },
+                "token": null,
+                "held": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "destination": 90,
+                "authenticatedOrigin": true
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": true,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 3,
+                  "operation": "update",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": null,
+                  "held": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold Update; burn the NFT. The name is retired and occupied.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 3,
+                "outputId": 0,
+                "output": null
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": -1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "over",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": -1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "forks": []
+  },
+  {
+    "id": "delete",
+    "title": "Delete the name",
+    "goal": "Queue Delete and make the name absent again.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the approved Insert; no NFT exists yet.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the request; the application holds one representative NFT and resolves to address A.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 2,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "say": "Application-approved Delete moves the NFT to request custody.",
+        "action": {
+          "release": {
+            "source": 2,
+            "request": {
+              "id": 3,
+              "operation": "delete",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": null,
+              "held": {
+                "registry": 1,
+                "key": 42,
+                "policy": 8,
+                "assetScope": 0
+              },
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "evidence": {
+              "source": 2,
+              "request": {
+                "id": 3,
+                "operation": "delete",
+                "proposal": {
+                  "registry": 1,
+                  "key": 42,
+                  "applicationPolicy": 7,
+                  "initial": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  },
+                  "scope": [
+                    0
+                  ]
+                },
+                "token": null,
+                "held": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "destination": 90,
+                "authenticatedOrigin": true
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": true,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 3,
+                  "operation": "delete",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": null,
+                  "held": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold Delete; the NFT burns, the name is absent, and its incarnation increases.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 3,
+                "outputId": 0,
+                "output": null
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": -1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": null,
+                  "incarnation": 1
+                }
+              ],
+              "applications": [],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": -1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "forks": [
+      {
+        "at": 3,
+        "title": "Try escaping request custody",
+        "steps": [
+          {
+            "say": "Terminal custody can leave only through completion.",
+            "action": {
+              "escape": {
+                "request": 3
+              }
+            },
+            "expect": {
+              "accepted": false,
+              "reason": "completion-only-custody"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "batch",
+    "title": "Delete and reinsert in a batch",
+    "goal": "Observe successive Delete then Insert effects with net zero representative mint.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "Queue the approved Insert; no NFT exists yet.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Fold the request; the application holds one representative NFT and resolves to address A.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [
+                {
+                  "id": 2,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      },
+      {
+        "say": "Queue Delete.",
+        "action": {
+          "release": {
+            "source": 2,
+            "request": {
+              "id": 3,
+              "operation": "delete",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": null,
+              "held": {
+                "registry": 1,
+                "key": 42,
+                "policy": 8,
+                "assetScope": 0
+              },
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "evidence": {
+              "source": 2,
+              "request": {
+                "id": 3,
+                "operation": "delete",
+                "proposal": {
+                  "registry": 1,
+                  "key": 42,
+                  "applicationPolicy": 7,
+                  "initial": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 100,
+                    "value": 20
+                  },
+                  "scope": [
+                    0
+                  ]
+                },
+                "token": null,
+                "held": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "destination": 90,
+                "authenticatedOrigin": true
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": true,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 3,
+                  "operation": "delete",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": null,
+                  "held": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Queue Insert approved for the next incarnation.",
+        "action": {
+          "createInsert": {
+            "request": {
+              "id": 4,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 200,
+                  "value": 20
+                },
+                "scope": [
+                  1
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 200,
+                        "value": 20
+                      },
+                      "scope": [
+                        1
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            },
+            "approval": {
+              "asset": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 200,
+                        "value": 20
+                      },
+                      "scope": [
+                        1
+                      ]
+                    }
+                  }
+                }
+              },
+              "accepted": true,
+              "conforms": true
+            },
+            "witness": {
+              "applicationMint": true,
+              "applicationSpend": false,
+              "nativeSpend": false,
+              "representativeMint": false
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 0
+                }
+              ],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 4,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 200,
+                      "value": 20
+                    },
+                    "scope": [
+                      1
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            1
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                },
+                {
+                  "id": 3,
+                  "operation": "delete",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": null,
+                  "held": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "destination": 90,
+                  "authenticatedOrigin": true
+                }
+              ],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            1
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                4,
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Atomic batch: Delete removes the old entry, then Insert installs address B. Logical burn and mint cancel.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 3,
+                "outputId": 0,
+                "output": null
+              },
+              {
+                "request": 4,
+                "outputId": 5,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 200,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [
+                {
+                  "key": 42,
+                  "value": "active",
+                  "incarnation": 1
+                }
+              ],
+              "applications": [
+                {
+                  "id": 5,
+                  "key": 42,
+                  "output": {
+                    "representative": {
+                      "registry": 1,
+                      "key": 42,
+                      "policy": 8,
+                      "assetScope": 0
+                    },
+                    "quantity": 1,
+                    "destination": 50,
+                    "datum": 200,
+                    "value": 20
+                  }
+                }
+              ],
+              "requests": [],
+              "approvals": [
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 200,
+                            "value": 20
+                          },
+                          "scope": [
+                            1
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                },
+                {
+                  "asset": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "accepted": true,
+                  "conforms": true
+                }
+              ],
+              "used": [
+                5,
+                4,
+                3,
+                2,
+                1
+              ]
+            },
+            "logical": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": -1
+              },
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "forks": [
+      {
+        "at": 5,
+        "title": "Try replaying the spent requests",
+        "steps": [
+          {
+            "say": "A completed request is unavailable and cannot be replayed.",
+            "action": {
+              "fold": {
+                "items": [
+                  {
+                    "request": 3,
+                    "outputId": 0,
+                    "output": null
+                  },
+                  {
+                    "request": 4,
+                    "outputId": 0,
+                    "output": null
+                  }
+                ],
+                "mint": [],
+                "actionNet": [],
+                "witness": {
+                  "applicationMint": false,
+                  "applicationSpend": false,
+                  "nativeSpend": true,
+                  "representativeMint": true
+                }
+              }
+            },
+            "expect": {
+              "accepted": false,
+              "reason": "request-unavailable"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "forged",
+    "title": "An outsider cannot forge origin",
+    "goal": "Show an outsider’s request being refused at the authenticated-origin boundary.",
+    "seed": {
+      "config": {
+        "registry": 1,
+        "applicationPolicy": 7,
+        "requestAddress": 90,
+        "representativePolicy": 8,
+        "reuseIdentity": true
+      },
+      "entries": [],
+      "applications": [],
+      "requests": [],
+      "approvals": [],
+      "used": []
+    },
+    "steps": [
+      {
+        "say": "An outsider can post a request; the model marks its origin unauthenticated.",
+        "action": {
+          "outsider": {
+            "request": {
+              "id": 1,
+              "operation": "insert",
+              "proposal": {
+                "registry": 1,
+                "key": 42,
+                "applicationPolicy": 7,
+                "initial": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                },
+                "scope": [
+                  0
+                ]
+              },
+              "token": {
+                "policy": 7,
+                "name": {
+                  "insert": {
+                    "proposal": {
+                      "registry": 1,
+                      "key": 42,
+                      "applicationPolicy": 7,
+                      "initial": {
+                        "representative": {
+                          "registry": 1,
+                          "key": 42,
+                          "policy": 8,
+                          "assetScope": 0
+                        },
+                        "quantity": 1,
+                        "destination": 50,
+                        "datum": 100,
+                        "value": 20
+                      },
+                      "scope": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              },
+              "held": null,
+              "destination": 90,
+              "authenticatedOrigin": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": true,
+          "value": {
+            "state": {
+              "config": {
+                "registry": 1,
+                "applicationPolicy": 7,
+                "requestAddress": 90,
+                "representativePolicy": 8,
+                "reuseIdentity": true
+              },
+              "entries": [],
+              "applications": [],
+              "requests": [
+                {
+                  "id": 1,
+                  "operation": "insert",
+                  "proposal": {
+                    "registry": 1,
+                    "key": 42,
+                    "applicationPolicy": 7,
+                    "initial": {
+                      "representative": {
+                        "registry": 1,
+                        "key": 42,
+                        "policy": 8,
+                        "assetScope": 0
+                      },
+                      "quantity": 1,
+                      "destination": 50,
+                      "datum": 100,
+                      "value": 20
+                    },
+                    "scope": [
+                      0
+                    ]
+                  },
+                  "token": {
+                    "policy": 7,
+                    "name": {
+                      "insert": {
+                        "proposal": {
+                          "registry": 1,
+                          "key": 42,
+                          "applicationPolicy": 7,
+                          "initial": {
+                            "representative": {
+                              "registry": 1,
+                              "key": 42,
+                              "policy": 8,
+                              "assetScope": 0
+                            },
+                            "quantity": 1,
+                            "destination": 50,
+                            "datum": 100,
+                            "value": 20
+                          },
+                          "scope": [
+                            0
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "held": null,
+                  "destination": 90,
+                  "authenticatedOrigin": false
+                }
+              ],
+              "approvals": [],
+              "used": [
+                1
+              ]
+            },
+            "logical": []
+          }
+        }
+      },
+      {
+        "say": "Folding the outsider request is refused: no representative is minted.",
+        "action": {
+          "fold": {
+            "items": [
+              {
+                "request": 1,
+                "outputId": 2,
+                "output": {
+                  "representative": {
+                    "registry": 1,
+                    "key": 42,
+                    "policy": 8,
+                    "assetScope": 0
+                  },
+                  "quantity": 1,
+                  "destination": 50,
+                  "datum": 100,
+                  "value": 20
+                }
+              }
+            ],
+            "mint": [
+              {
+                "asset": {
+                  "registry": 1,
+                  "key": 42,
+                  "policy": 8,
+                  "assetScope": 0
+                },
+                "quantity": 1
+              }
+            ],
+            "actionNet": [],
+            "witness": {
+              "applicationMint": false,
+              "applicationSpend": false,
+              "nativeSpend": true,
+              "representativeMint": true
+            }
+          }
+        },
+        "expect": {
+          "accepted": false,
+          "reason": "unauthenticated-request"
+        }
+      }
+    ],
+    "forks": []
+  }
+]

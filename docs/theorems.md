@@ -1,6 +1,6 @@
 # Theorem and intentional debt manifest
 
-All 37 declarations are **STATED**, each with exactly one intentional `sorry` and expected `sorryAx` dependency. None is PROVED, READY, AUDITED or ACCEPTED. The executable source-derived manifest is [theorem-debt.json](../model/theorem-debt.json). The bounded parser checks exact qualified identities and normalized statement hashes, rejects unlisted holes/axioms/admit/unsafe declarations, and rejects unrecognized theorem grammar. This is an identity/debt check, not a proof checker or semantic completeness audit.
+All 41 declarations are **STATED**, each with exactly one intentional `sorry` and expected `sorryAx` dependency. None is PROVED, READY, AUDITED or ACCEPTED. The executable source-derived manifest is [theorem-debt.json](../model/theorem-debt.json). The bounded parser checks exact qualified identities and normalized statement hashes, rejects unlisted holes/axioms/admit/unsafe declarations, and rejects unrecognized theorem grammar. This is an identity/debt check, not a proof checker or semantic completeness audit. These are source-derived debt records; no compiled-axiom inspection is claimed.
 
 ## Exact declaration inventory
 
@@ -51,3 +51,5 @@ All 37 declarations are **STATED**, each with exactly one intentional `sorry` an
 ## Inversions and statement domain
 
 Public inversions cover createInsert, mintWithdraw, release, evolve, outsider, withdraw, fold, moveAction, unconditional escape refusal, Insert and terminal foldOne branches, sequential composition, and address/pending resolver branches. Fold branch inversions expose exact guards and effects rather than merely restating a success boolean. Preservation obligations use Reachable where ledger invariants are needed; exact executable inversions quantify raw inputs. All inversions remain admitted.
+
+A whole-transition statement that terminal request custody can leave only through completion is still missing. The unconditional `escape_refused` statement and Reachable supply claims do not establish that general coverage obligation. The terminal Withdraw refusal in the finite corpus adds an executable example, not the missing theorem or a completeness result.

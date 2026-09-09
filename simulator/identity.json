@@ -1,0 +1,15 @@
+{
+  "status": "SIMULATOR-CANDIDATE",
+  "formalStatus": "STATED / sorryAx",
+  "files": {
+    "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
+    "formal/Statements.lean": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138",
+    "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
+    "formal/theorem-debt.json": "12582915ec51b3b22ce5b9638e6211ca02ea6f4656ede183bba3c5a3d6f9ba83",
+    "corpus.json": "ad85b170ccd108952f0ab958618cd32088ee66fc43000ad928aa755c4db06675"
+  },
+  "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
+  "corpusTransitions": 52,
+  "corpusResolutions": 6,
+  "theorems": 41
+}

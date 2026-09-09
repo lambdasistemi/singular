@@ -1,0 +1,143 @@
+{
+  "controlsDiscovered": 22,
+  "controlsExecuted": 22,
+  "controls": [
+    {
+      "name": "core-refuse-everything",
+      "observed": "corpus/S03b-configured-issuer-control",
+      "expected": "/corpus\\//"
+    },
+    {
+      "name": "core-accept-everything",
+      "observed": "corpus/S11c-terminal-withdraw-refused",
+      "expected": "/corpus\\/S11c-terminal-withdraw-refused/"
+    },
+    {
+      "name": "corpus-result-drift",
+      "observed": "corpus/S03b-configured-issuer-control",
+      "expected": "/corpus\\//"
+    },
+    {
+      "name": "zero-corpus",
+      "observed": "zero corpus",
+      "expected": "/zero corpus/"
+    },
+    {
+      "name": "identity-drop",
+      "observed": "theorem identity",
+      "expected": "/theorem identity/"
+    },
+    {
+      "name": "identity-rename",
+      "observed": "theorem identity",
+      "expected": "/theorem identity/"
+    },
+    {
+      "name": "identity-zero",
+      "observed": "zero theorem declarations",
+      "expected": "/zero theorem declarations/"
+    },
+    {
+      "name": "corpus-output-domain",
+      "observed": "invalid-nat/corpus.result.state.config.registry",
+      "expected": "/invalid-nat\\/corpus.result/"
+    },
+    {
+      "name": "property-execution-suppressed",
+      "observed": "property execution denominator",
+      "expected": "/property execution denominator/"
+    },
+    {
+      "name": "property-pending_insert_no_representative",
+      "observed": "property/pending_insert_no_representative",
+      "expected": "/property\\/pending_insert_no_representative/"
+    },
+    {
+      "name": "property-minting_requires_configured_issuer",
+      "observed": "property/minting_requires_configured_issuer",
+      "expected": "/property\\/minting_requires_configured_issuer/"
+    },
+    {
+      "name": "property-exact_withdraw_scope",
+      "observed": "property/exact_withdraw_scope",
+      "expected": "/property\\/exact_withdraw_scope/"
+    },
+    {
+      "name": "property-local_evolution_registry_unchanged",
+      "observed": "property/local_evolution_registry_unchanged",
+      "expected": "/property\\/local_evolution_registry_unchanged/"
+    },
+    {
+      "name": "property-release_is_operation_specific",
+      "observed": "property/release_is_operation_specific",
+      "expected": "/property\\/release_is_operation_specific/"
+    },
+    {
+      "name": "property-existing_action_does_not_refresh_scope",
+      "observed": "property/existing_action_does_not_refresh_scope",
+      "expected": "/property\\/existing_action_does_not_refresh_scope/"
+    },
+    {
+      "name": "property-native_witness_even_zero_net",
+      "observed": "property/native_witness_even_zero_net",
+      "expected": "/property\\/native_witness_even_zero_net/"
+    },
+    {
+      "name": "property-nonzero_action_invokes_policy",
+      "observed": "property/nonzero_action_invokes_policy",
+      "expected": "/property\\/nonzero_action_invokes_policy/"
+    },
+    {
+      "name": "property-escape_refused",
+      "observed": "property/escape_refused",
+      "expected": "/property\\/escape_refused/"
+    },
+    {
+      "name": "property-resolve_unauthenticated",
+      "observed": "property/resolve_unauthenticated",
+      "expected": "/property\\/resolve_unauthenticated/"
+    },
+    {
+      "name": "property-resolve_absent",
+      "observed": "property/resolve_absent",
+      "expected": "/property\\/resolve_absent/"
+    },
+    {
+      "name": "property-resolve_over",
+      "observed": "property/resolve_over",
+      "expected": "/property\\/resolve_over/"
+    },
+    {
+      "name": "control-suppression",
+      "observed": "control denominator",
+      "expected": "/control denominator/"
+    }
+  ]
+}
+{
+  "status": "PASS finite checks only",
+  "corpus": {
+    "discovered": 58,
+    "executed": 58
+  },
+  "stories": {
+    "discovered": 32,
+    "executed": 32,
+    "trees": 8
+  },
+  "properties": {
+    "discovered": 41,
+    "executed": 41,
+    "controlled": 12,
+    "exhibitsOnly": 17,
+    "gaps": 12
+  },
+  "boundary": {
+    "discovered": 1764,
+    "executed": 1764
+  },
+  "refusals": {
+    "declared": 28,
+    "exhibited": 17
+  }
+}

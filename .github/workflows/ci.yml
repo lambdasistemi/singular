@@ -39,6 +39,20 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#model-check
+  simulator:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Simulator corpus parity and controls
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix run --quiet .#simulator-check
   rendered-docs:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -117,7 +131,7 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, model, rendered-docs, dev-shell, release-check]
+    needs: [build-gate, model, simulator, rendered-docs, dev-shell, release-check]
     runs-on: nixos
     permissions:
       contents: read

@@ -19,8 +19,14 @@ model:
     lake build
     python3 tools/check_model.py
 
+simulator:
+    node simulator/build.mjs --check
+    node simulator/gate.mjs
+    node simulator/gate.mjs --selftest
+
 ci:
     just model
+    just simulator
     just build-docs
     python3 tools/check_site.py site
     just check-presentation

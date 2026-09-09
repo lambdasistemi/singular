@@ -1,0 +1,26 @@
+{
+  "capturedAt": "2026-09-09T13:45:34.668Z",
+  "htmlSha256ObservedInBrowser": "baf89f3ba38243f66555febdb5c55de52605807d2b10e369795d6f4122869270",
+  "files": {
+    "index.html": "baf89f3ba38243f66555febdb5c55de52605807d2b10e369795d6f4122869270",
+    "identity.json": "7f5161a27b82f05da289a85ae1a8bad907af494d7a8d959b8a43fc1e87504bf3",
+    "core.mjs": "db356083798d8e37c2a843e5d0f22ebde71478d18a332110443c22d88e7b1b65",
+    "actions.mjs": "3d1494fef781c14658ac7012a698aec01b495c7c9a3f17521d98e5647a4843ef",
+    "properties.mjs": "6530cdcc136121a77fa70d4ea14e870d9d01a700fe6efd77accf777cbc9dc54d",
+    "stories.json": "5d79e0443344119f8889b8db84f5b36bce964bc27925faad3e7eda289f69386e",
+    "gate.mjs": "f80f5a420f7dbe9acb157b9ded6dce804d8c170ab9d872315e6e320c292528e2",
+    "build.mjs": "941861e0523c3dcadf30752e5576b30dfafa26e956ea46ee65b9c26bf5cfcc4d",
+    "browser-check.js": "2869066298fdf9ec75fe950ae149fa459809425d0ff8ee813af71e23e2004ee1",
+    "page-body.html": "a375996e8067139df0bf8a88bd993a8406f5168805947e32f1bcd43219ab7ee1",
+    "page.mjs": "565193580ae4c934ef34195389d03155987aa2346a2fed54f9439acc4a9252d9",
+    "page.css": "55a3f9f8764fd3385bf7efd2d9472a2b51c53f319bb74d5eaee5091814926f33",
+    "template-generic.js": "36d4533d4755598b332d4751d90483ee9cd16915b2893b4cd7cc39a490193045",
+    "page-template.html": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
+    "corpus.json": "ad85b170ccd108952f0ab958618cd32088ee66fc43000ad928aa755c4db06675",
+    "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
+    "formal/Statements.lean": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138",
+    "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
+    "formal/theorem-debt.json": "12582915ec51b3b22ce5b9638e6211ca02ea6f4656ede183bba3c5a3d6f9ba83",
+    "coverage.json": "f4c88ec9ec211ee237b57ed11be533b25ef33fce8ba0056ebca60b7a677fc759"
+  }
+}

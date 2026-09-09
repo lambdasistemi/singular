@@ -1,13 +1,13 @@
 {
   "proposed-fault-atoms": [
     {
-      "text": "Proposed fault atoms. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "Twenty-six proposed mutation rows identify possible faults and executable witness candidates. Corrected issuer, exact target, outsider, terminal withdrawal and fresh-identity cases refine those proposals. No mutation campaign was executed.",
       "pause": 400
     }
   ],
   "coverage-boundary": [
     {
-      "text": "Coverage boundary. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "The rows are author proposals, not an accepted exact denominator. Compound families still need splitting. The whole-transition terminal-custody statement remains missing, and D4 identity and approval lifecycle choices remain open.",
       "pause": 400
     }
   ]

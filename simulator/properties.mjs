@@ -1,0 +1,22 @@
+import {equal,resolve} from './core.mjs';
+const kind=r=>Object.keys(r.action??{})[0];
+const ok=(r,k)=>r.result?.accepted&&kind(r)===k;
+const unchanged=(r,k)=>equal(r.before[k],r.result.value.state[k]);
+// Checks only the explicit consequent on a nonvacuous finite exhibit; no Lean proof claim.
+export const checks={
+ pending_insert_no_representative:{on:r=>ok(r,'createInsert'),test:r=>r.action.createInsert.request.held===null&&unchanged(r,'entries')&&unchanged(r,'applications'),fault:r=>{r.result.value.state.entries.push({key:999,value:'active',incarnation:0});}},
+ minting_requires_configured_issuer:{on:r=>ok(r,'createInsert'),test:r=>{const d=r.action.createInsert;return d.approval.asset.policy===r.before.config.applicationPolicy&&d.approval.accepted&&d.witness.applicationMint;},fault:r=>{r.action.createInsert.witness.applicationMint=false;}},
+ exact_withdraw_scope:{on:r=>ok(r,'withdraw'),test:r=>{const d=r.action.withdraw;return equal(d.asset.name,{withdraw:{registry:r.before.config.registry,request:d.request,refund:d.refund}});},fault:r=>{r.action.withdraw.refund.destination+=1;}},
+ local_evolution_registry_unchanged:{on:r=>ok(r,'evolve'),test:r=>unchanged(r,'entries')&&equal(r.result.value.logical,[]),fault:r=>{r.result.value.logical.push({asset:{registry:1,key:42,policy:8,assetScope:0},quantity:1});}},
+ release_is_operation_specific:{on:r=>ok(r,'release'),test:r=>{const d=r.action.release;return equal(d.request,d.evidence.request)&&d.witness.applicationSpend;},fault:r=>{r.action.release.evidence.request.id+=1;}},
+ existing_action_does_not_refresh_scope:{on:r=>ok(r,'moveAction')&&r.action.moveAction.net===0,test:r=>equal(r.before,r.result.value.state),fault:r=>{r.result.value.state.used.push(999);}},
+ native_witness_even_zero_net:{on:r=>ok(r,'fold')&&r.action.fold.mint.length===0,test:r=>r.action.fold.witness.nativeSpend&&r.result.value.logical.every(d=>r.result.value.logical.filter(e=>equal(e.asset,d.asset)).reduce((n,e)=>n+BigInt(e.quantity),0n)===0n),fault:r=>{r.action.fold.witness.nativeSpend=false;}},
+ nonzero_action_invokes_policy:{on:r=>ok(r,'fold')&&r.action.fold.actionNet.some(d=>r.action.fold.actionNet.filter(e=>equal(d.asset,e.asset)).reduce((n,e)=>n+BigInt(e.quantity),0n)!==0n),test:r=>r.action.fold.witness.applicationMint,fault:r=>{r.action.fold.witness.applicationMint=false;}},
+ escape_refused:{on:r=>kind(r)==='escape',test:r=>equal(r.result,{accepted:false,reason:'completion-only-custody'}),fault:r=>{r.result={accepted:true,value:{state:r.before,logical:[]}};}},
+ resolve_unauthenticated:{on:r=>r.resolution&&r.authenticated===false,test:r=>r.observed==='unauthenticated',fault:r=>{r.observed='absent';}},
+ resolve_absent:{on:r=>r.resolution&&r.authenticated&&!(r.before.entries.find(e=>e.key===r.key)?.value??null),test:r=>r.observed==='absent',fault:r=>{r.observed='pending';}},
+ resolve_over:{on:r=>r.resolution&&r.authenticated&&r.before.entries.find(e=>e.key===r.key)?.value==='over',test:r=>r.observed==='retired',fault:r=>{r.observed='absent';}}
+};
+const actionExhibits={createInsert_iff:'createInsert',mintWithdraw_iff:'mintWithdraw',release_iff:'release',evolve_iff:'evolve',outsider_iff:'outsider',withdraw_iff:'withdraw',fold_iff:'fold',moveAction_iff:'moveAction',withdrawal_preserves_registry_supply:'withdraw',release_removes_application_custody:'release',outsider_not_admitted:'outsider',whole_release_acceptance_independent:'release',whole_release_refusal_independent:'release',whole_insert_acceptance_independent:'createInsert',whole_insert_refusal_independent:'createInsert',insert_creation_registry_independent:'createInsert',release_registry_independent:'release'};
+export function theoremReport(ledger,record){return ledger.map(row=>{const name=row.name.split('.').at(-1),c=checks[name];const exhibited=c?Boolean(c.on(record)):Boolean(actionExhibits[name]&&ok(record,actionExhibits[name]));return {name:row.name,by:[row.name],status:'STATED / sorryAx',coverage:c?'controlled-check':exhibited?'exhibits-only':'gap',exhibited,holds:c&&exhibited?Boolean(c.test(record)):null,notes:c?'Finite consequent check; intended-result fault required by gate.':exhibited?'Action exhibit only; full quantified statement is not checked.':'No nonvacuous executable exhibit for this declaration on this record.'};});}
+export function corpusRecords(corpus){return [...corpus.cases.map(row=>({before:row.case.before,action:row.case.action,result:row.result,id:row.case.id})),...corpus.resolutions.map(row=>({...row,resolution:true,observed:resolve(row.before,row.key,row.authenticated)}))];}

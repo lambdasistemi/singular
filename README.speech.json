@@ -33,7 +33,7 @@
   ],
   "design-status": [
     {
-      "text": "This is the S1 executable design candidate, with a logical Lean model and deliberately admitted theorem statements. Simulation is held until separate blind model reviews are reconciled. No independent acceptance, completed proof or production validator is claimed.",
+      "text": "This is the S1 executable design candidate, with a logical Lean model, deliberately admitted theorem statements and a separately authored playable simulation. No independent audit acceptance, completed proof or production validator is claimed. The coverage ledger records the executable evidence and the limits.",
       "pause": 400
     }
   ],
