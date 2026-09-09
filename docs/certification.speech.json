@@ -36,5 +36,9 @@
       "text": "Seven decisions remain, each with a constraint already fixed: configuration authenticity, Update and Delete token construction, encoding and lifecycle, withdrawal and refunds, identity across Delete and reinsert, batching, and implementation and shared libraries.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "certification.md",
+    "sha256": "84ae3fe09bb8142f74ddbed7f30097d39ae4abc1bbd65da5e09e25859a844d91"
+  }
 }

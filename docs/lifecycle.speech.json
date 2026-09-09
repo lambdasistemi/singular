@@ -56,5 +56,9 @@
       "text": "A fold applies operations to successive map states; absence and old-value checks belong to the native mechanics. One representative cannot sit in two pending terminal requests, and a consumed request cannot be consumed again. Replay across Delete and reinsert is not settled here.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "lifecycle.md",
+    "sha256": "92eea8ae54fe324d5dc3b13bd3c68f023774c5ef173c46334913cff7a83bf5cc"
+  }
 }

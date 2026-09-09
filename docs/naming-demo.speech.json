@@ -22,5 +22,9 @@
       "text": "The application approves changing A to B, spends the current UTxO and requires a successor with the same representative and new datum. The registry stays Active. The table summarizes register, resolve and change address by registry operation and representative movement.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "naming-demo.md",
+    "sha256": "dada71c8cbd1327db814ff4beb74bc2264e4836c88279163a278542a28ccafc5"
+  }
 }

@@ -26,5 +26,9 @@
       "text": "At this bootstrap revision, no documentation version is released. The unreleased baseline is zero point zero point zero. Release-please proposes version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built documentation archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "building.md",
+    "sha256": "f32fd75390c49dd0ddf165e9827986224bc08f92264aa5f3c205d657e1c91fd5"
+  }
 }

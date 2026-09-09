@@ -21,17 +21,17 @@
   ],
   "why-singular-cannot-adopt-mpfs-unchanged": [
     {
-      "text": "The gaps are the registry contract, not the map. An owner gate contradicts the permissionless requirement, no representative NFT exists per key, retirement would be a value convention rather than an enforced terminal state, and nothing binds a request to an approved application output.",
+      "text": "The gap table sets each of Singular's requirements, named in words, against what MPFS supplies. No owner may gate a fold, but every state spend requires the owner's signature. Supply must be coupled to every transition, but only one cage NFT exists. Over must be terminal, but Update rewrites a value and Delete frees the key. A request must be certified by its application, but MPFS requests carry no policy, output or approval. Withdrawal must be application-authorized, but Retract is a timed requester right. A terminal request must keep its representative, but the owner may sweep. And End lets the owner destroy the whole map.",
       "pause": 400
     },
     {
-      "text": "MPFS resolves races between the oracle and requesters with exclusive time phases. Singular has no oracle, so it resolves them inside the fold, where an insert is checked against absence in the applicable successive state.",
+      "text": "MPFS resolves races between the oracle and requesters with exclusive time phases. Singular has no oracle, so it resolves them inside the fold, where an insert is checked against absence in the applicable successive registry state.",
       "pause": 400
     }
   ],
   "what-remains-reusable-from-mpfs": [
     {
-      "text": "The map layer and its off-chain machinery transfer: the fold shape of one proof per request, the cage indexer, the proof-bearing API, client transaction builders and verifiers. The authorization model does not transfer, and component reuse still needs its own evaluation.",
+      "text": "The map layer and its off-chain machinery transfer: the fold shape of one proof per request, the cage indexer, the proof-bearing API, client transaction builders and verifiers. The authorization model does not transfer, component reuse still needs its own evaluation, and the decision on transaction shapes and shared libraries remains open.",
       "pause": 400
     }
   ],
@@ -66,5 +66,9 @@
       "text": "Component-level evaluation, licensing, toolchain fit and correctness require their own checks, and reading a validator establishes what its source says rather than what a deployment does.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "prior-art.md",
+    "sha256": "4a85153d4ceb7c937556096fc1828b2368c64645d0d150ab7c8914dfd2cc9cee"
+  }
 }
