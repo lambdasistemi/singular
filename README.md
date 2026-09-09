@@ -25,13 +25,13 @@ flowchart LR
     REQ["Request UTxOs<br/>Insert · Update · Delete"]
     REG["Registry UTxO<br/>authenticated MPF root<br/>key → Active | Over"]
   end
-  USER["User"] -->|proposes a registration| POL
-  POL -->|mints an Insert action token<br/>certifying the exact proposal| REQ
-  FOLD["Folder<br/>anyone"] -->|folds requests with absence<br/>and existence proofs| REG
-  REG -->|mints the representative<br/>into the certified output| OUT
-  SCR -->|releases the NFT into an exact<br/>Update or Delete request| REQ
-  REG -->|burns the representative<br/>on Update or Delete| REQ
-  RES["Resolver"] -->|authenticates entry, NFT<br/>and current output| OUT
+  USER["User"] -->|"proposes a registration"| POL
+  POL -->|"mints an Insert action token<br/>certifying the exact proposal"| REQ
+  FOLD["Folder<br/>anyone"] -->|"folds requests with absence<br/>and existence proofs"| REG
+  REG -->|"mints the representative<br/>into the certified output"| OUT
+  SCR -->|"releases the NFT into an exact<br/>Update or Delete request"| REQ
+  REG -->|"burns the representative<br/>on Update or Delete"| REQ
+  RES["Resolver"] -->|"authenticates entry, NFT<br/>and current output"| OUT
 ```
 
 The application keeps its state in the UTxO holding the NFT and controls its own local transitions; the registry never sees that state. Singular records only whether a key has an outstanding representative or has been permanently retired, and enforces the coupling between registry transitions and NFT supply.

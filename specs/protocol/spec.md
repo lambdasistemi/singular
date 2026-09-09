@@ -9,7 +9,7 @@ Singular is a permissionless registry on Cardano for unique identities and indep
 ## Entities and terminology
 
 ```mermaid
-flowchart LR
+flowchart TB
   REG["Registry<br/>authenticated identity<br/>map: key → Active | Over"]
   REP["Representative NFT<br/>identifies the active registration<br/>of one key in one registry"]
   INS["Insert request UTxO<br/>carries an application-minted<br/>Insert action token, no NFT"]
@@ -17,11 +17,11 @@ flowchart LR
   POL["Configured application policy<br/>authorization anchor;<br/>mints Insert and Withdraw action tokens"]
   SCR["Application spending script<br/>governs legal spends of the<br/>application's NFT UTxO"]
   POL --> INS
-  INS -->|fold on an absent key| REG
-  REG -->|mints| REP
-  REP -->|held by| SCR
-  SCR -->|releases into| TERM
-  TERM -->|fold| REG
+  INS -->|"fold on an absent key"| REG
+  REG -->|"mints"| REP
+  REP -->|"held by"| SCR
+  SCR -->|"releases into"| TERM
+  TERM -->|"fold"| REG
 ```
 
 A registry has an authenticated identity and a map from keys to payload-free `Active` or `Over` values. An absent key has no entry. A representative NFT identifies the active registration of a key within its registry. An Insert request UTxO carries an application-minted Insert action token; Update/Delete requests carry the existing representative. Any additional Update/Delete request-token construction remains open. A configured application policy provides the application authorization anchor, including accepted approval for Insert. The application spending script governs legal spends of the application's NFT UTxO.

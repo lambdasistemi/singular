@@ -6,7 +6,7 @@ Request creation and folding are separate transactions. Each has its own atomic 
 
 ```mermaid
 stateDiagram-v2
-  direction LR
+  direction TB
   state "No representative" as none
   state "Pending Insert<br/>(no NFT in the request)" as pending
   state "Application custody<br/>(NFT in the application UTxO)" as app
@@ -15,7 +15,11 @@ stateDiagram-v2
   none --> pending: application policy mints<br/>the Insert action token
   pending --> none: Withdraw folded<br/>request consumed, nothing minted
   pending --> app: Insert folded on an absent key<br/>representative minted
-  app --> app: application update<br/>same NFT, successor UTxO
+  note right of app
+    application updates move the NFT
+    between successor UTxOs
+    without leaving this state
+  end note
   app --> terminal: application releases the NFT<br/>into an exact request
   terminal --> [*]: Update or Delete folded<br/>representative burned
 ```

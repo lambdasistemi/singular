@@ -5,16 +5,16 @@ Singular recognizes native requests. Applications decide whether the requested a
 ## Policy and script roles
 
 ```mermaid
-flowchart LR
+flowchart TB
   REGID["Registry identity<br/>which registry, which rules"]
   REP["Singular representative policy<br/>mints and burns representatives<br/>coupled to registry transitions"]
   APOL["Configured application policy<br/>approves Insert proposals<br/>mints Insert and Withdraw action tokens"]
   ASCR["Application spending script<br/>governs the representative's application UTxO<br/>authorizes exact Update/Delete releases"]
-  REGID -->|configured parameter:<br/>the application policy ID| APOL
-  APOL -->|action token named by<br/>hash(action, parameters)| REQ["Request UTxO"]
-  REQ -->|folded| REP
-  REP -->|representative into the<br/>certified application output| ASCR
-  ASCR -->|existing NFT into an<br/>exact terminal request| REQ
+  REGID -->|"configured parameter:<br/>the application policy ID"| APOL
+  APOL -->|"action token named by<br/>hash(action, parameters)"| REQ["Request UTxO"]
+  REQ -->|"folded"| REP
+  REP -->|"representative into the<br/>certified application output"| ASCR
+  ASCR -->|"existing NFT into an<br/>exact terminal request"| REQ
 ```
 
 | Identity | What it governs |
