@@ -20,6 +20,11 @@ let
     runtimeInputs = [ pkgs.python3 ];
     text = ''python3 ${src}/tools/check_site.py ${docs}'';
   };
+  previewCheck = pkgs.writeShellApplication {
+    name = "preview-check";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''python3 ${src}/tools/verify_preview.py "$@"'';
+  };
   serve = pkgs.writeShellApplication {
     name = "docs-serve";
     runtimeInputs = [ pkgs.python3 ];
@@ -33,6 +38,7 @@ in {
   '';
   apps = {
     docs-check = { type = "app"; program = pkgs.lib.getExe checker; };
+    preview-check = { type = "app"; program = pkgs.lib.getExe previewCheck; };
     docs-serve = { type = "app"; program = pkgs.lib.getExe serve; };
     default = { type = "app"; program = pkgs.lib.getExe serve; };
   };

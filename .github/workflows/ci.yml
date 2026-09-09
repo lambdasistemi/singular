@@ -68,7 +68,7 @@ jobs:
         env:
           PREVIEW_URL: ${{ steps.publish.outputs.preview-url }}
           CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
-        run: nix develop --quiet -c python3 tools/verify_preview.py "$PREVIEW_URL" result-docs "$CANDIDATE_SHA"
+        run: nix run --quiet .#preview-check -- "$PREVIEW_URL" result-docs "$CANDIDATE_SHA"
   cleanup-preview:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: nixos
