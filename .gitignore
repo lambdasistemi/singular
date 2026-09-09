@@ -3,3 +3,4 @@
 /result*
 .lake/
 __pycache__/
+/gate.sh
