@@ -1,6 +1,6 @@
 # Simulation candidate
 
-<a href="../../simulator/">Open the playable Singular simulator</a>.
+<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable Singular simulator</a> — the live generic-registry simulator, where Delete is allowed.
 
 Register a name, explore competing requests, cancel an Insert, change its address, retire it, or delete and reinsert it in a batch. Choose a story, advance with **›**, or press **▶** to play to its outcome. Click any tree node to revisit its state. A new manual attempt creates another branch without removing the previous play.
 
@@ -28,7 +28,7 @@ The Node gate also exercises **1,764 numeric-boundary probes** and **22 negative
 
 ## Model and assumptions
 
-<a href="../../model/Singular/Model.lean">Frozen executable model</a> · <a href="../../model/Singular/Statements.lean">Theorem statements</a> · <a href="../../model/corpus.json">Lean-generated corpus</a>.
+<a href="https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Model.lean">Frozen executable model</a> · <a href="https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Statements.lean">Theorem statements</a> · <a href="https://github.com/lambdasistemi/singular/blob/main/lean/corpus.json">Lean-generated corpus</a>.
 
 The model uses tagged terms for collision-free commitments and lists for authenticated logical maps and UTxO sets. Application acceptance and witness flags are supplied evidence. This page does not execute validators, verify signatures, or model wallet balances. Refund values are commitments; no refund-payment result exists in the modeled transition output. Names and addresses are natural numbers; key 42 and addresses A=100/B=200 are illustrative choices.
 
