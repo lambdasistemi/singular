@@ -2,6 +2,26 @@
 
 Request creation and folding are separate transactions. Each has its own atomic effects; there is an explicit pending interval between them. Creating a valid request does not guarantee that someone will fold it.
 
+## Where the representative is at every moment
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  state "No representative" as none
+  state "Pending Insert<br/>(no NFT in the request)" as pending
+  state "Application custody<br/>(NFT in the application UTxO)" as app
+  state "Pending Update or Delete<br/>(NFT held in the request)" as terminal
+  [*] --> none
+  none --> pending: application policy mints<br/>the Insert action token
+  pending --> none: Withdraw folded<br/>request consumed, nothing minted
+  pending --> app: Insert folded on an absent key<br/>representative minted
+  app --> app: application update<br/>same NFT, successor UTxO
+  app --> terminal: application releases the NFT<br/>into an exact request
+  terminal --> [*]: Update or Delete folded<br/>representative burned
+```
+
+A pending Insert holds no NFT; a pending Update or Delete holds the only one there is. Nothing but a valid fold moves the representative out of a terminal request.
+
 ## Mint, move and burn
 
 | Transaction | Request token | Representative NFT |
@@ -17,6 +37,25 @@ The Insert/Withdraw action token certifies the exact action under the configured
 
 ## Insert: certify first, check absence when folded
 
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant P as Application policy
+  participant R as Request UTxO
+  participant F as Folder (anyone)
+  participant G as Registry UTxO
+  participant O as Application output
+  U->>P: proposal: registry, key, initial datum, destination
+  P->>P: approve the exact proposal
+  P->>R: mint Insert action token<br/>asset name = hash(Insert, proposal)
+  Note over R: pending — no representative NFT<br/>registry not observed
+  F->>G: fold with an absence proof for the key
+  G->>G: recompute the action name, check absence
+  G->>O: mint the representative into the certified output
+  G->>R: consume the request
+  Note over G: key: Absent → Active
+```
+
 The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. The application minting policy must establish approval and enforce the required request format, binding and custody in that minting transaction. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Its configured policy mints the Insert action token directly. When consuming the request, Singular recomputes the expected asset name from the Insert tag and necessary proposal parameters and recognizes it under that policy ID. No second mandatory native request policy/token is introduced.
 
 The pending Insert request contains its Insert action token but **no representative NFT**. Request creation need not observe the mutable registry state. Certification approves the proposed creation, not a claim that the key will remain absent.
@@ -25,17 +64,59 @@ When folded successfully, Insert checks that the key is absent, changes it to `A
 
 Two Insert requests can target the same key while pending. An Insert whose key is occupied cannot succeed at that point. The design does not yet select whether a batch builder omits such requests or how failure is presented; it does not assume a skip rule inside the validator.
 
+### Withdrawing a pending Insert
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant P as Application policy
+  participant R as Pending Insert UTxO
+  participant S as Singular spending witness
+  U->>P: ask to cancel this exact pending Insert
+  P->>P: approve; mint Withdraw action token<br/>asset name = hash(Withdraw, registry, this UTxO, refund terms)
+  P->>S: transaction consuming the pending Insert
+  S->>S: check policy ID, recompute the Withdraw name,<br/>check it names this exact UTxO and the refund effects
+  S->>R: consume
+  Note over S: no representative minted, registry unchanged
+```
+
 An Insert can be withdrawn without changing the registry or creating a representative. The configured application policy must approve a separate Withdraw action token whose asset name commits to the Withdraw tag, registry, exact pending Insert UTxO and required refund terms/effects. Singular checks that action binding when consuming the pending Insert. Original Insert approval alone cannot authorize cancellation.
 
 Token disposal, refund economics and the application's conditions for approving withdrawal remain to be specified. They must protect deposits and avoid assuming arbitrary outsiders may repeatedly cancel valid registration attempts.
 
 ## Application evolution: keep the same representative
 
+```mermaid
+sequenceDiagram
+  participant A as Application spending script
+  participant O1 as Application UTxO (state 1, NFT)
+  participant O2 as Application UTxO (state 2, same NFT)
+  A->>O1: spend under the application's own rules
+  A->>O2: create successor carrying the same representative
+  Note over O1,O2: no registry request, no mint, no burn<br/>the key stays Active
+```
+
 While the NFT is in application custody, the application spending validator governs its movement and state changes. An application update can spend one application UTxO and produce its successor with the same NFT. This need not change the registry.
 
 The application can observe its own inputs and transaction context. Avoiding observation of the mutable registry UTxO does not prohibit those checks or the use of authenticated registry configuration.
 
 ## Update and Delete: transfer authority into a pending request
+
+```mermaid
+sequenceDiagram
+  participant A as Application spending script
+  participant O as Application UTxO (NFT)
+  participant R as Request UTxO
+  participant F as Folder (anyone)
+  participant G as Registry UTxO
+  A->>O: authorize this exact release:<br/>operation, registry/key, request destination
+  A->>R: move the existing representative into the request
+  Note over R: pending — the NFT is held here<br/>no withdrawal, rejection or sweep releases it
+  F->>G: fold with an existing-value proof for the key
+  G->>G: check native binding and custody
+  G->>R: consume the request, burn the representative
+  Note over G: Update: Active → Over<br/>Delete: Active → Absent
+```
 
 To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. Any additional Update/Delete request token and its issuer remain a construction detail; the existing NFT and exact authorized request binding are the adopted authority path.
 

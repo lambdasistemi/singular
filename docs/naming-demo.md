@@ -4,6 +4,26 @@ A small naming application makes Singular's separation visible: register `alice`
 
 The profile below uses a name as registry key and an address in the application datum. Name normalization, who may authorize changes, initial deposits and withdrawal conditions are application decisions still to select. They are not Singular rules.
 
+## The three actions at a glance
+
+```mermaid
+sequenceDiagram
+  participant Alice
+  participant App as Naming application
+  participant Reg as Singular registry
+  participant Res as Resolver
+  Alice->>App: register alice with address A
+  App->>App: approve the exact proposal, mint the Insert action token
+  Note over App,Reg: pending request — no NFT, no reservation
+  Reg->>Reg: a folder proves alice absent, sets Active
+  Reg->>App: representative minted into the output holding address A
+  Res->>Reg: is alice Active? which NFT?
+  Res->>App: read address A from the authenticated output
+  Alice->>App: change address A to B
+  App->>App: spend the output, create a successor with the same NFT and address B
+  Note over App,Reg: no registry request, no mint, no burn
+```
+
 ## Register
 
 Alice asks the application to approve an Insert proposal for `alice`, with an initial datum containing address A and the required application script destination. The configured application policy mints the action token committing to that proposal and enforces the required request construction. The pending request has no representative NFT.

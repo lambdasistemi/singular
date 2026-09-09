@@ -1,31 +1,59 @@
 {
+  "where-the-representative-is-at-every-moment": [
+    {
+      "text": "The custody state diagram starts with no representative. Minting the Insert action token creates a pending Insert that holds no NFT. A Withdraw returns it to nothing. A fold on an absent key mints the representative into application custody, where application updates move it between successor UTxOs. The application releases it into a pending Update or Delete, which holds the only NFT there is, and only a valid fold burns it.",
+      "pause": 400
+    },
+    {
+      "text": "A pending Insert holds no NFT; a pending Update or Delete holds the only one. Nothing but a valid fold moves a representative out of a terminal request.",
+      "pause": 400
+    }
+  ],
   "mint-move-and-burn": [
     {
-      "text": "Insert certification mints an action token. Folding Insert mints the representative. Application changes move it. Terminal requests hold it, then folding burns it. Withdraw cancels only a pending Insert.",
+      "text": "The table gives, for each transaction, what happens to the request token and to the representative: Insert creation mints an action token and no NFT; folding Insert mints the representative; an application update moves it; creating Update or Delete moves it into the request; folding them burns it; Withdraw mints a Withdraw action token and nothing else.",
       "pause": 400
     }
   ],
   "insert-certify-first-check-absence-when-folded": [
     {
-      "text": "The application approves the exact initial state and destination before folding. The request does not reserve the key. Singular checks absence and creates the certified output when folding succeeds.",
+      "text": "The sequence diagram runs from the user's proposal, through the application policy approving it and minting an Insert action token whose name hashes the proposal, to a pending request with no NFT, then to any folder proving absence, the registry recomputing the action name, minting the representative into the certified output and consuming the request. The key moves from absent to Active.",
+      "pause": 400
+    },
+    {
+      "text": "Certification approves the proposed creation, not a claim the key will stay absent. Two pending Inserts can target the same key; the one that sees absence at folding succeeds.",
+      "pause": 400
+    }
+  ],
+  "withdrawing-a-pending-insert": [
+    {
+      "text": "The sequence diagram shows the user asking to cancel one exact pending Insert, the application policy minting a Withdraw action token whose name commits to that UTxO and the refund terms, and Singular's spending witness checking the policy, recomputing the name and consuming the request with nothing minted and the registry unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Original Insert approval alone cannot cancel. Refund economics and disposal remain open.",
       "pause": 400
     }
   ],
   "application-evolution-keep-the-same-representative": [
     {
-      "text": "The application validator can move its existing NFT to a successor state without changing the registry.",
+      "text": "The sequence diagram shows the application spending script consuming its UTxO and creating a successor carrying the same NFT and a new state, with no registry request, mint or burn. The key stays Active.",
       "pause": 400
     }
   ],
   "update-and-delete-transfer-authority-into-a-pending-request": [
     {
-      "text": "The application authorizes transfer into the exact request. Its NFT stays there until completion. Update permanently retires the key. Delete permits reuse.",
+      "text": "The sequence diagram shows the application spending script authorizing one exact release, moving the existing representative into the request, the request holding it with no withdrawal or sweep possible, a folder proving the existing value, and the registry consuming the request and burning the representative: Update sets Over, Delete sets absent.",
+      "pause": 400
+    },
+    {
+      "text": "Merely being able to spend the NFT does not authorize every operation. Terminal requests are completion-only.",
       "pause": 400
     }
   ],
   "what-batching-establishes": [
     {
-      "text": "Requests apply to successive map states. Certificate disposal may still invoke the application minting policy. No performance result or universal application coverage is claimed.",
+      "text": "A fold applies operations to successive map states; absence and old-value checks belong to the native mechanics. One representative cannot sit in two pending terminal requests, and a consumed request cannot be consumed again. Replay across Delete and reinsert is not settled here.",
       "pause": 400
     }
   ]

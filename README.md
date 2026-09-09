@@ -2,7 +2,39 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
-Singular records whether a key has an outstanding representative NFT or has been permanently retired. The application keeps its state in the UTxO holding that NFT and controls its local transitions. Anyone can submit or fold requests that satisfy the protocol.
+## Who this is for
+
+**An application developer** wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.
+
+**A user of that application** asks it to register a key. The application approves the exact proposal — the key, the initial state, where the NFT will live — and the user's request waits, holding no NFT, until someone folds it into the registry. If the key is already taken by then, the registration fails and the user can withdraw the request; nothing was reserved by asking.
+
+**A folder** — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.
+
+**A resolver** wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.
+
+## How the parts fit
+
+```mermaid
+flowchart LR
+  subgraph app["The application"]
+    POL["Application policy<br/>(configured policy ID)"]
+    OUT["Application UTxO<br/>holds the representative NFT<br/>and the application state"]
+    SCR["Application spending script"]
+  end
+  subgraph sing["Singular"]
+    REQ["Request UTxOs<br/>Insert · Update · Delete"]
+    REG["Registry UTxO<br/>authenticated MPF root<br/>key → Active | Over"]
+  end
+  USER["User"] -->|proposes a registration| POL
+  POL -->|mints an Insert action token<br/>certifying the exact proposal| REQ
+  FOLD["Folder<br/>anyone"] -->|folds requests with absence<br/>and existence proofs| REG
+  REG -->|mints the representative<br/>into the certified output| OUT
+  SCR -->|releases the NFT into an exact<br/>Update or Delete request| REQ
+  REG -->|burns the representative<br/>on Update or Delete| REQ
+  RES["Resolver"] -->|authenticates entry, NFT<br/>and current output| OUT
+```
+
+The application keeps its state in the UTxO holding the NFT and controls its own local transitions; the registry never sees that state. Singular records only whether a key has an outstanding representative or has been permanently retired, and enforces the coupling between registry transitions and NFT supply.
 
 | Registry request | Before | After | Representative NFT |
 | --- | --- | --- | --- |

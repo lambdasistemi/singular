@@ -1,19 +1,31 @@
 {
   "what-each-layer-owns": [
     {
-      "text": "Singular owns registry transitions and NFT custody. Applications decide legal state changes. MPF supplies authenticated map mechanics.",
+      "text": "The diagram stacks three layers. The application owns its state and rules: certifying an initial state, deciding legal local changes, and authorizing the release of its NFT into an exact terminal request. Singular owns key state, request validity and custody, and the minting and burning coupled to transitions. MPF owns the authenticated map: absence proofs, existing-value proofs and successive roots across a fold.",
+      "pause": 400
+    },
+    {
+      "text": "Singular has no owner, privileged requester or privileged folder. Permissionless submission does not make arbitrary requests valid; applications may add conditions but cannot bypass supply or custody rules.",
       "pause": 400
     }
   ],
   "names-that-must-stay-distinct": [
     {
-      "text": "The representative NFT carries identity authority. Insert and Withdraw action tokens certify operations. Registry Update means retirement, while an application update changes local state.",
+      "text": "The table separates registry identity from registry key, the representative NFT from the request token, application certificate from application state, Withdraw from Delete, registry Update from application update, and defines a fold.",
+      "pause": 400
+    },
+    {
+      "text": "Creating a request, minting an action token and minting a representative are different events. An Update or Delete request moves the representative that already exists.",
       "pause": 400
     }
   ],
   "registry-states": [
     {
-      "text": "Absent keys may be inserted. Active means a representative is outstanding, including in a pending request. Over permanently reserves the key without a representative.",
+      "text": "The state diagram has three states. Absent becomes Active when an Insert is folded and a representative minted. Active becomes Over when an Update is folded and the representative burned, and no transition leaves Over. Active becomes absent again when a Delete is folded and the representative burned.",
+      "pause": 400
+    },
+    {
+      "text": "Active means the representative is outstanding, in application custody or in a pending terminal request; it says nothing about the application's business state. Both values are payload-free.",
       "pause": 400
     }
   ]

@@ -1,7 +1,39 @@
 {
+  "who-this-is-for": [
+    {
+      "text": "Four readers. An application developer who wants unique keys without running a registrar: one policy ID in, a registry of NFT-backed keys out, with minting, burning and reinsertion handled.",
+      "pause": 400
+    },
+    {
+      "text": "A user who asks the application to register a key, waits with no NFT and no reservation, and can withdraw if the key is taken first.",
+      "pause": 400
+    },
+    {
+      "text": "A folder, which is anyone, who applies pending requests to the registry with no owner to sign.",
+      "pause": 400
+    },
+    {
+      "text": "A resolver, who authenticates the registry entry, finds the NFT and reads the application's own output.",
+      "pause": 400
+    }
+  ],
+  "how-the-parts-fit": [
+    {
+      "text": "The diagram shows the application on one side, with its policy, its UTxO holding the representative NFT, and its spending script; and Singular on the other, with request UTxOs and the registry UTxO carrying the authenticated map.",
+      "pause": 400
+    },
+    {
+      "text": "A user proposes a registration; the application policy mints an Insert action token certifying it. A folder folds requests with proofs; the registry mints the representative into the certified output. The application script releases the NFT into an exact Update or Delete request; folding burns it. A resolver authenticates the entry, the NFT and the current output.",
+      "pause": 400
+    },
+    {
+      "text": "The table lists the three registry requests: Insert from absent to Active with a mint, Update from Active to Over with a burn that permanently reserves the key, and Delete from Active to absent with a burn that frees it.",
+      "pause": 400
+    }
+  ],
   "design-status": [
     {
-      "text": "Singular is an early protocol design. Documentation builds are checked, but the application and its proofs are not implemented.",
+      "text": "These documents record the adopted design and the decisions still needed. There is no implementation and no proof in this repository; its CI checks the documentation only. MPF is the registry data structure; MPFS is a separate application with reusable mechanics.",
       "pause": 400
     }
   ]
