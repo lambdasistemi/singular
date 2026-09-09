@@ -1,4 +1,14 @@
 {
+  "what-singular-is-trying-to-be": [
+    {
+      "text": "Singular is a component, not an application. A third party supplies one parameter, its application policy ID, and receives its own registry of unique keys with the representative NFT lifecycle managed end to end.",
+      "pause": 400
+    },
+    {
+      "text": "That is the axis on which the prior art has to be read. A registry welded to one application is not reusable by anyone else short of forking it. MPFS is the exception and the model: application-agnostic, created by anyone, blocked only by its owner gate.",
+      "pause": 400
+    }
+  ],
   "mpfs": [
     {
       "text": "MPFS is the nearest system to Singular, and the one whose reuse has to be answered explicitly. Its cage is an owner-held Merkle Patricia Forestry root, changed by folding request UTxOs that carry insert, delete or update operations over opaque byte values.",
@@ -38,6 +48,16 @@
   "the-authenticated-map-layer": [
     {
       "text": "This layer already has implementations: the Aiken Merkle Patricia Forestry library on-chain and haskell-mts off-chain. Choosing among them resolves none of the open decisions, which are about certification, custody and retirement rather than about how membership is proved.",
+      "pause": 400
+    }
+  ],
+  "retirement-and-reuse-of-a-key": [
+    {
+      "text": "Singular needs two ways for a registration to end. Delete burns the representative and returns the key to absence, so it can be registered again. Update burns the representative and writes Over, which is terminal.",
+      "pause": 400
+    },
+    {
+      "text": "That requirement is not local to this project. CIP113 arrives at permanence from the other direction, since its nodes are never removed, and MPFS supplies deletion but no retirement. No inspected system offers both modes under one contract.",
       "pause": 400
     }
   ],
