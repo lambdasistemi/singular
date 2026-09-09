@@ -4,12 +4,19 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {step,resolve,inspect,replay,checkCorpus,equal,initial,view} from './core.mjs';
 import {checks,theoremReport,corpusRecords} from './properties.mjs';
+import {checkNamingCorpus,selectProfile} from './naming.mjs';
 const root=new URL('./',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8'),json=p=>JSON.parse(read(p));
 const corpus=json('corpus.json'),stories=json('stories.json'),ledger=json('formal/theorem-debt.json'),identity=json('identity.json');
+const namingLedger=json('../lean/naming-theorem-debt.json'),namingCorpus=json('../lean/naming-corpus.json');
 const hash=s=>createHash('sha256').update(s).digest('hex');
+// Two differentiated statement sources, each with its own prefix; never one list.
 const names=[...read('formal/Statements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.Statements.'+m[1]);
-function identityGate(rows=ledger,expected=names){assert(expected.length>0,'zero theorem declarations');assert.deepEqual(rows.map(r=>r.name).sort(),[...expected].sort(),'theorem identity');assert.equal(new Set(rows.map(r=>r.name)).size,rows.length,'duplicate theorem identity');}
+const namingNames=[...read('formal/NamingStatements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.NamingStatements.'+m[1]);
+function identityGate(rows=ledger,expected=names,kind='generic'){assert(expected.length>0,kind==='naming'?'zero naming theorem declarations':'zero theorem declarations');assert.deepEqual(rows.map(r=>r.name).sort(),[...expected].sort(),kind==='naming'?'naming theorem identity':'theorem identity');assert.equal(new Set(rows.map(r=>r.name)).size,rows.length,kind==='naming'?'duplicate naming theorem identity':'duplicate theorem identity');}
 identityGate();assert.equal(names.length,identity.theorems,'theorem denominator');
+identityGate(namingLedger,namingNames,'naming');assert.equal(namingNames.length,identity.namingTheorems,'naming theorem denominator');
+const namingReceipt=checkNamingCorpus(namingCorpus);
+assert.equal(selectProfile('generic').id,'generic','profile selection');assert.equal(selectProfile('m1-naming').id,'m1-naming','profile selection');
 for(const [p,expected] of Object.entries(identity.files))assert.equal(hash(read(p)),expected,'identity/'+p);
 assert.equal(corpus.cases.length,identity.corpusTransitions,'transition denominator');assert.equal(corpus.resolutions.length,identity.corpusResolutions,'resolution denominator');
 const receipt=checkCorpus(corpus);const records=corpusRecords(corpus);
@@ -44,10 +51,17 @@ if(process.argv.includes('--selftest')){
  killed('identity-drop',()=>identityGate(ledger.slice(1)),/theorem identity/);
  killed('identity-rename',()=>identityGate(ledger.map((r,i)=>i? r:{...r,name:'Singular.Statements.fake'})),/theorem identity/);
  killed('identity-zero',()=>identityGate([],[]),/zero theorem declarations/);
+ killed('naming-identity-drop',()=>identityGate(namingLedger.slice(1),namingNames,'naming'),/naming theorem identity/);
+ killed('naming-identity-rename',()=>identityGate(namingLedger.map((r,i)=>i?r:{...r,name:'Singular.NamingStatements.fake'}),namingNames,'naming'),/naming theorem identity/);
+ killed('naming-identity-zero',()=>identityGate([],[],'naming'),/zero naming theorem declarations/);
+ const namingDrift=structuredClone(namingCorpus);namingDrift.queues[0].result.requestId=namingDrift.queues[0].result.requestId+1;killed('naming-corpus-drift',()=>checkNamingCorpus(namingDrift),/naming-corpus\//);
+ const namingSuppressed=0;killed('naming-corpus-suppressed',()=>assert(namingSuppressed===namingCorpus.spellings.length+namingCorpus.queues.length+namingCorpus.folds.length+namingCorpus.steps.length+namingCorpus.resolves.length+namingCorpus.replays.length,'naming corpus denominator'),/naming corpus denominator/);
+ const namingZero=structuredClone(namingCorpus);namingZero.steps=[];killed('naming-corpus-zero',()=>checkNamingCorpus(namingZero),/zero naming corpus/);
  const bad=structuredClone(corpus);const accepted=bad.cases.find(r=>r.result.accepted);accepted.result.value.state.config.registry=Number.MAX_SAFE_INTEGER+1;killed('corpus-output-domain',()=>checkCorpus(bad),/invalid-nat\/corpus.result/);
  const suppressed=records.slice(0,0);killed('property-execution-suppressed',()=>assert(suppressed.length===records.length,'property execution denominator'),/property execution denominator/);
  for(const [short,c] of Object.entries(checks)){const source=records.find(c.on);assert(source,'missing control exhibit/'+short);const fabricated=structuredClone(source);c.fault(fabricated);assert(c.on(fabricated),'control lost antecedent/'+short);killed('property-'+short,()=>assert(c.test(fabricated),'property/'+short),new RegExp('property/'+short));}
  killed('control-suppression',()=>assert.equal(0,Object.keys(checks).length,'control denominator'),/control denominator/);
+ assert.equal(controls.length,28,'control denominator');
  console.log(JSON.stringify({controlsDiscovered:controls.length,controlsExecuted:controls.length,controls},null,2));
 }
 if(process.argv.includes('--report')){writeFileSync(new URL('coverage.json',root),JSON.stringify(coverage,null,2)+'\n');}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Singular.NamingStatements.naming_delete_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bebbf7d436a19eb4dc730372f1e80bcdcc669614d07d6d6e3b5f2c6330dc1511"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_approval_reserves_nothing",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2e7d03b779d09c6665c6fdc9501b77f249b9e33ed52aa27b7f8b460798746dd6"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_absent_certified_insert_activates",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ea0b459e630ca7133d5fb9d4773decc5ea3645e9c5dc917feb0ca00eea41003c"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_occupied_key_refuses_duplicate",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5bb53ab9bde7a263c2119c592c8e21ce45c261b1160902e14d75eb69aa33c86b"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_fixture_fields_preserved_on_insert",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "6339ef770a497e2b663af4aa288abd3f24f8ac86af03c67aabf955d793f657a0"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_unauthenticated_resolve",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8fe894e85a0e3d30acb1f782c3b17b01805a30a3ccd08c6c43183333fa263fc0"
+  },
+  {
+    "name": "Singular.NamingStatements.naming_payment_destination_distinct_from_control",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3f8a4b7b2ae0e14f414a2f0234542a8a1983c1f8b5925ee61d559133de1fb67b"
+  }
+]

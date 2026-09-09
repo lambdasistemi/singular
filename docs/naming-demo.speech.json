@@ -1,30 +1,48 @@
 {
-  "the-three-actions-at-a-glance": [
+  "who-this-is-for": [
     {
-      "text": "The sequence diagram follows Alice, the naming application, the registry and a resolver. Alice registers alice with address A; the application approves and mints the action token; the request waits with no NFT and no reservation; a folder proves absence and the registry mints the representative into the output holding address A. The resolver checks the key is Active and reads address A from the authenticated output. Alice changes the address to B; the application spends the output and creates a successor with the same NFT, with no registry request, mint or burn.",
+      "text": "This page is for a reviewer who wants to play a naming claim instead of reading a walkthrough. The first-release naming profile is an explicit, labelled, unaccepted candidate, not the generic registry demo, and no on-chain acceptance is claimed. Open the simulator and choose the m1-naming profile.",
       "pause": 400
     }
   ],
-  "register": [
+  "what-you-can-do": [
     {
-      "text": "Alice's proposal is approved and its action token minted; the pending request has no NFT. A folder later proves absence, sets Active and mints the representative into the certified output. Prior approval never reserved Alice's place.",
+      "text": "Queue the first claim for the demo spelling alice: the claim waits with an application approval while the key stays absent, because approval reserves nothing. Queue a competing claim for the same spelling; two claims may both sit pending. Fold the first pending claim: the first valid absent-key fold succeeds, alice becomes Active, and the record carries the four certified fixture fields unchanged. Fold the competing claim: it is refused with occupied-key, because uniqueness is decided only when a certified Insert folds. Resolve alice with an authenticated view: the observation is active with the payment destination, control address, next-control commitment, and retirement quorum. Finally submit a crafted Delete: the naming transition parses the generic action shape and refuses it by name with naming-no-delete.",
       "pause": 400
     }
   ],
-  "resolve": [
+  "what-you-see-when-it-is-refused": [
     {
-      "text": "A resolver establishes the key is Active, authenticates the representative, finds the current application UTxO and reads the address from its datum. A pending terminal request, an absent key and an Over key all yield no live address.",
+      "text": "Every refusal names its intended condition, and a generic exception is a defect. The table lists the duplicate fold refused with occupied-key, the crafted delete refused with naming-no-delete, the unapproved queue refused with application-approval, the substituted representative refused with representative-identity, the misbound proposal refused with insert-binding, and the unauthenticated view refused with unauthenticated.",
       "pause": 400
     }
   ],
-  "change-address": [
+  "how-the-pieces-relate": [
     {
-      "text": "The application approves changing A to B, spends the current UTxO and requires a successor with the same representative and new datum. The registry stays Active. The table summarizes register, resolve and change address by registry operation and representative movement.",
+      "text": "The generic foundation of forty-one proved statements stays upstream. The naming layer adds fixtures, queueing, folding, and observation with seven proved statements of its own; the m1-naming engine transcribes that layer and never drives Lean from the browser. Choosing the profile is an explicit act: until m1-naming is selected its controls stay inert, and neither engine silently becomes the other.",
+      "pause": 400
+    }
+  ],
+  "what-is-proved-and-what-is-checked-here": [
+    {
+      "text": "Seven naming theorem declarations are PROVED in Lean from the standard axioms alone, in a separate inventory from the generic forty-one: the delete refusal, no reservation on approval, absent-key activation, occupied-key duplicate refusal, fixture preservation, unauthenticated resolve, and payment-destination distinctness. The simulator replays a Lean-authored naming corpus of thirty-four rows and requires byte-identical verdicts, and the page's self-test replays the same corpus in the browser. Finite checks remain finite: they measure the transcription and prove nothing about acceptance.",
+      "pause": 400
+    }
+  ],
+  "fixture-fields-and-finite-model-limits": [
+    {
+      "text": "The fixture has four fields: an optional payment destination distinct from the control address when present, a control address, a next-control commitment that stays a commitment, and a retirement quorum given as a membership list with a threshold. Values are finite-model fixtures, not economic policy; no fee, bond, price, expiry, or refund rule is invented. Keys, addresses, and commitments are natural numbers, alice maps to one frozen demo key, and maintenance, claim withdrawal, recovery, and retirement are not implemented and not faked.",
+      "pause": 400
+    }
+  ],
+  "status-of-this-candidate": [
+    {
+      "text": "The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, playable in the browser, and claimed nowhere else. The live preview is bound to the pull-request head, and the served page states that the candidate is unaccepted.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "dada71c8cbd1327db814ff4beb74bc2264e4836c88279163a278542a28ccafc5"
+    "sha256": "d619f54e31334edb5f49eeae67cfe6181c9842992fa8f89ee877150cecb2f825"
   }
 }
