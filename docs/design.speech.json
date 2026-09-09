@@ -56,5 +56,9 @@
       "text": "Two blind source reviews recommended proceeding but did not execute an audit or prove the model. The general whole-transition terminal-custody theorem remains missing. The protocol specification remains the behavioral authority; the ledger records executable coverage.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "design.md",
+    "sha256": "93b910d577d1617f15764c7275cabdc8a8f4f3349032dc74c92f6c926064b286"
+  }
 }

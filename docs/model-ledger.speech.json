@@ -22,5 +22,9 @@
       "text": "The Lean corpus has fifty-eight finite rows: fifty-two transitions and six resolver cases. Corrected issuer, exact withdrawal target and same-address outsider probes have valid controls. Fresh-identity Delete and reinsert, stale identity, wrong zero net and terminal withdrawal are exercised. These are finite examples, not proof or completeness acceptance.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "model-ledger.md",
+    "sha256": "5c1d067a4ef6fdad78153155fe2992101a7803799c0ae398548a77ead74b6adb"
+  }
 }

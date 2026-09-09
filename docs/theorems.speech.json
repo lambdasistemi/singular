@@ -10,5 +10,9 @@
       "text": "All inversions remain admitted. A general statement that terminal request custody can leave only through completion is missing. Escape refusal, reachable supply claims and finite terminal withdrawal cases do not replace that obligation.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "theorems.md",
+    "sha256": "112e8f671fad95237195d45f572d9c5589fe5e222d568e2f95d36b8fdad292aa"
+  }
 }

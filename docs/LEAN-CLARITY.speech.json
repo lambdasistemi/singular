@@ -1,11 +1,9 @@
 {
-  "lean-clarity-record": [
+  "formal-identities": [
     {
       "text": "The frozen Lean model is the authority. Addresses are illustrative natural numbers, application evidence is supplied, and refunds are commitments rather than payment flows. Finite corpus agreement does not prove universal parity. The clarity record lists theorem gaps, missing refusal exhibits, and template adaptations. This is a simulator candidate, not an accepted or proved system.",
       "pause": 400
-    }
-  ],
-  "formal-identities": [
+    },
     {
       "text": "The executable model, theorem statements, trace driver, and corrected corpus are each bound by SHA two hundred and fifty six. Changing a bound input invalidates the current evidence. Final checks use the corrected fifty eight row corpus, not the initial snapshot.",
       "pause": 400
@@ -40,5 +38,9 @@
       "text": "Focused checks cover fifty eight corpus rows, thirty two story actions, forty one theorem identities, one thousand seven hundred and sixty four numeric probes, and twenty two negative controls. The incorrect-acceptance fault changes only refused transitions and must fail on the terminal-withdrawal refusal case. Local browser evidence is separate from publication and independent audit. Zero Lean compiles and zero full Nix gates were consumed.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "LEAN-CLARITY.md",
+    "sha256": "53a88199364b09048bf866150ca456c842c744ecf012684fe065d1686a2ac4f7"
+  }
 }

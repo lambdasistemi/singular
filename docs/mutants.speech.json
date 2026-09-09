@@ -10,5 +10,9 @@
       "text": "The rows are author proposals, not an accepted exact denominator. Compound families still need splitting. The whole-transition terminal-custody statement remains missing, and deployed identity and approval lifecycle choices remain open.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "mutants.md",
+    "sha256": "f1aabcf8cdf49edd51661150587bedff2d8473e58857368e7df01d6f3b7bbb36"
+  }
 }

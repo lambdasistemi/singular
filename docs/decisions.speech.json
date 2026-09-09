@@ -56,5 +56,9 @@
       "text": "The Lean build, exact admission inventory, finite corpus and browser checks are creator evidence. Every theorem remains stated with visible sorry debt. Independent audit, accepted statements, proof completion and production conformance have not been commissioned as part of this delivery.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "f74f64e70af6eff6c0d55b92c0912c340c9065bc38a5ade03c27e3369f3935a7"
+  }
 }
