@@ -1,12 +1,14 @@
 {
   "status": "SIMULATOR-CANDIDATE",
-  "formalStatus": "STATED / sorryAx",
+  "formalStatus": "PROVED / standard axioms",
   "files": {
     "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "formal/Statements.lean": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138",
+    "formal/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
+    "formal/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
+    "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "formal/theorem-debt.json": "12582915ec51b3b22ce5b9638e6211ca02ea6f4656ede183bba3c5a3d6f9ba83",
-    "corpus.json": "ad85b170ccd108952f0ab958618cd32088ee66fc43000ad928aa755c4db06675"
+    "formal/theorem-debt.json": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db",
+    "corpus.json": "4fcc27b4a1edbfc8179d8b3cebcf43c9cf7d52d7827f42cc89ce90ba13b72095"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusTransitions": 52,

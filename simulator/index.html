@@ -345,7 +345,7 @@
 .status-pill{padding:5px 10px;background:var(--warn-bg);color:var(--warn);border-radius:20px;font-size:.8rem}.manual-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}fieldset{border:1px solid var(--line);border-radius:10px;margin:10px 0;padding:14px}legend{font-weight:600;color:var(--accent)}fieldset label{display:block;margin:8px 0}fieldset button{margin:4px 4px 4px 0;padding:7px 11px;background:var(--card);border:1px solid var(--line);border-radius:6px}fieldset button.primary{background:var(--accent);color:var(--on-accent)}fieldset p{font-size:.8rem;color:var(--muted)}#ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}#ledger details{padding:9px;border:1px solid var(--line);border-radius:7px;overflow-wrap:anywhere}#ledger .lit{border-color:var(--ok);background:var(--ok-bg)}#ledger .broken{border-color:var(--bad);background:var(--bad-bg)}#ledger .gap{color:var(--muted)}#tree{min-width:640px;width:100%;height:auto}#tree-wrap{overflow:auto}#tree text,#scene text{fill:var(--ink);font-family:system-ui;font-size:12px}#tree .node{cursor:pointer}#tree .node:focus{outline:2px solid var(--accent)}#where{font-weight:600;padding:15px;background:var(--accent-bg);border-radius:8px}#narration{padding:14px;min-height:70px}#branches button{display:block;width:100%;text-align:left;padding:12px;margin:6px 0;background:var(--accent-bg);border:1px solid var(--accent);border-radius:8px}textarea{display:block;width:100%;background:var(--card);color:var(--ink);font-family:var(--mono);border:1px solid var(--line);padding:12px;margin:10px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem}#ui-error{color:var(--bad);font-weight:600}#resolve-output{display:inline-block;padding:8px;color:var(--accent)}#custody{display:flex;flex-wrap:wrap;gap:10px;padding:12px}.custody-card{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--card)}#batch-composer label{display:flex;gap:12px;align-items:center}#batch-effects pre{border-left:3px solid var(--accent);padding:10px}#scene-drawer{overflow:auto}#scene{min-width:600px;width:100%;height:auto}#stage,#next-card,#lamps{padding:18px}dl dt{font-weight:600;margin-top:10px}dl dd{margin-left:0;color:var(--muted)}#identity{font-size:.68rem}.flow-token{fill:var(--accent);stroke:var(--on-accent)}@media(max-width:600px){header h1 small{display:none}.manual-grid{display:block}#stage,#next-card,#lamps{padding:10px}#playbar{flex-wrap:wrap}}
 #next-moves{display:block}#branches button{color:var(--ink)}#branches button.on{color:var(--ink);background:var(--accent-bg)}#tree .node.here circle{stroke:var(--accent);stroke-width:4}#tree .node.ok circle{stroke:var(--ok)}#tree .node.no circle{stroke:var(--bad)}
 </style></head><body>
-<header><h1>Singular <small>A name, its address, and the NFT that carries custody</small></h1><span class="status-pill">STATED · proofs admitted (sorryAx)</span><div class="hbtns"><a href="../model/Singular/Model.lean">Formal model</a><a href="../docs/simulation/">Guide</a><button id="btn-theme" class="ghost">☾ theme</button><button id="btn-reset" class="ghost">Free play</button></div></header>
+<header><h1>Singular <small>A name, its address, and the NFT that carries custody</small></h1><span class="status-pill">PROVED · 41 statements, standard axioms only</span><div class="hbtns"><a href="../model/Singular/Model.lean">Formal model</a><a href="../docs/simulation/">Guide</a><button id="btn-theme" class="ghost">☾ theme</button><button id="btn-reset" class="ghost">Free play</button></div></header>
 <div id="hud" aria-live="polite"></div><div id="toast" role="status"></div>
 <main>
 <section class="card" id="stage"><div class="stagebar"><select id="story-picker" aria-label="Pick a story"></select><span id="story-goal" class="goal"></span></div><div id="tree-wrap"><svg id="tree" role="group" aria-label="Immutable play tree; choose a node to revisit its state"></svg></div><div id="playbar"><button id="hist-first" class="nav" aria-label="Start">⇤</button><button id="hist-prev" class="nav" aria-label="Previous">‹</button><button id="btn-play" class="nav" aria-label="Play story">▶</button><button id="hist-next" class="nav" aria-label="Next">›</button><button id="hist-last" class="nav" aria-label="End">⇥</button><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Scrub play"><span id="pos"></span></div><div id="where" aria-live="polite"></div><details id="pots"><summary>What the states and evidence mean</summary><dl><dt>Absent</dt><dd>No current registry value. A pending Insert has no representative NFT yet.</dd><dt>Active / pending</dt><dd>Active with an application UTxO resolves to its address datum. If that UTxO has released its NFT to a terminal request, resolution is pending.</dd><dt>Retired (over)</dt><dd>Update completion retires the name; the occupied registry entry remains. Delete completion instead removes its value and increments the incarnation.</dd><dt>Evidence</dt><dd>Accepted application evidence and witness flags are inputs to this logical model. This page does not execute scripts or verify signatures. Stakeholder labels grant no privilege.</dd><dt>Address and value</dt><dd>Addresses and quantities are natural numbers. A=100 and B=200 are illustrative address datums. The model records output value and refund commitments, but does not model wallet balances or execute refunds.</dd></dl></details><div id="narration" aria-live="polite"></div></section>
@@ -358,7 +358,7 @@
 <fieldset><legend>Resolve a name</legend><label>Key <input id="resolve-key" type="number" min="0" step="1" value="42"></label><label><input id="authenticated-view" type="checkbox" checked> Authenticated ledger view</label><button id="resolve">Resolve</button><output id="resolve-output" aria-live="polite"></output></fieldset>
 </div><details id="refused-moves"><summary id="refused-summary">Try a deliberate refusal</summary><div id="refused-list"></div></details><div id="ui-error" role="alert"></div></section>
 <details class="card" id="scene-drawer" open><summary>NFT and UTxO custody <small>Application ↔ request custody → burn; Insert creates a representative</small></summary><svg id="scene" viewBox="0 0 1000 300" role="img" aria-label="Registry entry, application outputs, and pending request custody"></svg><div id="custody"></div><details><summary>Successive batch effects</summary><div id="batch-effects"></div></details></details>
-<section class="card" id="lamps"><h2>Theorem evidence <small id="found"></small></h2><p>Every declaration is STATED with admitted proof debt. A controlled check covers a finite exhibit of its consequent. Exhibits-only and gaps are not passing checks.</p><div id="ledger"></div></section>
+<section class="card" id="lamps"><h2>Theorem evidence <small id="found"></small></h2><p>Every declaration is PROVED in Lean from the standard axioms. A controlled check replays a finite exhibit of its consequent in this simulator. Exhibits-only and gaps are not passing checks; they measure this page, not the proofs.</p><div id="ledger"></div></section>
 <section class="drawers"><details class="card wide" id="numbers-drawer"><summary>Complete model state and last transaction</summary><pre id="datum"></pre><pre id="last-action"></pre></details><details class="card wide" id="act-drawer"><summary>Advanced free play: exact action JSON</summary><p>All nine model constructors are available here, including outsider, moveAction, and escape. Edit evidence, scope, identities, net quantities, and witnesses; invalid shapes and unsafe numbers are refused.</p><select id="action-kind" aria-label="Example action constructor"></select><button id="load-action">Load example</button><textarea id="action-json" rows="16" aria-label="Exact Lean action JSON"></textarea><button id="act-submit">Submit action</button></details><details class="card wide" id="about-drawer"><summary>Assumptions, formal identity, and finite evidence</summary><p>Tagged commitments abstract cryptographic hashing. Lists abstract authenticated maps and UTxOs. Application evidence is supplied. The diagnostic conforms flag is not a native issuer check. Atomic batches and configurable NFT identity reuse are model choices. Integers are accepted only in the exact safe-number domain; net arithmetic uses BigInt.</p><p>Only frozen corpus rows have observed Lean parity. Other manual and story states exercise the JavaScript transcription; no universal parity or proof follows. <a href="../docs/LEAN-CLARITY/">Read clarity limitations</a>.</p><pre id="identity"></pre><p id="corpus-status"></p></details></section>
 </main><pre id="selftest-out" hidden></pre>
 <script>
@@ -17980,7 +17980,7 @@ const STORIES=[
   ],
   "corpusSourceSha256": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
   "modelSha256": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-  "payloadSha256": "37bbd1995f049ea921063cf91f849f1fff963f16e8f526999537b761a5052f1b",
+  "payloadSha256": "9b75ab59ee2ae45efdf6934eee9953b12432bfa47a972824a112bcf09d4ef6c9",
   "resolutions": [
     {
       "authenticated": true,
@@ -18449,270 +18449,274 @@ const STORIES=[
   "schema": "singular-logical-corpus-v1",
   "sourceHashes": {
     "lean/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "lean/Singular.lean": "72a660652eaf6a50db7bc93c43e8d1c73a0f81f96f4db09372e09337164a7961",
+    "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
+    "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
+    "lean/Singular/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
     "lean/Singular/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "lean/Singular/Statements.lean": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138"
+    "lean/Singular/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609"
   },
-  "statementsSha256": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138",
-  "theoremManifestSha256": "12582915ec51b3b22ce5b9638e6211ca02ea6f4656ede183bba3c5a3d6f9ba83"
+  "statementsSha256": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
+  "theoremManifestSha256": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db"
 }
 ;const THEOREMS=[
   {
     "name": "Singular.Statements.insert_commitment_injective",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "acc639ab7fb78912b91ded316423260606a202c8bc9097d0c0cdb1561134e45c"
   },
   {
     "name": "Singular.Statements.action_domain_separation",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "cef29367c350e02e94d4b897691e8764274bc763e1c45f342f4565cf5194844c"
   },
   {
     "name": "Singular.Statements.createInsert_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "66c628ab6c6190f045733f221a3ed5ae1791d56b6614f3089aa92a146c547588"
   },
   {
     "name": "Singular.Statements.mintWithdraw_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "659faf3a5fc1ca25b31cd336cf49ca1e0af3ab0f38a773495106154376bb3438"
   },
   {
     "name": "Singular.Statements.release_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "49b33cc0154a21b3396366356beab4f68bc138270c808981ab74e3a36256abd7"
   },
   {
     "name": "Singular.Statements.evolve_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "f48dbb5f2ef278a5cc7cd83e910aa3c5a0cb89e0b5efc7303caa68caa2b2f120"
   },
   {
     "name": "Singular.Statements.outsider_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "c4ee5484925c4d51a130c544d73195fc0fc8f1526c1311ba52c3edd81a70b79b"
   },
   {
     "name": "Singular.Statements.withdraw_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "a80f2964ecef9859907ea00a24ee69b35d84919ef555f44a5913b16ea180e1f2"
   },
   {
     "name": "Singular.Statements.fold_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "0c335c6e6f3902a7b8c295112f74ccd70515cbdca4715846442828e69c3538f6"
   },
   {
     "name": "Singular.Statements.moveAction_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "d75ee497b27abbff41d7e2f2e4ed1c945f551381d4de9cdc2ae4e9f1beb08589"
   },
   {
     "name": "Singular.Statements.escape_refused",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "442700a69b1f5aeb6c5dfbf464b6ac7699006d4f2839e6cb630dddd3e006c908"
   },
   {
     "name": "Singular.Statements.foldOne_insert_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "ebda4ebd3dedf81f497472b68a75f42f335b6746f07759f9a181d7c5ab31faba"
   },
   {
     "name": "Singular.Statements.foldOne_terminal_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "2b3a1a84f9b7edba0fa0cfd9e1b01e2feef4e15907920bf17587aece09de7f49"
   },
   {
     "name": "Singular.Statements.sequential_fold_cons",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "036a059420c87f319c3fb30ea7cbb0402ac46d78d7bb24672707cd5d7e556319"
   },
   {
     "name": "Singular.Statements.supply_conservation",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "bee62c7b2b55eced153bab9f44e4709302712d388dffbac8524695ff49231e11"
   },
   {
     "name": "Singular.Statements.over_terminal",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "27e06f051360a1f456719d02c0540fb6f8f7c06a41719cfc5bf0ee1fdc38ef0a"
   },
   {
     "name": "Singular.Statements.over_no_representative",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "6958c0e472a303e62408ba9d84bb3faa5cc30a4d87beae6ec9f5caf7666eafdf"
   },
   {
     "name": "Singular.Statements.pending_insert_no_representative",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "9ef17faaa9f2b361bbe0773b3afdec07c8d24acf928d3bce096cc943c184a740"
   },
   {
     "name": "Singular.Statements.minting_requires_configured_issuer",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "60eb0ef6f74924fcf635dfc22ed65710b8e6762f94393e748718812aede9dbfa"
   },
   {
     "name": "Singular.Statements.withdrawal_preserves_registry_supply",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "d278087ed94e0f538ccba5a04a94e1089c39774d069dc580091f2a38dd11e5b7"
   },
   {
     "name": "Singular.Statements.exact_withdraw_scope",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "124546ee7fbb4379968ce1bccc7ba801c567cc09a699c52246cfdd6eb0d0499d"
   },
   {
     "name": "Singular.Statements.local_evolution_registry_unchanged",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "b9301d1fa5ff7cf94d1c3b7c1b40e8386bf6be04e9e36dc543080b7b9cb0cd54"
   },
   {
     "name": "Singular.Statements.release_is_operation_specific",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "643ec0b79778c3ba900aeca9063cedf21ab69e4dfc91779d0dd08d2afcd160d9"
   },
   {
     "name": "Singular.Statements.release_removes_application_custody",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "9dd3fc799f072da1b92138fffb41fea7d6f588d25e7287064b5bed244fc6fbbd"
   },
   {
     "name": "Singular.Statements.request_single_spend",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "ae3f74db25591349b0a826095d304480afb889b08bb342657bac4883304c2dca"
   },
   {
     "name": "Singular.Statements.approval_scope_checked",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "7ec380d3b33906216bfcf9b744ceb1f9e230e3b876075121992cb574fc8b67da"
   },
   {
     "name": "Singular.Statements.outsider_not_admitted",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "e8c0f448671514d014ad96351044f4aba210abdd95d32589a4306b0f980fa447"
   },
   {
     "name": "Singular.Statements.native_witness_even_zero_net",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "d9ea77d84e54a54d62703fc9a00d03c722761992cc9f1ae036f01404a718135c"
   },
   {
     "name": "Singular.Statements.nonzero_action_invokes_policy",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "aa81ba4d2e49f07948dcd3d24d53a9f8137d5a5abc03dac2a7f2ee9c028dec00"
   },
   {
     "name": "Singular.Statements.existing_action_does_not_refresh_scope",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "bf5af377450b8b506405e9b9a85a166d19f72fcfc52722bbb8bf9e54b7e2f15f"
   },
   {
     "name": "Singular.Statements.resolve_unauthenticated",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "4c95c9efca592a49413037e25e7c63105b93eec86d3ec970e77db0d33bd86c51"
   },
   {
     "name": "Singular.Statements.resolve_absent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "2205bd05ac27a0844d6628edad2b90ebebd00832c8dd6c950d639ec87c0d378b"
   },
   {
     "name": "Singular.Statements.resolve_over",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "d3ad85aa68922db7bb461886a83e633ae46ddc1781ab7471d9b44af78a8b42f4"
   },
   {
     "name": "Singular.Statements.resolve_address_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "73fdf86e1c1d5dd5fe8fe655b0ee0fb11640e64abc0d38469abbc7868a80d2e1"
   },
   {
     "name": "Singular.Statements.resolve_pending_iff",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "ebd55cc8e4631ab1b36e6e7c0cd345e4fec5564c7fba656000f81aed98430f78"
   },
   {
     "name": "Singular.Statements.release_registry_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "65cb3e5a1c732a6f6c70c82f8a1e0129ec1f3dc42a1cfbfda4e32787290b6d08"
   },
   {
     "name": "Singular.Statements.insert_creation_registry_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "7fa294756d1ad4a6181bff035caee00fe0867414e24f7558ba111dd7e0b07c32"
   },
   {
     "name": "Singular.Statements.whole_release_acceptance_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "05a46a442c1c999445e8e6c59fc83a1b9db14dbd8d901fa27d9ab54ba6071440"
   },
   {
     "name": "Singular.Statements.whole_release_refusal_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "7020410f873edf5239da5c1a31a8727a41b902dd2ac3d35adba1666c0b822dd4"
   },
   {
     "name": "Singular.Statements.whole_insert_acceptance_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "e0c47d8e2252b5abe2b910bc7094a451f56c9eb00d2ba3c507e8d6b3b3601187"
   },
   {
     "name": "Singular.Statements.whole_insert_refusal_independent",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "3b025c6a01a6d1bf3dd6f86ee976a7265f02bf0dd44941896ae3e4473d30b3d1"
   }
 ]
 ;const IDENTITY={
   "status": "SIMULATOR-CANDIDATE",
-  "formalStatus": "STATED / sorryAx",
+  "formalStatus": "PROVED / standard axioms",
   "files": {
     "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "formal/Statements.lean": "996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138",
+    "formal/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
+    "formal/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
+    "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "formal/theorem-debt.json": "12582915ec51b3b22ce5b9638e6211ca02ea6f4656ede183bba3c5a3d6f9ba83",
-    "corpus.json": "ad85b170ccd108952f0ab958618cd32088ee66fc43000ad928aa755c4db06675"
+    "formal/theorem-debt.json": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db",
+    "corpus.json": "4fcc27b4a1edbfc8179d8b3cebcf43c9cf7d52d7827f42cc89ce90ba13b72095"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusTransitions": 52,
