@@ -28,7 +28,7 @@ A successful fold MUST apply only these transitions and their coupled representa
 | Update | `Active` | `Over` | Burn the existing representative carried by the request |
 | Delete | `Active` | Absent | Burn the existing representative carried by the request |
 
-`Over` MUST be terminal. An `Over` key MUST have no live representative. Delete MUST permit a later Insert for that key, subject to fresh valid approval and absence at that later fold. No alternative Update pair is supported.
+`Over` MUST be terminal. An `Over` key MUST have no live representative. Delete MUST permit a later Insert for that key, subject to approval valid for that registration and absence at that later fold. No alternative Update pair is supported.
 
 `Active` MUST denote an outstanding representative, including while that representative is in a pending request. It MUST NOT assert an application's usability or local business state. The registry values MUST contain no application payload.
 
@@ -84,7 +84,7 @@ Singular MUST impose no native owner, privileged requester or privileged folder 
 
 The custody rules MUST prevent two simultaneous pending Update/Delete requests from holding the same authentic representative. Consuming a request UTxO MUST prevent consuming that same UTxO again.
 
-A later registration after Delete MUST NOT become authorized merely by replaying approval material from its previous incarnation. A concrete incarnation-binding rule is required under D4. UTxO single-spend alone MUST NOT be presented as establishing this broader property.
+Approval from a previous registration MUST NOT authorize a later incarnation outside its certified scope. If approval was limited to the previous incarnation, the later registration needs fresh approval; deliberately reusable approval is not ruled out if the application protocol selects and bounds it. A concrete scope/incarnation-binding rule is required under D4. UTxO single-spend alone MUST NOT be presented as establishing this broader property.
 
 ## Acceptance scenarios
 
@@ -105,7 +105,7 @@ These scenarios are specification obligations. **They have not been executed as 
 | Update completes | Representative burned; key becomes terminal `Over` | R1, R6 |
 | Delete completes, then a new approved Insert is folded | Representative burned at Delete; new representative created only on the later absent-key Insert | R1, R4, R8 |
 | A request names the right key but carries another registry's representative | Native binding rejects it | R2, R5 |
-| A completed request or previous-incarnation authorization is replayed | Rejected; previous-incarnation construction depends on D4 | R6, R8 |
+| A completed request or approval outside its certified incarnation/scope is replayed | Rejected; approval reuse within its intended scope and its concrete binding depend on D2/D4 | R6, R8 |
 | A valid transaction is submitted by an unrelated folder | No privileged actor gate rejects it | R7 |
 
 A concrete protocol must also demonstrate conservation of representative supply and custody across every allowed transaction shape, including attempts to bypass request creation or to mint/burn outside the coupled registry transitions.
@@ -117,7 +117,7 @@ A concrete protocol must also demonstrate conservation of representative supply 
 | D1 | Registry identity/configuration and policy binding, including hash dependencies | Use the configured application policy ID as authorization anchor; target one application-specific parameter without claiming proved sufficiency; no global allowlist or specific hash-cycle solution is selected |
 | D2 | Request-token issuer, logical-to-wire encoding and request/certificate lifecycle | Choose application-policy request minting or separate certification/native-request-policy composition; bind the whole proposal and effects; prevent acceptance after completion; specify reuse/consumption and token disposal |
 | D3 | Insert withdrawal authorization action, cancellation conditions and refund disposition | Authorization comes from the configured application policy; specify exact-request binding and protect funds/registration attempts; original Insert approval is not automatic cancellation approval |
-| D4 | Representative identity and approval replay protection across Delete/reinsert | Preserve key reuse while preventing stale approval from authorizing a new incarnation; choose and specify an effective fence |
+| D4 | Representative identity and approval replay protection across Delete/reinsert | Preserve key reuse and any deliberately authorized certificate reuse while rejecting approval outside its certified scope; choose and specify an effective fence |
 | D5 | Batch selection, failure presentation and limits | Preserve sequential MPF semantics; do not assume automatic skipping of failing requests or a measured capacity advantage |
 | D6 | Concrete transaction shapes and reusable library interfaces | Establish native supply/custody invariants; old MPFS proofs are not proof of Singular's protocol |
 
