@@ -86,7 +86,9 @@ try {
     await mkdir(directory, { mode: 0o700 });
     browserEnvironment[name] = directory;
   }
-  browser = await chromium.launch({ headless: true, channel: 'chromium', env: browserEnvironment });
+  // CI forbids the zygote's capset syscall. Fork/exec children directly while
+  // preserving the outer runner restrictions and Playwright's existing flags.
+  browser = await chromium.launch({ headless: true, channel: 'chromium', env: browserEnvironment, args: ['--no-zygote'] });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   page.setDefaultTimeout(10000);
   const external = [];

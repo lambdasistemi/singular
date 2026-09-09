@@ -9,7 +9,7 @@ serve-docs:
 
 # Stories, diagrams, no index labels, and speech bound to each page's hash.
 check-presentation:
-    python3 tools/check_presentation.py --front README.md README.md docs specs
+    python3 tools/check_presentation_repo.py
 
 # After editing PAGE.md and redoing PAGE.speech.json: just stamp-speech PAGE.md
 stamp-speech +pages:

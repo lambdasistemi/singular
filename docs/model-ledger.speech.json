@@ -1,7 +1,7 @@
 {
   "authority-and-domain": [
     {
-      "text": "Authority and domain. These are model and statement stage author artifacts with explicit remaining gaps, not completed proofs or independent acceptance.",
+      "text": "Use this register to trace exact requirements and finite scenarios to modeled behavior and explicit limits. Reachable states start with an empty registry under supplied configuration and successful steps. Malformed raw states are also used in finite tests; they are not assumed reachable. Request identifiers are permanently recorded, and consumed outputs are removed. The withdrawal supply statement needs reachability to exclude malformed aliasing.",
       "pause": 400
     }
   ],
@@ -13,7 +13,7 @@
   ],
   "proposed-abstractions-and-omissions": [
     {
-      "text": "Fresh representative identity fixes the certified asset scope to one incarnation, even with a broader approval scope list. Deliberate approval reuse uses the reused-identity profile. Decision D4 remains open.",
+      "text": "Fresh representative identity fixes the certified asset scope to one incarnation, even with a broader approval scope list. Deliberate approval reuse uses the reused-identity profile. Deployed identity and approval lifecycle construction remains open.",
       "pause": 400
     }
   ],

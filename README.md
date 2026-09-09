@@ -2,6 +2,8 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
+<a href="simulator/"><strong>Try the simulation</strong></a> — queue competing registrations, change an application's address, and explore retirement and Delete. The [simulation guide](docs/simulation.md) explains the manual controls and the admitted-model limits.
+
 ## Who this is for
 
 **An application developer** wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.
@@ -59,7 +61,7 @@ Read the design in order:
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed for a concrete protocol. The [S1 executable design candidate](docs/design.md) adds a logical Lean model, explicitly admitted theorem statements and a separately authored [playable simulation](docs/simulation.md). All theorem proofs intentionally remain `sorry`; no independent audit acceptance, completed proof or production validator is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) adds a logical Lean model, explicitly admitted theorem statements and a separately authored [playable simulation](docs/simulation.md). All theorem proofs intentionally remain `sorry`; no independent audit acceptance, completed proof or production validator is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
 
 Singular uses MPF as its authenticated registry data structure. Existing MPFS is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.
 

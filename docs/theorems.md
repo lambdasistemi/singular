@@ -1,5 +1,7 @@
 # Theorem and intentional debt manifest
 
+As a proof reviewer, use this register to identify exactly which statements were supplied and which proof obligations remain. Each declaration retains its exact qualified name and statement digest so that a changed or missing obligation can be detected.
+
 All 41 declarations are **STATED**, each with exactly one intentional `sorry` and expected `sorryAx` dependency. None is PROVED, READY, AUDITED or ACCEPTED. The executable source-derived manifest is [theorem-debt.json](../model/theorem-debt.json). The bounded parser checks exact qualified identities and normalized statement hashes, rejects unlisted holes/axioms/admit/unsafe declarations, and rejects unrecognized theorem grammar. This is an identity/debt check, not a proof checker or semantic completeness audit. These are source-derived debt records; no compiled-axiom inspection is claimed.
 
 ## Exact declaration inventory

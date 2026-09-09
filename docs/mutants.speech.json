@@ -7,7 +7,7 @@
   ],
   "coverage-boundary": [
     {
-      "text": "The rows are author proposals, not an accepted exact denominator. Compound families still need splitting. The whole-transition terminal-custody statement remains missing, and D4 identity and approval lifecycle choices remain open.",
+      "text": "The rows are author proposals, not an accepted exact denominator. Compound families still need splitting. The whole-transition terminal-custody statement remains missing, and deployed identity and approval lifecycle choices remain open.",
       "pause": 400
     }
   ]

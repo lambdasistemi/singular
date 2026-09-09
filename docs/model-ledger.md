@@ -1,5 +1,7 @@
 # Executable logical model ledger
 
+As a model reviewer, use this register to locate the exact requirement or finite scenario behind a behavior you observe, and check its conditions and omissions. The lookup identifiers below preserve links to executable evidence; the [design stories](design.md) explain the same behavior as a journey.
+
 This is a **CANDIDATE at MODEL + STATEMENTS stage**. The executable Lean machine is `Singular.step` in [the model source](../model/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is intentionally STATED with `sorry`; there is no completed proof, audit verdict or acceptance claim.
 
 ## Authority and domain

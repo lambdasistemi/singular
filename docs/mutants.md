@@ -1,5 +1,7 @@
 # Proposed semantic mutation ledger
 
+As a future audit planner, use this register to match a proposed fault to a concrete witness candidate and its intended obligation. The rows describe work still to commission; they do not report observed mutation kills.
+
 No semantic mutation campaign or independent checker-control campaign was commissioned or executed. Every row below is **PROPOSED / NOT EXECUTED**. Intentional theorem debt means mutating the model and merely recompiling its `sorry` statements cannot establish a mutation kill. A later proof/audit phase must fix the exact mutants, commands, non-vacuous witnesses and capacity before claiming coverage.
 
 ## Proposed fault atoms
