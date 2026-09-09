@@ -1,7 +1,7 @@
 {
   "build-and-check": [
     {
-      "text": "Build the documentation with Nix. The documentation check validates rendered links, anchors, speech and theme assets. Separate model and simulator checks exercise the admitted Lean candidate and finite corpus; no application proof is claimed.",
+      "text": "Build the documentation with Nix. The documentation check validates rendered links, anchors, speech and theme assets. Separate model and simulator checks exercise the admitted Lean candidate and finite corpus; no application proof is claimed. The browser check launches pinned Chromium and executes actual simulator controls using a temporary local server. The build gate realizes packages, checks, and development shell inputs before downstream jobs.",
       "pause": 400
     }
   ],

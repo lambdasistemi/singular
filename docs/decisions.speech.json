@@ -7,6 +7,10 @@
   ],
   "proposed-abstraction-boundary": [
     {
+      "text": "The desired identity is one canonical registry per application policy ID, without an independent instance parameter. Bootstrap still needs at-most-once enforcement: reusing a policy ID does not prevent duplicate creation. An application-supplied one-shot certificate or a consumed nonce UTxO are possible constructions, not selected mechanisms. The current model assumes an existing configuration and does not establish bootstrap or deployed uniqueness.",
+      "pause": 400
+    },
+    {
       "text": "An executable logical map may stand for authenticated MPF state, a tagged structured value may stand for an unambiguous action commitment, and an explicit witness or contract parameter may stand for a ledger validator's authenticated result. These abstractions make the intended transition law inspectable without choosing a serialization, hash function, script deployment or application policy. Their exact use and limitations are recorded beside the Lean definitions and in the model ledger. Required native output parameters remain explicit fields such as representative identity and quantity, datum, destination and supported value requirements. The model is not authority to introduce a universal transaction-predicate language. Example names, addresses and policy identities are illustrative values, not production schemas or a global allowlist.",
       "pause": 400
     }

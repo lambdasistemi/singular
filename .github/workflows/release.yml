@@ -13,17 +13,21 @@ jobs:
   build-gate:
     name: Release build gate
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-build-gate
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix flake check --no-eval-cache
+      - run: nix build --quiet --no-eval-cache .#build-gate
   release-pr:
     if: github.ref == 'refs/heads/main'
     needs: build-gate
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-release-pr
     steps:
       - name: Mint repository-scoped automation token
         id: app-token
@@ -46,6 +50,8 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build-gate
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-publish
     steps:
       - uses: actions/checkout@v6
         with:

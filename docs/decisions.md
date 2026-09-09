@@ -22,6 +22,8 @@ An executable logical map may stand for authenticated MPF state, a tagged struct
 
 Required native output parameters remain explicit fields such as representative identity and quantity, datum, destination and supported value requirements. The model is not authority to introduce a universal transaction-predicate language. Example names, addresses and policy identities are illustrative values, not production schemas or a global allowlist.
 
+The desired identity is **one canonical registry per application policy ID**, without an arbitrary independent instance parameter. The policy can serve as a downstream trust anchor, conditional on its issuance invariants, but parameterizing by that reusable ID does not prevent duplicate creation of the same registry asset and state. Bootstrap must enforce an at-most-once invariant. An asset is identified by policy ID and asset name; a policy ID alone identifies a distinguished singleton only when its issuance rules enforce that distinction. An application-supplied one-shot bootstrap certificate could avoid a separate Singular nonce parameter; consuming a nonce UTxO is another construction option. The mechanism remains open under D1. The current model starts with a supplied `Config` and contains no registry-creation transition, so it establishes neither bootstrap enforcement nor deployed registry uniqueness.
+
 ## Open construction decisions
 
 | ID | Still requires a ruling or construction | Boundary for this candidate |

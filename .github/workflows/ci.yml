@@ -1,4 +1,4 @@
-name: Documentation CI
+name: CI
 on:
   workflow_dispatch:
   push:
@@ -16,6 +16,8 @@ jobs:
     if: github.event.action != 'closed'
     name: Build Gate
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-build-gate
     steps:
       - uses: actions/checkout@v6
         with:
@@ -24,12 +26,14 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix flake check --no-eval-cache
+      - run: nix build --quiet --no-eval-cache .#build-gate
   model:
     if: github.event.action != 'closed'
     needs: build-gate
     name: Lean model and exact statement debt
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-model
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,6 +48,8 @@ jobs:
     needs: build-gate
     name: Simulator corpus parity and controls
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-simulator
     steps:
       - uses: actions/checkout@v6
         with:
@@ -53,11 +59,29 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#simulator-check
+  browser:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Simulator browser checks
+    runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-browser
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix run --quiet .#browser-check
   rendered-docs:
     if: github.event.action != 'closed'
     needs: build-gate
     name: Rendered documentation
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-rendered-docs
     steps:
       - uses: actions/checkout@v6
         with:
@@ -70,8 +94,10 @@ jobs:
   dev-shell:
     if: github.event.action != 'closed'
     needs: build-gate
-    name: Development shell documentation build
+    name: Development shell build
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-dev-shell
     steps:
       - uses: actions/checkout@v6
         with:
@@ -86,15 +112,23 @@ jobs:
     needs: build-gate
     name: Documentation release checks
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-release-check
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#release-check
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-preview
     steps:
       - uses: actions/checkout@v6
         with:
@@ -124,6 +158,8 @@ jobs:
   cleanup-preview:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-cleanup-preview
     steps:
       - uses: paolino/dev-assets/static-preview@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
         with:
@@ -131,8 +167,10 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, model, simulator, rendered-docs, dev-shell, release-check]
+    needs: [build-gate, model, simulator, browser, rendered-docs, dev-shell, release-check]
     runs-on: nixos
+    env:
+      XDG_CACHE_HOME: ${{ runner.temp }}/nix-cache-${{ github.run_id }}-${{ github.run_attempt }}-pages
     permissions:
       contents: read
       pages: write

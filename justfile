@@ -24,9 +24,13 @@ simulator:
     node simulator/gate.mjs
     node simulator/gate.mjs --selftest
 
+browser:
+    node tools/browser-check.mjs
+
 ci:
     just model
     just simulator
+    just browser
     just build-docs
     python3 tools/check_site.py site
     just check-presentation
