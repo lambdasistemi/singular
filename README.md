@@ -12,7 +12,9 @@ Singular records whether a key has an outstanding representative NFT or has been
 
 `Active` and `Over` contain no application payload. Registry **Update** means retirement, not an application-state update. `Over` is terminal.
 
-Requests carry a minted token recognized by Singular. The configured application policy ID is the authorization anchor; whether it mints the request token directly or supplies a certificate checked by a native request policy remains open. Update and Delete also carry the existing representative NFT: the application authorizes its transfer into the exact request, which then awaits completion. Insert has no representative NFT yet. Minting its request token requires accepted application certification of the proposed initial state and destination. Insert can fail at folding if its key is occupied, and can be withdrawn.
+The configured application policy ID is the authorization anchor. It mints action tokens whose asset names hash the action and its necessary parameters. Insert approval binds the registry/key, initial application datum and destination. Withdraw approval separately binds the exact pending Insert and its refund requirements; Insert approval alone cannot authorize cancellation.
+
+Insert carries no representative NFT, can fail at folding if its key is occupied, and can be withdrawn with the required authorization. Update/Delete carry the existing representative after the application authorizes its exact release, and retain it until completion. The concrete request-token arrangement for Update/Delete remains open.
 
 Read the design in order:
 

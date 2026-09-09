@@ -19,14 +19,14 @@ Singular has no native owner, privileged requester or privileged folder. Permiss
 | Registry identity | The particular registry a request and representative belong to |
 | Registry key | The identifier indexed within that registry |
 | Representative NFT | The unique token associated with an `Active` key; also called the identity NFT |
-| Request token | A token distinct from the representative, recognizing an approved, correctly constructed request; its issuing-policy arrangement is still open |
-| Application certificate | Evidence of approval under the configured application policy; whether this is a separate token remains open |
+| Request token | An action token distinct from the representative; Insert/Withdraw use the configured application policy, while Update/Delete token construction remains open |
+| Application certificate | An action token under the configured application policy whose asset name commits to the approved action and parameters |
 | Application state | Datum and other application information carried by application UTxOs |
 | Registry Update | The sole retirement operation `Active → Over` |
 | Application update | An application-defined transition that can move the existing NFT to a successor application UTxO without changing the registry |
 | Fold | Apply a sequence of registry requests with the corresponding MPF proofs and native NFT effects in a transaction |
 
-Creating a request UTxO, minting its request token, and minting a representative NFT are different events. A transaction constructing an Update/Delete request moves the representative that already exists; it does not mint a replacement representative.
+Creating a request UTxO, minting an application action token, and minting a representative NFT are different events. A transaction constructing an Update/Delete request moves the representative that already exists; it does not mint a replacement representative.
 
 ## Registry states
 
