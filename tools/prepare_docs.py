@@ -28,3 +28,5 @@ if replacements != 1:
 assets = stage / "assets"
 assets.mkdir()
 (assets / "read-aloud.js").write_text(reader)
+# Pinned Mermaid: served from the site so no page loads a script from a CDN.
+shutil.copyfile(os.environ["MERMAID_JS"], assets / "mermaid.min.js")

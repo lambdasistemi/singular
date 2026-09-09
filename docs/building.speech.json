@@ -15,6 +15,10 @@
     {
       "text": "Pull requests have a live preview without comments. Main publishes through GitHub Pages. The site includes a theme toggle and section read-aloud controls using browser voices.",
       "pause": 400
+    },
+    {
+      "text": "Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a Nix input and served from the site itself. No page loads a script or stylesheet from outside the site, and the site check fails if one does.",
+      "pause": 400
     }
   ],
   "documentation-releases": [

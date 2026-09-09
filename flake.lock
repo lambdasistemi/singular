@@ -7,18 +7,18 @@
       },
       "locked": {
         "dir": "mkdocs",
-        "lastModified": 1784531261,
-        "narHash": "sha256-IkjG81YoOIiQKeX2vYEJln0Y8/LSo0Imn7QkJl8FPaM=",
+        "lastModified": 1788962654,
+        "narHash": "sha256-4HGYaJz8u1U/YHu/Bx5qIqxBKZIwG7WhbSQ8o/5etWE=",
         "owner": "paolino",
         "repo": "dev-assets",
-        "rev": "a8f2ff7603bc793794d3e4459b2d5510a57e72a2",
+        "rev": "34c7df6959c9fa36c6927808de6712b939e7a7fb",
         "type": "github"
       },
       "original": {
         "dir": "mkdocs",
         "owner": "paolino",
         "repo": "dev-assets",
-        "rev": "a8f2ff7603bc793794d3e4459b2d5510a57e72a2",
+        "rev": "34c7df6959c9fa36c6927808de6712b939e7a7fb",
         "type": "github"
       }
     },

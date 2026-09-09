@@ -1,12 +1,16 @@
-{ pkgs, src, sharedShell, sharedSource }:
+{ pkgs, src, sharedShell, sharedSource, mermaidJs }:
 let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
+  # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
+  # defined. The shared toolchain pins a copy; serving it from the site keeps
+  # every diagram inside the checked, byte-verified build.
   docs = pkgs.stdenvNoCC.mkDerivation {
     pname = "singular-docs";
     version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
     inherit src;
     nativeBuildInputs = tools;
     DOCS_SHARED_SOURCE = "${sharedSource}";
+    MERMAID_JS = "${mermaidJs}";
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
@@ -51,5 +55,6 @@ in {
     inputsFrom = [ sharedShell ];
     packages = [ pkgs.python3 pkgs.just ];
     DOCS_SHARED_SOURCE = "${sharedSource}";
+    MERMAID_JS = "${mermaidJs}";
   };
 }

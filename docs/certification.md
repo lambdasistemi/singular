@@ -4,6 +4,19 @@ Singular recognizes native requests. Applications decide whether the requested a
 
 ## Policy and script roles
 
+```mermaid
+flowchart TB
+  REGID["Registry identity<br/>which registry, which rules"]
+  REP["Singular representative policy<br/>mints and burns representatives<br/>coupled to registry transitions"]
+  APOL["Configured application policy<br/>approves Insert proposals<br/>mints Insert and Withdraw action tokens"]
+  ASCR["Application spending script<br/>governs the representative's application UTxO<br/>authorizes exact Update/Delete releases"]
+  REGID -->|"configured parameter:<br/>the application policy ID"| APOL
+  APOL -->|"action token named by<br/>hash(action, parameters)"| REQ["Request UTxO"]
+  REQ -->|"folded"| REP
+  REP -->|"representative into the<br/>certified application output"| ASCR
+  ASCR -->|"existing NFT into an<br/>exact terminal request"| REQ
+```
+
 | Identity | What it governs |
 | --- | --- |
 | Registry identity | Which registry and its rules this request belongs to |
@@ -47,6 +60,19 @@ The configured application policy approves minting. Singular checks the expected
 Unambiguous canonical encoding and domain separation are required. The specific hash function, binary schema, datum representation, refund economics and token disposal remain open.
 
 ## Validation without mutable registry observation
+
+```mermaid
+sequenceDiagram
+  participant P as Application policy (mint)
+  participant A as Application spending script
+  participant S as Singular witnesses (fold)
+  Note over P: at request creation — registry root not read
+  P->>P: validate application facts, approval,<br/>required construction of the Insert request
+  Note over A: at release — registry root not read
+  A->>A: authorize the operation-specific transfer,<br/>enforce the request's format, binding and custody
+  Note over S: at consumption — current registry state read
+  S->>S: recompute the certificate name, check native conditions,<br/>apply the operation against the current key state
+```
 
 The configured application minting policy validates application facts, approval and the required construction when it mints the Insert asset. Singular checks the resulting certificate and native conditions when it consumes a request. Native format alone cannot authorize Insert; otherwise arbitrary non-application datums could claim keys. It need not read the current registry root or promise that Insert will succeed. Singular checks the current key state when applying the operation.
 

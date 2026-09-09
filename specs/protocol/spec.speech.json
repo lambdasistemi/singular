@@ -1,91 +1,103 @@
 {
   "purpose-and-scope": [
     {
-      "text": "This draft specifies registry operations, authorization and custody. It does not select an implementation language or application schema.",
+      "text": "Singular is a permissionless registry on Cardano for unique identities and independent application state, built on an authenticated MPF map and representative NFTs. This specification covers registry operations, native requests, certification and custody, and selects no language, encoding, plugin, KERI integration or library API.",
       "pause": 400
     }
   ],
   "entities-and-terminology": [
     {
-      "text": "Registry keys track Active or Over. The representative lives in application or request custody. Insert and Withdraw assets come from the configured application policy.",
+      "text": "The diagram shows the registry, whose map sends keys to Active or Over; the representative NFT; the Insert request UTxO carrying an application-minted action token and no NFT; the Update or Delete request UTxO carrying the existing representative; the configured application policy that mints action tokens; and the application spending script that holds the NFT and releases it into terminal requests.",
+      "pause": 400
+    },
+    {
+      "text": "The roles are semantically distinct even when scripts share a hash. The interface target is one parameter, the application policy ID.",
       "pause": 400
     }
   ],
   "required-behavior": [
     {
-      "text": "The following requirements describe intended protocol obligations. They have not been implemented or proved.",
+      "text": "Nine requirement sections follow. Must and must not express requirements of the intended protocol.",
       "pause": 400
     }
   ],
-  "r1-registry-transitions-and-representative-supply": [
+  "registry-transitions-and-representative-supply": [
     {
-      "text": "Insert changes absent to Active and mints. Update changes Active to Over and burns. Delete changes Active to absent and burns. Over is terminal.",
+      "text": "The state diagram shows absent to Active on Insert with a mint into the certified output, Active to Over on Update with a burn, Active to absent on Delete with a burn, and Over as terminal.",
+      "pause": 400
+    },
+    {
+      "text": "Over has no live representative. Delete permits a later Insert. Active denotes an outstanding representative, including in a pending request, and carries no application payload.",
       "pause": 400
     }
   ],
-  "r2-native-request-construction": [
+  "native-request-construction": [
     {
-      "text": "Application witnesses enforce creation. Singular validates consuming requests. An output at its address is not automatically admitted.",
+      "text": "Insert and Withdraw use action tokens minted under the configured application policy, which enforces approval and construction at minting. The releasing application validator enforces binding and custody for Update and Delete requests. Singular's witnesses recompute the action-bound name and refuse substitute policies. Creating an output at the address is not admission. Request creation must not require observing the mutable registry.",
       "pause": 400
     }
   ],
-  "r3-insert-approval-at-request-minting": [
+  "insert-approval-at-request-minting": [
     {
-      "text": "The configured policy approves the complete Insert proposal. Its correctness is an application obligation. Supported output parameters do not form a universal predicate language.",
+      "text": "Minting an Insert token requires accepted certification of the exact proposal, binding registry, key, policy evidence, initial state, destination and output requirements. The policy ID is an authenticated parameter; no field is substitutable after approval; approval is established at minting and reserves nothing. Declared effects are explicit native output parameters, not a predicate language.",
       "pause": 400
     }
   ],
-  "r4-insert-pending-completion-and-withdrawal": [
+  "insert-pending-completion-and-withdrawal": [
     {
-      "text": "Insert waits without a representative. Folding requires absence. Cancellation requires a separate Withdraw asset bound to that exact pending request and refund effects.",
+      "text": "A pending Insert holds no representative and asserts nothing about absence. Folding checks absence in the successive state and creates exactly the certified output atomically, refusing occupied keys. Withdrawal uses a separate Withdraw action token bound to the exact pending UTxO and refund terms, changes no registry state and mints nothing.",
       "pause": 400
     }
   ],
-  "r5-updatedelete-application-authorization": [
+  "update-and-delete-application-authorization": [
     {
-      "text": "The application authorizes the selected operation and transfers its existing NFT to the exact request. No redundant attestation is required simply to repeat that release.",
+      "text": "A terminal request carries the authentic representative for its exact registry and key. The application spending validator authorizes that exact transfer, including operation and destination, and enforces the request's format and custody. Spendability alone is not blanket authorization.",
       "pause": 400
     }
   ],
-  "r6-updatedelete-custody-and-completion": [
+  "update-and-delete-custody-and-completion": [
     {
-      "text": "A terminal request keeps its representative until completion. It cannot release it through ordinary withdrawal or sweep.",
+      "text": "Pending terminal requests keep their representative until valid completion, with no withdrawal, rejection or sweep. Completion consumes the request, burns the representative and applies the transition atomically. A completed request is never accepted again.",
       "pause": 400
     }
   ],
-  "r7-folding-and-actor-permissions": [
+  "folding-and-actor-permissions": [
     {
-      "text": "Anyone may fold valid requests. The native logic has no mandatory arbitrary callback, but application asset disposal may invoke its policy. Fair inclusion is not guaranteed.",
+      "text": "A fold applies requests against successive map states with absence and existing-value checks, recognizing authorization and explicit output requirements without a mandatory application callback. Singular imposes no owner, requester or folder gate; anyone may submit a satisfying transaction.",
       "pause": 400
     }
   ],
-  "r8-replay-and-reincarnation": [
+  "replay-and-reincarnation": [
     {
-      "text": "Spent requests cannot be spent again. Approval reuse must remain within its certified scope, including after a key is deleted and registered again.",
+      "text": "One representative cannot sit in two pending terminal requests, and a consumed UTxO cannot be consumed again. Approval from a previous registration does not authorize a later incarnation outside its certified scope; the concrete fence is an open decision.",
       "pause": 400
     }
   ],
-  "r9-executing-witnesses-and-net-minting": [
+  "executing-witnesses-and-net-minting": [
     {
-      "text": "Every obligation needs an executing witness. Logical mint and burn may net to zero, so policy invocation alone cannot be assumed to enforce all transitions.",
+      "text": "The sequence diagram assigns a witness to each boundary: the application minting policy for action assets, the application spending validator for releases, Singular's spending witnesses for consuming requests, and the representative policy for supply coupling when a nonzero mint-field change invokes it.",
+      "pause": 400
+    },
+    {
+      "text": "Net quantities can cancel across Delete and reinsert, so the spending witnesses must enforce each logical transition; moving an existing token does not re-run its policy.",
       "pause": 400
     }
   ],
   "acceptance-scenarios": [
     {
-      "text": "These rejection and success cases are specification obligations, not executed tests. They cover approved requests, counterfeit authorization, custody escapes, replay and actual ledger witness boundaries.",
+      "text": "Twenty-one scenarios, none executed or proved, each with its required outcome and the governing sections named in the last column. They cover approved and unapproved Inserts, substitute policies, altered proposals, competing Inserts, Withdraw binding, local transitions, exact releases, custody escapes, completion of Update and Delete, reinsertion, replay, unrelated folders, outsider outputs, and net-zero minting.",
       "pause": 400
     }
   ],
   "illustrative-naming-demo-obligations": [
     {
-      "text": "The proposed demo registers a name, resolves its authenticated address and changes that address locally. Naming and authorization details remain application choices.",
+      "text": "Seven demo obligations trace register, occupied-name refusal, resolve, resolve during a pending terminal request, resolve of absent or Over keys, address change, and refusal of forged state or unauthorized changes to their governing sections.",
       "pause": 400
     }
   ],
   "open-decisions": [
     {
-      "text": "Construction still needs encoding, policy binding, disposal, refunds, reincarnation, witness placement, batch limits and a naming profile.",
+      "text": "Seven named decisions remain: configuration binding, action encoding and token lifecycle, Withdraw economics, incarnation scope, batching, transaction shapes and libraries, and the naming profile. Each carries a constraint on its resolution.",
       "pause": 400
     }
   ]

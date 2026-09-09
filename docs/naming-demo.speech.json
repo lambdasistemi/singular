@@ -1,19 +1,25 @@
 {
+  "the-three-actions-at-a-glance": [
+    {
+      "text": "The sequence diagram follows Alice, the naming application, the registry and a resolver. Alice registers alice with address A; the application approves and mints the action token; the request waits with no NFT and no reservation; a folder proves absence and the registry mints the representative into the output holding address A. The resolver checks the key is Active and reads address A from the authenticated output. Alice changes the address to B; the application spends the output and creates a successor with the same NFT, with no registry request, mint or burn.",
+      "pause": 400
+    }
+  ],
   "register": [
     {
-      "text": "The illustrative application approves a name and address. Successful Insert folding creates the unique representative in its application output. Approval does not reserve ordering.",
+      "text": "Alice's proposal is approved and its action token minted; the pending request has no NFT. A folder later proves absence, sets Active and mints the representative into the certified output. Prior approval never reserved Alice's place.",
       "pause": 400
     }
   ],
   "resolve": [
     {
-      "text": "Authenticate the registry, representative and current application output before reading its address. Pending requests and retired or absent keys provide no current application address.",
+      "text": "A resolver establishes the key is Active, authenticates the representative, finds the current application UTxO and reads the address from its datum. A pending terminal request, an absent key and an Over key all yield no live address.",
       "pause": 400
     }
   ],
   "change-address": [
     {
-      "text": "The application authorizes moving the same representative to a new datum. There is no registry Update, mint or burn.",
+      "text": "The application approves changing A to B, spends the current UTxO and requires a successor with the same representative and new datum. The registry stays Active. The table summarizes register, resolve and change address by registry operation and representative movement.",
       "pause": 400
     }
   ]

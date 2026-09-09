@@ -1,6 +1,6 @@
 {
   description = "Singular documentation and review checks";
-  inputs.dev-assets-mkdocs.url = "github:paolino/dev-assets/a8f2ff7603bc793794d3e4459b2d5510a57e72a2?dir=mkdocs";
+  inputs.dev-assets-mkdocs.url = "github:paolino/dev-assets/34c7df6959c9fa36c6927808de6712b939e7a7fb?dir=mkdocs";
   inputs.nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
   outputs = { self, nixpkgs, dev-assets-mkdocs }:
     let
@@ -11,6 +11,7 @@
         src = self;
         sharedShell = dev-assets-mkdocs.devShells.${system}.default;
         sharedSource = dev-assets-mkdocs;
+        mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
       };
     in {
       packages = each (system: { default = (project system).docs; docs = (project system).docs; docs-release = (project system).releaseArchive; });
