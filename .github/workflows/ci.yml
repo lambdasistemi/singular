@@ -41,6 +41,7 @@ jobs:
       - run: nix run --quiet .#docs-check
   dev-shell:
     if: github.event.action != 'closed'
+    needs: build-gate
     name: Development shell documentation build
     runs-on: nixos
     steps:
