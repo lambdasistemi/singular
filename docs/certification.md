@@ -62,7 +62,7 @@ Sending an output to a script address does not execute that receiving spending v
 | --- | --- |
 | Mint Insert action asset | Application minting policy approves the proposal and enforces certified request construction |
 | Release NFT into Update/Delete request | Application spending validator authorizes the exact operation and enforces the request output's binding and custody |
-| Fold request | Singular request/registry spending validators check consumption, native bindings and map transition; representative mint/burn policy couples NFT supply to the transition |
+| Fold request | Singular request/registry spending validators check consumption, native bindings and map transition; representative mint/burn policy, when invoked, couples NFT supply to the transition |
 | Withdraw pending Insert | Application policy approves the Withdraw asset; Singular's spending validator checks the consumed Insert, action binding and refund effects |
 | Net mint/burn of an application action asset | Its policy executes for the nonzero mint-field change; moving an existing token alone does not invoke it |
 

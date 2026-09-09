@@ -54,7 +54,7 @@ The representative stays in request custody until that completion. Exact request
 
 ## What batching establishes
 
-A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition aim to keep the fold's own checks to explicit native obligations. Burning an application action token during folding still invokes its minting policy; whether that branch repeats expensive checks depends on the disposal contract. This is a design objective, not a measured performance result or a guarantee that every application fits.
+A fold traverses requests and applies their operations to the successive authenticated map states. Insert absence and Update/Delete old-value checks belong to those native mechanics. Certification and request recognition aim to keep the fold's own checks to explicit native obligations. A nonzero net burn of an application action token during folding still invokes its minting policy; whether that branch repeats expensive checks depends on the disposal contract. This is a design objective, not a measured performance result or a guarantee that every application fits.
 
 One authentic representative cannot be held in two simultaneously pending Update/Delete requests for the same key. Consuming a request UTxO prevents consuming that UTxO again. These facts do not settle authorization replay across Delete followed by a fresh Insert, or all possible conflicts between different keys.
 

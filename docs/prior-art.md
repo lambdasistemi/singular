@@ -1,5 +1,7 @@
 # Prior art and reuse candidates
 
+Comparison date: 2026-09-09. Implementation links pin revisions; website/whitepaper references record the material inspected on that date.
+
 The inspected projects provide substantial precedent for Singular's architecture and mechanics. No ready-made implementation of its complete contract was established in this bounded comparison. This is not a novelty claim, security audit or exhaustive search. Source inspection does not establish deployed behavior.
 
 The meaningful comparison is authorization timing and the request/NFT lifecycle. An equivalent registry would not be disqualified merely because it uses a different authenticated-set representation.
