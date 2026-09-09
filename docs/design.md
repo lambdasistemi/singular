@@ -82,7 +82,7 @@ The simulation is a separate author's transcription of the frozen Lean interface
 
 ## Candidate status
 
-The same published candidate includes the [executable Lean source](https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Model.lean), [proved statements](https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Statements.lean), their [supporting lemmas](https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Lemmas.lean) and [exported finite corpus](https://github.com/lambdasistemi/singular/blob/main/lean/corpus.json). Their identity belongs to this candidate; the proofs were completed without changing any statement.
+The same published candidate includes the [executable Lean source](../lean/Singular/Model.lean), [proved statements](../lean/Singular/Statements.lean), their [supporting lemmas](../lean/Singular/Lemmas.lean) and [exported finite corpus](../lean/corpus.json). Their identity belongs to this candidate; the proofs were completed without changing any statement.
 
 The repository carries no deployed Singular validator, accepted statement audit or production release. The proofs are complete and individually inventoried, with a compiled axiom gate on every build. The requested review surface is the draft PR and its exact candidate preview; independent audit stages remain separate work.
 

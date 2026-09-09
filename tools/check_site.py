@@ -165,7 +165,9 @@ def classify(url):
         return "internal-site"
     if parts.scheme not in ("http", "https"):
         return "non-http"
-    if parts.netloc == urlsplit(SITE_URL).netloc and parts.path.startswith(PREFIX):
+    if parts.netloc == urlsplit(SITE_URL).netloc:
+        # Same host: a path outside the project prefix is a deterministic 404
+        # (INV-26-PREFIX), provable offline — never a network question.
         return "internal-site"
     if parts.netloc == "github.com" and SELF_GITHUB.match(parts.path):
         return "github-source"
@@ -182,6 +184,10 @@ def check_resolved(url):
     parts = urlsplit(url)
     kind = classify(url)
     if kind == "internal-site":
+        if not parts.path.startswith(PREFIX):
+            result = ("fail", f"outside project prefix {PREFIX}: {parts.path} is not served by this site")
+            _resolved_cache[url] = result
+            return result
         rel = unquote(parts.path[len(PREFIX):])
         target = site / rel
         if rel.endswith("/") or target.is_dir():
@@ -235,6 +241,14 @@ def deployed_url(path):
     return SITE_URL + rel
 
 
+def is_repo_source_href(href):
+    """Hrefs into the repository's lean/ sources are GitHub-context links:
+    blob rendering follows the current ref. Their staged, on-host form is the
+    prepare_docs model/ rewrite, proven where it is served — on the built page
+    row, with byte identity to this build's lean/ sources."""
+    return not urlsplit(href).scheme and re.search(r"(?:^|/)lean/", href) is not None
+
+
 plans = []
 
 
@@ -265,7 +279,7 @@ for md in sorted((root / "docs").glob("*.md")):
     authored_by_page[built] = {href for href, _ in raw_anchors(text)}
     for href, label in raw_anchors(text):
         resolved = [github_blob_url(f"docs/{md.name}", href)]
-        if built in pages:
+        if built in pages and not is_repo_source_href(href):
             resolved += [docs_url(page_dir, href, True), docs_url(page_dir, href, False)]
         plan_row(f"docs/{md.name}", href, resolved, require_playable=any(c in label for c in CTA_LABELS))
     for href in md_links(text):
@@ -321,6 +335,24 @@ for source, href, resolved, require_playable in plans:
     rows.append({"source": source, "href": href, "kind": "+".join(kinds), "result": result, "evidence": evidence})
 
 failures = [r for r in rows if r["result"] == "fail"]
+
+# R1 (candidate model identity): every built-page href served from the staged
+# model/ copy must byte-match this build's lean/ source — on-host artifact,
+# not the production Pages alias. Quantified over the model files the
+# inventory actually reaches; empty set fails loudly.
+model_rows = set()
+for _, _, resolved, _ in plans:
+    for u in resolved:
+        parts = urlsplit(u)
+        if classify(u) == "internal-site" and parts.path.startswith(PREFIX + "model/"):
+            model_rows.add((parts.path, site / unquote(parts.path[len(PREFIX):])))
+assert model_rows, "no staged model/ artifacts reached by the inventory: shipped-model proof found nothing"
+model_mismatch = []
+for url_path, served in sorted(model_rows):
+    source = root / "lean" / url_path[len(PREFIX) + len("model/"):]
+    if not served.is_file() or not source.is_file() or served.read_bytes() != source.read_bytes():
+        model_mismatch.append(url_path)
+assert not model_mismatch, f"staged model/ bytes differ from lean/ sources: {model_mismatch}"
 blocked_rows = [r for r in rows if r["result"] == "blocked"]
 counts = {
     "total": len(rows),
@@ -340,6 +372,8 @@ print(json.dumps({
     "inventory": counts,
     "inventoryFailures": failures,
     "externalBlocked": blocked_rows,
+    "noTrailingSlashPolicy": {"authored": "enforced-in-row", "generated": "advisory (GitHub Pages 301; mkdocs out of fence)"},
     "noTrailingSlashAdvisory": no_slash,
+    "modelArtifactBytes": {"servedModelPaths": len(model_rows), "mismatches": 0},
 }))
 assert not failures, f"link inventory failures: {json.dumps(failures, indent=2)}"

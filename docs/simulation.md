@@ -28,7 +28,7 @@ The Node gate also exercises **1,764 numeric-boundary probes** and **22 negative
 
 ## Model and assumptions
 
-<a href="https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Model.lean">Frozen executable model</a> · <a href="https://github.com/lambdasistemi/singular/blob/main/lean/Singular/Statements.lean">Theorem statements</a> · <a href="https://github.com/lambdasistemi/singular/blob/main/lean/corpus.json">Lean-generated corpus</a>.
+<a href="../lean/Singular/Model.lean">Frozen executable model</a> · <a href="../lean/Singular/Statements.lean">Theorem statements</a> · <a href="../lean/corpus.json">Lean-generated corpus</a>.
 
 The model uses tagged terms for collision-free commitments and lists for authenticated logical maps and UTxO sets. Application acceptance and witness flags are supplied evidence. This page does not execute validators, verify signatures, or model wallet balances. Refund values are commitments; no refund-payment result exists in the modeled transition output. Names and addresses are natural numbers; key 42 and addresses A=100/B=200 are illustrative choices.
 
