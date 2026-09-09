@@ -27,6 +27,8 @@ Read the design in order:
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed before implementation. This repository contains no application implementation or proofs. Its CI is a bootstrap stub and does not build or test an application.
+These documents record the adopted design and name the decisions still needed before implementation. This repository contains no application implementation or proofs. Its CI builds and checks the documentation; it does not build or test an application.
 
 Singular uses MPF as its authenticated registry data structure. Existing MPFS is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.
+
+[Build and serve the documentation](docs/building.md) with the pinned Nix toolchain.

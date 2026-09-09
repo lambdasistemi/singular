@@ -1,0 +1,20 @@
+{
+  "what-each-layer-owns": [
+    {
+      "text": "Singular owns registry transitions and NFT custody. Applications decide legal state changes. MPF supplies authenticated map mechanics.",
+      "pause": 400
+    }
+  ],
+  "names-that-must-stay-distinct": [
+    {
+      "text": "The representative NFT carries identity authority. Insert and Withdraw action tokens certify operations. Registry Update means retirement, while an application update changes local state.",
+      "pause": 400
+    }
+  ],
+  "registry-states": [
+    {
+      "text": "Absent keys may be inserted. Active means a representative is outstanding, including in a pending request. Over permanently reserves the key without a representative.",
+      "pause": 400
+    }
+  ]
+}

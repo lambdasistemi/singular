@@ -1,0 +1,20 @@
+{
+  "register": [
+    {
+      "text": "The illustrative application approves a name and address. Successful Insert folding creates the unique representative in its application output. Approval does not reserve ordering.",
+      "pause": 400
+    }
+  ],
+  "resolve": [
+    {
+      "text": "Authenticate the registry, representative and current application output before reading its address. Pending requests and retired or absent keys provide no current application address.",
+      "pause": 400
+    }
+  ],
+  "change-address": [
+    {
+      "text": "The application authorizes moving the same representative to a new datum. There is no registry Update, mint or burn.",
+      "pause": 400
+    }
+  ]
+}

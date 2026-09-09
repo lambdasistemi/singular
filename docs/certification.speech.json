@@ -1,0 +1,32 @@
+{
+  "policy-and-script-roles": [
+    {
+      "text": "The configured application policy is the authorization anchor. Initial datum and spending destination are approved request values. A single application parameter is an interface target, not a proved implementation.",
+      "pause": 400
+    }
+  ],
+  "what-insert-exposes-and-binds": [
+    {
+      "text": "Insert binds its action, registry, key, initial datum, destination and supported native output parameters. Withdraw separately binds the exact pending Insert and refund effects. Their names use a canonical domain-separated hash.",
+      "pause": 400
+    }
+  ],
+  "validation-without-mutable-registry-observation": [
+    {
+      "text": "Application minting or spending witnesses authorize request construction without reading mutable registry state. Singular validates native conditions when consuming the request.",
+      "pause": 400
+    }
+  ],
+  "which-script-actually-executes": [
+    {
+      "text": "Sending an output does not execute the receiving script. Spending and nonzero minting invoke their respective validators. Net-zero quantities and moving existing tokens require explicit custody reasoning.",
+      "pause": 400
+    }
+  ],
+  "decisions-still-required": [
+    {
+      "text": "Encoding, configuration, disposal, refund rules, reincarnation and optional terminal-request tokens remain construction decisions. No implementation or proof is claimed.",
+      "pause": 400
+    }
+  ]
+}

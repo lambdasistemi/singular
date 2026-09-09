@@ -1,0 +1,92 @@
+{
+  "purpose-and-scope": [
+    {
+      "text": "This draft specifies registry operations, authorization and custody. It does not select an implementation language or application schema.",
+      "pause": 400
+    }
+  ],
+  "entities-and-terminology": [
+    {
+      "text": "Registry keys track Active or Over. The representative lives in application or request custody. Insert and Withdraw assets come from the configured application policy.",
+      "pause": 400
+    }
+  ],
+  "required-behavior": [
+    {
+      "text": "The following requirements describe intended protocol obligations. They have not been implemented or proved.",
+      "pause": 400
+    }
+  ],
+  "r1-registry-transitions-and-representative-supply": [
+    {
+      "text": "Insert changes absent to Active and mints. Update changes Active to Over and burns. Delete changes Active to absent and burns. Over is terminal.",
+      "pause": 400
+    }
+  ],
+  "r2-native-request-construction": [
+    {
+      "text": "Application witnesses enforce creation. Singular validates consuming requests. An output at its address is not automatically admitted.",
+      "pause": 400
+    }
+  ],
+  "r3-insert-approval-at-request-minting": [
+    {
+      "text": "The configured policy approves the complete Insert proposal. Its correctness is an application obligation. Supported output parameters do not form a universal predicate language.",
+      "pause": 400
+    }
+  ],
+  "r4-insert-pending-completion-and-withdrawal": [
+    {
+      "text": "Insert waits without a representative. Folding requires absence. Cancellation requires a separate Withdraw asset bound to that exact pending request and refund effects.",
+      "pause": 400
+    }
+  ],
+  "r5-updatedelete-application-authorization": [
+    {
+      "text": "The application authorizes the selected operation and transfers its existing NFT to the exact request. No redundant attestation is required simply to repeat that release.",
+      "pause": 400
+    }
+  ],
+  "r6-updatedelete-custody-and-completion": [
+    {
+      "text": "A terminal request keeps its representative until completion. It cannot release it through ordinary withdrawal or sweep.",
+      "pause": 400
+    }
+  ],
+  "r7-folding-and-actor-permissions": [
+    {
+      "text": "Anyone may fold valid requests. The native logic has no mandatory arbitrary callback, but application asset disposal may invoke its policy. Fair inclusion is not guaranteed.",
+      "pause": 400
+    }
+  ],
+  "r8-replay-and-reincarnation": [
+    {
+      "text": "Spent requests cannot be spent again. Approval reuse must remain within its certified scope, including after a key is deleted and registered again.",
+      "pause": 400
+    }
+  ],
+  "r9-executing-witnesses-and-net-minting": [
+    {
+      "text": "Every obligation needs an executing witness. Logical mint and burn may net to zero, so policy invocation alone cannot be assumed to enforce all transitions.",
+      "pause": 400
+    }
+  ],
+  "acceptance-scenarios": [
+    {
+      "text": "These rejection and success cases are specification obligations, not executed tests. They cover approved requests, counterfeit authorization, custody escapes, replay and actual ledger witness boundaries.",
+      "pause": 400
+    }
+  ],
+  "illustrative-naming-demo-obligations": [
+    {
+      "text": "The proposed demo registers a name, resolves its authenticated address and changes that address locally. Naming and authorization details remain application choices.",
+      "pause": 400
+    }
+  ],
+  "open-decisions": [
+    {
+      "text": "Construction still needs encoding, policy binding, disposal, refunds, reincarnation, witness placement, batch limits and a naming profile.",
+      "pause": 400
+    }
+  ]
+}

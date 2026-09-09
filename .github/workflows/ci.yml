@@ -1,22 +1,102 @@
-name: Bootstrap CI
-
+name: Documentation CI
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
+    types: [opened, synchronize, reopened, ready_for_review, closed]
 permissions:
   contents: read
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   build-gate:
+    if: github.event.action != 'closed'
     name: Build Gate
     runs-on: nixos
     steps:
-      - name: Bootstrap only
-        run: echo "Bootstrap stub only. No application build or tests are configured."
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - run: nix flake check --no-eval-cache
+  rendered-docs:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Rendered documentation
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - run: nix run --quiet .#docs-check
+  dev-shell:
+    if: github.event.action != 'closed'
+    name: Development shell documentation build
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - run: nix develop --quiet -c just ci
+  preview:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Live documentation preview
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - name: Build candidate
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          nix build --quiet .#docs -o result-docs
+          cp -R -L result-docs preview-site
+          chmod -R u+w preview-site
+          printf '%s\n' "$CANDIDATE_SHA" > preview-site/candidate.txt
+      - id: publish
+        uses: paolino/dev-assets/static-preview@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+        with:
+          path: preview-site
+          comment: 'false'
+      - name: Verify live candidate bytes
+        env:
+          PREVIEW_URL: ${{ steps.publish.outputs.preview-url }}
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: nix develop --quiet -c python3 tools/verify_preview.py "$PREVIEW_URL" result-docs "$CANDIDATE_SHA"
+  cleanup-preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: nixos
+    steps:
+      - uses: paolino/dev-assets/static-preview@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+        with:
+          mode: cleanup
+          comment: 'false'
+  pages:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-gate, rendered-docs, dev-shell]
+    runs-on: nixos
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: paolino/dev-assets/setup-nix@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
+      - run: nix build --quiet .#docs -o result-docs
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: result-docs
+      - id: deployment
+        uses: actions/deploy-pages@v5
