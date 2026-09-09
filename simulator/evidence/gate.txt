@@ -1,0 +1,27 @@
+{
+  "status": "PASS finite checks only",
+  "corpus": {
+    "discovered": 58,
+    "executed": 58
+  },
+  "stories": {
+    "discovered": 32,
+    "executed": 32,
+    "trees": 8
+  },
+  "properties": {
+    "discovered": 41,
+    "executed": 41,
+    "controlled": 12,
+    "exhibitsOnly": 17,
+    "gaps": 12
+  },
+  "boundary": {
+    "discovered": 1764,
+    "executed": 1764
+  },
+  "refusals": {
+    "declared": 28,
+    "exhibited": 17
+  }
+}

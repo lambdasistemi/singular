@@ -53,7 +53,7 @@ for path, page in pages.items():
         if url.fragment and target in pages:
             assert unquote(url.fragment) in pages[target].ids, f"{path}: missing anchor {href}"
         links += 1
-    if path.name == "404.html":
+    if path.name == "404.html" or path.is_relative_to(site / "simulator"):
         continue
     speech = path.parent.with_suffix(".speech.json") if path.parent != site else site / "index.speech.json"
     assert speech.exists(), f"missing speech: {speech}"
@@ -64,9 +64,9 @@ for path, page in pages.items():
     for key, segments in spoken.items():
         assert key in page.ids and segments, f"invalid speech heading: {path}: {key}"
         assert all(isinstance(x.get("text"), str) and x["text"] for x in segments)
-for required in ("docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html"):
+for required in ("docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html", "docs/design/index.html", "docs/decisions/index.html", "docs/simulation/index.html"):
     assert (site / required).exists(), required
 home = (site / "index.html").read_text()
 assert 'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
 assert 'assets/read-aloud.js' in home and 'rel="speech"' in home
-print(json.dumps({"renderedPages": len(pages), "localLinksAndAnchors": links, "speechCoverage": "PASS", "externalResources": 0, "diagramPages": len(mermaid_pages), "diagrams": sum(p.mermaid for p in pages.values()), "productTests": False}))
+print(json.dumps({"renderedPages": len(pages), "localLinksAndAnchors": links, "speechCoverage": "PASS", "externalResources": 0, "diagramPages": len(mermaid_pages), "diagrams": sum(p.mermaid for p in pages.values()), "scope": "rendered documentation; model and simulator checked separately"}))

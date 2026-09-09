@@ -1,0 +1,915 @@
+{
+  "sourceRefusals": [
+    {
+      "reason": "application-approval",
+      "sites": [
+        {
+          "reason": "application-approval",
+          "line": 206
+        },
+        {
+          "reason": "application-approval",
+          "line": 210
+        }
+      ],
+      "exhibits": [
+        "S02-no-approval"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "application-evolution-authorization",
+      "sites": [
+        {
+          "reason": "application-evolution-authorization",
+          "line": 228
+        }
+      ],
+      "exhibits": [
+        "N07-unauthorized-change",
+        "story/address/14"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "application-mint-witness",
+      "sites": [
+        {
+          "reason": "application-mint-witness",
+          "line": 250
+        }
+      ],
+      "exhibits": [
+        "S19c-distinct-action-assets-do-not-net",
+        "S19-action-burn-witness"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "application-unavailable",
+      "sites": [
+        {
+          "reason": "application-unavailable",
+          "line": 217
+        },
+        {
+          "reason": "application-unavailable",
+          "line": 226
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "approval-scope",
+      "sites": [
+        {
+          "reason": "approval-scope",
+          "line": 172
+        }
+      ],
+      "exhibits": [
+        "S15b-incarnation-replay"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "certified-output",
+      "sites": [
+        {
+          "reason": "certified-output",
+          "line": 174
+        }
+      ],
+      "exhibits": [
+        "S04-substituted-output"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "completion-only-custody",
+      "sites": [
+        {
+          "reason": "completion-only-custody",
+          "line": 257
+        }
+      ],
+      "exhibits": [
+        "S11-custody-escape",
+        "story/delete/23"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "evolution-representative",
+      "sites": [
+        {
+          "reason": "evolution-representative",
+          "line": 230
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "exact-release-authorization",
+      "sites": [
+        {
+          "reason": "exact-release-authorization",
+          "line": 219
+        }
+      ],
+      "exhibits": [
+        "S09-delete-substituted-update"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "insert-binding",
+      "sites": [
+        {
+          "reason": "insert-binding",
+          "line": 170
+        },
+        {
+          "reason": "insert-binding",
+          "line": 205
+        }
+      ],
+      "exhibits": [
+        "S03-substitute-policy"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "movement-net-not-zero",
+      "sites": [
+        {
+          "reason": "movement-net-not-zero",
+          "line": 254
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "native-witness",
+      "sites": [
+        {
+          "reason": "native-witness",
+          "line": 240
+        },
+        {
+          "reason": "native-witness",
+          "line": 246
+        }
+      ],
+      "exhibits": [
+        "S21b-zero-net-no-spending-witness"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "net-mint-mismatch",
+      "sites": [
+        {
+          "reason": "net-mint-mismatch",
+          "line": 248
+        }
+      ],
+      "exhibits": [
+        "S21e-fresh-wrong-zero-net"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "not-active",
+      "sites": [
+        {
+          "reason": "not-active",
+          "line": 179
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "occupied-key",
+      "sites": [
+        {
+          "reason": "occupied-key",
+          "line": 171
+        }
+      ],
+      "exhibits": [
+        "S05-competing-inserts",
+        "N02-occupied-name",
+        "story/compete/7"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "outsider-cannot-create-representative",
+      "sites": [
+        {
+          "reason": "outsider-cannot-create-representative",
+          "line": 236
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "registry-binding",
+      "sites": [
+        {
+          "reason": "registry-binding",
+          "line": 214
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "representative-identity",
+      "sites": [
+        {
+          "reason": "representative-identity",
+          "line": 173
+        }
+      ],
+      "exhibits": [
+        "S13j-stale-identity-refused"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "representative-witness",
+      "sites": [
+        {
+          "reason": "representative-witness",
+          "line": 249
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "request-unavailable",
+      "sites": [
+        {
+          "reason": "request-unavailable",
+          "line": 165
+        },
+        {
+          "reason": "request-unavailable",
+          "line": 239
+        }
+      ],
+      "exhibits": [
+        "S15-completed-replay",
+        "story/batch/29"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "terminal-binding",
+      "sites": [
+        {
+          "reason": "terminal-binding",
+          "line": 178
+        },
+        {
+          "reason": "terminal-binding",
+          "line": 221
+        }
+      ],
+      "exhibits": [
+        "S14-wrong-registry-nft"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "terminal-output",
+      "sites": [
+        {
+          "reason": "terminal-output",
+          "line": 180
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "unauthenticated-request",
+      "sites": [
+        {
+          "reason": "unauthenticated-request",
+          "line": 166
+        }
+      ],
+      "exhibits": [
+        "S17b-outsider-refused",
+        "story/forged/31"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "unrecognized-action",
+      "sites": [
+        {
+          "reason": "unrecognized-action",
+          "line": 253
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "utxo-id-reuse",
+      "sites": [
+        {
+          "reason": "utxo-id-reuse",
+          "line": 207
+        },
+        {
+          "reason": "utxo-id-reuse",
+          "line": 222
+        },
+        {
+          "reason": "utxo-id-reuse",
+          "line": 231
+        },
+        {
+          "reason": "utxo-id-reuse",
+          "line": 235
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    },
+    {
+      "reason": "withdraw-binding",
+      "sites": [
+        {
+          "reason": "withdraw-binding",
+          "line": 243
+        }
+      ],
+      "exhibits": [
+        "S07-insert-cannot-withdraw",
+        "S07b-wrong-pending-withdraw"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "withdraw-insert-only",
+      "sites": [
+        {
+          "reason": "withdraw-insert-only",
+          "line": 241
+        }
+      ],
+      "exhibits": [
+        "S11c-terminal-withdraw-refused",
+        "S17c-outsider-withdraw-refused"
+      ],
+      "status": "exhibited"
+    },
+    {
+      "reason": "withdraw-tag",
+      "sites": [
+        {
+          "reason": "withdraw-tag",
+          "line": 212
+        }
+      ],
+      "exhibits": [],
+      "status": "gap"
+    }
+  ],
+  "actions": [
+    "createInsert",
+    "escape",
+    "evolve",
+    "fold",
+    "mintWithdraw",
+    "moveAction",
+    "outsider",
+    "release",
+    "withdraw"
+  ],
+  "properties": [
+    {
+      "name": "Singular.Statements.insert_commitment_injective",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.action_domain_separation",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.createInsert_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.mintWithdraw_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S07d-mint-second-withdraw",
+        "S11b-mint-terminal-withdraw",
+        "story/compete/5",
+        "story/cancel/9"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.release_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.evolve_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S08-local-evolution",
+        "N06-change-address-B",
+        "story/address/13"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.outsider_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S17-outsider-output-creation",
+        "story/forged/30"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.withdraw_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S07e-valid-second-target",
+        "S06-exact-withdraw",
+        "story/compete/6",
+        "story/cancel/10"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.fold_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13d-fresh-insert-folded",
+        "S13f-fresh-delete-completed",
+        "S13h-fresh-reinsert-folded",
+        "S21d-fresh-delete-insert",
+        "S01-approved-insert",
+        "S12-update-completes",
+        "S13-delete-completes",
+        "S13b-reinsert",
+        "S16-unrelated-folder",
+        "S19b-action-burn-executes",
+        "S21-zero-net-delete-insert",
+        "N01-register-address-A",
+        "story/register/1",
+        "story/compete/4",
+        "story/address/12",
+        "story/retire/16",
+        "story/retire/18",
+        "story/delete/20",
+        "story/delete/22",
+        "story/batch/25",
+        "story/batch/28"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.moveAction_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S20-existing-action-movement"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.escape_refused",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S11-custody-escape",
+        "story/delete/23"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.foldOne_insert_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.foldOne_terminal_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.sequential_fold_cons",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.supply_conservation",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.over_terminal",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.over_no_representative",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.pending_insert_no_representative",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.minting_requires_configured_issuer",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.withdrawal_preserves_registry_supply",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S07e-valid-second-target",
+        "S06-exact-withdraw",
+        "story/compete/6",
+        "story/cancel/10"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.exact_withdraw_scope",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S07e-valid-second-target",
+        "S06-exact-withdraw",
+        "story/compete/6",
+        "story/cancel/10"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.local_evolution_registry_unchanged",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S08-local-evolution",
+        "N06-change-address-B",
+        "story/address/13"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.release_is_operation_specific",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.release_removes_application_custody",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.request_single_spend",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.approval_scope_checked",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.outsider_not_admitted",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S17-outsider-output-creation",
+        "story/forged/30"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.native_witness_even_zero_net",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S21-zero-net-delete-insert",
+        "story/batch/28"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.nonzero_action_invokes_policy",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S19b-action-burn-executes"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.existing_action_does_not_refresh_scope",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "S20-existing-action-movement"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.resolve_unauthenticated",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "N07b-forged-view"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.resolve_absent",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "N05-resolve-absent"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.resolve_over",
+      "status": "STATED / sorryAx",
+      "coverage": "controlled-check",
+      "exhibits": [
+        "N05b-resolve-over"
+      ],
+      "notes": "Finite consequent checks only."
+    },
+    {
+      "name": "Singular.Statements.resolve_address_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.resolve_pending_iff",
+      "status": "STATED / sorryAx",
+      "coverage": "gap",
+      "exhibits": [],
+      "notes": "No executable nonvacuous exhibit yet; statement remains admitted."
+    },
+    {
+      "name": "Singular.Statements.release_registry_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.insert_creation_registry_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.whole_release_acceptance_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.whole_release_refusal_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S13e-fresh-delete-released",
+        "S10b-release-varied-entry",
+        "S10-release-without-registry-read",
+        "story/retire/17",
+        "story/delete/21",
+        "story/batch/26"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.whole_insert_acceptance_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    },
+    {
+      "name": "Singular.Statements.whole_insert_refusal_independent",
+      "status": "STATED / sorryAx",
+      "coverage": "exhibits-only",
+      "exhibits": [
+        "S03b-configured-issuer-control",
+        "S07c-second-pending-insert",
+        "S13c-fresh-insert-created",
+        "S13g-fresh-reinsert-created",
+        "S13i-stale-identity-created",
+        "S21c-fresh-batch-staged",
+        "S10c-insert-varied-entry",
+        "S18-issuer-not-semantics",
+        "story/register/0",
+        "story/compete/2",
+        "story/compete/3",
+        "story/cancel/8",
+        "story/address/11",
+        "story/retire/15",
+        "story/delete/19",
+        "story/batch/24",
+        "story/batch/27"
+      ],
+      "notes": "Action exhibit; full quantified statement not checked."
+    }
+  ]
+}

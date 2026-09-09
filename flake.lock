@@ -77,7 +77,45 @@
         "nixpkgs": [
           "dev-assets-mkdocs",
           "nixpkgs"
-        ]
+        ],
+        "dev-assets-playwright": "dev-assets-playwright"
+      }
+    },
+    "dev-assets-playwright": {
+      "inputs": {
+        "nixpkgs": "playwright-nixpkgs"
+      },
+      "locked": {
+        "dir": "playwright",
+        "lastModified": 1784531261,
+        "narHash": "sha256-IkjG81YoOIiQKeX2vYEJln0Y8/LSo0Imn7QkJl8FPaM=",
+        "owner": "paolino",
+        "repo": "dev-assets",
+        "rev": "a8f2ff7603bc793794d3e4459b2d5510a57e72a2",
+        "type": "github"
+      },
+      "original": {
+        "dir": "playwright",
+        "owner": "paolino",
+        "repo": "dev-assets",
+        "rev": "a8f2ff7603bc793794d3e4459b2d5510a57e72a2",
+        "type": "github"
+      }
+    },
+    "playwright-nixpkgs": {
+      "locked": {
+        "lastModified": 1773821835,
+        "narHash": "sha256-TJ3lSQtW0E2JrznGVm8hOQGVpXjJyXY2guAxku2O9A4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b40629efe5d6ec48dd1efba650c797ddbd39ace0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     }
   },

@@ -23,7 +23,11 @@ let
   checker = pkgs.writeShellApplication {
     name = "docs-check";
     runtimeInputs = [ pkgs.python3 ];
-    text = ''python3 ${src}/tools/check_site.py ${docs}'';
+    text = ''
+      cd ${src}
+      python3 tools/check_site.py ${docs}
+      python3 tools/check_presentation_repo.py
+    '';
   };
   previewCheck = pkgs.writeShellApplication {
     name = "preview-check";

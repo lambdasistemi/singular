@@ -14,17 +14,27 @@ jobs:
     name: Release build gate
     runs-on: nixos
     steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-build-gate"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix flake check --no-eval-cache
+      - run: nix build --quiet --no-eval-cache .#build-gate
   release-pr:
     if: github.ref == 'refs/heads/main'
     needs: build-gate
     runs-on: nixos
     steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-release-pr"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - name: Mint repository-scoped automation token
         id: app-token
         uses: actions/create-github-app-token@v2
@@ -47,6 +57,11 @@ jobs:
     needs: build-gate
     runs-on: nixos
     steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-publish"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}

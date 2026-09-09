@@ -1,0 +1,64 @@
+{
+  "adopted-behavior": [
+    {
+      "text": "Registration creates the representative and makes an absent key active. Update burns the representative and retires the key permanently. Delete burns it and removes the entry. Application state can evolve while retaining the representative without a registry Update.",
+      "pause": 400
+    },
+    {
+      "text": "The configured application policy directly issues separate, domain-separated Insert and Withdraw action assets. Insert approval binds the initial output at minting without reserving a key. Withdrawal needs its own authority for the exact pending Insert and declared refund; it creates no representative and changes no entry.",
+      "pause": 400
+    },
+    {
+      "text": "The releasing application validator authorizes an exact terminal request, which retains the representative until valid completion. No ordinary cancellation or sweep releases it. Folds use successive registry states without a native privileged folder gate. Transition and custody witnesses remain required even when per-asset quantities net to zero.",
+      "pause": 400
+    },
+    {
+      "text": "Policy and spending-script identities retain distinct roles even if they share a script hash. Recognizing the issuer does not establish arbitrary application semantics.",
+      "pause": 400
+    }
+  ],
+  "choices-and-alternatives": [
+    {
+      "text": "The intended identity is one canonical registry per application policy, without an arbitrary independent instance parameter. At-most-once bootstrap construction remains open.",
+      "pause": 400
+    },
+    {
+      "text": "Direct application-issued action assets replace a second mandatory native request policy. Terminal custody persists until completion instead of ordinary cancellation or sweep, with the general custody theorem still missing. Logical state and witnesses enable inspection without choosing deployment. Selected batches are sequential and atomic, with no automatic skipping.",
+      "pause": 400
+    }
+  ],
+  "proposed-abstraction-boundary": [
+    {
+      "text": "A logical map stands for authenticated state, tagged terms stand for unambiguous commitments, and explicit witnesses or contract parameters stand for authenticated validator results. Native output fields remain explicit: representative identity and quantity, datum, destination and supported value requirements. No universal transaction-predicate language is introduced. Illustrative values are not production schemas or an allowlist.",
+      "pause": 400
+    },
+    {
+      "text": "The intended canonical registry is keyed by the application policy ID. That reusable ID does not prevent duplicate creation of registry assets and state. An asset is identified by both policy ID and asset name, and a distinguished singleton requires issuance rules enforcing that distinction. A policy can be a downstream trust anchor only conditional on its issuance invariants.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram links the desired canonical identity to the open at-most-once bootstrap requirement. An application one-shot certificate and a consumed nonce output are possible alternative constructions; neither is selected. The current model starts with supplied configuration and no registry-creation transition, establishing neither bootstrap enforcement nor deployed uniqueness.",
+      "pause": 400
+    }
+  ],
+  "open-construction-decisions": [
+    {
+      "text": "Configuration authentication, registry identity and hash dependencies remain open. Action encoding, hashing, reuse, disposal, optional terminal tokens and burn branches need construction. Withdrawal approval conditions and refund economics are not selected.",
+      "pause": 400
+    },
+    {
+      "text": "Representative identity and approval scope across reinsertion need a deployed construction. Batch selection, limits, fairness and failure presentation remain open beyond sequential semantics. Concrete transaction shapes, script responsibility and shared libraries are not established. Naming normalization, authorization, schemas, resolver authentication and economics remain illustrative.",
+      "pause": 400
+    }
+  ],
+  "evidence-and-next-stage": [
+    {
+      "text": "The Lean build, exact admission inventory, finite corpus and browser checks are creator evidence. Every theorem remains stated with visible sorry debt. Independent audit, accepted statements, proof completion and production conformance have not been commissioned as part of this delivery.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "f74f64e70af6eff6c0d55b92c0912c340c9065bc38a5ade03c27e3369f3935a7"
+  }
+}

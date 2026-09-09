@@ -1,0 +1,64 @@
+{
+  "story-register-and-use-an-application-output": [
+    {
+      "text": "A requester stages an Insert certified for an exact initial application output. Staging reserves no key and creates no representative. Folding requires absence and matching output and scope; a competing Insert at an occupied key is refused.",
+      "pause": 400
+    },
+    {
+      "text": "The state diagram starts at absence. Valid Insert creates a representative and makes the entry active. Application evolution and terminal release leave the entry active. Completing Update burns the representative and retires the entry permanently. Completing Delete burns it and returns the key to absence. A later Insert still needs valid certification for its incarnation.",
+      "pause": 400
+    }
+  ],
+  "story-cancel-a-proposal-or-finish-a-terminal-request": [
+    {
+      "text": "Cancelling a pending Insert requires separate Withdraw authorization for that exact request and declared refund. Original Insert approval is insufficient. The model commits to refund requirements without establishing payment.",
+      "pause": 400
+    },
+    {
+      "text": "The sequence diagram follows terminal custody. The application authorizes an exact Update or Delete and transfers its representative into the request, consuming its application output. The registry stays active. Escape and terminal withdrawal are refused. Valid completion consumes the request and burns the representative; Update retires the key and Delete removes the entry.",
+      "pause": 400
+    },
+    {
+      "text": "A general whole-transition completion-only custody theorem is still missing. Escape refusal, supply statements and finite terminal withdrawal cases do not close that gap.",
+      "pause": 400
+    }
+  ],
+  "story-fold-a-selected-batch": [
+    {
+      "text": "Any submitter can supply an ordered batch. Each item sees the previous registry result. A failed item refuses the selected batch atomically. There is no native privileged folder, automatic skipping, capacity or fairness claim.",
+      "pause": 400
+    },
+    {
+      "text": "Witnesses remain required when mint and burn for the same asset net to zero. Different asset identities cannot cancel each other. The model ledger, theorem inventory and mutation proposals retain the exact evidence and its limits.",
+      "pause": 400
+    }
+  ],
+  "reading-the-application-trust-boundary": [
+    {
+      "text": "The flowchart separates application authorization from native logical checks. The configured application policy supplies Insert and separate Withdraw approval. The application spending validator supplies exact release or local evolution evidence. Native binding and witness checks determine the modeled transition of registry and custody.",
+      "pause": 400
+    },
+    {
+      "text": "This evidence is supplied to the model, and the browser does not execute validators. Recognizing an issuer does not prove arbitrary application semantics. Logical maps, tagged commitments and explicit witnesses allow inspection while ledger construction stays open.",
+      "pause": 400
+    },
+    {
+      "text": "The simulation is a separate transcription of the frozen Lean interface. Finite examples and interactive checks are bounded creator evidence, not universal correspondence, independent audit, completed proof or ledger deployment conformance.",
+      "pause": 400
+    }
+  ],
+  "candidate-status": [
+    {
+      "text": "The executable source, admitted statements and exported corpus belong to this candidate. All forty-one declarations remain stated with intentional proof debt. There is no deployed Singular validator, completed proof campaign, accepted statement audit or production release.",
+      "pause": 400
+    },
+    {
+      "text": "Two blind source reviews recommended proceeding but did not execute an audit or prove the model. The general whole-transition terminal-custody theorem remains missing. The protocol specification remains the behavioral authority; the ledger records executable coverage.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "design.md",
+    "sha256": "93b910d577d1617f15764c7275cabdc8a8f4f3349032dc74c92f6c926064b286"
+  }
+}

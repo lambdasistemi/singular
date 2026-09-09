@@ -33,12 +33,12 @@
   ],
   "design-status": [
     {
-      "text": "These documents record the adopted design and the decisions still needed. There is no implementation and no proof in this repository; its CI checks the documentation only. MPF is the registry data structure; MPFS is a separate application with reusable mechanics.",
+      "text": "Try the simulation from the link at the top of this page. Queue competing registrations, change an application address, and explore retirement or Delete. This executable design candidate includes a logical Lean model and deliberately admitted theorem statements. No independent audit acceptance, completed proof or production validator is claimed. The coverage ledger records the executable evidence and the limits.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "37cb42d6be9d782e8c03b62c95f6e8b9d81fbfe3db68312949ce3a22e1261cda"
+    "sha256": "4e2b672a6342c2a3992f550a2d34a1f01ee79906960f99ab31662396b01f0ab8"
   }
 }

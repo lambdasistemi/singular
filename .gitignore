@@ -1,3 +1,5 @@
 /.docs-source/
 /site/
 /result*
+.lake/
+__pycache__/

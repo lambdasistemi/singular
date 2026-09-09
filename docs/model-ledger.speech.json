@@ -1,0 +1,30 @@
+{
+  "authority-and-domain": [
+    {
+      "text": "Use this register to trace exact requirements and finite scenarios to modeled behavior and explicit limits. Reachable states start with an empty registry under supplied configuration and successful steps. Malformed raw states are also used in finite tests; they are not assumed reachable. Request identifiers are permanently recorded, and consumed outputs are removed. The withdrawal supply statement needs reachability to exclude malformed aliasing.",
+      "pause": 400
+    }
+  ],
+  "requirements-and-semantic-atoms": [
+    {
+      "text": "The logical model has forty-one intentionally admitted statements. A whole-transition completion-only terminal-custody statement remains missing; escape refusal and supply claims do not close that gap.",
+      "pause": 400
+    }
+  ],
+  "proposed-abstractions-and-omissions": [
+    {
+      "text": "Fresh representative identity fixes the certified asset scope to one incarnation, even with a broader approval scope list. Deliberate approval reuse uses the reused-identity profile. Deployed identity and approval lifecycle construction remains open.",
+      "pause": 400
+    }
+  ],
+  "scenario-inventory": [
+    {
+      "text": "The Lean corpus has fifty-eight finite rows: fifty-two transitions and six resolver cases. Corrected issuer, exact withdrawal target and same-address outsider probes have valid controls. Fresh-identity Delete and reinsert, stale identity, wrong zero net and terminal withdrawal are exercised. These are finite examples, not proof or completeness acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "model-ledger.md",
+    "sha256": "5c1d067a4ef6fdad78153155fe2992101a7803799c0ae398548a77ead74b6adb"
+  }
+}
