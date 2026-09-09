@@ -73,7 +73,7 @@ sequenceDiagram
   participant R as Pending Insert UTxO
   participant S as Singular spending witness
   U->>P: ask to cancel this exact pending Insert
-  P->>P: approve; mint Withdraw action token<br/>asset name = hash(Withdraw, registry, this UTxO, refund terms)
+  P->>P: approve and mint the Withdraw action token<br/>asset name = hash(Withdraw, registry, this UTxO, refund terms)
   P->>S: transaction consuming the pending Insert
   S->>S: check policy ID, recompute the Withdraw name,<br/>check it names this exact UTxO and the refund effects
   S->>R: consume
