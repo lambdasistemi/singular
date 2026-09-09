@@ -29,7 +29,7 @@ To serve the packaged output without a live-reload editor, run `nix run .#docs-s
 
 Pull requests publish to a live preview with the candidate revision recorded alongside the generated site. Preview publication does not post PR comments. The default branch publishes through workflow-mode GitHub Pages after merge; the same documentation build supplies both routes.
 
-The Material theme follows the system light/dark preference and provides a toggle. Section read-aloud controls use the browser's speech voices and curated companion JSON. The shared reader is pinned by the Nix input; its speech URL lookup is adapted to work under both site prefixes. Voice availability depends on the browser and device.
+The Material theme follows the system light/dark preference and provides a toggle. Section read-aloud controls use the browser's speech voices and curated companion JSON. The shared reader is pinned by the Nix input; its speech URL lookup is adapted to work under both site prefixes. Diagrams are Mermaid, rendered by the copy the shared toolchain pins as a fixed-output Nix input and served from the site itself; no page loads a script or stylesheet from outside the site, and the site check fails if one does. Voice availability depends on the browser and device.
 
 ## Documentation releases
 
