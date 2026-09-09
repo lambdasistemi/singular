@@ -8,13 +8,13 @@ Singular is a permissionless registry on Cardano for unique identities and indep
 
 ## Entities and terminology
 
-A registry has an authenticated identity and a map from keys to payload-free `Active` or `Over` values. An absent key has no entry. A representative NFT identifies the active registration of a key within its registry. A request UTxO carries a native request token; Update/Delete requests also carry the existing representative. A configured application policy provides the application authorization anchor, including accepted approval for Insert. The application spending script governs legal spends of the application's NFT UTxO.
+A registry has an authenticated identity and a map from keys to payload-free `Active` or `Over` values. An absent key has no entry. A representative NFT identifies the active registration of a key within its registry. An Insert request UTxO carries an application-minted Insert action token; Update/Delete requests carry the existing representative. Any additional Update/Delete request-token construction remains open. A configured application policy provides the application authorization anchor, including accepted approval for Insert. The application spending script governs legal spends of the application's NFT UTxO.
 
 Registry identity, representative policy, request-token issuance, application authorization policy and application spending script are distinct semantic roles. Their actual script hashes may coincide if an implementation shares a script; this specification neither requires nor forbids that sharing.
 
-The design interface target is one application-specific parameter: the configured application policy ID. Registry identity and native policy settings are separate protocol configuration; Insert initial state and destination are approved per-request values. Sufficiency of this interface for a concrete protocol is not yet proved. Whether the application policy mints request tokens directly or supplies certification to a separate native request policy remains open.
+The design interface target is one application-specific parameter: the configured application policy ID. Registry identity and native policy settings are separate protocol configuration; Insert initial state and destination are approved per-request values. Sufficiency of this interface for a concrete protocol is not yet proved. The application policy mints Insert and Withdraw action tokens directly. Singular recognizes the configured policy ID and recomputes their action-bound asset names; no second mandatory native request policy/token is required for these actions.
 
-Registry **Update** means retirement. An **application update** means an application-defined state transition and is not a registry operation.
+**Withdraw** cancels a pending Insert; it is neither registry Delete nor a staking-reward withdrawal/plugin invocation. Registry **Update** means retirement. An **application update** means an application-defined state transition and is not a registry operation.
 
 ## Required behavior
 
@@ -34,7 +34,9 @@ A successful fold MUST apply only these transitions and their coupled representa
 
 ### R2. Native request construction
 
-A recognized request MUST carry a minted token whose issuance establishes the required authorization and native request validity. Request admission MUST validate structure, operation, exact registry/key binding and required custody in the creating transaction. The issuing-policy arrangement is D2: direct minting by the configured application policy or certification checked by a separate native request policy. A token issued by an arbitrary substitute policy MUST NOT be accepted as a recognized request token.
+Insert and Withdraw MUST use action tokens minted under the configured application policy. Request admission MUST validate the applicable native structure, operation, exact registry/key or request binding and custody. Singular MUST recognize the configured policy ID and recompute the expected action-bound asset name. Tokens issued by an arbitrary substitute policy MUST NOT be accepted. Any additional Update/Delete request token and its issuer remain a construction detail under D2.
+
+Action-token asset names MUST hash an unambiguous canonical encoding with domain separation between Insert and Withdraw. The specific hash function and binary schema remain open.
 
 The application constructs the transaction; the configured application policy ID is its authorization anchor. Request creation MUST be supportable without observing the mutable registry UTxO. This requirement does not prohibit application inputs, transaction-context checks or authenticated registry configuration.
 
@@ -50,7 +52,7 @@ Minting an Insert request token MUST require accepted application certification 
 
 The application policy ID MUST be an authenticated Singular parameter bound to the registry's rules. A requester MUST NOT gain approval by choosing an arbitrary self-issued policy. The certification mechanism MUST prevent substitution of any bound field after approval.
 
-Approval MUST be established when the Insert request token is minted; this requirement is not deferred to folding. Direct application-policy request minting and a separate certificate/native-request-policy arrangement are unresolved alternatives, not simultaneous requirements. Certification MUST NOT be treated as a reservation of the key or a guarantee of inclusion/order.
+Approval MUST be established when the Insert request token is minted; this requirement is not deferred to folding. The configured application policy MUST mint the Insert action token directly. Its asset name MUST commit to the Insert tag, registry, key, initial application datum, destination and declared required effects. Singular MUST recompute and match this name. Certification MUST NOT be treated as a reservation of the key or a guarantee of inclusion/order.
 
 ### R4. Insert pending, completion and withdrawal
 
@@ -58,11 +60,13 @@ A pending Insert request MUST contain no representative NFT. A representative fo
 
 Successful folding MUST check absence in the applicable successive registry state and MUST produce exactly the representative output specified by the certified proposal, including its destination and initial state. Registry insertion and representative creation MUST occur atomically in that folding transaction. The fold MUST NOT accept Insert for an occupied key.
 
-Insert requests MUST support withdrawal before successful folding. Withdrawal MUST NOT change registry state or mint a representative. Cancellation authorization MUST originate from the configured application policy, rather than a native Singular owner or signature permission rule. The exact authorization action, its binding to the pending request, conditions, refund handling and token/certificate disposal are unresolved under D3 below. Original Insert approval MUST NOT automatically be treated as cancellation approval; withdrawal availability does not authorize arbitrary third-party cancellation or arbitrary access to deposits.
+Insert requests MUST support withdrawal before successful folding. Withdrawal MUST NOT change registry state or mint a representative. Cancellation authorization MUST originate from a separate Withdraw action token minted by the configured application policy. Its asset name MUST commit to the Withdraw tag, registry, exact pending Insert UTxO and required refund terms/effects. Singular MUST check the configured policy and this exact action binding when consuming the pending Insert. An Insert action token alone MUST NOT authorize Withdraw.
+
+The application's approval conditions, precise refund economics and token disposal remain open under D2/D3. No representative minting or registry transition is permitted during Withdraw. The protocol MUST NOT interpret withdrawal availability as arbitrary access to deposits or arbitrary cancellation authority.
 
 ### R5. Update/Delete application authorization
 
-An Update/Delete request MUST carry the existing authentic representative for its exact registry/key, together with the native request token, at the Singular request address.
+An Update/Delete request MUST carry the existing authentic representative for its exact registry/key, at the Singular request address. An additional request token, if any, is a construction detail under D2.
 
 The application spending validator MUST authorize transfer from application custody into that exact request, including operation, registry/key and destination. The application remains responsible for the legality of the release under its own rules. Mere NFT spendability MUST NOT be treated as blanket authorization of any registry operation.
 
@@ -97,7 +101,8 @@ These scenarios are specification obligations. **They have not been executed as 
 | Requester supplies its own unaccepted certification policy | Native request minting refuses it | R3 |
 | Registry, key, operation, initial datum or destination changed after certification | Altered proposal/output cannot be accepted using that approval | R3, R4 |
 | Two certified pending Inserts target one key | Only an Insert seeing absence may succeed; certification reserves neither request's place | R4, R7 |
-| Authorized withdrawal of a pending Insert | No representative minted and no registry mutation; authority/refund cases require D3 | R4 |
+| Withdraw action token binds exact pending Insert and required effects | Consume that Insert with no representative mint or registry mutation; concrete refund/disposal cases require D2/D3 | R2, R4 |
+| Insert token alone or a Withdraw token for a different pending Insert is supplied to cancel | Withdrawal refuses the mismatched authorization | R2, R4 |
 | Application performs a legal local state transition | Existing representative can move to its successor application UTxO without registry Update | R1, R5 |
 | Application authorizes Delete, transaction substitutes Update | Exact-release authorization fails | R5 |
 | Valid Update/Delete request is formed without reading mutable registry | Native request admission can succeed from application authorization, binding and custody | R2, R5 |
@@ -115,8 +120,8 @@ A concrete protocol must also demonstrate conservation of representative supply 
 | ID | Required decision | Constraint on its resolution |
 | --- | --- | --- |
 | D1 | Registry identity/configuration and policy binding, including hash dependencies | Use the configured application policy ID as authorization anchor; target one application-specific parameter without claiming proved sufficiency; no global allowlist or specific hash-cycle solution is selected |
-| D2 | Request-token issuer, logical-to-wire encoding and request/certificate lifecycle | Choose application-policy request minting or separate certification/native-request-policy composition; bind the whole proposal and effects; prevent acceptance after completion; specify reuse/consumption and token disposal |
-| D3 | Insert withdrawal authorization action, cancellation conditions and refund disposition | Authorization comes from the configured application policy; specify exact-request binding and protect funds/registration attempts; original Insert approval is not automatic cancellation approval |
+| D2 | Canonical action encoding/hash, token lifecycle and optional Update/Delete token construction | Insert/Withdraw are direct application-policy action assets; bind actions and parameters unambiguously with domain separation; specify reuse/disposal and prevent acceptance beyond certified scope |
+| D3 | Withdraw approval conditions, refund economics and disposal | Separate application-policy Withdraw asset binds exact pending Insert and required effects; preserve deposits and registration attempts; Insert approval alone cannot cancel |
 | D4 | Representative identity and approval replay protection across Delete/reinsert | Preserve key reuse and any deliberately authorized certificate reuse while rejecting approval outside its certified scope; choose and specify an effective fence |
 | D5 | Batch selection, failure presentation and limits | Preserve sequential MPF semantics; do not assume automatic skipping of failing requests or a measured capacity advantage |
 | D6 | Concrete transaction shapes and reusable library interfaces | Establish native supply/custody invariants; old MPFS proofs are not proof of Singular's protocol |
