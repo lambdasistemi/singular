@@ -58,8 +58,10 @@ for path, page in pages.items():
     speech = path.parent.with_suffix(".speech.json") if path.parent != site else site / "index.speech.json"
     assert speech.exists(), f"missing speech: {speech}"
     data = json.loads(speech.read_text())
-    assert page.headings <= data.keys(), f"missing spoken sections: {path}: {page.headings - data.keys()}"
-    for key, segments in data.items():
+    # `_source` binds the companion to the page hash; tools/check_presentation.py verifies it.
+    spoken = {k: v for k, v in data.items() if not k.startswith("_")}
+    assert page.headings <= spoken.keys(), f"missing spoken sections: {path}: {page.headings - spoken.keys()}"
+    for key, segments in spoken.items():
         assert key in page.ids and segments, f"invalid speech heading: {path}: {key}"
         assert all(isinstance(x.get("text"), str) and x["text"] for x in segments)
 for required in ("docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html"):

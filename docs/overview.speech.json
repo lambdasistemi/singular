@@ -28,5 +28,9 @@
       "text": "Active means the representative is outstanding, in application custody or in a pending terminal request; it says nothing about the application's business state. Both values are payload-free.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "overview.md",
+    "sha256": "6607ecf9e1d976f40eaaec76bda371bdaeb506928d867e941a984eec6c8ae698"
+  }
 }

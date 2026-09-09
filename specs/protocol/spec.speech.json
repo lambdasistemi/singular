@@ -100,5 +100,9 @@
       "text": "Seven named decisions remain: configuration binding, action encoding and token lifecycle, Withdraw economics, incarnation scope, batching, transaction shapes and libraries, and the naming profile. Each carries a constraint on its resolution.",
       "pause": 400
     }
-  ]
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "613e19259f4a71036951831274b64a4b8a1a27035ee586729cb3d74ce1447952"
+  }
 }
