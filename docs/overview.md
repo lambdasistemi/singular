@@ -19,8 +19,8 @@ Singular has no native owner, privileged requester or privileged folder. Permiss
 | Registry identity | The particular registry a request and representative belong to |
 | Registry key | The identifier indexed within that registry |
 | Representative NFT | The unique token associated with an `Active` key; also called the identity NFT |
-| Request token | A separate token issued under Singular's request policy, recognizing a correctly constructed request |
-| Application certificate | Evidence from an accepted application certification policy approving an Insert proposal |
+| Request token | A token distinct from the representative, recognizing an approved, correctly constructed request; its issuing-policy arrangement is still open |
+| Application certificate | Evidence of approval under the configured application policy; whether this is a separate token remains open |
 | Application state | Datum and other application information carried by application UTxOs |
 | Registry Update | The sole retirement operation `Active → Over` |
 | Application update | An application-defined transition that can move the existing NFT to a successor application UTxO without changing the registry |

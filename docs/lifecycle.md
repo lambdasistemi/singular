@@ -17,7 +17,7 @@ The request token recognizes the native request. The representative NFT carries 
 
 ## Insert: certify first, check absence when folded
 
-The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. An accepted application certification policy approves that exact proposal. Singular's request policy requires this application approval when minting the native request token, together with its native format, binding and custody checks. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction, and the application certification and native request minting policies may both run in that transaction.
+The application prepares a proposal identifying the registry, key, initial application state and destination application script/address. The configured application policy approves that exact proposal. Request minting must establish this application approval together with the native format, binding and custody requirements. A correctly formatted Insert without accepted application approval is invalid; it cannot be used to register an arbitrary non-application datum. The application constructs the transaction. Whether its configured policy mints the request token directly or supplies certification checked by a native request minting policy is still open.
 
 The pending Insert request contains a request token but **no representative NFT**. Request creation need not observe the mutable registry state. Certification approves the proposed creation, not a claim that the key will remain absent.
 
@@ -25,7 +25,7 @@ When folded successfully, Insert checks that the key is absent, changes it to `A
 
 Two Insert requests can target the same key while pending. An Insert whose key is occupied cannot succeed at that point. The design does not yet select whether a batch builder omits such requests or how failure is presented; it does not assume a skip rule inside the validator.
 
-An Insert can be withdrawn without changing the registry or creating a representative. Withdrawal authority, refund destination and disposal of the request token/certificate still need a concrete rule. Permissionless operation is not permission to take someone else's deposit. Even if refunds go to the correct address, allowing arbitrary third parties to cancel valid requests could prevent registration. Who may cancel, and under which conditions, is unresolved.
+An Insert can be withdrawn without changing the registry or creating a representative. Withdrawal authority, refund destination and disposal of the request token/certificate still need a concrete rule. Permissionless operation is not permission to take someone else's deposit. Even if refunds go to the correct address, allowing arbitrary third parties to cancel valid requests could prevent registration. Cancellation authorization comes from the configured application policy. The exact authorization action, its binding to the pending request and conditions remain unresolved; original Insert approval does not automatically authorize cancellation.
 
 ## Application evolution: keep the same representative
 
@@ -35,9 +35,9 @@ The application can observe its own inputs and transaction context. Avoiding obs
 
 ## Update and Delete: transfer authority into a pending request
 
-To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. The output also carries a request token issued under Singular's request policy.
+To request retirement or removal, the application constructs a transaction that spends its NFT UTxO and places the existing representative into the Singular request output. The output also carries a minted request token recognized by Singular; its issuing-policy arrangement remains open.
 
-The application validator must authorize **that exact release**: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. Singular's request policy checks native format, binding and custody; it does not repeat arbitrary application validation. No second application attestation token is required merely to repeat the approved release.
+The application validator must authorize **that exact release**: the chosen Update or Delete operation, registry/key binding and request destination. Merely being able to spend the NFT does not establish authorization for every operation. Native request admission checks format, binding and custody; it does not repeat arbitrary application validation. No second application attestation token is required merely to repeat the approved release.
 
 These checks need no observation of the mutable registry state when the request is created. The registry remains `Active` during the pending interval, and the NFT remains outstanding in the request. It cannot continue rotating as an application UTxO while held there.
 
