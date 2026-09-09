@@ -53,12 +53,12 @@
   ],
   "evidence-and-next-stage": [
     {
-      "text": "The Lean build, exact admission inventory, finite corpus and browser checks are creator evidence. Every theorem remains stated with visible sorry debt. Independent audit, accepted statements, proof completion and production conformance have not been commissioned as part of this delivery.",
+      "text": "The Lean build with its compiled axiom gate, exact proof inventory, finite corpus and browser checks are creator evidence. Every theorem is proved from the standard axioms. Independent audit, accepted statements and production conformance have not been commissioned as part of this delivery.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "f74f64e70af6eff6c0d55b92c0912c340c9065bc38a5ade03c27e3369f3935a7"
+    "sha256": "f932887da1163da51c9f74aa8152b02cfcc10d44d10d5e84b18bb45cc8af5655"
   }
 }

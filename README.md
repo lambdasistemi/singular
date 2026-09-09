@@ -61,7 +61,7 @@ Read the design in order:
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) adds a logical Lean model, explicitly admitted theorem statements and a separately authored [playable simulation](docs/simulation.md). All theorem proofs intentionally remain `sorry`; no independent audit acceptance, completed proof or production validator is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) adds a logical Lean model, 41 proved theorem statements and a separately authored [playable simulation](docs/simulation.md). Every statement is proved from the standard axioms and the build refuses a re-admitted one; no independent audit acceptance or production validator is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
 
 Singular uses MPF as its authenticated registry data structure. Existing MPFS is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.
 

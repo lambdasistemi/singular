@@ -34,7 +34,7 @@ No unresolved definition was silently filled in. These are explicit boundaries o
 
 ## Theorem coverage gaps
 
-All 41 declarations remain STATED with admitted proof debt. The ledger contains 12 controlled finite consequent checks, 17 action exhibits only, and 12 gaps. Exact rows and pinned exhibit identities are in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/feat/model-simulation-s1/simulator/coverage.json).
+All 41 declarations were STATED with admitted proof debt when this record was written; they have since been PROVED without changing any statement, see the [theorem inventory](theorems.md). The ledger contains 12 controlled finite consequent checks, 17 action exhibits only, and 12 gaps. Exact rows and pinned exhibit identities are in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/main/simulator/coverage.json).
 
 The following declarations have no executable nonvacuous exhibit in this candidate:
 

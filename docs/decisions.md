@@ -60,4 +60,4 @@ The diagram separates the desired identity from the unresolved enforcement mecha
 
 ## Evidence and next stage
 
-The candidate's Lean build, exact admission inventory, exported finite corpus and browser checks are creator evidence. Every theorem remains **STATED**, with its `sorry` debt visible. Independent audit, accepted statements, proof completion and production conformance have not been commissioned as part of this delivery.
+The candidate's Lean build with its compiled axiom gate, exact proof inventory, exported finite corpus and browser checks are creator evidence. Every theorem is **PROVED** from the standard axioms. Independent audit, accepted statements and production conformance have not been commissioned as part of this delivery.

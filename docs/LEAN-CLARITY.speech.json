@@ -17,7 +17,7 @@
   ],
   "theorem-coverage-gaps": [
     {
-      "text": "All forty one declarations remain stated with admitted proof debt. Twelve have controlled finite checks, seventeen have action exhibits, and twelve lack a nonvacuous executable exhibit. The named gaps include commitment properties, element and sequential fold equivalences, supply and retirement properties, request spending, approval scope, and address and pending resolution equivalences. Action exhibits do not check full quantified statements.",
+      "text": "All forty one declarations were stated with admitted proof debt when this record was written, and have since been proved without changing any statement. Twelve have controlled finite checks, seventeen have action exhibits, and twelve lack a nonvacuous executable exhibit. The named gaps include commitment properties, element and sequential fold equivalences, supply and retirement properties, request spending, approval scope, and address and pending resolution equivalences. Action exhibits do not check full quantified statements.",
       "pause": 400
     }
   ],
@@ -41,6 +41,6 @@
   ],
   "_source": {
     "file": "LEAN-CLARITY.md",
-    "sha256": "53a88199364b09048bf866150ca456c842c744ecf012684fe065d1686a2ac4f7"
+    "sha256": "8c196cd9ca373360aa20061878eeed35f95b30202264147e88ef9a45d7af5312"
   }
 }
