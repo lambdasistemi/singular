@@ -1,7 +1,7 @@
 {
   "who-this-is-for": [
     {
-      "text": "This page is for a holder of an active name who wants to change its payment destination, recover after losing the current controller, or retire permanently. The complete playable lifecycle replays thirty-eight Lean-derived rows and then drives the same public transition in the browser. Maintenance and recovery keep the representative in application custody. Retirement moves it into completion-only custody before burning it. This remains design-time evidence, not ledger execution.",
+      "text": "This page is for a claimant who wants to cancel before folding, or a holder who wants to maintain, recover, or retire an active name. Cancellation consumes only an unfulfilled claim and copies its stored refund address. Maintenance and recovery keep the representative in application custody, while retirement moves it into completion-only custody before burning it. This remains design-time evidence, not ledger execution.",
       "pause": 400
     }
   ],
@@ -23,9 +23,9 @@
       "pause": 400
     }
   ],
-  "what-remains-deliberately-unavailable": [
+  "cancel-a-pending-claim": [
     {
-      "text": "Cancelling an unfulfilled naming claim remains on hold. Insert certification never grants cancellation permission, but the signer, refund recipient, refund value, and fee treatment are undecided. The naming interface therefore offers no claim-cancellation button or success claim. Retirement-request withdrawal is different: it is a required refusal attempt. The generic registry demonstration is not naming policy.",
+      "text": "A pending claim stores its refund address inside the Insert commitment. A separate cancellation approval consumes that exact claim only when the requested refund destination equals the stored address, then copies it and leaves the name absent. Redirecting the refund, relying on Insert certification, cancelling after fold, and replaying cancellation are refused. No fee, deposit, price, bond, or refund-value schedule is inferred. Retirement-request withdrawal remains a distinct refusal.",
       "pause": 400
     }
   ],
@@ -37,12 +37,12 @@
   ],
   "evidence-and-release-status": [
     {
-      "text": "The browser drives integrated maintenance, recovery, and both retirement routes with their refusals. Retirement is queued first, showing pending, and completed by a separate permissionless fold, showing retired or Over. The reconciliation table binds all thirty-eight model and corpus identities to public controls and assertions. The downloadable archive carries raw model, contract, scenarios, replay sources, pinned tooling, and exact identities under one SHA two hundred and fifty six manifest. This is still an unaccepted design candidate, not a deployed validator or ledger observation.",
+      "text": "The browser drives pending-claim cancellation, maintenance, recovery, and both retirement routes with their refusals. Retirement is queued first, showing pending, and completed by a separate permissionless fold, showing retired or Over. The reconciliation binds all forty-three model and corpus identities to public controls and assertions. The downloadable archive carries raw model, contract, scenarios, replay sources, pinned tooling, and exact identities under one SHA two hundred and fifty six manifest. This is still an unaccepted design candidate, not a deployed validator or ledger observation.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "264ddc3a102145002aa69db8313c651596e7aa271eee83906e0c50b7dfee4ac0"
+    "sha256": "c92143164ab198d0cc722a8d373bc5a7cd6f9fb28af5714c975b6d51e98a04d8"
   }
 }

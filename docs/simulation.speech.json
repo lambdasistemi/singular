@@ -1,17 +1,17 @@
 {
   "try-the-manual-controls": [
     {
-      "text": "The simulator has two explicit profiles. The first-release naming profile lets you queue competing claims for alice, fold the winner, observe the duplicate refusal, resolve the certified fixture, and try a refused Delete. The generic registry profile separately demonstrates Insert withdrawal, address evolution, retirement, Delete, and batch ordering. Neither profile silently falls back to the other.",
+      "text": "The simulator has two explicit profiles. The first-release naming profile lets you queue and cancel an unfulfilled claim, exercise each cancellation refusal, queue competing claims, fold the winner, observe the duplicate refusal, resolve the certified fixture, and try a refused Delete. The generic registry profile separately demonstrates Insert withdrawal, address evolution, retirement, Delete, and batch ordering. Neither profile silently falls back to the other.",
       "pause": 400
     },
     {
-      "text": "The playable naming lifecycle maintains a payment destination, recovers through a committed next controller, and queues then separately completes retirement through either the controller or quorum route. Naming claim cancellation remains on hold and has no control; retirement request withdrawal is a separate refused attempt. In the generic profile, queue two Inserts, fold one, separately approve and withdraw the other, then explore evolution and terminal requests.",
+      "text": "Naming claim cancellation requires separate approval and copies the refund address stored in the request; redirect, certification-only, post-fold, and replay attempts are refused. The playable active-name lifecycle maintains a payment destination, recovers through a committed next controller, and queues then separately completes retirement through either the controller or quorum route. Retirement request withdrawal is a separate refused attempt. The generic profile retains its own Insert withdrawal journey.",
       "pause": 400
     }
   ],
   "what-the-evidence-establishes": [
     {
-      "text": "This simulator candidate replays fifty-eight generic Lean rows, thirty-four naming rows, and thirty-eight lifecycle and wire rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The lifecycle denominator covers maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field datum. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. These are finite checks, not acceptance.",
+      "text": "This simulator candidate replays fifty-eight generic Lean rows, thirty-four naming rows, and forty-three lifecycle and wire rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The lifecycle denominator covers pending-claim cancellation, maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field datum. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. These are finite checks, not acceptance.",
       "pause": 400
     }
   ],
@@ -29,6 +29,6 @@
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "9f6855e2217892943bbcba0f83a577dbb9ac99207400915f1653e66bbad5e24b"
+    "sha256": "224c42555cae5c77e8ef329bac019006303d1aea8f6412b051ae15eff4d58d79"
   }
 }

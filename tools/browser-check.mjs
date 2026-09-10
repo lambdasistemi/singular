@@ -50,6 +50,42 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.click('#btn-theme');
   await page.selectOption('#naming-profile','m1-naming');
   assert((await page.locator('#naming-verdict').innerText()).includes('unaccepted'),'naming profile selected');
+  const namingWithdraw=page.getByRole('button',{name:/withdraw pending claim/i});
+  assert(await namingWithdraw.count()===1,'naming /withdraw/i claim-cancellation control present');
+  await page.click('#naming-claim');
+  const storedRefundAddress=await page.locator('#naming-state').evaluate(node=>JSON.parse(node.textContent).registry.requests[0].proposal.refundAddress);
+  assert(storedRefundAddress===60,'pending naming claim stores refund address');
+  await page.locator('#naming-cancel-approved').uncheck();
+  await namingWithdraw.click();
+  assert((await page.locator('#naming-verdict').innerText()).includes('LC03-insert-attestation-cancellation-refused'),
+    'insert certification alone cannot authorize cancellation');
+  await page.locator('#naming-cancel-approved').check();
+  await page.locator('#naming-refund-redirect').check();
+  await namingWithdraw.click();
+  assert((await page.locator('#naming-verdict').innerText()).includes('LC02-cancellation-redirect-refused'),
+    'claim cancellation refund redirect refused');
+  await page.locator('#naming-refund-redirect').uncheck();
+  await namingWithdraw.click();
+  assert((await page.locator('#naming-verdict').innerText()).includes(`LC01-cancellation-stored-refund-accepts: claim #1 withdrawn; copied stored refund address ${storedRefundAddress}`),
+    'pending claim cancellation copies stored refund address');
+  const cancelledState=await page.locator('#naming-state').evaluate(node=>JSON.parse(node.textContent));
+  assert(cancelledState.claims.length===0&&cancelledState.registry.requests.length===0,
+    'accepted claim cancellation consumes pending claim');
+  await page.click('#naming-resolve');
+  assert((await page.locator('#naming-verdict').innerText()).includes('absent'),
+    'accepted claim cancellation leaves name absent');
+  await namingWithdraw.click();
+  assert((await page.locator('#naming-verdict').innerText()).includes('LC06-cancellation-replay-refused'),
+    'claim cancellation replay refused');
+  await page.selectOption('#naming-profile','generic');
+  await page.selectOption('#naming-profile','m1-naming');
+  await page.click('#naming-claim');
+  await page.click('#naming-fold-first');
+  await namingWithdraw.click();
+  assert((await page.locator('#naming-verdict').innerText()).includes('LC04-folded-claim-cancellation-refused'),
+    'folded claim cancellation refused');
+  await page.selectOption('#naming-profile','generic');
+  await page.selectOption('#naming-profile','m1-naming');
   const namingTheoremNames=await page.evaluate(()=>NAMINGTHEOREMS.map(row=>row.name).sort());
   const namingLampNames=(await page.locator('[data-naming-theorem]').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-naming-theorem')).sort()));
   assert(namingTheoremNames.length>0&&JSON.stringify(namingLampNames)===JSON.stringify(namingTheoremNames),'naming exact theorem lamps');

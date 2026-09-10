@@ -26,6 +26,11 @@ if (!equal([...lifecycleCorpusReceipt.identities].sort(), [...lifecycleCorpusIde
 }
 
 const correspondence = {
+  'LC01-cancellation-stored-refund-accepts': ['pending-claim cancellation copies the stored refund address', '#naming-withdraw'],
+  'LC02-cancellation-redirect-refused': ['pending-claim cancellation cannot redirect its refund', '#naming-withdraw'],
+  'LC03-insert-attestation-cancellation-refused': ['Insert certification alone cannot cancel a claim', '#naming-withdraw'],
+  'LC04-folded-claim-cancellation-refused': ['a folded claim is no longer cancellable', '#naming-withdraw'],
+  'LC06-cancellation-replay-refused': ['a consumed claim cancellation cannot replay', '#naming-withdraw'],
   'LM01-maintenance-accepts': ['clear, set, or replace destination with preservation checks', '#destination-clear'],
   'LM02-maintenance-unauthorized-refused': ['missing controller signer is refused', '#destination-missing-signer'],
   'LM03-maintenance-field-tamper-refused': ['non-destination field tamper is refused', '#destination-tamper'],
