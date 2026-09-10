@@ -1,6 +1,7 @@
 { pkgs, src, sharedShell, sharedSource, mermaidJs }:
 let
   tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
+  candidateRef = src.rev or (src.dirtyRev or "");
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
@@ -25,6 +26,7 @@ let
     runtimeInputs = [ pkgs.python3 ];
     text = ''
       cd ${src}
+      ${pkgs.lib.optionalString (candidateRef != "") "export SINGULAR_CANDIDATE_REF=${pkgs.lib.escapeShellArg candidateRef}"}
       python3 tools/check_site.py ${docs}
       python3 tools/check_presentation_repo.py
     '';

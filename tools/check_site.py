@@ -14,6 +14,7 @@ distinct "blocked" outcomes that are named but do not pass.
 from html.parser import HTMLParser
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -32,22 +33,32 @@ PLAYABLE = SITE_URL + "simulator/"
 CTA_LABELS = ("Try the simulation", "Open the playable Singular simulator")
 EXTERNAL_TIMEOUT = 15
 EXTERNAL_CONCURRENCY = 8
+CANDIDATE_REF_ERROR = (
+    "candidate git ref unavailable: SINGULAR_CANDIDATE_REF is empty and "
+    "git rev-parse HEAD failed or git is unavailable; relative GitHub links cannot be bound"
+)
 
 site = Path(sys.argv[1]).resolve()
-root = site.parent
+root = Path(__file__).resolve().parent.parent
 
 
 def candidate_git_context():
-    """(source ref, full commit) derived from git at run time: the branch when
-    one is checked out, the commit otherwise. GitHub source links are bound to
-    this ref — nothing is hardcoded, so future runs on other branches need no
-    edit and no ref is pinned in source."""
-    sha = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
-                         capture_output=True, text=True, timeout=60)
+    """Return the explicit packaged ref, or derive the checked-out Git ref."""
+    explicit_ref = os.environ.get("SINGULAR_CANDIDATE_REF", "").strip()
+    if explicit_ref:
+        return explicit_ref, explicit_ref
+    try:
+        sha = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                             capture_output=True, text=True, timeout=60)
+    except OSError:
+        return None, None
     if sha.returncode != 0:
         return None, None
-    branch_out = subprocess.run(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
-                                capture_output=True, text=True, timeout=60)
+    try:
+        branch_out = subprocess.run(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"],
+                                    capture_output=True, text=True, timeout=60)
+    except OSError:
+        return sha.stdout.strip(), sha.stdout.strip()
     branch = branch_out.stdout.strip()
     ref = branch if branch_out.returncode == 0 and branch and branch != "HEAD" else sha.stdout.strip()
     return ref, sha.stdout.strip()
@@ -201,7 +212,7 @@ def github_readme_url(href):
     parts = urlsplit(href)
     if parts.scheme or parts.netloc:
         return href
-    assert CANDIDATE_REF, "candidate git ref unavailable: relative GitHub links cannot be bound"
+    assert CANDIDATE_REF, CANDIDATE_REF_ERROR
     return f"{REPO_BLOB}/{CANDIDATE_REF}/{href.lstrip('/')}"
 
 
@@ -209,7 +220,7 @@ def github_blob_url(source_md, href):
     """Rewrite href the way GitHub renders ``source_md`` as a blob page at the
     ref the reader is viewing (the candidate ref), so relative source links
     follow the viewed ref instead of a moving alias."""
-    assert CANDIDATE_REF, "candidate git ref unavailable: relative GitHub links cannot be bound"
+    assert CANDIDATE_REF, CANDIDATE_REF_ERROR
     return urljoin(f"{REPO_BLOB}/{CANDIDATE_REF}/{source_md}", href)
 
 
