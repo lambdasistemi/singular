@@ -4,7 +4,13 @@ open Lean Singular
 def initial : State := {}
 def nft : Representative := representative initial 42
 def outA : Output := { representative := nft, destination := 50, datum := 100, value := 20 }
-def proposal : Proposal := { registry := 1, key := 42, applicationPolicy := 7,   initial := outA, scope := [0] }
+def proposal : Proposal :=
+  { registry := 1
+    key := 42
+    applicationPolicy := 7
+    refundAddress := 60
+    initial := outA
+    scope := [0] }
 def req : Request := { id := 1, operation := .insert, proposal,   token := some (insertAsset proposal), destination := 90, authenticatedOrigin := true }
 def approval : Approval := { asset := insertAsset proposal, accepted := true }
 def wm : Witnesses := { applicationMint := true }

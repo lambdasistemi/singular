@@ -64,6 +64,16 @@ def forgedRecovery : LifecycleAction :=
     { requiredSigners := [nonFixtureControllerAddress] }
 
 def lifecycleStepRows : List LifecycleStepRow := [
+  { id := "LC01-cancellation-stored-refund-accepts", before := cancellationPending,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC02-cancellation-redirect-refused", before := cancellationPending,
+    action := .cancelClaim 1 (demoRefundAddress + 1) },
+  { id := "LC03-insert-attestation-cancellation-refused", before := claimedOnce,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC04-folded-claim-cancellation-refused", before := activeOnce,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC06-cancellation-replay-refused", before := cancelledClaim,
+    action := .cancelClaim 1 demoRefundAddress },
   { id := "LM01-maintenance-accepts", before := activeOnce, action := maintainClear },
   { id := "LM02-maintenance-unauthorized-refused", before := activeOnce,
     action := .maintain 3 4 aliceKey clearedFixture {} },
@@ -154,6 +164,9 @@ def lifecycleActionJson : LifecycleAction → Json
         ("requestId", toJson requestId), ("key", toJson key),
         ("request", toJson request), ("route", routeJson route),
         ("witnesses", witnessesJson witnesses)])]
+  | .cancelClaim requestId refundAddress =>
+      Json.mkObj [("cancelClaim", Json.mkObj [("requestId", toJson requestId),
+        ("refundAddress", toJson refundAddress)])]
   | .completeRetirement requestId =>
       Json.mkObj [("completeRetirement", Json.mkObj [("requestId", toJson requestId)])]
   | .withdrawRetirement requestId =>

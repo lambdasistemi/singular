@@ -45,7 +45,7 @@
     "name": "Singular.Statements.withdraw_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "a80f2964ecef9859907ea00a24ee69b35d84919ef555f44a5913b16ea180e1f2"
+    "statementSha256": "0058bce1e42df4d7b1dedd884157087b657b341a16892756fd6fbfcebb49c60d"
   },
   {
     "name": "Singular.Statements.fold_iff",

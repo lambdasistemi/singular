@@ -58,7 +58,8 @@ theorem withdraw_iff (s : State) (id : Nat) (a : Asset) (refund : Refund)
     (w : Witnesses) (t : Result) :
     step s (.withdraw id a refund w) = .ok t ↔
     ∃ r, s.requests.find? (·.id == id) = some r ∧ w.nativeSpend = true ∧
-    r.authenticatedOrigin = true ∧ insertNative s r = true ∧ recognized s a = true ∧
+    r.authenticatedOrigin = true ∧ insertNative s r = true ∧
+    refund.destination = r.proposal.refundAddress ∧ recognized s a = true ∧
     a.name = .withdraw s.config.registry id refund ∧ t = { state := consume s id } := by
   exact withdraw_ok s id a refund w t
 
@@ -134,7 +135,7 @@ theorem over_terminal (s : State) (a : Action) (t : Result) (key : Nat)
     exact over
   | withdraw id a refund w =>
     rw [withdraw_ok] at success
-    obtain ⟨r, -, -, -, -, -, -, rfl⟩ := success
+    obtain ⟨r, -, -, -, -, -, -, -, rfl⟩ := success
     exact over
   | fold items mint net w =>
     rw [fold_ok] at success
@@ -173,7 +174,7 @@ theorem withdrawal_preserves_registry_supply (s : State) (id : Nat) (a : Asset)
     (h : step s (.withdraw id a refund w) = .ok t) :
     t.state.entries = s.entries ∧ t.state.applications = s.applications ∧ t.logical = [] := by
   rw [withdraw_ok] at h
-  obtain ⟨r, hr, -, -, -, -, -, rfl⟩ := h
+  obtain ⟨r, hr, -, -, -, -, -, -, rfl⟩ := h
   have hid : r.id = id := by simpa using List.find?_some hr
   subst hid
   refine ⟨rfl, ?_, rfl⟩
@@ -183,7 +184,7 @@ theorem exact_withdraw_scope (s : State) (id : Nat) (a : Asset) (refund : Refund
     (w : Witnesses) (t : Result) (h : step s (.withdraw id a refund w) = .ok t) :
     a.name = .withdraw s.config.registry id refund := by
   rw [withdraw_ok] at h
-  obtain ⟨r, -, -, -, -, -, hname, -⟩ := h
+  obtain ⟨r, -, -, -, -, -, -, hname, -⟩ := h
   exact hname
 
 theorem local_evolution_registry_unchanged (s : State) (id : Nat) (u : ApplicationUTxO)

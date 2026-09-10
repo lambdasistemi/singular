@@ -34,6 +34,7 @@ naming economics. -/
 def demoDestination : Nat := 50
 def demoDatum : Nat := 100
 def demoValue : Nat := 20
+def demoRefundAddress : Nat := 60
 
 structure RetirementQuorum where
   members : List (List Nat)
@@ -281,7 +282,10 @@ def namingQueueAction (state : NamingState) (key : Nat) : Action :=
   let output : Output :=
     { representative := representative state.registry key, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
   let proposal : Proposal :=
-    { registry := state.registry.config.registry, key := key, applicationPolicy := state.registry.config.applicationPolicy, initial := output, scope := [(entry state.registry key).incarnation] }
+    { registry := state.registry.config.registry, key := key,
+      applicationPolicy := state.registry.config.applicationPolicy,
+      refundAddress := demoRefundAddress, initial := output,
+      scope := [(entry state.registry key).incarnation] }
   let asset := insertAsset proposal
   Action.createInsert { id := freshId state.registry, operation := Operation.insert, proposal := proposal, token := some asset, held := Option.none, destination := state.registry.config.requestAddress, authenticatedOrigin := true } { asset := asset, accepted := true } { applicationMint := true }
 

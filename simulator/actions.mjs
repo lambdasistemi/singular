@@ -2,9 +2,9 @@ import {initial,view,step} from './core.mjs';
 // Illustrative defaults only: key 42, application destination 50, address datum A=100/B=200.
 export const witnesses=(overrides={})=>({applicationMint:false,applicationSpend:false,nativeSpend:false,representativeMint:false,...overrides});
 export function nextId(s){const n=Math.max(0,...s.used)+1;if(!Number.isSafeInteger(n))throw Error('invalid-nat/nextId');return n;}
-export function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,accepted=true,conforms=true}={}){
+export function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,refundAddress=60,accepted=true,conforms=true}={}){
  const output={representative:{...view(s,key).representative,assetScope},quantity:1,destination:50,datum,value:20};
- const proposal={registry:s.config.registry,key,applicationPolicy:s.config.applicationPolicy,initial:output,scope};
+ const proposal={registry:s.config.registry,key,applicationPolicy:s.config.applicationPolicy,refundAddress,initial:output,scope};
  const asset={policy:s.config.applicationPolicy,name:{insert:{proposal}}};
  return {createInsert:{request:{id,operation:'insert',proposal,token:asset,held:null,destination:s.config.requestAddress,authenticatedOrigin:true},approval:{asset,accepted,conforms},witness:witnesses({applicationMint:true})}};
 }

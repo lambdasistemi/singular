@@ -38,6 +38,9 @@ GENERIC_SOURCES = [
 NAMING_IMPORT = re.compile(r'^import Singular\.Naming\w*\n?', re.M)
 
 LIFECYCLE_IDS = {
+    'LC01-cancellation-stored-refund-accepts', 'LC02-cancellation-redirect-refused',
+    'LC03-insert-attestation-cancellation-refused',
+    'LC04-folded-claim-cancellation-refused', 'LC06-cancellation-replay-refused',
     'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
     'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
     'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',

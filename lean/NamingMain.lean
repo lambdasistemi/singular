@@ -11,7 +11,7 @@ open Lean
 def namingInitial : NamingState := {}
 
 def craftedDeleteRequest (state : NamingState) (id : Nat) : Request :=
-  { id := id, operation := Operation.delete, proposal := { registry := state.registry.config.registry, key := aliceKey, applicationPolicy := state.registry.config.applicationPolicy, initial := { representative := representative state.registry aliceKey, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }, scope := [(entry state.registry aliceKey).incarnation] }, token := Option.none, held := some (representative state.registry aliceKey), destination := state.registry.config.requestAddress, authenticatedOrigin := true }
+  { id := id, operation := Operation.delete, proposal := { registry := state.registry.config.registry, key := aliceKey, applicationPolicy := state.registry.config.applicationPolicy, refundAddress := 0, initial := { representative := representative state.registry aliceKey, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }, scope := [(entry state.registry aliceKey).incarnation] }, token := Option.none, held := some (representative state.registry aliceKey), destination := state.registry.config.requestAddress, authenticatedOrigin := true }
 
 def craftedRelease (state : NamingState) (source id : Nat) : Action :=
   .release source (craftedDeleteRequest state id) { source := source, request := craftedDeleteRequest state id, accepted := true } { applicationSpend := true }
@@ -20,7 +20,7 @@ def craftedRefund : Refund := { destination := 60, value := 20 }
 
 def craftedInsertRequest (state : NamingState) (key policy id : Nat) : Request :=
   let output : Output := { representative := representative state.registry key, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
-  let proposal : Proposal := { registry := state.registry.config.registry, key := key, applicationPolicy := policy, initial := output, scope := [(entry state.registry key).incarnation] }
+  let proposal : Proposal := { registry := state.registry.config.registry, key := key, applicationPolicy := policy, refundAddress := demoRefundAddress, initial := output, scope := [(entry state.registry key).incarnation] }
   { id := id, operation := Operation.insert, proposal := proposal, token := some (insertAsset proposal), held := Option.none, destination := state.registry.config.requestAddress, authenticatedOrigin := true }
 
 def craftedCreateInsert (state : NamingState) (key policy id : Nat) (accepted : Bool) : Action :=
@@ -37,7 +37,7 @@ def tamperedFold (state : NamingState) (requestId : Nat) : Action :=
 representative: the registered identity does not match the registry. -/
 def substitutedRepState : NamingState :=
   let output : Output := { representative := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
-  let proposal : Proposal := { registry := 1, key := aliceKey, applicationPolicy := 7, initial := output, scope := [0] }
+  let proposal : Proposal := { registry := 1, key := aliceKey, applicationPolicy := 7, refundAddress := demoRefundAddress, initial := output, scope := [0] }
   let request : Request := { id := 7, operation := Operation.insert, proposal := proposal, token := some (insertAsset proposal), held := Option.none, destination := 90, authenticatedOrigin := true }
   { claimedOnce with registry := { claimedOnce.registry with requests := request :: claimedOnce.registry.requests, approvals := { asset := insertAsset proposal, accepted := true } :: claimedOnce.registry.approvals } }
 

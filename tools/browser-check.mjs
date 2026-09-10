@@ -76,7 +76,7 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
   await page.goto(new URL('/lifecycle-view.html', page.url()).href, {waitUntil:'networkidle'});
   const lifecycleReplay=await page.evaluate(()=>window.lifecycleCorpusReceipt);
-  assert(lifecycleReplay.discovered===38&&lifecycleReplay.executed===38,'lifecycle browser Lean replay 38/38');
+  assert(lifecycleReplay.discovered===43&&lifecycleReplay.executed===43,'lifecycle browser Lean replay 43/43');
   await page.click('#wire-roundtrip');
   assert((await page.locator('#result').innerText()).includes('byteLength'),'browser four-field byte wire codec');
   await page.click('#recovery-key-loss');
