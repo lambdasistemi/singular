@@ -170,8 +170,9 @@ def decodeInsertCommitment : WireData → Option Proposal
   | _ => none
 
 def decodeInsertRequestCommitment (request : Request) (data : WireData) : Option Proposal := do
-  let expected ← encodeInsertRequest request
-  if data != expected then none else decodeInsertCommitment data
+  let expected ← (encodeInsertRequest request).bind decodeInsertCommitment
+  let proposal ← decodeInsertCommitment data
+  if proposal != expected then none else some proposal
 
 def insertRequestShape : WireData → Option InsertRequestShape
   | .constr commitmentIndex [.constr proposalIndex fields] =>

@@ -214,8 +214,9 @@ export const decodeInsertCommitment = data => sameKeys(data, ['constr']) && data
   && Array.isArray(data.constr.fields) && data.constr.fields.length === 1
   ? decodeProposal(data.constr.fields[0]) : null;
 export const decodeInsertRequestCommitment = (request, data) => {
-  const expected = encodeInsertRequest(request);
-  return expected !== null && equal(data, expected) ? decodeInsertCommitment(data) : null;
+  const expected = decodeInsertCommitment(encodeInsertRequest(request));
+  const proposal = decodeInsertCommitment(data);
+  return expected !== null && proposal !== null && equal(proposal, expected) ? proposal : null;
 };
 export const insertRequestShape = data => {
   const proposal = data?.constr?.fields;

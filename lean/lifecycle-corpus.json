@@ -1,5 +1,5 @@
 {
-  "corpusSourceSha256": "6d2ec3489e1138b6c481d87ced8ec1046cf5f03f715f5b5c132a07d1db28b1d3",
+  "corpusSourceSha256": "6c5d1c4a27399e0b4d72799b56f74b814badc18f1df8c79cb3e7ea62d6c01e7f",
   "initializations": [
     {
       "attempt": {
@@ -336,7 +336,7 @@
   ],
   "lifecycleStatementsSha256": "9bb4e5718f46591b81a5b65bfa037347e5908f8ec5a6baf437edc67227858d30",
   "modelSha256": "5afd1b517d9e6a93a558a548fa6b9b1bcd3727df4e734943bdddbc21afcacbe2",
-  "payloadSha256": "57e62e539476efcae0ba38fc489a643f979d85ecb8e4d4271a4d589504091883",
+  "payloadSha256": "6126445e12ffe3cced153f14efb380b813f2e59bd6506c98021ef452103bd8e4",
   "registrations": [
     {
       "accepted": true,
@@ -2382,7 +2382,7 @@
   ],
   "schema": "singular-naming-lifecycle-corpus-v1",
   "sourceHashes": {
-    "lean/LifecycleMain.lean": "6d2ec3489e1138b6c481d87ced8ec1046cf5f03f715f5b5c132a07d1db28b1d3",
+    "lean/LifecycleMain.lean": "6c5d1c4a27399e0b4d72799b56f74b814badc18f1df8c79cb3e7ea62d6c01e7f",
     "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
     "lean/NamingMain.lean": "1a7eeab9e62a7c84ec043d574f5c2086946c9a15fa4a43418e07cce3b66c7a42",
     "lean/Singular.lean": "a66a8d18b7e348766dcf2be92cf5e4651362f7118c537c5978d876832842f941",
@@ -2396,9 +2396,9 @@
     "lean/Singular/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
     "lean/Singular/NamingLifecycleStatements.lean": "9bb4e5718f46591b81a5b65bfa037347e5908f8ec5a6baf437edc67227858d30",
     "lean/Singular/NamingStatements.lean": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
-    "lean/Singular/NamingWire.lean": "9a5f16e2b46cbd7c41851bf751a9093c8393ed743d6b0738d3f66b37a2ca2d59",
+    "lean/Singular/NamingWire.lean": "4464720b2946183c1a6faf4a2f0a7689ea45dd1d96b9e86aba138e9131edaf8d",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
-    "lean/Singular/NamingWireStatements.lean": "449985f47ca30dd66eef1c61db0e6eaf3fd91edc4f459f3314a8f6b27815f861",
+    "lean/Singular/NamingWireStatements.lean": "91d7d421b5ea93944c87068c919a8326dd5d86842651d86272fc8189cce201ce",
     "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
   },
   "steps": [
@@ -31740,7 +31740,424 @@
       },
       "id": "WD03-two-destinations-refused",
       "result": null
+    },
+    {
+      "comparisonResult": {
+        "accepted": false,
+        "reason": "withdraw-refund-address"
+      },
+      "decoded": {
+        "applicationPolicy": 7,
+        "initial": {
+          "datum": 100,
+          "destination": 50,
+          "quantity": 1,
+          "representative": {
+            "assetScope": 0,
+            "key": 42,
+            "policy": 8,
+            "registry": 1
+          },
+          "value": 20
+        },
+        "key": 42,
+        "refundAddress": 60,
+        "registry": 1,
+        "scope": [
+          0
+        ]
+      },
+      "decodedBytes": {
+        "applicationPolicy": 7,
+        "initial": {
+          "datum": 100,
+          "destination": 50,
+          "quantity": 1,
+          "representative": {
+            "assetScope": 0,
+            "key": 42,
+            "policy": 8,
+            "registry": 1
+          },
+          "value": 20
+        },
+        "key": 42,
+        "refundAddress": 60,
+        "registry": 1,
+        "scope": [
+          0
+        ]
+      },
+      "encoded": {
+        "constr": {
+          "fields": [
+            {
+              "constr": {
+                "fields": [
+                  {
+                    "integer": 1
+                  },
+                  {
+                    "integer": 42
+                  },
+                  {
+                    "integer": 7
+                  },
+                  {
+                    "integer": 60
+                  },
+                  {
+                    "constr": {
+                      "fields": [
+                        {
+                          "constr": {
+                            "fields": [
+                              {
+                                "integer": 1
+                              },
+                              {
+                                "integer": 42
+                              },
+                              {
+                                "integer": 8
+                              },
+                              {
+                                "integer": 0
+                              }
+                            ],
+                            "index": 0
+                          }
+                        },
+                        {
+                          "integer": 1
+                        },
+                        {
+                          "integer": 50
+                        },
+                        {
+                          "integer": 100
+                        },
+                        {
+                          "integer": 20
+                        }
+                      ],
+                      "index": 0
+                    }
+                  },
+                  {
+                    "list": [
+                      {
+                        "integer": 0
+                      }
+                    ]
+                  }
+                ],
+                "index": 0
+              }
+            }
+          ],
+          "index": 0
+        }
+      },
+      "encodedBytes": [
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        7,
+        24,
+        60,
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        8,
+        0,
+        255,
+        1,
+        24,
+        50,
+        24,
+        100,
+        20,
+        255,
+        159,
+        0,
+        255,
+        255,
+        255
+      ],
+      "expectedBytes": [
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        7,
+        24,
+        60,
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        8,
+        0,
+        255,
+        1,
+        24,
+        50,
+        24,
+        100,
+        20,
+        255,
+        159,
+        0,
+        255,
+        255,
+        255
+      ],
+      "id": "WR01-insert-request-refund-roundtrip",
+      "malformedBytes": [
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        7,
+        24,
+        60,
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        8,
+        0,
+        255,
+        1,
+        24,
+        50,
+        24,
+        100,
+        20,
+        255,
+        159,
+        0,
+        255,
+        255
+      ],
+      "malformedResult": null,
+      "presentedRefundAddress": 61,
+      "proposal": {
+        "applicationPolicy": 7,
+        "initial": {
+          "datum": 100,
+          "destination": 50,
+          "quantity": 1,
+          "representative": {
+            "assetScope": 0,
+            "key": 42,
+            "policy": 8,
+            "registry": 1
+          },
+          "value": 20
+        },
+        "key": 42,
+        "refundAddress": 60,
+        "registry": 1,
+        "scope": [
+          0
+        ]
+      },
+      "redirectedBytes": [
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        7,
+        24,
+        61,
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        8,
+        0,
+        255,
+        1,
+        24,
+        50,
+        24,
+        100,
+        20,
+        255,
+        159,
+        0,
+        255,
+        255,
+        255
+      ],
+      "redirectedDecoded": {
+        "applicationPolicy": 7,
+        "initial": {
+          "datum": 100,
+          "destination": 50,
+          "quantity": 1,
+          "representative": {
+            "assetScope": 0,
+            "key": 42,
+            "policy": 8,
+            "registry": 1
+          },
+          "value": 20
+        },
+        "key": 42,
+        "refundAddress": 61,
+        "registry": 1,
+        "scope": [
+          0
+        ]
+      },
+      "redirectedRequestResult": null,
+      "reencodedBytes": [
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        7,
+        24,
+        60,
+        216,
+        121,
+        159,
+        216,
+        121,
+        159,
+        1,
+        24,
+        42,
+        8,
+        0,
+        255,
+        1,
+        24,
+        50,
+        24,
+        100,
+        20,
+        255,
+        159,
+        0,
+        255,
+        255,
+        255
+      ],
+      "request": {
+        "authenticatedOrigin": true,
+        "destination": 90,
+        "held": null,
+        "id": 1,
+        "operation": "insert",
+        "proposal": {
+          "applicationPolicy": 7,
+          "initial": {
+            "datum": 100,
+            "destination": 50,
+            "quantity": 1,
+            "representative": {
+              "assetScope": 0,
+              "key": 42,
+              "policy": 8,
+              "registry": 1
+            },
+            "value": 20
+          },
+          "key": 42,
+          "refundAddress": 60,
+          "registry": 1,
+          "scope": [
+            0
+          ]
+        },
+        "token": {
+          "name": {
+            "insert": {
+              "proposal": {
+                "applicationPolicy": 7,
+                "initial": {
+                  "datum": 100,
+                  "destination": 50,
+                  "quantity": 1,
+                  "representative": {
+                    "assetScope": 0,
+                    "key": 42,
+                    "policy": 8,
+                    "registry": 1
+                  },
+                  "value": 20
+                },
+                "key": 42,
+                "refundAddress": 60,
+                "registry": 1,
+                "scope": [
+                  0
+                ]
+              }
+            }
+          },
+          "policy": 7
+        }
+      },
+      "shape": {
+        "commitmentArity": 1,
+        "commitmentIndex": 0,
+        "proposalArity": 6,
+        "proposalIndex": 0
+      },
+      "storedRefundAddress": 60
     }
   ],
-  "wireTheoremManifestSha256": "0adb2b21555b4897dffaca130a7241cd547371b3a0e8ed481c4523adfc13f2d6"
+  "wireTheoremManifestSha256": "73ff3df69ac79241b4467753c8b422274918282743c1c146490a19f6ed2ec4da"
 }

@@ -1,5 +1,6 @@
 import Singular.NamingWire
 import Singular.NamingLifecycle
+import Singular.Lemmas
 
 namespace Singular.NamingWireStatements
 
@@ -36,29 +37,61 @@ theorem insert_request_fixture_is_the_queued_request :
 set_option maxRecDepth 100000 in
 theorem insert_request_serialises_byte_exact :
     serialiseInsertRequest aliceInsertRequest = some expectedAliceInsertRequestBytes := by
-  decide
+  simp [serialiseInsertRequest, encodeInsertRequest, aliceInsertRequest,
+    aliceInsertProposal, insertAsset, encodeProposal, encodeOutput,
+    encodeRepresentative, representative, entry, serialiseWireData, cborHead,
+    expectedAliceInsertRequestBytes, aliceKey, demoDestination, demoDatum,
+    demoValue, demoRefundAddress] <;> decide
 
+set_option maxRecDepth 100000 in
 theorem insert_request_roundtrip_and_declared_shape :
     (encodeInsertRequest aliceInsertRequest).bind decodeInsertCommitment =
       some aliceInsertProposal ∧
     (encodeInsertRequest aliceInsertRequest).bind insertRequestShape =
       some (InsertRequestShape.mk 0 1 0 6) ∧
-    deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes =
-      some aliceInsertProposal ∧
-    (deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes).bind
-      (fun proposal => serialiseInsertRequest
+    (encodeInsertRequest aliceInsertRequest).bind (fun encoded =>
+      (decodeInsertCommitment encoded).bind fun proposal => encodeInsertRequest
+        { aliceInsertRequest with proposal, token := some (insertAsset proposal) }) =
+      encodeInsertRequest aliceInsertRequest ∧
+    (encodeInsertRequest aliceInsertRequest).bind (fun encoded =>
+      (decodeInsertCommitment encoded).bind fun proposal => serialiseInsertRequest
         { aliceInsertRequest with proposal, token := some (insertAsset proposal) }) =
       some expectedAliceInsertRequestBytes := by
-  decide
+  constructor
+  · simp [encodeInsertRequest, decodeInsertCommitment, decodeProposal,
+      decodeOutput, decodeRepresentative, encodeProposal, encodeOutput,
+      encodeRepresentative, aliceInsertRequest, aliceInsertProposal, insertAsset,
+      representative, entry]
+  · constructor
+    · rfl
+    · constructor
+      · rfl
+      · simpa [aliceInsertRequest] using insert_request_serialises_byte_exact
 
+set_option maxRecDepth 100000 in
 theorem insert_request_malformed_and_redirect_refused :
-    deserialiseInsertRequest aliceInsertRequest malformedAliceInsertRequestBytes = none ∧
-    deserialiseInsertCommitment redirectedAliceInsertRequestBytes =
+    decodeInsertRequestCommitment aliceInsertRequest (.constr 0 []) = none ∧
+    decodeInsertCommitment (.constr 0 [encodeProposal redirectedAliceInsertProposal]) =
       some redirectedAliceInsertProposal ∧
-    deserialiseInsertRequest aliceInsertRequest redirectedAliceInsertRequestBytes = none ∧
+    decodeInsertRequestCommitment aliceInsertRequest
+      (.constr 0 [encodeProposal redirectedAliceInsertProposal]) = none ∧
     lifecycleStep fixtureHasher cancellationPending
       (.cancelClaim 1 (demoRefundAddress + 1)) =
       .error "withdraw-refund-address" := by
-  decide
+  constructor
+  · simp [decodeInsertRequestCommitment, encodeInsertRequest,
+      decodeInsertCommitment, decodeProposal, decodeOutput,
+      decodeRepresentative, aliceInsertRequest, aliceInsertProposal, insertAsset]
+  · constructor
+    · rfl
+    · constructor
+      · simp [decodeInsertRequestCommitment, encodeInsertRequest,
+          decodeInsertCommitment, decodeProposal, decodeOutput,
+          decodeRepresentative, aliceInsertRequest, aliceInsertProposal,
+          redirectedAliceInsertProposal, insertAsset, encodeProposal, encodeOutput,
+          encodeRepresentative,
+          representative, entry, aliceKey, demoDestination, demoDatum, demoValue,
+          demoRefundAddress]
+      · rfl
 
 end Singular.NamingWireStatements

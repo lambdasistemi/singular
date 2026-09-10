@@ -81,10 +81,10 @@ try {
     check((await result.innerText()).includes(fragment), label);
   };
   const receipt = await page.evaluate(() => window.lifecycleCorpusReceipt);
-  check(receipt.discovered === 43 && receipt.executed === 43,
-    'Lean-derived lifecycle replay is 43/43');
-  check(await page.locator('#reconciliation tr').count() === 43,
-    'all 43 identities have public correspondence rows');
+  check(receipt.discovered === 44 && receipt.executed === 44,
+    'Lean-derived lifecycle replay is 44/44');
+  check(await page.locator('#reconciliation tr').count() === 44,
+    'all 44 identities have public correspondence rows');
 
   await clickResult('#destination-clear', 'Clear payment destination', 'destination clear');
   await clickResult('#destination-set', 'Set payment destination', 'destination set');
@@ -162,7 +162,7 @@ try {
   await clickResult('#wire-two-destinations', 'four-field-datum-shape', 'two destinations refused');
 
   const observed = await page.evaluate(() => window.lifecycleJourney.observed().sort());
-  check(observed.length === 38, 'all 38 non-cancellation lifecycle identities were browser-observed');
+  check(observed.length === 39, 'all 39 non-cancellation lifecycle identities were browser-observed');
   check(await page.getByText('No death oracle.', {exact: false}).isVisible(), 'no-death-oracle boundary visible');
   const rawAddressLimit = await page.locator('.limits p')
     .filter({hasText: 'Raw-address payment limit.'}).innerText();
@@ -216,7 +216,7 @@ try {
     'public folded-claim cancellation refused');
   observed.push('LC04-folded-claim-cancellation-refused');
   check(JSON.stringify(observed.sort()) === JSON.stringify([...receipt.identities].sort()),
-    'all 43 model and corpus identities were browser-observed');
+    'all 44 model and corpus identities were browser-observed');
   check(external.length === 0, 'no external runtime requests');
   check(pageErrors.length === 0, `no page errors: ${pageErrors.join('; ')}`);
 
