@@ -1,4 +1,5 @@
 import Singular.NamingWire
+import Singular.NamingLifecycle
 
 namespace Singular.NamingWireStatements
 
@@ -26,6 +27,38 @@ theorem inline_datum_only :
 
 theorem payment_destination_zero_or_one :
     decodeNamingDatum twoDestinationDatum = none := by
+  decide
+
+theorem insert_request_fixture_is_the_queued_request :
+    claimedOnce.registry.requests.head? = some aliceInsertRequest := by
+  decide
+
+set_option maxRecDepth 100000 in
+theorem insert_request_serialises_byte_exact :
+    serialiseInsertRequest aliceInsertRequest = some expectedAliceInsertRequestBytes := by
+  decide
+
+theorem insert_request_roundtrip_and_declared_shape :
+    (encodeInsertRequest aliceInsertRequest).bind decodeInsertCommitment =
+      some aliceInsertProposal ∧
+    (encodeInsertRequest aliceInsertRequest).bind insertRequestShape =
+      some (InsertRequestShape.mk 0 1 0 6) ∧
+    deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes =
+      some aliceInsertProposal ∧
+    (deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes).bind
+      (fun proposal => serialiseInsertRequest
+        { aliceInsertRequest with proposal, token := some (insertAsset proposal) }) =
+      some expectedAliceInsertRequestBytes := by
+  decide
+
+theorem insert_request_malformed_and_redirect_refused :
+    deserialiseInsertRequest aliceInsertRequest malformedAliceInsertRequestBytes = none ∧
+    deserialiseInsertCommitment redirectedAliceInsertRequestBytes =
+      some redirectedAliceInsertProposal ∧
+    deserialiseInsertRequest aliceInsertRequest redirectedAliceInsertRequestBytes = none ∧
+    lifecycleStep fixtureHasher cancellationPending
+      (.cancelClaim 1 (demoRefundAddress + 1)) =
+      .error "withdraw-refund-address" := by
   decide
 
 end Singular.NamingWireStatements

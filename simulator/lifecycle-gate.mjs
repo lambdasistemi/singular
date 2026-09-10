@@ -14,8 +14,10 @@ import {
   nextControlHashInput, retirementRequest,
 } from './lifecycle.mjs';
 import {
-  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
-  namingDatumShape, serialiseNamingDatum, twoDestinationDatum,
+  decodeInsertCommitment, decodeNamingDatum, deserialiseInsertCommitment,
+  deserialiseInsertRequest, deserialiseNamingDatum, encodeInsertRequest,
+  encodeNamingDatum, extractNamingDatum, insertRequestShape, namingDatumShape,
+  serialiseInsertRequest, serialiseNamingDatum, twoDestinationDatum,
 } from './naming-wire.mjs';
 
 const lifecycleCorpus = JSON.parse(readFileSync(new URL('../lean/lifecycle-corpus.json', import.meta.url)));
@@ -80,6 +82,21 @@ for (const address of addresses) {
 
 const queuedVerdict = queueClaim(namingInitial(), {spelling: 'alice', fixture: aliceFixture, accepted: true});
 const queued = ok(queuedVerdict);
+const insertRequest = queued.state.registry.requests[0];
+const insertRequestRow = lifecycleCorpus.wire.find(row => row.id === 'WR01-insert-request-refund-roundtrip');
+const encodedInsertRequest = encodeInsertRequest(insertRequest);
+assert.deepEqual(insertRequestShape(encodedInsertRequest), {
+  commitmentIndex: 0, commitmentArity: 1, proposalIndex: 0, proposalArity: 6});
+assert.deepEqual(decodeInsertCommitment(encodedInsertRequest), insertRequest.proposal);
+assert.deepEqual(serialiseInsertRequest(insertRequest), insertRequestRow.expectedBytes);
+assert.deepEqual(deserialiseInsertRequest(insertRequest, insertRequestRow.expectedBytes), insertRequest.proposal);
+assert.deepEqual(serialiseInsertRequest({...insertRequest, proposal: insertRequest.proposal,
+  token: {policy: insertRequest.proposal.applicationPolicy, name: {insert: {proposal: insertRequest.proposal}}}}),
+insertRequestRow.expectedBytes);
+assert.equal(deserialiseInsertRequest(insertRequest, insertRequestRow.malformedBytes), null);
+assert.deepEqual(deserialiseInsertCommitment(insertRequestRow.redirectedBytes),
+  {...insertRequest.proposal, refundAddress: 61});
+assert.equal(deserialiseInsertRequest(insertRequest, insertRequestRow.redirectedBytes), null);
 assert.equal(queued.state.registry.requests[0].proposal.refundAddress, 60,
   'queued Insert commits the stored cancellation refund address');
 const cancellationRefund = {destination: 60, value: 0};
