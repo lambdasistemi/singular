@@ -69,6 +69,7 @@ const correspondence = {
 const observed = new Set();
 let current;
 let keyLost = false;
+let recoveredController = false;
 let initializationState = {consumedSeeds: []};
 let lastExecutingWitness = null;
 let lastRetirementAction = null;
@@ -89,6 +90,19 @@ const resolutionLabel = () => {
   const value = resolution();
   return typeof value === 'string' ? value : value?.status ?? value?.error ?? 'unknown';
 };
+
+const destinationControls = ['destination-clear', 'destination-set', 'destination-replace',
+  'destination-missing-signer', 'destination-tamper', 'destination-quorum-tamper'];
+const recoveryAttemptControls = ['recovery-wrong-reveal', 'recovery-missing-signer',
+  'recovery-wrong-signer', 'recovery-missing-fresh', 'recovery-tamper',
+  'recovery-representative-tamper', 'recovery-registry-tamper', 'recovery-quorum-tamper',
+  'recovery-forged-digest', 'recovery-accept'];
+const recoveredControls = ['recovery-replay', 'recovery-old-controller',
+  'recovery-new-controller-update'];
+const retirementStartControls = ['retirement-insufficient', 'retirement-quorum-takeover',
+  'retirement-quorum-redirect', 'retirement-wrong-custody', 'retirement-controller',
+  'retirement-quorum'];
+const disable = (ids, disabled) => ids.forEach(id => { element(id).disabled = disabled; });
 
 function renderReconciliation() {
   const body = element('reconciliation');
@@ -127,10 +141,28 @@ function renderState() {
     summary.append(item);
   }
   const pending = current.registry.requests.find(request => request.operation === 'update');
+  const hasActiveRecord = active !== undefined;
+  disable(destinationControls, !hasActiveRecord || keyLost);
+  disable(recoveryAttemptControls, !hasActiveRecord || !keyLost || recoveredController);
+  disable(recoveredControls, !hasActiveRecord || !recoveredController);
+  disable(retirementStartControls, !hasActiveRecord);
+  element('recovery-key-loss').disabled = !hasActiveRecord || keyLost || recoveredController;
   element('retirement-fold').disabled = !pending;
   element('retirement-withdraw').disabled = !pending;
   element('retirement-replay').disabled = !pending || lastRetirementAction === null;
   element('retirement-reregister').disabled = resolutionLabel() !== 'retired';
+  const initialized = initializationState.consumedSeeds.includes(namingConsumerBinding.canonicalSeed);
+  element('initialization-canonical').disabled = initialized;
+  element('initialization-repeat').disabled = !initialized;
+  element('state-guidance').textContent = pending
+    ? 'Retirement is pending. Use the explicit withdrawal or replay refusal, fold to Over, or Reset to active alice.'
+    : resolutionLabel() === 'retired'
+      ? 'The name is retired / Over. Active-name controls are unavailable. Reset to active alice to start another journey.'
+      : keyLost
+        ? 'The current key is marked lost. Use a recovery attempt or Reset to active alice.'
+        : recoveredController
+          ? 'Recovery completed. The replay, old-controller, and new-controller controls are now available.'
+          : 'Active-name controls are available. Mark the current key lost to enable recovery attempts.';
 }
 
 function show(label, verdict, details = {}) {
@@ -144,6 +176,7 @@ function show(label, verdict, details = {}) {
 function reset(label = 'Reset to active alice.') {
   current = activeState();
   keyLost = false;
+  recoveredController = false;
   lastExecutingWitness = null;
   lastRetirementAction = null;
   show(label, {accepted: true}, {observation: resolutionLabel()});
@@ -207,7 +240,7 @@ element('destination-missing-signer').onclick = () => {
   maintain(candidate, [], 'Destination change without controller signer', 'controller-signature', ['LM02-maintenance-unauthorized-refused']);
 };
 element('destination-tamper').onclick = () => {
-  const candidate = {...clone(record().fixture), nextControlCommitment: clone(freshControllerCommitment)};
+  const candidate = {...clone(record().fixture), nextControlCommitment: nextCommitment(otherControllerAddress)};
   maintain(candidate, [record().fixture.controlAddress], 'Destination action with commitment tamper', 'destination-field-preservation', ['LM03-maintenance-field-tamper-refused']);
 };
 element('destination-quorum-tamper').onclick = () => {
@@ -219,6 +252,7 @@ element('destination-quorum-tamper').onclick = () => {
 element('recovery-key-loss').onclick = () => {
   reset('Recovery journey reset: alice is active.');
   keyLost = true;
+  recoveredController = false;
   const hashInput = nextControlHashInput(nextControllerAddress);
   const computedCommitment = nextCommitment(nextControllerAddress);
   if (!equal(computedCommitment, record().fixture.nextControlCommitment)) {
@@ -276,6 +310,7 @@ element('recovery-accept').onclick = () => {
     ['LR01-recovery-accepts']);
   current = verdict.value.state;
   keyLost = false;
+  recoveredController = true;
   renderState();
 };
 element('recovery-replay').onclick = () => expect('Replay consumed next-controller reveal', executeLifecycle(
@@ -335,28 +370,6 @@ element('retirement-wrong-custody').onclick = () => {
   expect('Retirement with wrong representative custody', executeLifecycle(action), 'retirement-request',
     ['LT08-wrong-retirement-custody-refused']);
 };
-element('retirement-quorum-takeover').onclick = () => {
-  const quorum = record().fixture.retirementQuorum;
-  const candidate = {...clone(record().fixture), controlAddress: clone(otherControllerAddress)};
-  maintain(candidate, [], 'Retirement quorum attempts controller takeover', 'controller-signature',
-    ['LT05-quorum-control-takeover-refused'], false, quorum.members.slice(0, quorum.threshold));
-};
-element('retirement-quorum-redirect').onclick = () => {
-  const quorum = record().fixture.retirementQuorum;
-  const candidate = {...clone(record().fixture), paymentDestination: clone(otherControllerAddress)};
-  maintain(candidate, [], 'Retirement quorum attempts payment redirection', 'controller-signature',
-    ['LT06-quorum-payment-redirection-refused'], false, quorum.members.slice(0, quorum.threshold));
-};
-element('retirement-wrong-custody').onclick = () => {
-  const beforeRecord = record();
-  const requestId = freshId();
-  const request = retirementRequest(current, beforeRecord, application(), requestId);
-  request.held = {...request.held, policy: request.held.policy + 1};
-  const action = {retire: {source: beforeRecord.outputId, requestId, key: beforeRecord.key,
-    request, route: 'controller', witnesses: {requiredSigners: [clone(beforeRecord.fixture.controlAddress)], quorumSigners: []}}};
-  expect('Retirement with wrong representative custody', executeLifecycle(action), 'retirement-request',
-    ['LT08-wrong-retirement-custody-refused']);
-};
 element('retirement-controller').onclick = () => retire('controller', [], 'Queue retirement with controller', null,
   ['LT01-controller-retirement-accepts']);
 element('retirement-quorum').onclick = () => {
@@ -370,14 +383,6 @@ element('retirement-withdraw').onclick = () => {
     'retirement-withdrawal-refused', ['LT07-retirement-withdrawal-refused']);
 };
 element('retirement-replay').onclick = () => expect('Replay retirement initiation',
-  executeLifecycle(clone(lastRetirementAction)), 'naming-record-unavailable', ['LT09-retirement-replay-refused']);
-element('retirement-withdraw').onclick = () => {
-  const pending = current.registry.requests.find(request => request.operation === 'update');
-  expect('Withdraw a queued retirement request', executeLifecycle(
-    {withdrawRetirement: {requestId: pending.id}}), 'retirement-withdrawal-refused',
-  ['LT07-retirement-withdrawal-refused']);
-};
-element('retirement-replay').onclick = () => expect('Replay retirement initiation from pending',
   executeLifecycle(clone(lastRetirementAction)), 'naming-record-unavailable', ['LT09-retirement-replay-refused']);
 element('retirement-fold').onclick = () => {
   const pending = current.registry.requests.find(request => request.operation === 'update');
@@ -423,12 +428,6 @@ element('initialization-registry').onclick = () => initialize('Substituted regis
 element('initialization-policy').onclick = () => initialize('Substituted application policy initialization',
   {...canonicalAttempt(), applicationPolicy: namingConsumerBinding.applicationPolicy + 1}, 'application-policy',
   ['LI05-substituted-policy-refused']);
-element('initialization-representative-policy').onclick = () => initialize('Substituted representative policy initialization',
-  {...canonicalAttempt(), representativePolicy: namingConsumerBinding.representativePolicy + 1},
-  'representative-policy', ['LI07-substituted-representative-policy-refused']);
-element('initialization-validator').onclick = () => initialize('Substituted validator script initialization',
-  {...canonicalAttempt(), validatorScript: namingConsumerBinding.validatorScript + 1},
-  'validator-script', ['LI08-substituted-validator-script-refused']);
 element('initialization-representative-policy').onclick = () => initialize('Substituted representative policy initialization',
   {...canonicalAttempt(), representativePolicy: namingConsumerBinding.representativePolicy + 1},
   'representative-policy', ['LI07-substituted-representative-policy-refused']);

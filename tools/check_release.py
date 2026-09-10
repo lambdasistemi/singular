@@ -61,7 +61,6 @@ with tarfile.open(archive / filename) as bundle:
         "artifacts/review/simulator/lifecycle-journeys.mjs",
         "artifacts/review/simulator/lifecycle.mjs",
         "artifacts/review/simulator/naming-wire.mjs",
-        "artifacts/review/simulator/lifecycle-corpus.json",
         "artifacts/review/tools/axioms.lean",
         "artifacts/review/tools/check_model.py",
         "artifacts/SHA256SUMS",

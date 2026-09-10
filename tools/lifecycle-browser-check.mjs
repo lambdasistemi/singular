@@ -116,10 +116,25 @@ try {
   await clickResult('#retirement-wrong-custody', 'retirement-request', 'wrong retirement custody refused');
   await clickResult('#retirement-controller', '"observation": "pending"', 'controller queues pending retirement');
   check((await page.locator('#state-summary').innerText()).includes('pending'), 'pending resolve is visible');
+  check(await page.locator('#destination-clear').isDisabled(), 'active-only controls disabled while retirement pending');
+  for (const id of ['destination-set', 'recovery-key-loss', 'retirement-controller', 'retirement-quorum']) {
+    check(await page.locator(`#${id}`).isDisabled(), `${id} disabled while retirement pending`);
+  }
+  for (const id of ['retirement-withdraw', 'retirement-replay', 'retirement-fold']) {
+    check(await page.locator(`#${id}`).isEnabled(), `${id} enabled while retirement pending`);
+  }
   await clickResult('#retirement-withdraw', 'retirement-withdrawal-refused', 'retirement withdrawal refused');
   await clickResult('#retirement-replay', 'naming-record-unavailable', 'retirement replay refused');
   await clickResult('#retirement-fold', 'retired / Over', 'separate permissionless fold completes retirement');
   check((await page.locator('#state-summary').innerText()).includes('retired'), 'retired resolve is visible');
+  check(await page.locator('#destination-clear').isDisabled(), 'clear destination disabled after Over');
+  for (const id of ['recovery-key-loss', 'retirement-controller', 'retirement-withdraw',
+    'retirement-replay', 'retirement-fold']) {
+    check(await page.locator(`#${id}`).isDisabled(), `${id} disabled after Over`);
+  }
+  check(await page.locator('#retirement-reregister').isEnabled(), 'post-Over re-registration refusal enabled');
+  check((await page.locator('#state-guidance').innerText()).includes('Reset to active alice'),
+    'post-Over reset guidance visible');
   await clickResult('#retirement-reregister', 'occupied-key', 're-registration after Over refused');
   await clickResult('#retirement-reset', 'other authorization route', 'reset for quorum route');
   await clickResult('#retirement-insufficient', 'retirement-authorization', 'insufficient quorum refused');
