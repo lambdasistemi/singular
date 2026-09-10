@@ -181,8 +181,12 @@ jobs:
       # Issue #37: the epic's runnable artifact. One command boots a
       # cage, submits a request, applies it and reads the resulting
       # state back on a real devnet, printing one line per step plus
-      # the pinned script identities it exercised (read from
-      # onchain/script-identity.json). It is the same library code
+      # the pinned unapplied script identities (read from
+      # onchain/script-identity.json) and the applied hashes this run
+      # derived from them and carried on chain — the
+      # derived-applied-identity assertion fails the job when the
+      # derivation does not reproduce an applied hash. It is the
+      # same library code
       # path as the e2e suite — no mocks, no stubbed node — and it is
       # hermetic (D-011): the Nix-built binary brings the locked
       # cardano-node on its own PATH; no cabal, no package index, no

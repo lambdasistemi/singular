@@ -7,31 +7,38 @@
   "validators": [
     {
       "title": "request.request.spend",
-      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f"
+      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f",
+      "parameters": 2
     },
     {
       "title": "request.request.else",
-      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f"
+      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f",
+      "parameters": 2
     },
     {
       "title": "staking.staking.withdraw",
-      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
+      "parameters": 0
     },
     {
       "title": "staking.staking.else",
-      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
+      "parameters": 0
     },
     {
       "title": "state.state.mint",
-      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce",
+      "parameters": 1
     },
     {
       "title": "state.state.spend",
-      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce",
+      "parameters": 1
     },
     {
       "title": "state.state.else",
-      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce",
+      "parameters": 1
     }
   ]
 }

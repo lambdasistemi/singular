@@ -37,8 +37,18 @@ connection to a real 'cardano-node' spawned as a subprocess. No
 mocks, no stubbed node.
 
 At start it prints the upstream source revision and the pinned
-validator hashes read from @onchain/script-identity.json@, so the
-run states which contracts it exercised.
+validator hashes read from @onchain/script-identity.json@. Those
+pins are the /unapplied/ blueprint identities — the stable,
+reviewable scripts issue #34 enforces — not the hashes a
+transaction carries: the on-chain scripts are parameterized (the
+state validator takes 1 parameter, the request validator 2), so
+applying the parameters changes the hash. The run therefore also
+reports the /applied/ hashes it actually used, with their
+parameters named, and asserts the derivation between the two
+layers (marker @derived-applied-identity@): each applied hash
+must equal the hash of the unapplied blueprint code with this
+instance's parameters applied, or the run fails naming both
+hashes and the parameters.
 -}
 module Main (main) where
 
@@ -84,7 +94,11 @@ import Cardano.Ledger.Api.Tx.Body (
     scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
+import Cardano.Ledger.Api.Tx.Wits (
+    Redeemers (..),
+    rdmrsTxWitsL,
+    scriptTxWitsL,
+ )
 import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
@@ -92,6 +106,7 @@ import PlutusTx.IsData.Class (FromData (..))
 
 import Cardano.MPFS.Cage.Blueprint (
     applyPreviousPolicies,
+    applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -118,6 +133,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     extractCageDatum,
     findStateUtxo,
     mkInlineDatum,
+    onChainTokenId,
     requestAddrFromCfg,
     scriptHashBytes,
     toLedgerData,
@@ -201,19 +217,21 @@ journey :: IO ()
 journey = do
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
     identityPath <- identityPathFromEnv
-    printIdentity =<< readScriptIdentity identityPath
+    si <- readScriptIdentity identityPath
+    printIdentity si
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
     case
         ( extractCompiledCode "state.state" bp
         , extractCompiledCode "request.request" bp
+        , extractCompiledCode "staking.staking" bp
         ) of
-        (Just stateBytes, Just requestBytes) ->
-            runJourney stateBytes requestBytes
+        (Just stateBytes, Just requestBytes, Just stakingBytes) ->
+            runJourney si stateBytes requestBytes stakingBytes
         _ ->
             failWith
-                "state.state or request.request compiled code \
-                \not found in blueprint"
+                "state.state, request.request or staking.staking \
+                \compiled code not found in blueprint"
 
 -- ---------------------------------------------------------
 -- Identity: which contracts this run exercises
@@ -230,8 +248,11 @@ identityPathFromEnv =
         >>= maybe (pure defaultIdentityPath) pure
 
 {- | The pinned identities in @onchain\/script-identity.json@:
-the upstream source revision and the compiled validator
-hashes the repository pins.
+the upstream source revision, each validator's parameter
+count, and the compiled validator hashes the repository
+pins. Those pins are the /unapplied/ blueprint scripts —
+the stable, reviewable identity — not the hashes the
+transactions of a particular instance carry.
 -}
 data ScriptIdentity = ScriptIdentity
     { siRevision :: Text
@@ -242,12 +263,17 @@ data ValidatorPin = ValidatorPin
     { vpTitle :: Text
     -- ^ Validator title, e.g. @state.state.spend@
     , vpHash :: Text
-    -- ^ Compiled script hash pinned in the manifest
+    -- ^ Unapplied compiled script hash pinned in the manifest
+    , vpParameters :: Int
+    -- ^ How many parameters the on-chain instance applies
     }
 
 instance FromJSON ValidatorPin where
     parseJSON = withObject "ValidatorPin" $ \o ->
-        ValidatorPin <$> o .: "title" <*> o .: "hash"
+        ValidatorPin
+            <$> o .: "title"
+            <*> o .: "hash"
+            <*> o .: "parameters"
 
 instance FromJSON ScriptIdentity where
     parseJSON = withObject "ScriptIdentity" $ \o ->
@@ -270,18 +296,195 @@ printIdentity si = do
     one v =
         emit
             "identity"
-            ( "pinned validator "
+            ( "pinned unapplied validator "
                 <> T.unpack (vpTitle v)
-                <> " hash "
+                <> " hash 0x"
                 <> T.unpack (vpHash v)
+                <> " (parameters="
+                <> show (vpParameters v)
+                <> ")"
             )
+
+{- | Assert the derivation between the two identity layers
+(marker @derived-applied-identity@).
+
+The manifest pins the /unapplied/ blueprint scripts. The
+scripts that run on chain are parameterized: the state
+validator takes 1 parameter (@previousPolicies@, @[]@ for
+this genesis cage), the request validator takes 2
+(@statePolicyId@, @cageToken@), and the staking validator
+takes none, so its two layers coincide. This step
+
+  * requires each pinned unapplied hash to be the hash of
+    the blueprint's raw code, so the pinned layer is what
+    this run's blueprint actually contains;
+
+  * applies this instance's parameters to the unapplied
+    code, hashes the result, and requires it to equal the
+    hash of the script the run actually carried to the
+    node: the boot transaction's witness holds exactly the
+    derived state script, the update transaction's witness
+    exactly the derived state and request scripts.
+
+Any mismatch fails the run naming both hashes and the
+parameters used — the relationship between the layers is a
+check, not an assumption.
+-}
+stepDerivedIdentity ::
+    ScriptIdentity ->
+    CageConfig ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    TokenId ->
+    ConwayTx ->
+    ConwayTx ->
+    IO ()
+stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = do
+    let hashHex = hex . scriptHashBytes
+        -- The unapplied layer: the blueprint's raw code hashes.
+        unappliedState = hashHex (computeScriptHash rawState)
+        unappliedRequest = hashHex (computeScriptHash rawRequest)
+        unappliedStaking = hashHex (computeScriptHash rawStaking)
+    -- The pinned layer is the unapplied code this run's
+    -- blueprint actually contains.
+    checkPinnedUnapplied si "state.state" unappliedState
+    checkPinnedUnapplied si "request.request" unappliedRequest
+    checkPinnedUnapplied si "staking.staking" unappliedStaking
+    -- Derivation: apply this instance's parameters to the
+    -- unapplied code and hash the result.
+    let stateHash = computeScriptHash (applyPreviousPolicies [] rawState)
+        stateHex = hashHex stateHash
+        stateParams = "previousPolicies=[]"
+        tokenName = let TokenId (AssetName an) = tid in fromShort an
+        requestHash =
+            computeScriptHash $
+                applyRequestParams
+                    (scriptHashBytes stateHash)
+                    (onChainTokenId tid)
+                    rawRequest
+        requestHex = hashHex requestHash
+        requestParams =
+            "statePolicyId=0x"
+                <> stateHex
+                <> " cageToken=0x"
+                <> hex tokenName
+    -- The run's config follows from the same derivation.
+    unless (cfgScriptHash cfg == stateHash) $
+        failWith $
+            "derived-applied-identity failed for state: \
+            \derived applied hash 0x"
+                <> stateHex
+                <> " (parameters "
+                <> stateParams
+                <> ") but the run's state policy hash is 0x"
+                <> hashHex (cfgScriptHash cfg)
+    -- The scripts the run actually carried to the node.
+    let bootWitness = witnessScriptHashes bootTx
+        updateWitness = witnessScriptHashes updateTx
+    unless (bootWitness == Set.singleton stateHex) $
+        failWith $
+            "derived-applied-identity failed for state: \
+            \expected the boot transaction to carry exactly \
+            \the derived applied hash 0x"
+                <> stateHex
+                <> " (parameters "
+                <> stateParams
+                <> ") but its script witness held "
+                <> show (Set.toList bootWitness)
+    unless (updateWitness == Set.fromList [stateHex, requestHex]) $
+        failWith $
+            "derived-applied-identity failed for request: \
+            \expected the update transaction to carry exactly \
+            \the derived applied hashes 0x"
+                <> stateHex
+                <> " and 0x"
+                <> requestHex
+                <> " (request parameters "
+                <> requestParams
+                <> ") but its script witness held "
+                <> show (Set.toList updateWitness)
+    emit
+        "derived-applied-identity"
+        ( "state applied hash 0x"
+            <> stateHex
+            <> " = unapplied 0x"
+            <> unappliedState
+            <> " with parameters "
+            <> stateParams
+            <> " (1 parameter) — the boot tx carried \
+               \exactly this script"
+        )
+    emit
+        "derived-applied-identity"
+        ( "request applied hash 0x"
+            <> requestHex
+            <> " = unapplied 0x"
+            <> unappliedRequest
+            <> " with parameters "
+            <> requestParams
+            <> " (2 parameters) — the update tx carried \
+               \exactly this script"
+        )
+    emit
+        "derived-applied-identity"
+        ( "staking applied hash 0x"
+            <> unappliedStaking
+            <> " takes no parameters (0) — applied and \
+               \unapplied coincide, matching the pin"
+        )
+
+-- | Require every manifest entry under the validator
+-- prefix to pin exactly @unappliedHex@ — the hash of this
+-- run's blueprint raw code.
+checkPinnedUnapplied :: ScriptIdentity -> Text -> String -> IO ()
+checkPinnedUnapplied si prefix unappliedHex =
+    case pins of
+        [] ->
+            failWith
+                ( "derived-applied-identity: no pinned unapplied \
+                  \entry for "
+                    <> T.unpack prefix
+                )
+        (h : rest) ->
+            unless (all (== h) rest && h == T.pack unappliedHex) $
+                failWith $
+                    "derived-applied-identity: the manifest pins \
+                    \unapplied hash "
+                        <> T.unpack h
+                        <> " for "
+                        <> T.unpack prefix
+                        <> " but this run's blueprint code \
+                           \hashes to 0x"
+                        <> unappliedHex
+  where
+    pins =
+        [ vpHash v
+        | v <- siValidators si
+        , prefix `T.isPrefixOf` vpTitle v
+        ]
+
+-- | The hashes of the PlutusV3 scripts a submitted
+-- transaction carried in its witness set — the bytes the
+-- node received and executed.
+witnessScriptHashes :: ConwayTx -> Set.Set String
+witnessScriptHashes tx =
+    Set.fromList
+        [ hex (scriptHashBytes sh)
+        | sh <- Map.keys (tx ^. witsTxL . scriptTxWitsL)
+        ]
 
 -- ---------------------------------------------------------
 -- The journey, on a real devnet
 -- ---------------------------------------------------------
 
-runJourney :: SBS.ShortByteString -> SBS.ShortByteString -> IO ()
-runJourney stateBytes requestBytes = do
+runJourney ::
+    ScriptIdentity ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    IO ()
+runJourney si stateBytes requestBytes stakingBytes = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -316,10 +519,19 @@ runJourney stateBytes requestBytes = do
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
         let cfg = cageCfg stateBytes requestBytes seedRef
-        (tokenId, bootRoot) <- stepBoot cfg prov submit tm
+        (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
         reqCount <- stepRequest cfg prov submit tokenId
         stepVerifyAbsent cfg prov mirrorRef tokenId
-        stepApply cfg prov submit tm tokenId reqCount
+        appliedTx <- stepApply cfg prov submit tm tokenId reqCount
+        stepDerivedIdentity
+            si
+            cfg
+            stateBytes
+            requestBytes
+            stakingBytes
+            tokenId
+            bootTx
+            appliedTx
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
         stepReject cfg prov submit tm tokenId appliedState
@@ -333,7 +545,7 @@ stepBoot ::
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
-    IO (TokenId, OnChainRoot)
+    IO (TokenId, OnChainRoot, ConwayTx)
 stepBoot cfg prov submit tm = do
     unsigned <- bootTokenImpl cfg prov genesisAddr
     signed <- submitWithGenesis submit unsigned
@@ -361,7 +573,7 @@ stepBoot cfg prov submit tm = do
             <> " root=0x"
             <> hex (unOnChainRoot bootRoot)
         )
-    pure (tid, bootRoot)
+    pure (tid, bootRoot, signed)
 
 -- | Submit an insert request into the cage's request address
 -- and observe it land.
@@ -412,7 +624,7 @@ stepApply ::
     TrieManager IO ->
     TokenId ->
     Int ->
-    IO ()
+    IO ConwayTx
 stepApply cfg prov submit tm tid reqCount = do
     unsigned <- updateTokenImpl cfg prov tm tid genesisAddr
     signed <- submitWithGenesis submit unsigned
@@ -428,6 +640,7 @@ stepApply cfg prov submit tm tid reqCount = do
             <> "->"
             <> show (length after)
         )
+    pure signed
 
 -- | Read the resulting state back from the chain: decode the
 -- state UTxO's inline datum and observe that the trie root

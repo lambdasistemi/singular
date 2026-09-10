@@ -20,7 +20,11 @@ this document.
 0. **Identity header.** Reads `onchain/script-identity.json` (path
    from `MPFS_SCRIPT_IDENTITY`, default `../onchain/script-identity.json`)
    and prints the upstream source revision and every pinned validator
-   hash, so the output states which contracts the run exercised.
+   hash, each labelled **unapplied** with the validator's parameter
+   count. The pins are the reviewable blueprint identities (#34) —
+   not the hashes a transaction carries: the on-chain scripts are
+   parameterized (state 1 parameter, request 2, staking 0), and
+   applying parameters changes the hash.
 1. **Start a real devnet.** Spawns `cardano-node` (found on `PATH`;
    the Nix wrapper supplies the locked node) with generated genesis,
    connects over node-to-client, and verifies the connection by
@@ -44,7 +48,20 @@ this document.
 5. **apply.** Acts as the oracle: builds the update with
    `updateTokenImpl` (proof from the trie manager), signs, submits,
    and observes the request UTxO being consumed.
-6. **verify-present and the negative case.** After the apply, proves
+6. **derived-applied-identity.** Ties the two identity layers
+   together. First requires each pinned unapplied hash to equal the
+   hash of the blueprint's raw code this run actually loaded. Then
+   applies this instance's parameters to the unapplied code —
+   `previousPolicies=[]` for the state validator; `statePolicyId`
+   (the applied state hash) and `cageToken` for the request
+   validator; nothing for staking — hashes the result, and requires
+   the boot transaction's script witness to hold exactly the derived
+   state script and the update transaction's witness exactly the
+   derived state and request scripts. Prints each validator's
+   **applied** hash alongside its unapplied pin and its parameters;
+   any mismatch fails the run naming both hashes and the parameters
+   used.
+7. **verify-present and the negative case.** After the apply, proves
    the key is present with the expected value: replays the applied
    insert into the proof mirror, binds the claimed value into the
    inclusion proof, folds it, and compares against the chain-read
@@ -52,12 +69,12 @@ this document.
    hold and requires the fold to differ from that root
    (`rejected false claim`) — a negative case that would pass is
    itself a defect and fails the run.
-7. **read-back.** Queries the cage address, decodes the state UTxO's
+8. **read-back.** Queries the cage address, decodes the state UTxO's
    inline datum, and prints the resulting on-chain state: the trie
    root (verifying it moved from the boot root — the applied request
    is on chain), max fee, processing window, retract window and stake
    script.
-8. **negative section — the validators must refuse.** These are
+9. **negative section — the validators must refuse.** These are
    **MPFS cage** negative cases, exercised against a real devnet in
    the same run; no Singular naming behaviour is involved. A second,
    unapplied insert request is submitted (`reject-request`), the
