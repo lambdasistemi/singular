@@ -33,7 +33,7 @@ common warnings
 library
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   lib
+  hs-source-dirs:   lib naming/src
   build-depends:
     , aeson                  >=2.1  && <2.3
     , base                   >=4.14 && <5
@@ -78,6 +78,10 @@ library
     Cardano.MPFS.Cage.TxBuilder.Sweep
     Cardano.MPFS.Cage.TxBuilder.Update
     Cardano.MPFS.Cage.Types
+    Naming.Datum
+    Naming.Request
+    Naming.Wire
+    Naming.Wire.Vectors
 
 executable cage-test-vectors
   import:           warnings
@@ -136,16 +140,14 @@ executable journey
 -- the contract row LI01-canonical-initialization-accepts on a real
 -- devnet, reads the resulting state, binding, checkpoint datum and
 -- witness shape back from the chain, and fails non-zero on any
--- mismatch. Source lives in journey/li01/; every imported Haskell
--- module stays untouched.
+-- mismatch. Source lives in journey/li01/; the naming codec comes
+-- from the library (Naming.* moved inside this flake root, issue
+-- #51) and every imported Haskell module stays untouched.
 executable li01
   import:           warnings
   default-language: GHC2021
-  hs-source-dirs:   journey/li01 ../naming/src
+  hs-source-dirs:   journey/li01
   main-is:          Main.hs
-  other-modules:
-    Naming.Datum
-    Naming.Wire
   build-depends:
     , aeson
     , async
