@@ -8,6 +8,7 @@ import {pathToFileURL} from 'node:url';
 const root = resolve(process.argv[2] ?? '.');
 const evidence = await mkdtemp(join(tmpdir(), 'singular-lifecycle-browser-'));
 const publicFiles = new Map([
+  ['/index.html', ['simulator', 'index.html', 'text/html; charset=utf-8']],
   ['/lifecycle-view.html', ['simulator', 'lifecycle-view.html', 'text/html; charset=utf-8']],
   ['/lifecycle-journeys.mjs', ['simulator', 'lifecycle-journeys.mjs', 'text/javascript; charset=utf-8']],
   ['/lifecycle-view.mjs', ['simulator', 'lifecycle-view.mjs', 'text/javascript; charset=utf-8']],
@@ -80,10 +81,10 @@ try {
     check((await result.innerText()).includes(fragment), label);
   };
   const receipt = await page.evaluate(() => window.lifecycleCorpusReceipt);
-  check(receipt.discovered === 38 && receipt.executed === 38,
-    'Lean-derived lifecycle replay is 38/38');
-  check(await page.locator('#reconciliation tr').count() === 38,
-    'all 38 identities have public correspondence rows');
+  check(receipt.discovered === 43 && receipt.executed === 43,
+    'Lean-derived lifecycle replay is 43/43');
+  check(await page.locator('#reconciliation tr').count() === 43,
+    'all 43 identities have public correspondence rows');
 
   await clickResult('#destination-clear', 'Clear payment destination', 'destination clear');
   await clickResult('#destination-set', 'Set payment destination', 'destination set');
@@ -161,7 +162,7 @@ try {
   await clickResult('#wire-two-destinations', 'four-field-datum-shape', 'two destinations refused');
 
   const observed = await page.evaluate(() => window.lifecycleJourney.observed().sort());
-  check(observed.length === 38, 'all 38 model and corpus identities were browser-observed');
+  check(observed.length === 38, 'all 38 non-cancellation lifecycle identities were browser-observed');
   check(await page.getByText('No death oracle.', {exact: false}).isVisible(), 'no-death-oracle boundary visible');
   const rawAddressLimit = await page.locator('.limits p')
     .filter({hasText: 'Raw-address payment limit.'}).innerText();
@@ -169,8 +170,53 @@ try {
     && rawAddressLimit.includes('cannot prevent someone from sending directly')
     && rawAddressLimit.includes('previously saved raw Cardano address'),
   'retirement raw-address payment limit explained');
-  check(await page.getByText('No claim cancellation.', {exact: false}).isVisible(), 'claim-cancellation omission explained');
-  check(await page.locator('#claim-cancellation').count() === 0, 'no naming claim-cancellation control');
+  check(await page.getByText('Claim cancellation is separate.', {exact: false}).isVisible(),
+    'claim cancellation and retirement withdrawal are distinguished');
+  await page.goto(new URL('/index.html', page.url()).href, {waitUntil: 'networkidle'});
+  await page.selectOption('#naming-profile', 'm1-naming');
+  const namingWithdraw = page.locator('#naming-card').getByRole('button', {name: /withdraw/i});
+  check(await namingWithdraw.count() === 1, 'naming /withdraw/i claim-cancellation control present');
+  await page.click('#naming-claim');
+  const storedRefundAddress = await page.locator('#naming-state')
+    .evaluate(node => JSON.parse(node.textContent).registry.requests[0].proposal.refundAddress);
+  check(storedRefundAddress === 60, 'pending naming claim stores refund address');
+  await page.locator('#naming-cancel-approved').uncheck();
+  await namingWithdraw.click();
+  check((await page.locator('#naming-verdict').innerText()).includes('LC03-insert-attestation-cancellation-refused'),
+    'public cancellation requires separate approval');
+  observed.push('LC03-insert-attestation-cancellation-refused');
+  await page.locator('#naming-cancel-approved').check();
+  await page.locator('#naming-refund-redirect').check();
+  await namingWithdraw.click();
+  check((await page.locator('#naming-verdict').innerText()).includes('LC02-cancellation-redirect-refused'),
+    'public cancellation refuses refund redirection');
+  observed.push('LC02-cancellation-redirect-refused');
+  await page.locator('#naming-refund-redirect').uncheck();
+  await namingWithdraw.click();
+  check((await page.locator('#naming-verdict').innerText()).includes(
+    `LC01-cancellation-stored-refund-accepts: claim #1 withdrawn; copied stored refund address ${storedRefundAddress}`),
+    'public cancellation copies stored refund address');
+  const cancelledState = await page.locator('#naming-state').evaluate(node => JSON.parse(node.textContent));
+  check(cancelledState.claims.length === 0 && cancelledState.registry.requests.length === 0,
+    'public cancellation consumes pending claim');
+  await page.click('#naming-resolve');
+  check((await page.locator('#naming-verdict').innerText()).includes('absent'),
+    'public cancellation leaves name absent');
+  observed.push('LC01-cancellation-stored-refund-accepts');
+  await namingWithdraw.click();
+  check((await page.locator('#naming-verdict').innerText()).includes('LC06-cancellation-replay-refused'),
+    'public cancellation replay refused');
+  observed.push('LC06-cancellation-replay-refused');
+  await page.selectOption('#naming-profile', 'generic');
+  await page.selectOption('#naming-profile', 'm1-naming');
+  await page.click('#naming-claim');
+  await page.click('#naming-fold-first');
+  await namingWithdraw.click();
+  check((await page.locator('#naming-verdict').innerText()).includes('LC04-folded-claim-cancellation-refused'),
+    'public folded-claim cancellation refused');
+  observed.push('LC04-folded-claim-cancellation-refused');
+  check(JSON.stringify(observed.sort()) === JSON.stringify([...receipt.identities].sort()),
+    'all 43 model and corpus identities were browser-observed');
   check(external.length === 0, 'no external runtime requests');
   check(pageErrors.length === 0, `no page errors: ${pageErrors.join('; ')}`);
 

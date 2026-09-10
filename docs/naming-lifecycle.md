@@ -2,12 +2,13 @@
 
 ## Who this is for
 
-A holder of an active name wants to change where it receives payments, recover after losing the current control key, or retire the name permanently. The representative NFT stays with the application state while maintenance or recovery is in progress; retirement alone moves it into completion-only custody before burning it.
+A claimant wants to cancel before a name is folded, or a holder of an active name wants to change where it receives payments, recover after losing the current control key, or retire the name permanently. Cancellation consumes only an unfulfilled claim and copies its stored refund address. The representative NFT stays with the application state while maintenance or recovery is in progress; retirement alone moves it into completion-only custody before burning it.
 
-This page accompanies the integrated executable candidate. [Open the complete playable lifecycle](https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html) to set, replace, or clear a destination; recover a lost controller; and retire through either authorization route. The page replays the exact 38-row Lean-derived corpus, then lets the browser drive the same public transition. It remains a design-time model, not an observed ledger execution.
+This page accompanies the integrated executable candidate. [Open the complete playable lifecycle](https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html) to follow claim cancellation into the naming profile, set, replace, or clear a destination, recover a lost controller, and retire through either authorization route. The browser surfaces replay the exact 43-row Lean-derived corpus, then drive the same public transitions. It remains a design-time model, not an observed ledger execution.
 
 ```mermaid
 flowchart LR
+  ClaimPending[Unfulfilled claim<br/>stored refund address] -->|separate cancellation approval<br/>copies stored address| Absent[Name absent]
   Active[Active name<br/>representative in application output]
   Active -->|authorized destination maintenance| Active
   Active -->|reveal committed next controller<br/>and install fresh commitment| Active
@@ -69,9 +70,22 @@ Pending retirement is observably different from `Over`. The transition refuses a
 
 Retirement prevents name-based resolution. It cannot prevent someone from sending directly to a previously saved raw Cardano address: the protocol cannot retract an address another person already knows.
 
-## What remains deliberately unavailable
+## Cancel a pending claim
 
-Cancelling an unfulfilled naming claim is on hold. Certification of the original Insert never grants withdrawal permission, but authority has not yet named the withdrawal signer, refund recipient, refund value, or fee treatment. Therefore this lifecycle surface provides no naming-withdrawal button, default, or success claim. The generic registry simulator's withdrawal demonstration remains generic behavior, not naming policy.
+The application records the refund address in the pending request and therefore inside the Insert commitment that names its action token. A separate cancellation approval can consume that exact pending claim only when its requested refund destination equals the stored address. The withdrawal copies the address rather than choosing it again, leaves the name absent, and creates no representative.
+
+```mermaid
+sequenceDiagram
+  participant Claimant
+  participant App as Application policy
+  participant Request as Pending naming claim
+  Claimant->>App: ask to cancel exact pending claim
+  App->>Request: approve withdrawal bound to request<br/>and stored refund address
+  Request->>Request: consume claim; copy stored address
+  Request-->>Claimant: name remains absent
+```
+
+The transition refuses a different refund address, the original Insert certification without separate cancellation authority, a claim already folded into an active name, and replay of a consumed cancellation. No fee, deposit, price, bond, or refund-value schedule follows from the address ruling. Retirement-request withdrawal remains a different, required refusal.
 
 ## Consumer and ledger boundary
 
@@ -88,6 +102,6 @@ The historical Cage types are evidence about encodings and precedents, not an as
 
 ## Evidence and release status
 
-The browser surface drives integrated maintenance, recovery, and both retirement routes, including their refusal cases. It keeps retirement initiation separate from the permissionless completion fold and shows `pending` before `retired / Over`. Its reconciliation table binds each of the 38 model/corpus identities to a public control or assertion. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
+The browser surfaces drive pending-claim cancellation, integrated maintenance, recovery, and both retirement routes, including their refusal cases. They keep retirement initiation separate from the permissionless completion fold and show `pending` before `retired / Over`. The reconciliation binds each of the 43 model/corpus identities to a public control or assertion. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
 
 This remains an unaccepted executable design candidate. Lean proof, finite replay, source-bound contract evidence, a built archive, and a live preview are distinct from a compiled Cardano validator or observed ledger execution.

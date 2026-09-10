@@ -7,13 +7,13 @@
   ],
   "what-you-can-do": [
     {
-      "text": "Queue the first claim for the demo spelling alice: the claim waits with an application approval while the key stays absent, because approval reserves nothing. Queue a competing claim for the same spelling; two claims may both sit pending. Fold the first pending claim: the first valid absent-key fold succeeds, alice becomes Active, and the record carries the four certified fixture fields unchanged. Fold the competing claim: it is refused with occupied-key, because uniqueness is decided only when a certified Insert folds. Resolve alice with an authenticated view: the observation is active with the payment destination, control address, next-control commitment, and retirement quorum. Finally submit a crafted Delete: the naming transition parses the generic action shape and refuses it by name with naming-no-delete.",
+      "text": "Queue the first claim for the demo spelling alice: it waits while the key stays absent, because approval reserves nothing. Separately authorize withdrawal to copy the refund address stored in that request; redirection, Insert certification alone, cancellation after fold, and replay are refused. Then queue two claims for alice, fold the first to Active, and observe the competing fold refused with occupied-key. Resolve alice to read the certified fixture, and submit a crafted Delete to see naming-no-delete.",
       "pause": 400
     }
   ],
   "what-you-see-when-it-is-refused": [
     {
-      "text": "Every refusal names its intended condition, and a generic exception is a defect. The table lists the duplicate fold refused with occupied-key, the crafted delete refused with naming-no-delete, the unapproved queue refused with application-approval, the substituted representative refused with representative-identity, the misbound proposal refused with insert-binding, and the unauthenticated view refused with unauthenticated.",
+      "text": "Every refusal names its intended condition, and a generic exception is a defect. Cancellation refuses refund redirection, missing separate approval, an already folded claim, and replay. The remaining rows cover duplicate folding, crafted Delete, unapproved queueing, substituted representative identity, proposal misbinding, and unauthenticated resolution.",
       "pause": 400
     }
   ],
@@ -31,7 +31,7 @@
   ],
   "fixture-fields-and-finite-model-limits": [
     {
-      "text": "The playable claim card carries four fixture fields: an optional canonical payment destination, a canonical base or enterprise controller address with a payment-key credential, a thirty-two-byte next-control commitment, and a threshold quorum of payment-key hashes. They are finite-model values, not economic policy. Continue to the playable lifecycle for maintenance, recovery, and split retirement. Naming claim cancellation remains on hold and has no button; retirement request withdrawal is a distinct refusal case.",
+      "text": "The playable claim card carries four fixture fields: an optional canonical payment destination, a canonical controller address, a thirty-two-byte next-control commitment, and a threshold quorum. The pending request also stores its refund address inside the Insert commitment, and cancellation can only copy it. No fee, deposit, price, bond, or refund-value schedule is invented. Retirement request withdrawal remains a distinct refusal case.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "b71dd979e08e9650fc6f3de0e6e0506b60f6cddc784609867ad7fdbd271048af"
+    "sha256": "d4fa8712736c20b4239a291c52aa1fd58ae0bceef608018f6b2744bacc048327"
   }
 }

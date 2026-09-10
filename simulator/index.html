@@ -359,8 +359,9 @@
 </div><details id="refused-moves"><summary id="refused-summary">Try a deliberate refusal</summary><div id="refused-list"></div></details><div id="ui-error" role="alert"></div></section>
 <section class="card" id="naming-card"><h2>First-release naming profile <small>m1-naming · unaccepted candidate — a labelled engine beside, never instead of, the generic profile</small></h2><div class="manual-grid"><fieldset><legend>Choose the profile explicitly</legend><label>Profile <select id="naming-profile" aria-label="Select the naming profile"><option value="generic">generic — registry demo</option><option value="m1-naming">m1-naming — naming claims (unaccepted)</option></select></label><p>Until m1-naming is selected its controls stay inert: no engine switch happens implicitly.</p></fieldset>
 <fieldset><legend>Claim and fold the demo spelling <code>alice</code></legend><label><input id="naming-approved" type="checkbox" checked> Application approval accepted</label><button id="naming-claim" class="primary" disabled>Queue first claim</button><button id="naming-claim-competing" disabled>Queue competing claim</button><button id="naming-fold-first" disabled>Fold first pending</button><button id="naming-fold-second" disabled>Fold second pending</button><button id="naming-resolve" disabled>Resolve alice (authenticated)</button></fieldset>
+<fieldset><legend>Cancel an unfulfilled naming claim</legend><label><input id="naming-cancel-approved" type="checkbox" checked disabled> Separate cancellation approval accepted</label><label><input id="naming-refund-redirect" type="checkbox" disabled> Try redirecting the refund</label><button id="naming-withdraw" disabled>Withdraw pending claim</button><p>The claim stores its refund address when queued. Withdrawal copies that address; it cannot choose another destination.</p></fieldset>
 <fieldset><legend>Try a crafted Delete</legend><p>The naming transition accepts the generic action shape. A crafted generic Delete is refused by name.</p><button id="naming-crafted-delete" disabled>Submit crafted Delete</button></fieldset></div>
-<output id="naming-verdict" aria-live="polite"></output><pre id="naming-state">{}</pre><p>Naming observations report the four certified fixture fields — payment destination, control address, next-control commitment, retirement quorum — carried unchanged from the claim. Addresses are canonical binary base or enterprise addresses, and the next-control commitment is a 32-byte digest; <code>alice</code> is a demo fixture. Use <a href="./lifecycle-view.html">Lifecycle journeys</a> for maintenance, recovery, and retirement. No ledger, validator, wallet, payment, or refund execution; naming withdrawal remains unavailable. This profile is an unaccepted candidate.</p><h3>Naming theorem lamps <small id="naming-found"></small></h3><div id="naming-ledger" class="manual-grid"></div></section>
+<output id="naming-verdict" aria-live="polite"></output><pre id="naming-state">{}</pre><p>Naming observations report the four certified fixture fields — payment destination, control address, next-control commitment, retirement quorum — carried unchanged from the claim. Addresses are canonical binary base or enterprise addresses, and the next-control commitment is a 32-byte digest; <code>alice</code> is a demo fixture. Use <a href="./lifecycle-view.html">Lifecycle journeys</a> for maintenance, recovery, and retirement. Cancellation copies the refund address stored in the pending request; this finite model does not execute a ledger refund or invent fees, deposits, prices, or bonds. This profile is an unaccepted candidate.</p><h3>Naming theorem lamps <small id="naming-found"></small></h3><div id="naming-ledger" class="manual-grid"></div></section>
 <details class="card" id="scene-drawer" open><summary>NFT and UTxO custody <small>Application ↔ request custody → burn; Insert creates a representative</small></summary><svg id="scene" viewBox="0 0 1000 300" role="img" aria-label="Registry entry, application outputs, and pending request custody"></svg><div id="custody"></div><details><summary>Successive batch effects</summary><div id="batch-effects"></div></details></details>
 <section class="card" id="lamps"><h2>Theorem evidence <small id="found"></small></h2><p>Every declaration is PROVED in Lean from the standard axioms. A controlled check replays a finite exhibit of its consequent in this simulator. Exhibits-only and gaps are not passing checks; they measure this page, not the proofs.</p><div id="ledger"></div></section>
 <section class="drawers"><details class="card wide" id="numbers-drawer"><summary>Complete model state and last transaction</summary><pre id="datum"></pre><pre id="last-action"></pre></details><details class="card wide" id="act-drawer"><summary>Advanced free play: exact action JSON</summary><p>All nine model constructors are available here, including outsider, moveAction, and escape. Edit evidence, scope, identities, net quantities, and witnesses; invalid shapes and unsafe numbers are refused.</p><select id="action-kind" aria-label="Example action constructor"></select><button id="load-action">Load example</button><textarea id="action-json" rows="16" aria-label="Exact Lean action JSON"></textarea><button id="act-submit">Submit action</button></details><details class="card wide" id="about-drawer"><summary>Assumptions, formal identity, and finite evidence</summary><p>Tagged commitments abstract cryptographic hashing. Lists abstract authenticated maps and UTxOs. Application evidence is supplied. The diagnostic conforms flag is not a native issuer check. Atomic batches and configurable NFT identity reuse are model choices. Integers are accepted only in the exact safe-number domain; net arithmetic uses BigInt.</p><p>Only frozen corpus rows have observed Lean parity. Other manual and story states exercise the JavaScript transcription; no universal parity or proof follows. <a href="../docs/LEAN-CLARITY/">Read clarity limitations</a>.</p><pre id="identity"></pre><p id="corpus-status"></p></details></section>
@@ -372,7 +373,7 @@ const equal=(a,b)=>canonical(a)===canonical(b);
 const fail=reason=>{throw new Error(reason)};
 const N='nat',I='int',B='bool';
 const rep={registry:N,key:N,policy:N,assetScope:N},out={representative:rep,quantity:N,destination:N,datum:N,value:N};
-const proposal={registry:N,key:N,applicationPolicy:N,initial:out,scope:[N]},refund={destination:N,value:N};
+const proposal={registry:N,key:N,applicationPolicy:N,refundAddress:N,initial:out,scope:[N]},refund={destination:N,value:N};
 const asset={policy:N,name:{$union:{insert:{proposal},withdraw:{registry:N,request:N,refund}}}};
 const approval={asset,accepted:B,conforms:B};
 const req={id:N,operation:{$enum:['insert','update','delete']},proposal,token:{$option:asset},held:{$option:rep},destination:N,authenticatedOrigin:B};
@@ -432,7 +433,7 @@ function transition(s,a,trajectory){const kind=Object.keys(a)[0],d=a[kind],w=d.w
  case 'release':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.request,r))fail('exact-release-authorization');if(!releaseNative(s,r)||!r.authenticatedOrigin||!equal(r.held,u.output.representative)||u.key!==r.proposal.key)fail('terminal-binding');if(!fresh(s,r.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,requests:[r,...t.requests],used:[r.id,...t.used]});}
  case 'evolve':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence,n=d.successor;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.successor,n))fail('application-evolution-authorization');if(!equal(n.output.representative,u.output.representative)||n.output.quantity!==1||n.key!==u.key)fail('evolution-representative');if(!fresh(s,n.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,applications:[n,...t.applications],used:[n.id,...t.used]});}
  case 'outsider':if(!fresh(s,r.id))fail('utxo-id-reuse');if(r.held!==null)fail('outsider-cannot-create-representative');return result({...s,requests:[{...r,authenticatedOrigin:false},...s.requests],used:[r.id,...s.used]});
- case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
+ case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(d.refund.destination!==pending.proposal.refundAddress)fail('withdraw-refund-address');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
  case 'fold':{if(!w.nativeSpend)fail('native-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
  case 'moveAction':if(!recognized(s,d.asset))fail('unrecognized-action');if(d.net!==0)fail('movement-net-not-zero');return result(s);
  case 'escape':fail('completion-only-custody');
@@ -448,9 +449,9 @@ function view(s,key){validate(s,stateSchema,'state');validate(key,N,'key');retur
 // Illustrative defaults only: key 42, application destination 50, address datum A=100/B=200.
 const witnesses=(overrides={})=>({applicationMint:false,applicationSpend:false,nativeSpend:false,representativeMint:false,...overrides});
 function nextId(s){const n=Math.max(0,...s.used)+1;if(!Number.isSafeInteger(n))throw Error('invalid-nat/nextId');return n;}
-function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,accepted=true,conforms=true}={}){
+function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,refundAddress=60,accepted=true,conforms=true}={}){
  const output={representative:{...view(s,key).representative,assetScope},quantity:1,destination:50,datum,value:20};
- const proposal={registry:s.config.registry,key,applicationPolicy:s.config.applicationPolicy,initial:output,scope};
+ const proposal={registry:s.config.registry,key,applicationPolicy:s.config.applicationPolicy,refundAddress,initial:output,scope};
  const asset={policy:s.config.applicationPolicy,name:{insert:{proposal}}};
  return {createInsert:{request:{id,operation:'insert',proposal,token:asset,held:null,destination:s.config.requestAddress,authenticatedOrigin:true},approval:{asset,accepted,conforms},witness:witnesses({applicationMint:true})}};
 }
@@ -496,7 +497,7 @@ const namingFail = reason => { throw new Error(reason); };
 
 const demoSpellings = [['alice', 42]];
 const aliceKey = 42;
-const demoDestination = 50, demoDatum = 100, demoValue = 20;
+const demoDestination = 50, demoDatum = 100, demoValue = 20, demoRefundAddress = 60;
 const spellingKey = spelling => {
   if (typeof spelling !== 'string') namingFail('invalid-shape/naming.spelling');
   const hit = demoSpellings.find(([s]) => s === spelling);
@@ -628,7 +629,9 @@ function namingStep(state, action) {
 
 function namingQueueAction(state, key) {
   const output = { representative: namingRepresentative(state.registry, key), quantity: 1, destination: demoDestination, datum: demoDatum, value: demoValue };
-  const proposal = { registry: state.registry.config.registry, key, applicationPolicy: state.registry.config.applicationPolicy, initial: output, scope: [namingEntry(state.registry, key).incarnation] };
+  const proposal = { registry: state.registry.config.registry, key,
+    applicationPolicy: state.registry.config.applicationPolicy, refundAddress: demoRefundAddress,
+    initial: output, scope: [namingEntry(state.registry, key).incarnation] };
   const asset = namingInsertAsset(proposal);
   return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false } } };
 }
@@ -868,6 +871,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -892,6 +896,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -924,6 +929,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -975,6 +981,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -999,6 +1006,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1033,6 +1041,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1153,6 +1162,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1228,6 +1238,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -1252,6 +1263,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -1284,6 +1296,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -1335,6 +1348,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -1359,6 +1373,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1393,6 +1408,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1435,6 +1451,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -1459,6 +1476,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -1491,6 +1509,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -1542,6 +1561,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -1566,6 +1586,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1596,6 +1617,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -1620,6 +1642,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1654,6 +1677,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1685,6 +1709,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1803,6 +1828,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -1827,6 +1853,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1861,6 +1888,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -1892,6 +1920,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2008,6 +2037,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -2032,6 +2062,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2083,6 +2114,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2114,6 +2146,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2241,6 +2274,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2272,6 +2306,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2417,6 +2452,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -2441,6 +2477,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -2473,6 +2510,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -2524,6 +2562,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -2548,6 +2587,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2582,6 +2622,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2663,6 +2704,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -2687,6 +2729,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2738,6 +2781,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2840,6 +2884,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -2904,6 +2949,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -2928,6 +2974,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -2960,6 +3007,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -3011,6 +3059,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -3035,6 +3084,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3069,6 +3119,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3189,6 +3240,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3328,6 +3380,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3456,6 +3509,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -3480,6 +3534,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -3512,6 +3567,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -3563,6 +3619,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -3587,6 +3644,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3621,6 +3679,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3741,6 +3800,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -3795,6 +3855,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -3830,6 +3891,7 @@ const STORIES=[
                   "registry": 1,
                   "key": 42,
                   "applicationPolicy": 7,
+                  "refundAddress": 60,
                   "initial": {
                     "representative": {
                       "registry": 1,
@@ -3894,6 +3956,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -3931,6 +3994,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4025,6 +4089,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4101,6 +4166,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -4125,6 +4191,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -4157,6 +4224,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -4208,6 +4276,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -4232,6 +4301,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4266,6 +4336,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4386,6 +4457,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4440,6 +4512,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -4475,6 +4548,7 @@ const STORIES=[
                   "registry": 1,
                   "key": 42,
                   "applicationPolicy": 7,
+                  "refundAddress": 60,
                   "initial": {
                     "representative": {
                       "registry": 1,
@@ -4539,6 +4613,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -4576,6 +4651,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4670,6 +4746,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4765,6 +4842,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -4789,6 +4867,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -4821,6 +4900,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -4872,6 +4952,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -4896,6 +4977,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -4930,6 +5012,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5050,6 +5133,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5104,6 +5188,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -5139,6 +5224,7 @@ const STORIES=[
                   "registry": 1,
                   "key": 42,
                   "applicationPolicy": 7,
+                  "refundAddress": 60,
                   "initial": {
                     "representative": {
                       "registry": 1,
@@ -5203,6 +5289,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -5240,6 +5327,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5284,6 +5372,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -5308,6 +5397,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -5340,6 +5430,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -5397,6 +5488,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -5421,6 +5513,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5451,6 +5544,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -5488,6 +5582,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5519,6 +5614,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5637,6 +5733,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5668,6 +5765,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5793,6 +5891,7 @@ const STORIES=[
                 "registry": 1,
                 "key": 42,
                 "applicationPolicy": 7,
+                "refundAddress": 60,
                 "initial": {
                   "representative": {
                     "registry": 1,
@@ -5817,6 +5916,7 @@ const STORIES=[
                       "registry": 1,
                       "key": 42,
                       "applicationPolicy": 7,
+                      "refundAddress": 60,
                       "initial": {
                         "representative": {
                           "registry": 1,
@@ -5863,6 +5963,7 @@ const STORIES=[
                     "registry": 1,
                     "key": 42,
                     "applicationPolicy": 7,
+                    "refundAddress": 60,
                     "initial": {
                       "representative": {
                         "registry": 1,
@@ -5887,6 +5988,7 @@ const STORIES=[
                           "registry": 1,
                           "key": 42,
                           "applicationPolicy": 7,
+                          "refundAddress": 60,
                           "initial": {
                             "representative": {
                               "registry": 1,
@@ -5998,6 +6100,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6030,6 +6133,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -6053,6 +6157,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6116,6 +6221,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6158,6 +6264,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -6181,6 +6288,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6224,6 +6332,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6256,6 +6365,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -6279,6 +6389,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6320,6 +6431,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6362,6 +6474,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -6385,6 +6498,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6431,6 +6545,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6462,6 +6577,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6504,6 +6620,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -6527,6 +6644,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6558,6 +6676,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -6581,6 +6700,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6653,6 +6773,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6684,6 +6805,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6726,6 +6848,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -6749,6 +6872,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6780,6 +6904,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -6803,6 +6928,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -6867,6 +6993,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6898,6 +7025,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6940,6 +7068,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -6963,6 +7092,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -6994,6 +7124,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -7017,6 +7148,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -7107,6 +7239,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7138,6 +7271,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7180,6 +7314,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -7203,6 +7338,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7234,6 +7370,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -7257,6 +7394,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7321,6 +7459,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -7352,6 +7491,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -7394,6 +7534,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -7417,6 +7558,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -7489,6 +7631,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7542,6 +7685,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -7604,6 +7748,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -7657,6 +7802,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -7745,6 +7891,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7798,6 +7945,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -7892,6 +8040,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7934,6 +8083,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -7957,6 +8107,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -7988,6 +8139,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -8011,6 +8163,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8061,6 +8214,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8093,6 +8247,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -8116,6 +8271,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8179,6 +8335,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -8221,6 +8378,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -8244,6 +8402,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -8328,6 +8487,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8370,6 +8530,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -8393,6 +8554,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8466,6 +8628,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -8535,6 +8698,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -8570,6 +8734,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -8626,6 +8791,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8689,6 +8855,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -8742,6 +8909,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -8814,6 +8982,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -8867,6 +9036,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -8922,6 +9092,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -8983,6 +9154,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -9015,6 +9187,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -9038,6 +9211,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -9079,6 +9253,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -9143,6 +9318,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -9174,6 +9350,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -9222,6 +9399,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     1
@@ -9245,6 +9423,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -9332,6 +9511,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -9363,6 +9543,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -9411,6 +9592,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -9434,6 +9616,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -9510,6 +9693,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -9541,6 +9725,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -9604,6 +9789,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0,
@@ -9637,6 +9823,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0,
@@ -9661,6 +9848,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0,
@@ -9703,6 +9891,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -9767,6 +9956,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0,
@@ -9799,6 +9989,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -9847,6 +10038,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0,
@@ -9871,6 +10063,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0,
@@ -9959,6 +10152,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0,
@@ -9991,6 +10185,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -10039,6 +10234,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0,
@@ -10063,6 +10259,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0,
@@ -10116,6 +10313,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -10148,6 +10346,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -10171,6 +10370,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -10212,6 +10412,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -10265,6 +10466,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -10310,6 +10512,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -10341,6 +10544,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -10389,6 +10593,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     1
@@ -10412,6 +10617,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -10448,6 +10654,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -10546,6 +10753,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -10577,6 +10785,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -10625,6 +10834,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -10648,6 +10858,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -10684,6 +10895,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -10766,6 +10978,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -10797,6 +11010,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -10896,6 +11110,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -10927,6 +11142,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -10975,6 +11191,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -10998,6 +11215,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -11034,6 +11252,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -11083,6 +11302,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -11171,6 +11391,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11213,6 +11434,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -11236,6 +11458,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11294,6 +11517,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -11329,6 +11553,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -11385,6 +11610,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11448,6 +11674,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -11501,6 +11728,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -11543,6 +11771,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11575,6 +11804,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -11598,6 +11828,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11667,6 +11898,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -11715,6 +11947,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -11738,6 +11971,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -11822,6 +12056,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11864,6 +12099,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -11887,6 +12123,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -11960,6 +12197,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -12020,6 +12258,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12052,6 +12291,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12075,6 +12315,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12141,6 +12382,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12173,6 +12415,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12196,6 +12439,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12303,6 +12547,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12345,6 +12590,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12368,6 +12614,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12474,6 +12721,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12505,6 +12753,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12547,6 +12796,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12570,6 +12820,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12601,6 +12852,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12624,6 +12876,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12720,6 +12973,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12762,6 +13016,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -12785,6 +13040,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12848,6 +13104,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -12899,6 +13156,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -12944,6 +13202,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -12986,6 +13245,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -13009,6 +13269,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13104,6 +13365,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13135,6 +13397,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13177,6 +13440,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -13200,6 +13464,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13231,6 +13496,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -13254,6 +13520,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13370,6 +13637,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13450,6 +13718,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -13520,6 +13789,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -13555,6 +13825,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -13611,6 +13882,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13686,6 +13958,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -13721,6 +13994,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -13777,6 +14051,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13834,6 +14109,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -13881,6 +14157,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -13929,6 +14206,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -13982,6 +14260,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -14060,6 +14339,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -14113,6 +14393,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -14168,6 +14449,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -14259,6 +14541,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -14312,6 +14595,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -14367,6 +14651,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -14469,6 +14754,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -14500,6 +14786,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -14548,6 +14835,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -14571,6 +14859,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -14647,6 +14936,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -14678,6 +14968,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -14750,6 +15041,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -14785,6 +15077,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -14841,6 +15134,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -14965,6 +15259,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15072,6 +15367,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15103,6 +15399,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15151,6 +15448,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -15174,6 +15472,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15267,6 +15566,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15309,6 +15609,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -15332,6 +15633,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15405,6 +15707,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -15466,6 +15769,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -15489,6 +15793,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15541,6 +15846,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15583,6 +15889,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -15606,6 +15913,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15669,6 +15977,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -15711,6 +16020,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -15734,6 +16044,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -15765,6 +16076,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -15788,6 +16100,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -15890,6 +16203,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15932,6 +16246,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -15955,6 +16270,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -15986,6 +16302,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -16009,6 +16326,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16059,6 +16377,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16091,6 +16410,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -16114,6 +16434,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16177,6 +16498,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16219,6 +16541,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -16242,6 +16565,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16285,6 +16609,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16357,6 +16682,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16399,6 +16725,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -16422,6 +16749,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16471,6 +16799,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16543,6 +16872,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16585,6 +16915,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -16608,6 +16939,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16681,6 +17013,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16739,6 +17072,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -16780,6 +17114,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16822,6 +17157,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -16845,6 +17181,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -16891,6 +17228,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -16933,6 +17271,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -16956,6 +17295,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -17035,6 +17375,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -17066,6 +17407,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17114,6 +17456,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -17137,6 +17480,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -17173,6 +17517,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -17255,6 +17600,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           1
@@ -17286,6 +17632,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -17385,6 +17732,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -17416,6 +17764,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17464,6 +17813,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   1
@@ -17487,6 +17837,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         1
@@ -17523,6 +17874,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -17613,6 +17965,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17655,6 +18008,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -17678,6 +18032,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17751,6 +18106,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -17869,6 +18225,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17900,6 +18257,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -17948,6 +18306,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -17971,6 +18330,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -18088,6 +18448,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -18168,6 +18529,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -18295,6 +18657,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -18337,9 +18700,9 @@ const STORIES=[
       }
     }
   ],
-  "corpusSourceSha256": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-  "modelSha256": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-  "payloadSha256": "9b75ab59ee2ae45efdf6934eee9953b12432bfa47a972824a112bcf09d4ef6c9",
+  "corpusSourceSha256": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+  "modelSha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+  "payloadSha256": "01c1bc0a28b07eaac84c54c0c8961ed852a1602e85a9db40bea60e0204ce2309",
   "resolutions": [
     {
       "authenticated": true,
@@ -18383,6 +18746,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18448,6 +18812,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18501,6 +18866,7 @@ const STORIES=[
                 "value": 20
               },
               "key": 42,
+              "refundAddress": 60,
               "registry": 1,
               "scope": [
                 0
@@ -18544,6 +18910,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18606,6 +18973,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18685,6 +19053,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18768,6 +19137,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -18807,15 +19177,15 @@ const STORIES=[
   ],
   "schema": "singular-logical-corpus-v1",
   "sourceHashes": {
-    "lean/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
+    "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
-    "lean/Singular/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "lean/Singular/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609"
+    "lean/Singular/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
+    "lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
   },
-  "statementsSha256": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
-  "theoremManifestSha256": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db"
+  "statementsSha256": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
+  "theoremManifestSha256": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a"
 }
 ;const THEOREMS=[
   {
@@ -18864,7 +19234,7 @@ const STORIES=[
     "name": "Singular.Statements.withdraw_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "a80f2964ecef9859907ea00a24ee69b35d84919ef555f44a5913b16ea180e1f2"
+    "statementSha256": "0058bce1e42df4d7b1dedd884157087b657b341a16892756fd6fbfcebb49c60d"
   },
   {
     "name": "Singular.Statements.fold_iff",
@@ -19081,13 +19451,13 @@ const STORIES=[
     }
   ],
   "files": {
-    "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "formal/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
-    "formal/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
+    "formal/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "formal/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
+    "formal/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "formal/theorem-debt.json": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db",
-    "corpus.json": "4fcc27b4a1edbfc8179d8b3cebcf43c9cf7d52d7827f42cc89ce90ba13b72095",
+    "formal/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+    "formal/theorem-debt.json": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a",
+    "corpus.json": "ff576b4b4aaf572879a6a039cce82c0e6194d44c878ae14065cf2d413b66e6d9",
     "formal/Naming.lean": "2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72",
     "formal/NamingStatements.lean": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81"
   },
@@ -19098,7 +19468,7 @@ const STORIES=[
   "namingTheorems": 17
 }
 ;const NAMINGCORPUS={
-  "corpusSourceSha256": "ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e",
+  "corpusSourceSha256": "1a7eeab9e62a7c84ec043d574f5c2086946c9a15fa4a43418e07cce3b66c7a42",
   "folds": [
     {
       "before": {
@@ -19579,6 +19949,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -19610,6 +19981,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -19652,6 +20024,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -19675,6 +20048,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -19706,6 +20080,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -19729,6 +20104,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -20263,6 +20639,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -20294,6 +20671,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -20342,6 +20720,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -20365,6 +20744,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -20888,6 +21268,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -20919,6 +21300,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -20967,6 +21349,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -20990,6 +21373,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -21517,6 +21901,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -21548,6 +21933,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -21596,6 +21982,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -21619,6 +22006,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -22146,6 +22534,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -22177,6 +22566,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -22225,6 +22615,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -22248,6 +22639,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -22274,9 +22666,9 @@ const STORIES=[
       }
     }
   ],
-  "modelSha256": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
+  "modelSha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
   "namingStatementsSha256": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
-  "payloadSha256": "bb8c5194f41a308d1819353c0cab38554a8f3673ebfaefe70d5e9d4401349d6a",
+  "payloadSha256": "85c4ea4eecbd170ba24fc8071ca8ab90fc8fd079192969cd6fdbb147843459e2",
   "queues": [
     {
       "accepted": true,
@@ -22873,6 +23265,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -22915,6 +23308,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -22938,6 +23332,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -23261,6 +23656,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -23303,6 +23699,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -23326,6 +23723,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -23997,6 +24395,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -24028,6 +24427,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -24070,6 +24470,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -24093,6 +24494,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -24124,6 +24526,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -24147,6 +24550,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -25559,6 +25963,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -25590,6 +25995,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -25638,6 +26044,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -25661,6 +26068,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -26728,6 +27136,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -26759,6 +27168,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -26790,6 +27200,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -26838,6 +27249,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -26861,6 +27273,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -26892,6 +27305,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -26915,6 +27329,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -27461,6 +27876,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -27492,6 +27908,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -27534,6 +27951,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -27557,6 +27975,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -27588,6 +28007,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -27611,6 +28031,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -28186,6 +28607,7 @@ const STORIES=[
                                   "value": 20
                                 },
                                 "key": 42,
+                                "refundAddress": 60,
                                 "registry": 1,
                                 "scope": [
                                   0
@@ -28217,6 +28639,7 @@ const STORIES=[
                                   "value": 20
                                 },
                                 "key": 42,
+                                "refundAddress": 60,
                                 "registry": 1,
                                 "scope": [
                                   0
@@ -28265,6 +28688,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -28288,6 +28712,7 @@ const STORIES=[
                                   "value": 20
                                 },
                                 "key": 42,
+                                "refundAddress": 60,
                                 "registry": 1,
                                 "scope": [
                                   0
@@ -28811,6 +29236,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -28842,6 +29268,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -28890,6 +29317,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -28913,6 +29341,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -28967,6 +29396,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 0,
                   "registry": 1,
                   "scope": [
                     0
@@ -29002,6 +29432,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 0,
                 "registry": 1,
                 "scope": [
                   0
@@ -29525,6 +29956,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -29556,6 +29988,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -29604,6 +30037,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -29627,6 +30061,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -29679,6 +30114,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 0,
                       "registry": 1,
                       "scope": [
                         0
@@ -29714,6 +30150,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 0,
                     "registry": 1,
                     "scope": [
                       0
@@ -30248,6 +30685,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -30279,6 +30717,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -30327,6 +30766,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -30350,6 +30790,7 @@ const STORIES=[
                           "value": 20
                         },
                         "key": 42,
+                        "refundAddress": 60,
                         "registry": 1,
                         "scope": [
                           0
@@ -30853,6 +31294,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -30884,6 +31326,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -30926,6 +31369,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -30949,6 +31393,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -30980,6 +31425,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -31003,6 +31449,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -31504,6 +31951,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -31535,6 +31983,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -31577,6 +32026,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -31600,6 +32050,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -31631,6 +32082,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -31654,6 +32106,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -32178,6 +32631,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -32209,6 +32663,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -32257,6 +32712,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -32280,6 +32736,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -33100,6 +33557,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -33131,6 +33589,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -33179,6 +33638,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -33202,6 +33662,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -33524,24 +33985,24 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v1",
   "sourceHashes": {
-    "lean/LifecycleMain.lean": "f735256acb45e4cd79a276b7943e5b0190dd01076184c20f6d4abdcfe69be6fd",
-    "lean/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "lean/NamingMain.lean": "ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e",
+    "lean/LifecycleMain.lean": "6d2ec3489e1138b6c481d87ced8ec1046cf5f03f715f5b5c132a07d1db28b1d3",
+    "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+    "lean/NamingMain.lean": "1a7eeab9e62a7c84ec043d574f5c2086946c9a15fa4a43418e07cce3b66c7a42",
     "lean/Singular.lean": "a66a8d18b7e348766dcf2be92cf5e4651362f7118c537c5978d876832842f941",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
-    "lean/Singular/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "lean/Singular/Naming.lean": "7c467e633deef83988b51c41a17305c99c3a5978fb59c136eaec11c7e35b007c",
+    "lean/Singular/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
+    "lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "lean/Singular/Naming.lean": "ffc6b2c9512f3306c71da56c09d173a06d0f27c8e81689b846d072523ce58069",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "eb28d9759c22ebe5abd6989cdc9a51ab3c620b91268781407f3abab1b7c1eef6",
-    "lean/Singular/NamingLifecycle.lean": "e36d5b3708a7883b908fe294bff84d4a370c12864a13e83f5daed5217d78398b",
+    "lean/Singular/NamingLifecycle.lean": "5afd1b517d9e6a93a558a548fa6b9b1bcd3727df4e734943bdddbc21afcacbe2",
     "lean/Singular/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
-    "lean/Singular/NamingLifecycleStatements.lean": "03c18c3c906a15b1b9b8dde929e609deae3b8924948ed80f43ebdb300d7d9da5",
+    "lean/Singular/NamingLifecycleStatements.lean": "9bb4e5718f46591b81a5b65bfa037347e5908f8ec5a6baf437edc67227858d30",
     "lean/Singular/NamingStatements.lean": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
     "lean/Singular/NamingWire.lean": "9a5f16e2b46cbd7c41851bf751a9093c8393ed743d6b0738d3f66b37a2ca2d59",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "449985f47ca30dd66eef1c61db0e6eaf3fd91edc4f459f3314a8f6b27815f861",
-    "lean/Singular/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609"
+    "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
   },
   "spellings": [
     {
@@ -33588,6 +34049,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 0,
                 "registry": 1,
                 "scope": [
                   0
@@ -33623,6 +34085,7 @@ const STORIES=[
                 "value": 20
               },
               "key": 42,
+              "refundAddress": 0,
               "registry": 1,
               "scope": [
                 0
@@ -34140,6 +34603,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -34171,6 +34635,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -34219,6 +34684,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -34242,6 +34708,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -34796,6 +35263,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -34827,6 +35295,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -34875,6 +35344,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -34898,6 +35368,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -35472,6 +35943,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -35503,6 +35975,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -35551,6 +36024,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -35574,6 +36048,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36127,6 +36602,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36158,6 +36634,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36206,6 +36683,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -36229,6 +36707,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36277,6 +36756,7 @@ const STORIES=[
                 "value": 20
               },
               "key": 42,
+              "refundAddress": 60,
               "registry": 1,
               "scope": [
                 0
@@ -36300,6 +36780,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -36613,6 +37094,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36655,6 +37137,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -36678,6 +37161,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -36721,6 +37205,7 @@ const STORIES=[
                     "value": 20
                   },
                   "key": 42,
+                  "refundAddress": 60,
                   "registry": 1,
                   "scope": [
                     0
@@ -37040,6 +37525,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -37082,6 +37568,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -37105,6 +37592,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -37434,6 +37922,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -37476,6 +37965,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -37499,6 +37989,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38042,6 +38533,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38073,6 +38565,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38126,6 +38619,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 0,
                 "registry": 1,
                 "scope": [
                   0
@@ -38154,6 +38648,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -38177,6 +38672,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38224,6 +38720,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -38256,6 +38753,7 @@ const STORIES=[
                 "value": 20
               },
               "key": 42,
+              "refundAddress": 60,
               "registry": 1,
               "scope": [
                 0
@@ -38279,6 +38777,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -38598,6 +39097,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38640,6 +39140,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -38663,6 +39164,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -38708,6 +39210,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -38740,6 +39243,7 @@ const STORIES=[
                 "value": 20
               },
               "key": 42,
+              "refundAddress": 60,
               "registry": 1,
               "scope": [
                 0
@@ -38763,6 +39267,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -39082,6 +39587,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -39124,6 +39630,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -39147,6 +39654,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -39511,6 +40019,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -39542,6 +40051,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -39584,6 +40094,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -39607,6 +40118,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -39638,6 +40150,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -39661,6 +40174,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -40202,6 +40716,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -40233,6 +40748,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -40275,6 +40791,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -40298,6 +40815,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -40329,6 +40847,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -40352,6 +40871,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -40885,6 +41405,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -40916,6 +41437,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -40964,6 +41486,7 @@ const STORIES=[
                       "value": 20
                     },
                     "key": 42,
+                    "refundAddress": 60,
                     "registry": 1,
                     "scope": [
                       0
@@ -40987,6 +41510,7 @@ const STORIES=[
                             "value": 20
                           },
                           "key": 42,
+                          "refundAddress": 60,
                           "registry": 1,
                           "scope": [
                             0
@@ -41550,6 +42074,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -41581,6 +42106,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -41629,6 +42155,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -41652,6 +42179,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -42195,6 +42723,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -42226,6 +42755,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -42268,6 +42798,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -42291,6 +42822,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -42322,6 +42854,7 @@ const STORIES=[
                   "value": 20
                 },
                 "key": 42,
+                "refundAddress": 60,
                 "registry": 1,
                 "scope": [
                   0
@@ -42345,6 +42878,7 @@ const STORIES=[
                         "value": 20
                       },
                       "key": 42,
+                      "refundAddress": 60,
                       "registry": 1,
                       "scope": [
                         0
@@ -42590,18 +43124,19 @@ function numFrom(text){if(!/^\d+$/.test(text)||!Number.isSafeInteger(Number(text
 /* ---- naming profile (m1-naming · unaccepted candidate) ---- */
 const NAMING_FIXTURE=structuredClone(aliceFixture);
 const NAMING_OTHER=structuredClone(otherFixture);
-const naming={engine:null,state:null,pending:[]};
+const naming={engine:null,state:null,pending:[],lastRequest:null,lastCancellation:null};
 const namingActive=()=>$('naming-profile').value==='m1-naming';
 const namingSay=text=>{$('naming-verdict').textContent=text;};
 const namingReports=namingPropertyReport(NAMINGTHEOREMS,NAMINGCORPUS);
 const namingRender=()=>{$('naming-state').textContent=JSON.stringify(naming.state??{},null,2);$('naming-found').textContent=`${namingReports.length} exact declarations`;clear($('naming-ledger'));for(const report of namingReports){const short=report.name.split('.').at(-1);$('naming-ledger').append(h('details',{class:`thm ${report.holds===false?'broken':report.holds===true?'lit':'gap'}`,'data-naming-theorem':report.name},h('summary',{},`${report.holds===true?'● ':''}${short} · ${report.coverage}`),h('p',{},report.name),h('p',{},report.status),h('p',{},report.notes)));}};
 function namingWire(){
- $('naming-profile').onchange=()=>{const on=namingActive();for(const id of ['naming-claim','naming-claim-competing','naming-fold-first','naming-fold-second','naming-resolve','naming-crafted-delete'])$(id).disabled=!on;if(on){naming.engine=selectProfile('m1-naming').engine;naming.state=namingInitial();naming.pending=[];namingSay('m1-naming selected — unaccepted candidate. Queue the first claim for alice.');namingRender();}else{namingSay('Generic profile active; the naming engine was left explicitly. No implicit fallback exists.');$('naming-state').textContent='{}';}};
- $('naming-claim').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_FIXTURE,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);namingSay(`✓ Claim #${r.requestId} queued. Approval reserves nothing: alice is still absent.`);}namingRender();});
- $('naming-claim-competing').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_OTHER,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);namingSay(`✓ Competing claim #${r.requestId} queued. Two claims for alice may both wait.`);}namingRender();});
+ $('naming-profile').onchange=()=>{const on=namingActive();for(const id of ['naming-claim','naming-claim-competing','naming-fold-first','naming-fold-second','naming-resolve','naming-crafted-delete','naming-cancel-approved','naming-refund-redirect','naming-withdraw'])$(id).disabled=!on;if(on){naming.engine=selectProfile('m1-naming').engine;naming.state=namingInitial();naming.pending=[];naming.lastRequest=null;naming.lastCancellation=null;$('naming-cancel-approved').checked=true;$('naming-refund-redirect').checked=false;namingSay('m1-naming selected — unaccepted candidate. Queue the first claim for alice.');namingRender();}else{namingSay('Generic profile active; the naming engine was left explicitly. No implicit fallback exists.');$('naming-state').textContent='{}';}};
+ $('naming-claim').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_FIXTURE,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);naming.lastRequest=r.requestId;namingSay(`✓ Claim #${r.requestId} queued. Approval reserves nothing: alice is still absent.`);}namingRender();});
+ $('naming-claim-competing').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_OTHER,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);naming.lastRequest=r.requestId;namingSay(`✓ Competing claim #${r.requestId} queued. Two claims for alice may both wait.`);}namingRender();});
  const fold=which=>guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const id=which==='first'?naming.pending[0]:naming.pending.at(-1);if(id===undefined)throw Error('request-unavailable');const r=foldRequest(naming.state,id);if(!r.accepted){namingSay(`✗ Fold #${id} refused: ${r.reason} — uniqueness is decided only at fold.`);}else{naming.state=r.value.state;naming.pending=naming.pending.filter(x=>x!==id);namingSay(`✓ Folded #${id}: alice is Active carrying the certified fixture fields, unchanged.`);}namingRender();});
  $('naming-fold-first').onclick=fold('first');$('naming-fold-second').onclick=fold('second');
  $('naming-resolve').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const o=namingResolve(naming.state,'alice',true);namingSay('Resolve alice → '+(typeof o==='string'?o:o.status==='active'?'active, fixture '+JSON.stringify(o.fixture):JSON.stringify(o)));});
+ $('naming-withdraw').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const id=naming.pending[0]??naming.lastRequest;if(id===null)throw Error('request-unavailable');const refundAddress=demoRefundAddress+($('naming-refund-redirect').checked?1:0);const withdrawal=makeWithdrawal(naming.state.registry,id,refundAddress,0);let registry=naming.state.registry;if($('naming-cancel-approved').checked){const approval=step(registry,withdrawal.mint);if(!approval.accepted)throw Error(approval.reason);registry=approval.value.state;}const verdict=step(registry,withdrawal.withdraw);if(verdict.accepted){naming.state={...naming.state,registry:verdict.value.state,claims:naming.state.claims.filter(claim=>claim.requestId!==id)};naming.pending=naming.pending.filter(requestId=>requestId!==id);naming.lastCancellation=id;namingSay(`✓ LC01-cancellation-stored-refund-accepts: claim #${id} withdrawn; copied stored refund address ${refundAddress}; alice remains absent.`);}else{const row=verdict.reason==='withdraw-refund-address'?'LC02-cancellation-redirect-refused':verdict.reason==='withdraw-binding'?'LC03-insert-attestation-cancellation-refused':naming.lastCancellation===id?'LC06-cancellation-replay-refused':naming.state.records.some(record=>record.key===aliceKey)?'LC04-folded-claim-cancellation-refused':'claim-cancellation-refused';namingSay(`✗ ${row}: ${verdict.reason}.`);}namingRender();});
  $('naming-crafted-delete').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const source=naming.state.registry.applications[0]?.id;if(source===undefined)throw Error('naming-active-utxo-absent');const crafted=makeRelease(naming.state.registry,source,'delete',true);const v=namingStep(naming.state,crafted);namingSay(v.accepted?'✓ accepted — this would be a defect':'✗ Refused: '+v.reason+' — the naming profile defines no delete, release or reuse.');});
 }
 function runSelftest(){const receipt=checkCorpus(CORPUS);const namingReceipt=checkNamingCorpus(NAMINGCORPUS);if(namingReports.length!==NAMINGTHEOREMS.length||namingReports.some(row=>row.holds===false))throw Error('naming theorem lamps');let rows=0;for(const story of STORIES){let st=story.seed;const prefix=[st];for(const e of story.steps){const r=step(st,e.action);if(!equal(r,e.expect))throw Error('story/'+story.id);if(r.accepted)st=r.value.state;prefix.push(st);rows++;}for(const fork of story.forks){let fs=prefix[fork.at];for(const e of fork.steps){const r=step(fs,e.action);if(!equal(r,e.expect))throw Error('fork/'+story.id);if(r.accepted)fs=r.value.state;rows++;}}}if(!rows)throw Error('zero stories');const msg=`PASS finite corpus ${receipt.executed}/${receipt.discovered}; story steps ${rows}; theorem identities ${THEOREMS.length}; naming rows ${namingReceipt.executed}; naming theorem lamps ${namingReports.length}; admitted proofs`;document.title='PASS · Singular simulator';$('selftest-out').hidden=false;$('selftest-out').textContent=msg;return msg;}
