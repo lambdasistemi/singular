@@ -2,7 +2,7 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
-<a href="simulator/"><strong>Try the simulation</strong></a> — queue competing registrations, change an application's address, and explore retirement and Delete. The [simulation guide](docs/simulation.md) explains the manual controls and the admitted-model limits.
+<a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — the live generic-registry simulator, where Delete is allowed. Queue competing registrations, change an application's address, and explore retirement. The [simulation guide](docs/simulation.md) explains the manual controls and the proved-model limits.
 
 ## Who this is for
 
