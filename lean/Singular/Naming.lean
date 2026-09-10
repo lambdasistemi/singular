@@ -154,22 +154,33 @@ structure NamingQueueOutcome where
   state : NamingState
   deriving Repr, BEq, DecidableEq, ToJson
 
+/-- Validate the three naming-specific queue guards before entering the generic
+registry transition. Keeping this boundary explicit makes each refusal branch
+independently invertible. -/
+def namingQueueValidate (spelling : String) (fixture : NamingFixture)
+    (accepted : Bool) : Except String Nat :=
+  match spellingKey spelling with
+  | none => .error "unknown-spelling"
+  | some key =>
+    if !wellFormedFixture fixture then .error "invalid-fixture"
+    else if !accepted then .error "application-approval"
+    else .ok key
+
 /-- Queue a naming claim for a spelling. Refuses an unknown spelling, a
 malformed fixture, or a rejected application approval. Two queues for the same
 spelling both accept: approval reserves nothing. -/
 def namingQueue (state : NamingState) (spelling : String) (fixture : NamingFixture)
     (accepted : Bool) : Except String NamingQueueOutcome := do
-  let key ← requireSome (spellingKey spelling) "unknown-spelling"
-  if !wellFormedFixture fixture then throw "invalid-fixture"
-  if !accepted then throw "application-approval"
+  let key ← namingQueueValidate spelling fixture accepted
   let id := freshId state.registry
   let result ← namingStep state (namingQueueAction state key)
   pure { requestId := id, state := { result.state with claims := result.state.claims ++ [{ requestId := id, spelling := spelling, key := key, fixture := fixture }] } }
 
 /-- The certified fold action for a queued Insert request. -/
-def namingFoldAction (state : NamingState) (requestId : Nat) : Except String Action := do
-  let r ← requireSome (state.registry.requests.find? (fun q => q.id == requestId)) "request-unavailable"
-  pure (Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true })
+def namingFoldAction (state : NamingState) (requestId : Nat) : Except String Action :=
+  match state.registry.requests.find? (fun q => q.id == requestId) with
+  | some r => Except.ok (Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true })
+  | none => Except.error "request-unavailable"
 
 /-- Fold one queued naming claim. The first valid absent-key fold accepts; a
 later certified Insert for that key is refused with `occupied-key`. -/

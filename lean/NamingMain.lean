@@ -83,7 +83,7 @@ structure StepRow where
 structure ResolveRow where
   id : String
   before : NamingState
-  key : Nat
+  spelling : String
   authenticated : Bool
   expected : Json
   deriving ToJson
@@ -132,12 +132,12 @@ def stepRows : List StepRow := [
   { id := "NS14-tampered-item-output", before := claimedTwice, action := tamperedFold claimedTwice 1, accept := false, expectedReason := "certified-output" }]
 
 def resolveRows : List ResolveRow := [
-  { id := "NR01-unauthenticated-view", before := claimedTwice, key := aliceKey, authenticated := false, expected := toJson NamingObservation.unauthenticated },
-  { id := "NR02-two-claims-pending", before := claimedTwice, key := aliceKey, authenticated := true, expected := toJson NamingObservation.pending },
-  { id := "NR03-active-certified-fixture", before := activeOnce, key := aliceKey, authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
-  { id := "NR04-absent-initial", before := namingInitial, key := aliceKey, authenticated := true, expected := toJson NamingObservation.absent },
-  { id := "NR05-active-second-claim-pending", before := activeOnce, key := aliceKey, authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
-  { id := "NR06-unknown-key-absent", before := namingInitial, key := 99, authenticated := true, expected := toJson NamingObservation.absent }]
+  { id := "NR01-unauthenticated-view", before := claimedTwice, spelling := "alice", authenticated := false, expected := toJson NamingObservation.unauthenticated },
+  { id := "NR02-two-claims-pending", before := claimedTwice, spelling := "alice", authenticated := true, expected := toJson NamingObservation.pending },
+  { id := "NR03-active-certified-fixture", before := activeOnce, spelling := "alice", authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
+  { id := "NR04-absent-initial", before := namingInitial, spelling := "alice", authenticated := true, expected := toJson NamingObservation.absent },
+  { id := "NR05-active-second-claim-pending", before := activeOnce, spelling := "alice", authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
+  { id := "NR06-unknown-spelling", before := namingInitial, spelling := "carol", authenticated := true, expected := Json.mkObj [("error", toJson "unknown-spelling")] }]
 
 def replayRows : List ReplayRow := [
   { id := "NRP01-journey-fold-replay", before := claimedTwice, actions := [queuedFoldAction claimedTwice 1], expectedState := activeOnce },
@@ -182,6 +182,13 @@ def resolveJson (r : Except String NamingObservation) : Json :=
   | .ok o => toJson o
   | .error reason => Json.mkObj [("error", toJson reason)]
 
+def namingResolveSpelling (state : NamingState) (spelling : String) (authenticated : Bool) :
+    Except String NamingObservation :=
+  if !authenticated then .ok .unauthenticated
+  else match spellingKey spelling with
+    | some key => namingResolve state key authenticated
+    | none => .error "unknown-spelling"
+
 def replayJson (state : NamingState) (actions : List Action) : Json :=
   let replay := namingReplay state actions
   Json.mkObj [("state", toJson replay.state),
@@ -201,9 +208,9 @@ def stepRowJson (row : StepRow) : Json :=
     ("result", verdictJson (stepVerdict row))]
 
 def resolveRowJson (row : ResolveRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("key", toJson row.key),
+  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("spelling", toJson row.spelling),
     ("authenticated", toJson row.authenticated),
-    ("expected", resolveJson (namingResolve row.before row.key row.authenticated))]
+    ("expected", resolveJson (namingResolveSpelling row.before row.spelling row.authenticated))]
 
 def replayRowJson (row : ReplayRow) : Json :=
   Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("actions", toJson row.actions),
@@ -228,7 +235,7 @@ def main : IO Unit := do
     unless stepCorrect row do
       throw (IO.userError s!"step expectation failed: {row.id}: {repr (stepVerdict row)}")
   for row in resolveRows do
-    unless resolveJson (namingResolve row.before row.key row.authenticated) == row.expected do
+    unless resolveJson (namingResolveSpelling row.before row.spelling row.authenticated) == row.expected do
       throw (IO.userError s!"resolve expectation failed: {row.id}")
   for row in replayRows do
     let replay := namingReplay row.before row.actions
@@ -242,4 +249,3 @@ def main : IO Unit := do
     ("resolves", toJson (resolveRows.map resolveRowJson)),
     ("replays", toJson (replayRows.map replayRowJson))]
   stdout.putStrLn json.compress
-

@@ -1,5 +1,5 @@
 {
-  "corpusSourceSha256": "4c11b1d35dca711b633e407d59f85c7144bc2abf5b98ce42b314fb3b64aede03",
+  "corpusSourceSha256": "ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e",
   "folds": [
     {
       "before": {
@@ -1092,8 +1092,8 @@
     }
   ],
   "modelSha256": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-  "namingStatementsSha256": "71fe734e898375c6a0cc83f0a45b5e33c4e1e15b19fc985f52c0da00d2cf3164",
-  "payloadSha256": "dfd95c1e364f12f0973af1a16ad85f76fb18b2982eef4d8e8cd3935c2c9f5054",
+  "namingStatementsSha256": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81",
+  "payloadSha256": "61d43a9d2b19bb290d1b5537af2328dce85f89a701318440841bd80493c9042d",
   "queues": [
     {
       "accepted": true,
@@ -3881,7 +3881,7 @@
       },
       "expected": "unauthenticated",
       "id": "NR01-unauthenticated-view",
-      "key": 42
+      "spelling": "alice"
     },
     {
       "authenticated": true,
@@ -4116,7 +4116,7 @@
       },
       "expected": "pending",
       "id": "NR02-two-claims-pending",
-      "key": 42
+      "spelling": "alice"
     },
     {
       "authenticated": true,
@@ -4341,7 +4341,7 @@
         "status": "active"
       },
       "id": "NR03-active-certified-fixture",
-      "key": 42
+      "spelling": "alice"
     },
     {
       "authenticated": true,
@@ -4365,7 +4365,7 @@
       },
       "expected": "absent",
       "id": "NR04-absent-initial",
-      "key": 42
+      "spelling": "alice"
     },
     {
       "authenticated": true,
@@ -4590,7 +4590,7 @@
         "status": "active"
       },
       "id": "NR05-active-second-claim-pending",
-      "key": 42
+      "spelling": "alice"
     },
     {
       "authenticated": true,
@@ -4612,22 +4612,25 @@
           "used": []
         }
       },
-      "expected": "absent",
-      "id": "NR06-unknown-key-absent",
-      "key": 99
+      "expected": {
+        "error": "unknown-spelling"
+      },
+      "id": "NR06-unknown-spelling",
+      "spelling": "carol"
     }
   ],
   "schema": "singular-naming-corpus-v1",
   "sourceHashes": {
     "lean/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "lean/NamingMain.lean": "4c11b1d35dca711b633e407d59f85c7144bc2abf5b98ce42b314fb3b64aede03",
+    "lean/NamingMain.lean": "ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e",
     "lean/Singular.lean": "df09af29896004a49eb03deb1cd37b41a9f569e581ec51dbd86235c729b72184",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
     "lean/Singular/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "lean/Singular/Naming.lean": "c3e143a19b2c8d831213d30e4252be8103f26ffee88759e8af4519c22d2dba27",
+    "lean/Singular/Naming.lean": "2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
-    "lean/Singular/NamingStatements.lean": "71fe734e898375c6a0cc83f0a45b5e33c4e1e15b19fc985f52c0da00d2cf3164",
+    "lean/Singular/NamingLemmas.lean": "b7ad0b835df60c770586237f946d75aaae1d6a563a16223d3112cfa1c57d41e9",
+    "lean/Singular/NamingStatements.lean": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81",
     "lean/Singular/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609"
   },
   "spellings": [
@@ -8169,5 +8172,5 @@
       }
     }
   ],
-  "theoremManifestSha256": "c9d216dfe5b2f38cb92004e072264330118c95bed5bc372c6a25913a05a0e51b"
+  "theoremManifestSha256": "735a302b9a2686a135d5b0bc0d0c79ad7462defafea0603f878404032abbe158"
 }

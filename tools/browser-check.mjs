@@ -50,6 +50,9 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.click('#btn-theme');
   await page.selectOption('#naming-profile','m1-naming');
   assert((await page.locator('#naming-verdict').innerText()).includes('unaccepted'),'naming profile selected');
+  const namingTheoremNames=await page.evaluate(()=>NAMINGTHEOREMS.map(row=>row.name).sort());
+  const namingLampNames=(await page.locator('[data-naming-theorem]').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-naming-theorem')).sort()));
+  assert(namingTheoremNames.length>0&&JSON.stringify(namingLampNames)===JSON.stringify(namingTheoremNames),'naming exact theorem lamps');
   await page.click('#naming-claim');
   assert((await page.locator('#naming-verdict').innerText()).includes('queued'),'naming first claim');
   await page.click('#naming-claim-competing');

@@ -15,6 +15,12 @@
       "pause": 400
     }
   ],
+  "naming-profile-identities-and-limits": [
+    {
+      "text": "The naming profile binds its model, helper proofs, seventeen theorem statements, executable corpus, and theorem inventory by SHA two hundred and fifty six. Fifteen theorem rows have controlled finite checks and two transition equations are exhibits only. The page derives seventeen exact-name lamps from the inventory. Public JavaScript entry points enforce exact naming shapes, nested numeric domains, complete validation of supported actions, exported spelling resolution, replay validation, and a queue-time fixture snapshot. Unsupported action constructors are refused before their payloads are interpreted. These are simulator-boundary and finite-corpus results, not ledger or signature evidence.",
+      "pause": 400
+    }
+  ],
   "theorem-coverage-gaps": [
     {
       "text": "All forty one declarations were stated with admitted proof debt when this record was written, and have since been proved without changing any statement. Twelve have controlled finite checks, seventeen have action exhibits, and twelve lack a nonvacuous executable exhibit. The named gaps include commitment properties, element and sequential fold equivalences, supply and retirement properties, request spending, approval scope, and address and pending resolution equivalences. Action exhibits do not check full quantified statements.",
@@ -35,12 +41,12 @@
   ],
   "verification-boundary": [
     {
-      "text": "Focused checks cover fifty eight corpus rows, thirty two story actions, forty one theorem identities, one thousand seven hundred and sixty four numeric probes, and twenty two negative controls. The incorrect-acceptance fault changes only refused transitions and must fail on the terminal-withdrawal refusal case. Local browser evidence is separate from publication and independent audit. Zero Lean compiles and zero full Nix gates were consumed.",
+      "text": "Focused checks cover fifty eight generic corpus rows, thirty four naming corpus rows, thirty two story actions, forty one generic theorem identities, seventeen naming identities and lamps, one thousand seven hundred and seventy two public-boundary probes, and forty three negative controls. Two naming equations remain exhibits only. The incorrect-acceptance fault changes only refused transitions and must fail on the terminal-withdrawal refusal case. Local browser evidence is separate from publication and independent audit.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "LEAN-CLARITY.md",
-    "sha256": "8c196cd9ca373360aa20061878eeed35f95b30202264147e88ef9a45d7af5312"
+    "sha256": "9df137e8ed3bf52d20f5da85205154bec243244e0b152bf312d00aa404ab2f6b"
   }
 }
