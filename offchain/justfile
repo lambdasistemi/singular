@@ -15,6 +15,12 @@ haskell-build:
 # exposed as a package output so the recipe consumes the locked identity
 # (D-008); it is the same derivation offchain/nix/checks.nix wraps the
 # `cage-tests-e2e` check with.
+#
+# This recipe needs WARM CABAL STATE (the CHaP package index in your
+# ~/.cabal and a populated cabal store). It is the iterative developer
+# loop only; it is NOT the gate, and it fails on a clean machine (D-011:
+# on CI it died in 96s fetching the CHaP index over HTTPS). The gate is
+# the hermetic `e2e` recipe below.
 haskell-e2e:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -23,6 +29,17 @@ haskell-e2e:
     echo "MPFS_BLUEPRINT=$blueprint"
     MPFS_BLUEPRINT="$blueprint" PATH="$node/bin:$PATH" \
         nix develop --command cabal test e2e-tests -O0
+
+# Hermetic devnet E2E (D-011). Builds the blueprint from the onchain
+# flake, then runs the Nix-built, cardano-node-wrapped test binary.
+# No cabal, no package index, no dev-shell state: this is the form CI
+# runs and the one that works on a clean machine.
+e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+    echo "MPFS_BLUEPRINT=$blueprint"
+    MPFS_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
 
 # Regenerate the ONCHAIN golden from the OFFCHAIN generator. This is the
 # ONLY recipe that writes onchain/validators/cage_vectors.ak — an

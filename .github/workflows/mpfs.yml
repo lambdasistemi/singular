@@ -107,16 +107,26 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # The recipe builds the blueprint from the onchain flake first, then
-      # points MPFS_BLUEPRINT at that store path and drives the real
-      # cardano-node (locked input, exposed as offchain#cardano-node)
-      # through the e2e-tests suite — six MPFS cage scenarios: boots
-      # state and applies a request update; retracts a phase-2 request;
-      # rejects a phase-3 request; ends a cage by burning the state
-      # token; sweeps malformed request-address UTxOs; Modify and End
-      # succeed with staking-script withdrawal. Observed 6/6 on the
-      # worker host. These cover the cage protocol surface only — they
-      # do not cover Singular's naming-claim or maintenance behaviour.
+      # Hermetic devnet run (D-011): no `nix develop`, no `just`, no
+      # cabal — nothing consults a package index or any ambient state.
+      # haskell.nix resolves every dependency of the wrapped
+      # `cage-tests-e2e` binary at build time, and the wrapper puts the
+      # locked cardano-node (offchain#cardano-node) on its own PATH.
+      # The step builds the blueprint from the onchain flake first and
+      # points MPFS_BLUEPRINT at that store path, then runs the suite —
+      # six MPFS cage scenarios: boots state and applies a request
+      # update; retracts a phase-2 request; rejects a phase-3 request;
+      # ends a cage by burning the state token; sweeps malformed
+      # request-address UTxOs; Modify and End succeed with
+      # staking-script withdrawal. `needs:` stays ordering and
+      # fail-fast: if the blueprint cannot build, this expensive job is
+      # skipped instead of failing later for the same reason, while
+      # freshness itself is carried by the step's own blueprint build
+      # (the consumed artifact is always built from the checked-out
+      # commit). The suite covers the cage protocol surface only — it
+      # does not cover Singular's naming-claim or maintenance behaviour.
       - name: Run the devnet E2E against a fresh blueprint
         working-directory: offchain
-        run: nix develop --quiet --command just haskell-e2e
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
