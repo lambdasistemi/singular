@@ -11,8 +11,10 @@ import {
   nextCommitment, nextControlHashInput, retirementRequest,
 } from './lifecycle.mjs';
 import {
-  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum,
-  extractNamingDatum, namingDatumShape, serialiseNamingDatum,
+  decodeInsertCommitment, decodeNamingDatum, deserialiseInsertCommitment,
+  deserialiseInsertRequest, deserialiseNamingDatum, encodeInsertRequest,
+  encodeNamingDatum, extractNamingDatum, insertRequestShape, namingDatumShape,
+  serialiseInsertRequest, serialiseNamingDatum,
   twoDestinationDatum,
 } from './naming-wire.mjs';
 
@@ -69,6 +71,7 @@ const correspondence = {
   'WD01-four-field-roundtrip': ['exact four-field datum bytes round-trip', '#wire-roundtrip'],
   'WD02-datum-hash-refused': ['datum-hash attachment is refused', '#wire-hash'],
   'WD03-two-destinations-refused': ['a second destination field is refused', '#wire-two-destinations'],
+  'WR01-insert-request-refund-roundtrip': ['Insert request bytes commit the cancellation refund address', '#wire-roundtrip'],
 };
 
 const observed = new Set();
@@ -445,6 +448,7 @@ element('initialization-validator').onclick = () => initialize('Substituted vali
 const wireRow = identity => lifecycleCorpus.wire.find(row => row.id === identity);
 element('wire-roundtrip').onclick = () => {
   const row = wireRow('WD01-four-field-roundtrip');
+  const requestRow = wireRow('WR01-insert-request-refund-roundtrip');
   const encoded = encodeNamingDatum(aliceFixture);
   const bytes = serialiseNamingDatum(aliceFixture);
   const decoded = decodeNamingDatum(encoded);
@@ -452,10 +456,33 @@ element('wire-roundtrip').onclick = () => {
   if (!equal(namingDatumShape(encoded), {outerIndex: 0, innerIndex: 0, arity: 4}) || !equal(bytes, row.expectedBytes)
       || !equal(decoded, aliceFixture) || !equal(decodedBytes, aliceFixture)
       || !equal(serialiseNamingDatum(decodedBytes), bytes)) throw new Error('four-field wire roundtrip');
+  const queued = queueClaim(namingInitial(), {spelling: 'alice', fixture: clone(aliceFixture), accepted: true});
+  if (!queued.accepted) throw new Error(`insert request setup: ${queued.reason}`);
+  const request = queued.value.state.registry.requests[0];
+  const requestEncoded = encodeInsertRequest(request);
+  const requestBytes = serialiseInsertRequest(request);
+  const requestDecoded = deserialiseInsertRequest(request, requestRow.expectedBytes);
+  const requestReencoded = requestDecoded === null ? null : serialiseInsertRequest({
+    ...request, proposal: requestDecoded,
+    token: {policy: requestDecoded.applicationPolicy, name: {insert: {proposal: requestDecoded}}},
+  });
+  if (!equal(request, requestRow.request) || !equal(decodeInsertCommitment(requestEncoded), request.proposal)
+      || !equal(insertRequestShape(requestEncoded), requestRow.shape)
+      || !equal(requestBytes, requestRow.expectedBytes)
+      || !equal(requestDecoded, request.proposal) || !equal(requestReencoded, requestRow.expectedBytes)
+      || deserialiseInsertRequest(request, requestRow.malformedBytes) !== null
+      || !equal(deserialiseInsertCommitment(requestRow.redirectedBytes), requestRow.redirectedDecoded)
+      || deserialiseInsertRequest(request, requestRow.redirectedBytes) !== null
+      || request.proposal.refundAddress !== requestRow.storedRefundAddress) {
+    throw new Error('insert request refund wire roundtrip');
+  }
   lastExecutingWitness = null;
-  mark('WD01-four-field-roundtrip');
+  mark('WD01-four-field-roundtrip', 'WR01-insert-request-refund-roundtrip');
   show('Encode, decode, and re-encode exact four-field datum bytes', {accepted: true},
-    {shape: namingDatumShape(encoded), byteLength: bytes.length});
+    {shape: namingDatumShape(encoded), byteLength: bytes.length,
+      insertRequestShape: insertRequestShape(requestEncoded),
+      insertRequestByteLength: requestBytes.length,
+      storedRefundAddress: request.proposal.refundAddress});
 };
 element('wire-hash').onclick = () => {
   if (extractNamingDatum({datumHash: [1, 2, 3]}) !== null) throw new Error('datum hash accepted');

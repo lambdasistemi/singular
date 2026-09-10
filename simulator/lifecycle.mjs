@@ -3,12 +3,14 @@
 // supported address and mirrors the lifecycle verdicts.
 import {step, equal} from './core.mjs';
 import {
-  canonicalAddress, paymentKeyAddress, commitmentShape, foldRequest,
-  demoRefundAddress, namingResolve, queueClaim, wellFormedFixture,
+  aliceFixture, canonicalAddress, paymentKeyAddress, commitmentShape, foldRequest,
+  demoRefundAddress, namingInitial, namingResolve, queueClaim, wellFormedFixture,
 } from './naming.mjs';
 import {
-  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
-  namingDatumShape, serialiseNamingDatum,
+  decodeInsertCommitment, decodeNamingDatum, deserialiseInsertCommitment,
+  deserialiseInsertRequest, deserialiseNamingDatum, encodeInsertRequest,
+  encodeNamingDatum, extractNamingDatum, insertRequestShape, namingDatumShape,
+  serialiseInsertRequest, serialiseNamingDatum,
 } from './naming-wire.mjs';
 
 const fail = reason => { throw new Error(reason); };
@@ -272,6 +274,7 @@ export const lifecycleCorpusIdentities = Object.freeze([
   'LT07-retirement-withdrawal-refused', 'LT08-wrong-retirement-custody-refused',
   'LT09-retirement-replay-refused',
   'WD01-four-field-roundtrip', 'WD02-datum-hash-refused', 'WD03-two-destinations-refused',
+  'WR01-insert-request-refund-roundtrip',
 ]);
 
 function checkWireRow(row) {
@@ -294,6 +297,45 @@ function checkWireRow(row) {
   }
   if (row.id === 'WD03-two-destinations-refused') {
     return decodeNamingDatum(row.encoded) === null && row.result === null;
+  }
+  if (row.id === 'WR01-insert-request-refund-roundtrip') {
+    const queued = queueClaim(namingInitial(), {
+      spelling: 'alice', fixture: structuredClone(aliceFixture), accepted: true,
+    });
+    if (!queued.accepted) return false;
+    const request = queued.value.state.registry.requests[0];
+    const encoded = encodeInsertRequest(request);
+    const decoded = decodeInsertCommitment(encoded);
+    const decodedBytes = deserialiseInsertRequest(request, row.expectedBytes);
+    const reencodedBytes = decodedBytes === null ? null : serialiseInsertRequest({
+      ...request, proposal: decodedBytes,
+      token: {policy: decodedBytes.applicationPolicy, name: {insert: {proposal: decodedBytes}}},
+    });
+    const refund = {destination: row.storedRefundAddress, value: 0};
+    const approval = step(queued.value.state.registry, {mintWithdraw: {
+      approval: {asset: {policy: queued.value.state.registry.config.applicationPolicy,
+        name: {withdraw: {registry: queued.value.state.registry.config.registry,
+          request: queued.requestId, refund}}}, accepted: true, conforms: true},
+      witness: {applicationMint: true, applicationSpend: false, nativeSpend: false,
+        representativeMint: false},
+    }});
+    if (!approval.accepted) return false;
+    const comparison = lifecycleStep({...queued.value.state, registry: approval.value.state},
+      {cancelClaim: {requestId: queued.requestId, refundAddress: row.presentedRefundAddress}});
+    return equal(request, row.request) && equal(request.proposal, row.proposal)
+      && equal(encoded, row.encoded) && equal(decoded, row.decoded)
+      && equal(insertRequestShape(encoded), row.shape)
+      && equal(serialiseInsertRequest(request), row.encodedBytes)
+      && equal(row.encodedBytes, row.expectedBytes)
+      && equal(decodedBytes, row.decodedBytes) && equal(reencodedBytes, row.reencodedBytes)
+      && deserialiseInsertRequest(request, row.malformedBytes) === null
+      && row.malformedResult === null
+      && equal(deserialiseInsertCommitment(row.redirectedBytes), row.redirectedDecoded)
+      && deserialiseInsertRequest(request, row.redirectedBytes) === null
+      && row.redirectedRequestResult === null
+      && request.proposal.refundAddress === row.storedRefundAddress
+      && row.presentedRefundAddress !== row.storedRefundAddress
+      && equal(comparison, row.comparisonResult);
   }
   return false;
 }

@@ -62,7 +62,7 @@ LIFECYCLE_IDS = {
     'LT06-quorum-payment-redirection-refused', 'LT07-retirement-withdrawal-refused',
     'LT08-wrong-retirement-custody-refused', 'LT09-retirement-replay-refused',
     'WD01-four-field-roundtrip', 'WD02-datum-hash-refused',
-    'WD03-two-destinations-refused',
+    'WD03-two-destinations-refused', 'WR01-insert-request-refund-roundtrip',
 }
 
 

@@ -231,6 +231,9 @@ def namingWireRows : List Json :=
   let decoded := decodeNamingDatum encoded
   let encodedBytes := serialiseNamingDatum aliceFixture
   let decodedBytes := deserialiseNamingDatum expectedNamingDatumBytes
+  let insertEncoded := encodeInsertRequest aliceInsertRequest
+  let insertDecoded := insertEncoded.bind decodeInsertCommitment
+  let insertDecodedBytes := deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes
   [Json.mkObj [("id", toJson "WD01-four-field-roundtrip"),
       ("fixture", toJson aliceFixture), ("encoded", toJson encoded),
       ("decoded", toJson decoded), ("reencoded", toJson (decoded.map encodeNamingDatum)),
@@ -245,7 +248,32 @@ def namingWireRows : List Json :=
       ("result", toJson (extractNamingDatum (.datumHash [1, 2, 3])))],
     Json.mkObj [("id", toJson "WD03-two-destinations-refused"),
       ("encoded", toJson twoDestinationDatum),
-      ("result", toJson (decodeNamingDatum twoDestinationDatum))]]
+      ("result", toJson (decodeNamingDatum twoDestinationDatum))],
+    Json.mkObj [("id", toJson "WR01-insert-request-refund-roundtrip"),
+      ("request", toJson aliceInsertRequest),
+      ("proposal", toJson aliceInsertProposal),
+      ("encoded", toJson insertEncoded),
+      ("decoded", toJson insertDecoded),
+      ("shape", toJson (insertEncoded.bind insertRequestShape)),
+      ("encodedBytes", toJson (serialiseInsertRequest aliceInsertRequest)),
+      ("expectedBytes", toJson expectedAliceInsertRequestBytes),
+      ("decodedBytes", toJson insertDecodedBytes),
+      ("reencodedBytes", toJson (insertDecodedBytes.bind fun proposal =>
+        serialiseInsertRequest
+          { aliceInsertRequest with proposal, token := some (insertAsset proposal) })),
+      ("malformedBytes", toJson malformedAliceInsertRequestBytes),
+      ("malformedResult", toJson
+        (deserialiseInsertRequest aliceInsertRequest malformedAliceInsertRequestBytes)),
+      ("redirectedBytes", toJson redirectedAliceInsertRequestBytes),
+      ("redirectedDecoded", toJson
+        (deserialiseInsertCommitment redirectedAliceInsertRequestBytes)),
+      ("redirectedRequestResult", toJson
+        (deserialiseInsertRequest aliceInsertRequest redirectedAliceInsertRequestBytes)),
+      ("storedRefundAddress", toJson aliceInsertProposal.refundAddress),
+      ("presentedRefundAddress", toJson (demoRefundAddress + 1)),
+      ("comparisonResult", lifecycleVerdictJson
+        (lifecycleStep fixtureHasher cancellationPending
+          (.cancelClaim 1 (demoRefundAddress + 1))))]]
 
 end Singular
 
