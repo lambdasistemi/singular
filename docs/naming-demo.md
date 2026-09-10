@@ -4,7 +4,7 @@
 
 A reviewer who wants to play a naming claim in the docs rather than read a proposed walkthrough. This page is the entry point for the first-release naming profile — an explicit, labelled, **unaccepted candidate**. It is not the generic registry demo, and no on-chain acceptance is claimed anywhere on this page or in the simulator.
 
-<a href="../../simulator/">Open the playable simulator and choose the m1-naming profile</a>.
+<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable simulator and choose the m1-naming profile</a>.
 
 ## What you can do
 
