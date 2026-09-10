@@ -2,7 +2,7 @@
 
 As an application designer, follow a registration from an approved request into a live application output, then explore address changes, retirement and deletion. The simulator shows successful transitions and exact refusals so you can inspect the proposed behavior before choosing a ledger construction.
 
-<a href="../../simulator/">Open the playable Singular simulator</a> or follow the [simulation walkthrough](simulation.md).
+<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable Singular simulator</a> — the live generic-registry simulator, where Delete is allowed — or follow the [simulation walkthrough](simulation.md).
 
 This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 41 theorem and inversion declarations are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
 
@@ -82,7 +82,7 @@ The simulation is a separate author's transcription of the frozen Lean interface
 
 ## Candidate status
 
-The same published candidate includes the [executable Lean source](../model/Singular/Model.lean), [proved statements](../model/Singular/Statements.lean), their [supporting lemmas](../model/Singular/Lemmas.lean) and [exported finite corpus](../model/corpus.json). Their identity belongs to this candidate; the proofs were completed without changing any statement.
+The same published candidate includes the [executable Lean source](../lean/Singular/Model.lean), [proved statements](../lean/Singular/Statements.lean), their [supporting lemmas](../lean/Singular/Lemmas.lean) and [exported finite corpus](../lean/corpus.json). Their identity belongs to this candidate; the proofs were completed without changing any statement.
 
 The repository carries no deployed Singular validator, accepted statement audit or production release. The proofs are complete and individually inventoried, with a compiled axiom gate on every build. The requested review surface is the draft PR and its exact candidate preview; independent audit stages remain separate work.
 

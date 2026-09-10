@@ -7,5 +7,5 @@ raise SystemExit(main([
     "--register", "docs/model-ledger.md",
     "--register", "docs/theorems.md",
     "--register", "docs/mutants.md",
-    "README.md", "docs", "specs",
+    "README.md", "docs", "specs/protocol",
 ]))

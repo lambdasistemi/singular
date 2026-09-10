@@ -2,7 +2,7 @@
 
 As a model reviewer, use this register to locate the exact requirement or finite scenario behind a behavior you observe, and check its conditions and omissions. The lookup identifiers below preserve links to executable evidence; the [design stories](design.md) explain the same behavior as a journey.
 
-This is a **CANDIDATE at MODEL + PROOFS stage**. The executable Lean machine is `Singular.step` in [the model source](../model/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is PROVED from the standard axioms without changing its statement; there is no audit verdict or acceptance claim.
+This is a **CANDIDATE at MODEL + PROOFS stage**. The executable Lean machine is `Singular.step` in [the model source](../lean/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is PROVED from the standard axioms without changing its statement; there is no audit verdict or acceptance claim.
 
 ## Authority and domain
 
@@ -46,7 +46,7 @@ Completion-only terminal custody remains a statement-coverage gap across the who
 
 ## Scenario inventory
 
-The checked [corpus](../model/corpus.json) carries the exact model, statements, corpus-source and theorem-manifest SHA-256 identities. Each transition row records input state, action, independently declared accepted/refused expectation, exact refusal reason where applicable, and Lean-computed result. Resolver rows record input state, authentication flag and expected result. `tools/check_model.py` verifies source identities and byte-for-byte regeneration; this is finite behavior evidence, not exhaustive verification.
+The checked [corpus](../lean/corpus.json) carries the exact model, statements, corpus-source and theorem-manifest SHA-256 identities. Each transition row records input state, action, independently declared accepted/refused expectation, exact refusal reason where applicable, and Lean-computed result. Resolver rows record input state, authentication flag and expected result. `tools/check_model.py` verifies source identities and byte-for-byte regeneration; this is finite behavior evidence, not exhaustive verification.
 
 | Corpus identity | Explicit status | Expected outcome |
 | --- | --- | --- |
