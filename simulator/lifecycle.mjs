@@ -6,6 +6,10 @@ import {
   canonicalAddress, paymentKeyAddress, commitmentShape, foldRequest,
   namingResolve, queueClaim, wellFormedFixture,
 } from './naming.mjs';
+import {
+  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
+  namingDatumShape, serialiseNamingDatum,
+} from './naming-wire.mjs';
 
 const fail = reason => { throw new Error(reason); };
 const mask64 = (1n << 64n) - 1n;
@@ -81,8 +85,10 @@ const exactFields = (value, fields) => equal(Object.keys(value ?? {}).sort(), [.
 const authorized = (fixture, witnesses) => paymentKeyAddress(fixture.controlAddress)
   && witnesses.requiredSigners.some(signer => equal(signer, fixture.controlAddress));
 const quorumAuthorized = (fixture, witnesses) => {
-  const signed = [...new Set(fixture.retirementQuorum.members.filter(member => witnesses.quorumSigners.includes(member)))];
-  return fixture.retirementQuorum.threshold > 0 && signed.length >= fixture.retirementQuorum.threshold;
+  const signed = fixture.retirementQuorum.members.filter(member =>
+    witnesses.quorumSigners.some(signer => equal(signer, member)));
+  const distinct = new Set(signed.map(member => JSON.stringify(member))).size;
+  return fixture.retirementQuorum.threshold > 0 && distinct >= fixture.retirementQuorum.threshold;
 };
 const validateOutput = (state, record, application, source, successor) => {
   if (source !== record.outputId || application.id !== source || application.key !== record.key
@@ -169,6 +175,20 @@ export function lifecycleStep(state, action) {
   catch (error) { return {accepted: false, reason: error.message}; }
 }
 
+const emptyExecutionWitness = () => ({applicationMint: false, applicationSpend: false,
+  nativeSpend: false, representativeMint: false, seedSpend: false, authenticatedRead: false,
+  requiredSigners: [], quorumSigners: []});
+
+export function lifecycleExecutingWitness(action) {
+  const witness = emptyExecutionWitness();
+  const kind = Object.keys(action ?? {})[0];
+  if (['maintain', 'recover', 'retire'].includes(kind)) return {...witness, applicationSpend: true,
+    requiredSigners: action[kind].witnesses.requiredSigners,
+    quorumSigners: action[kind].witnesses.quorumSigners};
+  if (kind === 'completeRetirement') return {...witness, nativeSpend: true, representativeMint: true};
+  return null;
+}
+
 export const cardanoKeriRevision = '14a64a4681d3e429fab5877062b5c476c2a4bfe2';
 export const namingConsumerBinding = Object.freeze({sourceRevision: cardanoKeriRevision, canonicalSeed: 400,
   registry: 1, applicationPolicy: 7, representativePolicy: 8, validatorScript: 12});
@@ -182,8 +202,22 @@ export function initializeConsumer(binding, attempt) {
   return {accepted: true};
 }
 
+export function initializeConsumerTransition(binding, state, attempt) {
+  const shape = initializeConsumer(binding, attempt);
+  if (!shape.accepted) return shape;
+  if (state.consumedSeeds.includes(attempt.seed)) return {accepted: false, reason: 'canonical-seed-consumed'};
+  return {accepted: true, state: {consumedSeeds: [attempt.seed, ...state.consumedSeeds]}};
+}
+
+export function initializationExecutingWitness(binding, state, attempt) {
+  return {...emptyExecutionWitness(),
+    seedSpend: initializeConsumerTransition(binding, state, attempt).accepted};
+}
+
 export const lifecycleCorpusIdentities = Object.freeze([
   'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
+  'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
+  'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',
   'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
   'LM03-maintenance-field-tamper-refused', 'LO01-retirement-pending-visible',
   'LO02-retirement-over-visible', 'LR01-recovery-accepts',
@@ -192,11 +226,36 @@ export const lifecycleCorpusIdentities = Object.freeze([
   'LR06-forged-public-digest-refused', 'LT01-controller-retirement-accepts',
   'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
   'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
+  'WD01-four-field-roundtrip', 'WD02-datum-hash-refused', 'WD03-two-destinations-refused',
 ]);
+
+function checkWireRow(row) {
+  if (row.id === 'WD01-four-field-roundtrip') {
+    const encoded = encodeNamingDatum(row.fixture);
+    const decoded = decodeNamingDatum(encoded);
+    const encodedBytes = serialiseNamingDatum(row.fixture);
+    const decodedBytes = deserialiseNamingDatum(row.expectedBytes);
+    return equal(encoded, row.encoded) && equal(decoded, row.decoded)
+      && equal(decoded === null ? null : encodeNamingDatum(decoded), row.reencoded)
+      && equal(encodedBytes, row.encodedBytes) && equal(encodedBytes, row.expectedBytes)
+      && equal(decodedBytes, row.decodedBytes)
+      && equal(decodedBytes === null ? null : serialiseNamingDatum(decodedBytes), row.reencodedBytes)
+      && deserialiseNamingDatum(row.malformedBytes) === null && row.malformedResult === null
+      && equal(namingDatumShape(encoded), row.shape)
+      && equal(row.shape, {outerIndex: 0, innerIndex: 0, arity: 4});
+  }
+  if (row.id === 'WD02-datum-hash-refused') {
+    return extractNamingDatum(row.attachment) === null && row.result === null;
+  }
+  if (row.id === 'WD03-two-destinations-refused') {
+    return decodeNamingDatum(row.encoded) === null && row.result === null;
+  }
+  return false;
+}
 
 /** Replay the single Lean-produced lifecycle corpus through public adapters. */
 export function checkLifecycleCorpus(corpus) {
-  const sections = ['steps', 'resolutions', 'initializations', 'registrations'];
+  const sections = ['steps', 'resolutions', 'initializations', 'registrations', 'wire'];
   if (corpus?.schema !== 'singular-naming-lifecycle-corpus-v1'
       || !sections.every(section => Array.isArray(corpus[section]) && corpus[section].length > 0)) fail('zero lifecycle corpus');
   const rows = sections.flatMap(section => corpus[section]);
@@ -205,14 +264,18 @@ export function checkLifecycleCorpus(corpus) {
   let executed = 0;
   for (const row of corpus.steps) {
     if (!equal(lifecycleStep(row.before, row.action), row.result)) fail(`lifecycle-corpus/${row.id}`);
+    if (!equal(lifecycleExecutingWitness(row.action), row.executingWitness)) fail(`lifecycle-witness/${row.id}`);
     executed++;
   }
   for (const row of corpus.resolutions) {
     if (!equal(namingResolve(row.before, row.spelling, row.authenticated), row.expected)) fail(`lifecycle-corpus/${row.id}`);
+    if (!equal({...emptyExecutionWitness(), authenticatedRead: row.authenticated}, row.executingWitness)) fail(`lifecycle-witness/${row.id}`);
     executed++;
   }
   for (const row of corpus.initializations) {
-    if (!equal(initializeConsumer(row.binding, row.attempt), row.result)) fail(`lifecycle-corpus/${row.id}`);
+    if (!equal(initializeConsumer(row.binding, row.attempt), row.shapeResult)) fail(`lifecycle-shape/${row.id}`);
+    if (!equal(initializeConsumerTransition(row.binding, row.before, row.attempt), row.result)) fail(`lifecycle-corpus/${row.id}`);
+    if (!equal(initializationExecutingWitness(row.binding, row.before, row.attempt), row.executingWitness)) fail(`lifecycle-witness/${row.id}`);
     executed++;
   }
   for (const row of corpus.registrations) {
@@ -220,6 +283,12 @@ export function checkLifecycleCorpus(corpus) {
     if (!equal(queue, row.queueResult)) fail(`lifecycle-corpus/${row.id}/queue`);
     const fold = queue.accepted ? foldRequest(queue.value.state, queue.requestId) : queue;
     if (!equal(fold, row.foldResult)) fail(`lifecycle-corpus/${row.id}/fold`);
+    if (!equal({...emptyExecutionWitness(), applicationMint: true, nativeSpend: true,
+      representativeMint: true}, row.executingWitness)) fail(`lifecycle-witness/${row.id}`);
+    executed++;
+  }
+  for (const row of corpus.wire) {
+    if (!checkWireRow(row)) fail(`lifecycle-corpus/${row.id}`);
     executed++;
   }
   if (executed !== lifecycleCorpusIdentities.length) fail('lifecycle corpus denominator');

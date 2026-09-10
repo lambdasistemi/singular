@@ -118,5 +118,35 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "6e43c4fdd0f705a95e8fd77771f376fa4be4a90e6a0d6a85544e2d4a9cf07073"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3f953c0bfe4f632f06affc437198fbf24ad5b9b0e0de27138a44ecaf5686bafd"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.second_seed_rival_registry_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d464b54da007528dcababb22d118cdeb47c138475d4aacc09fde9a96547460c0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_registry_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "869cd7019de8cf9f9deb01cbcb874236b0849a42ce0e09b66e9985918608b3b0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_policy_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7e335f0fc46ad890758512458ba6350c5b9968643b25a1c385c20cb78a41f0a0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "08d610c87c30b7482a565a1e96c6ee57c87fbeab94d7d45a6791b2c8cfe52995"
   }
 ]

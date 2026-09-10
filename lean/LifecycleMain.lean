@@ -1,4 +1,5 @@
 import Singular.NamingLifecycleAudit
+import Singular.NamingWireAudit
 
 /-! Lean-owned executable lifecycle corpus. Rows contain inputs and results
 computed by the model itself. Consumers replay these bytes through the public
@@ -22,6 +23,7 @@ structure LifecycleResolutionRow where
 structure LifecycleInitializationRow where
   id : String
   binding : ConsumerBinding
+  before : InitializationState
   attempt : InitializationAttempt
 
 structure LifecycleRegistrationRow where
@@ -82,9 +84,17 @@ def lifecycleResolutionRows : List LifecycleResolutionRow := [
 
 def lifecycleInitializationRows : List LifecycleInitializationRow := [
   { id := "LI01-canonical-initialization-accepts", binding := namingConsumerBinding,
-    attempt := canonicalInitialization },
+    before := {}, attempt := canonicalInitialization },
   { id := "LI02-alternate-seed-refused", binding := namingConsumerBinding,
-    attempt := alternateSeedInitialization }]
+    before := {}, attempt := alternateSeedInitialization },
+  { id := "LI03-second-seed-rival-registry-refused", binding := namingConsumerBinding,
+    before := {}, attempt := rivalRegistryInitialization },
+  { id := "LI04-substituted-registry-refused", binding := namingConsumerBinding,
+    before := {}, attempt := substitutedRegistryInitialization },
+  { id := "LI05-substituted-policy-refused", binding := namingConsumerBinding,
+    before := {}, attempt := substitutedPolicyInitialization },
+  { id := "LI06-repeated-canonical-seed-refused", binding := namingConsumerBinding,
+    before := canonicalInitializedState, attempt := canonicalInitialization }]
 
 def lifecycleRegistrationRows : List LifecycleRegistrationRow := [
   { id := "LX01-re-registration-after-over-refused", before := retirementOver,
@@ -126,6 +136,11 @@ def initializationVerdictJson (result : Except String Unit) : Json :=
   | .ok _ => Json.mkObj [("accepted", toJson true)]
   | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)]
 
+def initializationStateVerdictJson (result : Except String InitializationState) : Json :=
+  match result with
+  | .ok state => Json.mkObj [("accepted", toJson true), ("state", toJson state)]
+  | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)]
+
 def queueVerdictJson (result : Except String NamingQueueOutcome) : Json :=
   match result with
   | .ok value => Json.mkObj [("accepted", toJson true), ("requestId", toJson value.requestId),
@@ -135,11 +150,13 @@ def queueVerdictJson (result : Except String NamingQueueOutcome) : Json :=
 def stepRowJson (row : LifecycleStepRow) : Json :=
   Json.mkObj [("id", toJson row.id), ("before", toJson row.before),
     ("action", lifecycleActionJson row.action),
+    ("executingWitness", toJson (lifecycleExecutingWitness row.action)),
     ("result", lifecycleVerdictJson (lifecycleStep fixtureHasher row.before row.action))]
 
 def resolutionRowJson (row : LifecycleResolutionRow) : Json :=
   Json.mkObj [("id", toJson row.id), ("before", toJson row.before),
     ("spelling", toJson row.spelling), ("authenticated", toJson row.authenticated),
+    ("executingWitness", toJson ({ authenticatedRead := row.authenticated } : LifecycleExecutionWitness)),
     ("expected", match spellingKey row.spelling with
       | none => Json.mkObj [("error", toJson "unknown-spelling")]
       | some key => match namingResolve row.before key row.authenticated with
@@ -148,8 +165,11 @@ def resolutionRowJson (row : LifecycleResolutionRow) : Json :=
 
 def initializationRowJson (row : LifecycleInitializationRow) : Json :=
   Json.mkObj [("id", toJson row.id), ("binding", toJson row.binding),
-    ("attempt", toJson row.attempt),
-    ("result", initializationVerdictJson (initializeConsumer row.binding row.attempt))]
+    ("before", toJson row.before), ("attempt", toJson row.attempt),
+    ("executingWitness", toJson (initializationExecutingWitness row.binding row.before row.attempt)),
+    ("shapeResult", initializationVerdictJson (initializeConsumer row.binding row.attempt)),
+    ("result", initializationStateVerdictJson
+      (initializeConsumerTransition row.binding row.before row.attempt))]
 
 def registrationRowJson (row : LifecycleRegistrationRow) : Json :=
   let queue := namingQueue row.before row.spelling row.fixture row.accepted
@@ -157,7 +177,29 @@ def registrationRowJson (row : LifecycleRegistrationRow) : Json :=
   Json.mkObj [("id", toJson row.id), ("before", toJson row.before),
     ("spelling", toJson row.spelling), ("fixture", toJson row.fixture),
     ("accepted", toJson row.accepted), ("queueResult", queueVerdictJson queue),
+    ("executingWitness", toJson ({ applicationMint := true, nativeSpend := true, representativeMint := true } : LifecycleExecutionWitness)),
     ("foldResult", lifecycleVerdictJson fold)]
+
+def namingWireRows : List Json :=
+  let encoded := encodeNamingDatum aliceFixture
+  let decoded := decodeNamingDatum encoded
+  let encodedBytes := serialiseNamingDatum aliceFixture
+  let decodedBytes := deserialiseNamingDatum expectedNamingDatumBytes
+  [Json.mkObj [("id", toJson "WD01-four-field-roundtrip"),
+      ("fixture", toJson aliceFixture), ("encoded", toJson encoded),
+      ("decoded", toJson decoded), ("reencoded", toJson (decoded.map encodeNamingDatum)),
+      ("encodedBytes", toJson encodedBytes), ("expectedBytes", toJson expectedNamingDatumBytes),
+      ("decodedBytes", toJson decodedBytes),
+      ("reencodedBytes", toJson (decodedBytes.map serialiseNamingDatum)),
+      ("malformedBytes", toJson malformedNamingDatumBytes),
+      ("malformedResult", toJson (deserialiseNamingDatum malformedNamingDatumBytes)),
+      ("shape", toJson (namingDatumShape encoded))],
+    Json.mkObj [("id", toJson "WD02-datum-hash-refused"),
+      ("attachment", Json.mkObj [("datumHash", toJson ([1, 2, 3] : List Nat))]),
+      ("result", toJson (extractNamingDatum (.datumHash [1, 2, 3])))],
+    Json.mkObj [("id", toJson "WD03-two-destinations-refused"),
+      ("encoded", toJson twoDestinationDatum),
+      ("result", toJson (decodeNamingDatum twoDestinationDatum))]]
 
 end Singular
 
@@ -168,5 +210,6 @@ def main : IO Unit := do
     ("steps", toJson (lifecycleStepRows.map stepRowJson)),
     ("resolutions", toJson (lifecycleResolutionRows.map resolutionRowJson)),
     ("initializations", toJson (lifecycleInitializationRows.map initializationRowJson)),
-    ("registrations", toJson (lifecycleRegistrationRows.map registrationRowJson))]
+    ("registrations", toJson (lifecycleRegistrationRows.map registrationRowJson)),
+    ("wire", toJson namingWireRows)]
   (← IO.getStdout).putStrLn json.compress

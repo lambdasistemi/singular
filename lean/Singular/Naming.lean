@@ -36,7 +36,7 @@ def demoDatum : Nat := 100
 def demoValue : Nat := 20
 
 structure RetirementQuorum where
-  members : List Nat
+  members : List (List Nat)
   threshold : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
@@ -134,6 +134,12 @@ def paymentKeyAddress (address : NamingAddress) : Bool :=
 def wellFormedCommitment (commitment : NextCommitment) : Bool :=
   commitment.digest.length == 32 && bytesValid commitment.digest
 
+def quorumKeyHash (start : Nat) : List Nat := List.range' start 28
+
+def wellFormedQuorum (quorum : RetirementQuorum) : Bool :=
+  quorum.members.all (fun member => member.length == 28 && bytesValid member) &&
+    quorum.threshold > 0 && quorum.threshold <= quorum.members.eraseDups.length
+
 def controllerAddress : NamingAddress :=
   { bytes := 97 :: List.range' 1 28, form := .enterprise, network := 1,
     paymentCredential := .paymentKey, paymentHash := List.range' 1 28 }
@@ -173,6 +179,7 @@ structure NamingFixture where
 must be absent or distinct from the control address. -/
 def wellFormedFixture (fixture : NamingFixture) : Bool :=
   paymentKeyAddress fixture.controlAddress && wellFormedCommitment fixture.nextControlCommitment &&
+  wellFormedQuorum fixture.retirementQuorum &&
   match fixture.paymentDestination with
   | none => true
   | some destination => canonicalAddress destination && destination != fixture.controlAddress
@@ -182,13 +189,13 @@ fixtures, not product or economic policy. -/
 def aliceFixture : NamingFixture :=
   { paymentDestination := some destinationAddress, controlAddress := controllerAddress,
     nextControlCommitment := nextControllerCommitment,
-    retirementQuorum := { members := [50, 51, 52], threshold := 2 } }
+    retirementQuorum := { members := [quorumKeyHash 1, quorumKeyHash 29, quorumKeyHash 57], threshold := 2 } }
 
 /-- A competing well-formed demo fixture for a second `alice` claim. -/
 def otherFixture : NamingFixture :=
   { paymentDestination := none, controlAddress := otherControllerAddress,
     nextControlCommitment := nextControllerCommitment,
-    retirementQuorum := { members := [60, 61], threshold := 2 } }
+    retirementQuorum := { members := [quorumKeyHash 85, quorumKeyHash 113], threshold := 2 } }
 
 /-- A malformed demo fixture: the payment destination equals the control
 address, so certification must refuse it. -/

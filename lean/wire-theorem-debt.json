@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Singular.NamingWireStatements.naming_datum_serialises_byte_exact",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7e458efca4757d2e11d34bec76e87b6a8c6cdc20980e2b7200cb1eed456188f8"
+  },
+  {
+    "name": "Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e48c0a065cf1592b9f5cf04ade0f6f569f0f89cf4e046b5dfdb9318c17c0eed4"
+  },
+  {
+    "name": "Singular.NamingWireStatements.inline_datum_only",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "37f674ac8ba8a31ab91f742635706dda503de9f04f7e6def77e4ee761798b8b8"
+  },
+  {
+    "name": "Singular.NamingWireStatements.payment_destination_zero_or_one",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "59e5bb84401349cf663987e0dec63eab4008b55c0568011f915f2782eabb85c1"
+  }
+]

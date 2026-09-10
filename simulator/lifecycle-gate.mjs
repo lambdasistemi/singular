@@ -7,10 +7,15 @@ import {
   nextControllerCommitment, queueClaim, foldRequest,
 } from './naming.mjs';
 import {
-  blake2b256, cardanoKeriRevision, checkLifecycleCorpus, initializeConsumer, lifecycleStep,
+  blake2b256, cardanoKeriRevision, checkLifecycleCorpus, initializeConsumer,
+  initializeConsumerTransition, lifecycleStep,
   namingConsumerBinding, nextCommitment, nextControlHashContract,
   nextControlHashInput, retirementRequest,
 } from './lifecycle.mjs';
+import {
+  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
+  namingDatumShape, serialiseNamingDatum, twoDestinationDatum,
+} from './naming-wire.mjs';
 
 const lifecycleCorpus = JSON.parse(readFileSync(new URL('../lean/lifecycle-corpus.json', import.meta.url)));
 const leanReplay = checkLifecycleCorpus(lifecycleCorpus);
@@ -20,6 +25,19 @@ assert.throws(() => checkLifecycleCorpus(lifecycleDrift), /lifecycle-corpus\/LM0
 const lifecycleIdentityDrop = structuredClone(lifecycleCorpus);
 lifecycleIdentityDrop.steps.shift();
 assert.throws(() => checkLifecycleCorpus(lifecycleIdentityDrop), /lifecycle corpus identity/);
+const encodedDatum = encodeNamingDatum(aliceFixture);
+assert.deepEqual(namingDatumShape(encodedDatum), {outerIndex: 0, innerIndex: 0, arity: 4});
+assert.deepEqual(decodeNamingDatum(encodedDatum), aliceFixture);
+assert.deepEqual(encodeNamingDatum(decodeNamingDatum(encodedDatum)), encodedDatum);
+assert.deepEqual(extractNamingDatum({inline: encodedDatum}), aliceFixture);
+assert.equal(extractNamingDatum({datumHash: [1, 2, 3]}), null);
+assert.equal(decodeNamingDatum(twoDestinationDatum(aliceFixture)), null);
+const wireRow = lifecycleCorpus.wire.find(row => row.id === 'WD01-four-field-roundtrip');
+const encodedDatumBytes = serialiseNamingDatum(aliceFixture);
+assert.deepEqual(encodedDatumBytes, wireRow.expectedBytes);
+assert.deepEqual(deserialiseNamingDatum(wireRow.expectedBytes), aliceFixture);
+assert.deepEqual(serialiseNamingDatum(deserialiseNamingDatum(wireRow.expectedBytes)), wireRow.expectedBytes);
+assert.equal(deserialiseNamingDatum(wireRow.malformedBytes), null);
 
 const ok = verdict => {
   assert.equal(verdict.accepted, true, JSON.stringify(verdict));
@@ -100,13 +118,18 @@ const requeueVerdict = queueClaim(over, {spelling: 'alice', fixture: aliceFixtur
 const requeued = ok(requeueVerdict);
 refused(foldRequest(requeued.state, requeueVerdict.requestId), 'occupied-key');
 refused(lifecycleStep(active, {...retire, retire: {...retire.retire, route: 'quorum',
-  witnesses: {requiredSigners: [], quorumSigners: [50]}}}), 'retirement-authorization');
+  witnesses: {requiredSigners: [], quorumSigners: [aliceFixture.retirementQuorum.members[0]]}}}), 'retirement-authorization');
 
 const canonical = {sourceRevision: cardanoKeriRevision, seed: 400, seedConsumed: true,
   registry: 1, applicationPolicy: 7, representativePolicy: 8, validatorScript: 12};
 assert.deepEqual(initializeConsumer(namingConsumerBinding, canonical), {accepted: true});
 refused(initializeConsumer(namingConsumerBinding, {...canonical, seed: 401}), 'canonical-seed');
+const initialized = initializeConsumerTransition(namingConsumerBinding, {consumedSeeds: []}, canonical);
+assert.deepEqual(initialized, {accepted: true, state: {consumedSeeds: [400]}});
+refused(initializeConsumerTransition(namingConsumerBinding, initialized.state, canonical), 'canonical-seed-consumed');
 
 console.log(JSON.stringify({leanReplay, hashCorrespondence: {dynamicAddresses: addresses.length, oracle: 'python-hashlib'},
   lifecycle: ['maintenance', 'recovery', 'retirement-controller', 'retirement-completion', 'initialization'],
-  negativeControls: 9}));
+  wireCodec: {outerIndex: 0, innerIndex: 0, arity: 4, bytes: encodedDatumBytes.length,
+    exactBytes: true, malformedBytesRefused: true, inlineOnly: true, zeroOrOneDestination: true},
+  negativeControls: 13}));

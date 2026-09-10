@@ -45,7 +45,20 @@ def nonFixtureControllerAddress : NamingAddress :=
 
 structure LifecycleWitnesses where
   requiredSigners : List NamingAddress := []
-  quorumSigners : List Nat := []
+  quorumSigners : List (List Nat) := []
+  deriving Repr, BEq, DecidableEq, ToJson
+
+/-- The actual boundary witness exercised by one lifecycle example. This is
+derived from the action, rather than narrated beside it. -/
+structure LifecycleExecutionWitness where
+  applicationMint : Bool := false
+  applicationSpend : Bool := false
+  nativeSpend : Bool := false
+  representativeMint : Bool := false
+  seedSpend : Bool := false
+  authenticatedRead : Bool := false
+  requiredSigners : List NamingAddress := []
+  quorumSigners : List (List Nat) := []
   deriving Repr, BEq, DecidableEq, ToJson
 
 inductive RetirementRoute where
@@ -61,6 +74,18 @@ inductive LifecycleAction where
       (route : RetirementRoute) (witnesses : LifecycleWitnesses)
   | completeRetirement (requestId : Nat)
   deriving Repr, BEq, DecidableEq, ToJson
+
+def lifecycleExecutingWitness : LifecycleAction → LifecycleExecutionWitness
+  | .maintain _ _ _ _ witnesses =>
+      { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
+        quorumSigners := witnesses.quorumSigners }
+  | .recover _ _ _ _ _ witnesses =>
+      { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
+        quorumSigners := witnesses.quorumSigners }
+  | .retire _ _ _ _ _ witnesses =>
+      { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
+        quorumSigners := witnesses.quorumSigners }
+  | .completeRetirement _ => { nativeSpend := true, representativeMint := true }
 
 def namingRecord (state : NamingState) (key : Nat) : Except String NamingRecord :=
   requireSome (state.records.find? (fun record => record.key == key)) "naming-record-unavailable"
@@ -203,6 +228,28 @@ def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAtte
   if attempt.representativePolicy != binding.representativePolicy then throw "representative-policy"
   if attempt.validatorScript != binding.validatorScript then throw "validator-script"
 
+/-! Executable one-shot state for the initialization input. `seedConsumed` is
+retained in `InitializationAttempt` as the source-boundary shape predicate,
+while this transition owns consumption and therefore refuses a replay without
+trusting that caller-supplied flag to remember prior executions. This is a
+design-time UTxO-consumption model, not evidence that a Cardano transaction was
+executed. -/
+structure InitializationState where
+  consumedSeeds : List Nat := []
+  deriving Repr, BEq, DecidableEq, ToJson
+
+def initializeConsumerTransition (binding : ConsumerBinding) (state : InitializationState)
+    (attempt : InitializationAttempt) : Except String InitializationState := do
+  initializeConsumer binding attempt
+  if state.consumedSeeds.contains attempt.seed then throw "canonical-seed-consumed"
+  return { consumedSeeds := attempt.seed :: state.consumedSeeds }
+
+def initializationExecutingWitness (binding : ConsumerBinding) (state : InitializationState)
+    (attempt : InitializationAttempt) : LifecycleExecutionWitness :=
+  match initializeConsumerTransition binding state attempt with
+  | .ok _ => { seedSpend := true }
+  | .error _ => {}
+
 def namingConsumerBinding : ConsumerBinding :=
   { sourceRevision := cardanoKeriRevision, canonicalSeed := 400, registry := 1,
     applicationPolicy := 7, representativePolicy := 8, validatorScript := 12 }
@@ -213,6 +260,20 @@ def canonicalInitialization : InitializationAttempt :=
 
 def alternateSeedInitialization : InitializationAttempt :=
   { canonicalInitialization with seed := 401 }
+
+def rivalRegistryInitialization : InitializationAttempt :=
+  { canonicalInitialization with seed := 401, registry := 2 }
+
+def substitutedRegistryInitialization : InitializationAttempt :=
+  { canonicalInitialization with registry := 2 }
+
+def substitutedPolicyInitialization : InitializationAttempt :=
+  { canonicalInitialization with applicationPolicy := 9 }
+
+def canonicalInitializedState : InitializationState :=
+  match initializeConsumerTransition namingConsumerBinding {} canonicalInitialization with
+  | .ok state => state
+  | .error _ => {}
 
 def clearedFixture : NamingFixture := { aliceFixture with paymentDestination := none }
 
@@ -254,7 +315,7 @@ def retirementByQuorum : LifecycleAction :=
       | none => .completeRetirement 0
       | some application =>
           .retire record.outputId 4 aliceKey (retirementRequest activeOnce record application 4)
-            .quorum { quorumSigners := [50, 51] }
+            .quorum { quorumSigners := [quorumKeyHash 1, quorumKeyHash 29] }
 
 def retirementInsufficient : LifecycleAction :=
   match activeOnce.records.head? with
@@ -264,7 +325,7 @@ def retirementInsufficient : LifecycleAction :=
       | none => .completeRetirement 0
       | some application =>
           .retire record.outputId 4 aliceKey (retirementRequest activeOnce record application 4)
-            .quorum { quorumSigners := [50] }
+            .quorum { quorumSigners := [quorumKeyHash 1] }
 
 def afterLifecycle (state : NamingState) (action : LifecycleAction) : NamingState :=
   match lifecycleStep fixtureHasher state action with
