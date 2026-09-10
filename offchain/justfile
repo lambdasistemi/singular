@@ -4,34 +4,59 @@ develop:
 
 # Build Haskell cage library
 haskell-build:
-    cabal build -O0 all
+    nix develop --command cabal build -O0 all
 
-# Run Haskell E2E tests against a devnet (needs a real cardano-node
-# subprocess; may exceed slice budget — see issue #31 acceptance row).
-# Ordering is manual and nothing enforces it: build the onchain
-# blueprint FIRST (`nix build ../onchain#plutus-blueprint`, or
-# `aiken build` in onchain/) or ../onchain/plutus.json is stale.
+# Run the devnet E2E (drives a real cardano-node subprocess). The recipe
+# builds the Aiken blueprint FIRST, from the onchain flake:
+# onchain/plutus.json is not a committed file, so the recipe must produce
+# the artifact it consumes and point MPFS_BLUEPRINT at the store path.
+# Pinned toolchains only (D-006): cabal from this tree's dev shell, and
+# cardano-node from .#cardano-node — the input this flake already locks,
+# exposed as a package output so the recipe consumes the locked identity
+# (D-008); it is the same derivation offchain/nix/checks.nix wraps the
+# `cage-tests-e2e` check with.
 haskell-e2e:
-    MPFS_BLUEPRINT=../onchain/plutus.json cabal test e2e-tests -O0
+    #!/usr/bin/env bash
+    set -euo pipefail
+    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+    node="$(nix build --quiet --no-link --print-out-paths .#cardano-node)"
+    echo "MPFS_BLUEPRINT=$blueprint"
+    MPFS_BLUEPRINT="$blueprint" PATH="$node/bin:$PATH" \
+        nix develop --command cabal test e2e-tests -O0
 
-# IMPURE stopgap (break 5, D-003): regenerates the ONCHAIN golden from
-# the OFFCHAIN generator via host-relative paths. Requires both trees
-# checked out as siblings with aiken on PATH.
+# Regenerate the ONCHAIN golden from the OFFCHAIN generator. This is the
+# ONLY recipe that writes onchain/validators/cage_vectors.ak — an
+# explicit, developer-requested regeneration (D-003, D-006). The result
+# is formatted with the pinned Aiken, never an ambient one, and the
+# build leaves no `result` symlink behind.
 generate-vectors:
-    nix build .#test-vectors --quiet
-    cp -f result ../onchain/validators/cage_vectors.ak
-    aiken fmt ../onchain/validators/cage_vectors.ak
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="$(nix build --quiet --no-link --print-out-paths .#test-vectors)"
+    cp "$out" ../onchain/validators/cage_vectors.ak
+    chmod u+w ../onchain/validators/cage_vectors.ak
+    nix develop ../onchain#aiken --command aiken fmt ../onchain/validators/cage_vectors.ak
+    echo "generate-vectors: wrote onchain/validators/cage_vectors.ak"
 
-# Check that committed vectors are up to date. This procedure — not
-# `nix flake check` — is the only freshness gate: a green
-# `nix flake check` on either flake asserts NOTHING about vector
-# freshness (D-003). The enforcing CI job is pending milestone
-# arbitration.
+# Check that committed vectors are up to date. READ-ONLY (D-006): the
+# generator's output lands in a temp dir, is formatted there with the
+# pinned Aiken, and is diffed against the committed golden. Nothing in
+# either tree is written. This procedure — not `nix flake check` — is
+# the only freshness gate: a green `nix flake check` on either flake
+# asserts NOTHING about vector freshness (D-003). Enforced in CI by
+# .github/workflows/mpfs.yml (A-002).
 vectors-check:
     #!/usr/bin/env bash
     set -euo pipefail
-    just generate-vectors
-    if ! git diff --exit-code -- ../onchain/validators/cage_vectors.ak; then
-        echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit"
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    out="$(nix build --quiet --no-link --print-out-paths .#test-vectors)"
+    cp "$out" "$tmp/cage_vectors.ak"
+    chmod u+w "$tmp/cage_vectors.ak"
+    nix develop ../onchain#aiken --command aiken fmt "$tmp/cage_vectors.ak"
+    if diff -u ../onchain/validators/cage_vectors.ak "$tmp/cage_vectors.ak"; then
+        echo "vectors-check: PASS — committed golden matches the pinned-Aiken-formatted generator output"
+    else
+        echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
         exit 1
     fi

@@ -1,0 +1,122 @@
+# MPFS cross-tree gates (A-002, D-005).
+#
+# This workflow enforces the two cross-tree relationships that neither
+# isolated flake can see (the trees are two self-contained flakes since
+# the two-flake split; a green `nix flake check` on either asserts
+# nothing about vector freshness, and nothing builds the blueprint
+# before the Haskell side consumes it):
+#
+#   1. the real vector comparison — the Haskell generator's output,
+#      formatted by the pinned Aiken, diffed against the committed
+#      golden `onchain/validators/cage_vectors.ak` (D-003/D-006);
+#   2. an explicit order — the Aiken blueprint build is a job of its
+#      own and the devnet E2E job runs only after it (`needs:`): if the
+#      blueprint cannot build, the expensive devnet job is skipped
+#      instead of failing later for the same reason. Freshness itself is
+#      NOT carried by the ordering edge: the e2e recipe builds
+#      ../onchain#plutus-blueprint itself and points MPFS_BLUEPRINT at
+#      that exact store path, so what the suite consumes is always the
+#      artifact built from the checked-out commit. `needs:` is the
+#      ordering and fail-fast; the recipe is the freshness guarantee.
+#
+# Every command below was executed on the worker host before this file
+# was written, with receipts (t31-recipes-ci handoffs/recipes-ci-report.md):
+#   - nix build --quiet --no-link --print-out-paths .#plutus-blueprint  (exit 0)
+#   - nix develop --quiet --command just vectors-check                  (exit 0, PASS)
+#   - nix develop --quiet --command just haskell-e2e                    (exit 0, 6/6)
+name: MPFS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'onchain/**'
+      - 'offchain/**'
+      - '.github/workflows/mpfs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'onchain/**'
+      - 'offchain/**'
+      - '.github/workflows/mpfs.yml'
+permissions:
+  contents: read
+concurrency:
+  group: mpfs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  blueprint:
+    name: Aiken blueprint builds first
+    runs-on: nixos
+    timeout-minutes: 15
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-blueprint"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build the Aiken blueprint
+        working-directory: onchain
+        run: nix build --quiet --no-link --print-out-paths .#plutus-blueprint
+  vectors-fresh:
+    name: Cage vectors match the generator
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-vectors-fresh"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Read-only verification (D-006): generate into a temp path, format
+      # that with the pinned Aiken (nix develop ../onchain#aiken), diff
+      # against the committed golden. The recipe writes nothing in either
+      # tree; only `just generate-vectors` writes the golden.
+      - name: Diff generator output against the committed golden
+        working-directory: offchain
+        run: nix develop --quiet --command just vectors-check
+  e2e:
+    name: Devnet E2E on the fresh blueprint
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 60
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-e2e"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # The recipe builds the blueprint from the onchain flake first, then
+      # points MPFS_BLUEPRINT at that store path and drives the real
+      # cardano-node (locked input, exposed as offchain#cardano-node)
+      # through the e2e-tests suite — six MPFS cage scenarios: boots
+      # state and applies a request update; retracts a phase-2 request;
+      # rejects a phase-3 request; ends a cage by burning the state
+      # token; sweeps malformed request-address UTxOs; Modify and End
+      # succeed with staking-script withdrawal. Observed 6/6 on the
+      # worker host. These cover the cage protocol surface only — they
+      # do not cover Singular's naming-claim or maintenance behaviour.
+      - name: Run the devnet E2E against a fresh blueprint
+        working-directory: offchain
+        run: nix develop --quiet --command just haskell-e2e

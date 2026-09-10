@@ -1,6 +1,8 @@
-# Build plutus.json blueprint via Nix
+# Build the plutus.json blueprint via Nix — print the store path and
+# leave no `result` symlink (Singular's `/result*` ignore is
+# root-anchored and does not cover onchain/result).
 build:
-    nix build
+    nix build --no-link --print-out-paths
 
 # Enter Aiken dev shell
 develop:
@@ -10,10 +12,11 @@ develop:
 develop-aiken:
     nix develop .#aiken
 
-# Build blueprint directly with aiken (requires aiken in PATH)
+# Build the blueprint directly with aiken — pinned toolchain (D-006),
+# never whatever aiken happens to be on the caller's PATH.
 aiken-build:
-    aiken build
+    nix develop --command aiken build
 
-# Run aiken tests
+# Run aiken tests — pinned toolchain (D-006)
 test:
-    aiken check
+    nix develop --command aiken check

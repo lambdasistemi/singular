@@ -98,6 +98,10 @@
       {
         packages = {
           inherit test-vectors test-vectors-json;
+          # Mechanical adapter (D-008): exposes the cardano-node already
+          # locked as this flake's input, so the devnet recipe consumes the
+          # locked identity instead of re-resolving a remote tag.
+          cardano-node = cardano-node.packages.${system}.cardano-node;
         };
 
         # vectors-freshness was deleted from ./nix/checks.nix (break 5,
