@@ -14,13 +14,13 @@
     }
   ],
   "files": {
-    "formal/Model.lean": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
-    "formal/Lemmas.lean": "f71d70fc1e166156b1ac848738e036138e16b6518e6d8e15462efaa5329eba37",
-    "formal/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609",
+    "formal/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "formal/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
+    "formal/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
-    "formal/theorem-debt.json": "92f2cd110a0199248269977e37b43adfd5fbe60e22681546a5cbac6d5cb0a3db",
-    "corpus.json": "4fcc27b4a1edbfc8179d8b3cebcf43c9cf7d52d7827f42cc89ce90ba13b72095",
+    "formal/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+    "formal/theorem-debt.json": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a",
+    "corpus.json": "ff576b4b4aaf572879a6a039cce82c0e6194d44c878ae14065cf2d413b66e6d9",
     "formal/Naming.lean": "2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72",
     "formal/NamingStatements.lean": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81"
   },

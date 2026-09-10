@@ -64,6 +64,16 @@ def forgedRecovery : LifecycleAction :=
     { requiredSigners := [nonFixtureControllerAddress] }
 
 def lifecycleStepRows : List LifecycleStepRow := [
+  { id := "LC01-cancellation-stored-refund-accepts", before := cancellationPending,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC02-cancellation-redirect-refused", before := cancellationPending,
+    action := .cancelClaim 1 (demoRefundAddress + 1) },
+  { id := "LC03-insert-attestation-cancellation-refused", before := claimedOnce,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC04-folded-claim-cancellation-refused", before := activeOnce,
+    action := .cancelClaim 1 demoRefundAddress },
+  { id := "LC06-cancellation-replay-refused", before := cancelledClaim,
+    action := .cancelClaim 1 demoRefundAddress },
   { id := "LM01-maintenance-accepts", before := activeOnce, action := maintainClear },
   { id := "LM02-maintenance-unauthorized-refused", before := activeOnce,
     action := .maintain 3 4 aliceKey clearedFixture {} },
@@ -154,6 +164,9 @@ def lifecycleActionJson : LifecycleAction → Json
         ("requestId", toJson requestId), ("key", toJson key),
         ("request", toJson request), ("route", routeJson route),
         ("witnesses", witnessesJson witnesses)])]
+  | .cancelClaim requestId refundAddress =>
+      Json.mkObj [("cancelClaim", Json.mkObj [("requestId", toJson requestId),
+        ("refundAddress", toJson refundAddress)])]
   | .completeRetirement requestId =>
       Json.mkObj [("completeRetirement", Json.mkObj [("requestId", toJson requestId)])]
   | .withdrawRetirement requestId =>
@@ -218,6 +231,9 @@ def namingWireRows : List Json :=
   let decoded := decodeNamingDatum encoded
   let encodedBytes := serialiseNamingDatum aliceFixture
   let decodedBytes := deserialiseNamingDatum expectedNamingDatumBytes
+  let insertEncoded := encodeInsertRequest aliceInsertRequest
+  let insertDecoded := insertEncoded.bind decodeInsertCommitment
+  let insertDecodedBytes := deserialiseInsertRequest aliceInsertRequest expectedAliceInsertRequestBytes
   [Json.mkObj [("id", toJson "WD01-four-field-roundtrip"),
       ("fixture", toJson aliceFixture), ("encoded", toJson encoded),
       ("decoded", toJson decoded), ("reencoded", toJson (decoded.map encodeNamingDatum)),
@@ -232,7 +248,32 @@ def namingWireRows : List Json :=
       ("result", toJson (extractNamingDatum (.datumHash [1, 2, 3])))],
     Json.mkObj [("id", toJson "WD03-two-destinations-refused"),
       ("encoded", toJson twoDestinationDatum),
-      ("result", toJson (decodeNamingDatum twoDestinationDatum))]]
+      ("result", toJson (decodeNamingDatum twoDestinationDatum))],
+    Json.mkObj [("id", toJson "WR01-insert-request-refund-roundtrip"),
+      ("request", toJson aliceInsertRequest),
+      ("proposal", toJson aliceInsertProposal),
+      ("encoded", toJson insertEncoded),
+      ("decoded", toJson insertDecoded),
+      ("shape", toJson (insertEncoded.bind insertRequestShape)),
+      ("encodedBytes", toJson (serialiseInsertRequest aliceInsertRequest)),
+      ("expectedBytes", toJson expectedAliceInsertRequestBytes),
+      ("decodedBytes", toJson insertDecodedBytes),
+      ("reencodedBytes", toJson (insertDecodedBytes.bind fun proposal =>
+        serialiseInsertRequest
+          { aliceInsertRequest with proposal, token := some (insertAsset proposal) })),
+      ("malformedBytes", toJson malformedAliceInsertRequestBytes),
+      ("malformedResult", toJson
+        (deserialiseInsertRequest aliceInsertRequest malformedAliceInsertRequestBytes)),
+      ("redirectedBytes", toJson redirectedAliceInsertRequestBytes),
+      ("redirectedDecoded", toJson
+        (deserialiseInsertCommitment redirectedAliceInsertRequestBytes)),
+      ("redirectedRequestResult", toJson
+        (deserialiseInsertRequest aliceInsertRequest redirectedAliceInsertRequestBytes)),
+      ("storedRefundAddress", toJson aliceInsertProposal.refundAddress),
+      ("presentedRefundAddress", toJson (demoRefundAddress + 1)),
+      ("comparisonResult", lifecycleVerdictJson
+        (lifecycleStep fixtureHasher cancellationPending
+          (.cancelClaim 1 (demoRefundAddress + 1))))]]
 
 end Singular
 

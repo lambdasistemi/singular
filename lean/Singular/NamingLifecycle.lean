@@ -73,6 +73,7 @@ inductive LifecycleAction where
       (candidate : NamingFixture) (witnesses : LifecycleWitnesses)
   | retire (source requestId key : Nat) (request : Request)
       (route : RetirementRoute) (witnesses : LifecycleWitnesses)
+  | cancelClaim (requestId refundAddress : Nat)
   | completeRetirement (requestId : Nat)
   | withdrawRetirement (requestId : Nat)
   deriving Repr, BEq, DecidableEq, ToJson
@@ -87,6 +88,7 @@ def lifecycleExecutingWitness : LifecycleAction → LifecycleExecutionWitness
   | .retire _ _ _ _ _ witnesses =>
       { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
         quorumSigners := witnesses.quorumSigners }
+  | .cancelClaim _ _ => { nativeSpend := true }
   | .completeRetirement _ => { nativeSpend := true, representativeMint := true }
   | .withdrawRetirement _ => {}
 
@@ -164,7 +166,13 @@ def recoverController (hasher : NextControlHasher) (state : NamingState) (source
 
 def retirementRequest (state : NamingState) (record : NamingRecord)
     (application : ApplicationUTxO) (requestId : Nat) : Request :=
-  let proposal : Proposal := { registry := state.registry.config.registry, key := record.key, applicationPolicy := state.registry.config.applicationPolicy, initial := application.output, scope := [(entry state.registry record.key).incarnation] }
+  let proposal : Proposal :=
+    { registry := state.registry.config.registry
+      key := record.key
+      applicationPolicy := state.registry.config.applicationPolicy
+      refundAddress := 0
+      initial := application.output
+      scope := [(entry state.registry record.key).incarnation] }
   { id := requestId, operation := .update, proposal := proposal, token := none,
     held := some record.representative, destination := state.registry.config.requestAddress,
     authenticatedOrigin := true }
@@ -201,6 +209,34 @@ def refuseRetirementWithdrawal (state : NamingState) (requestId : Nat) : Except 
   if request.operation != .update then throw "retirement-update-only"
   throw "retirement-withdrawal-refused"
 
+/-- Cancellation copies the refund address committed by the queued Insert.
+The refund value is deliberately fixed to zero in this naming lifecycle model:
+economic terms are outside the operator ruling represented by these rows. -/
+def cancellationRefund (refundAddress : Nat) : Refund :=
+  { destination := refundAddress, value := 0 }
+
+def cancellationAsset (state : NamingState) (requestId refundAddress : Nat) : Asset :=
+  { policy := state.registry.config.applicationPolicy,
+    name := .withdraw state.registry.config.registry requestId
+      (cancellationRefund refundAddress) }
+
+def cancelNamingClaim (state : NamingState) (requestId refundAddress : Nat) :
+    Except String NamingResult := do
+  let request ← requireSome
+    (state.registry.requests.find? (fun candidate => candidate.id == requestId))
+    "request-unavailable"
+  if request.operation != .insert then throw "cancellation-insert-only"
+  if refundAddress != request.proposal.refundAddress then
+    throw "withdraw-refund-address"
+  let result ← step state.registry (.withdraw requestId
+    (cancellationAsset state requestId refundAddress)
+    (cancellationRefund refundAddress) { nativeSpend := true })
+  let nextState : NamingState :=
+    { registry := result.state
+      claims := state.claims.filter (fun claim => claim.requestId != requestId)
+      records := state.records }
+  return { state := nextState, logical := result.logical }
+
 def lifecycleStep (hasher : NextControlHasher) (state : NamingState) : LifecycleAction → Except String NamingResult
   | .maintain source successor key candidate witnesses =>
       maintainDestination state source successor key candidate witnesses
@@ -209,6 +245,8 @@ def lifecycleStep (hasher : NextControlHasher) (state : NamingState) : Lifecycle
         candidateRepresentative candidate witnesses
   | .retire source requestId key request route witnesses =>
       beginRetirement state source requestId key request route witnesses
+  | .cancelClaim requestId refundAddress =>
+      cancelNamingClaim state requestId refundAddress
   | .completeRetirement requestId => finishRetirement state requestId
   | .withdrawRetirement requestId => refuseRetirementWithdrawal state requestId
 
@@ -401,6 +439,18 @@ def retirementWrongCustody : LifecycleAction :=
           .retire record.outputId 4 aliceKey { request with held := some wrongRepresentative }
             .controller { requiredSigners := [controllerAddress] }
 
+def withCancellationApproval (state : NamingState) (requestId refundAddress : Nat) : NamingState :=
+  let asset := cancellationAsset state requestId refundAddress
+  match step state.registry (.mintWithdraw { asset := asset, accepted := true }
+      { applicationMint := true }) with
+  | .ok result => { state with registry := result.state }
+  | .error _ => state
+
+/-- Pending `alice` with the distinct withdrawal attestation needed for the
+positive cancellation row. The Insert attestation remains separately present. -/
+def cancellationPending : NamingState :=
+  withCancellationApproval claimedOnce 1 demoRefundAddress
+
 def afterLifecycle (state : NamingState) (action : LifecycleAction) : NamingState :=
   match lifecycleStep fixtureHasher state action with
   | .ok result => result.state
@@ -408,6 +458,8 @@ def afterLifecycle (state : NamingState) (action : LifecycleAction) : NamingStat
 
 def retirementPending : NamingState := afterLifecycle activeOnce retirementByController
 def retirementOver : NamingState := afterLifecycle retirementPending (.completeRetirement 4)
+def cancelledClaim : NamingState :=
+  afterLifecycle cancellationPending (.cancelClaim 1 demoRefundAddress)
 
 def retiredReRegistration : Except String NamingResult := do
   let queued ← namingQueue retirementOver "alice" aliceFixture true

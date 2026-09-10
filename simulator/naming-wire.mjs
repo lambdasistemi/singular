@@ -1,3 +1,4 @@
+import {equal} from './core.mjs';
 import {decodeAddress, wellFormedFixture} from './naming.mjs';
 
 const bytes = value => ({bytes: [...value]});
@@ -165,4 +166,75 @@ export const serialiseNamingDatum = fixture => serialiseWireData(encodeNamingDat
 export const deserialiseNamingDatum = input => {
   const data = deserialiseWireData(input);
   return data === null ? null : decodeNamingDatum(data);
+};
+
+const natData = value => Number.isSafeInteger(value) && value >= 0 ? integer(value) : null;
+const decodeNat = data => sameKeys(data, ['integer']) && Number.isSafeInteger(data.integer)
+  && data.integer >= 0 ? data.integer : null;
+const encodeRepresentative = value => constr(0, [integer(value.registry), integer(value.key),
+  integer(value.policy), integer(value.assetScope)]);
+const decodeRepresentative = data => {
+  if (!sameKeys(data, ['constr']) || data.constr.index !== 0 || !Array.isArray(data.constr.fields)
+      || data.constr.fields.length !== 4) return null;
+  const values = data.constr.fields.map(decodeNat);
+  return values.some(value => value === null) ? null
+    : {registry: values[0], key: values[1], policy: values[2], assetScope: values[3]};
+};
+const encodeOutput = value => constr(0, [encodeRepresentative(value.representative),
+  integer(value.quantity), integer(value.destination), integer(value.datum), integer(value.value)]);
+const decodeOutput = data => {
+  if (!sameKeys(data, ['constr']) || data.constr.index !== 0 || !Array.isArray(data.constr.fields)
+      || data.constr.fields.length !== 5) return null;
+  const [representativeData, ...numberData] = data.constr.fields;
+  const representative = decodeRepresentative(representativeData);
+  const values = numberData.map(decodeNat);
+  return representative === null || values.some(value => value === null) ? null
+    : {representative, quantity: values[0], destination: values[1], datum: values[2], value: values[3]};
+};
+const encodeProposal = proposal => constr(0, [integer(proposal.registry), integer(proposal.key),
+  integer(proposal.applicationPolicy), integer(proposal.refundAddress), encodeOutput(proposal.initial),
+  list(proposal.scope.map(integer))]);
+const decodeProposal = data => {
+  if (!sameKeys(data, ['constr']) || data.constr.index !== 0 || !Array.isArray(data.constr.fields)
+      || data.constr.fields.length !== 6) return null;
+  const [registryData, keyData, policyData, refundData, outputData, scopeData] = data.constr.fields;
+  const numbers = [registryData, keyData, policyData, refundData].map(decodeNat);
+  const initial = decodeOutput(outputData);
+  if (numbers.some(value => value === null) || initial === null || !sameKeys(scopeData, ['list'])
+      || !Array.isArray(scopeData.list)) return null;
+  const scope = scopeData.list.map(decodeNat);
+  return scope.some(value => value === null) ? null : {registry: numbers[0], key: numbers[1],
+    applicationPolicy: numbers[2], refundAddress: numbers[3], initial, scope};
+};
+const insertAsset = proposal => ({policy: proposal.applicationPolicy, name: {insert: {proposal}}});
+export const encodeInsertRequest = request => request?.operation === 'insert'
+  && request.proposal && equal(request.token, insertAsset(request.proposal))
+  ? constr(0, [encodeProposal(request.proposal)]) : null;
+export const decodeInsertCommitment = data => sameKeys(data, ['constr']) && data.constr.index === 0
+  && Array.isArray(data.constr.fields) && data.constr.fields.length === 1
+  ? decodeProposal(data.constr.fields[0]) : null;
+export const decodeInsertRequestCommitment = (request, data) => {
+  const expected = decodeInsertCommitment(encodeInsertRequest(request));
+  const proposal = decodeInsertCommitment(data);
+  return expected !== null && proposal !== null && equal(proposal, expected) ? proposal : null;
+};
+export const insertRequestShape = data => {
+  const proposal = data?.constr?.fields;
+  return Number.isSafeInteger(data?.constr?.index) && Array.isArray(proposal) && proposal.length === 1
+    && Number.isSafeInteger(proposal[0]?.constr?.index) && Array.isArray(proposal[0]?.constr?.fields)
+    ? {commitmentIndex: data.constr.index, commitmentArity: 1,
+      proposalIndex: proposal[0].constr.index, proposalArity: proposal[0].constr.fields.length}
+    : null;
+};
+export const serialiseInsertRequest = request => {
+  const data = encodeInsertRequest(request);
+  return data === null ? null : serialiseWireData(data);
+};
+export const deserialiseInsertCommitment = input => {
+  const data = deserialiseWireData(input);
+  return data === null ? null : decodeInsertCommitment(data);
+};
+export const deserialiseInsertRequest = (request, input) => {
+  const data = deserialiseWireData(input);
+  return data === null ? null : decodeInsertRequestCommitment(request, data);
 };

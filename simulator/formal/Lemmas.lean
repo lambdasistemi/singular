@@ -285,7 +285,8 @@ theorem withdraw_ok (s : State) (id : Nat) (a : Asset) (refund : Refund)
     (w : Witnesses) (t : Result) :
     step s (.withdraw id a refund w) = .ok t ↔
     ∃ r, s.requests.find? (·.id == id) = some r ∧ w.nativeSpend = true ∧
-    r.authenticatedOrigin = true ∧ insertNative s r = true ∧ recognized s a = true ∧
+    r.authenticatedOrigin = true ∧ insertNative s r = true ∧
+    refund.destination = r.proposal.refundAddress ∧ recognized s a = true ∧
     a.name = .withdraw s.config.registry id refund ∧ t = { state := consume s id } := by
   unfold step
   rcases hfind : s.requests.find? (·.id == id) with _ | r
@@ -862,7 +863,7 @@ theorem inv_step {s : State} {a : Action} {t : Result} (hs : Inv s) (h : step s 
     exact inv_add_request hs rfl rfl rfl rfl rfl hheld (by simpa [fresh] using hfresh)
   | withdraw id a refund w =>
     rw [withdraw_ok] at h
-    obtain ⟨r, hr, -, -, hnative, -, -, rfl⟩ := h
+    obtain ⟨r, hr, -, -, hnative, -, -, -, rfl⟩ := h
     have hid : r.id = id := by simpa using List.find?_some hr
     subst hid
     have hheld : r.held = none := by

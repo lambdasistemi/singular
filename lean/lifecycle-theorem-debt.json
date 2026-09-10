@@ -18,6 +18,36 @@
     "statementSha256": "bae003c96c43adf86a6f8a22e3def323ffa3faa52602bf2b27d04d57c18c0fd6"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.cancellation_stored_refund_committed_and_accepts",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d7e799977547bce52d48f83f3c983bd7f1033738f93cba5aa07a5de455e88143"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.cancellation_redirect_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "133ef77a91a6bf0c995b2779b781253c218fefd098030dc7bc454d3ef6063c15"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.insert_attestation_alone_cannot_cancel",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e1bca3bc99cda4c8540d8ce2111c533ff49ed998d031054f49085ffb02b853ae"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.folded_claim_cancellation_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2f8bb229bdcd14d571327b8f835565492b6e92ff4f03e6dc3c343a727d14808a"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.cancellation_replay_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d272abc3bb226c0d407ef9aeb3aba3d7d3c0b1e64de993d4418a092338d2e319"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.destination_clear_accepts",
     "status": "PROVED",
     "debt": "none",

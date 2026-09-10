@@ -13,7 +13,7 @@ const namingFail = reason => { throw new Error(reason); };
 
 export const demoSpellings = [['alice', 42]];
 export const aliceKey = 42;
-export const demoDestination = 50, demoDatum = 100, demoValue = 20;
+export const demoDestination = 50, demoDatum = 100, demoValue = 20, demoRefundAddress = 60;
 export const spellingKey = spelling => {
   if (typeof spelling !== 'string') namingFail('invalid-shape/naming.spelling');
   const hit = demoSpellings.find(([s]) => s === spelling);
@@ -145,7 +145,9 @@ export function namingStep(state, action) {
 
 export function namingQueueAction(state, key) {
   const output = { representative: namingRepresentative(state.registry, key), quantity: 1, destination: demoDestination, datum: demoDatum, value: demoValue };
-  const proposal = { registry: state.registry.config.registry, key, applicationPolicy: state.registry.config.applicationPolicy, initial: output, scope: [namingEntry(state.registry, key).incarnation] };
+  const proposal = { registry: state.registry.config.registry, key,
+    applicationPolicy: state.registry.config.applicationPolicy, refundAddress: demoRefundAddress,
+    initial: output, scope: [namingEntry(state.registry, key).incarnation] };
   const asset = namingInsertAsset(proposal);
   return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false } } };
 }

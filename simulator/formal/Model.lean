@@ -36,6 +36,10 @@ structure Proposal where
   registry : Nat
   key : Nat
   applicationPolicy : Nat
+  /-- Cancellation destination fixed by the application before the Insert
+  commitment is minted. Because the proposal is the Insert token name, this
+  address is committed rather than selected during withdrawal. -/
+  refundAddress : Nat
   initial : Output
   scope : List Nat
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
@@ -239,6 +243,7 @@ def step (s : State) (a : Action) : Except String Result := do
     let r ← requireSome (s.requests.find? (·.id == id)) "request-unavailable"
     if !w.nativeSpend then throw "native-witness"
     if !r.authenticatedOrigin || !insertNative s r then throw "withdraw-insert-only"
+    if refund.destination != r.proposal.refundAddress then throw "withdraw-refund-address"
     if !recognized s asset || asset.name != .withdraw s.config.registry id refund then
       throw "withdraw-binding"
     return { state := consume s id }

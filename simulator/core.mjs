@@ -4,7 +4,7 @@ export const equal=(a,b)=>canonical(a)===canonical(b);
 const fail=reason=>{throw new Error(reason)};
 const N='nat',I='int',B='bool';
 const rep={registry:N,key:N,policy:N,assetScope:N},out={representative:rep,quantity:N,destination:N,datum:N,value:N};
-const proposal={registry:N,key:N,applicationPolicy:N,initial:out,scope:[N]},refund={destination:N,value:N};
+const proposal={registry:N,key:N,applicationPolicy:N,refundAddress:N,initial:out,scope:[N]},refund={destination:N,value:N};
 const asset={policy:N,name:{$union:{insert:{proposal},withdraw:{registry:N,request:N,refund}}}};
 const approval={asset,accepted:B,conforms:B};
 const req={id:N,operation:{$enum:['insert','update','delete']},proposal,token:{$option:asset},held:{$option:rep},destination:N,authenticatedOrigin:B};
@@ -64,7 +64,7 @@ function transition(s,a,trajectory){const kind=Object.keys(a)[0],d=a[kind],w=d.w
  case 'release':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.request,r))fail('exact-release-authorization');if(!releaseNative(s,r)||!r.authenticatedOrigin||!equal(r.held,u.output.representative)||u.key!==r.proposal.key)fail('terminal-binding');if(!fresh(s,r.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,requests:[r,...t.requests],used:[r.id,...t.used]});}
  case 'evolve':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence,n=d.successor;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.successor,n))fail('application-evolution-authorization');if(!equal(n.output.representative,u.output.representative)||n.output.quantity!==1||n.key!==u.key)fail('evolution-representative');if(!fresh(s,n.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,applications:[n,...t.applications],used:[n.id,...t.used]});}
  case 'outsider':if(!fresh(s,r.id))fail('utxo-id-reuse');if(r.held!==null)fail('outsider-cannot-create-representative');return result({...s,requests:[{...r,authenticatedOrigin:false},...s.requests],used:[r.id,...s.used]});
- case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
+ case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(d.refund.destination!==pending.proposal.refundAddress)fail('withdraw-refund-address');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
  case 'fold':{if(!w.nativeSpend)fail('native-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
  case 'moveAction':if(!recognized(s,d.asset))fail('unrecognized-action');if(d.net!==0)fail('movement-net-not-zero');return result(s);
  case 'escape':fail('completion-only-custody');

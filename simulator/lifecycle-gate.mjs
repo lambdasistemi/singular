@@ -1,6 +1,7 @@
 import {spawnSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {step} from './core.mjs';
 import {
   aliceFixture, controllerAddress, decodeAddress, freshControllerAddress,
   freshControllerCommitment, namingInitial, nextControllerAddress,
@@ -13,14 +14,17 @@ import {
   nextControlHashInput, retirementRequest,
 } from './lifecycle.mjs';
 import {
-  decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
-  namingDatumShape, serialiseNamingDatum, twoDestinationDatum,
+  decodeInsertCommitment, decodeNamingDatum, deserialiseInsertCommitment,
+  deserialiseInsertRequest, deserialiseNamingDatum, encodeInsertRequest,
+  encodeNamingDatum, extractNamingDatum, insertRequestShape, namingDatumShape,
+  serialiseInsertRequest, serialiseNamingDatum, twoDestinationDatum,
 } from './naming-wire.mjs';
 
 const lifecycleCorpus = JSON.parse(readFileSync(new URL('../lean/lifecycle-corpus.json', import.meta.url)));
 const leanReplay = checkLifecycleCorpus(lifecycleCorpus);
 const lifecycleDrift = structuredClone(lifecycleCorpus);
-lifecycleDrift.steps[0].result = {accepted: false, reason: 'fabricated-result'};
+const lifecycleDriftRow = lifecycleDrift.steps.find(row => row.id === 'LM01-maintenance-accepts');
+lifecycleDriftRow.result = {accepted: false, reason: 'fabricated-result'};
 assert.throws(() => checkLifecycleCorpus(lifecycleDrift), /lifecycle-corpus\/LM01-maintenance-accepts/);
 const lifecycleIdentityDrop = structuredClone(lifecycleCorpus);
 lifecycleIdentityDrop.steps.shift();
@@ -78,7 +82,40 @@ for (const address of addresses) {
 
 const queuedVerdict = queueClaim(namingInitial(), {spelling: 'alice', fixture: aliceFixture, accepted: true});
 const queued = ok(queuedVerdict);
+const insertRequest = queued.state.registry.requests[0];
+const insertRequestRow = lifecycleCorpus.wire.find(row => row.id === 'WR01-insert-request-refund-roundtrip');
+const encodedInsertRequest = encodeInsertRequest(insertRequest);
+assert.deepEqual(insertRequestShape(encodedInsertRequest), {
+  commitmentIndex: 0, commitmentArity: 1, proposalIndex: 0, proposalArity: 6});
+assert.deepEqual(decodeInsertCommitment(encodedInsertRequest), insertRequest.proposal);
+assert.deepEqual(serialiseInsertRequest(insertRequest), insertRequestRow.expectedBytes);
+assert.deepEqual(deserialiseInsertRequest(insertRequest, insertRequestRow.expectedBytes), insertRequest.proposal);
+assert.deepEqual(serialiseInsertRequest({...insertRequest, proposal: insertRequest.proposal,
+  token: {policy: insertRequest.proposal.applicationPolicy, name: {insert: {proposal: insertRequest.proposal}}}}),
+insertRequestRow.expectedBytes);
+assert.equal(deserialiseInsertRequest(insertRequest, insertRequestRow.malformedBytes), null);
+assert.deepEqual(deserialiseInsertCommitment(insertRequestRow.redirectedBytes),
+  {...insertRequest.proposal, refundAddress: 61});
+assert.equal(deserialiseInsertRequest(insertRequest, insertRequestRow.redirectedBytes), null);
+assert.equal(queued.state.registry.requests[0].proposal.refundAddress, 60,
+  'queued Insert commits the stored cancellation refund address');
+const cancellationRefund = {destination: 60, value: 0};
+const cancellationAsset = {policy: queued.state.registry.config.applicationPolicy,
+  name: {withdraw: {registry: queued.state.registry.config.registry,
+    request: queuedVerdict.requestId, refund: cancellationRefund}}};
+const approvedCancellationRegistry = ok(step(queued.state.registry, {mintWithdraw: {
+  approval: {asset: cancellationAsset, accepted: true, conforms: true},
+  witness: {applicationMint: true, applicationSpend: false, nativeSpend: false,
+    representativeMint: false}}})).state;
+const cancellationPending = {...queued.state, registry: approvedCancellationRegistry};
+const cancel = {cancelClaim: {requestId: queuedVerdict.requestId, refundAddress: 60}};
+const cancelled = ok(lifecycleStep(cancellationPending, cancel)).state;
+refused(lifecycleStep(cancellationPending, {cancelClaim: {...cancel.cancelClaim,
+  refundAddress: 61}}), 'withdraw-refund-address');
+refused(lifecycleStep(queued.state, cancel), 'withdraw-binding');
+refused(lifecycleStep(cancelled, cancel), 'request-unavailable');
 const active = ok(foldRequest(queued.state, queuedVerdict.requestId)).state;
+refused(lifecycleStep(active, cancel), 'request-unavailable');
 const record = active.records[0];
 assert.equal(record.outputId, active.registry.applications[0].id);
 
@@ -156,7 +193,7 @@ assert.deepEqual(initialized, {accepted: true, state: {consumedSeeds: [400]}});
 refused(initializeConsumerTransition(namingConsumerBinding, initialized.state, canonical), 'canonical-seed-consumed');
 
 console.log(JSON.stringify({leanReplay, hashCorrespondence: {dynamicAddresses: addresses.length, oracle: 'python-hashlib'},
-  lifecycle: ['maintenance', 'recovery', 'retirement-controller', 'retirement-completion', 'initialization'],
+  lifecycle: ['cancellation', 'maintenance', 'recovery', 'retirement-controller', 'retirement-completion', 'initialization'],
   wireCodec: {outerIndex: 0, innerIndex: 0, arity: 4, bytes: encodedDatumBytes.length,
     exactBytes: true, malformedBytesRefused: true, inlineOnly: true, zeroOrOneDestination: true},
-  negativeControls: 26}));
+  negativeControls: 30}));
