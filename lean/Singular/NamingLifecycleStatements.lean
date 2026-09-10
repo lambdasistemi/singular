@@ -25,6 +25,36 @@ theorem hash_contract_publishes_complete_preimage :
   · rfl
   · constructor <;> rfl
 
+theorem cancellation_stored_refund_committed_and_accepts :
+    cancellationPending.registry.requests.head?.map
+        (fun request => request.proposal.refundAddress) = some demoRefundAddress ∧
+    cancellationPending.registry.requests.head?.map
+        (fun request => request.token == some (insertAsset request.proposal)) = some true ∧
+    (lifecycleStep fixtureHasher cancellationPending
+      (.cancelClaim 1 demoRefundAddress)).isOk = true := by
+  decide
+
+theorem cancellation_redirect_refused :
+    lifecycleStep fixtureHasher cancellationPending
+      (.cancelClaim 1 (demoRefundAddress + 1)) =
+      .error "withdraw-refund-address" := by
+  rfl
+
+theorem insert_attestation_alone_cannot_cancel :
+    lifecycleStep fixtureHasher claimedOnce (.cancelClaim 1 demoRefundAddress) =
+      .error "withdraw-binding" := by
+  rfl
+
+theorem folded_claim_cancellation_refused :
+    lifecycleStep fixtureHasher activeOnce (.cancelClaim 1 demoRefundAddress) =
+      .error "request-unavailable" := by
+  rfl
+
+theorem cancellation_replay_refused :
+    lifecycleStep fixtureHasher cancelledClaim (.cancelClaim 1 demoRefundAddress) =
+      .error "request-unavailable" := by
+  rfl
+
 theorem destination_clear_accepts :
     (lifecycleStep fixtureHasher activeOnce maintainClear).isOk = true := by
   decide

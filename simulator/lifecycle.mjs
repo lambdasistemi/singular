@@ -4,7 +4,7 @@
 import {step, equal} from './core.mjs';
 import {
   canonicalAddress, paymentKeyAddress, commitmentShape, foldRequest,
-  namingResolve, queueClaim, wellFormedFixture,
+  demoRefundAddress, namingResolve, queueClaim, wellFormedFixture,
 } from './naming.mjs';
 import {
   decodeNamingDatum, deserialiseNamingDatum, encodeNamingDatum, extractNamingDatum,
@@ -107,10 +107,17 @@ const replaceOutput = (state, record, application, successor, fixture) => {
 export const retirementRequest = (state, record, application, requestId) => ({
   id: requestId, operation: 'update',
   proposal: {registry: state.registry.config.registry, key: record.key,
-    applicationPolicy: state.registry.config.applicationPolicy, initial: application.output,
+    applicationPolicy: state.registry.config.applicationPolicy, refundAddress: 0, initial: application.output,
     scope: [state.registry.entries.find(entry => entry.key === record.key)?.incarnation ?? 0]},
   token: null, held: record.representative, destination: state.registry.config.requestAddress,
   authenticatedOrigin: true,
+});
+
+const cancellationRefund = refundAddress => ({destination: refundAddress, value: 0});
+const cancellationAsset = (state, requestId, refundAddress) => ({
+  policy: state.registry.config.applicationPolicy,
+  name: {withdraw: {registry: state.registry.config.registry, request: requestId,
+    refund: cancellationRefund(refundAddress)}},
 });
 
 function transition(state, action) {
@@ -159,6 +166,22 @@ function transition(state, action) {
     if (!result.accepted) fail(result.reason);
     return {state: {...state, registry: result.value.state, records: state.records.filter(other => other.key !== data.key)}, logical: result.value.logical};
   }
+  if (kind === 'cancelClaim') {
+    if (!exactFields(data, ['requestId', 'refundAddress'])) fail('lifecycle-action');
+    const request = state.registry.requests.find(candidate => candidate.id === data.requestId)
+      ?? fail('request-unavailable');
+    if (request.operation !== 'insert') fail('cancellation-insert-only');
+    if (data.refundAddress !== request.proposal.refundAddress) fail('withdraw-refund-address');
+    const result = step(state.registry, {withdraw: {request: data.requestId,
+      asset: cancellationAsset(state, data.requestId, data.refundAddress),
+      refund: cancellationRefund(data.refundAddress),
+      witness: {applicationMint: false, applicationSpend: false, nativeSpend: true,
+        representativeMint: false}}});
+    if (!result.accepted) fail(result.reason);
+    return {state: {...state, registry: result.value.state,
+      claims: state.claims.filter(claim => claim.requestId !== data.requestId)},
+    logical: result.value.logical};
+  }
   if (kind === 'completeRetirement') {
     const request = state.registry.requests.find(candidate => candidate.id === data.requestId) ?? fail('request-unavailable');
     if (request.operation !== 'update') fail('retirement-update-only');
@@ -193,12 +216,14 @@ export function lifecycleExecutingWitness(action) {
   if (['maintain', 'recover', 'retire'].includes(kind)) return {...witness, applicationSpend: true,
     requiredSigners: action[kind].witnesses.requiredSigners,
     quorumSigners: action[kind].witnesses.quorumSigners};
+  if (kind === 'cancelClaim') return {...witness, nativeSpend: true};
   if (kind === 'completeRetirement') return {...witness, nativeSpend: true, representativeMint: true};
   if (kind === 'withdrawRetirement') return witness;
   return null;
 }
 
 export const cardanoKeriRevision = '14a64a4681d3e429fab5877062b5c476c2a4bfe2';
+export {demoRefundAddress};
 export const namingConsumerBinding = Object.freeze({sourceRevision: cardanoKeriRevision, canonicalSeed: 400,
   registry: 1, applicationPolicy: 7, representativePolicy: 8, validatorScript: 12});
 export function initializeConsumer(binding, attempt) {
@@ -224,6 +249,9 @@ export function initializationExecutingWitness(binding, state, attempt) {
 }
 
 export const lifecycleCorpusIdentities = Object.freeze([
+  'LC01-cancellation-stored-refund-accepts', 'LC02-cancellation-redirect-refused',
+  'LC03-insert-attestation-cancellation-refused', 'LC04-folded-claim-cancellation-refused',
+  'LC06-cancellation-replay-refused',
   'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
   'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
   'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',
