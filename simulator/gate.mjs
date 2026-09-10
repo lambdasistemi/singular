@@ -4,12 +4,22 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {step,resolve,inspect,replay,checkCorpus,equal,initial,view} from './core.mjs';
 import {checks,theoremReport,corpusRecords} from './properties.mjs';
+import {checkNamingCorpus,selectProfile,namingPropertyReport,namingChecks,namingInitial,queueClaim,namingResolve,namingReplay,namingStep} from './naming.mjs';
 const root=new URL('./',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8'),json=p=>JSON.parse(read(p));
 const corpus=json('corpus.json'),stories=json('stories.json'),ledger=json('formal/theorem-debt.json'),identity=json('identity.json');
+const namingLedger=json('../lean/naming-theorem-debt.json'),namingCorpus=json('../lean/naming-corpus.json');
 const hash=s=>createHash('sha256').update(s).digest('hex');
+// Two differentiated statement sources, each with its own prefix; never one list.
 const names=[...read('formal/Statements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.Statements.'+m[1]);
-function identityGate(rows=ledger,expected=names){assert(expected.length>0,'zero theorem declarations');assert.deepEqual(rows.map(r=>r.name).sort(),[...expected].sort(),'theorem identity');assert.equal(new Set(rows.map(r=>r.name)).size,rows.length,'duplicate theorem identity');}
+const namingNames=[...read('formal/NamingStatements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.NamingStatements.'+m[1]);
+function identityGate(rows=ledger,expected=names,kind='generic'){assert(expected.length>0,kind==='naming'?'zero naming theorem declarations':'zero theorem declarations');assert.deepEqual(rows.map(r=>r.name).sort(),[...expected].sort(),kind==='naming'?'naming theorem identity':'theorem identity');assert.equal(new Set(rows.map(r=>r.name)).size,rows.length,kind==='naming'?'duplicate naming theorem identity':'duplicate theorem identity');}
 identityGate();assert.equal(names.length,identity.theorems,'theorem denominator');
+identityGate(namingLedger,namingNames,'naming');assert.equal(namingNames.length,identity.namingTheorems,'naming theorem denominator');
+const namingReceipt=checkNamingCorpus(namingCorpus);
+const namingProperties=namingPropertyReport(namingLedger,namingCorpus);
+assert.equal(namingProperties.length,namingNames.length,'naming property denominator');
+for(const row of namingProperties)if(row.coverage==='controlled-check')assert.equal(row.holds,true,'naming property/'+row.name.split('.').at(-1));
+assert.equal(selectProfile('generic').id,'generic','profile selection');assert.equal(selectProfile('m1-naming').id,'m1-naming','profile selection');
 for(const [p,expected] of Object.entries(identity.files))assert.equal(hash(read(p)),expected,'identity/'+p);
 assert.equal(corpus.cases.length,identity.corpusTransitions,'transition denominator');assert.equal(corpus.resolutions.length,identity.corpusResolutions,'resolution denominator');
 const receipt=checkCorpus(corpus);const records=corpusRecords(corpus);
@@ -31,6 +41,18 @@ for(const path of numericPaths(base.before)){for(const value of [-1,0.5,Number.M
 for(const row of corpus.cases){for(const path of numericPaths(row.case.action)){boundaryDiscovered++;const bad=change(row.case.action,path,Number.MAX_SAFE_INTEGER+1);assert.match(step(row.case.before,bad).reason,/^invalid-(nat|int)\//,'action boundary');boundaryExecuted++;}}
 assert.equal(boundaryExecuted,boundaryDiscovered,'boundary denominator');assert(boundaryExecuted>0);
 assert.match(step({...initial(),extra:0},{escape:{request:0}}).reason,/invalid-shape/,'complete shape');assert.match(step(initial(),{escape:{request:0},outsider:{}}).reason,/invalid-shape/,'constructor shape');
+const namingFixture={paymentDestination:70,controlAddress:50,nextControlCommitment:80,retirementQuorum:{members:[50,51,52],threshold:2}};
+const namingBase=namingInitial();
+assert.match(queueClaim(namingBase,{spelling:'alice',fixture:{...namingFixture,extra:0},accepted:true}).reason,/invalid-fixture/,'naming exact fixture shape');boundaryDiscovered++;boundaryExecuted++;
+assert.match(queueClaim(namingBase,{spelling:'alice',fixture:namingFixture,accepted:true,extra:0}).reason,/invalid-shape\/naming.queue/,'naming exact queue shape');boundaryDiscovered++;boundaryExecuted++;
+assert.match(namingResolve({...namingBase,extra:0},'alice',true).error,/invalid-shape\/naming.state/,'naming exact state shape');boundaryDiscovered++;boundaryExecuted++;
+const namingBadNat=structuredClone(namingBase);namingBadNat.registry.config.registry=-1;
+assert.match(namingResolve(namingBadNat,'alice',true).error,/invalid-nat\/state.config.registry/,'naming nested registry domain');boundaryDiscovered++;boundaryExecuted++;
+assert.throws(()=>namingReplay(namingBadNat,[]),/invalid-nat\/state.config.registry/,'naming replay validates empty origin');boundaryDiscovered++;boundaryExecuted++;
+assert.throws(()=>namingReplay(namingBase,{}),/invalid-shape\/naming.actions/,'naming replay action array');boundaryDiscovered++;boundaryExecuted++;
+const namingBadAction=structuredClone(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').action);namingBadAction.fold.extra={};assert.match(namingStep(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').before,namingBadAction).reason,/invalid-shape\/actions/,'naming exact supported action shape');boundaryDiscovered++;boundaryExecuted++;
+const callerFixture=structuredClone(namingFixture);const queuedSnapshot=queueClaim(namingBase,{spelling:'alice',fixture:callerFixture,accepted:true});assert.equal(queuedSnapshot.accepted,true,'naming fixture snapshot setup');callerFixture.nextControlCommitment=81;assert.equal(queuedSnapshot.value.state.claims[0].fixture.nextControlCommitment,80,'naming fixture snapshot');boundaryDiscovered++;boundaryExecuted++;
+assert.equal(boundaryExecuted,boundaryDiscovered,'extended boundary denominator');
 const deleting=structuredClone(corpus.cases.find(r=>r.case.id==='S13-delete-completes'));deleting.case.before.entries[0].incarnation=Number.MAX_SAFE_INTEGER;assert.match(step(deleting.case.before,deleting.case.action).reason,/invalid-nat\/result.entries.incarnation/,'successor overflow');
 const model=read('formal/Model.lean');const refusalSites=[...model.matchAll(/(?:throw|requireSome[^\n]*)\s+"([\w-]+)"/g)].map(m=>({reason:m[1],line:model.slice(0,m.index).split('\n').length}));const refusals=[...new Set(refusalSites.map(x=>x.reason))].sort();const observedRefusals=[...new Set(records.filter(r=>r.result&&!r.result.accepted).map(r=>r.result.reason))].sort();const coverage={sourceRefusals:refusals.map(reason=>({reason,sites:refusalSites.filter(x=>x.reason===reason),exhibits:records.filter(r=>r.result?.reason===reason).map(r=>r.id),status:observedRefusals.includes(reason)?'exhibited':'gap'})),actions:[...new Set(corpus.cases.map(r=>Object.keys(r.case.action)[0]))].sort(),properties:propertyCoverage};
 const controls=[];
@@ -44,11 +66,19 @@ if(process.argv.includes('--selftest')){
  killed('identity-drop',()=>identityGate(ledger.slice(1)),/theorem identity/);
  killed('identity-rename',()=>identityGate(ledger.map((r,i)=>i? r:{...r,name:'Singular.Statements.fake'})),/theorem identity/);
  killed('identity-zero',()=>identityGate([],[]),/zero theorem declarations/);
+ killed('naming-identity-drop',()=>identityGate(namingLedger.slice(1),namingNames,'naming'),/naming theorem identity/);
+ killed('naming-identity-rename',()=>identityGate(namingLedger.map((r,i)=>i?r:{...r,name:'Singular.NamingStatements.fake'}),namingNames,'naming'),/naming theorem identity/);
+ killed('naming-identity-zero',()=>identityGate([],[],'naming'),/zero naming theorem declarations/);
+ const namingDrift=structuredClone(namingCorpus);namingDrift.queues[0].result.requestId=namingDrift.queues[0].result.requestId+1;killed('naming-corpus-drift',()=>checkNamingCorpus(namingDrift),/naming-corpus\//);
+ const namingSuppressed=0;killed('naming-corpus-suppressed',()=>assert(namingSuppressed===namingCorpus.spellings.length+namingCorpus.queues.length+namingCorpus.folds.length+namingCorpus.steps.length+namingCorpus.resolves.length+namingCorpus.replays.length,'naming corpus denominator'),/naming corpus denominator/);
+ const namingZero=structuredClone(namingCorpus);namingZero.steps=[];killed('naming-corpus-zero',()=>checkNamingCorpus(namingZero),/zero naming corpus/);
  const bad=structuredClone(corpus);const accepted=bad.cases.find(r=>r.result.accepted);accepted.result.value.state.config.registry=Number.MAX_SAFE_INTEGER+1;killed('corpus-output-domain',()=>checkCorpus(bad),/invalid-nat\/corpus.result/);
  const suppressed=records.slice(0,0);killed('property-execution-suppressed',()=>assert(suppressed.length===records.length,'property execution denominator'),/property execution denominator/);
  for(const [short,c] of Object.entries(checks)){const source=records.find(c.on);assert(source,'missing control exhibit/'+short);const fabricated=structuredClone(source);c.fault(fabricated);assert(c.on(fabricated),'control lost antecedent/'+short);killed('property-'+short,()=>assert(c.test(fabricated),'property/'+short),new RegExp('property/'+short));}
+ for(const [short,c] of Object.entries(namingChecks)){if(typeof c.fault!=='function')continue;const fabricated=structuredClone(namingCorpus);c.fault(fabricated);assert(c.on(fabricated),'naming control lost exhibit/'+short);killed('naming-property-'+short,()=>assert(c.test(fabricated),'naming property/'+short),new RegExp('naming property/'+short));}
  killed('control-suppression',()=>assert.equal(0,Object.keys(checks).length,'control denominator'),/control denominator/);
+ assert.equal(controls.length,28+Object.values(namingChecks).filter(c=>typeof c.fault==='function').length,'control denominator');
  console.log(JSON.stringify({controlsDiscovered:controls.length,controlsExecuted:controls.length,controls},null,2));
 }
 if(process.argv.includes('--report')){writeFileSync(new URL('coverage.json',root),JSON.stringify(coverage,null,2)+'\n');}
-console.log(JSON.stringify({status:'PASS finite checks only',corpus:receipt,stories:{discovered:storyDiscovered,executed:storyExecuted,trees:stories.length},properties:{discovered:names.length,executed:propertyExecuted,controlled:propertyCoverage.filter(r=>r.coverage==='controlled-check').length,exhibitsOnly:propertyCoverage.filter(r=>r.coverage==='exhibits-only').length,gaps:propertyCoverage.filter(r=>r.coverage==='gap').length},boundary:{discovered:boundaryDiscovered,executed:boundaryExecuted},refusals:{declared:refusals.length,exhibited:refusals.filter(x=>observedRefusals.includes(x)).length}},null,2));
+console.log(JSON.stringify({status:'PASS finite checks only',corpus:receipt,stories:{discovered:storyDiscovered,executed:storyExecuted,trees:stories.length},properties:{discovered:names.length,executed:propertyExecuted,controlled:propertyCoverage.filter(r=>r.coverage==='controlled-check').length,exhibitsOnly:propertyCoverage.filter(r=>r.coverage==='exhibits-only').length,gaps:propertyCoverage.filter(r=>r.coverage==='gap').length},namingProperties:{discovered:namingProperties.length,executed:namingProperties.length,controlled:namingProperties.filter(r=>r.coverage==='controlled-check').length,exhibitsOnly:namingProperties.filter(r=>r.coverage==='exhibits-only').length,gaps:namingProperties.filter(r=>r.coverage==='gap').length},boundary:{discovered:boundaryDiscovered,executed:boundaryExecuted},refusals:{declared:refusals.length,exhibited:refusals.filter(x=>observedRefusals.includes(x)).length}},null,2));

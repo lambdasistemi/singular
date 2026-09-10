@@ -1,0 +1,30 @@
+{
+  "naming-lean": [
+    {
+      "text": "wellFormedFixture, namingStep, namingResolve, and namingReplay. Delete is refused with naming-no-delete.",
+      "pause": 400
+    }
+  ],
+  "simulator-naming-engine-simulatornamingmjs": [
+    {
+      "text": "namingInitial, spellingKey, queueClaim, foldRequest, namingStep, and namingResolve. Two alice queues may both accept.",
+      "pause": 400
+    }
+  ],
+  "profile-selection": [
+    {
+      "text": "selectProfile accepts only generic and the naming profile. No implicit fallback.",
+      "pause": 400
+    }
+  ],
+  "inventories": [
+    {
+      "text": "Generic check_model still matches the frozen forty-one records. Naming statements use a separate inventory, all proved from standard axioms.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/functions-model.md",
+    "sha256": "6b61f1356c22d9cdd4d2a3754260f7f9fc771767917321270a0b3f3608c15b56"
+  }
+}

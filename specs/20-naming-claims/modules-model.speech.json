@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "A dependency diagram places the generic model upstream of the naming layer, with separate theorem inventories and labelled simulator profiles.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Generic foundation stays upstream. Docs describe the playable profile and do not define transition rules.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "No new shared library. New files for naming; generic modules keep their current owners.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "specs/20-naming-claims/modules-model.md",
+    "sha256": "4eed916845ebaf0133fff21601a3c1f626ec69744087a4c234708b555831e69c"
+  }
+}

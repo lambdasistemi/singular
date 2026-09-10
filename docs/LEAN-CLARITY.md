@@ -13,6 +13,23 @@ The simulator derives behavior from the frozen `Singular.Model` definitions, `Si
 
 Changing any bound input invalidates the current evidence. The initial corpus was superseded by the corrected 58-row export; final gates consume only that corrected identity.
 
+## Naming profile identities and limits
+
+| Artifact | SHA256 |
+| --- | --- |
+| Naming.lean | `2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72` |
+| NamingLemmas.lean | `b7ad0b835df60c770586237f946d75aaae1d6a563a16223d3112cfa1c57d41e9` |
+| NamingStatements.lean | `25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81` |
+| NamingMain.lean | `ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e` |
+| Naming theorem inventory | `735a302b9a2686a135d5b0bc0d0c79ad7462defafea0603f878404032abbe158` |
+| Naming corpus | `fee9e4b772604d3587ebedd0980f8ba5e38ef17280e329f677114463e57e36ec` |
+
+The naming inventory contains 17 exact declarations: the original seven statements plus ten branch declarations covering three `namingStep` arms, three queue guards, and four resolve outcomes. The simulator derives 17 exact-name property rows and the composed page derives 17 lamps from that same inventory. Fifteen rows run controlled finite-consequent checks whose fabricated violating records are required to fail; the create-Insert and all-Insert fold equations are exhibits only. A finite lamp does not re-prove a quantified Lean theorem or establish reachability of every premise.
+
+The public JavaScript naming entry points reject extra wrapper, fixture, quorum, claim, record, and queue fields; validate every nested generic registry field; validate supported Insert/fold actions completely; reject non-array replay actions; and validate the origin even for an empty replay. Unsupported action constructors are refused at the naming boundary without interpreting their payloads. Corpus resolve rows use the exported spelling-based `namingResolve`, including an unknown-spelling refusal, rather than the private key helper. Queue acceptance snapshots the certified fixture before returning state, so later caller mutation cannot change the queued claim, folded record, or authenticated observation.
+
+These checks establish the untyped simulator boundary and finite Lean-corpus agreement only. They do not make JavaScript validation a ledger validator, prove a real address codec, verify a signature, or turn the unaccepted naming profile into released behavior. Refusal coverage remains attributable to the named finite exhibits; it is not a claim that every possible malformed value or every quantified premise is reachable.
+
 ## Decisions and model limits
 
 | Point | Formal pointer | Treatment |
@@ -67,6 +84,6 @@ The machine-specific renderer port also changes the template’s generic page wi
 
 ## Verification boundary
 
-The focused Node evidence covers 58 corpus rows, 32 story action steps, 41 exact theorem identities, 1,764 numeric-boundary probes, and 22 self-falsification controls. The incorrect-acceptance control preserves every genuine accepted transition and flips only refused transitions; it must fail at `S11c-terminal-withdraw-refused`.
+The focused Node evidence covers 58 generic corpus rows, 34 naming corpus rows, 32 story action steps, 41 generic theorem identities, 17 naming theorem identities and lamps, 1,772 public-boundary probes, and 43 self-falsification controls (28 generic/instrument controls plus 15 naming property mutations). The two naming equation rows remain exhibits-only. The incorrect-acceptance control preserves every genuine accepted transition and flips only refused transitions; it must fail at `S11c-terminal-withdraw-refused`.
 
-Local real-DOM evidence and exact tested asset hashes are in `simulator/evidence/` in Git. Live publication and independent audit remain separate. Verification consumed **0/2 Lean compile invocations** and **0 full Nix gates**. This return is **SIMULATOR-CANDIDATE**, not proof, audit acceptance, or readiness.
+Local real-DOM evidence and exact tested asset hashes are in `simulator/evidence/` in Git. Fresh repair evidence and its invocation accounting belong to the submission receipt; this clarity page does not claim audit acceptance, publication, or release readiness.

@@ -48,6 +48,25 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.click('#resolve');
   assert(await page.locator('#resolve-output').innerText()==='unauthenticated','forged view');
   await page.click('#btn-theme');
+  await page.selectOption('#naming-profile','m1-naming');
+  assert((await page.locator('#naming-verdict').innerText()).includes('unaccepted'),'naming profile selected');
+  const namingTheoremNames=await page.evaluate(()=>NAMINGTHEOREMS.map(row=>row.name).sort());
+  const namingLampNames=(await page.locator('[data-naming-theorem]').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-naming-theorem')).sort()));
+  assert(namingTheoremNames.length>0&&JSON.stringify(namingLampNames)===JSON.stringify(namingTheoremNames),'naming exact theorem lamps');
+  await page.click('#naming-claim');
+  assert((await page.locator('#naming-verdict').innerText()).includes('queued'),'naming first claim');
+  await page.click('#naming-claim-competing');
+  assert((await page.locator('#naming-verdict').innerText()).includes('Competing'),'naming competing claim');
+  await page.click('#naming-fold-first');
+  assert((await page.locator('#naming-verdict').innerText()).includes('Active'),'naming first fold active');
+  await page.click('#naming-fold-second');
+  assert((await page.locator('#naming-verdict').innerText()).includes('occupied-key'),'naming duplicate refused');
+  await page.click('#naming-crafted-delete');
+  assert((await page.locator('#naming-verdict').innerText()).includes('naming-no-delete'),'naming crafted delete refused');
+  await page.click('#naming-resolve');
+  assert((await page.locator('#naming-verdict').innerText()).includes('paymentDestination'),'naming resolve carries fixture');
+  await page.selectOption('#naming-profile','generic');
+  assert((await page.locator('#naming-verdict').innerText()).includes('No implicit fallback'),'naming explicit fallback guard');
   await page.screenshot({path:join(evidence,'browser-dark.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.click('#btn-theme');
@@ -56,7 +75,7 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   assert((await page.locator('#where').innerText()).includes('address 200'),'delete reinsert story');
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
   assert(errors.length===0,'page errors '+errors.join(';'));
-  return {status:'PASS',checks:checks.length,assertions:checks,errors,url:page.url(),title:await page.title(),browser:page.context().browser().version(),manual:['competing Inserts','fold first','withdraw refused without separate approval','mint withdrawal approval','withdraw second','unauthorized evolution refused','evolve address B','queue Update','resolve pending','fold terminal','resolve retired','unauthenticated view'],stories:['register','compete refusal fork and trunk','batch'],screenshots:['browser-dark.png','browser-mobile.png']}; }
+  return {status:'PASS',checks:checks.length,assertions:checks,errors,url:page.url(),title:await page.title(),browser:page.context().browser().version(),manual:['competing Inserts','fold first','withdraw refused without separate approval','mint withdrawal approval','withdraw second','unauthorized evolution refused','evolve address B','queue Update','resolve pending','fold terminal','resolve retired','unauthenticated view','naming claim and fold','naming occupied-key','naming crafted delete','naming resolve fixture'],stories:['register','compete refusal fork and trunk','batch','naming journey'],screenshots:['browser-dark.png','browser-mobile.png']}; }
 
 const root = resolve(process.argv[2] ?? '.');
 const evidence = await mkdtemp(join(tmpdir(), 'singular-browser-'));
