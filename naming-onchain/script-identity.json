@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "compiler": "v1.1.21+unknown",
+  "plutus_version": "v3",
+  "validators": [
+    {
+      "title": "application.application.spend",
+      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "parameters": 0
+    },
+    {
+      "title": "application.application.mint",
+      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "parameters": 0
+    },
+    {
+      "title": "application.application.else",
+      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "parameters": 0
+    },
+    {
+      "title": "representative.representative.mint",
+      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "parameters": 1
+    },
+    {
+      "title": "representative.representative.else",
+      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "parameters": 1
+    }
+  ]
+}
