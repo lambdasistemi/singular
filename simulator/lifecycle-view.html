@@ -1,8 +1,128 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Singular naming lifecycle</title>
-<style>body{font:16px system-ui;max-width:900px;margin:2rem auto;padding:0 1rem;background:#10151d;color:#e9f0f8}button{padding:.65rem;margin:.25rem;border:0;border-radius:.4rem}output{display:block;white-space:pre-wrap;background:#172232;padding:1rem;margin-top:1rem}.pass{color:#78e08f}</style>
-</head><body><main><h1>Naming lifecycle evidence view</h1>
-<p>This view executes the same source modules as the headless adapter. Recovery hashes the canonical address internally; no digest field exists in the action.</p>
-<button id="hash">Check non-fixture hash</button><button id="forge">Try forged recovery</button><button id="retire">Run retirement</button>
-<output id="result">Ready.</output></main><script type="module" src="./lifecycle-view.mjs"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Singular · Play the naming lifecycle</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0d131c;--card:#172232;--line:#34465e;--ink:#edf4fc;--muted:#aec0d4;--ok:#78e08f;--bad:#ff8d8d;--accent:#70b7ff}
+    *{box-sizing:border-box}body{font:16px/1.5 system-ui,sans-serif;max-width:1180px;margin:0 auto;padding:1.5rem;background:var(--bg);color:var(--ink)}
+    header{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:1rem}header h1{margin:0;flex:1 1 28rem}a{color:var(--accent)}
+    .receipt,.card{background:var(--card);border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin:1rem 0}.receipt{border-color:var(--ok)}
+    .journeys{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:1rem}.journeys .card{margin:0}
+    button{padding:.65rem .8rem;margin:.25rem;border:1px solid var(--line);border-radius:.4rem;background:#24354b;color:var(--ink);cursor:pointer}
+    button.primary{background:#1769aa;border-color:var(--accent)}button.danger{border-color:var(--bad)}button:disabled{opacity:.45;cursor:not-allowed}
+    output,pre{display:block;white-space:pre-wrap;overflow-wrap:anywhere;background:#101923;padding:1rem;border-radius:.45rem}output.pass{border-left:4px solid var(--ok)}output.refused{border-left:4px solid var(--bad)}
+    .state-line{display:flex;flex-wrap:wrap;gap:.6rem}.state-line span{background:#101923;padding:.35rem .6rem;border-radius:1rem}
+    .limits strong{color:var(--accent)}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:.55rem}.covered{color:var(--ok)}
+    code{color:#c8e2ff}@media(max-width:600px){body{padding:.8rem}.journeys{display:block}table{display:block;overflow:auto}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Play the complete naming lifecycle</h1>
+  <a href="./index.html">Claim and fold interface</a>
+  <a href="../docs/naming-lifecycle/">Lifecycle guide</a>
+</header>
+
+<section class="receipt" aria-live="polite">
+  <strong id="replay-status">Loading the Lean-derived lifecycle corpus…</strong>
+  <p>Corpus correspondence is checked on load. The controls below are a separate operator journey through the public JavaScript transition.</p>
+</section>
+
+<section class="card">
+  <h2>Current active name</h2>
+  <div class="state-line" id="state-summary"></div>
+  <button id="reset-active">Reset to active alice</button>
+  <output id="result" aria-live="polite">Ready.</output>
+</section>
+
+<main class="journeys">
+  <section class="card" id="destination-journey">
+    <h2>1 · Change payment routing</h2>
+    <p>Use the current controller to clear, set, or replace the optional destination. Every success must preserve the representative, controller, next commitment, quorum, registry, and key.</p>
+    <button id="destination-clear" class="primary">Clear destination</button>
+    <button id="destination-set" class="primary">Set destination</button>
+    <button id="destination-replace" class="primary">Replace destination</button>
+    <h3>Refusal controls</h3>
+    <button id="destination-missing-signer" class="danger">Omit controller signer</button>
+    <button id="destination-tamper" class="danger">Tamper with commitment</button>
+    <button id="destination-quorum-tamper" class="danger">Alter retirement quorum</button>
+  </section>
+
+  <section class="card" id="recovery-journey">
+    <h2>2 · Recover after key loss</h2>
+    <p>The old controller is treated as unavailable. Reveal the committed next address, sign with its payment key, and install a fresh commitment.</p>
+    <button id="recovery-key-loss">Mark current key lost</button>
+    <button id="recovery-wrong-reveal" class="danger">Try wrong reveal</button>
+    <button id="recovery-missing-signer" class="danger">Omit next-key signer</button>
+    <button id="recovery-wrong-signer" class="danger">Use wrong payment-key signer</button>
+    <button id="recovery-missing-fresh" class="danger">Reuse consumed commitment</button>
+    <button id="recovery-tamper" class="danger">Tamper with preserved field</button>
+    <button id="recovery-representative-tamper" class="danger">Substitute representative</button>
+    <button id="recovery-registry-tamper" class="danger">Substitute registry</button>
+    <button id="recovery-quorum-tamper" class="danger">Substitute quorum</button>
+    <button id="recovery-forged-digest" class="danger">Supply forged public digest</button>
+    <button id="recovery-accept" class="primary">Recover with committed next key</button>
+    <button id="recovery-replay" class="danger">Replay consumed reveal</button>
+    <button id="recovery-old-controller" class="danger">Try old controller</button>
+    <button id="recovery-new-controller-update" class="primary">Update destination with new controller</button>
+  </section>
+
+  <section class="card" id="retirement-journey">
+    <h2>3 · Retire permanently</h2>
+    <p>Initiation and completion are deliberately separate. First place the representative in completion-only request custody and observe <strong>pending</strong>. Then anyone may fold it and observe <strong>retired / Over</strong>.</p>
+    <button id="retirement-insufficient" class="danger">Try insufficient quorum</button>
+    <button id="retirement-quorum-takeover" class="danger">Try quorum control takeover</button>
+    <button id="retirement-quorum-redirect" class="danger">Try quorum payment redirection</button>
+    <button id="retirement-wrong-custody" class="danger">Try wrong representative custody</button>
+    <button id="retirement-controller" class="primary">Queue with controller</button>
+    <button id="retirement-quorum" class="primary">Queue with quorum only</button>
+    <button id="retirement-withdraw" class="danger" disabled>Try withdrawing retirement</button>
+    <button id="retirement-replay" class="danger" disabled>Replay retirement initiation</button>
+    <button id="retirement-fold" disabled>Permissionless fold to Over</button>
+    <button id="retirement-reregister" class="danger" disabled>Try re-registering after Over</button>
+    <p><button id="retirement-reset">Reset for the other authorization route</button></p>
+  </section>
+
+  <section class="card" id="initialization-journey">
+    <h2>4 · Bind one consumer identity</h2>
+    <p>The canonical source, seed, registry, policies, and validator identity are explicit design-time inputs. This models consumption; it does not execute a ledger transaction.</p>
+    <button id="initialization-canonical" class="primary">Initialize canonical consumer</button>
+    <button id="initialization-repeat" class="danger">Repeat consumed canonical seed</button>
+    <button id="initialization-alternate" class="danger">Try rival seed</button>
+    <button id="initialization-rival" class="danger">Try rival seed and registry</button>
+    <button id="initialization-registry" class="danger">Substitute registry identity</button>
+    <button id="initialization-policy" class="danger">Substitute application policy</button>
+    <button id="initialization-representative-policy" class="danger">Substitute representative policy</button>
+    <button id="initialization-validator" class="danger">Substitute validator script</button>
+  </section>
+
+  <section class="card" id="wire-journey">
+    <h2>5 · Inspect the four-field wire datum</h2>
+    <p>The outer inline datum and inner naming datum are constructor 0; the naming datum has exactly four fields. These are design-time codec checks, not compiled-script interoperability.</p>
+    <button id="wire-roundtrip" class="primary">Encode → decode → re-encode bytes</button>
+    <button id="wire-hash" class="danger">Try datum-hash attachment</button>
+    <button id="wire-two-destinations" class="danger">Try two destinations</button>
+  </section>
+</main>
+
+<section class="card limits">
+  <h2>Boundaries you can see</h2>
+  <p><strong>No death oracle.</strong> The quorum route uses an explicit threshold of configured signer key hashes. It infers nothing about death, incapacity, time, or identity, and it does not require the controller signer.</p>
+  <p><strong>Raw-address payment limit.</strong> Retiring a name prevents name-based resolution, but it cannot prevent someone from sending directly to a previously saved raw Cardano address. The model preserves canonical binary base or enterprise addresses as routing data; it does not construct a transaction, prove wallet ownership, execute a payment, or inspect a ledger.</p>
+  <p><strong>No claim cancellation.</strong> Cancellation authority, recipient, refund value, fee treatment, and signer are unresolved, so this interface exposes no naming-claim cancellation action. This does not suppress the required refusal attempt against a retirement request.</p>
+</section>
+
+<section class="card">
+  <h2>Model → corpus → public action reconciliation</h2>
+  <p>Each named row below is replayed on load and has a browser-driven action or assertion. Additional set and replace actions reuse the same maintenance branch while checking field preservation.</p>
+  <table>
+    <thead><tr><th>Identity</th><th>Behaviour</th><th>Public control / assertion</th><th>Status</th></tr></thead>
+    <tbody id="reconciliation"></tbody>
+  </table>
+</section>
+
+<script type="module" src="./lifecycle-journeys.mjs"></script>
+</body>
+</html>

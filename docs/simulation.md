@@ -4,7 +4,7 @@
 
 Register a name, explore competing requests, cancel an Insert, change its address, retire it, or delete and reinsert it in a batch. Choose a story, advance with **›**, or press **▶** to play to its outcome. Click any tree node to revisit its state. A new manual attempt creates another branch without removing the previous play.
 
-For the naming journey, select **m1-naming**, queue two claims for `alice`, fold the first, then fold the second to observe `occupied-key`. Resolve the active record to inspect its certified fixture, and submit the crafted Delete to observe `naming-no-delete`. Payment-destination maintenance, committed-controller recovery, and controller-or-quorum retirement are specified in the [naming lifecycle contract](naming-lifecycle.md), but are not called playable until their integrated transitions and browser assertions land. Naming withdrawal is on hold and has no control.
+For the naming journey, select **m1-naming**, queue two claims for `alice`, fold the first, then fold the second to observe `occupied-key`. Resolve the active record to inspect its certified fixture, and submit the crafted Delete to observe `naming-no-delete`. Then open the [playable naming lifecycle](naming-lifecycle.md) to maintain the payment destination, recover through the committed next controller, or queue and separately complete retirement through the controller or quorum route. Naming-claim cancellation is on hold and has no control; retirement-request withdrawal is a distinct refused attempt.
 
 ## Try the manual controls
 
@@ -22,7 +22,7 @@ The **Advanced free play** drawer exposes exact action JSON for every modeled ac
 
 This is a **SIMULATOR-CANDIDATE**. The generic model has **41** Lean theorem declarations and the naming layer has **17**; all are **PROVED** from the standard axioms. The simulator's finite checks measure transcriptions of those models, not the proofs; no acceptance is claimed.
 
-The focused gate replays **58 frozen generic Lean rows** — 52 transitions and 6 resolutions — plus **34 frozen naming rows** across spelling, queue, fold, transition, resolution, and replay sections. The eight generic story trees contain **32 action steps**, including refusal forks. Story and manual steps outside the exact corpus input set exercise a transcription only; they do not acquire Lean parity by resemblance to a corpus row.
+The focused gate replays **58 frozen generic Lean rows** — 52 transitions and 6 resolutions — plus **34 frozen naming rows** and **38 lifecycle and wire rows**. The lifecycle denominator covers maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field wire datum. The eight generic story trees contain **32 action steps**, including refusal forks. Story and manual steps outside the exact corpus input set exercise a transcription only; they do not acquire Lean parity by resemblance to a corpus row.
 
 The generic theorem ledger has **12 controlled finite checks**, **17 action exhibits only**, and **12 explicit gaps**. The naming ledger has **15 controlled finite checks**, **2 exhibits only**, and **0 gaps**. Each controlled check has a fabricated intended-result failure. An action exhibit does not check its full quantified theorem. The page displays these distinctions; it does not turn unexhibited rows into passing lamps.
 
@@ -32,7 +32,7 @@ The Node gate also exercises **1,772 public-boundary probes** and **43 negative 
 
 <a href="../lean/Singular/Model.lean">Frozen executable model</a> · <a href="../lean/Singular/Statements.lean">Theorem statements</a> · <a href="../lean/corpus.json">Lean-generated corpus</a>.
 
-The generic model uses tagged terms for collision-free commitments and lists for authenticated logical maps and UTxO sets. Application acceptance and witness flags are supplied evidence. This page does not execute validators, verify signatures, or model wallet balances. Refund values are commitments; no refund-payment result exists in the modeled transition output. The current generic fixtures and playable naming claim card use finite predecessor values. The lifecycle contract requires an explicit controller-address shape and 32-byte next-controller commitment; the page will not claim those shapes are playable until the integrated engine and browser checks replace the predecessor fixture.
+The generic model uses tagged terms for collision-free commitments and lists for authenticated logical maps and UTxO sets. Application acceptance and witness flags are supplied evidence. This page does not execute validators, verify signatures, or model wallet balances. Refund values are commitments; no refund-payment result exists in the modeled transition output. The naming fixture uses canonical binary Cardano address shapes, a 32-byte next-controller commitment, and a published threshold quorum. The browser exercises those shapes through the integrated lifecycle transition, but that design-time execution does not claim compiled-script interoperability or a ledger transaction.
 
 Address evolution and retirement are different operations: `evolve` changes the application output without changing the registry; `update` completes retirement to `over`. The model’s `conforms` diagnostic does not enforce application semantics. Read the [clarity record](LEAN-CLARITY.md) before treating an observed outcome as a deployment guarantee.
 
@@ -44,6 +44,9 @@ From a source checkout:
 node simulator/build.mjs --check
 node simulator/gate.mjs
 node simulator/gate.mjs --selftest
+node simulator/lifecycle-gate.mjs
+nix run .#browser-check
+nix run .#lifecycle-browser-check
 ```
 
 From the root of a freshly extracted documentation archive:

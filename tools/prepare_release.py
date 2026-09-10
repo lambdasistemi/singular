@@ -35,9 +35,13 @@ manifest = {
 for relative in (
     "model/corpus.json",
     "model/naming-corpus.json",
+    "model/lifecycle-corpus.json",
     "model/theorem-debt.json",
     "model/naming-theorem-debt.json",
+    "model/lifecycle-theorem-debt.json",
+    "model/wire-theorem-debt.json",
     "simulator/identity.json",
+    "simulator/lifecycle-corpus.json",
 ):
     manifest[relative] = hashlib.sha256((site / relative).read_bytes()).hexdigest()
 (artifacts / "SHA256SUMS").write_text(

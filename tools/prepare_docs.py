@@ -64,7 +64,7 @@ if model.is_dir():
 simulator = root / "simulator"
 if (simulator / "index.html").is_file():
     (stage / "simulator").mkdir()
-    for name in ("index.html", "identity.json", "lifecycle-view.html", "lifecycle-view.mjs", "lifecycle.mjs", "naming-wire.mjs", "naming.mjs", "core.mjs"):
+    for name in ("index.html", "identity.json", "lifecycle-view.html", "lifecycle-view.mjs", "lifecycle-journeys.mjs", "lifecycle.mjs", "naming-wire.mjs", "naming.mjs", "core.mjs"):
         shutil.copyfile(simulator / name, stage / "simulator" / name)
     shutil.copyfile(root / "lean/lifecycle-corpus.json", stage / "simulator/lifecycle-corpus.json")
 shutil.copyfile(root / "README.md", stage / "index.md")

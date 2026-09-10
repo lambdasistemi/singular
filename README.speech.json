@@ -5,11 +5,11 @@
       "pause": 400
     },
     {
-      "text": "A user who asks the application to register a key and waits with no NFT and no reservation. Generic registry withdrawal is modeled separately. Naming withdrawal stays unavailable until its authority and refund semantics are specified.",
+      "text": "A user who asks the application to register a key and waits with no NFT and no reservation. Generic registry withdrawal is modeled separately. Naming claim cancellation stays unavailable until its authority and refund semantics are specified.",
       "pause": 400
     },
     {
-      "text": "A holder of an active name who wants to maintain payment routing, recover through a committed next controller, or retire permanently. The lifecycle page records those rules, but does not call them playable before the integrated transitions and browser checks land.",
+      "text": "A holder of an active name can maintain payment routing, recover through a committed next controller, or retire permanently in the playable lifecycle. Its integrated transition is reconciled across thirty-eight model, corpus, and browser identities. This remains an unaccepted design candidate, not ledger execution.",
       "pause": 400
     },
     {
@@ -37,7 +37,7 @@
   ],
   "design-status": [
     {
-      "text": "The link at the top opens the simulator. Choose the explicit first-release naming profile to claim, fold, resolve, and try duplicate-name and Delete refusals; the generic registry profile remains beside it. The candidate has forty-one proved generic declarations and seventeen proved naming declarations. Its focused checks replay fifty-eight generic rows and thirty-four naming rows. That is finite correspondence evidence, not independent acceptance, a compiled Cardano validator, or ledger execution.",
+      "text": "The link at the top opens the simulator. Choose the explicit first-release naming profile to claim, fold, resolve, and try duplicate-name and Delete refusals; the generic registry profile remains beside it. The candidate has forty-one proved generic declarations and seventeen proved naming declarations. Its focused checks replay fifty-eight generic rows, thirty-four naming rows, and thirty-eight lifecycle and wire rows. That is finite correspondence evidence, not independent acceptance, a compiled Cardano validator, or ledger execution.",
       "pause": 400
     },
     {
@@ -47,6 +47,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "0f41e6c5375a1af81a34e937e5415a5a7c0a6ee2e706ec4945459b4223682059"
+    "sha256": "84ce20194fea97ef1681996654f6e793d79f8e5dfabb273d72db736956f1b80c"
   }
 }

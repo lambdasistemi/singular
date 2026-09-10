@@ -1,7 +1,7 @@
 {
   "who-this-is-for": [
     {
-      "text": "This page is for a holder of an active name who wants to change its payment destination, recover after losing the current controller, or retire permanently. Maintenance and recovery keep the representative in application custody. Retirement moves it into completion-only custody before burning it. The lifecycle contract is being integrated, so this page does not call an unavailable transition playable.",
+      "text": "This page is for a holder of an active name who wants to change its payment destination, recover after losing the current controller, or retire permanently. The complete playable lifecycle replays thirty-eight Lean-derived rows and then drives the same public transition in the browser. Maintenance and recovery keep the representative in application custody. Retirement moves it into completion-only custody before burning it. This remains design-time evidence, not ledger execution.",
       "pause": 400
     }
   ],
@@ -19,13 +19,13 @@
   ],
   "retire-permanently": [
     {
-      "text": "Either the controller or a sufficient reset quorum initiates retirement. Both routes put the representative into one completion-only request. Permissionless folding burns it and moves the key to Over. Pending retirement remains distinct from Over, and withdrawal, redirection, replay, Delete, release, and re-registration are refused.",
+      "text": "Either the controller or a sufficient retirement quorum initiates retirement. The quorum is a retirement authorization, not next-controller recovery and not a death oracle. Both routes put the representative into one completion-only request. Permissionless folding burns it and moves the key to Over. Pending retirement remains distinct from Over, and withdrawal, redirection, replay, Delete, release, and re-registration are refused. Retirement prevents name-based resolution, but cannot stop a direct send to a previously saved raw Cardano address.",
       "pause": 400
     }
   ],
   "what-remains-deliberately-unavailable": [
     {
-      "text": "Cancelling an unfulfilled naming claim remains on hold. Insert certification never grants withdrawal permission, but the signer, refund recipient, refund value, and fee treatment are undecided. The naming interface therefore offers no withdrawal button or success claim. The generic registry demonstration is not naming policy.",
+      "text": "Cancelling an unfulfilled naming claim remains on hold. Insert certification never grants cancellation permission, but the signer, refund recipient, refund value, and fee treatment are undecided. The naming interface therefore offers no claim-cancellation button or success claim. Retirement-request withdrawal is different: it is a required refusal attempt. The generic registry demonstration is not naming policy.",
       "pause": 400
     }
   ],
@@ -37,12 +37,12 @@
   ],
   "evidence-and-release-status": [
     {
-      "text": "The final browser surface must drive real integrated maintenance, recovery, and both retirement routes with their refusals. Placeholders are integration markers and cannot survive acceptance. The downloadable archive carries raw model, contract, scenarios, replay sources, pinned tooling, and exact identities under one SHA two hundred and fifty six manifest. This is still an unaccepted design candidate, not a deployed validator or ledger observation.",
+      "text": "The browser drives integrated maintenance, recovery, and both retirement routes with their refusals. Retirement is queued first, showing pending, and completed by a separate permissionless fold, showing retired or Over. The reconciliation table binds all thirty-eight model and corpus identities to public controls and assertions. The downloadable archive carries raw model, contract, scenarios, replay sources, pinned tooling, and exact identities under one SHA two hundred and fifty six manifest. This is still an unaccepted design candidate, not a deployed validator or ledger observation.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "0f8b78314e34200c18830c77cdc5c0af23654d267f5e7ca657520eb01c66ad82"
+    "sha256": "264ddc3a102145002aa69db8313c651596e7aa271eee83906e0c50b7dfee4ac0"
   }
 }

@@ -70,12 +70,12 @@ Finite checks are finite: the corpus replays measure the transcription on its ro
 
 | Field | Shape in this slice |
 | --- | --- |
-| Payment destination | zero or one predecessor fixture value; when present, distinct from the control address |
-| Control address | predecessor finite fixture on this playable claim card |
-| Next-control commitment | predecessor finite fixture — the commitment, not a revealed next key |
-| Retirement quorum | membership list and threshold, present as structure |
+| Payment destination | zero or one canonical binary base or enterprise address; when present, distinct from the control address |
+| Control address | canonical binary base or enterprise address with a payment-key credential |
+| Next-control commitment | 32-byte domain-separated BLAKE2b digest — the commitment, not a revealed next address |
+| Retirement quorum | payment-key-hash members and a threshold, present as structure |
 
-Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, or refund rule is invented anywhere in the profile. `alice` maps to one frozen demo key. The [lifecycle contract](naming-lifecycle.md) replaces the predecessor address and commitment fixtures with an explicit Cardano address shape and a 32-byte commitment, but this page does not call those shapes or their maintenance, recovery, and retirement transitions playable before engine and browser integration. Naming withdrawal remains on hold and has no button. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
+Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, or refund rule is invented anywhere in the profile. `alice` maps to one frozen demo key. Continue to the [playable lifecycle](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Naming-claim cancellation remains on hold and has no button; retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
 
 ## Status of this candidate
 

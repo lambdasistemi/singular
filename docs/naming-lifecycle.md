@@ -4,7 +4,7 @@
 
 A holder of an active name wants to change where it receives payments, recover after losing the current control key, or retire the name permanently. The representative NFT stays with the application state while maintenance or recovery is in progress; retirement alone moves it into completion-only custody before burning it.
 
-This page records the lifecycle contract being integrated into the executable candidate. The current published simulator can play claim, fold, resolve, and naming Delete refusal. Controls described below are not presented as playable until their real model-derived transitions and browser checks land together.
+This page accompanies the integrated executable candidate. [Open the complete playable lifecycle](https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html) to set, replace, or clear a destination; recover a lost controller; and retire through either authorization route. The page replays the exact 38-row Lean-derived corpus, then lets the browser drive the same public transition. It remains a design-time model, not an observed ledger execution.
 
 ```mermaid
 flowchart LR
@@ -54,18 +54,20 @@ The commitment is `BLAKE2b-256("singular/naming/next-control/v1" || 0x00 || cano
 
 ## Retire permanently
 
-Either the current controller or the configured reset quorum may initiate retirement. Both routes create the same completion-only request: it holds the representative and cannot be withdrawn, redirected, released, or converted into Delete. Anyone may fold that request, burn the representative, and move the key to `Over`.
+Either the current controller or the configured retirement quorum may initiate retirement. Both routes create the same completion-only request: it holds the representative and cannot be withdrawn, redirected, released, or converted into Delete. Anyone may fold that request, burn the representative, and move the key to `Over`.
 
 ```mermaid
 stateDiagram-v2
   direction LR
   Active --> RetirementPending: controller witness
-  Active --> RetirementPending: sufficient reset quorum
+  Active --> RetirementPending: sufficient retirement quorum
   RetirementPending --> Over: permissionless fold<br/>burn representative
   Over --> Over: re-registration refused
 ```
 
-Pending retirement is observably different from `Over`. The transition refuses an insufficient quorum, a quorum attempt that changes payment routing or control fields, wrong representative custody, replay, Delete/release, retirement withdrawal, and registration after `Over`. The quorum is a recovery path selected by the application; it is not a death oracle.
+Pending retirement is observably different from `Over`. The transition refuses an insufficient quorum, a quorum attempt that changes payment routing or control fields, wrong representative custody, replay, Delete/release, retirement withdrawal, and registration after `Over`. The quorum is a retirement authorization selected by the application; it is not next-controller recovery and it is not a death oracle.
+
+Retirement prevents name-based resolution. It cannot prevent someone from sending directly to a previously saved raw Cardano address: the protocol cannot retract an address another person already knows.
 
 ## What remains deliberately unavailable
 
@@ -86,6 +88,6 @@ The historical Cage types are evidence about encodings and precedents, not an as
 
 ## Evidence and release status
 
-The final browser surface must drive the real integrated maintenance, recovery, and both retirement routes, including their refusal cases. Disabled placeholders are integration markers only and must be removed before acceptance. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
+The browser surface drives integrated maintenance, recovery, and both retirement routes, including their refusal cases. It keeps retirement initiation separate from the permissionless completion fold and shows `pending` before `retired / Over`. Its reconciliation table binds each of the 38 model/corpus identities to a public control or assertion. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
 
 This remains an unaccepted executable design candidate. Lean proof, finite replay, source-bound contract evidence, a built archive, and a live preview are distinct from a compiled Cardano validator or observed ledger execution.

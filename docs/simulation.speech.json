@@ -5,30 +5,30 @@
       "pause": 400
     },
     {
-      "text": "Naming payment-destination maintenance, committed-controller recovery, and controller-or-quorum retirement are specified but not called playable before their integrated transitions and browser assertions land. Naming withdrawal remains on hold and has no control. In the generic profile, queue two Inserts, fold one, separately approve and withdraw the other, then explore evolution and terminal requests.",
+      "text": "The playable naming lifecycle maintains a payment destination, recovers through a committed next controller, and queues then separately completes retirement through either the controller or quorum route. Naming claim cancellation remains on hold and has no control; retirement request withdrawal is a separate refused attempt. In the generic profile, queue two Inserts, fold one, separately approve and withdraw the other, then explore evolution and terminal requests.",
       "pause": 400
     }
   ],
   "what-the-evidence-establishes": [
     {
-      "text": "This simulator candidate replays fifty-eight generic Lean rows and thirty-four naming rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. The gate also exercises one thousand seven hundred and seventy-two public-boundary probes and forty-three negative controls. These are finite checks, not acceptance.",
+      "text": "This simulator candidate replays fifty-eight generic Lean rows, thirty-four naming rows, and thirty-eight lifecycle and wire rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The lifecycle denominator covers maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field datum. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. These are finite checks, not acceptance.",
       "pause": 400
     }
   ],
   "model-and-assumptions": [
     {
-      "text": "The generic model uses tagged commitments and logical lists for maps and UTxOs. Application acceptance and witnesses are supplied evidence; scripts and signatures are not verified here. Generic refund values are commitments rather than modeled payments. The current playable naming card still uses finite predecessor fixtures. The lifecycle contract requires an explicit controller-address shape and thirty-two-byte next-controller commitment, which are not called playable before engine and browser integration.",
+      "text": "The generic model uses tagged commitments and logical lists for maps and UTxOs. Application acceptance and witnesses are supplied evidence; scripts and signatures are not verified here. Generic refund values are commitments rather than modeled payments. The naming fixture uses canonical binary Cardano addresses, a thirty-two-byte next-controller commitment, and a threshold quorum. The browser drives those shapes through the integrated lifecycle transition, but this does not establish compiled-script interoperability or ledger execution.",
       "pause": 400
     }
   ],
   "reproduce-the-focused-checks": [
     {
-      "text": "In a source checkout, use the simulator build check, Node gate, and self-test. For archive evidence, first verify the internal checksum manifest, then run the check app from the archive's own locked flake. It compiles the shipped Lean model, regenerates both corpora, checks compiled axioms, verifies the standalone page, replays generic and naming rows, and executes negative controls. The locked toolchain may be acquired when uncached, but model and replay inputs never come from a checkout or unpinned fetch. This remains review material, not a published release or ledger artifact.",
+      "text": "In a source checkout, use the simulator build check, Node gate, self-test, lifecycle gate, and both browser checks. For archive evidence, first verify the internal checksum manifest, then run the check app from the archive's own locked flake. It compiles the shipped Lean model, regenerates all corpora, checks compiled axioms, verifies both public pages, replays generic, naming, lifecycle, and wire rows, and executes negative controls. The locked toolchain may be acquired when uncached, but model and replay inputs never come from a checkout or unpinned fetch. This remains review material, not a published release or ledger artifact.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "9133235d846c4a00352ba8ac62b6b27b847a99e7a15188cad40db1b0b4bcd811"
+    "sha256": "9f6855e2217892943bbcba0f83a577dbb9ac99207400915f1653e66bbad5e24b"
   }
 }

@@ -31,7 +31,7 @@
   ],
   "fixture-fields-and-finite-model-limits": [
     {
-      "text": "The playable claim card still carries four predecessor fixture fields: optional payment destination, control address, next-control commitment, and retirement quorum. They are finite-model values, not economic policy. The lifecycle contract requires an explicit Cardano address and thirty-two-byte commitment, but this page does not call those shapes or the maintenance, recovery, and retirement transitions playable before engine and browser integration. Naming withdrawal remains on hold and has no button.",
+      "text": "The playable claim card carries four fixture fields: an optional canonical payment destination, a canonical base or enterprise controller address with a payment-key credential, a thirty-two-byte next-control commitment, and a threshold quorum of payment-key hashes. They are finite-model values, not economic policy. Continue to the playable lifecycle for maintenance, recovery, and split retirement. Naming claim cancellation remains on hold and has no button; retirement request withdrawal is a distinct refusal case.",
       "pause": 400
     }
   ],
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "8b6de15455a6940ca2e2f92af7d61463ae493f549fb97ba544c70c83b96a138e"
+    "sha256": "b71dd979e08e9650fc6f3de0e6e0506b60f6cddc784609867ad7fdbd271048af"
   }
 }

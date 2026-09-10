@@ -21,6 +21,7 @@ let
       cp lean/corpus.json lean/theorem-debt.json \
         lean/naming-corpus.json lean/naming-theorem-debt.json \
         lean/lifecycle-corpus.json lean/lifecycle-theorem-debt.json \
+        lean/wire-theorem-debt.json \
         axioms-report.txt "$out/share/"
     '';
   };
