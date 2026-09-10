@@ -120,7 +120,7 @@ jobs:
         working-directory: offchain
         run: nix develop --quiet --command just vectors-check
   naming-wire:
-    name: Naming wire vectors match the epic-15 contract (t45)
+    name: Naming wire vectors match the epic-15 contract
     runs-on: nixos
     timeout-minutes: 15
     steps:
@@ -136,7 +136,7 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # t45 (#45): the naming datum codec must agree with the epic-15
+      # Issue #45: the naming datum codec must agree with the epic-15
       # v0.2.0 contract's own bytes. The four wire vectors are vendored
       # with provenance in naming/src/Naming/Wire/Vectors.hs, so the job
       # needs no network. The suite is pure base + bytestring and is

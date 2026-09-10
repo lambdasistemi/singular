@@ -1,4 +1,4 @@
--- | The t45 wire-vector suite: asserts the naming codec against the
+-- | The naming wire-vector suite (issue #45): asserts the naming codec against the
 -- vendored epic-15 v0.2.0 vectors byte for byte, including the negative
 -- cases the vectors record. Plain base + bytestring, so the suite runs
 -- with the dev-shell GHC alone — no package index, no network.

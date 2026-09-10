@@ -1,4 +1,4 @@
-# Naming LI correspondence record (t45)
+# Naming LI correspondence record
 
 The correspondence between the abstract identities the epic-15 contract's
 `LI` rows carry and the concrete ledger objects this epic intends to

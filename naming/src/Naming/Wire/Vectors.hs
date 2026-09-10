@@ -12,7 +12,7 @@
 --   * source inside the archive:
 --     @simulator/lifecycle-corpus.json@, @wire@ array, fields
 --     @expectedBytes@ / @malformedBytes@ / @redirectedBytes@ / fixtures
---   * extraction: 2026-09-10, t45-codec worker, mechanically copied from
+--   * extraction: 2026-09-10, mechanically copied from
 --     the archive copy whose sha256 was verified against the value above
 --
 -- These are the contract's bytes. If the codec disagrees with them, the

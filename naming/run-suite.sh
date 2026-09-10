@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# t45 naming wire vector suite — compile with the dev-shell GHC and run.
+# Naming wire vector suite (issue #45) — compile with the dev-shell GHC and run.
 # Pure base + bytestring: no cabal, no package index, no network (D-011
 # logic). Run from anywhere; CI entry point and local receipt producer:
 #
