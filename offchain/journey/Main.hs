@@ -2,14 +2,21 @@
 
 {- |
 Module      : Main
-Description : The bounded MPFS cage journey, narrated against a real devnet
+Description : The bounded MPFS cage journey, verified against a real devnet
 License     : Apache-2.0
 
 One command that runs the bounded journey against a real devnet
-node and narrates it, one line per step:
+node and verifies it, one line per step:
 
-  boot a cage, submit a request, apply it, read the resulting
-  state back.
+  boot a cage, submit a request, prove the key absent, apply
+  the request, prove the key present with the expected value,
+  reject a false claim, read the resulting state back.
+
+Verification follows D-013: the library builds proofs
+('mkMPFExclusionProof', 'mkMPFInclusionProof'); off-chain each
+proof is folded to the root it implies and that root is compared
+against the root read back from the chain's state datum — never
+against a root this runner derived from the same trie.
 
 This is the vehicle for Singular's naming claim, not the claim:
 nothing this runner prints describes a name as claimed, registered
@@ -35,7 +42,7 @@ import Control.Exception
     , displayException
     , throwIO
     )
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -43,6 +50,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short (fromShort)
 import Data.ByteString.Short qualified as SBS
+import Data.IORef (IORef, newIORef, readIORef)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -69,7 +77,9 @@ import Cardano.MPFS.Cage.Ledger (
     TokenId (..),
  )
 import Cardano.MPFS.Cage.Provider qualified as Cage
+import Cardano.MPFS.Cage.Trie qualified as CageTrie
 import Cardano.MPFS.Cage.Trie (TrieManager (..))
+import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
@@ -102,6 +112,41 @@ import Cardano.Node.Client.N2C.Connection (
     runNodeClient,
  )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
+import MPF.Backend.Pure (
+    MPFInMemoryDB,
+    emptyMPFInMemoryDB,
+    runMPFPure,
+    runMPFPureTransaction,
+ )
+import MPF.Backend.Standalone (
+    MPFStandalone (..),
+    MPFStandaloneCodecs (..),
+ )
+import MPF.Hashes (
+    MPFHash,
+    isoMPFHash,
+    mkMPFHash,
+    mpfHashing,
+    parseMPFHash,
+    renderMPFHash,
+ )
+import MPF.Interface (
+    FromHexKV (..),
+    HexKey,
+    byteStringToHexKey,
+    hexKeyPrism,
+ )
+import MPF.Proof.Exclusion (
+    MPFExclusionProof,
+    foldMPFExclusionProof,
+    mkMPFExclusionProof,
+    verifyMPFExclusionProof,
+ )
+import MPF.Proof.Insertion (
+    MPFProof (..),
+    foldMPFProof,
+    mkMPFInclusionProof,
+ )
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
@@ -219,6 +264,12 @@ runJourney stateBytes requestBytes = do
         let prov = adaptProvider (mkN2CProvider lsqCh)
             submit = mkN2CSubmitter ltxsCh
         tm <- mkPureTrieManager
+        -- The proof mirror: an in-memory trie kept in step with
+        -- the operations the journey applies on chain. It builds
+        -- the proofs; the roots those proofs are checked against
+        -- are always read back from the chain's state datum
+        -- (D-013), never from this trie.
+        mirrorRef <- newIORef emptyMPFInMemoryDB
         -- Verify the connection carries queries before building on it.
         _ <- Cage.queryProtocolParams prov
         -- Pick the boot seed from the genesis wallet. The state
@@ -233,10 +284,12 @@ runJourney stateBytes requestBytes = do
         let cfg = cageCfg stateBytes requestBytes seedRef
         (tokenId, bootRoot) <- stepBoot cfg prov submit tm
         reqCount <- stepRequest cfg prov submit tokenId
+        stepVerifyAbsent cfg prov mirrorRef tokenId
         stepApply cfg prov submit tm tokenId reqCount
+        stepVerifyPresent cfg prov mirrorRef tokenId
         stepReadBack cfg prov tokenId bootRoot
         cancel nodeThread
-        emit "complete" "4/4 journey steps ok"
+        emit "complete" "6/6 journey steps ok"
 
 -- | Boot a cage: mint the state token, register its trie,
 -- observe the state UTxO and read the boot state datum.
@@ -294,8 +347,8 @@ stepRequest cfg prov submit tid = do
             prov
             (Coin 1_000_000)
             tid
-            "hello"
-            "world"
+            journeyKey
+            journeyValue
             genesisAddr
     signed <- submitWithGenesis submit unsigned
     after <- Cage.queryUTxOs prov reqAddr
@@ -304,7 +357,11 @@ stepRequest cfg prov submit tid = do
         (length after == 1)
     emit
         "request"
-        ( "submitted insert request key=hello value=world tx="
+        ( "submitted insert request key="
+            <> textOf journeyKey
+            <> " value="
+            <> textOf journeyValue
+            <> " tx="
             <> show (txIdTx signed)
             <> " request_utxos="
             <> show (length after)
@@ -374,6 +431,218 @@ stepReadBack cfg prov tid bootRoot = do
             <> show (stateRetractTime st)
             <> " stake_script="
             <> maybe "none" (\(BuiltinByteString bs) -> hex bs) (stateStakeScript st)
+        )
+
+-- ---------------------------------------------------------
+-- Authenticated-state verification (D-013)
+-- ---------------------------------------------------------
+
+-- | The bounded operation the journey applies: an insert of
+-- 'journeyKey' with 'journeyValue'. 'forgedValue' is a value
+-- the state does not hold — the negative case's claim.
+journeyKey :: ByteString
+journeyKey = "hello"
+
+journeyValue :: ByteString
+journeyValue = "world"
+
+forgedValue :: ByteString
+forgedValue = "forged"
+
+{- | MPF codecs and key hashing with the exact conventions
+the cage trie uses, so proof paths match what the on-chain
+validator expects.
+-}
+mpfCodecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
+mpfCodecs =
+    MPFStandaloneCodecs
+        { mpfKeyCodec = hexKeyPrism
+        , mpfValueCodec = isoMPFHash
+        , mpfNodeCodec = isoMPFHash
+        }
+
+fromHexKVIdentity :: FromHexKV HexKey MPFHash MPFHash
+fromHexKVIdentity =
+    FromHexKV
+        { fromHexK = id
+        , fromHexV = id
+        , hexTreePrefix = const []
+        }
+
+-- | Keys enter the trie hashed, as the cage library hashes them.
+mpfKeyPath :: ByteString -> HexKey
+mpfKeyPath = byteStringToHexKey . renderMPFHash . mkMPFHash
+
+-- | Build the exclusion proof for a raw key against a
+-- snapshot of the mirror database.
+exclusionProofFrom ::
+    MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
+exclusionProofFrom db k =
+    fst $
+        runMPFPure db $
+            runMPFPureTransaction mpfCodecs $
+                mkMPFExclusionProof
+                    []
+                    fromHexKVIdentity
+                    mpfHashing
+                    MPFStandaloneMPFCol
+                    (mpfKeyPath k)
+
+-- | Build the inclusion proof for a raw key against a
+-- snapshot of the mirror database.
+inclusionProofFrom ::
+    MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
+inclusionProofFrom db k =
+    fst $
+        runMPFPure db $
+            runMPFPureTransaction mpfCodecs $
+                mkMPFInclusionProof
+                    []
+                    fromHexKVIdentity
+                    mpfHashing
+                    MPFStandaloneMPFCol
+                    (mpfKeyPath k)
+
+{- | The chain-read root as the exclusion verifier's trusted
+root: the all-zero root denotes the empty trie.
+-}
+trustedRootFromChain :: OnChainRoot -> IO (Maybe MPFHash)
+trustedRootFromChain (OnChainRoot bs)
+    | bs == BS.replicate 32 0 = pure Nothing
+    | otherwise = case parseMPFHash bs of
+        Just h -> pure (Just h)
+        Nothing ->
+            failWith
+                ("verify: malformed chain root 0x" <> hex bs)
+
+-- | Read the current state datum for a token straight from
+-- the chain: the state UTxO at the cage address. This is the
+-- only comparison target for every verification below.
+readChainState ::
+    CageConfig ->
+    Cage.Provider IO ->
+    TokenId ->
+    IO OnChainTokenState
+readChainState cfg prov tid = do
+    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+        Nothing ->
+            failWith "verify: no state UTxO carrying the policy token"
+        Just (_, out) -> case extractCageDatum out of
+            Just (StateDatum s) -> pure s
+            _ ->
+                failWith
+                    "verify: state UTxO datum is not a StateDatum"
+
+{- | Verify the key is provably absent from the authenticated
+state, before the insert: fold the exclusion proof and compare
+the root it implies against the root read back from the chain.
+-}
+stepVerifyAbsent ::
+    CageConfig ->
+    Cage.Provider IO ->
+    IORef MPFInMemoryDB ->
+    TokenId ->
+    IO ()
+stepVerifyAbsent cfg prov mirrorRef tid = do
+    chainRoot <- stateRoot <$> readChainState cfg prov tid
+    trusted <- trustedRootFromChain chainRoot
+    db <- readIORef mirrorRef
+    proof <- case exclusionProofFrom db journeyKey of
+        Just p -> pure p
+        Nothing ->
+            failWith $
+                "proved-absent failed: key "
+                    <> textOf journeyKey
+                    <> " has no exclusion proof — the state holds it"
+                    <> "; chain root 0x"
+                    <> hex (unOnChainRoot chainRoot)
+    let implied = foldMPFExclusionProof mpfHashing proof
+    unless (verifyMPFExclusionProof mpfHashing trusted proof) $
+        failWith $
+            "proved-absent failed: key "
+                <> textOf journeyKey
+                <> " exclusion proof implies root "
+                <> maybe "<empty trie>" (hex . renderMPFHash) implied
+                <> " but the chain read root 0x"
+                <> hex (unOnChainRoot chainRoot)
+    emit
+        "verify-absent"
+        ( "proved absent key="
+            <> textOf journeyKey
+            <> " against chain root 0x"
+            <> hex (unOnChainRoot chainRoot)
+        )
+
+{- | Verify the key is provably present with the expected
+value, after the apply: replay the applied insert into the
+mirror, bind the claimed value into the inclusion proof, fold
+it, and compare against the chain-read root. Then run the
+negative case: a proof asserting a value the state does not
+hold must not reproduce that root, and the runner must reject
+it.
+-}
+stepVerifyPresent ::
+    CageConfig ->
+    Cage.Provider IO ->
+    IORef MPFInMemoryDB ->
+    TokenId ->
+    IO ()
+stepVerifyPresent cfg prov mirrorRef tid = do
+    let mirror = mkPureTrieFromRef mirrorRef
+    _ <- CageTrie.insert mirror journeyKey journeyValue
+    chainRoot <- stateRoot <$> readChainState cfg prov tid
+    db <- readIORef mirrorRef
+    base <- case inclusionProofFrom db journeyKey of
+        Just p -> pure p
+        Nothing ->
+            failWith $
+                "proved-present failed: key "
+                    <> textOf journeyKey
+                    <> " has no inclusion proof; chain root 0x"
+                    <> hex (unOnChainRoot chainRoot)
+    let claimed = base{mpfProofValueHash = mkMPFHash journeyValue}
+        implied = foldMPFProof mpfHashing claimed
+    unless (renderMPFHash implied == unOnChainRoot chainRoot) $
+        failWith $
+            "proved-present failed: key "
+                <> textOf journeyKey
+                <> " value "
+                <> textOf journeyValue
+                <> ": proof implies root 0x"
+                <> hex (renderMPFHash implied)
+                <> " but the chain read root 0x"
+                <> hex (unOnChainRoot chainRoot)
+    emit
+        "verify-present"
+        ( "proved present key="
+            <> textOf journeyKey
+            <> " value="
+            <> textOf journeyValue
+            <> " root=0x"
+            <> hex (unOnChainRoot chainRoot)
+        )
+    let falseClaim = base{mpfProofValueHash = mkMPFHash forgedValue}
+        falseRoot = foldMPFProof mpfHashing falseClaim
+    when (renderMPFHash falseRoot == unOnChainRoot chainRoot) $
+        failWith $
+            "false-claim accepted: key "
+                <> textOf journeyKey
+                <> " claimed value "
+                <> textOf forgedValue
+                <> " reproduced the chain read root 0x"
+                <> hex (unOnChainRoot chainRoot)
+                <> " — the negative case is not negative"
+    emit
+        "verify-false-claim"
+        ( "rejected false claim key="
+            <> textOf journeyKey
+            <> " claimed value="
+            <> textOf forgedValue
+            <> ": proof implies root 0x"
+            <> hex (renderMPFHash falseRoot)
+            <> " which differs from the chain read root 0x"
+            <> hex (unOnChainRoot chainRoot)
         )
 
 -- ---------------------------------------------------------
@@ -492,3 +761,7 @@ requireEnv name =
 -- | Lowercase hex for narration.
 hex :: ByteString -> String
 hex = T.unpack . TE.decodeUtf8 . Base16.encode
+
+-- | Render a byte string as text for narration.
+textOf :: ByteString -> String
+textOf = T.unpack . TE.decodeUtf8
