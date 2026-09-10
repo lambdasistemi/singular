@@ -111,10 +111,15 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   assert((await page.locator('#where').innerText()).includes('address 200'),'delete reinsert story');
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
   await page.goto(new URL('/lifecycle-view.html', page.url()).href, {waitUntil:'networkidle'});
+  await page.waitForFunction(() => window.lifecycleJourney !== undefined);
   const lifecycleReplay=await page.evaluate(()=>window.lifecycleCorpusReceipt);
   assert(lifecycleReplay.discovered===43&&lifecycleReplay.executed===43,'lifecycle browser Lean replay 43/43');
   await page.click('#wire-roundtrip');
-  assert((await page.locator('#result').innerText()).includes('byteLength'),'browser four-field byte wire codec');
+  const wireResult=JSON.parse(await page.locator('#result').innerText());
+  assert(wireResult.action==='Encode, decode, and re-encode exact four-field datum bytes'
+    &&wireResult.verdict?.accepted===true
+    &&JSON.stringify(wireResult.shape)===JSON.stringify({outerIndex:0,innerIndex:0,arity:4})
+    &&wireResult.byteLength===205,'browser exact four-field byte wire codec result');
   await page.click('#recovery-key-loss');
   await page.click('#recovery-forged-digest');
   assert((await page.locator('#result').innerText()).includes('lifecycle-action'),'lifecycle browser forged digest refused');
