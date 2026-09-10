@@ -10,7 +10,27 @@ source = Path(source)
 revision = urlopen(base + "candidate.txt").read().decode().strip()
 assert revision == expected, (revision, expected)
 verified = {}
-names = ["index.html", "docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/naming-demo.speech.json", "docs/building/index.html", "docs/building.speech.json", "assets/mermaid.min.js", "docs/design/index.html", "docs/decisions/index.html", "docs/model-ledger/index.html", "docs/theorems/index.html", "docs/simulation/index.html"]
+names = [
+    "index.html",
+    "docs/naming-demo/index.html",
+    "docs/naming-demo.speech.json",
+    "docs/naming-lifecycle/index.html",
+    "docs/naming-lifecycle.speech.json",
+    "specs/protocol/spec/index.html",
+    "docs/building/index.html",
+    "docs/building.speech.json",
+    "assets/mermaid.min.js",
+    "docs/design/index.html",
+    "docs/decisions/index.html",
+    "docs/model-ledger/index.html",
+    "docs/theorems/index.html",
+    "docs/simulation/index.html",
+    "artifacts/contracts/naming-lifecycle-contract.txt",
+    "artifacts/review/README.md",
+    "artifacts/review/flake.nix",
+    "artifacts/review/flake.lock",
+    "artifacts/SHA256SUMS",
+]
 for directory in ("model", "simulator"):
     names.extend(str(path.relative_to(source)) for path in sorted((source / directory).rglob("*"))
                  if path.is_file() and path.suffix in {".lean", ".json", ".js", ".mjs", ".css", ".html"})

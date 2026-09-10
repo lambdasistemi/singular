@@ -19,30 +19,30 @@
   ],
   "how-the-pieces-relate": [
     {
-      "text": "The generic foundation of forty-one proved statements stays upstream. The naming layer adds fixtures, queueing, folding, and observation with seven proved statements of its own; the m1-naming engine transcribes that layer and never drives Lean from the browser. Choosing the profile is an explicit act: until m1-naming is selected its controls stay inert, and neither engine silently becomes the other.",
+      "text": "The generic foundation of forty-one proved declarations stays upstream. The naming layer adds fixtures, queueing, folding, and observation with seventeen proved declarations of its own; the m1-naming engine transcribes that layer and never drives Lean from the browser. Choosing the profile is an explicit act: until m1-naming is selected its controls stay inert, and neither engine silently becomes the other.",
       "pause": 400
     }
   ],
   "what-is-proved-and-what-is-checked-here": [
     {
-      "text": "Seven naming theorem declarations are PROVED in Lean from the standard axioms alone, in a separate inventory from the generic forty-one: the delete refusal, no reservation on approval, absent-key activation, occupied-key duplicate refusal, fixture preservation, unauthenticated resolve, and payment-destination distinctness. The simulator replays a Lean-authored naming corpus of thirty-four rows and requires byte-identical verdicts, and the page's self-test replays the same corpus in the browser. Finite checks remain finite: they measure the transcription and prove nothing about acceptance.",
+      "text": "Seventeen naming theorem declarations are proved in Lean from the standard axioms alone, separately from the generic forty-one. Seven record the user-facing claim contract; ten more pin transition, queue-validation, and resolution equations across the public boundary. The simulator replays a Lean-authored naming corpus of thirty-four rows and requires byte-identical verdicts, and the page's self-test replays the same corpus in the browser. Finite checks remain finite: they measure the transcription and prove nothing about acceptance.",
       "pause": 400
     }
   ],
   "fixture-fields-and-finite-model-limits": [
     {
-      "text": "The fixture has four fields: an optional payment destination distinct from the control address when present, a control address, a next-control commitment that stays a commitment, and a retirement quorum given as a membership list with a threshold. Values are finite-model fixtures, not economic policy; no fee, bond, price, expiry, or refund rule is invented. Keys, addresses, and commitments are natural numbers, alice maps to one frozen demo key, and maintenance, claim withdrawal, recovery, and retirement are not implemented and not faked.",
+      "text": "The playable claim card carries four fixture fields: an optional canonical payment destination, a canonical base or enterprise controller address with a payment-key credential, a thirty-two-byte next-control commitment, and a threshold quorum of payment-key hashes. They are finite-model values, not economic policy. Continue to the playable lifecycle for maintenance, recovery, and split retirement. Naming claim cancellation remains on hold and has no button; retirement request withdrawal is a distinct refusal case.",
       "pause": 400
     }
   ],
   "status-of-this-candidate": [
     {
-      "text": "The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, playable in the browser, and claimed nowhere else. The live preview is bound to the pull-request head, and the served page states that the candidate is unaccepted.",
+      "text": "The claim, fold, and resolve naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review. Building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head and states that the candidate is unaccepted.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "77ae60c4e1f80d3c7015e1b966d0151a2539197e7c3660591e949312f5e889a2"
+    "sha256": "b71dd979e08e9650fc6f3de0e6e0506b60f6cddc784609867ad7fdbd271048af"
   }
 }

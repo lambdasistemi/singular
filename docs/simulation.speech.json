@@ -1,34 +1,34 @@
 {
   "try-the-manual-controls": [
     {
-      "text": "The Singular simulator lets you register a name, explore competing Inserts, cancel with separate approval, change an address, and complete retirement or Delete. The corrected finite corpus has fifty eight rows. All forty one theorem declarations remain stated with admitted proofs. Twelve have controlled finite checks, seventeen have action exhibits only, and twelve have explicit gaps.",
+      "text": "The simulator has two explicit profiles. The first-release naming profile lets you queue competing claims for alice, fold the winner, observe the duplicate refusal, resolve the certified fixture, and try a refused Delete. The generic registry profile separately demonstrates Insert withdrawal, address evolution, retirement, Delete, and batch ordering. Neither profile silently falls back to the other.",
       "pause": 400
     },
     {
-      "text": "Queue two Inserts for the same name, fold one, then approve and withdraw the other. Change the application address with accepted evidence. Queue retirement or Delete, resolve while pending, and fold the terminal request. The batch composer makes order explicit, and the advanced drawer accepts exact model action JSON.",
+      "text": "The playable naming lifecycle maintains a payment destination, recovers through a committed next controller, and queues then separately completes retirement through either the controller or quorum route. Naming claim cancellation remains on hold and has no control; retirement request withdrawal is a separate refused attempt. In the generic profile, queue two Inserts, fold one, separately approve and withdraw the other, then explore evolution and terminal requests.",
       "pause": 400
     }
   ],
   "what-the-evidence-establishes": [
     {
-      "text": "This simulator candidate replays fifty eight frozen Lean rows and thirty two story actions. All forty one declarations are proved from the standard axioms; the simulator checks measure this transcription, not the proofs: twelve controlled finite checks, seventeen action exhibits only, and twelve explicit gaps. The gate also exercises one thousand seven hundred and sixty four numeric boundary probes and twenty two negative controls. Seventeen of twenty eight refusal reasons have exhibits.",
+      "text": "This simulator candidate replays fifty-eight generic Lean rows, thirty-four naming rows, and thirty-eight lifecycle and wire rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The lifecycle denominator covers maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field datum. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. These are finite checks, not acceptance.",
       "pause": 400
     }
   ],
   "model-and-assumptions": [
     {
-      "text": "The frozen model uses tagged commitments and logical lists for maps and UTxOs. Application acceptance and witnesses are supplied evidence; scripts and signatures are not verified here. Refunds are commitments rather than modeled payments. Address evolution differs from retirement, and the conformity diagnostic is not enforced by native checks.",
+      "text": "The generic model uses tagged commitments and logical lists for maps and UTxOs. Application acceptance and witnesses are supplied evidence; scripts and signatures are not verified here. Generic refund values are commitments rather than modeled payments. The naming fixture uses canonical binary Cardano addresses, a thirty-two-byte next-controller commitment, and a threshold quorum. The browser drives those shapes through the integrated lifecycle transition, but this does not establish compiled-script interoperability or ledger execution.",
       "pause": 400
     }
   ],
   "reproduce-the-focused-checks": [
     {
-      "text": "Use the simulator build check, Node gate, and gate self-test from the repository root. The standalone page embeds its runtime assets. Local browser verification exercised manual controls, refusal branches, both themes, and a mobile viewport. That evidence is separate from deployed-byte and browser checks. No Lean compile or full Nix gate was consumed by these checks.",
+      "text": "In a source checkout, use the simulator build check, Node gate, self-test, lifecycle gate, and both browser checks. For archive evidence, first verify the internal checksum manifest, then run the check app from the archive's own locked flake. It compiles the shipped Lean model, regenerates all corpora, checks compiled axioms, verifies both public pages, replays generic, naming, lifecycle, and wire rows, and executes negative controls. The locked toolchain may be acquired when uncached, but model and replay inputs never come from a checkout or unpinned fetch. This remains review material, not a published release or ledger artifact.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "bc5cf66c7c87e7867432583e7624355b177b7e98a2734c81bc840a795b896c7e"
+    "sha256": "9f6855e2217892943bbcba0f83a577dbb9ac99207400915f1653e66bbad5e24b"
   }
 }

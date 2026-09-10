@@ -5,7 +5,11 @@
       "pause": 400
     },
     {
-      "text": "A user who asks the application to register a key, waits with no NFT and no reservation, and can withdraw if the key is taken first.",
+      "text": "A user who asks the application to register a key and waits with no NFT and no reservation. Generic registry withdrawal is modeled separately. Naming claim cancellation stays unavailable until its authority and refund semantics are specified.",
+      "pause": 400
+    },
+    {
+      "text": "A holder of an active name can maintain payment routing, recover through a committed next controller, or retire permanently in the playable lifecycle. Its integrated transition is reconciled across thirty-eight model, corpus, and browser identities. This remains an unaccepted design candidate, not ledger execution.",
       "pause": 400
     },
     {
@@ -33,12 +37,16 @@
   ],
   "design-status": [
     {
-      "text": "The link at the top of this page opens the live generic-registry simulator, where Delete is allowed. Queue competing registrations, change an application address, and explore retirement. This executable design candidate includes a logical Lean model and forty-one proved theorem statements. Every statement is proved from the standard axioms, and the build refuses a statement that is admitted again. No independent audit acceptance or production validator is claimed. The coverage ledger records the executable evidence and the proved-model limits.",
+      "text": "The link at the top opens the simulator. Choose the explicit first-release naming profile to claim, fold, resolve, and try duplicate-name and Delete refusals; the generic registry profile remains beside it. The candidate has forty-one proved generic declarations and seventeen proved naming declarations. Its focused checks replay fifty-eight generic rows, thirty-four naming rows, and thirty-eight lifecycle and wire rows. That is finite correspondence evidence, not independent acceptance, a compiled Cardano validator, or ledger execution.",
+      "pause": 400
+    },
+    {
+      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake. A checkout pass does not substitute, and no tag or publication is authorized.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "92b1d397da0a5b7a34774e401be84e16fb5fe9fbf0e0cc74f1bba997ac60fb0b"
+    "sha256": "84ce20194fea97ef1681996654f6e793d79f8e5dfabb273d72db736956f1b80c"
   }
 }

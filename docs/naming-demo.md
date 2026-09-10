@@ -51,7 +51,7 @@ Every refusal names its intended condition. A generic exception is a defect.
 
 ```mermaid
 flowchart TB
-  Generic[Generic registry model, forty-one proved statements] --> NamingLayer[Naming layer, seven proved statements]
+  Generic[Generic registry model, forty-one proved declarations] --> NamingLayer[Naming layer, seventeen proved declarations]
   NamingLayer --> NamingEngine[m1-naming engine]
   Generic --> GenericEngine[Generic engine]
   NamingEngine --> NamingCard[First-release naming profile card]
@@ -62,7 +62,7 @@ The generic foundation stays upstream. The naming layer adds fixtures, queueing,
 
 ## What is proved and what is checked here
 
-The naming layer carries seven theorem declarations, every one PROVED in Lean from the standard axioms alone, in a separate inventory from the generic forty-one: the delete refusal, no reservation on approval, absent-key activation, occupied-key duplicate refusal, fixture preservation through the fold, unauthenticated resolve, and the fixture's payment-destination distinctness. The simulator replays a Lean-authored naming corpus of thirty-four rows — queueing, folding, crafted refusals, resolutions, and replays — and requires byte-identical verdicts from the transcription. The page's own self-test replays the same corpus in the browser.
+The naming layer carries seventeen theorem declarations, every one PROVED in Lean from the standard axioms alone, in a separate inventory from the generic forty-one. Seven record the user-facing contract: Delete refusal, no reservation on approval, absent-key activation, occupied-key duplicate refusal, fixture preservation through the fold, unauthenticated resolve, and payment-destination distinctness. Ten more pin the transition, queue-validation, and resolution equations that expose the full public boundary. The simulator replays a Lean-authored naming corpus of thirty-four rows — spelling, queue, fold, transition, resolution, and replay cases — and requires byte-identical verdicts from the transcription. The page's own self-test replays the same corpus in the browser.
 
 Finite checks are finite: the corpus replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.
 
@@ -70,13 +70,13 @@ Finite checks are finite: the corpus replays measure the transcription on its ro
 
 | Field | Shape in this slice |
 | --- | --- |
-| Payment destination | zero or one natural number; when present, distinct from the control address |
-| Control address | natural number |
-| Next-control commitment | natural number — the commitment, not a revealed next key |
-| Retirement quorum | membership list and threshold, present as structure |
+| Payment destination | zero or one canonical binary base or enterprise address; when present, distinct from the control address |
+| Control address | canonical binary base or enterprise address with a payment-key credential |
+| Next-control commitment | 32-byte domain-separated BLAKE2b digest — the commitment, not a revealed next address |
+| Retirement quorum | payment-key-hash members and a threshold, present as structure |
 
-Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, or refund rule is invented anywhere in the profile. Keys, addresses, and commitments are natural numbers; `alice` maps to one frozen demo key. Not implemented here, and not faked: payment-destination maintenance, withdrawal of pending claims, recovery through the next-control commitment, owner-or-quorum retirement, consumer-contract scenarios, or a published release package. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
+Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, or refund rule is invented anywhere in the profile. `alice` maps to one frozen demo key. Continue to the [playable lifecycle](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Naming-claim cancellation remains on hold and has no button; retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
 
 ## Status of this candidate
 
-The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, playable in the browser, and claimed nowhere else. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.
+The claim/fold/resolve naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review; building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.

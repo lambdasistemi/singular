@@ -4,3 +4,9 @@ import Singular.Statements
 import Singular.Audit
 import Singular.Naming
 import Singular.NamingStatements
+import Singular.NamingLifecycle
+import Singular.NamingLifecycleStatements
+import Singular.NamingLifecycleAudit
+import Singular.NamingWire
+import Singular.NamingWireStatements
+import Singular.NamingWireAudit

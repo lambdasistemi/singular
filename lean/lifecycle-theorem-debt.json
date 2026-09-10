@@ -1,0 +1,230 @@
+[
+  {
+    "name": "Singular.NamingLifecycleStatements.supported_address_roundtrips",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8264a57ceac1140412b6929a371b2c5bfa30a70801f662c884590723c55a5bf4"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "56b7cb93f4b9bc66e44535a8c12e070d1a775e9ddc18114d1d5e4f7feb433dd3"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bae003c96c43adf86a6f8a22e3def323ffa3faa52602bf2b27d04d57c18c0fd6"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_clear_accepts",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c571d964f36e9f585be7dbb3228877f7cdfa11e73d3639cce869e45f6b048904"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "24e8bcb3174132bc8a1bce8f1046003a54bcf4894ebb7742a311a5680bdfc9a2"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_unauthorized_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2c1c2a4d0fccf14ab9bcf4758f853bfcd39d72b4b4af2174dc21987250ca5990"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_commitment_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8e85ac3594099f0e7be96d0fbeeb11b7aacb690bc7af9cb5acd7eaaa37766669"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "eadae3275cd3b4505e61d3732ff736838a3c0b6f9de59c495e938f7979927eeb"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "897e3fad655734d10b78b4d56b35096bc33fa74b3352df24c907b30ae9deb9f7"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d976956abbb49568563bd172403632a58a70588ec886abd6982f42f97a826f0b"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3422ac74c0b333157d671042a2250d8f5cf705844c4a6b3b22f0ed052e06f816"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7d638594512fce9d584164e505393bbc31f5c40baadd08d720bc4134fe697566"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a732c6e49cf7d540a8f0d71606b029025e7f23affe91e3451315dcd0b02454dc"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7dda9842513f2f684d7319ac265b22ad5b59e1414e81ce29c5f92b75dd495f85"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_representative_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "4b972382f8a4d741b8c20c2044c7c3467da55b05ab816a34409be43df899f3ea"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_registry_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5c5f2125acdbf51af46524a98beaad48a25aa47874eef8d3e6cdb6e4ca68a866"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fddd60fcb156aa2772713980683424081a2702911b50bb65a97166746f6c41a2"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_replay_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1006e45d7d5db89b22fb7c51f1fcb41d1cbfeb3596de5fe286ca42d41ae08610"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.old_controller_dead_after_recovery",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f3ea012a4c45f63195538b6a79c892fa2a7d526f5c4203fdbbcf7c972663e3a5"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "55c436afb02dcd15b525de5d0b3926239d0846e901586e5894b18e4ea7b29902"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.insufficient_quorum_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b500266a8af43eb54c70a27eb99f95b975340b77f473405a85f3ebaf3c885b40"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f53aad8470bf9cb0c81e82211b5e5c08b2fdb60f1b75eac22821b0b5e3d3d30"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "84412199567beb8e9f792e881431cac7333f341afd546d372b6b0c5c31526d1c"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_withdrawal_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ef48760d96e5db3f52cb2f1ee5bc5fc1886097e31166f15ed29816b754ca3f23"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e10ffb552094d0128d289df0f8ea85f0baf619733be30a71117277cf4d73a050"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_replay_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8b9bf10b30e16918ad3853ac44c44932c206b6d0bf4567a28afd6463f9c77f89"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_pending_then_over",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ae68936af4142d453483321a52f3e27d983cdfb6377d043ad0b51607d960f65d"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.re_registration_after_over_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "88740e868991fc92748051d8aa9efe3e65118faf3a3c0d9277c5854b85d178d9"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b2910290e792e419fa4ffbfe5af9ff4694f8510e1750d03a3c5ab2817dda0977"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.alternate_registry_seed_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "69127fe99214edcec453b22c740899a9f7446fc6667dac585db67fa2e228e4bf"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "6e43c4fdd0f705a95e8fd77771f376fa4be4a90e6a0d6a85544e2d4a9cf07073"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3f953c0bfe4f632f06affc437198fbf24ad5b9b0e0de27138a44ecaf5686bafd"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.second_seed_rival_registry_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d464b54da007528dcababb22d118cdeb47c138475d4aacc09fde9a96547460c0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_registry_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "869cd7019de8cf9f9deb01cbcb874236b0849a42ce0e09b66e9985918608b3b0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_policy_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7e335f0fc46ad890758512458ba6350c5b9968643b25a1c385c20cb78a41f0a0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_representative_policy_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8db24127813527b7c02e126f0e9278524dc5445f1c153084ac7e7b51b0347e9e"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_validator_script_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fb630b9f9099de678e8f5ecf14633b8c1b504adcb3fd2109fd5f23b234f8495b"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "08d610c87c30b7482a565a1e96c6ee57c87fbeab94d7d45a6791b2c8cfe52995"
+  }
+]

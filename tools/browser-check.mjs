@@ -74,6 +74,19 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.click('#hist-last');
   assert((await page.locator('#where').innerText()).includes('address 200'),'delete reinsert story');
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
+  await page.goto(new URL('/lifecycle-view.html', page.url()).href, {waitUntil:'networkidle'});
+  const lifecycleReplay=await page.evaluate(()=>window.lifecycleCorpusReceipt);
+  assert(lifecycleReplay.discovered===38&&lifecycleReplay.executed===38,'lifecycle browser Lean replay 38/38');
+  await page.click('#wire-roundtrip');
+  assert((await page.locator('#result').innerText()).includes('byteLength'),'browser four-field byte wire codec');
+  await page.click('#recovery-key-loss');
+  await page.click('#recovery-forged-digest');
+  assert((await page.locator('#result').innerText()).includes('lifecycle-action'),'lifecycle browser forged digest refused');
+  await page.click('#reset-active');
+  await page.click('#retirement-controller');
+  assert((await page.locator('#state-summary').innerText()).includes('pending'),'lifecycle browser pending distinction');
+  await page.click('#retirement-fold');
+  assert((await page.locator('#state-summary').innerText()).includes('retired'),'lifecycle browser retired distinction');
   assert(errors.length===0,'page errors '+errors.join(';'));
   return {status:'PASS',checks:checks.length,assertions:checks,errors,url:page.url(),title:await page.title(),browser:page.context().browser().version(),manual:['competing Inserts','fold first','withdraw refused without separate approval','mint withdrawal approval','withdraw second','unauthorized evolution refused','evolve address B','queue Update','resolve pending','fold terminal','resolve retired','unauthenticated view','naming claim and fold','naming occupied-key','naming crafted delete','naming resolve fixture'],stories:['register','compete refusal fork and trunk','batch','naming journey'],screenshots:['browser-dark.png','browser-mobile.png']}; }
 
@@ -84,6 +97,12 @@ const server = createServer((request, response) => {
   if (request.url === '/' || request.url === '/index.html') {
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     response.end(html);
+  } else if (['/lifecycle-view.html','/lifecycle-view.mjs','/lifecycle-journeys.mjs','/lifecycle.mjs','/naming-wire.mjs','/naming.mjs','/core.mjs','/lifecycle-corpus.json'].includes(request.url)) {
+    const file = request.url.slice(1), directory = file === 'lifecycle-corpus.json' ? 'lean' : 'simulator';
+    readFile(join(root, directory, file)).then(bytes => {
+      response.writeHead(200, {'Content-Type': file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.json') ? 'application/json' : 'text/javascript; charset=utf-8'});
+      response.end(bytes);
+    }, error => { response.writeHead(500); response.end(error.message); });
   } else {
     response.writeHead(404);
     response.end();

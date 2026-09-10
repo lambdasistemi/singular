@@ -23,12 +23,16 @@
   ],
   "documentation-releases": [
     {
-      "text": "At this bootstrap revision, no documentation version is released. The unreleased baseline is zero point zero point zero. Release-please proposes version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built documentation archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "text": "Documentation version zero point one point zero is prepared consistently in the version file, release manifest, and changelog. That does not establish a tag or published archive. Release-please proposes later version changes in a pull request. An operator-authorized version tag on its merged commit publishes the Nix-built archive and checksum, verifies uploaded bytes, then updates bookkeeping labels without comments.",
+      "pause": 400
+    },
+    {
+      "text": "The archive is also a runnable review workspace. Under artifacts review it carries model and theorem sources, corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. After extracting the actual archive into a fresh directory, verify the internal checksum manifest and run the review flake's check app. Nix may acquire only the exact locked toolchain; all model and replay inputs come from the archive. A checkout pass or presence check does not establish archive reproduction, and no release tag is authorized by this candidate.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "3f7faa10a99022c09f6e68b2d2664f4ae34cc81c5e33e63cf8f879aa9d68337b"
+    "sha256": "748b7c963ad3044f51297cad1c764d0690178ced6666cc6bf4daf3e692aa04ae"
   }
 }

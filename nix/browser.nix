@@ -11,15 +11,23 @@ let
     runtimeEnv = environment;
     text = ''node ${src}/tools/browser-check.mjs ${src}'';
   };
+  lifecycleChecker = pkgs.writeShellApplication {
+    name = "lifecycle-browser-check";
+    runtimeInputs = [ browserPkgs.nodejs ];
+    runtimeEnv = environment;
+    text = ''node ${src}/tools/lifecycle-browser-check.mjs ${src}'';
+  };
 in {
-  inherit checker environment;
+  inherit checker lifecycleChecker environment;
   apps.browser-check = { type = "app"; program = pkgs.lib.getExe checker; };
+  apps.lifecycle-browser-check = { type = "app"; program = pkgs.lib.getExe lifecycleChecker; };
   check = pkgs.runCommand "singular-browser-check" {
     nativeBuildInputs = [ pkgs.glibcLocales ];
     LANG = "C.UTF-8";
     LC_ALL = "C.UTF-8";
   } ''
     ${pkgs.lib.getExe checker}
+    ${pkgs.lib.getExe lifecycleChecker}
     touch "$out"
   '';
 }

@@ -2,13 +2,15 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
-<a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — the live generic-registry simulator, where Delete is allowed. Queue competing registrations, change an application's address, and explore retirement. The [simulation guide](docs/simulation.md) explains the manual controls and the proved-model limits.
+<a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — choose the explicit **m1-naming** profile to claim, fold, resolve, and test duplicate-name and Delete refusals. The generic-registry profile remains available beside it, where Delete is allowed. The [simulation guide](docs/simulation.md) separates those two journeys and their finite-model limits.
 
 ## Who this is for
 
 **An application developer** wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.
 
-**A user of that application** asks it to register a key. The application approves the exact proposal — the key, the initial state, where the NFT will live — and the user's request waits, holding no NFT, until someone folds it into the registry. If the key is already taken by then, the registration fails and the user can withdraw the request; nothing was reserved by asking.
+**A user of that application** asks it to register a key. The application approves the exact proposal — the key, the initial state, where the NFT will live — and the user's request waits, holding no NFT, until someone folds it into the registry. If the key is already taken by then, the registration fails; nothing was reserved by asking. Generic-registry withdrawal is modeled separately. Naming-claim cancellation remains deliberately unavailable until its authority, refund destination, value, and fee treatment are specified.
+
+**A holder of an active name** wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The [playable naming lifecycle](docs/naming-lifecycle.md) drives those maintenance, recovery, and controller-or-quorum retirement rules through the integrated transition, while retaining an exact 38-row model/corpus/browser reconciliation. It remains an unaccepted design candidate, not an observed ledger execution.
 
 **A folder** — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.
 
@@ -56,12 +58,16 @@ Read the design in order:
 2. [Requests, folding and NFT custody](docs/lifecycle.md)
 3. [Certification and identity binding](docs/certification.md)
 4. [Naming walkthrough: register, resolve, change address](docs/naming-demo.md)
-5. [Prior art and reuse candidates](docs/prior-art.md)
-6. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
+5. [Naming lifecycle: maintain, recover, retire](docs/naming-lifecycle.md)
+6. [Play and reproduce the simulation](docs/simulation.md)
+7. [Prior art and reuse candidates](docs/prior-art.md)
+8. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) adds a logical Lean model, 41 proved theorem statements and a separately authored [playable simulation](docs/simulation.md). Every statement is proved from the standard axioms and the build refuses a re-admitted one; no independent audit acceptance or production validator is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has 41 proved generic-registry declarations and 17 proved first-release naming declarations, plus a separately authored [playable simulation](docs/simulation.md). The focused checks replay 58 generic rows, 34 naming rows, and 38 lifecycle and wire rows; they test correspondence on those finite inputs rather than proving browser behavior generally. No independent audit acceptance, compiled Cardano validator, or ledger execution is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+
+The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies `artifacts/SHA256SUMS`, and runs the archive's own flake; a checkout pass does not substitute. [Build and release details](docs/building.md) give the exact commands. No tag or publication is authorized by this candidate.
 
 Singular uses MPF as its authenticated registry data structure. Existing MPFS is a separate application with potentially reusable mechanics. The implementation stack and shared-library boundaries remain unselected; extracting a shared library is future work.
 

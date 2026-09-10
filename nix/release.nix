@@ -3,11 +3,13 @@ let
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
   python = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
   archive = pkgs.runCommand "singular-docs-release-${version}" {
-    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip pkgs.coreutils ];
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip pkgs.coreutils pkgs.python3 ];
   } ''
     mkdir -p "$out"
+    python3 ${src}/tools/stage_release.py --selftest
+    python3 ${src}/tools/stage_release.py ${docs} release-stage
     tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
-      -C ${docs} -cf - . | gzip -n > "$out/singular-docs-${version}.tar.gz"
+      -C release-stage -cf - . | gzip -n > "$out/singular-docs-${version}.tar.gz"
     cd "$out"
     sha256sum "singular-docs-${version}.tar.gz" > SHA256SUMS
   '';
