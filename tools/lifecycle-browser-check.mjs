@@ -94,6 +94,10 @@ try {
     'maintenance quorum alteration refused');
 
   await clickResult('#recovery-key-loss', 'marked unavailable', 'key loss is visible');
+  check(await page.locator('#retirement-controller').isDisabled(),
+    'controller retirement disabled after controller key loss');
+  check(await page.locator('#retirement-quorum').isEnabled(),
+    'quorum retirement remains enabled after controller key loss');
   await clickResult('#recovery-wrong-reveal', 'recovery-commitment', 'wrong reveal refused');
   await clickResult('#recovery-missing-signer', 'recovery-required-signer', 'missing recovery signer refused');
   await clickResult('#recovery-wrong-signer', 'recovery-required-signer', 'wrong payment-key signer refused');

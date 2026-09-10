@@ -146,6 +146,8 @@ function renderState() {
   disable(recoveryAttemptControls, !hasActiveRecord || !keyLost || recoveredController);
   disable(recoveredControls, !hasActiveRecord || !recoveredController);
   disable(retirementStartControls, !hasActiveRecord);
+  element('retirement-controller').disabled = !hasActiveRecord || keyLost;
+  element('retirement-wrong-custody').disabled = !hasActiveRecord || keyLost;
   element('recovery-key-loss').disabled = !hasActiveRecord || keyLost || recoveredController;
   element('retirement-fold').disabled = !pending;
   element('retirement-withdraw').disabled = !pending;

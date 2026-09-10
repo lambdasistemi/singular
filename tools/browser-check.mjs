@@ -79,8 +79,10 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   assert(lifecycleReplay.discovered===38&&lifecycleReplay.executed===38,'lifecycle browser Lean replay 38/38');
   await page.click('#wire-roundtrip');
   assert((await page.locator('#result').innerText()).includes('byteLength'),'browser four-field byte wire codec');
+  await page.click('#recovery-key-loss');
   await page.click('#recovery-forged-digest');
   assert((await page.locator('#result').innerText()).includes('lifecycle-action'),'lifecycle browser forged digest refused');
+  await page.click('#reset-active');
   await page.click('#retirement-controller');
   assert((await page.locator('#state-summary').innerText()).includes('pending'),'lifecycle browser pending distinction');
   await page.click('#retirement-fold');
