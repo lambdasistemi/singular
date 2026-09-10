@@ -76,7 +76,7 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
   await page.goto(new URL('/lifecycle-view.html', page.url()).href, {waitUntil:'networkidle'});
   const lifecycleReplay=await page.evaluate(()=>window.lifecycleCorpusReceipt);
-  assert(lifecycleReplay.discovered===25&&lifecycleReplay.executed===25,'lifecycle browser Lean replay 25/25');
+  assert(lifecycleReplay.discovered===38&&lifecycleReplay.executed===38,'lifecycle browser Lean replay 38/38');
   const wire=await page.evaluate(()=>window.namingWireReceipt);
   assert(wire.shape.outerIndex===0&&wire.shape.innerIndex===0&&wire.shape.arity===4&&wire.roundtrip&&wire.byteLength===205&&wire.exactBytes&&wire.byteRoundtrip&&wire.malformedBytesRejected&&wire.inline&&wire.hashRejected&&wire.twoRejected,'browser four-field byte wire codec');
   await page.click('#hash');

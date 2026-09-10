@@ -41,14 +41,17 @@ def destinationTamper : LifecycleAction :=
     { requiredSigners := [controllerAddress] }
 
 def wrongReveal : LifecycleAction :=
-  .recover 3 4 aliceKey freshControllerAddress recoveredFixture
+  .recover 3 4 aliceKey freshControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey) recoveredFixture
     { requiredSigners := [freshControllerAddress] }
 
 def missingRecoverySigner : LifecycleAction :=
-  .recover 3 4 aliceKey nextControllerAddress recoveredFixture {}
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey) recoveredFixture {}
 
 def replayRecovery : LifecycleAction :=
-  .recover 4 5 aliceKey nextControllerAddress recoveredFixture
+  .recover 4 5 aliceKey nextControllerAddress recoveredState.registry.config.registry
+    (representative recoveredState.registry aliceKey) recoveredFixture
     { requiredSigners := [nextControllerAddress] }
 
 def oldControllerMaintenance : LifecycleAction :=
@@ -56,7 +59,8 @@ def oldControllerMaintenance : LifecycleAction :=
     { requiredSigners := [controllerAddress] }
 
 def forgedRecovery : LifecycleAction :=
-  .recover 3 4 aliceKey nonFixtureControllerAddress forgedRecoveryFixture
+  .recover 3 4 aliceKey nonFixtureControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey) forgedRecoveryFixture
     { requiredSigners := [nonFixtureControllerAddress] }
 
 def lifecycleStepRows : List LifecycleStepRow := [
@@ -64,17 +68,39 @@ def lifecycleStepRows : List LifecycleStepRow := [
   { id := "LM02-maintenance-unauthorized-refused", before := activeOnce,
     action := .maintain 3 4 aliceKey clearedFixture {} },
   { id := "LM03-maintenance-field-tamper-refused", before := activeOnce, action := destinationTamper },
+  { id := "LM04-maintenance-quorum-alteration-refused", before := activeOnce,
+    action := maintainQuorumTamper },
   { id := "LR01-recovery-accepts", before := activeOnce, action := recoverWithNext },
   { id := "LR02-wrong-reveal-refused", before := activeOnce, action := wrongReveal },
   { id := "LR03-missing-recovery-signer-refused", before := activeOnce, action := missingRecoverySigner },
   { id := "LR04-recovery-replay-refused", before := recoveredState, action := replayRecovery },
   { id := "LR05-old-controller-refused", before := recoveredState, action := oldControllerMaintenance },
   { id := "LR06-forged-public-digest-refused", before := activeOnce, action := forgedRecovery },
+  { id := "LR07-wrong-payment-key-signer-refused", before := activeOnce,
+    action := recoverWrongPaymentKeySigner },
+  { id := "LR08-missing-fresh-commitment-refused", before := activeOnce,
+    action := recoverMissingFreshCommitment },
+  { id := "LR09-representative-tamper-refused", before := activeOnce,
+    action := recoverRepresentativeTamper },
+  { id := "LR10-registry-tamper-refused", before := activeOnce,
+    action := recoverRegistryTamper },
+  { id := "LR11-quorum-tamper-refused", before := activeOnce,
+    action := recoverQuorumTamper },
   { id := "LT01-controller-retirement-accepts", before := activeOnce, action := retirementByController },
   { id := "LT02-quorum-retirement-accepts", before := activeOnce, action := retirementByQuorum },
   { id := "LT03-insufficient-quorum-refused", before := activeOnce, action := retirementInsufficient },
   { id := "LT04-retirement-completes", before := retirementPending,
-    action := .completeRetirement 4 }]
+    action := .completeRetirement 4 },
+  { id := "LT05-quorum-control-takeover-refused", before := activeOnce,
+    action := quorumControlTakeover },
+  { id := "LT06-quorum-payment-redirection-refused", before := activeOnce,
+    action := quorumPaymentRedirection },
+  { id := "LT07-retirement-withdrawal-refused", before := retirementPending,
+    action := .withdrawRetirement 4 },
+  { id := "LT08-wrong-retirement-custody-refused", before := activeOnce,
+    action := retirementWrongCustody },
+  { id := "LT09-retirement-replay-refused", before := retirementPending,
+    action := retirementByController }]
 
 def lifecycleResolutionRows : List LifecycleResolutionRow := [
   { id := "LO01-retirement-pending-visible", before := retirementPending,
@@ -94,7 +120,11 @@ def lifecycleInitializationRows : List LifecycleInitializationRow := [
   { id := "LI05-substituted-policy-refused", binding := namingConsumerBinding,
     before := {}, attempt := substitutedPolicyInitialization },
   { id := "LI06-repeated-canonical-seed-refused", binding := namingConsumerBinding,
-    before := canonicalInitializedState, attempt := canonicalInitialization }]
+    before := canonicalInitializedState, attempt := canonicalInitialization },
+  { id := "LI07-substituted-representative-policy-refused", binding := namingConsumerBinding,
+    before := {}, attempt := substitutedRepresentativeInitialization },
+  { id := "LI08-substituted-validator-script-refused", binding := namingConsumerBinding,
+    before := {}, attempt := substitutedValidatorInitialization }]
 
 def lifecycleRegistrationRows : List LifecycleRegistrationRow := [
   { id := "LX01-re-registration-after-over-refused", before := retirementOver,
@@ -113,10 +143,11 @@ def lifecycleActionJson : LifecycleAction → Json
       Json.mkObj [("maintain", Json.mkObj [("source", toJson source),
         ("successor", toJson successor), ("key", toJson key),
         ("candidate", toJson candidate), ("witnesses", witnessesJson witnesses)])]
-  | .recover source successor key revealed candidate witnesses =>
+  | .recover source successor key revealed candidateRegistry candidateRepresentative candidate witnesses =>
       Json.mkObj [("recover", Json.mkObj [("source", toJson source),
         ("successor", toJson successor), ("key", toJson key),
-        ("revealed", toJson revealed), ("candidate", toJson candidate),
+        ("revealed", toJson revealed), ("candidateRegistry", toJson candidateRegistry),
+        ("candidateRepresentative", toJson candidateRepresentative), ("candidate", toJson candidate),
         ("witnesses", witnessesJson witnesses)])]
   | .retire source requestId key request route witnesses =>
       Json.mkObj [("retire", Json.mkObj [("source", toJson source),
@@ -125,6 +156,8 @@ def lifecycleActionJson : LifecycleAction → Json
         ("witnesses", witnessesJson witnesses)])]
   | .completeRetirement requestId =>
       Json.mkObj [("completeRetirement", Json.mkObj [("requestId", toJson requestId)])]
+  | .withdrawRetirement requestId =>
+      Json.mkObj [("withdrawRetirement", Json.mkObj [("requestId", toJson requestId)])]
 
 def lifecycleVerdictJson (result : Except String NamingResult) : Json :=
   match result with

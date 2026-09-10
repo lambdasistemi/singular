@@ -69,23 +69,26 @@ inductive LifecycleAction where
   | maintain (source successor key : Nat) (candidate : NamingFixture)
       (witnesses : LifecycleWitnesses)
   | recover (source successor key : Nat) (revealed : NamingAddress)
+      (candidateRegistry : Nat) (candidateRepresentative : Representative)
       (candidate : NamingFixture) (witnesses : LifecycleWitnesses)
   | retire (source requestId key : Nat) (request : Request)
       (route : RetirementRoute) (witnesses : LifecycleWitnesses)
   | completeRetirement (requestId : Nat)
+  | withdrawRetirement (requestId : Nat)
   deriving Repr, BEq, DecidableEq, ToJson
 
 def lifecycleExecutingWitness : LifecycleAction → LifecycleExecutionWitness
   | .maintain _ _ _ _ witnesses =>
       { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
         quorumSigners := witnesses.quorumSigners }
-  | .recover _ _ _ _ _ witnesses =>
+  | .recover _ _ _ _ _ _ _ witnesses =>
       { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
         quorumSigners := witnesses.quorumSigners }
   | .retire _ _ _ _ _ witnesses =>
       { applicationSpend := true, requiredSigners := witnesses.requiredSigners,
         quorumSigners := witnesses.quorumSigners }
   | .completeRetirement _ => { nativeSpend := true, representativeMint := true }
+  | .withdrawRetirement _ => {}
 
 def namingRecord (state : NamingState) (key : Nat) : Except String NamingRecord :=
   requireSome (state.records.find? (fun record => record.key == key)) "naming-record-unavailable"
@@ -135,11 +138,14 @@ def maintainDestination (state : NamingState) (source successor key : Nat)
   return { state := replaceLifecycleOutput state record application successor candidate }
 
 def recoverController (hasher : NextControlHasher) (state : NamingState) (source successor key : Nat)
-    (revealed : NamingAddress) (candidate : NamingFixture)
+    (revealed : NamingAddress) (candidateRegistry : Nat)
+    (candidateRepresentative : Representative) (candidate : NamingFixture)
     (witnesses : LifecycleWitnesses) : Except String NamingResult := do
   let record ← namingRecord state key
   let application ← recordApplication state record
   validateLifecycleOutput state record application source successor
+  if candidateRegistry != state.registry.config.registry then throw "recovery-registry"
+  if candidateRepresentative != record.representative then throw "recovery-representative"
   if !paymentKeyAddress revealed then throw "recovery-payment-key"
   let computed := hasher revealed
   if !wellFormedCommitment computed then throw "recovery-hash-shape"
@@ -189,14 +195,22 @@ def finishRetirement (state : NamingState) (requestId : Nat) : Except String Nam
     [] { nativeSpend := true, representativeMint := true })
   return { state := { state with registry := result.state }, logical := result.logical }
 
+def refuseRetirementWithdrawal (state : NamingState) (requestId : Nat) : Except String NamingResult := do
+  let request ← requireSome (state.registry.requests.find? (fun candidate => candidate.id == requestId))
+    "request-unavailable"
+  if request.operation != .update then throw "retirement-update-only"
+  throw "retirement-withdrawal-refused"
+
 def lifecycleStep (hasher : NextControlHasher) (state : NamingState) : LifecycleAction → Except String NamingResult
   | .maintain source successor key candidate witnesses =>
       maintainDestination state source successor key candidate witnesses
-  | .recover source successor key revealed candidate witnesses =>
-      recoverController hasher state source successor key revealed candidate witnesses
+  | .recover source successor key revealed candidateRegistry candidateRepresentative candidate witnesses =>
+      recoverController hasher state source successor key revealed candidateRegistry
+        candidateRepresentative candidate witnesses
   | .retire source requestId key request route witnesses =>
       beginRetirement state source requestId key request route witnesses
   | .completeRetirement requestId => finishRetirement state requestId
+  | .withdrawRetirement requestId => refuseRetirementWithdrawal state requestId
 
 /-! Design-time source binding for the consumer boundary. -/
 def cardanoKeriRevision : String := "14a64a4681d3e429fab5877062b5c476c2a4bfe2"
@@ -270,6 +284,12 @@ def substitutedRegistryInitialization : InitializationAttempt :=
 def substitutedPolicyInitialization : InitializationAttempt :=
   { canonicalInitialization with applicationPolicy := 9 }
 
+def substitutedRepresentativeInitialization : InitializationAttempt :=
+  { canonicalInitialization with representativePolicy := 9 }
+
+def substitutedValidatorInitialization : InitializationAttempt :=
+  { canonicalInitialization with validatorScript := 13 }
+
 def canonicalInitializedState : InitializationState :=
   match initializeConsumerTransition namingConsumerBinding {} canonicalInitialization with
   | .ok state => state
@@ -293,8 +313,50 @@ def fixtureHasher : NextControlHasher := fun address =>
 def maintainClear : LifecycleAction :=
   .maintain 3 4 aliceKey clearedFixture { requiredSigners := [controllerAddress] }
 
+def maintainQuorumTamper : LifecycleAction :=
+  .maintain 3 4 aliceKey
+    { clearedFixture with retirementQuorum := otherFixture.retirementQuorum }
+    { requiredSigners := [controllerAddress] }
+
+def quorumControlTakeover : LifecycleAction :=
+  .maintain 3 4 aliceKey { aliceFixture with controlAddress := otherControllerAddress }
+    { quorumSigners := [quorumKeyHash 1, quorumKeyHash 29] }
+
+def quorumPaymentRedirection : LifecycleAction :=
+  .maintain 3 4 aliceKey { aliceFixture with paymentDestination := some otherControllerAddress }
+    { quorumSigners := [quorumKeyHash 1, quorumKeyHash 29] }
+
 def recoverWithNext : LifecycleAction :=
-  .recover 3 4 aliceKey nextControllerAddress recoveredFixture
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey) recoveredFixture
+    { requiredSigners := [nextControllerAddress] }
+
+def recoverWrongPaymentKeySigner : LifecycleAction :=
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey) recoveredFixture
+    { requiredSigners := [controllerAddress] }
+
+def recoverMissingFreshCommitment : LifecycleAction :=
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey)
+    { recoveredFixture with nextControlCommitment := nextControllerCommitment }
+    { requiredSigners := [nextControllerAddress] }
+
+def recoverRepresentativeTamper : LifecycleAction :=
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    { representative activeOnce.registry aliceKey with policy :=
+        (representative activeOnce.registry aliceKey).policy + 1 }
+    recoveredFixture { requiredSigners := [nextControllerAddress] }
+
+def recoverRegistryTamper : LifecycleAction :=
+  .recover 3 4 aliceKey nextControllerAddress (namingConsumerBinding.registry + 1)
+    (representative activeOnce.registry aliceKey) recoveredFixture
+    { requiredSigners := [nextControllerAddress] }
+
+def recoverQuorumTamper : LifecycleAction :=
+  .recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+    (representative activeOnce.registry aliceKey)
+    { recoveredFixture with retirementQuorum := otherFixture.retirementQuorum }
     { requiredSigners := [nextControllerAddress] }
 
 def retirementByController : LifecycleAction :=
@@ -326,6 +388,18 @@ def retirementInsufficient : LifecycleAction :=
       | some application =>
           .retire record.outputId 4 aliceKey (retirementRequest activeOnce record application 4)
             .quorum { quorumSigners := [quorumKeyHash 1] }
+
+def retirementWrongCustody : LifecycleAction :=
+  match activeOnce.records.head? with
+  | none => .completeRetirement 0
+  | some record =>
+      match activeOnce.registry.applications.find? (fun output => output.id == record.outputId) with
+      | none => .completeRetirement 0
+      | some application =>
+          let request := retirementRequest activeOnce record application 4
+          let wrongRepresentative := { record.representative with policy := record.representative.policy + 1 }
+          .retire record.outputId 4 aliceKey { request with held := some wrongRepresentative }
+            .controller { requiredSigners := [controllerAddress] }
 
 def afterLifecycle (state : NamingState) (action : LifecycleAction) : NamingState :=
   match lifecycleStep fixtureHasher state action with

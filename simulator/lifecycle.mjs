@@ -127,9 +127,12 @@ function transition(state, action) {
     return {state: replaceOutput(state, record, application, data.successor, data.candidate), logical: []};
   }
   if (kind === 'recover') {
-    if (!exactFields(data, ['source', 'successor', 'key', 'revealed', 'candidate', 'witnesses'])) fail('lifecycle-action');
+    if (!exactFields(data, ['source', 'successor', 'key', 'revealed', 'candidateRegistry',
+      'candidateRepresentative', 'candidate', 'witnesses'])) fail('lifecycle-action');
     const record = findRecord(state, data.key), application = findApplication(state, record);
     validateOutput(state, record, application, data.source, data.successor);
+    if (data.candidateRegistry !== state.registry.config.registry) fail('recovery-registry');
+    if (!equal(data.candidateRepresentative, record.representative)) fail('recovery-representative');
     if (!paymentKeyAddress(data.revealed)) fail('recovery-payment-key');
     const computed = nextCommitment(data.revealed);
     if (!commitmentShape(computed)) fail('recovery-hash-shape');
@@ -167,6 +170,11 @@ function transition(state, action) {
     if (!result.accepted) fail(result.reason);
     return {state: {...state, registry: result.value.state}, logical: result.value.logical};
   }
+  if (kind === 'withdrawRetirement') {
+    const request = state.registry.requests.find(candidate => candidate.id === data.requestId) ?? fail('request-unavailable');
+    if (request.operation !== 'update') fail('retirement-update-only');
+    fail('retirement-withdrawal-refused');
+  }
   fail('lifecycle-action');
 }
 
@@ -186,6 +194,7 @@ export function lifecycleExecutingWitness(action) {
     requiredSigners: action[kind].witnesses.requiredSigners,
     quorumSigners: action[kind].witnesses.quorumSigners};
   if (kind === 'completeRetirement') return {...witness, nativeSpend: true, representativeMint: true};
+  if (kind === 'withdrawRetirement') return witness;
   return null;
 }
 
@@ -218,14 +227,22 @@ export const lifecycleCorpusIdentities = Object.freeze([
   'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
   'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
   'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',
+  'LI07-substituted-representative-policy-refused', 'LI08-substituted-validator-script-refused',
   'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
-  'LM03-maintenance-field-tamper-refused', 'LO01-retirement-pending-visible',
+  'LM03-maintenance-field-tamper-refused', 'LM04-maintenance-quorum-alteration-refused',
+  'LO01-retirement-pending-visible',
   'LO02-retirement-over-visible', 'LR01-recovery-accepts',
   'LR02-wrong-reveal-refused', 'LR03-missing-recovery-signer-refused',
   'LR04-recovery-replay-refused', 'LR05-old-controller-refused',
-  'LR06-forged-public-digest-refused', 'LT01-controller-retirement-accepts',
+  'LR06-forged-public-digest-refused', 'LR07-wrong-payment-key-signer-refused',
+  'LR08-missing-fresh-commitment-refused', 'LR09-representative-tamper-refused',
+  'LR10-registry-tamper-refused', 'LR11-quorum-tamper-refused',
+  'LT01-controller-retirement-accepts',
   'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
   'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
+  'LT05-quorum-control-takeover-refused', 'LT06-quorum-payment-redirection-refused',
+  'LT07-retirement-withdrawal-refused', 'LT08-wrong-retirement-custody-refused',
+  'LT09-retirement-replay-refused',
   'WD01-four-field-roundtrip', 'WD02-datum-hash-refused', 'WD03-two-destinations-refused',
 ]);
 

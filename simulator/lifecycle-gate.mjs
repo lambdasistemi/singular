@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   aliceFixture, controllerAddress, decodeAddress, freshControllerAddress,
   freshControllerCommitment, namingInitial, nextControllerAddress,
-  nextControllerCommitment, queueClaim, foldRequest,
+  nextControllerCommitment, otherControllerAddress, otherFixture, queueClaim, foldRequest,
 } from './naming.mjs';
 import {
   blake2b256, cardanoKeriRevision, checkLifecycleCorpus, initializeConsumer,
@@ -90,14 +90,33 @@ assert.equal(maintained.records[0].outputId, 3);
 assert.equal(maintained.records[0].fixture.paymentDestination, null);
 refused(lifecycleStep(active, {...maintain, maintain: {...maintain.maintain,
   witnesses: {requiredSigners: [], quorumSigners: []}}}), 'controller-signature');
+refused(lifecycleStep(active, {...maintain, maintain: {...maintain.maintain,
+  candidate: {...cleared, retirementQuorum: otherFixture.retirementQuorum}}}), 'destination-field-preservation');
+refused(lifecycleStep(active, {...maintain, maintain: {...maintain.maintain,
+  candidate: {...aliceFixture, controlAddress: otherControllerAddress},
+  witnesses: {requiredSigners: [], quorumSigners: aliceFixture.retirementQuorum.members.slice(0, 2)}}}), 'controller-signature');
+refused(lifecycleStep(active, {...maintain, maintain: {...maintain.maintain,
+  candidate: {...aliceFixture, paymentDestination: otherControllerAddress},
+  witnesses: {requiredSigners: [], quorumSigners: aliceFixture.retirementQuorum.members.slice(0, 2)}}}), 'controller-signature');
 
 const recoveredFixture = {...aliceFixture, controlAddress: nextControllerAddress,
   nextControlCommitment: freshControllerCommitment};
 const recover = {recover: {source: record.outputId, successor: 3, key: record.key,
-  revealed: nextControllerAddress, candidate: recoveredFixture,
+  revealed: nextControllerAddress, candidateRegistry: active.registry.config.registry,
+  candidateRepresentative: record.representative, candidate: recoveredFixture,
   witnesses: {requiredSigners: [nextControllerAddress], quorumSigners: []}}};
 const recovered = ok(lifecycleStep(active, recover)).state;
 assert.deepEqual(recovered.records[0].fixture.controlAddress, nextControllerAddress);
+refused(lifecycleStep(active, {recover: {...recover.recover,
+  candidateRegistry: active.registry.config.registry + 1}}), 'recovery-registry');
+refused(lifecycleStep(active, {recover: {...recover.recover,
+  candidateRepresentative: {...record.representative, policy: record.representative.policy + 1}}}), 'recovery-representative');
+refused(lifecycleStep(active, {recover: {...recover.recover,
+  candidate: {...recoveredFixture, retirementQuorum: otherFixture.retirementQuorum}}}), 'recovery-field-preservation');
+refused(lifecycleStep(active, {recover: {...recover.recover,
+  witnesses: {requiredSigners: [controllerAddress], quorumSigners: []}}}), 'recovery-required-signer');
+refused(lifecycleStep(active, {recover: {...recover.recover,
+  candidate: {...recoveredFixture, nextControlCommitment: nextControllerCommitment}}}), 'recovery-fresh-commitment');
 const forgedFixture = {...aliceFixture, controlAddress: addresses[12], nextControlCommitment: freshControllerCommitment};
 refused(lifecycleStep(active, {recover: {...recover.recover, revealed: addresses[12], candidate: forgedFixture,
   witnesses: {requiredSigners: [addresses[12]], quorumSigners: []}, computed: nextControllerCommitment}}), 'lifecycle-action');
@@ -110,6 +129,10 @@ const retire = {retire: {source: record.outputId, requestId, key: record.key, re
   witnesses: {requiredSigners: [controllerAddress], quorumSigners: []}}};
 const pending = ok(lifecycleStep(active, retire)).state;
 assert.equal(pending.records.length, 0);
+refused(lifecycleStep(active, {retire: {...retire.retire,
+  request: {...request, held: {...record.representative, policy: record.representative.policy + 1}}}}), 'retirement-request');
+refused(lifecycleStep(pending, retire), 'naming-record-unavailable');
+refused(lifecycleStep(pending, {withdrawRetirement: {requestId}}), 'retirement-withdrawal-refused');
 const over = ok(lifecycleStep(pending, {completeRetirement: {requestId}})).state;
 assert.equal(over.registry.entries.find(entry => entry.key === record.key).value, 'over');
 assert.equal((await import('./naming.mjs')).namingResolve(pending, 'alice', true), 'pending');
@@ -124,6 +147,10 @@ const canonical = {sourceRevision: cardanoKeriRevision, seed: 400, seedConsumed:
   registry: 1, applicationPolicy: 7, representativePolicy: 8, validatorScript: 12};
 assert.deepEqual(initializeConsumer(namingConsumerBinding, canonical), {accepted: true});
 refused(initializeConsumer(namingConsumerBinding, {...canonical, seed: 401}), 'canonical-seed');
+refused(initializeConsumer(namingConsumerBinding,
+  {...canonical, representativePolicy: canonical.representativePolicy + 1}), 'representative-policy');
+refused(initializeConsumer(namingConsumerBinding,
+  {...canonical, validatorScript: canonical.validatorScript + 1}), 'validator-script');
 const initialized = initializeConsumerTransition(namingConsumerBinding, {consumedSeeds: []}, canonical);
 assert.deepEqual(initialized, {accepted: true, state: {consumedSeeds: [400]}});
 refused(initializeConsumerTransition(namingConsumerBinding, initialized.state, canonical), 'canonical-seed-consumed');
@@ -132,4 +159,4 @@ console.log(JSON.stringify({leanReplay, hashCorrespondence: {dynamicAddresses: a
   lifecycle: ['maintenance', 'recovery', 'retirement-controller', 'retirement-completion', 'initialization'],
   wireCodec: {outerIndex: 0, innerIndex: 0, arity: 4, bytes: encodedDatumBytes.length,
     exactBytes: true, malformedBytesRefused: true, inlineOnly: true, zeroOrOneDestination: true},
-  negativeControls: 13}));
+  negativeControls: 26}));
