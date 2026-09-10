@@ -24,11 +24,15 @@
               python3 tools/check_model.py \
                 --binary .lake/build/bin/singular-corpus \
                 --naming-binary .lake/build/bin/naming-corpus \
+                --lifecycle-binary .lake/build/bin/lifecycle-corpus \
                 --axioms-report axioms-report.txt \
                 --root . > model-check.txt
               node simulator/build.mjs --check > page-build-check.txt
               node simulator/gate.mjs > replay-check.txt
               node simulator/gate.mjs --selftest > replay-selftest.txt
+              node simulator/lifecycle-gate.mjs > lifecycle-replay-check.txt
+              grep -F '"dynamicAddresses":24' lifecycle-replay-check.txt
+              grep -F '"negativeControls":9' lifecycle-replay-check.txt
               runHook postBuild
             '';
             installPhase = ''
@@ -41,6 +45,7 @@
                 tail -n 28 replay-check.txt
                 grep -F '"controlsDiscovered": 43' replay-selftest.txt
                 grep -F '"controlsExecuted": 43' replay-selftest.txt
+                cat lifecycle-replay-check.txt
                 printf '%s\n' 'PASS archive model and replay reproduction'
               } > "$out/receipt.txt"
             '';

@@ -17,13 +17,24 @@ let
       mkdir -p "$out/bin" "$out/share"
       cp .lake/build/bin/singular-corpus "$out/bin/"
       cp .lake/build/bin/naming-corpus "$out/bin/"
-      cp lean/corpus.json lean/theorem-debt.json lean/naming-corpus.json lean/naming-theorem-debt.json axioms-report.txt "$out/share/"
+      cp .lake/build/bin/lifecycle-corpus "$out/bin/"
+      cp lean/corpus.json lean/theorem-debt.json \
+        lean/naming-corpus.json lean/naming-theorem-debt.json \
+        lean/lifecycle-corpus.json lean/lifecycle-theorem-debt.json \
+        axioms-report.txt "$out/share/"
     '';
   };
   checker = pkgs.writeShellApplication {
     name = "model-check";
     runtimeInputs = [ pkgs.python3 ];
-    text = ''python3 ${src}/tools/check_model.py --binary ${package}/bin/singular-corpus --naming-binary ${package}/bin/naming-corpus --axioms-report ${package}/share/axioms-report.txt --root ${src}'';
+    text = ''
+      python3 ${src}/tools/check_model.py \
+        --binary ${package}/bin/singular-corpus \
+        --naming-binary ${package}/bin/naming-corpus \
+        --lifecycle-binary ${package}/bin/lifecycle-corpus \
+        --axioms-report ${package}/share/axioms-report.txt \
+        --root ${src}
+    '';
   };
 in {
   inherit package;

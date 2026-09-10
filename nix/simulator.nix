@@ -2,12 +2,13 @@
 let
   checker = pkgs.writeShellApplication {
     name = "simulator-check";
-    runtimeInputs = [ pkgs.nodejs ];
+    runtimeInputs = [ pkgs.nodejs pkgs.python3 ];
     text = ''
       cd ${src}
       node simulator/build.mjs --check
       node simulator/gate.mjs
       node simulator/gate.mjs --selftest
+      node simulator/lifecycle-gate.mjs
     '';
   };
 in {
