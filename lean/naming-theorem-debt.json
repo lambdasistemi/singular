@@ -39,7 +39,7 @@
     "name": "Singular.NamingStatements.naming_payment_destination_distinct_from_control",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3f8a4b7b2ae0e14f414a2f0234542a8a1983c1f8b5925ee61d559133de1fb67b"
+    "statementSha256": "a270b61cf15b28199ae46eef178d44f83ae7d4f22bebb0e663c54c92cd4b8f04"
   },
   {
     "name": "Singular.NamingStatements.naming_step_create_insert",
@@ -93,12 +93,12 @@
     "name": "Singular.NamingStatements.naming_resolve_pending_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "aaccb0166859648790140e89434c304774224f11be00e62a9c5397ea41f2f1d1"
+    "statementSha256": "f1044187fba42c49b020c009e6b54f331806d7468a29e4975869bd2d8972226e"
   },
   {
     "name": "Singular.NamingStatements.naming_resolve_absent_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fffd1dbaf702baf313a63dfb71642fc8563702499081a3a0cd4a514d0b6088bb"
+    "statementSha256": "e6223bb562846e585b483ac480e2a532d60c80efea5b61ebf6fcadc93e5fa971"
   }
 ]

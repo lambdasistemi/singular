@@ -23,6 +23,42 @@ export const spellingKey = spelling => {
 const nat = x => Number.isSafeInteger(x) && x >= 0;
 const exactObject = (x, keys) => x && typeof x === 'object' && !Array.isArray(x)
   && equal(Object.keys(x).sort(), [...keys].sort());
+const bytesShape = xs => Array.isArray(xs) && xs.every(x => nat(x) && x < 256);
+const credential = x => x === 'paymentKey' || x === 'script';
+export const addressShape = a => exactObject(a, ['bytes', 'form', 'network', 'paymentCredential', 'paymentHash', 'stakeCredential', 'stakeHash'])
+  && bytesShape(a.bytes) && (a.form === 'enterprise' || a.form === 'base') && nat(a.network)
+  && credential(a.paymentCredential) && bytesShape(a.paymentHash)
+  && (a.stakeCredential === null || credential(a.stakeCredential)) && bytesShape(a.stakeHash);
+const credentialOffset = c => c === 'paymentKey' ? 0 : 1;
+export function encodeAddress(a) {
+  if (!addressShape(a) || a.network >= 16 || a.paymentHash.length !== 28) return null;
+  if (a.form === 'enterprise') {
+    if (a.stakeCredential !== null || a.stakeHash.length !== 0) return null;
+    return [(6 + credentialOffset(a.paymentCredential)) * 16 + a.network, ...a.paymentHash];
+  }
+  if (a.stakeCredential === null || a.stakeHash.length !== 28) return null;
+  return [(credentialOffset(a.paymentCredential) + 2 * credentialOffset(a.stakeCredential)) * 16 + a.network,
+    ...a.paymentHash, ...a.stakeHash];
+}
+export function decodeAddress(bytes) {
+  if (!bytesShape(bytes) || bytes.length === 0) return null;
+  const [header, ...payload] = bytes, kind = Math.floor(header / 16), network = header % 16;
+  if ((kind === 6 || kind === 7) && payload.length === 28) return {bytes: [...bytes], form: 'enterprise', network,
+    paymentCredential: kind === 6 ? 'paymentKey' : 'script', paymentHash: payload, stakeCredential: null, stakeHash: []};
+  if (kind < 4 && payload.length === 56) return {bytes: [...bytes], form: 'base', network,
+    paymentCredential: kind % 2 === 0 ? 'paymentKey' : 'script', paymentHash: payload.slice(0, 28),
+    stakeCredential: kind < 2 ? 'paymentKey' : 'script', stakeHash: payload.slice(28)};
+  return null;
+}
+export const canonicalAddress = a => addressShape(a) && equal(decodeAddress(a.bytes), a) && equal(encodeAddress(a), a.bytes);
+export const paymentKeyAddress = a => canonicalAddress(a) && a.paymentCredential === 'paymentKey';
+const address = start => ({bytes: [97, ...Array.from({length: 28}, (_, i) => start + i)], form: 'enterprise', network: 1,
+  paymentCredential: 'paymentKey', paymentHash: Array.from({length: 28}, (_, i) => start + i), stakeCredential: null, stakeHash: []});
+export const controllerAddress = address(1), nextControllerAddress = address(29), freshControllerAddress = address(57),
+  destinationAddress = address(85), otherControllerAddress = address(113);
+export const nextControllerCommitment = {digest: [194,219,76,247,78,175,65,208,95,243,240,210,186,25,12,72,45,189,40,94,86,21,171,104,133,192,82,134,196,194,60,190]};
+export const freshControllerCommitment = {digest: [21,97,193,91,73,128,133,127,176,110,74,179,92,201,188,236,175,9,11,10,168,189,239,25,246,51,21,101,163,51,32,79]};
+export const commitmentShape = c => exactObject(c, ['digest']) && bytesShape(c.digest) && c.digest.length === 32;
 const repShape = r => r && typeof r === 'object' && !Array.isArray(r)
   && exactObject(r, ['registry', 'key', 'policy', 'assetScope'])
   && ['registry', 'key', 'policy', 'assetScope'].every(k => nat(r[k]));
@@ -31,14 +67,14 @@ const quorumShape = q => q && typeof q === 'object' && !Array.isArray(q)
   && Array.isArray(q.members) && q.members.every(nat) && nat(q.threshold);
 const fixtureShape = f => f && typeof f === 'object' && !Array.isArray(f)
   && exactObject(f, ['paymentDestination', 'controlAddress', 'nextControlCommitment', 'retirementQuorum'])
-  && (f.paymentDestination === null || nat(f.paymentDestination))
-  && nat(f.controlAddress) && nat(f.nextControlCommitment) && quorumShape(f.retirementQuorum);
+  && (f.paymentDestination === null || canonicalAddress(f.paymentDestination))
+  && paymentKeyAddress(f.controlAddress) && commitmentShape(f.nextControlCommitment) && quorumShape(f.retirementQuorum);
 const claimShape = c => c && typeof c === 'object' && !Array.isArray(c)
   && exactObject(c, ['requestId', 'spelling', 'key', 'fixture'])
   && nat(c.requestId) && typeof c.spelling === 'string' && nat(c.key) && fixtureShape(c.fixture);
 const recordShape = r => r && typeof r === 'object' && !Array.isArray(r)
-  && exactObject(r, ['key', 'representative', 'fixture'])
-  && nat(r.key) && repShape(r.representative) && fixtureShape(r.fixture);
+  && exactObject(r, ['outputId', 'key', 'representative', 'fixture'])
+  && nat(r.outputId) && nat(r.key) && repShape(r.representative) && fixtureShape(r.fixture);
 function validateNaming(state) {
   if (!exactObject(state, ['registry', 'claims', 'records'])) namingFail('invalid-shape/naming.state');
   replay(state.registry, []);
@@ -47,7 +83,11 @@ function validateNaming(state) {
 }
 
 export const wellFormedFixture = f => fixtureShape(f)
-  && (f.paymentDestination === null || f.paymentDestination !== f.controlAddress);
+  && (f.paymentDestination === null || !equal(f.paymentDestination, f.controlAddress));
+export const aliceFixture = {paymentDestination: destinationAddress, controlAddress: controllerAddress,
+  nextControlCommitment: nextControllerCommitment, retirementQuorum: {members: [50, 51, 52], threshold: 2}};
+export const otherFixture = {paymentDestination: null, controlAddress: otherControllerAddress,
+  nextControlCommitment: nextControllerCommitment, retirementQuorum: {members: [60, 61], threshold: 2}};
 
 const namingEntry = (s, k) => s.entries.find(e => e.key === k) ?? { key: k, value: null, incarnation: 0 };
 const namingRepresentative = (s, k) => ({ registry: s.config.registry, key: k, policy: s.config.representativePolicy, assetScope: s.config.reuseIdentity ? 0 : namingEntry(s, k).incarnation });
@@ -60,7 +100,7 @@ function migrateClaims(state, items, registry) {
     claims: state.claims.filter(c => !items.some(i => i.request === c.requestId)),
     records: [...state.records, ...items.flatMap(i => {
       const c = state.claims.find(c => c.requestId === i.request);
-      return c ? [{ key: c.key, representative: namingRepresentative(registry, c.key), fixture: c.fixture }] : [];
+      return c ? [{ outputId: i.outputId, key: c.key, representative: namingRepresentative(registry, c.key), fixture: c.fixture }] : [];
     })],
   };
 }
@@ -149,7 +189,8 @@ function resolveByKey(state, key, authenticated) {
   if (authenticated !== true) return 'unauthenticated';
   const record = state.records.find(r => r.key === key);
   if (record) return { status: 'active', fixture: record.fixture };
-  if (namingEntry(state.registry, key).value !== null || state.claims.some(c => c.key === key)) return 'pending';
+  if (namingEntry(state.registry, key).value === 'over') return 'retired';
+  if (namingEntry(state.registry, key).value === 'active' || state.claims.some(c => c.key === key)) return 'pending';
   return 'absent';
 }
 
@@ -260,13 +301,13 @@ export const namingChecks = {
     const claim = row.before.claims.find(candidate => candidate.requestId === row.requestId);
     return Boolean(claim && item && item.key === claim.key && equal(item.fixture, claim.fixture));
   }, corpus => {
-    namingRow(corpus, 'folds', 'NF01-first-absent-key-fold').result.value.state.records[0].fixture.nextControlCommitment += 1;
+    namingRow(corpus, 'folds', 'NF01-first-absent-key-fold').result.value.state.records[0].fixture.nextControlCommitment.digest[0] ^= 1;
   }),
   naming_unauthenticated_resolve: resolution('NR01-unauthenticated-view', 'unauthenticated'),
   naming_payment_destination_distinct_from_control: property('queues', 'NQ01-alice-first-queues', corpus => {
     const first = namingRow(corpus, 'queues', 'NQ01-alice-first-queues').fixture;
     const other = namingRow(corpus, 'queues', 'NQ02-competing-claim-queues').fixture;
-    return first.paymentDestination !== null && first.paymentDestination !== first.controlAddress
+    return first.paymentDestination !== null && !equal(first.paymentDestination, first.controlAddress)
       && other.paymentDestination === null && wellFormedFixture(first) && wellFormedFixture(other);
   }, corpus => {
     const fixture = namingRow(corpus, 'queues', 'NQ01-alice-first-queues').fixture;
@@ -283,7 +324,7 @@ export const namingChecks = {
     const row = namingRow(corpus, 'resolves', 'NR03-active-certified-fixture');
     const record = row.before.records.find(candidate => candidate.key === aliceKey);
     return Boolean(record && row.expected?.status === 'active' && equal(row.expected.fixture, record.fixture));
-  }, corpus => { namingRow(corpus, 'resolves', 'NR03-active-certified-fixture').expected.fixture.controlAddress += 1; }),
+  }, corpus => { namingRow(corpus, 'resolves', 'NR03-active-certified-fixture').expected.fixture.controlAddress.bytes[0] ^= 16; }),
   naming_resolve_pending_iff: resolution('NR02-two-claims-pending', 'pending'),
   naming_resolve_absent_iff: resolution('NR04-absent-initial', 'absent'),
 };

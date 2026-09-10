@@ -6,12 +6,14 @@ axiom report, produced by `Singular.Audit` and `Singular.NamingAudit`, is cross-
 against both manifests so that a declaration reported PROVED is one Lean elaborated from
 the standard axioms alone.
 
-Two corpora are enforced. The generic corpus is frozen: it must reproduce byte-for-byte
+Three corpora are enforced. The generic corpus is frozen: it must reproduce byte-for-byte
 from the generic binary over the generic source extent, where `lean/Singular.lean` counts
 in its base form — the current file may differ from that base only by `import
 Singular.Naming*` lines (the naming layer hangs off the generic library by imports and
 nothing else). The naming corpus is checked the same way over the full current Lean
 extent, so every naming module is hash-bound to the exported evidence.
+The lifecycle corpus is produced by its own Lean executable over that same full source
+extent and replayed by the public simulator adapter.
 """
 import argparse
 import hashlib
@@ -34,6 +36,18 @@ GENERIC_SOURCES = [
 ]
 
 NAMING_IMPORT = re.compile(r'^import Singular\.Naming\w*\n?', re.M)
+
+LIFECYCLE_IDS = {
+    'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
+    'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
+    'LM03-maintenance-field-tamper-refused', 'LO01-retirement-pending-visible',
+    'LO02-retirement-over-visible', 'LR01-recovery-accepts',
+    'LR02-wrong-reveal-refused', 'LR03-missing-recovery-signer-refused',
+    'LR04-recovery-replay-refused', 'LR05-old-controller-refused',
+    'LR06-forged-public-digest-refused', 'LT01-controller-retirement-accepts',
+    'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
+    'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
+}
 
 
 def digest(data):
@@ -121,6 +135,7 @@ def main():
     parser.add_argument('--root', type=Path, default=Path.cwd())
     parser.add_argument('--binary', type=Path)
     parser.add_argument('--naming-binary', type=Path)
+    parser.add_argument('--lifecycle-binary', type=Path)
     parser.add_argument('--axioms-report', type=Path, help='saved output of `lake env lean tools/axioms.lean`')
     parser.add_argument('--export', action='store_true')
     args = parser.parse_args()
@@ -129,24 +144,33 @@ def main():
     audit_sources(root)
     generic_records = statement_inventory(root / 'lean/Singular/Statements.lean', 'Singular.Statements.')
     naming_records = statement_inventory(root / 'lean/Singular/NamingStatements.lean', 'Singular.NamingStatements.')
+    lifecycle_records = statement_inventory(root / 'lean/Singular/NamingLifecycleStatements.lean',
+                                            'Singular.NamingLifecycleStatements.')
     generic_names = {r['name'] for r in generic_records}
     naming_names = {r['name'] for r in naming_records}
-    assert not generic_names & naming_names, 'naming declarations collide with the generic inventory'
+    lifecycle_names = {r['name'] for r in lifecycle_records}
+    assert not generic_names & naming_names and not generic_names & lifecycle_names \
+        and not naming_names & lifecycle_names, 'theorem declaration inventories collide'
 
     generic_manifest_path = root / 'lean/theorem-debt.json'
     naming_manifest_path = root / 'lean/naming-theorem-debt.json'
+    lifecycle_manifest_path = root / 'lean/lifecycle-theorem-debt.json'
     if args.export:
         generic_manifest_path.write_text(json.dumps(generic_records, indent=2) + '\n')
         naming_manifest_path.write_text(json.dumps(naming_records, indent=2) + '\n')
+        lifecycle_manifest_path.write_text(json.dumps(lifecycle_records, indent=2) + '\n')
     generic_manifest = json.loads(generic_manifest_path.read_text())
     naming_manifest = json.loads(naming_manifest_path.read_text())
+    lifecycle_manifest = json.loads(lifecycle_manifest_path.read_text())
     assert generic_records == generic_manifest, 'exact named theorem/debt manifest mismatch'
     assert naming_records == naming_manifest, 'exact named naming theorem/debt manifest mismatch'
+    assert lifecycle_records == lifecycle_manifest, 'exact named lifecycle theorem/debt manifest mismatch'
 
     report = axiom_report(root, args.axioms_report)
-    assert set(report) == generic_names | naming_names, 'compiled report names differ from the manifests'
+    assert set(report) == generic_names | naming_names | lifecycle_names, 'compiled report names differ from the manifests'
     check_records(generic_records, report, 'model-check')
     check_records(naming_records, report, 'naming-check')
+    check_records(lifecycle_records, report, 'lifecycle-check')
 
     binary = args.binary or root / '.lake/build/bin/singular-corpus'
     corpus = json.loads(subprocess.check_output([str(binary)]))
@@ -185,7 +209,22 @@ def main():
     check_or_compare(root / 'lean/naming-corpus.json', json.dumps(naming_corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'naming corpus')
 
+    lifecycle_binary = args.lifecycle_binary or root / '.lake/build/bin/lifecycle-corpus'
+    lifecycle_corpus = json.loads(subprocess.check_output([str(lifecycle_binary)]))
+    assert lifecycle_corpus['schema'] == 'singular-naming-lifecycle-corpus-v1'
+    corpus_envelope(lifecycle_corpus, all_sources, lifecycle_manifest_path,
+                    'lifecycleStatementsSha256', 'lean/Singular/NamingLifecycleStatements.lean',
+                    'lean/Singular/NamingLifecycle.lean', 'lean/LifecycleMain.lean')
+    lifecycle_ids = [row['id'] for section in ('steps', 'resolutions', 'initializations', 'registrations')
+                     for row in lifecycle_corpus[section]]
+    assert len(lifecycle_ids) == len(set(lifecycle_ids)), 'duplicate lifecycle corpus identity'
+    assert set(lifecycle_ids) == LIFECYCLE_IDS, 'exact lifecycle corpus identities differ'
+    check_or_compare(root / 'lean/lifecycle-corpus.json',
+                     json.dumps(lifecycle_corpus, indent=2, sort_keys=True) + '\n',
+                     args.export, 'lifecycle corpus')
+
     print(f'model-check: {len(ids)} executable corpus rows; {len(naming_ids)} naming rows; '
+          f'{len(lifecycle_ids)} lifecycle rows; '
           f'model {corpus["modelSha256"][:12]}')
 
 

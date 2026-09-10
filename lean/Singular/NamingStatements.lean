@@ -83,8 +83,11 @@ theorem naming_unauthenticated_resolve (state : NamingState) (key : Nat) :
 /-- The demo fixture's payment destination is present and distinct from the
 control address; the competing fixture's is absent. Both are well formed. -/
 theorem naming_payment_destination_distinct_from_control :
-    aliceFixture.paymentDestination = some 70 ∧ aliceFixture.controlAddress = 50 ∧
+    aliceFixture.paymentDestination = some destinationAddress ∧
+    aliceFixture.controlAddress = controllerAddress ∧
     aliceFixture.paymentDestination != some aliceFixture.controlAddress ∧
+    paymentKeyAddress aliceFixture.controlAddress = true ∧
+    wellFormedCommitment aliceFixture.nextControlCommitment = true ∧
     wellFormedFixture aliceFixture = true ∧ wellFormedFixture otherFixture = true := by
   decide
 
@@ -160,8 +163,11 @@ theorem naming_resolve_unauthenticated_iff (state : NamingState) (key : Nat) (au
     cases hr : state.records.find? (fun r => r.key == key) with
     | some rec => simp [namingResolve, hr]
     | none =>
-      cases hp : ((entry state.registry key).value.isSome || state.claims.any (fun c => c.key == key)) <;>
-        simp [namingResolve, hr, hp]
+      cases he : (entry state.registry key).value with
+      | some value => cases value <;> simp [namingResolve, hr, he]
+      | none =>
+        cases hc : state.claims.any (fun c => c.key == key) <;>
+          simp [namingResolve, hr, he, hc]
 
 /-- Observation branch two: an active observation is exactly a record for the
 key, and its fixture is the recorded certified fixture. -/
@@ -171,28 +177,36 @@ theorem naming_resolve_active_iff (state : NamingState) (key : Nat) (fixture : N
   cases hr : state.records.find? (fun r => r.key == key) with
   | some rec => simp [namingResolve, hr]
   | none =>
-    cases hp : ((entry state.registry key).value.isSome || state.claims.any (fun c => c.key == key)) <;>
-      simp [namingResolve, hr, hp]
+    cases he : (entry state.registry key).value with
+    | some value => cases value <;> simp [namingResolve, hr, he]
+    | none =>
+      cases hc : state.claims.any (fun c => c.key == key) <;>
+        simp [namingResolve, hr, he, hc]
 
-/-- Observation branch three: with no record, pending is exactly a key that is
-either present in the registry or claimed. -/
+/-- Observation branch three: with no record, pending is exactly an active
+entry awaiting its record or a queued claim. Over is a distinct observation. -/
 theorem naming_resolve_pending_iff (state : NamingState) (key : Nat)
     (hno : state.records.find? (fun r => r.key == key) = none) :
     namingResolve state key true = .ok NamingObservation.pending ↔
-      ((entry state.registry key).value.isSome || state.claims.any (fun c => c.key == key)) := by
-  cases hp : (entry state.registry key).value.isSome <;>
+      ((entry state.registry key).value = some .active ||
+        ((entry state.registry key).value = none ∧ state.claims.any (fun c => c.key == key))) := by
+  cases he : (entry state.registry key).value with
+  | some value => cases value <;> simp [namingResolve, hno, he]
+  | none =>
     cases hc : state.claims.any (fun c => c.key == key) <;>
-    simp [namingResolve, hno, hp, hc]
+      simp [namingResolve, hno, he, hc]
 
 /-- Observation branch four: with no record, absent is exactly a key that is
 neither present in the registry nor claimed. -/
 theorem naming_resolve_absent_iff (state : NamingState) (key : Nat)
     (hno : state.records.find? (fun r => r.key == key) = none) :
     namingResolve state key true = .ok NamingObservation.absent ↔
-      ((entry state.registry key).value.isSome = false ∧ ¬state.claims.any (fun c => c.key == key)) := by
-  cases hp : (entry state.registry key).value.isSome <;>
+      ((entry state.registry key).value = none ∧ ¬state.claims.any (fun c => c.key == key)) := by
+  cases he : (entry state.registry key).value with
+  | some value => cases value <;> simp [namingResolve, hno, he]
+  | none =>
     cases hc : state.claims.any (fun c => c.key == key) <;>
-    simp [namingResolve, hno, hp, hc]
+      simp [namingResolve, hno, he, hc]
 
 end NamingStatements
 end Singular

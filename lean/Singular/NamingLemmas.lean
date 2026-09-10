@@ -143,7 +143,12 @@ theorem namingFoldInsertPreservesFixture (state : NamingState) (claim : NamingCl
     rw [hs] at hok
     rw [exceptBindOkRegistryResult, Except.ok.injEq] at hok
     subst result
-    refine ⟨{ key := claim.key, representative := representative res.state claim.key, fixture := claim.fixture }, rfl, rfl, ?_⟩
-    simp [migrateClaims, hc]
+    let record : NamingRecord :=
+      { outputId := freshId state.registry
+        key := claim.key
+        representative := representative res.state claim.key
+        fixture := claim.fixture }
+    refine ⟨record, rfl, rfl, ?_⟩
+    simp [record, migrateClaims, hc]
 
 end Singular

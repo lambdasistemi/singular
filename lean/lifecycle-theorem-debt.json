@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Singular.NamingLifecycleStatements.supported_address_roundtrips",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8264a57ceac1140412b6929a371b2c5bfa30a70801f662c884590723c55a5bf4"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "56b7cb93f4b9bc66e44535a8c12e070d1a775e9ddc18114d1d5e4f7feb433dd3"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bae003c96c43adf86a6f8a22e3def323ffa3faa52602bf2b27d04d57c18c0fd6"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_clear_accepts",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c571d964f36e9f585be7dbb3228877f7cdfa11e73d3639cce869e45f6b048904"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "24e8bcb3174132bc8a1bce8f1046003a54bcf4894ebb7742a311a5680bdfc9a2"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_unauthorized_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2c1c2a4d0fccf14ab9bcf4758f853bfcd39d72b4b4af2174dc21987250ca5990"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_commitment_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8e85ac3594099f0e7be96d0fbeeb11b7aacb690bc7af9cb5acd7eaaa37766669"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "897e3fad655734d10b78b4d56b35096bc33fa74b3352df24c907b30ae9deb9f7"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d976956abbb49568563bd172403632a58a70588ec886abd6982f42f97a826f0b"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "aa7f36c70c72be99fbf8048595c86c441e54cad7ffb600ea3ee216e1ae1393c6"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "100d82d52fde2974476e8d63aa8a4f62632195406ea56d1abceee3d4544b2784"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_replay_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "605b29e0e311a06f24ae4dd2db4c7298033f12a763a0d1be9922cf3c53a67f9a"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.old_controller_dead_after_recovery",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f3ea012a4c45f63195538b6a79c892fa2a7d526f5c4203fdbbcf7c972663e3a5"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "55c436afb02dcd15b525de5d0b3926239d0846e901586e5894b18e4ea7b29902"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.insufficient_quorum_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b500266a8af43eb54c70a27eb99f95b975340b77f473405a85f3ebaf3c885b40"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_pending_then_over",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ae68936af4142d453483321a52f3e27d983cdfb6377d043ad0b51607d960f65d"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.re_registration_after_over_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "88740e868991fc92748051d8aa9efe3e65118faf3a3c0d9277c5854b85d178d9"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e453307e78d3f77bcfd60dc4ce25a18cc46f77b72aa53c267329416a84d1ec4d"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.alternate_registry_seed_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "69127fe99214edcec453b22c740899a9f7446fc6667dac585db67fa2e228e4bf"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "6e43c4fdd0f705a95e8fd77771f376fa4be4a90e6a0d6a85544e2d4a9cf07073"
+  }
+]

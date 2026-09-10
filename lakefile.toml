@@ -1,7 +1,7 @@
 name = "singular"
 version = "0.1.0"
 srcDir = "lean"
-defaultTargets = ["Singular", "singular-corpus", "naming-corpus"]
+defaultTargets = ["Singular", "singular-corpus", "naming-corpus", "lifecycle-corpus"]
 
 [[lean_lib]]
 name = "Singular"
@@ -13,3 +13,7 @@ root = "Main"
 [[lean_exe]]
 name = "naming-corpus"
 root = "NamingMain"
+
+[[lean_exe]]
+name = "lifecycle-corpus"
+root = "LifecycleMain"
