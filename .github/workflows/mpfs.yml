@@ -138,13 +138,52 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # Issue #45: the naming datum codec must agree with the epic-15
       # v0.2.0 contract's own bytes. The four wire vectors are vendored
-      # with provenance in naming/src/Naming/Wire/Vectors.hs, so the job
-      # needs no network. The suite is pure base + bytestring and is
-      # compiled and run with the dev-shell GHC directly: no cabal, no
-      # package index, no warm state (the same D-011 reasoning as the
-      # hermetic e2e, at unit-test cost).
+      # with provenance in offchain/naming/src/Naming/Wire/Vectors.hs
+      # (the codec moved inside the offchain flake root in issue #51),
+      # so the job needs no network. The suite is pure base + bytestring
+      # and is compiled and run with the dev-shell GHC directly: no
+      # cabal, no package index, no warm state (the same D-011 reasoning
+      # as the hermetic e2e, at unit-test cost).
       - name: Run the naming wire vector suite
-        run: nix develop ./offchain --quiet --command bash naming/run-suite.sh
+        run: nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
+  li01:
+    name: LI01 canonical initialization, packaged and hermetic
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-li01"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issues #47 + #51: the LI01 canonical-initialization runner on
+      # the same hermetic path as the e2e and the journey (D-011). It
+      # became a packaged `nix run` app when the naming codec moved
+      # inside the offchain flake root (#51): the Nix-built binary
+      # brings the locked cardano-node on its own PATH; no dev shell,
+      # no cabal, no package index, no warm developer state. `needs:`
+      # is ordering and fail-fast on the blueprint, exactly as for the
+      # e2e and journey jobs; the step builds the blueprint from the
+      # onchain flake itself and points MPFS_BLUEPRINT at that store
+      # path, so the consumed artifact is always built from the
+      # checked-out commit. The runner asserts the row's witness
+      # shape, the chain-read canonical binding, the initial naming
+      # checkpoint datum (decoded with the Naming.Datum codec against
+      # the contract's vendored bytes) and the resulting state, and
+      # exits non-zero on any mismatch (marker li01-state-matches-row).
+      - name: Run LI01 as a packaged app without a dev shell
+        working-directory: offchain
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$blueprint" nix run --quiet .#li01
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: blueprint
