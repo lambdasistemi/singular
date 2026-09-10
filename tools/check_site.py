@@ -700,7 +700,7 @@ if served_bases and not failures:
         served_report[name] = {
             "base": base,
             "identity": identity,
-            "identityEvidence": identity_evidence,
+            "identityEvidence": meta["identityEvidence"],
             "strictCandidate": strict_candidate,
             "routes": len(routes),
             "pass": len(pass_routes),
