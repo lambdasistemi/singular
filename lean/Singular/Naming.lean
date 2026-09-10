@@ -160,7 +160,7 @@ def nextControllerCommitment : NextCommitment :=
 
 def freshControllerCommitment : NextCommitment :=
   { digest := [21, 97, 193, 91, 73, 128, 133, 127, 176, 110, 74, 179, 92, 201, 188, 236,
-    175, 9, 11, 10, 139, 222, 241, 159, 99, 49, 86, 90, 51, 50, 4, 15] }
+    175, 9, 11, 10, 168, 189, 239, 25, 246, 51, 21, 101, 163, 51, 32, 79] }
 
 structure NamingFixture where
   paymentDestination : Option NamingAddress
@@ -207,6 +207,7 @@ structure NamingClaim where
 /-- An active naming record: the folded key, its minted representative, and the
 certified fixture carried unchanged from the claim. -/
 structure NamingRecord where
+  outputId : Nat
   key : Nat
   representative : Representative
   fixture : NamingFixture
@@ -226,7 +227,7 @@ structure NamingResult where
 /-- Authenticated naming observation. `active` carries the four certified
 fixture fields. A pending claim reserves nothing: it observes as `pending`. -/
 inductive NamingObservation where
-  | unauthenticated | absent | pending
+  | unauthenticated | absent | pending | retired
   | active (fixture : NamingFixture)
   deriving Repr, BEq, DecidableEq
 
@@ -235,6 +236,7 @@ instance : ToJson NamingObservation where
     | .unauthenticated => Json.str "unauthenticated"
     | .absent => Json.str "absent"
     | .pending => Json.str "pending"
+    | .retired => Json.str "retired"
     | .active f => Json.mkObj [("status", Json.str "active"), ("fixture", toJson f)]
 
 /-- The first fresh identifier after every identifier used so far. -/
@@ -243,7 +245,7 @@ def freshId (s : State) : Nat := s.used.foldl max 0 + 1
 /-- Fold bookkeeping: move each folded claim into an active naming record,
 carrying its certified fixture fields unchanged. -/
 def migrateClaims (state : NamingState) (items : List FoldItem) (registry : State) : NamingState :=
-  { state with registry := registry, claims := state.claims.filter (fun c => !items.any (fun i => i.request == c.requestId)), records := state.records ++ items.filterMap (fun i => match state.claims.find? (fun c => c.requestId == i.request) with | some c => some { key := c.key, representative := representative registry c.key, fixture := c.fixture } | none => none) }
+  { state with registry := registry, claims := state.claims.filter (fun c => !items.any (fun i => i.request == c.requestId)), records := state.records ++ items.filterMap (fun i => match state.claims.find? (fun c => c.requestId == i.request) with | some c => some { outputId := i.outputId, key := c.key, representative := representative registry c.key, fixture := c.fixture } | none => none) }
 
 /-- The naming transition. Only certified Insert queueing (`createInsert`) and
 the certified Insert fold follow the generic registry; every other generic
@@ -316,18 +318,21 @@ def namingFoldRequest (state : NamingState) (requestId : Nat) : Except String Na
   let action ← namingFoldAction state requestId
   namingStep state action
 
-/-- Authenticated naming observation of a registry key. Unauthenticated views
-observe nothing; a folded record reports the certified fixture; a queued claim
-or an entry without a record observes as pending. -/
+/-- Authenticated naming observation of a registry key. An Over entry is
+caller-visible as retired and is never collapsed into the transient pending
+state. -/
 def namingResolve (state : NamingState) (key : Nat) (authenticated : Bool) :
     Except String NamingObservation :=
   if !authenticated then .ok .unauthenticated
   else match state.records.find? (fun r => r.key == key) with
     | some r => .ok (.active r.fixture)
     | none =>
-      if (entry state.registry key).value.isSome || state.claims.any (fun c => c.key == key) then
-        .ok .pending
-      else .ok .absent
+      match (entry state.registry key).value with
+      | some .over => .ok .retired
+      | some .active => .ok .pending
+      | none =>
+        if state.claims.any (fun c => c.key == key) then .ok .pending
+        else .ok .absent
 
 structure NamingReplay where
   state : NamingState

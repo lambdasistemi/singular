@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {step,resolve,inspect,replay,checkCorpus,equal,initial,view} from './core.mjs';
 import {checks,theoremReport,corpusRecords} from './properties.mjs';
-import {checkNamingCorpus,selectProfile,namingPropertyReport,namingChecks,namingInitial,queueClaim,namingResolve,namingReplay,namingStep} from './naming.mjs';
+import {aliceFixture,checkNamingCorpus,selectProfile,namingPropertyReport,namingChecks,namingInitial,queueClaim,namingResolve,namingReplay,namingStep} from './naming.mjs';
 const root=new URL('./',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8'),json=p=>JSON.parse(read(p));
 const corpus=json('corpus.json'),stories=json('stories.json'),ledger=json('formal/theorem-debt.json'),identity=json('identity.json');
 const namingLedger=json('../lean/naming-theorem-debt.json'),namingCorpus=json('../lean/naming-corpus.json');
@@ -41,7 +41,7 @@ for(const path of numericPaths(base.before)){for(const value of [-1,0.5,Number.M
 for(const row of corpus.cases){for(const path of numericPaths(row.case.action)){boundaryDiscovered++;const bad=change(row.case.action,path,Number.MAX_SAFE_INTEGER+1);assert.match(step(row.case.before,bad).reason,/^invalid-(nat|int)\//,'action boundary');boundaryExecuted++;}}
 assert.equal(boundaryExecuted,boundaryDiscovered,'boundary denominator');assert(boundaryExecuted>0);
 assert.match(step({...initial(),extra:0},{escape:{request:0}}).reason,/invalid-shape/,'complete shape');assert.match(step(initial(),{escape:{request:0},outsider:{}}).reason,/invalid-shape/,'constructor shape');
-const namingFixture={paymentDestination:70,controlAddress:50,nextControlCommitment:80,retirementQuorum:{members:[50,51,52],threshold:2}};
+const namingFixture=structuredClone(aliceFixture);
 const namingBase=namingInitial();
 assert.match(queueClaim(namingBase,{spelling:'alice',fixture:{...namingFixture,extra:0},accepted:true}).reason,/invalid-fixture/,'naming exact fixture shape');boundaryDiscovered++;boundaryExecuted++;
 assert.match(queueClaim(namingBase,{spelling:'alice',fixture:namingFixture,accepted:true,extra:0}).reason,/invalid-shape\/naming.queue/,'naming exact queue shape');boundaryDiscovered++;boundaryExecuted++;
@@ -51,7 +51,7 @@ assert.match(namingResolve(namingBadNat,'alice',true).error,/invalid-nat\/state.
 assert.throws(()=>namingReplay(namingBadNat,[]),/invalid-nat\/state.config.registry/,'naming replay validates empty origin');boundaryDiscovered++;boundaryExecuted++;
 assert.throws(()=>namingReplay(namingBase,{}),/invalid-shape\/naming.actions/,'naming replay action array');boundaryDiscovered++;boundaryExecuted++;
 const namingBadAction=structuredClone(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').action);namingBadAction.fold.extra={};assert.match(namingStep(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').before,namingBadAction).reason,/invalid-shape\/actions/,'naming exact supported action shape');boundaryDiscovered++;boundaryExecuted++;
-const callerFixture=structuredClone(namingFixture);const queuedSnapshot=queueClaim(namingBase,{spelling:'alice',fixture:callerFixture,accepted:true});assert.equal(queuedSnapshot.accepted,true,'naming fixture snapshot setup');callerFixture.nextControlCommitment=81;assert.equal(queuedSnapshot.value.state.claims[0].fixture.nextControlCommitment,80,'naming fixture snapshot');boundaryDiscovered++;boundaryExecuted++;
+const callerFixture=structuredClone(namingFixture);const queuedSnapshot=queueClaim(namingBase,{spelling:'alice',fixture:callerFixture,accepted:true});assert.equal(queuedSnapshot.accepted,true,'naming fixture snapshot setup');callerFixture.nextControlCommitment.digest[0]^=1;assert.notEqual(queuedSnapshot.value.state.claims[0].fixture.nextControlCommitment.digest[0],callerFixture.nextControlCommitment.digest[0],'naming fixture snapshot');boundaryDiscovered++;boundaryExecuted++;
 assert.equal(boundaryExecuted,boundaryDiscovered,'extended boundary denominator');
 const deleting=structuredClone(corpus.cases.find(r=>r.case.id==='S13-delete-completes'));deleting.case.before.entries[0].incarnation=Number.MAX_SAFE_INTEGER;assert.match(step(deleting.case.before,deleting.case.action).reason,/invalid-nat\/result.entries.incarnation/,'successor overflow');
 const model=read('formal/Model.lean');const refusalSites=[...model.matchAll(/(?:throw|requireSome[^\n]*)\s+"([\w-]+)"/g)].map(m=>({reason:m[1],line:model.slice(0,m.index).split('\n').length}));const refusals=[...new Set(refusalSites.map(x=>x.reason))].sort();const observedRefusals=[...new Set(records.filter(r=>r.result&&!r.result.accepted).map(r=>r.result.reason))].sort();const coverage={sourceRefusals:refusals.map(reason=>({reason,sites:refusalSites.filter(x=>x.reason===reason),exhibits:records.filter(r=>r.result?.reason===reason).map(r=>r.id),status:observedRefusals.includes(reason)?'exhibited':'gap'})),actions:[...new Set(corpus.cases.map(r=>Object.keys(r.case.action)[0]))].sort(),properties:propertyCoverage};
