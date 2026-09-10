@@ -153,6 +153,70 @@
           inherit aiken-check;
         };
 
+        # -------------------------------------------------------
+        # Script identity (issue #34)
+        # -------------------------------------------------------
+
+        # The committed manifest records, for every validator in the
+        # blueprint, its title and compiled hash, plus the upstream
+        # source revision and the compiler string the blueprint
+        # reports. Generated from a real build by
+        # `just script-identity-regen` — never hand-typed.
+        scriptIdentityManifest = ./script-identity.json;
+
+        # Rebuild the blueprint and compare EVERY validator against the
+        # manifest, in both directions: a moved hash, a validator
+        # missing from the manifest and a manifest entry with no
+        # counterpart in the build all fail, naming the validator and
+        # both hashes. The comparison is quantified over the blueprint's
+        # validator set, so a validator added or removed cannot pass
+        # silently, and a manifest or blueprint with zero validators is
+        # a failure rather than a vacuous pass.
+        script-identity = pkgs.runCommand "mpf-script-identity-check" {
+          nativeBuildInputs = [ pkgs.jq ];
+          blueprint = plutus-blueprint;
+          manifest = scriptIdentityManifest;
+        } ''
+          set -euo pipefail
+          problems="$(jq -r -n \
+            --slurpfile bp "$blueprint" \
+            --slurpfile man "$manifest" \
+            '
+              ($bp[0].validators | map({key: .title, value: .hash}) | from_entries) as $built
+              | ($man[0].validators | map({key: .title, value: .hash}) | from_entries) as $pinned
+              | (if ($built | length) == 0
+                 then ["FAIL: the blueprint reports zero validators"] else [] end)
+                + (if ($pinned | length) == 0
+                 then ["FAIL: the manifest records zero validators"] else [] end)
+                + (if $man[0].compiler != $bp[0].preamble.compiler.version then
+                     ["FAIL: compiler moved: manifest records \($man[0].compiler), blueprint reports \($bp[0].preamble.compiler.version)"]
+                   else [] end)
+                + [$built | to_entries[] | .key as $k |
+                     if ($pinned | has($k) | not) then
+                       "FAIL: validator \($k) is missing from the manifest (built hash \(.value))"
+                     elif $pinned[$k] != .value then
+                       "FAIL: validator \($k) moved: manifest expects \($pinned[$k]), build produced \(.value)"
+                     else empty end]
+                + [$pinned | to_entries[] | .key as $k |
+                     if ($built | has($k) | not) then
+                       "FAIL: manifest entry \($k) (hash \(.value)) has no counterpart in the build"
+                     else empty end]
+              | .[]
+            ')" || {
+            echo "FAIL: jq could not parse the blueprint or the manifest" >&2
+            exit 1
+          }
+          if [ -n "$problems" ]; then
+            echo "script-identity check FAILED:" >&2
+            printf '%s\n' "$problems" >&2
+            exit 1
+          fi
+          echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
+          touch $out
+        '';
+
+        scriptIdentityChecks = { inherit script-identity; };
+
         # The Aiken dev shell, bound once so `default` and the
         # back-compat `aiken` name expose the same shell.
         aikenShell = pkgs.mkShell {
@@ -168,9 +232,13 @@
         packages = {
           default = plutus-blueprint;
           inherit plutus-blueprint;
+          # Same derivation as checks.script-identity; exposed as a
+          # package so recipes and CI can address it without naming the
+          # system (`nix build .#script-identity`).
+          inherit script-identity;
         };
 
-        checks = aikenChecks;
+        checks = aikenChecks // scriptIdentityChecks;
 
         apps = { };
 

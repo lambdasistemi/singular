@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "upstream": {
+    "source_revision": "34a5bfbb8cca2cb1911b7060d0e61db28ba21e83"
+  },
+  "compiler": "v1.1.21+unknown",
+  "validators": [
+    {
+      "title": "request.request.spend",
+      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f"
+    },
+    {
+      "title": "request.request.else",
+      "hash": "6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f"
+    },
+    {
+      "title": "staking.staking.withdraw",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "staking.staking.else",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10"
+    },
+    {
+      "title": "state.state.mint",
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+    },
+    {
+      "title": "state.state.spend",
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+    },
+    {
+      "title": "state.state.else",
+      "hash": "64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce"
+    }
+  ]
+}

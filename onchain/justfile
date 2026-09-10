@@ -20,3 +20,38 @@ aiken-build:
 # Run aiken tests — pinned toolchain (D-006)
 test:
     nix develop --command aiken check
+
+# Enforce compiled script identity (issue #34): rebuild the blueprint and
+# compare EVERY validator against the committed manifest. Fails on a moved
+# hash, a validator missing from the manifest, a manifest entry with no
+# counterpart in the build, or a stale compiler string. Runs the
+# checks.script-identity derivation.
+script-identity:
+    nix build --no-link --print-out-paths .#script-identity
+
+# Regenerate onchain/script-identity.json from a fresh blueprint build.
+# Run this ONLY for a deliberate identity change — the manifest diff is
+# what a reviewer reads. Never hand-edit the manifest; if it disagrees
+# with the build, the build is right.
+script-identity-regen:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
+    blueprint="$(nix build --quiet --no-link --print-out-paths .#plutus-blueprint)"
+    root="$(git rev-parse --show-toplevel)"
+    rev="$(awk -F'|' '/frozen revision/ {gsub(/[ `]/, "", $3); print $3; exit}' "$root/PROVENANCE.md")"
+    if [[ ! "$rev" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "error: could not read the upstream frozen revision from PROVENANCE.md" >&2
+        exit 1
+    fi
+    jq -n \
+        --slurpfile bp "$blueprint" \
+        --arg rev "$rev" \
+        '{
+           schema: 1,
+           upstream: {source_revision: $rev},
+           compiler: $bp[0].preamble.compiler.version,
+           validators: [$bp[0].validators[] | {title: .title, hash: .hash}]
+         }' > script-identity.json
+    echo "wrote onchain/script-identity.json: $(jq '.validators | length' script-identity.json) validators, compiler $(jq -r '.compiler' script-identity.json), upstream $rev"
+    echo "review the diff: git diff -- onchain/script-identity.json"
