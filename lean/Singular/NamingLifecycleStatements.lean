@@ -53,6 +53,11 @@ theorem destination_commitment_tamper_refused :
       .error "destination-field-preservation" := by
   rfl
 
+theorem maintenance_quorum_alteration_refused :
+    lifecycleStep fixtureHasher activeOnce maintainQuorumTamper =
+      .error "destination-field-preservation" := by
+  rfl
+
 theorem recovery_accepts_without_old_controller :
     (lifecycleStep fixtureHasher activeOnce recoverWithNext).isOk = true := by
   decide
@@ -69,21 +74,49 @@ theorem recovery_installs_controller_and_fresh_commitment :
 
 theorem wrong_recovery_reveal_refused :
     lifecycleStep fixtureHasher activeOnce
-      (.recover 3 4 aliceKey freshControllerAddress recoveredFixture
+      (.recover 3 4 aliceKey freshControllerAddress namingConsumerBinding.registry
+        (representative activeOnce.registry aliceKey) recoveredFixture
         { requiredSigners := [freshControllerAddress] }) =
       .error "recovery-commitment" := by
   rfl
 
 theorem recovery_requires_revealed_payment_key_signer :
     lifecycleStep fixtureHasher activeOnce
-      (.recover 3 4 aliceKey nextControllerAddress recoveredFixture {}) =
+      (.recover 3 4 aliceKey nextControllerAddress namingConsumerBinding.registry
+        (representative activeOnce.registry aliceKey) recoveredFixture {}) =
       .error "recovery-required-signer" := by
+  rfl
+
+theorem correct_reveal_wrong_payment_key_signer_refused :
+    lifecycleStep fixtureHasher activeOnce recoverWrongPaymentKeySigner =
+      .error "recovery-required-signer" := by
+  rfl
+
+theorem recovery_missing_fresh_commitment_refused :
+    lifecycleStep fixtureHasher activeOnce recoverMissingFreshCommitment =
+      .error "recovery-fresh-commitment" := by
+  rfl
+
+theorem recovery_representative_tamper_refused :
+    lifecycleStep fixtureHasher activeOnce recoverRepresentativeTamper =
+      .error "recovery-representative" := by
+  rfl
+
+theorem recovery_registry_tamper_refused :
+    lifecycleStep fixtureHasher activeOnce recoverRegistryTamper =
+      .error "recovery-registry" := by
+  rfl
+
+theorem recovery_quorum_tamper_refused :
+    lifecycleStep fixtureHasher activeOnce recoverQuorumTamper =
+      .error "recovery-field-preservation" := by
   rfl
 
 theorem recovery_replay_refused :
     let recovered := afterLifecycle activeOnce recoverWithNext
     lifecycleStep fixtureHasher recovered
-      (.recover 4 5 aliceKey nextControllerAddress recoveredFixture
+      (.recover 4 5 aliceKey nextControllerAddress recovered.registry.config.registry
+        (representative recovered.registry aliceKey) recoveredFixture
         { requiredSigners := [nextControllerAddress] }) =
       .error "recovery-commitment" := by
   rfl
@@ -106,6 +139,31 @@ theorem insufficient_quorum_refused :
       .error "retirement-authorization" := by
   rfl
 
+theorem quorum_only_control_takeover_refused :
+    lifecycleStep fixtureHasher activeOnce quorumControlTakeover =
+      .error "controller-signature" := by
+  rfl
+
+theorem quorum_only_payment_redirection_refused :
+    lifecycleStep fixtureHasher activeOnce quorumPaymentRedirection =
+      .error "controller-signature" := by
+  rfl
+
+theorem retirement_withdrawal_refused :
+    lifecycleStep fixtureHasher retirementPending (.withdrawRetirement 4) =
+      .error "retirement-withdrawal-refused" := by
+  rfl
+
+theorem wrong_retirement_request_custody_refused :
+    lifecycleStep fixtureHasher activeOnce retirementWrongCustody =
+      .error "retirement-request" := by
+  rfl
+
+theorem retirement_replay_refused :
+    lifecycleStep fixtureHasher retirementPending retirementByController =
+      .error "naming-record-unavailable" := by
+  rfl
+
 theorem retirement_pending_then_over :
     namingResolve retirementPending aliceKey true = .ok .pending ∧
     namingResolve retirementOver aliceKey true = .ok .retired := by
@@ -120,7 +178,8 @@ theorem re_registration_after_over_refused :
 theorem forged_public_digest_cannot_override_trusted_hash :
     fixtureHasher nonFixtureControllerAddress = wrongDomainCommitment ∧
     lifecycleStep fixtureHasher activeOnce
-      (.recover 3 4 aliceKey nonFixtureControllerAddress forgedRecoveryFixture
+      (.recover 3 4 aliceKey nonFixtureControllerAddress namingConsumerBinding.registry
+        (representative activeOnce.registry aliceKey) forgedRecoveryFixture
         { requiredSigners := [nonFixtureControllerAddress] }) =
       .error "recovery-commitment" := by
   constructor
@@ -159,6 +218,16 @@ theorem substituted_registry_refused :
 theorem substituted_policy_refused :
     initializeConsumer namingConsumerBinding substitutedPolicyInitialization =
       .error "application-policy" := by
+  rfl
+
+theorem substituted_representative_policy_refused :
+    initializeConsumer namingConsumerBinding substitutedRepresentativeInitialization =
+      .error "representative-policy" := by
+  rfl
+
+theorem substituted_validator_script_refused :
+    initializeConsumer namingConsumerBinding substitutedValidatorInitialization =
+      .error "validator-script" := by
   rfl
 
 theorem executing_witness_is_derived_per_example :

@@ -42,6 +42,12 @@
     "statementSha256": "8e85ac3594099f0e7be96d0fbeeb11b7aacb690bc7af9cb5acd7eaaa37766669"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "eadae3275cd3b4505e61d3732ff736838a3c0b6f9de59c495e938f7979927eeb"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller",
     "status": "PROVED",
     "debt": "none",
@@ -57,19 +63,49 @@
     "name": "Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "aa7f36c70c72be99fbf8048595c86c441e54cad7ffb600ea3ee216e1ae1393c6"
+    "statementSha256": "3422ac74c0b333157d671042a2250d8f5cf705844c4a6b3b22f0ed052e06f816"
   },
   {
     "name": "Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "100d82d52fde2974476e8d63aa8a4f62632195406ea56d1abceee3d4544b2784"
+    "statementSha256": "7d638594512fce9d584164e505393bbc31f5c40baadd08d720bc4134fe697566"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a732c6e49cf7d540a8f0d71606b029025e7f23affe91e3451315dcd0b02454dc"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7dda9842513f2f684d7319ac265b22ad5b59e1414e81ce29c5f92b75dd495f85"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_representative_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "4b972382f8a4d741b8c20c2044c7c3467da55b05ab816a34409be43df899f3ea"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_registry_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5c5f2125acdbf51af46524a98beaad48a25aa47874eef8d3e6cdb6e4ca68a866"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fddd60fcb156aa2772713980683424081a2702911b50bb65a97166746f6c41a2"
   },
   {
     "name": "Singular.NamingLifecycleStatements.recovery_replay_refused",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "605b29e0e311a06f24ae4dd2db4c7298033f12a763a0d1be9922cf3c53a67f9a"
+    "statementSha256": "1006e45d7d5db89b22fb7c51f1fcb41d1cbfeb3596de5fe286ca42d41ae08610"
   },
   {
     "name": "Singular.NamingLifecycleStatements.old_controller_dead_after_recovery",
@@ -90,6 +126,36 @@
     "statementSha256": "b500266a8af43eb54c70a27eb99f95b975340b77f473405a85f3ebaf3c885b40"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1f53aad8470bf9cb0c81e82211b5e5c08b2fdb60f1b75eac22821b0b5e3d3d30"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "84412199567beb8e9f792e881431cac7333f341afd546d372b6b0c5c31526d1c"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_withdrawal_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ef48760d96e5db3f52cb2f1ee5bc5fc1886097e31166f15ed29816b754ca3f23"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e10ffb552094d0128d289df0f8ea85f0baf619733be30a71117277cf4d73a050"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_replay_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8b9bf10b30e16918ad3853ac44c44932c206b6d0bf4567a28afd6463f9c77f89"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.retirement_pending_then_over",
     "status": "PROVED",
     "debt": "none",
@@ -105,7 +171,7 @@
     "name": "Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "e453307e78d3f77bcfd60dc4ce25a18cc46f77b72aa53c267329416a84d1ec4d"
+    "statementSha256": "b2910290e792e419fa4ffbfe5af9ff4694f8510e1750d03a3c5ab2817dda0977"
   },
   {
     "name": "Singular.NamingLifecycleStatements.alternate_registry_seed_refused",
@@ -142,6 +208,18 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "7e335f0fc46ad890758512458ba6350c5b9968643b25a1c385c20cb78a41f0a0"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_representative_policy_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8db24127813527b7c02e126f0e9278524dc5445f1c153084ac7e7b51b0347e9e"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.substituted_validator_script_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fb630b9f9099de678e8f5ecf14633b8c1b504adcb3fd2109fd5f23b234f8495b"
   },
   {
     "name": "Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example",

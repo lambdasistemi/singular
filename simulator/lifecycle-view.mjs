@@ -34,7 +34,9 @@ document.querySelector('#hash').onclick = () => show({address: nonFixture.bytes,
 document.querySelector('#forge').onclick = () => {
   const candidate = {...aliceFixture, controlAddress: nonFixture, nextControlCommitment: nextCommitment(controllerAddress)};
   const verdict = lifecycleStep(active, {recover: {source: record.outputId, successor: 3, key: record.key,
-    revealed: nonFixture, candidate, witnesses: {requiredSigners: [nonFixture], quorumSigners: []},
+    revealed: nonFixture, candidateRegistry: active.registry.config.registry,
+    candidateRepresentative: record.representative, candidate,
+    witnesses: {requiredSigners: [nonFixture], quorumSigners: []},
     computed: nextControllerCommitment}});
   show(verdict);
 };
