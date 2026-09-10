@@ -27,7 +27,8 @@ for name, workflow in workflows.items():
 filename = f"singular-docs-{version}.tar.gz"
 assert (archive / "SHA256SUMS").read_text() == hashlib.sha256((archive / filename).read_bytes()).hexdigest() + "  " + filename + "\n"
 with tarfile.open(archive / filename) as bundle:
-    names = {m.name.removeprefix("./") for m in bundle.getmembers()}
+    members = {m.name.removeprefix("./"): m for m in bundle.getmembers()}
+    names = set(members)
     for required in (
         "index.html",
         "docs/naming-demo/index.html",
@@ -38,30 +39,43 @@ with tarfile.open(archive / filename) as bundle:
         "index.speech.json",
     ):
         assert required in names, f"release archive misses {required}"
-    artifact_files = (
+    required_artifacts = (
         "artifacts/contracts/naming-lifecycle-contract.txt",
-        "artifacts/scenarios/stories.json",
-        "artifacts/replay/README.txt",
-        "artifacts/replay/actions.mjs",
-        "artifacts/replay/core.mjs",
-        "artifacts/replay/naming.mjs",
-        "artifacts/tooling/flake.lock",
-        "artifacts/tooling/lean-toolchain",
+        "artifacts/review/README.md",
+        "artifacts/review/flake.nix",
+        "artifacts/review/flake.lock",
+        "artifacts/review/lakefile.toml",
+        "artifacts/review/lean-toolchain",
+        "artifacts/review/lean/Main.lean",
+        "artifacts/review/lean/NamingMain.lean",
+        "artifacts/review/lean/corpus.json",
+        "artifacts/review/lean/naming-corpus.json",
+        "artifacts/review/simulator/build.mjs",
+        "artifacts/review/simulator/gate.mjs",
+        "artifacts/review/simulator/index.html",
+        "artifacts/review/tools/axioms.lean",
+        "artifacts/review/tools/check_model.py",
+        "artifacts/SHA256SUMS",
+    )
+    for required in required_artifacts:
+        assert required in names, f"release archive misses {required}"
+    recorded = bundle.extractfile("./artifacts/SHA256SUMS").read().decode().splitlines()
+    expected_paths = {
+        name for name, member in members.items()
+        if name.startswith("artifacts/") and name != "artifacts/SHA256SUMS"
+        and member.isfile()
+    }
+    expected_paths.update({
         "model/corpus.json",
         "model/naming-corpus.json",
         "model/theorem-debt.json",
         "model/naming-theorem-debt.json",
         "simulator/identity.json",
-        "artifacts/SHA256SUMS",
-    )
-    for required in artifact_files:
-        assert required in names, f"release archive misses {required}"
-    recorded = bundle.extractfile("./artifacts/SHA256SUMS").read().decode().splitlines()
-    expected = {}
-    for path in artifact_files[:-1]:
-        payload = bundle.extractfile("./" + path).read()
-        expected[path] = hashlib.sha256(payload).hexdigest()
-    expected_lines = [f"{expected[path]}  {path}" for path in sorted(expected)]
+    })
+    expected_lines = []
+    for path in sorted(expected_paths):
+        payload = bundle.extractfile(members[path]).read()
+        expected_lines.append(f"{hashlib.sha256(payload).hexdigest()}  {path}")
     assert recorded == expected_lines, "artifact identity manifest drift"
     assert all(not m.name.startswith("/") and ".." not in Path(m.name).parts and not m.issym() and not m.islnk() for m in bundle.getmembers())
 print(json.dumps({"version": version, "unreleasedBaseline": not manifest, "archive": filename, "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS"}))

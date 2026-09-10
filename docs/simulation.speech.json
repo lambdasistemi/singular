@@ -23,12 +23,12 @@
   ],
   "reproduce-the-focused-checks": [
     {
-      "text": "Use the simulator build check, Node gate, and gate self-test from the repository root. The standalone page embeds both profile engines and its runtime assets. The pinned browser check exercises generic and naming controls, refusal branches, both themes, and a mobile viewport. Build the documentation release for a reproducible review bundle with raw model, contract, scenarios, replay sources, pinned tooling, exact identities, and SHA two hundred and fifty six manifests. It remains review material, not a published release or ledger artifact.",
+      "text": "In a source checkout, use the simulator build check, Node gate, and self-test. For archive evidence, first verify the internal checksum manifest, then run the check app from the archive's own locked flake. It compiles the shipped Lean model, regenerates both corpora, checks compiled axioms, verifies the standalone page, replays generic and naming rows, and executes negative controls. The locked toolchain may be acquired when uncached, but model and replay inputs never come from a checkout or unpinned fetch. This remains review material, not a published release or ledger artifact.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "44d9b841b1650ee88eebb33cb07b664f5c7dddf91092a6fc9792e52668e96ed2"
+    "sha256": "9133235d846c4a00352ba8ac62b6b27b847a99e7a15188cad40db1b0b4bcd811"
   }
 }

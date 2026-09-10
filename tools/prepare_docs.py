@@ -1,5 +1,4 @@
 """Stage canonical Markdown once for MkDocs; generated files are never edited."""
-import hashlib
 import os
 from pathlib import Path
 import re
@@ -68,38 +67,6 @@ if (simulator / "index.html").is_file():
     for name in ("index.html", "identity.json"):
         shutil.copyfile(simulator / name, stage / "simulator" / name)
 
-# The release archive is also a reproducible review kit. Keep the raw contract,
-# scenarios, replay sources, pinned toolchain inputs, and identity ledgers beside
-# the rendered site, with one byte-exact manifest over the complete surface.
-artifact_sources = {
-    "contracts/naming-lifecycle-contract.txt": root / "docs/naming-lifecycle.md",
-    "scenarios/stories.json": root / "simulator/stories.json",
-    "replay/README.txt": root / "simulator/README.md",
-    "replay/actions.mjs": root / "simulator/actions.mjs",
-    "replay/core.mjs": root / "simulator/core.mjs",
-    "replay/naming.mjs": root / "simulator/naming.mjs",
-    "tooling/flake.lock": root / "flake.lock",
-    "tooling/lean-toolchain": root / "lean-toolchain",
-}
-artifacts = stage / "artifacts"
-manifest = {}
-for relative, source in sorted(artifact_sources.items()):
-    destination = artifacts / relative
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, destination)
-    manifest[f"artifacts/{relative}"] = hashlib.sha256(destination.read_bytes()).hexdigest()
-for relative in (
-    "model/corpus.json",
-    "model/naming-corpus.json",
-    "model/theorem-debt.json",
-    "model/naming-theorem-debt.json",
-    "simulator/identity.json",
-):
-    manifest[relative] = hashlib.sha256((stage / relative).read_bytes()).hexdigest()
-(artifacts / "SHA256SUMS").write_text(
-    "\n".join(f"{manifest[path]}  {path}" for path in sorted(manifest)) + "\n",
-    encoding="utf-8",
-)
 shutil.copyfile(root / "README.md", stage / "index.md")
 shutil.copyfile(root / "README.speech.json", stage / "index.speech.json")
 # The shared reader assumes a root deployment when locating home-page speech.

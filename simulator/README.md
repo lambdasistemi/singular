@@ -2,7 +2,7 @@
 
 The self-contained browser artifact is `index.html`; it embeds the exact core, action builders, property code, eight generic story trees, corrected Lean corpora, theorem inventories, and formal identity. Publishing serves `index.html` and `identity.json` at `site/simulator/`; the downloadable archive also carries the replay sources, scenarios, and identity ledgers under `site/artifacts/`. Formal files are linked under the parent's canonical `site/model/` location.
 
-Run from the repository root:
+From a source checkout, run:
 
 ```sh
 node simulator/build.mjs --check
@@ -10,7 +10,16 @@ node simulator/gate.mjs
 node simulator/gate.mjs --selftest
 ```
 
-To rebuild, run `node simulator/build.mjs`. To serve locally, run `node simulator/serve.mjs` and open `http://127.0.0.1:8769/simulator/?selftest=1`. The page's self-test is finite corpus/story replay, not a proof or a replacement for the browser gate.
+From the root of an extracted documentation archive, use the archive-owned environment instead of an ambient `node` or a checkout:
+
+```sh
+sha256sum --check artifacts/SHA256SUMS
+nix run --no-write-lock-file ./artifacts/review#check
+```
+
+The review flake and lock pin Node, Lean, and the complete source set used by the check. Nix may acquire that exact locked toolchain when it is not cached; it does not fetch model or replay inputs.
+
+In a checkout, rebuild with `node simulator/build.mjs`. To serve locally, run `node simulator/serve.mjs` and open `http://127.0.0.1:8769/simulator/?selftest=1`. The page's self-test is finite corpus/story replay, not a proof or a replacement for the browser gate.
 
 `browser-check.js` is a Playwright MCP `browser_run_code_unsafe` function; pass the file as its `filename` (or its text as `code`). It exercises real manual controls and story branches. `evidence/browser-*-receipt.json` and the supplementary receipts retain the exact tool output and code. Screenshots and browser-observed HTML hashes are retained alongside them.
 

@@ -143,7 +143,11 @@ class Page(HTMLParser):
             self.anchors.append((self._anchor, "".join(self._buf).strip()))
             self._anchor = self._buf = None
 
-pages = {p: Page(p.read_text()) for p in site.rglob("*.html")}
+pages = {
+    path: Page(path.read_text())
+    for path in site.rglob("*.html")
+    if not path.is_relative_to(site / "artifacts")
+}
 assert pages, "no rendered pages"
 # Every script and stylesheet a reader loads comes from this site: a CDN fetch at
 # read time would put the diagrams outside the pinned, byte-verified build.

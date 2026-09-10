@@ -38,7 +38,7 @@ Address evolution and retirement are different operations: `evolve` changes the 
 
 ## Reproduce the focused checks
 
-From the repository root:
+From a source checkout:
 
 ```sh
 node simulator/build.mjs --check
@@ -46,8 +46,17 @@ node simulator/gate.mjs
 node simulator/gate.mjs --selftest
 ```
 
+From the root of a freshly extracted documentation archive:
+
+```sh
+sha256sum --check artifacts/SHA256SUMS
+nix run --no-write-lock-file ./artifacts/review#check
+```
+
+The first command verifies every shipped review input. The second uses the archive's own flake and lock to compile the shipped Lean model, regenerate and compare both corpora, check compiled axioms, rebuild the standalone page in check mode, replay the generic and naming rows, and execute the negative controls. Nix may acquire the exact locked toolchain when it is not cached; no model, scenario, simulator, or checker input comes from a checkout or an unpinned fetch.
+
 `node simulator/build.mjs` deterministically rebuilds the standalone HTML. The page embeds its engines, actions, stories, corpora, and theorem inventories; it has no framework, CDN, or runtime asset dependency. Publishing stages `index.html` and `identity.json` under `site/simulator/`.
 
-Build the versioned review bundle with `nix build .#docs-release` and check it with `nix run .#release-check`. The archive includes the rendered site, raw model and corpus files, the naming contract, scenario and replay sources, pinned toolchain inputs, and exact identities under `artifacts/SHA256SUMS`. The outer `SHA256SUMS` authenticates the archive itself. A locally built bundle is reproducible review material; it is not a published release, validator, or ledger artifact.
+Build the versioned review bundle with `nix build .#docs-release` and check its packaging with `nix run .#release-check`. Then extract the actual archive into a fresh directory and run the archive commands above: a checkout-relative pass does not establish archive reproduction. The archive includes the rendered site and a complete runnable review tree under `artifacts/review/`; `artifacts/SHA256SUMS` binds every review input plus the separately served corpus and identity files. The outer `SHA256SUMS` authenticates the archive itself. A locally built bundle is reproducible review material; it is not a published release, validator, or ledger artifact.
 
 Local browser verification exercises competing generic Inserts, separate generic withdrawal authorization, address evolution and refusal, pending and retired resolution, forged-view refusal, the naming claim/fold/resolve journey and its duplicate/Delete refusals, story branches, both themes, and a 390-pixel viewport. This local browser evidence is separate from deployed-byte/browser checks. The pinned Nix runner supplies Chromium; exact commands and retained historical evidence are described in the repository. A browser pass does not establish ledger execution.

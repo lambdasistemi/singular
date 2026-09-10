@@ -41,12 +41,12 @@
       "pause": 400
     },
     {
-      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site, raw model and corpus files, the naming contract, scenarios, replay sources, pinned toolchain inputs, exact identity ledgers, and an internal SHA two hundred and fifty six manifest. No tag or publication is authorized by this candidate.",
+      "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake. A checkout pass does not substitute, and no tag or publication is authorized.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "3d4089617d6389a34a68b0687821dfadd1200f737286b6c2c6e6580662620c2d"
+    "sha256": "0f41e6c5375a1af81a34e937e5415a5a7c0a6ee2e706ec4945459b4223682059"
   }
 }

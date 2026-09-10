@@ -26,6 +26,9 @@ names = [
     "docs/theorems/index.html",
     "docs/simulation/index.html",
     "artifacts/contracts/naming-lifecycle-contract.txt",
+    "artifacts/review/README.md",
+    "artifacts/review/flake.nix",
+    "artifacts/review/flake.lock",
     "artifacts/SHA256SUMS",
 ]
 for directory in ("model", "simulator"):

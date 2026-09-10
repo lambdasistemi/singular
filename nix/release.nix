@@ -6,7 +6,7 @@ let
     nativeBuildInputs = [ pkgs.gnutar pkgs.gzip pkgs.coreutils ];
   } ''
     mkdir -p "$out"
-    tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner \
+    tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner --hard-dereference \
       -C ${docs} -cf - . | gzip -n > "$out/singular-docs-${version}.tar.gz"
     cd "$out"
     sha256sum "singular-docs-${version}.tar.gz" > SHA256SUMS

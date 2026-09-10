@@ -15,6 +15,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
+      python3 tools/prepare_release.py site
     '';
     installPhase = ''
       cp -r site "$out"

@@ -27,12 +27,12 @@
       "pause": 400
     },
     {
-      "text": "The archive is also a review kit. Under artifacts it carries the naming lifecycle contract, scenarios, replay sources, pinned toolchain inputs, and an exact manifest covering those files plus the shipped model corpora, theorem inventories, and simulator identity. The inner checksum manifest authenticates the review inputs, while the outer checksum authenticates the archive. No release tag is authorized by this candidate.",
+      "text": "The archive is also a runnable review workspace. Under artifacts review it carries model and theorem sources, corpora, scenarios, simulator and replay sources, checkers, and a minimal flake with its exact lock. After extracting the actual archive into a fresh directory, verify the internal checksum manifest and run the review flake's check app. Nix may acquire only the exact locked toolchain; all model and replay inputs come from the archive. A checkout pass or presence check does not establish archive reproduction, and no release tag is authorized by this candidate.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "8ce3e53413de9f4b0340b29ce16db41324ec8b3b25cc2d21567f797eb7fda187"
+    "sha256": "748b7c963ad3044f51297cad1c764d0690178ced6666cc6bf4daf3e692aa04ae"
   }
 }
