@@ -33,6 +33,11 @@ script-identity:
 # Run this ONLY for a deliberate identity change — the manifest diff is
 # what a reviewer reads. Never hand-edit the manifest; if it disagrees
 # with the build, the build is right.
+#
+# Each validator's parameter count comes from the blueprint's own
+# `parameters` array (absent for a zero-parameter validator), so a
+# regeneration reproduces the committed manifest byte for byte instead
+# of silently dropping the counts (issue #43).
 script-identity-regen:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -51,7 +56,7 @@ script-identity-regen:
            schema: 1,
            upstream: {source_revision: $rev},
            compiler: $bp[0].preamble.compiler.version,
-           validators: [$bp[0].validators[] | {title: .title, hash: .hash}]
+           validators: [$bp[0].validators[] | {title: .title, hash: .hash, parameters: ((.parameters // []) | length)}]
          }' > script-identity.json
     echo "wrote onchain/script-identity.json: $(jq '.validators | length' script-identity.json) validators, compiler $(jq -r '.compiler' script-identity.json), upstream $rev"
     echo "review the diff: git diff -- onchain/script-identity.json"
