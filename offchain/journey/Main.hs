@@ -10,7 +10,16 @@ node and verifies it, one line per step:
 
   boot a cage, submit a request, prove the key absent, apply
   the request, prove the key present with the expected value,
-  reject a false claim, read the resulting state back.
+  reject a false claim, read the resulting state back, then
+  submit three transactions the on-chain validators must
+  refuse — a forged state-token identity, a tampered
+  certified output, a missing required witness — and prove
+  the authenticated state took no trace from them.
+
+The three negative cases are MPFS cage negative cases. They
+exercise the imported validators' identity, certified-output
+and ownership guards; no Singular naming behaviour exists in
+this runner.
 
 Verification follows D-013: the library builds proofs
 ('mkMPFExclusionProof', 'mkMPFInclusionProof'); off-chain each
@@ -44,26 +53,42 @@ import Control.Exception
     )
 import Control.Monad (unless, when)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
+import Data.Bits (complement)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short (fromShort)
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef)
+import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (mapMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (%~), (.~), (^.))
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn, stderr)
 
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Api.Scripts.Data (Data (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx.Body (
+    mintTxBodyL,
+    outputsTxBodyL,
+    reqSignerHashesTxBodyL,
+    scriptIntegrityHashTxBodyL,
+ )
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
+import PlutusTx.IsData.Class (FromData (..))
 
 import Cardano.MPFS.Cage.Blueprint (
     applyPreviousPolicies,
@@ -74,6 +99,9 @@ import Cardano.MPFS.Cage.Config (CageConfig (..))
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
+    ConwayEra,
+    PParams,
+    Root (..),
     TokenId (..),
  )
 import Cardano.MPFS.Cage.Provider qualified as Cage
@@ -86,9 +114,14 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
+    computeScriptIntegrity,
     extractCageDatum,
     findStateUtxo,
+    mkInlineDatum,
     requestAddrFromCfg,
+    scriptHashBytes,
+    toLedgerData,
+    toPlcData,
     txInToRef,
  )
 import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
@@ -98,6 +131,7 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
+    UpdateRedeemer (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
@@ -152,7 +186,7 @@ import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
+import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -287,9 +321,10 @@ runJourney stateBytes requestBytes = do
         stepVerifyAbsent cfg prov mirrorRef tokenId
         stepApply cfg prov submit tm tokenId reqCount
         stepVerifyPresent cfg prov mirrorRef tokenId
-        stepReadBack cfg prov tokenId bootRoot
+        appliedState <- stepReadBack cfg prov tokenId bootRoot
+        stepReject cfg prov submit tm tokenId appliedState
         cancel nodeThread
-        emit "complete" "6/6 journey steps ok"
+        emit "complete" "11/11 journey steps ok"
 
 -- | Boot a cage: mint the state token, register its trie,
 -- observe the state UTxO and read the boot state datum.
@@ -396,13 +431,14 @@ stepApply cfg prov submit tm tid reqCount = do
 
 -- | Read the resulting state back from the chain: decode the
 -- state UTxO's inline datum and observe that the trie root
--- moved from the boot root.
+-- moved from the boot root. Returns the authenticated state
+-- as read, for the negative section's unchanged control.
 stepReadBack ::
     CageConfig ->
     Cage.Provider IO ->
     TokenId ->
     OnChainRoot ->
-    IO ()
+    IO OnChainTokenState
 stepReadBack cfg prov tid bootRoot = do
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
     st <- case
@@ -432,6 +468,294 @@ stepReadBack cfg prov tid bootRoot = do
             <> " stake_script="
             <> maybe "none" (\(BuiltinByteString bs) -> hex bs) (stateStakeScript st)
         )
+    pure st
+
+-- ---------------------------------------------------------
+-- Negative cases: the validators must refuse (issue #41)
+-- ---------------------------------------------------------
+
+{- | The rejection reason each negative case requires: the
+node must report a phase-2 Plutus evaluation failure — the
+on-chain validator refused to execute the transaction — and
+not any phase-1 ledger rule. A malformed CBOR, an unbalanced
+fee or a missing input would all "fail" while telling us
+nothing about the guards; a phase-1-shaped rejection fails
+the run naming what came back instead.
+
+Marker: expected-rejection-reason
+-}
+expectedRejectionReason :: String
+expectedRejectionReason =
+    "phase-2 Plutus script evaluation failure \
+    \on the submitted transaction"
+
+-- | The node-level marker of that reason: a failed Plutus
+-- evaluation is reported by the ledger as a 'PlutusFailure'.
+phase2ScriptFailureMarker :: String -> Bool
+phase2ScriptFailureMarker = isInfixOf "PlutusFailure"
+
+{- | The MPFS cage negative section. With one unapplied
+insert request pending, build the valid update transaction
+the oracle would submit, derive three transactions from it
+that are each invalid in exactly one intended way, and
+require the on-chain validators to refuse all three. Then
+prove the authenticated state is unchanged: a rejected
+evaluation never applies, so the rejected transactions must
+have left no trace.
+-}
+stepReject ::
+    CageConfig ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    TokenId ->
+    OnChainTokenState ->
+    IO ()
+stepReject cfg prov submit tm tid stateBeforeRejects = do
+    -- A second, unapplied insert request: the payload the
+    -- mutated updates below pretend to process. It stays at
+    -- the request address throughout.
+    let reqAddr = requestAddrFromCfg cfg tid Testnet
+    before <- Cage.queryUTxOs prov reqAddr
+    require "reject: request address empty before the second request" $
+        null before
+    unsignedReq <-
+        requestInsertImpl
+            cfg
+            prov
+            (Coin 1_000_000)
+            tid
+            negativeKey
+            negativeValue
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReq
+    reqUtxos <- Cage.queryUTxOs prov reqAddr
+    require "reject: exactly one request UTxO after the second request" $
+        length reqUtxos == 1
+    forgedRef <- case reqUtxos of
+        ((reqIn, _) : _) -> pure (txInToRef reqIn)
+        [] -> failWith "reject: no request UTxO found"
+    emit
+        "reject-request"
+        ( "pending insert request key="
+            <> textOf negativeKey
+            <> " value="
+            <> textOf negativeValue
+            <> " request_utxos="
+            <> show (length reqUtxos)
+        )
+    -- The apply step ran inside a speculative session, whose
+    -- mutations were discarded: the manager's trie still holds
+    -- the empty boot state, while the chain holds the applied
+    -- hello insert. Replay that insert — committed this time —
+    -- so the second update's proofs are computed against the
+    -- root the chain actually has, and require the manager to
+    -- be in step before building on it.
+    _ <- withTrie tm tid $ \trie -> do
+        _ <- CageTrie.insert trie journeyKey journeyValue
+        managerRoot <- CageTrie.getRoot trie
+        require
+            "reject: trie manager is in step with the chain"
+            (unRoot managerRoot == unOnChainRoot (stateRoot stateBeforeRejects))
+        pure ()
+    -- The valid oracle update for that request. It is never
+    -- submitted unmutated: each case derives one single-defect
+    -- transaction from it. Every mutation keeps the tx
+    -- well-formed for ledger phase 1 (the case descriptions
+    -- say how), so only the on-chain validator stands between
+    -- each transaction and the ledger.
+    baseTx <- updateTokenImpl cfg prov tm tid genesisAddr
+    newRoot <- baseTxStateRoot baseTx
+    pp <- Cage.queryProtocolParams prov
+    -- The validators the three cases require to refuse, by
+    -- their script hashes as the node names them in a phase-2
+    -- failure.
+    let stateScriptHash =
+            scriptHashHexOfAddr (cageAddrFromCfg cfg Testnet)
+        requestScriptHash =
+            scriptHashHexOfAddr (requestAddrFromCfg cfg tid Testnet)
+    -- Case 1: forged state-token identity. The request's
+    -- Contribute redeemer names a real input — the request
+    -- UTxO itself — as the cage's state UTxO. It carries no
+    -- state token, and request.request.spend must refuse it.
+    expectRejected
+        "reject-forged-identity"
+        "request.request.spend validateContribute: the claimed state UTxO carries no state token"
+        requestScriptHash
+        submit
+        (forgeContributeStateRef pp forgedRef baseTx)
+    -- Case 2: tampered certified output. The new state output
+    -- keeps the exact StateDatum shape but its root is the
+    -- byte complement of the root the proofs certify.
+    let tamperedRoot = tamperRoot newRoot
+    expectRejected
+        "reject-tampered-output"
+        "state.state.spend validModify: output datum root must equal the proof-recomputed root"
+        stateScriptHash
+        submit
+        (tamperStateOutputRoot newRoot tamperedRoot baseTx)
+    -- Case 3: missing required witness. The owner signature
+    -- is dropped from the body's required signers, so the
+    -- ledger no longer demands the vkey witness and phase 1
+    -- passes — but state.state.spend still requires it.
+    expectRejected
+        "reject-missing-witness"
+        "state.state.spend validateOwnership: the owner's required signature is absent"
+        stateScriptHash
+        submit
+        (dropRequiredSigners baseTx)
+    -- Positive control: the rejected transactions left no
+    -- trace. The authenticated state is re-read from the
+    -- chain and compared against the post-apply state.
+    stateAfter <- readChainState cfg prov tid
+    require
+        "reject-control: authenticated state datum unchanged"
+        (stateAfter == stateBeforeRejects)
+    reqAfter <- Cage.queryUTxOs prov reqAddr
+    require
+        "reject-control: the pending request is still unapplied"
+        (length reqAfter == 1)
+    emit
+        "reject-control"
+        ( "authenticated state unchanged after 3 rejected transactions"
+            <> " root=0x"
+            <> hex (unOnChainRoot (stateRoot stateAfter))
+            <> " request_utxos="
+            <> show (length reqAfter)
+            <> " — no trace"
+        )
+
+{- | Submit a mutated transaction that the on-chain
+validators must refuse. Fails the journey if the node
+accepts it — naming the guard that did not hold — or if it
+rejects it for any reason other than 'expectedRejectionReason'.
+-}
+expectRejected ::
+    String ->
+    String ->
+    String ->
+    Submitter IO ->
+    ConwayTx ->
+    IO ()
+expectRejected caseName guard expectedScript submit tx = do
+    result <- submitTx submit (addKeyWitness genesisSignKey tx)
+    case result of
+        Submitted _ ->
+            failWith $
+                caseName
+                    <> ": transaction was ACCEPTED — the guard did not hold: "
+                    <> guard
+        Rejected reason -> do
+            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+            unless (phase2ScriptFailureMarker reasonText) $
+                failWith $
+                    caseName
+                        <> ": expected-rejection-reason <"
+                        <> expectedRejectionReason
+                        <> "> but the node rejected with <"
+                        <> reasonText
+                        <> ">"
+            -- The node names the script that failed: require the
+            -- expected validator to be the one that refused.
+            unless (expectedScript `isInfixOf` reasonText) $
+                failWith $
+                    caseName
+                        <> ": the node rejected in phase 2 but its failure does not name the expected validator (script hash 0x"
+                        <> expectedScript
+                        <> "); the node said <"
+                        <> reasonText
+                        <> ">"
+            emit caseName ("node refused it, reason matched: " <> reasonText)
+
+-- | The payload of the request the negative section
+-- pretends to process. It is never applied.
+negativeKey :: ByteString
+negativeKey = "negative"
+
+negativeValue :: ByteString
+negativeValue = "probe"
+
+-- | The root the valid update writes into its state output.
+baseTxStateRoot :: ConwayTx -> IO OnChainRoot
+baseTxStateRoot tx = case mapMaybe stateRootOf outputs of
+    [r] -> pure r
+    rs ->
+        failWith $
+            "reject: expected exactly one state output in the base update, found "
+                <> show (length rs)
+  where
+    outputs = toList (tx ^. bodyTxL . outputsTxBodyL)
+    stateRootOf out = case extractCageDatum out of
+        Just (StateDatum s) -> Just (stateRoot s)
+        _ -> Nothing
+
+-- | A same-shaped but wrong root: the byte complement.
+tamperRoot :: OnChainRoot -> OnChainRoot
+tamperRoot (OnChainRoot bs) = OnChainRoot (BS.map complement bs)
+
+{- | Rewrite the request spend's Contribute redeemer so it
+names a forged state reference, and re-stamp the script
+integrity hash so ledger phase 1 stays valid. Everything
+else — inputs, outputs, fees — is untouched.
+-}
+forgeContributeStateRef ::
+    PParams ConwayEra ->
+    OnChainTxOutRef ->
+    ConwayTx ->
+    ConwayTx
+forgeContributeStateRef pp forgedRef tx =
+    tx
+        & witsTxL . rdmrsTxWitsL .~ newRedeemers
+        & bodyTxL . scriptIntegrityHashTxBodyL .~ integrity
+  where
+    Redeemers rdmrMap = tx ^. witsTxL . rdmrsTxWitsL
+    newRedeemers = Redeemers (Map.map swapContribute rdmrMap)
+    swapContribute pair = case decodeUpdateRedeemer (fst pair) of
+        Just (Contribute _) -> (toLedgerData (Contribute forgedRef), snd pair)
+        _ -> pair
+    integrity = computeScriptIntegrity pp newRedeemers
+
+-- | Decode a redeemer payload as an 'UpdateRedeemer'.
+decodeUpdateRedeemer :: Data ConwayEra -> Maybe UpdateRedeemer
+decodeUpdateRedeemer (Data d) = fromBuiltinData (BuiltinData d)
+
+-- | Lowercase hex of the script hash of a script payment
+-- address, in the form the node names a failing script by.
+scriptHashHexOfAddr :: Addr -> String
+scriptHashHexOfAddr (Addr _ (ScriptHashObj sh) _) =
+    hex (scriptHashBytes sh)
+scriptHashHexOfAddr _ = emptyScriptHashHex
+
+-- | The empty fallback for a non-script address, which the
+-- reason check can never match.
+emptyScriptHashHex :: String
+emptyScriptHashHex = ""
+
+{- | Replace the root inside the new state output's inline
+datum: correct 'StateDatum' shape, wrong content. The value,
+size and address are untouched, so fee and min-UTxO rules
+still hold.
+-}
+tamperStateOutputRoot :: OnChainRoot -> OnChainRoot -> ConwayTx -> ConwayTx
+tamperStateOutputRoot expected tampered tx =
+    tx & bodyTxL . outputsTxBodyL %~ fmap fixOutput
+  where
+    fixOutput out = case extractCageDatum out of
+        Just (StateDatum s)
+            | stateRoot s == expected ->
+                out
+                    & datumTxOutL
+                    .~ mkInlineDatum
+                        (toPlcData (StateDatum s{stateRoot = tampered}))
+        _ -> out
+
+{- | Drop every required signer from the body: the ledger no
+longer demands the owner's vkey witness, but the state
+validator still does.
+-}
+dropRequiredSigners :: ConwayTx -> ConwayTx
+dropRequiredSigners tx =
+    tx & bodyTxL . reqSignerHashesTxBodyL .~ Set.empty
 
 -- ---------------------------------------------------------
 -- Authenticated-state verification (D-013)
