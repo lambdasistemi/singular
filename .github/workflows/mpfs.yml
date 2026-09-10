@@ -65,6 +65,36 @@ jobs:
       - name: Build the Aiken blueprint
         working-directory: onchain
         run: nix build --quiet --no-link --print-out-paths .#plutus-blueprint
+  script-identity:
+    name: Compiled script identity matches the manifest
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 15
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-script-identity"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #34: the compiled script hash IS the contract's identity.
+      # Rebuild the blueprint and compare every validator against the
+      # committed manifest onchain/script-identity.json — a moved hash, a
+      # validator missing from the manifest, a manifest entry with no
+      # counterpart in the build, or a moved compiler string fails the
+      # job. A deliberate identity change regenerates the manifest via
+      # `just script-identity-regen`, and the manifest diff is what the
+      # reviewer reads. Same derivation as checks.script-identity, so a
+      # local `nix flake check` in onchain/ runs the identical comparison.
+      - name: Compare the committed manifest with a fresh blueprint build
+        working-directory: onchain
+        run: nix build --quiet --no-link --print-out-paths .#script-identity
   vectors-fresh:
     name: Cage vectors match the generator
     runs-on: nixos
