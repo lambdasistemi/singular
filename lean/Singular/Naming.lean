@@ -40,33 +40,160 @@ structure RetirementQuorum where
   threshold : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
+inductive NamingCredential where
+  | paymentKey | script
+  deriving Repr, BEq, DecidableEq, ToJson
+
+inductive NamingAddressForm where
+  | enterprise | base
+  deriving Repr, BEq, DecidableEq, ToJson
+
+/-- A decoded Conway address together with its canonical binary wire bytes.
+Only base and enterprise forms are supported by the first naming profile. -/
+structure NamingAddress where
+  bytes : List Nat
+  form : NamingAddressForm
+  network : Nat
+  paymentCredential : NamingCredential
+  paymentHash : List Nat
+  stakeCredential : Option NamingCredential := none
+  stakeHash : List Nat := []
+  deriving Repr, BEq, DecidableEq, ToJson
+
+/-- The wire-level next-controller commitment. The digest is exactly 32 bytes. -/
+structure NextCommitment where
+  digest : List Nat
+  deriving Repr, BEq, DecidableEq, ToJson
+
+def bytesValid (bytes : List Nat) : Bool := bytes.all (· < 256)
+
+def credentialOffset : NamingCredential → Nat
+  | .paymentKey => 0
+  | .script => 1
+
+/-- Conway header nibble for the supported address forms. -/
+def addressKind (address : NamingAddress) : Option Nat :=
+  match address.form, address.paymentCredential, address.stakeCredential with
+  | .enterprise, payment, none => some (6 + credentialOffset payment)
+  | .base, payment, some stake => some (credentialOffset payment + 2 * credentialOffset stake)
+  | _, _, _ => none
+
+def encodeAddress (address : NamingAddress) : Option (List Nat) := do
+  if address.network >= 16 || address.paymentHash.length != 28 || !bytesValid address.paymentHash then
+    none
+  let kind ← addressKind address
+  match address.form with
+  | .enterprise =>
+      if !address.stakeHash.isEmpty then none
+      else some ((kind * 16 + address.network) :: address.paymentHash)
+  | .base =>
+      if address.stakeHash.length != 28 || !bytesValid address.stakeHash then none
+      else some ((kind * 16 + address.network) :: (address.paymentHash ++ address.stakeHash))
+
+def credentialFromBit (bit : Nat) : NamingCredential :=
+  if bit == 0 then .paymentKey else .script
+
+/-- Decode only the two frozen supported Conway forms. Callers compare the
+decoded value with the supplied value and re-encode it, excluding alternate
+encodings of one address. -/
+def decodeAddress (bytes : List Nat) : Option NamingAddress := do
+  let header ← bytes.head?
+  let payload := bytes.drop 1
+  let kind := header / 16
+  let network := header % 16
+  if kind == 6 || kind == 7 then
+    if payload.length != 28 || !bytesValid bytes then none
+    else
+      let address : NamingAddress :=
+        { bytes := bytes
+          form := .enterprise
+          network := network
+          paymentCredential := credentialFromBit (kind - 6)
+          paymentHash := payload }
+      some address
+  else if kind < 4 then
+    if payload.length != 56 || !bytesValid bytes then none
+    else
+      let address : NamingAddress :=
+        { bytes := bytes
+          form := .base
+          network := network
+          paymentCredential := credentialFromBit (kind % 2)
+          paymentHash := payload.take 28
+          stakeCredential := some (credentialFromBit (kind / 2))
+          stakeHash := payload.drop 28 }
+      some address
+  else none
+
+def canonicalAddress (address : NamingAddress) : Bool :=
+  decodeAddress address.bytes == some address && encodeAddress address == some address.bytes
+
+def paymentKeyAddress (address : NamingAddress) : Bool :=
+  canonicalAddress address && address.paymentCredential == .paymentKey
+
+def wellFormedCommitment (commitment : NextCommitment) : Bool :=
+  commitment.digest.length == 32 && bytesValid commitment.digest
+
+def controllerAddress : NamingAddress :=
+  { bytes := 97 :: List.range' 1 28, form := .enterprise, network := 1,
+    paymentCredential := .paymentKey, paymentHash := List.range' 1 28 }
+
+def nextControllerAddress : NamingAddress :=
+  { bytes := 97 :: List.range' 29 28, form := .enterprise, network := 1,
+    paymentCredential := .paymentKey, paymentHash := List.range' 29 28 }
+
+def freshControllerAddress : NamingAddress :=
+  { bytes := 97 :: List.range' 57 28, form := .enterprise, network := 1,
+    paymentCredential := .paymentKey, paymentHash := List.range' 57 28 }
+
+def destinationAddress : NamingAddress :=
+  { bytes := 97 :: List.range' 85 28, form := .enterprise, network := 1,
+    paymentCredential := .paymentKey, paymentHash := List.range' 85 28 }
+
+def otherControllerAddress : NamingAddress :=
+  { bytes := 97 :: List.range' 113 28, form := .enterprise, network := 1,
+    paymentCredential := .paymentKey, paymentHash := List.range' 113 28 }
+
+def nextControllerCommitment : NextCommitment :=
+  { digest := [194, 219, 76, 247, 78, 175, 65, 208, 95, 243, 240, 210, 186, 25, 12, 72,
+    45, 189, 40, 94, 86, 21, 171, 104, 133, 192, 82, 134, 196, 194, 60, 190] }
+
+def freshControllerCommitment : NextCommitment :=
+  { digest := [21, 97, 193, 91, 73, 128, 133, 127, 176, 110, 74, 179, 92, 201, 188, 236,
+    175, 9, 11, 10, 139, 222, 241, 159, 99, 49, 86, 90, 51, 50, 4, 15] }
+
 structure NamingFixture where
-  paymentDestination : Option Nat
-  controlAddress : Nat
-  nextControlCommitment : Nat
+  paymentDestination : Option NamingAddress
+  controlAddress : NamingAddress
+  nextControlCommitment : NextCommitment
   retirementQuorum : RetirementQuorum
   deriving Repr, BEq, DecidableEq, ToJson
 
 /-- The four fixture slots are present by construction; the payment destination
 must be absent or distinct from the control address. -/
 def wellFormedFixture (fixture : NamingFixture) : Bool :=
+  paymentKeyAddress fixture.controlAddress && wellFormedCommitment fixture.nextControlCommitment &&
   match fixture.paymentDestination with
   | none => true
-  | some destination => destination != fixture.controlAddress
+  | some destination => canonicalAddress destination && destination != fixture.controlAddress
 
 /-- The frozen first-release demo fixture for `alice`. Values are finite-model
 fixtures, not product or economic policy. -/
 def aliceFixture : NamingFixture :=
-  { paymentDestination := some 70, controlAddress := 50, nextControlCommitment := 80, retirementQuorum := { members := [50, 51, 52], threshold := 2 } }
+  { paymentDestination := some destinationAddress, controlAddress := controllerAddress,
+    nextControlCommitment := nextControllerCommitment,
+    retirementQuorum := { members := [50, 51, 52], threshold := 2 } }
 
 /-- A competing well-formed demo fixture for a second `alice` claim. -/
 def otherFixture : NamingFixture :=
-  { paymentDestination := none, controlAddress := 60, nextControlCommitment := 80, retirementQuorum := { members := [60, 61], threshold := 2 } }
+  { paymentDestination := none, controlAddress := otherControllerAddress,
+    nextControlCommitment := nextControllerCommitment,
+    retirementQuorum := { members := [60, 61], threshold := 2 } }
 
 /-- A malformed demo fixture: the payment destination equals the control
 address, so certification must refuse it. -/
 def malformedFixture : NamingFixture :=
-  { aliceFixture with paymentDestination := some 50 }
+  { aliceFixture with paymentDestination := some controllerAddress }
 
 /-- A queued certified Insert for a fixture spelling. Two claims may share a
 spelling; uniqueness is decided only at fold. -/

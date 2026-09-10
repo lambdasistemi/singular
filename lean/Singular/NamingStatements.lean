@@ -83,8 +83,11 @@ theorem naming_unauthenticated_resolve (state : NamingState) (key : Nat) :
 /-- The demo fixture's payment destination is present and distinct from the
 control address; the competing fixture's is absent. Both are well formed. -/
 theorem naming_payment_destination_distinct_from_control :
-    aliceFixture.paymentDestination = some 70 ∧ aliceFixture.controlAddress = 50 ∧
+    aliceFixture.paymentDestination = some destinationAddress ∧
+    aliceFixture.controlAddress = controllerAddress ∧
     aliceFixture.paymentDestination != some aliceFixture.controlAddress ∧
+    paymentKeyAddress aliceFixture.controlAddress = true ∧
+    wellFormedCommitment aliceFixture.nextControlCommitment = true ∧
     wellFormedFixture aliceFixture = true ∧ wellFormedFixture otherFixture = true := by
   decide
 
