@@ -100,6 +100,37 @@ executable cage-test-vectors
     , plutus-tx
     , text
 
+-- The bounded journey runner (D-012): narrates the MPFS cage
+-- journey — boot a cage, submit a request, apply it, read the
+-- resulting state back — against a real devnet node, using the
+-- same library code path as the E2E suite. Source lives in
+-- journey/; every imported Haskell module stays untouched.
+executable journey
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , ouroboros-network
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0

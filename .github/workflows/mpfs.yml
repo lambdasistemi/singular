@@ -160,3 +160,37 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+  journey:
+    name: The bounded MPFS cage journey, narrated end to end
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-journey"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #37: the epic's runnable artifact. One command boots a
+      # cage, submits a request, applies it and reads the resulting
+      # state back on a real devnet, printing one line per step plus
+      # the pinned script identities it exercised (read from
+      # onchain/script-identity.json). It is the same library code
+      # path as the e2e suite — no mocks, no stubbed node — and it is
+      # hermetic (D-011): the Nix-built binary brings the locked
+      # cardano-node on its own PATH; no cabal, no package index, no
+      # warm developer state. It covers the cage protocol surface
+      # only — it does not demonstrate Singular naming-claim or
+      # maintenance behaviour.
+      - name: Run the bounded MPFS cage journey against a real devnet
+        working-directory: offchain
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$blueprint" nix run --quiet .#journey

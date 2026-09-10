@@ -70,17 +70,38 @@
         components =
           project.project.hsPkgs.cardano-mpfs-cage.components;
 
+        cardanoNode =
+          cardano-node.packages.${system}.cardano-node;
+
         haskellChecks = import ./nix/checks.nix {
           inherit pkgs components;
           shell = project.project.shell;
-          cardanoNode =
-            cardano-node.packages.${system}.cardano-node;
+          inherit cardanoNode;
         };
 
         haskellApps = import ./nix/apps.nix {
           inherit pkgs;
           checks = haskellChecks;
         };
+
+        # The bounded journey runner (D-012). A Nix-built binary —
+        # haskell.nix resolves every dependency, so a clean runner
+        # needs no cabal, no package index and no warm state (D-011)
+        # — wrapped so it brings the locked cardano-node on its own
+        # PATH, exactly like cage-tests-e2e in ./nix/checks.nix.
+        # The blueprint and the identity manifest come from the
+        # caller at run time (MPFS_BLUEPRINT, MPFS_SCRIPT_IDENTITY);
+        # no store path is baked in.
+        journey = pkgs.runCommand "journey" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.journey.meta or { }) // {
+            mainProgram = "journey";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.journey} $out/bin/journey \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
 
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
@@ -109,7 +130,12 @@
         # flake root. The procedure lives in ./justfile (vectors-check).
         checks = haskellChecks;
 
-        apps = haskellApps;
+        apps = haskellApps // {
+          journey = {
+            type = "app";
+            program = pkgs.lib.getExe journey;
+          };
+        };
 
         devShells = {
           default = project.devShells.default;
