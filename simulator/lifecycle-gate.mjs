@@ -1,4 +1,5 @@
 import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {
   aliceFixture, controllerAddress, decodeAddress, freshControllerAddress,
@@ -6,10 +7,19 @@ import {
   nextControllerCommitment, queueClaim, foldRequest,
 } from './naming.mjs';
 import {
-  blake2b256, cardanoKeriRevision, initializeConsumer, lifecycleStep,
+  blake2b256, cardanoKeriRevision, checkLifecycleCorpus, initializeConsumer, lifecycleStep,
   namingConsumerBinding, nextCommitment, nextControlHashContract,
   nextControlHashInput, retirementRequest,
 } from './lifecycle.mjs';
+
+const lifecycleCorpus = JSON.parse(readFileSync(new URL('../lean/lifecycle-corpus.json', import.meta.url)));
+const leanReplay = checkLifecycleCorpus(lifecycleCorpus);
+const lifecycleDrift = structuredClone(lifecycleCorpus);
+lifecycleDrift.steps[0].result = {accepted: false, reason: 'fabricated-result'};
+assert.throws(() => checkLifecycleCorpus(lifecycleDrift), /lifecycle-corpus\/LM01-maintenance-accepts/);
+const lifecycleIdentityDrop = structuredClone(lifecycleCorpus);
+lifecycleIdentityDrop.steps.shift();
+assert.throws(() => checkLifecycleCorpus(lifecycleIdentityDrop), /lifecycle corpus identity/);
 
 const ok = verdict => {
   assert.equal(verdict.accepted, true, JSON.stringify(verdict));
@@ -97,6 +107,6 @@ const canonical = {sourceRevision: cardanoKeriRevision, seed: 400, seedConsumed:
 assert.deepEqual(initializeConsumer(namingConsumerBinding, canonical), {accepted: true});
 refused(initializeConsumer(namingConsumerBinding, {...canonical, seed: 401}), 'canonical-seed');
 
-console.log(JSON.stringify({hashCorrespondence: {dynamicAddresses: addresses.length, oracle: 'python-hashlib'},
+console.log(JSON.stringify({leanReplay, hashCorrespondence: {dynamicAddresses: addresses.length, oracle: 'python-hashlib'},
   lifecycle: ['maintenance', 'recovery', 'retirement-controller', 'retirement-completion', 'initialization'],
-  negativeControls: 7}));
+  negativeControls: 9}));

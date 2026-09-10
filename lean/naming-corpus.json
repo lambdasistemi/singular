@@ -2452,7 +2452,7 @@
   ],
   "modelSha256": "3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce",
   "namingStatementsSha256": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
-  "payloadSha256": "fff328cc7a18d56571e7595d7f55058bf9db84af17e11cd0c995ff65f7405fd4",
+  "payloadSha256": "4663ab6146912d87b48b0106b67ed92dcd0da925c3cd24aedf67ffcf1625a8d0",
   "queues": [
     {
       "accepted": true,
@@ -11032,6 +11032,7 @@
   ],
   "schema": "singular-naming-corpus-v1",
   "sourceHashes": {
+    "lean/LifecycleMain.lean": "970aa935c27f930c04de892087804d365ddddb5e81addad5cf10e89f6704ed3f",
     "lean/Main.lean": "cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65",
     "lean/NamingMain.lean": "ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e",
     "lean/Singular.lean": "d367a26bc61dce24342ed0e86f66fd51344e92929f2b8b91424fd5c72956fe1d",
@@ -11042,7 +11043,7 @@
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "eb28d9759c22ebe5abd6989cdc9a51ab3c620b91268781407f3abab1b7c1eef6",
     "lean/Singular/NamingLifecycle.lean": "a37e7778c13f2902e119a56512ea033206fbe1c7f2259706c7d80d9d04b00245",
-    "lean/Singular/NamingLifecycleAudit.lean": "2145682e197b34f11bcea6d5570b0f9b6b62b12ea4a9041c1170caeb9acc512b",
+    "lean/Singular/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
     "lean/Singular/NamingLifecycleStatements.lean": "8a5412da5a2836114f4cb5e2fcbc92b60a0e2b00fc80ac8c393035c99d1c6540",
     "lean/Singular/NamingStatements.lean": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
     "lean/Singular/Statements.lean": "d17cb6b6a84d5a688baaad9d54d44271a6f27d762c50a3a500f9ce27acb32609"

@@ -2,7 +2,10 @@
 // preimage contract; this module supplies BLAKE2b-256 for every canonical
 // supported address and mirrors the lifecycle verdicts.
 import {step, equal} from './core.mjs';
-import {canonicalAddress, paymentKeyAddress, commitmentShape, wellFormedFixture} from './naming.mjs';
+import {
+  canonicalAddress, paymentKeyAddress, commitmentShape, foldRequest,
+  namingResolve, queueClaim, wellFormedFixture,
+} from './naming.mjs';
 
 const fail = reason => { throw new Error(reason); };
 const mask64 = (1n << 64n) - 1n;
@@ -177,4 +180,48 @@ export function initializeConsumer(binding, attempt) {
     if (attempt[field] !== binding[field]) return {accepted: false, reason};
   }
   return {accepted: true};
+}
+
+export const lifecycleCorpusIdentities = Object.freeze([
+  'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
+  'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
+  'LM03-maintenance-field-tamper-refused', 'LO01-retirement-pending-visible',
+  'LO02-retirement-over-visible', 'LR01-recovery-accepts',
+  'LR02-wrong-reveal-refused', 'LR03-missing-recovery-signer-refused',
+  'LR04-recovery-replay-refused', 'LR05-old-controller-refused',
+  'LR06-forged-public-digest-refused', 'LT01-controller-retirement-accepts',
+  'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
+  'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
+]);
+
+/** Replay the single Lean-produced lifecycle corpus through public adapters. */
+export function checkLifecycleCorpus(corpus) {
+  const sections = ['steps', 'resolutions', 'initializations', 'registrations'];
+  if (corpus?.schema !== 'singular-naming-lifecycle-corpus-v1'
+      || !sections.every(section => Array.isArray(corpus[section]) && corpus[section].length > 0)) fail('zero lifecycle corpus');
+  const rows = sections.flatMap(section => corpus[section]);
+  const ids = rows.map(row => row.id);
+  if (!equal([...ids].sort(), [...lifecycleCorpusIdentities].sort()) || new Set(ids).size !== ids.length) fail('lifecycle corpus identity');
+  let executed = 0;
+  for (const row of corpus.steps) {
+    if (!equal(lifecycleStep(row.before, row.action), row.result)) fail(`lifecycle-corpus/${row.id}`);
+    executed++;
+  }
+  for (const row of corpus.resolutions) {
+    if (!equal(namingResolve(row.before, row.spelling, row.authenticated), row.expected)) fail(`lifecycle-corpus/${row.id}`);
+    executed++;
+  }
+  for (const row of corpus.initializations) {
+    if (!equal(initializeConsumer(row.binding, row.attempt), row.result)) fail(`lifecycle-corpus/${row.id}`);
+    executed++;
+  }
+  for (const row of corpus.registrations) {
+    const queue = queueClaim(row.before, {spelling: row.spelling, fixture: row.fixture, accepted: row.accepted});
+    if (!equal(queue, row.queueResult)) fail(`lifecycle-corpus/${row.id}/queue`);
+    const fold = queue.accepted ? foldRequest(queue.value.state, queue.requestId) : queue;
+    if (!equal(fold, row.foldResult)) fail(`lifecycle-corpus/${row.id}/fold`);
+    executed++;
+  }
+  if (executed !== lifecycleCorpusIdentities.length) fail('lifecycle corpus denominator');
+  return {discovered: ids.length, executed, identities: ids};
 }

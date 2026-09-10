@@ -1,5 +1,5 @@
 import {aliceFixture, controllerAddress, decodeAddress, foldRequest, namingInitial, namingResolve, nextControllerCommitment, queueClaim} from './naming.mjs';
-import {lifecycleStep, nextCommitment, retirementRequest} from './lifecycle.mjs';
+import {checkLifecycleCorpus, lifecycleStep, nextCommitment, retirementRequest} from './lifecycle.mjs';
 
 const result = document.querySelector('#result');
 const show = value => { result.textContent = JSON.stringify(value, null, 2); result.className = 'pass'; };
@@ -7,6 +7,8 @@ const queued = queueClaim(namingInitial(), {spelling: 'alice', fixture: aliceFix
 const active = foldRequest(queued.value.state, queued.requestId).value.state;
 const record = active.records[0], application = active.registry.applications[0];
 const nonFixture = decodeAddress([97, ...Array.from({length: 28}, (_, index) => 141 + index)]);
+const lifecycleCorpusReceipt = checkLifecycleCorpus(await (await fetch('./lifecycle-corpus.json')).json());
+window.lifecycleCorpusReceipt = lifecycleCorpusReceipt;
 
 document.querySelector('#hash').onclick = () => show({address: nonFixture.bytes, digest: nextCommitment(nonFixture).digest});
 document.querySelector('#forge').onclick = () => {

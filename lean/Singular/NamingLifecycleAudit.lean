@@ -6,7 +6,7 @@ open Lean Elab Command
 
 def standard : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 
-elab "#audit_naming_lifecycle" : command => do
+def audit (report : Bool) : CommandElabM Unit := do
   let env ← getEnv
   let some idx := env.getModuleIdx? `Singular.NamingLifecycleStatements
     | throwError "Singular.NamingLifecycleStatements is not imported"
@@ -18,6 +18,10 @@ elab "#audit_naming_lifecycle" : command => do
     let axioms ← collectAxioms name
     let extra := axioms.filter (· ∉ standard)
     unless extra.isEmpty do throwError "{name} depends on {extra}"
+    if report then IO.println s!"AXIOMS {name} {axioms.toList}"
+
+elab "#audit_naming_lifecycle" : command => audit false
+elab "#audit_naming_lifecycle " &"report" : command => audit true
 
 #audit_naming_lifecycle
 

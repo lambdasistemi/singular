@@ -75,6 +75,8 @@ async function checkPage(page, evidence) { const errors=[]; page.on('pageerror',
   assert((await page.locator('#where').innerText()).includes('address 200'),'delete reinsert story');
   await page.screenshot({path:join(evidence,'browser-mobile.png'),fullPage:true});
   await page.goto(new URL('/lifecycle-view.html', page.url()).href, {waitUntil:'networkidle'});
+  const lifecycleReplay=await page.evaluate(()=>window.lifecycleCorpusReceipt);
+  assert(lifecycleReplay.discovered===18&&lifecycleReplay.executed===18,'lifecycle browser Lean replay 18/18');
   await page.click('#hash');
   assert((await page.locator('#result').innerText()).includes('digest'),'lifecycle browser non-fixture hash');
   await page.click('#forge');
@@ -92,10 +94,10 @@ const server = createServer((request, response) => {
   if (request.url === '/' || request.url === '/index.html') {
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     response.end(html);
-  } else if (['/lifecycle-view.html','/lifecycle-view.mjs','/lifecycle.mjs','/naming.mjs','/core.mjs'].includes(request.url)) {
-    const file = request.url.slice(1);
-    readFile(join(root, 'simulator', file)).then(bytes => {
-      response.writeHead(200, {'Content-Type': file.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/javascript; charset=utf-8'});
+  } else if (['/lifecycle-view.html','/lifecycle-view.mjs','/lifecycle.mjs','/naming.mjs','/core.mjs','/lifecycle-corpus.json'].includes(request.url)) {
+    const file = request.url.slice(1), directory = file === 'lifecycle-corpus.json' ? 'lean' : 'simulator';
+    readFile(join(root, directory, file)).then(bytes => {
+      response.writeHead(200, {'Content-Type': file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.json') ? 'application/json' : 'text/javascript; charset=utf-8'});
       response.end(bytes);
     }, error => { response.writeHead(500); response.end(error.message); });
   } else {
