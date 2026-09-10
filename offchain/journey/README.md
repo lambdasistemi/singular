@@ -36,20 +36,38 @@ this document.
    fee 1,000,000 lovelace) with `requestInsertImpl`, signs, submits,
    and observes exactly one request UTxO at the token's request
    address.
-4. **apply.** Acts as the oracle: builds the update with
+4. **verify-absent.** Before the insert is applied, proves the key is
+   absent from the authenticated state: builds the key's exclusion
+   proof, folds it to the root it implies, and compares that root
+   against the root read back from the chain's state datum. Prints
+   `proved absent` with the matched root; any mismatch fails the run.
+5. **apply.** Acts as the oracle: builds the update with
    `updateTokenImpl` (proof from the trie manager), signs, submits,
    and observes the request UTxO being consumed.
-5. **read-back.** Queries the cage address, decodes the state UTxO's
+6. **verify-present and the negative case.** After the apply, proves
+   the key is present with the expected value: replays the applied
+   insert into the proof mirror, binds the claimed value into the
+   inclusion proof, folds it, and compares against the chain-read
+   root (`proved present`). Then asserts a value the state does not
+   hold and requires the fold to differ from that root
+   (`rejected false claim`) — a negative case that would pass is
+   itself a defect and fails the run.
+7. **read-back.** Queries the cage address, decodes the state UTxO's
    inline datum, and prints the resulting on-chain state: the trie
    root (verifying it moved from the boot root — the applied request
    is on chain), max fee, processing window, retract window and stake
    script.
 
+Every verification compares a folded proof against the root read back
+from the chain (D-013) — never against a root this runner derived
+from the same trie.
+
 Each step prints one line: what was done and the observable result
 (transaction id, UTxO counts, roots). Exit status is `0` only when all
-four journey steps succeed; any failure — a rejected transaction, a
-missing observable, a bad blueprint — prints `journey: FAILED: ...`
-and exits non-zero.
+journey steps — including all three verifications — succeed; any
+failure — a rejected transaction, a verification mismatch, a missing
+observable, a bad blueprint — prints `journey: FAILED: ...` and exits
+non-zero.
 
 ## Running it
 

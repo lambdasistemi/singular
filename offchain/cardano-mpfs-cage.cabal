@@ -125,6 +125,7 @@ executable journey
     , cardano-tx-tools:tx-build
     , containers
     , microlens
+    , mts:mpf-write
     , ouroboros-network
     , plutus-tx
     , text
