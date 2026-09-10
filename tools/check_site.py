@@ -188,7 +188,7 @@ for path, page in pages.items():
     for key, segments in spoken.items():
         assert key in page.ids and segments, f"invalid speech heading: {path}: {key}"
         assert all(isinstance(x.get("text"), str) and x["text"] for x in segments)
-for required in ("docs/naming-demo/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html", "docs/design/index.html", "docs/decisions/index.html", "docs/simulation/index.html"):
+for required in ("docs/naming-demo/index.html", "docs/naming-lifecycle/index.html", "specs/protocol/spec/index.html", "docs/prior-art/index.html", "docs/design/index.html", "docs/decisions/index.html", "docs/simulation/index.html"):
     assert (site / required).exists(), required
 home = (site / "index.html").read_text()
 assert 'data-md-color-scheme="default"' in home and 'data-md-color-scheme="slate"' in home
