@@ -141,23 +141,9 @@
           installPhase = "touch $out";
         };
 
-        # -------------------------------------------------------
-        # Haskell build (cage package)
-        # -------------------------------------------------------
-
-        project = import ./haskell/nix/project.nix {
-          inherit CHaP pkgs;
-        };
-
-        components =
-          project.project.hsPkgs.cardano-mpfs-cage.components;
-
-        haskellChecks = import ./haskell/nix/checks.nix {
-          inherit pkgs components;
-          shell = project.project.shell;
-          cardanoNode =
-            cardano-node.packages.${system}.cardano-node;
-        };
+        # (Haskell block deleted: project, components, haskellChecks,
+        #  haskellApps, test-vectors, test-vectors-json all move to
+        #  offchain/flake.nix. Breaks 2-4.)
 
         # Aiken-side checks. Exposed so CI can build them via
         # `.#checks.<sys>.<name>` like the Haskell checks, instead
@@ -167,43 +153,34 @@
           inherit aiken-check;
         };
 
-        haskellApps = import ./haskell/nix/apps.nix {
-          inherit pkgs;
-          checks = haskellChecks;
+        # The Aiken dev shell, bound once so `default` and the
+        # back-compat `aiken` name expose the same shell.
+        aikenShell = pkgs.mkShell {
+          packages = [
+            pkgs.aiken
+            pkgs.just
+            pkgs.lean4
+          ];
         };
-
-        # -------------------------------------------------------
-        # Test vectors (from local Haskell package)
-        # -------------------------------------------------------
-
-        test-vectors = pkgs.runCommand "cage-vectors.ak" { } ''
-          ${pkgs.lib.getExe components.exes.cage-test-vectors} --aiken > $out
-        '';
-
-        test-vectors-json = pkgs.runCommand "cage-vectors.json" { } ''
-          ${pkgs.lib.getExe components.exes.cage-test-vectors} > $out
-        '';
 
       in
       {
         packages = {
           default = plutus-blueprint;
-          inherit plutus-blueprint test-vectors test-vectors-json;
+          inherit plutus-blueprint;
         };
 
-        checks = haskellChecks // aikenChecks;
+        checks = aikenChecks;
 
-        apps = haskellApps;
+        apps = { };
 
         devShells = {
-          aiken = pkgs.mkShell {
-            packages = [
-              pkgs.aiken
-              pkgs.just
-              pkgs.lean4
-            ];
-          };
-          default = project.devShells.default;
+          # NOTE: was `devShells.aiken`; after the split the Aiken
+          # shell is the only (hence default) shell in this flake.
+          # The `aiken` name is kept as an alias for justfile/CI
+          # continuity (`nix develop .#aiken`).
+          default = aikenShell;
+          aiken = aikenShell;
         };
       }
     );

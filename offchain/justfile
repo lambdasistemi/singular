@@ -1,0 +1,37 @@
+# Enter Haskell dev shell (default)
+develop:
+    nix develop
+
+# Build Haskell cage library
+haskell-build:
+    cabal build -O0 all
+
+# Run Haskell E2E tests against a devnet (needs a real cardano-node
+# subprocess; may exceed slice budget — see issue #31 acceptance row).
+# Ordering is manual and nothing enforces it: build the onchain
+# blueprint FIRST (`nix build ../onchain#plutus-blueprint`, or
+# `aiken build` in onchain/) or ../onchain/plutus.json is stale.
+haskell-e2e:
+    MPFS_BLUEPRINT=../onchain/plutus.json cabal test e2e-tests -O0
+
+# IMPURE stopgap (break 5, D-003): regenerates the ONCHAIN golden from
+# the OFFCHAIN generator via host-relative paths. Requires both trees
+# checked out as siblings with aiken on PATH.
+generate-vectors:
+    nix build .#test-vectors --quiet
+    cp -f result ../onchain/validators/cage_vectors.ak
+    aiken fmt ../onchain/validators/cage_vectors.ak
+
+# Check that committed vectors are up to date. This procedure — not
+# `nix flake check` — is the only freshness gate: a green
+# `nix flake check` on either flake asserts NOTHING about vector
+# freshness (D-003). The enforcing CI job is pending milestone
+# arbitration.
+vectors-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just generate-vectors
+    if ! git diff --exit-code -- ../onchain/validators/cage_vectors.ak; then
+        echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit"
+        exit 1
+    fi

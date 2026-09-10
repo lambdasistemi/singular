@@ -32,13 +32,4 @@ in
       hlint lib app test e2e-test
     '';
   };
-  vectors-freshness = pkgs.runCommand "vectors-freshness" {
-    nativeBuildInputs = [ pkgs.aiken ];
-  } ''
-    ${pkgs.lib.getExe components.exes.cage-test-vectors} --aiken > "$TMPDIR/cage_vectors.ak"
-    aiken fmt "$TMPDIR/cage_vectors.ak"
-    diff -u ${../../validators/cage_vectors.ak} "$TMPDIR/cage_vectors.ak" \
-      || (echo "ERROR: committed vectors are stale" && exit 1)
-    touch $out
-  '';
 }
