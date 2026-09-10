@@ -57,6 +57,35 @@ this document.
    root (verifying it moved from the boot root — the applied request
    is on chain), max fee, processing window, retract window and stake
    script.
+8. **negative section — the validators must refuse.** These are
+   **MPFS cage** negative cases, exercised against a real devnet in
+   the same run; no Singular naming behaviour is involved. A second,
+   unapplied insert request is submitted (`reject-request`), the
+   applied insert is replayed into the trie manager so its proofs
+   stand on the root the chain actually has, and the valid oracle
+   update is built but never submitted. Three single-defect mutants
+   of it are derived and each must be refused by the node for the
+   matched reason (a phase-2 `PlutusFailure` naming the expected
+   validator's script hash):
+   - `reject-forged-identity` — the request's `Contribute` redeemer
+     is rewritten to name the request UTxO itself as the state UTxO;
+     it carries no state token, and `request.request.spend` refuses
+     it (the script-integrity hash is re-stamped so ledger phase 1
+     stays valid).
+   - `reject-tampered-output` — the new state output keeps the exact
+     `StateDatum` shape but its root is the byte complement of the
+     root the proofs certify; `state.state.spend` refuses it (same
+     size, so fee and min-UTxO rules still hold).
+   - `reject-missing-witness` — the owner signature is dropped from
+     the body's required signers, so the ledger no longer demands
+     the vkey witness and phase 1 passes; `state.state.spend`'s
+     ownership check refuses it.
+   A transaction accepted by the node fails the run naming the guard
+   that did not hold; a rejection that does not match the expected
+   reason fails the run naming what came back. Afterwards
+   (`reject-control`) the authenticated state is re-read and must be
+   **unchanged** — a rejected evaluation never applies, so the
+   rejected transactions left no trace.
 
 Every verification compares a folded proof against the root read back
 from the chain (D-013) — never against a root this runner derived
