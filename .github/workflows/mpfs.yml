@@ -31,12 +31,14 @@ on:
     branches: [main]
     paths:
       - 'onchain/**'
+      - 'naming-onchain/**'
       - 'offchain/**'
       - '.github/workflows/mpfs.yml'
   pull_request:
     branches: [main]
     paths:
       - 'onchain/**'
+      - 'naming-onchain/**'
       - 'offchain/**'
       - '.github/workflows/mpfs.yml'
 permissions:
@@ -45,6 +47,39 @@ concurrency:
   group: mpfs-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  naming-validators:
+    name: Naming validators build, refuse, and match their pinned identity
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #52: Singular's own naming validators (naming-onchain/,
+      # a separate Aiken tree whose flake.lock is a byte-for-byte copy
+      # of onchain's — the two-flake split pattern of D-018). One
+      # command runs the whole slice gate: `nix flake check` builds
+      # checks.aiken-check (the hermetic Aiken suite — every enforced
+      # condition paired with a refusal, fixtures taken from the
+      # accepted v0.2.0 corpus rows LM01..LM04/LC01..LC06) and
+      # checks.script-identity (the compiled blueprint compared
+      # two-directionally against the committed script-identity.json,
+      # quantified over the validator set, with parameter counts — the
+      # onchain #34 pattern). The copied lock pins the same nixpkgs as
+      # the imported partition, so the Aiken compiler — and therefore
+      # every pinned hash — is directly comparable with onchain's.
+      - name: Run the naming validator suite and identity check
+        working-directory: naming-onchain
+        run: nix flake check
   blueprint:
     name: Aiken blueprint builds first
     runs-on: nixos

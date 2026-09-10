@@ -1,0 +1,27 @@
+# Build the naming blueprint via Nix — print the store path and leave
+# no `result` symlink (Singular's `/result*` ignore is root-anchored).
+build:
+    nix build --no-link --print-out-paths
+
+# Run the Aiken test suite — pinned toolchain (D-006): the aiken binary
+# comes from the nixpkgs this tree's copied flake.lock pins, never
+# whatever aiken happens to be on the caller's PATH.
+test:
+    nix develop --command aiken check
+
+# Enforce compiled script identity: rebuild the blueprint and compare
+# EVERY validator against the committed manifest, in both directions.
+script-identity:
+    nix build --no-link --print-out-paths .#script-identity
+
+# Regenerate script-identity.json from a fresh blueprint build. Run
+# ONLY for a deliberate identity change; the manifest diff is what a
+# reviewer reads. Never hand-edit the manifest.
+script-identity-regen:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
+    blueprint="$(nix build --quiet --no-link --print-out-paths .#plutus-blueprint)"
+    jq '{schema: 1, compiler: .preamble.compiler.version, plutus_version: .preamble.plutusVersion, validators: [.validators[] | {title, hash, parameters: ((.parameters // []) | length)}]}' "$blueprint" > script-identity.json
+    echo "wrote script-identity.json: $(jq '.validators | length' script-identity.json) validators, compiler $(jq -r '.compiler' script-identity.json)"
+    echo "review the diff: git diff -- script-identity.json"

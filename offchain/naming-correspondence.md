@@ -32,8 +32,8 @@ identities below are bound together at initialization or not at all.
 | abstract identity (LI row) | intended concrete ledger realisation | status |
 |---|---|---|
 | `registry` (1) | The singleton registry state UTxO held at the naming application validator, carrying the registry state token; the abstract `registry` nat indexes it (the state token's name/incarnation). | status: realised (#47) — the UTxO `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf#0` at the applied state script address, carrying exactly 1 registry token named `0xc1f1c9b09607e0f63d1580f3e9d3eb88b7d8a208f5a3d4be01b8fd009eebb632` |
-| `applicationPolicy` (7) | The `PolicyId` (script hash) of the application minting policy compiled from the naming blueprint — mints the insert-request token on `insert` and burns it when the request folds or is cancelled. | intended-but-unproven (#47) — not exercised by LI01 (`applicationMint` is false); its applied hash `0x8c7f99ec95884024eb74a500c8af1def3e60ade9ca64241f4c94e869` was named by derivation only |
-| `representativePolicy` (8) | The `PolicyId` (script hash) of the representative minting policy — one representative NFT per naming record; `assetScope` is the record's incarnation, so reuse mints a fresh representative under the same policy. | intended-but-unproven (#47) — not exercised by LI01 (`representativeMint` is false); the frozen partition contains no representative minting policy at all, so this realisation has no object to bind to yet |
+| `applicationPolicy` (7) | The `PolicyId` (script hash) of the application minting policy compiled from the naming blueprint — mints the insert-request token on `insert` and burns it when the request folds or is cancelled. | status: bound (#52) — authored as the `mint` purpose of the naming application validator in `naming-onchain/` (one script hash serving both purposes, the imported partition's state-script pattern): pinned hash `b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff` (`naming-onchain/script-identity.json`, 0 parameters, so the pinned hash is the applied address). The policy branch currently mints and binds **withdraw approvals** (asset name = the refund destination it binds, minted on the controller's signature — the `LC03` "separate cancellation approval"); insert-request token minting remains unrealised until the insert flow is executed, and is recorded as the seam in the t52 report |
+| `representativePolicy` (8) | The `PolicyId` (script hash) of the representative minting policy — one representative NFT per naming record; `assetScope` is the record's incarnation, so reuse mints a fresh representative under the same policy. | status: bound (#52) — authored in `naming-onchain/` and pinned as `representative.representative.mint` `6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc` (`naming-onchain/script-identity.json`, 1 parameter: the application policy hash). It never moves an asset on its own authority: a mint or burn must ride a transaction spending a naming claim or record at the application validator, and the application spend's own redeemer (`Fold`/`Retire`) must name exactly the representatives moved, each at exactly ±1 |
 | `validatorScript` (12) | The compiled registry/application spending validator's script identity, from the pinned partition in `onchain/script-identity.json` (read at run time via `MPFS_BLUEPRINT`, never baked into the offchain tree). LI08 refuses a substituted validator script, so the identity is part of the initialization binding. | status: realised (#47) — the applied `state.state` script `0x874e476d7408de769e07a4ebf34f3c7379ebd7bd35ab8aad426b41d5` (derived from the pinned unapplied `0x64d1afbf…` with `previousPolicies=[]`), read back from the registry UTxO's address credential and carried as the tx's only script witness; the same script hash is the bootstrap minting policy |
 | `canonicalSeed` (400) | The canonical seed UTxO: a unique outRef consumed by the initialization transaction (`seedConsumed: true`). Uniqueness (LI02, LI03, LI06) is enforced by *spending* it — a second registry can never consume it again — not by referencing it. | status: realised (#47) — the lexically first UTxO of the devnet genesis wallet, consumed by tx `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf`; bound on chain by the registry token name, which is SHA-256 of the seed outRef |
 
@@ -92,3 +92,84 @@ naming expected 1 vs observed 0. No representative minting policy
 exists in the blueprint at all, so the claim rows
 (`representativeMint: true`) cannot execute against this partition
 without new validator work.
+
+## What t52 bound (2026-09-10)
+
+Issue #52 authored Singular's naming validators in their own tree,
+`naming-onchain/` (own `aiken.toml`, own flake, `flake.lock` copied
+byte-for-byte from `onchain/` — the two-flake split pattern of D-018,
+so the pinned Aiken toolchain and therefore every pinned hash is
+comparable with the imported partition's). Both scripts are Aiken-level
+only: the `LM`/`LC` rows are still not executed on a ledger — that is
+the next slice, which now has something real to execute against.
+
+**`applicationSpend` — the naming application validator is realised and
+enforces the `LM` rows.** Its spend purpose takes the four-field naming
+datum in the accepted encoding (double `constr(0)` wrap, option-encoded
+payment destination, 32-byte commitment, 28-byte quorum members,
+threshold 1..distinct members — mirrored function for function from the
+`Naming.Datum` codec; a fifth field refuses). Maintenance (`Maintain`)
+requires the control address's payment key hash among the transaction
+signatories and preserves control address, next-control commitment and
+retirement quorum exactly; only the payment destination is maintainable
+(`LM01` accepts, `LM02`/`LM03`/`LM04` refuse). Fold freezes the
+four-field datum into the record; Retire refuses any continuation
+carrying the same datum.
+
+**The `LC` rows needed new script code — the MPFS request/retract
+machinery cannot carry cancellation.** Read from `onchain/validators/`
+(source, not memory): (1) the MPFS `Request` datum has no refund field
+— `requestOwner`, `tip`, `submitted_at` — so `LC02`'s stored-refund
+comparison is not expressible; (2) `Retract` authorizes by the request
+owner's signature, while the `LC` rows present **no signers** — the
+authorization in the contract is a separate withdraw approval, which
+MPFS has no concept of (`LC03`'s `withdraw-binding`); (3) what MPFS
+*does* give for free is `request-unavailable`: a consumed UTxO cannot
+be re-spent, which is the ledger shape of `LC04`/`LC06`. The refund
+comparison therefore lives in the new application validator's
+`Cancel` path: the withdraw approval rides the claim under the
+application policy with the stored refund destination as its asset
+name; `Cancel` compares the presented refund against that binding,
+requires the approval burned exactly once, refuses any continuation
+record, and requires the refund paid to the bound destination.
+
+**`nativeSpend` — one recut this realisation implies, flagged for the
+execution slice.** The record's intended `nativeSpend` realisation (a
+phase-1 script spend, no Plutus spending witness) cannot enforce the
+refund comparison: a native script cannot read an asset name, a datum,
+or an output address, so a phase-1-only cancellation either trusts the
+spender or refuses nothing — and an always-passing claim address is
+theftable. Under the t52 realisation, executing `LC` will present as an
+application spend (plus the approval burn), i.e. the `nativeSpend: true`
+flag is realised as "no Plutus spend on the *request* output", not "no
+Plutus anywhere". Recutting the flag's concrete witness is within this
+epic's mandate (the v0.2.0 partition is abstract); the row's accepted
+behaviour is unchanged.
+
+**What the four-field datum cannot carry, said precisely.** "At most one
+outstanding representative per record identity across time" is not
+expressible in a minting policy alone — a name can be reminted after
+burn, and the datum has no fifth field to carry a counter. The policy
+enforces what a policy can (mints bound to application-spend `Fold`
+redeemers, exact quantities, nothing else under the policy); outstanding
+uniqueness must come from the registry state (the MPF maps spellings to
+commitments) at execution time. Likewise, fold-time issuance of the
+withdraw approval into the claim's value, and the insert-request token
+itself, belong to the insert/fold execution flow — the mint purpose's
+`WithdrawApproval` branch binds the destination and requires the
+controller's signature, and the deeper controller-to-record binding
+lands with the flow that constructs those transactions.
+
+**NOTE-001 refresh (2026-09-10).** The epic owner's NOTE-001 caught the
+`LC04`/`LC06` rows claimed but untested — and the check surfaced a real
+gap: `Fold` preserved the claim's value wholesale, so a withdraw
+approval would have flowed into the record and a folded claim *could be
+cancelled*. `Fold` now consumes the approval (burned exactly once, the
+record inheriting the claim's value minus it), making this record's own
+realisation sentence — the application policy "burns it when the
+request folds **or** is cancelled" — true on chain. `LC04` and `LC06`
+are enforced by construction and observed refusing
+(`lc04_folded_claim_cancellation_refuses`,
+`lc06_cancellation_replay_refuses`); the application hash moved to
+`b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff` and the
+manifest diff records it.
