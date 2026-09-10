@@ -1,0 +1,145 @@
+cabal-version: 3.4
+name:          cardano-mpfs-cage
+version:       0.1.0.0
+synopsis:      MPFS cage validator types, tx builders, and E2E tests
+description:
+  PlutusData types matching the Aiken cage validator,
+  transaction builders using the TxBuild DSL from
+  cardano-node-clients, JSON/Aiken test vector generator,
+  and devnet E2E tests. Single source of truth for all
+  Haskell cage code.
+
+license:       Apache-2.0
+license-file:  LICENSE
+author:        Paolo Veronelli
+maintainer:    paolo.veronelli@gmail.com
+category:      Cardano
+build-type:    Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+library
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   lib
+  build-depends:
+    , aeson                  >=2.1  && <2.3
+    , base                   >=4.14 && <5
+    , bytestring             >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-strict-containers
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers             >=0.6  && <0.8
+    , crypton
+    , memory
+    , microlens
+    , mts:mpf-write
+    , plutus-core
+    , plutus-ledger-api
+    , plutus-tx
+    , text                   >=2.0  && <2.2
+    , time
+
+  exposed-modules:
+    Cardano.MPFS.Cage.AssetName
+    Cardano.MPFS.Cage.Blueprint
+    Cardano.MPFS.Cage.Config
+    Cardano.MPFS.Cage.Ledger
+    Cardano.MPFS.Cage.Proof
+    Cardano.MPFS.Cage.Provider
+    Cardano.MPFS.Cage.Trie
+    Cardano.MPFS.Cage.Trie.Pure
+    Cardano.MPFS.Cage.Trie.PureManager
+    Cardano.MPFS.Cage.TxBuilder.Boot
+    Cardano.MPFS.Cage.TxBuilder.End
+    Cardano.MPFS.Cage.TxBuilder.Internal
+    Cardano.MPFS.Cage.TxBuilder.Reject
+    Cardano.MPFS.Cage.TxBuilder.Request
+    Cardano.MPFS.Cage.TxBuilder.Retract
+    Cardano.MPFS.Cage.TxBuilder.Sweep
+    Cardano.MPFS.Cage.TxBuilder.Update
+    Cardano.MPFS.Cage.Types
+
+executable cage-test-vectors
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   app/test-vectors
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , aiken-codegen
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-mpfs-cage
+    , crypton
+    , lens
+    , memory
+    , mts:mpf-write
+    , plutus-core
+    , plutus-tx
+    , text
+
+test-suite cage-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  other-modules:    Cardano.MPFS.Cage.TypesSpec
+  build-depends:
+    , base               >=4.14 && <5
+    , bytestring
+    , cardano-mpfs-cage
+    , hspec
+    , plutus-core
+    , plutus-tx
+    , QuickCheck
+
+test-suite e2e-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   e2e-test
+  main-is:          main.hs
+  other-modules:    Cardano.MPFS.Cage.E2E.CageSpec
+  build-depends:
+    , async
+    , base
+    , bytestring
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , containers
+    , hspec
+    , microlens
+    , ouroboros-network
+
+  ghc-options:      -threaded -with-rtsopts=-N
