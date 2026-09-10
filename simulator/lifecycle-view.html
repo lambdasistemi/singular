@@ -112,7 +112,7 @@
   <h2>Boundaries you can see</h2>
   <p><strong>No death oracle.</strong> The quorum route uses an explicit threshold of configured signer key hashes. It infers nothing about death, incapacity, time, or identity, and it does not require the controller signer.</p>
   <p><strong>Raw-address payment limit.</strong> Retiring a name prevents name-based resolution, but it cannot prevent someone from sending directly to a previously saved raw Cardano address. The model preserves canonical binary base or enterprise addresses as routing data; it does not construct a transaction, prove wallet ownership, execute a payment, or inspect a ledger.</p>
-  <p><strong>No claim cancellation.</strong> Cancellation authority, recipient, refund value, fee treatment, and signer are unresolved, so this interface exposes no naming-claim cancellation action. This does not suppress the required refusal attempt against a retirement request.</p>
+  <p><strong>Claim cancellation is separate.</strong> The <a href="./index.html#naming-card">m1-naming profile</a> can withdraw an unfulfilled claim with separate cancellation approval. The request stores its refund address when queued, and withdrawal must copy it; redirect, Insert-certification-only, post-fold, and replay attempts are refused. This does not weaken the required refusal against withdrawing a retirement request, and it invents no fee, deposit, price, bond, or refund-value schedule.</p>
 </section>
 
 <section class="card">

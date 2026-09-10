@@ -11,11 +11,12 @@ A reviewer who wants to play a naming claim in the docs rather than read a propo
 Open the simulator, select **m1-naming** under *First-release naming profile*, then:
 
 1. **Queue the first claim** for the demo spelling `alice`. The claim waits with an application approval; the key stays absent, because approval reserves nothing.
-2. **Queue a competing claim** for the same spelling. Two claims for `alice` may both sit pending.
-3. **Fold the first pending claim.** The first valid absent-key fold succeeds: `alice` becomes Active, the representative is minted, and the active record carries the four certified fixture fields unchanged.
-4. **Fold the second pending claim.** It is refused with `occupied-key` — uniqueness is decided only when a certified Insert folds.
-5. **Resolve alice** with an authenticated view. The observation is `active` carrying the payment destination, control address, next-control commitment, and retirement quorum from the certified claim.
-6. **Submit a crafted Delete.** The naming transition accepts the generic action shape, so a crafted generic Delete is parsed and then refused by name: `naming-no-delete`.
+2. **Withdraw that pending claim.** A separate cancellation approval copies the refund address stored when the claim was queued. Redirecting it, relying on Insert certification alone, cancelling after fold, or replaying the consumed cancellation is refused.
+3. **Queue two claims** for the same spelling. Two claims for `alice` may both sit pending.
+4. **Fold the first pending claim.** The first valid absent-key fold succeeds: `alice` becomes Active, the representative is minted, and the active record carries the four certified fixture fields unchanged.
+5. **Fold the second pending claim.** It is refused with `occupied-key` — uniqueness is decided only when a certified Insert folds.
+6. **Resolve alice** with an authenticated view. The observation is `active` carrying the payment destination, control address, next-control commitment, and retirement quorum from the certified claim.
+7. **Submit a crafted Delete.** The naming transition accepts the generic action shape, so a crafted generic Delete is parsed and then refused by name: `naming-no-delete`.
 
 ```mermaid
 sequenceDiagram
@@ -24,6 +25,8 @@ sequenceDiagram
   participant Registry
   Reviewer->>Naming: queue claim alice (first)
   Note over Naming: approval reserves nothing; alice stays absent
+  Reviewer->>Naming: separately authorize withdrawal
+  Naming-->>Reviewer: copy stored refund address; alice stays absent
   Reviewer->>Naming: queue claim alice (competing)
   Reviewer->>Naming: fold the first claim
   Naming->>Registry: Insert on absent key
@@ -40,6 +43,9 @@ Every refusal names its intended condition. A generic exception is a defect.
 
 | Attempt | Refusal you should see |
 | --- | --- |
+| Redirect a pending claim's refund | `withdraw-refund-address` |
+| Present only the original Insert certification | `withdraw-binding` |
+| Cancel a folded claim or replay a consumed cancellation | `request-unavailable`, attributed to the attempted condition |
 | Fold the duplicate after the first Insert committed | `occupied-key` |
 | Craft a Delete (or name-release, or reuse) straight at the naming transition | `naming-no-delete` |
 | Queue an Insert with the application approval rejected | `application-approval` |
@@ -75,7 +81,7 @@ Finite checks are finite: the corpus replays measure the transcription on its ro
 | Next-control commitment | 32-byte domain-separated BLAKE2b digest — the commitment, not a revealed next address |
 | Retirement quorum | payment-key-hash members and a threshold, present as structure |
 
-Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, or refund rule is invented anywhere in the profile. `alice` maps to one frozen demo key. Continue to the [playable lifecycle](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Naming-claim cancellation remains on hold and has no button; retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
+Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, deposit, or refund-value rule is invented anywhere in the profile. `alice` maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the [playable lifecycle](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
 
 ## Status of this candidate
 
