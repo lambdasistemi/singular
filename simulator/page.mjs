@@ -39,8 +39,8 @@ function wire(){
 }
 function numFrom(text){if(!/^\d+$/.test(text)||!Number.isSafeInteger(Number(text)))throw Error('invalid-nat/batch-order');return Number(text);}
 /* ---- naming profile (m1-naming · unaccepted candidate) ---- */
-const NAMING_FIXTURE={paymentDestination:70,controlAddress:50,nextControlCommitment:80,retirementQuorum:{members:[50,51,52],threshold:2}};
-const NAMING_OTHER={...NAMING_FIXTURE,controlAddress:60,paymentDestination:null};
+const NAMING_FIXTURE=structuredClone(aliceFixture);
+const NAMING_OTHER=structuredClone(otherFixture);
 const naming={engine:null,state:null,pending:[]};
 const namingActive=()=>$('naming-profile').value==='m1-naming';
 const namingSay=text=>{$('naming-verdict').textContent=text;};

@@ -64,7 +64,9 @@ const repShape = r => r && typeof r === 'object' && !Array.isArray(r)
   && ['registry', 'key', 'policy', 'assetScope'].every(k => nat(r[k]));
 const quorumShape = q => q && typeof q === 'object' && !Array.isArray(q)
   && exactObject(q, ['members', 'threshold'])
-  && Array.isArray(q.members) && q.members.every(nat) && nat(q.threshold);
+  && Array.isArray(q.members) && q.members.every(member => bytesShape(member) && member.length === 28)
+  && nat(q.threshold) && q.threshold > 0
+  && q.threshold <= new Set(q.members.map(member => JSON.stringify(member))).size;
 const fixtureShape = f => f && typeof f === 'object' && !Array.isArray(f)
   && exactObject(f, ['paymentDestination', 'controlAddress', 'nextControlCommitment', 'retirementQuorum'])
   && (f.paymentDestination === null || canonicalAddress(f.paymentDestination))
@@ -84,10 +86,13 @@ function validateNaming(state) {
 
 export const wellFormedFixture = f => fixtureShape(f)
   && (f.paymentDestination === null || !equal(f.paymentDestination, f.controlAddress));
+export const quorumKeyHash = start => Array.from({length: 28}, (_, index) => start + index);
 export const aliceFixture = {paymentDestination: destinationAddress, controlAddress: controllerAddress,
-  nextControlCommitment: nextControllerCommitment, retirementQuorum: {members: [50, 51, 52], threshold: 2}};
+  nextControlCommitment: nextControllerCommitment,
+  retirementQuorum: {members: [quorumKeyHash(1), quorumKeyHash(29), quorumKeyHash(57)], threshold: 2}};
 export const otherFixture = {paymentDestination: null, controlAddress: otherControllerAddress,
-  nextControlCommitment: nextControllerCommitment, retirementQuorum: {members: [60, 61], threshold: 2}};
+  nextControlCommitment: nextControllerCommitment,
+  retirementQuorum: {members: [quorumKeyHash(85), quorumKeyHash(113)], threshold: 2}};
 
 const namingEntry = (s, k) => s.entries.find(e => e.key === k) ?? { key: k, value: null, incarnation: 0 };
 const namingRepresentative = (s, k) => ({ registry: s.config.registry, key: k, policy: s.config.representativePolicy, assetScope: s.config.reuseIdentity ? 0 : namingEntry(s, k).incarnation });

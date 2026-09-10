@@ -136,4 +136,38 @@ theorem canonical_consumer_initialization_accepts :
     initializeConsumer namingConsumerBinding canonicalInitialization = .ok () := by
   rfl
 
+theorem canonical_seed_is_consumed_once :
+    initializeConsumerTransition namingConsumerBinding {} canonicalInitialization =
+      .ok { consumedSeeds := [400] } ∧
+    initializeConsumer namingConsumerBinding canonicalInitialization = .ok () ∧
+    initializeConsumerTransition namingConsumerBinding canonicalInitializedState
+      canonicalInitialization = .error "canonical-seed-consumed" := by
+  constructor
+  · rfl
+  constructor <;> rfl
+
+theorem second_seed_rival_registry_refused :
+    initializeConsumer namingConsumerBinding rivalRegistryInitialization =
+      .error "canonical-seed" := by
+  rfl
+
+theorem substituted_registry_refused :
+    initializeConsumer namingConsumerBinding substitutedRegistryInitialization =
+      .error "registry-authenticity" := by
+  rfl
+
+theorem substituted_policy_refused :
+    initializeConsumer namingConsumerBinding substitutedPolicyInitialization =
+      .error "application-policy" := by
+  rfl
+
+theorem executing_witness_is_derived_per_example :
+    (lifecycleExecutingWitness maintainClear).applicationSpend = true ∧
+    (lifecycleExecutingWitness recoverWithNext).requiredSigners = [nextControllerAddress] ∧
+    (lifecycleExecutingWitness retirementByQuorum).quorumSigners =
+      [quorumKeyHash 1, quorumKeyHash 29] ∧
+    (lifecycleExecutingWitness (.completeRetirement 4)).nativeSpend = true ∧
+    (lifecycleExecutingWitness (.completeRetirement 4)).representativeMint = true := by
+  decide
+
 end Singular.NamingLifecycleStatements

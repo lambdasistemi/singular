@@ -39,6 +39,8 @@ NAMING_IMPORT = re.compile(r'^import Singular\.Naming\w*\n?', re.M)
 
 LIFECYCLE_IDS = {
     'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
+    'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
+    'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',
     'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
     'LM03-maintenance-field-tamper-refused', 'LO01-retirement-pending-visible',
     'LO02-retirement-over-visible', 'LR01-recovery-accepts',
@@ -47,6 +49,8 @@ LIFECYCLE_IDS = {
     'LR06-forged-public-digest-refused', 'LT01-controller-retirement-accepts',
     'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
     'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
+    'WD01-four-field-roundtrip', 'WD02-datum-hash-refused',
+    'WD03-two-destinations-refused',
 }
 
 
@@ -146,31 +150,40 @@ def main():
     naming_records = statement_inventory(root / 'lean/Singular/NamingStatements.lean', 'Singular.NamingStatements.')
     lifecycle_records = statement_inventory(root / 'lean/Singular/NamingLifecycleStatements.lean',
                                             'Singular.NamingLifecycleStatements.')
+    wire_records = statement_inventory(root / 'lean/Singular/NamingWireStatements.lean',
+                                       'Singular.NamingWireStatements.')
     generic_names = {r['name'] for r in generic_records}
     naming_names = {r['name'] for r in naming_records}
     lifecycle_names = {r['name'] for r in lifecycle_records}
+    wire_names = {r['name'] for r in wire_records}
     assert not generic_names & naming_names and not generic_names & lifecycle_names \
-        and not naming_names & lifecycle_names, 'theorem declaration inventories collide'
+        and not naming_names & lifecycle_names and not wire_names & (generic_names | naming_names | lifecycle_names), \
+        'theorem declaration inventories collide'
 
     generic_manifest_path = root / 'lean/theorem-debt.json'
     naming_manifest_path = root / 'lean/naming-theorem-debt.json'
     lifecycle_manifest_path = root / 'lean/lifecycle-theorem-debt.json'
+    wire_manifest_path = root / 'lean/wire-theorem-debt.json'
     if args.export:
         generic_manifest_path.write_text(json.dumps(generic_records, indent=2) + '\n')
         naming_manifest_path.write_text(json.dumps(naming_records, indent=2) + '\n')
         lifecycle_manifest_path.write_text(json.dumps(lifecycle_records, indent=2) + '\n')
+        wire_manifest_path.write_text(json.dumps(wire_records, indent=2) + '\n')
     generic_manifest = json.loads(generic_manifest_path.read_text())
     naming_manifest = json.loads(naming_manifest_path.read_text())
     lifecycle_manifest = json.loads(lifecycle_manifest_path.read_text())
+    wire_manifest = json.loads(wire_manifest_path.read_text())
     assert generic_records == generic_manifest, 'exact named theorem/debt manifest mismatch'
     assert naming_records == naming_manifest, 'exact named naming theorem/debt manifest mismatch'
     assert lifecycle_records == lifecycle_manifest, 'exact named lifecycle theorem/debt manifest mismatch'
+    assert wire_records == wire_manifest, 'exact named wire theorem/debt manifest mismatch'
 
     report = axiom_report(root, args.axioms_report)
-    assert set(report) == generic_names | naming_names | lifecycle_names, 'compiled report names differ from the manifests'
+    assert set(report) == generic_names | naming_names | lifecycle_names | wire_names, 'compiled report names differ from the manifests'
     check_records(generic_records, report, 'model-check')
     check_records(naming_records, report, 'naming-check')
     check_records(lifecycle_records, report, 'lifecycle-check')
+    check_records(wire_records, report, 'wire-check')
 
     binary = args.binary or root / '.lake/build/bin/singular-corpus'
     corpus = json.loads(subprocess.check_output([str(binary)]))
@@ -212,10 +225,11 @@ def main():
     lifecycle_binary = args.lifecycle_binary or root / '.lake/build/bin/lifecycle-corpus'
     lifecycle_corpus = json.loads(subprocess.check_output([str(lifecycle_binary)]))
     assert lifecycle_corpus['schema'] == 'singular-naming-lifecycle-corpus-v1'
+    lifecycle_corpus['wireTheoremManifestSha256'] = digest(wire_manifest_path.read_bytes())
     corpus_envelope(lifecycle_corpus, all_sources, lifecycle_manifest_path,
                     'lifecycleStatementsSha256', 'lean/Singular/NamingLifecycleStatements.lean',
                     'lean/Singular/NamingLifecycle.lean', 'lean/LifecycleMain.lean')
-    lifecycle_ids = [row['id'] for section in ('steps', 'resolutions', 'initializations', 'registrations')
+    lifecycle_ids = [row['id'] for section in ('steps', 'resolutions', 'initializations', 'registrations', 'wire')
                      for row in lifecycle_corpus[section]]
     assert len(lifecycle_ids) == len(set(lifecycle_ids)), 'duplicate lifecycle corpus identity'
     assert set(lifecycle_ids) == LIFECYCLE_IDS, 'exact lifecycle corpus identities differ'
