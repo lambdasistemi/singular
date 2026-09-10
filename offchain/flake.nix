@@ -103,6 +103,20 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The LI01 canonical-initialization runner (issue #47),
+        # wrapped the same way as journey: the locked cardano-node
+        # on its own PATH, no store path baked in.
+        li01 = pkgs.runCommand "li01" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.li01.meta or { }) // {
+            mainProgram = "li01";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.li01} $out/bin/li01 \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
         # -------------------------------------------------------
@@ -134,6 +148,10 @@
           journey = {
             type = "app";
             program = pkgs.lib.getExe journey;
+          };
+          li01 = {
+            type = "app";
+            program = pkgs.lib.getExe li01;
           };
         };
 

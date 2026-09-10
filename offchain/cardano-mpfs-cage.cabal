@@ -132,6 +132,46 @@ executable journey
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The LI01 canonical-initialization runner (issue #47): executes
+-- the contract row LI01-canonical-initialization-accepts on a real
+-- devnet, reads the resulting state, binding, checkpoint datum and
+-- witness shape back from the chain, and fails non-zero on any
+-- mismatch. Source lives in journey/li01/; every imported Haskell
+-- module stays untouched.
+executable li01
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/li01 ../naming/src
+  main-is:          Main.hs
+  other-modules:
+    Naming.Datum
+    Naming.Wire
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
