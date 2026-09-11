@@ -148,6 +148,21 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The LT retirement rows (issue #66), wrapped the same way as
+        # recovery-rows: the locked cardano-node on its own PATH, no store
+        # path baked in. The naming-onchain blueprint comes from the caller
+        # at run time (NAMING_BLUEPRINT).
+        retirement-rows = pkgs.runCommand "retirement-rows" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.retirement-rows.meta or { }) // {
+            mainProgram = "retirement-rows";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.retirement-rows} $out/bin/retirement-rows \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # The seven wrong canonical initialization refusals (issue
         # #50), wrapped the same way as journey, li01 and naming-rows:
         # the locked cardano-node on its own PATH, no store path baked
@@ -185,7 +200,8 @@
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`
           # hit the same derivation. Issue #50: same for li-refusals.
           # Issue #62: same for recovery-rows.
-          inherit naming-rows li-refusals recovery-rows;
+          # Issue #66: same for retirement-rows.
+          inherit naming-rows li-refusals recovery-rows retirement-rows;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -213,6 +229,10 @@
           recovery-rows = {
             type = "app";
             program = pkgs.lib.getExe recovery-rows;
+          };
+          retirement-rows = {
+            type = "app";
+            program = pkgs.lib.getExe retirement-rows;
           };
           li-refusals = {
             type = "app";

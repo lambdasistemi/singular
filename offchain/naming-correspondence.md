@@ -253,3 +253,75 @@ with a canonical name) as a stand-in preserving the single-token
 shape; the full representative-policy NFT flow stays as bound in #52.
 The registry binding on ledger is the application validator hash
 itself. Retirement has no rows here.
+
+## What t66 executed (2026-09-11)
+
+Issue #66 put retirement initiation on a real ledger: the seven
+in-scope rows `LT01..LT03`, `LT05`, `LT06`, `LT08`, `LT09` executed
+against Singular's naming application validator (pinned application
+hash `58d3d792a9511bdcdfad9359be78e30496a22cfd5618dc4da0035345`,
+0 parameters, so the pinned hash is the applied address — the
+`t62`-bound identity moved from `c368590a91…` by the authorised
+`Retire` and the hardcoded custody hash) and the new completion-only
+custody script (pinned `retirement_custody.retirement_custody.spend`
+`0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954`,
+0 parameters, so its hash is the address `Retire` must place the
+representative at).
+
+**`applicationSpend` — the retirement spend is realised.** Its spend
+purpose takes the four-field naming datum in the accepted encoding and
+a `Retire { representatives }` redeemer (index 3; `Maintain`/`Cancel`/
+`Fold` keep their indices and `Recover` stays at 4, or the `lmlc`
+encodings break). In model order it demands the controller's payment
+key or at least `threshold` distinct stored quorum members among the
+required signers (`LT03` — one distinct signature short — and the
+duplicate-member shape refused on `retirement-authorization`;
+`eraseDups` is load-bearing), the record's single representative under
+the application policy land at the custody script address (`LT08`,
+authorised but sent anywhere else, refused on `retirement-request`;
+creating that output executes no receiving script, so the refusal
+comes from the `Retire` spend), and no continuation of the record.
+Observed 2026-09-11: three setup transactions created accept1
+`e1fdb82862…#0`, accept2 `a8fc578de…#0` and refusals `5597695800…#0` at
+the application validator, each with the representative
+`0x6015ace1e578f773adc5e0005a660dc3de6e60cbcd702e0ce0d0abed96`
+under the application policy, control distinct from the two-member
+quorum at threshold 2; `LT01` accepted `72a6034043…` (required signers
+exactly the controller, no quorum member) and `LT02` accepted
+`03b2120134…` (required signers exactly the two quorum members, no
+controller); every refusal came back phase-2 naming the application
+hash; `LT09` replayed `LT01`'s exact transaction against the consumed
+record and the ledger itself refused the spent output in phase 1
+(`All inputs are spent`, the `LC06` precedent — recorded as exactly
+that, not as a validator refusal). A fourth setup record carries a
+stored quorum naming one member twice and a second once at threshold
+two; the duplicated member alone is refused on
+`retirement-authorization`, binding the distinctness.
+
+**`requiredSigners` and `quorumSigners` — the retirement authorisation
+is realised.** The controller route needs no quorum signature and the
+quorum route needs no controller signature: each is shown sufficient
+alone from the chain. `LT05` and `LT06` are not retirements — quorum-
+signed maintenance changing the control fields and the payment
+destination — and are refused on `controller-signature` by the
+existing `Maintain` path with no new check, proving quorum power is
+bounded to ending the name.
+
+**`retirement-request` — custody is realised and proved from the
+chain.** After `LT01` and `LT02` the representative is observed at the
+custody script address in the accepting transaction's own outputs and
+the consumed record is observed gone from the application validator.
+The custody script itself carries a single spending path — completion,
+which burns what it holds exactly once and requires no signature —
+and no withdrawal, redirection or `Delete` path; spending it
+(`LT04` completion, `LT07` withdrawal refusal) is the next child and
+has no rows here.
+
+**Limit (t66).** The representative for this slice is still the
+application-policy stand-in from #62 (minted via the existing
+`WithdrawApproval` branch with a canonical name), not the real
+representative-policy NFT flow: the `Retire` redeemer names it but the
+validator binds the chain-carried token, and no mint or burn under
+either policy rides the retirement. The real flow — `Fold` minting the
+NFT under the representative policy, retirement preserving it into
+custody, completion burning it there — stays as bound in #52.

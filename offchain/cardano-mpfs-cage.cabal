@@ -250,6 +250,44 @@ executable recovery-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The LT retirement rows (issue #66): executes the in-scope contract rows
+-- LT01..LT03, LT05, LT06, LT08, LT09 on a real devnet against Singular's
+-- naming application validator and the new completion-only custody script,
+-- attributes every refusal to its phase-2 reason (LT09's replay to the
+-- ledger's own phase-1 refusal), proves custody and the record's end from
+-- the chain after LT01 and LT02, and fails non-zero on any mismatch.
+-- Source lives in journey/retirement/; the naming codec comes from the
+-- library and every imported Haskell module stays untouched.
+executable retirement-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/retirement
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 -- The seven wrong canonical initialization refusals (issue #50):
 -- executes the contract rows LI02..LI08 on a real devnet against the
 -- frozen partitions (the applied state script for the bootstrap, the

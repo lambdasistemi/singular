@@ -76,6 +76,14 @@ pub const redirected_hash =
 
 pub const representative_name = #"5265700102030405060708090a0b0c0d"
 
+/// The retirement custody script hash (issue #66): matches
+/// `application.retirement_custody_hash` — the address a `Retire` may
+/// place the representative at.
+pub const custody_hash =
+  #"0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954"
+
+pub const custody_address = address.from_script(custody_hash)
+
 /// Test stand-in for the compiled application script hash.
 pub const app_policy = "application_policy"
 

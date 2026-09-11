@@ -1,8 +1,10 @@
-# Recover control on a real ledger
+# Recover control and retire names on a real ledger
 
 ## Who this is for
 
 A holder of an active name who has lost the everyday control key and planned ahead by committing to a next controller in advance. This page shows how that holder spends the record with the address committed to earlier, signs with that address's payment key alone, and sees the chain hand over control — then maintains the name normally under the new key while the old key stops working.
+
+It is also for a holder who wants to end a name permanently, and for the quorum fixed at registration that can end it without the holder. Either route moves the representative into completion-only custody — a script with no withdrawal path — and neither route can be turned into a takeover or a payment redirection.
 
 ## What you can do
 
@@ -53,8 +55,47 @@ sequenceDiagram
   App->>Successor: same representative, new controller, fresh digest
 ```
 
-The commitment is `BLAKE2b-256("singular/naming/next-control/v1" || 0x00 || canonical-address-bytes)` over the whole binary address including header and network. Only canonical base and enterprise addresses with payment-key credentials are supported. Retirement has no ledger rows in this slice; it arrives as a later step and is not runnable here.
+The commitment is `BLAKE2b-256("singular/naming/next-control/v1" || 0x00 || canonical-address-bytes)` over the whole binary address including header and network. Only canonical base and enterprise addresses with payment-key credentials are supported.
+
+## How retirement ends a name
+
+Run the seven retirement rows against a real devnet node from `offchain/`:
+
+```sh
+cd offchain
+blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#retirement-rows
+```
+
+The private shallow `TMPDIR` keeps the devnet node database away from other work on the same host and keeps its socket inside the address length limit. The blueprint comes from the checked-out commit at run time; no store path is baked in and no dev shell is used.
+
+Two failure controls ship with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:
+
+```sh
+TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" RETIREMENT_CONTROL=valid nix run --quiet .#retirement-rows
+TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" RETIREMENT_CONTROL=wrong-reason nix run --quiet .#retirement-rows
+```
+
+Both exit non-zero by design, after executing rows.
+
+```mermaid
+flowchart LR
+  Record[Active record<br/>controller plus registration quorum] -->|controller signs alone| Custody[Completion-only custody<br/>representative held, no way back]
+  Record -->|quorum signs alone| Custody
+  Record -->|quorum tries takeover or redirection| Refused[Refused<br/>quorum can only end the name]
+  Custody -.->|anyone completes, next step| Burned[Representative burned<br/>name ended]
+```
+
+## What the retirement run observes
+
+The run creates three records at the application validator, each carrying the single representative token with a quorum of two distinct members at threshold two, then executes each row against the outcome its contract specifies. Every refusal is asserted as a phase-two script failure naming the application validator, except the replay, where the ledger itself refuses the consumed output. One line per row begins with the full row name.
+
+The two accepted rows each prove custody from the chain: after the controller-alone retirement and after the quorum-alone retirement, the representative is observed at the custody script address in the accepting transaction's own outputs, and the consumed record is observed gone from the application validator. The controller-alone row carries no quorum signature and the quorum-alone row carries no controller signature, so each route is shown sufficient alone. The quorum-short row carries one distinct signature too few and is otherwise exactly the accepted shape. A sibling row stores a quorum that names one member twice and a second once at threshold two — well-formed by the existing rules — with only the duplicated member signing: counting signatures instead of distinct members would accept it, so the row binds the distinctness the model demands.
+
+The bounded-quorum rows are ordinary maintenance carrying both quorum signatures and no controller signature: changing the control fields and changing the payment destination are both refused on the controller signature by the existing path, without any new check. The wrong-custody row is authorized by the controller but sends the representative anywhere but the custody script, and is refused on the retirement request. The replay replays a real accepted retirement against the record the chain no longer has, and the ledger itself refuses the spent output — recorded as exactly that, not dressed up as a validator refusal. After the refusals the surviving record is read back unchanged.
 
 ## Limits and next steps
 
-The representative for this slice is carried under the application policy as a stand-in that preserves the single-token shape; the full representative mint and burn flow stays as authored elsewhere and is not exercised here. The registry binding on ledger is the application validator hash read from the spent input. Retirement, including quorum initiation and the permissionless completion fold, is out of scope for this runner and will extend the same executable in a later step.
+The representative for this slice is carried under the application policy as a stand-in that preserves the single-token shape; the full representative mint and burn flow stays as authored elsewhere and is not exercised here. The registry binding on ledger is the application validator hash read from the spent input.
+
+Retirement custody is created and filled by this runner and proved from the chain, but spending it is the next step: completion, which burns the representative with no signature from anybody, and the withdrawal refusal that proves no other path exists, arrive as the next child. No quorum rotation, no takeover, no re-registration, and no death oracle: the chain verifies authority, not death.
