@@ -124,6 +124,9 @@ import Cardano.Ledger.Api.Tx.Body (
     scriptIntegrityHashTxBodyL,
     vldtTxBodyL,
  )
+import Cardano.Ledger.Api.Scripts.Data (
+    Datum (..),
+ )
 import Cardano.Ledger.Api.Tx.Out (
     addrTxOutL,
     coinTxOutL,
@@ -277,6 +280,7 @@ canonicalRows =
     , "CG04"
     , "CG05"
     , "CS01"
+    , "CS02"
     , "CS06"
     ]
 
@@ -290,6 +294,9 @@ data Control
     | FalseClaim
     | WrongIndex
     | WrongParams
+    | FalseDatum
+    | MissingWitness
+    | SingleKey
     | -- | CA03 armed: the policy+address-only authenticator must
       -- reject the rival, which it cannot. Proves CA02's rejection
       -- is attributable to the derived name and nothing else.
@@ -309,6 +316,9 @@ readControl = do
         Just "false-claim" -> pure FalseClaim
         Just "wrong-index" -> pure WrongIndex
         Just "wrong-params" -> pure WrongParams
+        Just "false-datum" -> pure FalseDatum
+        Just "missing-witness" -> pure MissingWitness
+        Just "single-key" -> pure SingleKey
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just other ->
@@ -432,6 +442,8 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
+        cgDevnet = [r | r <- devnetRows, r `elem` ["CG02", "CG03", "CG04", "CG05"]]
+        csDevnet = [r | r <- devnetRows, r `notElem` ["CG02", "CG03", "CG04", "CG05"]]
     mapM_ (runLocalRow blueprintPath receiptsDir) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes) <- loadCodes blueprintPath
@@ -444,20 +456,36 @@ runRows rawRows receiptsDir = do
         require
             "forged control value collides with a row value"
             (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
-        bracketTmpDir $ do
-            gDir <- genesisDir
-            checkGenesis gDir
-            withCardanoNode gDir $ \sock _startMs ->
-                runSession
-                    devnetRows
-                    control
-                    stateBytes
-                    requestBytes
-                    nodeVer
-                    base
-                    dirty
-                    receiptsDir
-                    sock
+        unless (null cgDevnet) $
+            bracketTmpDir $ do
+                gDir <- genesisDir
+                checkGenesis gDir
+                withCardanoNode gDir $ \sock _startMs ->
+                    runSession
+                        cgDevnet
+                        control
+                        stateBytes
+                        requestBytes
+                        nodeVer
+                        base
+                        dirty
+                        receiptsDir
+                        sock
+        unless (null csDevnet) $
+            bracketTmpDir $ do
+                gDir <- genesisDir
+                checkGenesis gDir
+                withCardanoNode gDir $ \sock _startMs ->
+                    runCSSession
+                        csDevnet
+                        control
+                        stateBytes
+                        requestBytes
+                        nodeVer
+                        base
+                        dirty
+                        receiptsDir
+                        sock
     when (null devnetRows) $
         emit "complete" (show (length localRows) <> "/" <> show (length rows) <> " rows ok")
 
@@ -2508,3 +2536,246 @@ extractTokenId cfg tx =
 txInHex :: TxId -> String
 txInHex (TxId h) =
     hex (hashToBytes (extractHash h))
+
+-- ---------------------------------------------------------
+-- CS devnet session (serialization boundary)
+-- ---------------------------------------------------------
+
+cs02Key, cs02Val :: ByteString
+cs02Key = "cs02-key"
+cs02Val = "cs02-value"
+
+runCSSession ::
+    [String] ->
+    Control ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    FilePath ->
+    IO ()
+runCSSession rows control stateBytes requestBytes nodeVer base dirty receiptsDir sock = do
+    lsqCh <- newLSQChannel 16
+    ltxsCh <- newLTxSChannel 16
+    nodeThread <-
+        async $
+            runNodeClient
+                (NetworkMagic 42)
+                sock
+                lsqCh
+                ltxsCh
+    threadDelay 3_000_000
+    status <- poll nodeThread
+    case status of
+        Nothing -> pure ()
+        Just _ ->
+            failWith "node connection closed before queries ran"
+    let prov = adaptProvider (mkN2CProvider lsqCh)
+        submit = mkN2CSubmitter ltxsCh
+        stateMarker = hex (scriptHashBytes (computeScriptHash (applyPreviousPolicies [] stateBytes)))
+        blueprintIdStr =
+            "state:"
+                <> stateMarker
+                <> " request:"
+                <> hex
+                    (scriptHashBytes (computeScriptHash requestBytes))
+    _ <- Cage.queryProtocolParams prov
+    mapM_ (runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr) rows
+    cancel nodeThread
+    emit
+        "complete"
+        (show (length rows) <> "/" <> show (length rows) <> " rows ok")
+
+runCSRow ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    String ->
+    IO ()
+runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
+    "CS02" -> runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    _ -> failWith ("CS row not yet implemented: " <> row)
+
+-- | CS02: datum bytes constructed in Haskell and submitted are read
+-- back identical (byte-compare submitted vs chain-observed).
+runCS02 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    (seedTxIn, _) <- largestWalletUtxo prov
+    let cfg = cageCfg stateBytes requestBytes (txInToRef seedTxIn)
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    let submittedStateDatum = findStateDatum unsignedBoot
+    (mem, cpu) <- measureUnitsProv prov unsignedBoot
+    signedBoot <- submitWithGenesis submit unsignedBoot
+    tid <- extractTokenId cfg signedBoot
+    unsignedReq <-
+        requestInsertImpl
+            cfg
+            prov
+            (defaultTip cfg)
+            tid
+            cs02Key
+            cs02Val
+            genesisAddr
+    let submittedReqDatum = findRequestDatum cs02Key unsignedReq
+    signedReq <- submitWithGenesis submit unsignedReq
+    observedStateDatum <- readStateDatum prov cfg tid
+    observedReqDatum <- readRequestDatum prov cfg tid cs02Key
+    case control of
+        FalseDatum -> do
+            emit "control" "false-datum armed: demanding state bytes match request bytes"
+            require
+                ("CS02: submitted state bytes differ from chain-observed (control)")
+                (submittedStateDatum == submittedReqDatum)
+        _ -> do
+            require
+                ("CS02: state datum bytes differ: submitted " <> show submittedStateDatum <> " vs chain " <> show observedStateDatum)
+                (submittedStateDatum == observedStateDatum)
+            require
+                ("CS02: request datum bytes differ: submitted " <> show submittedReqDatum <> " vs chain " <> show observedReqDatum)
+                (submittedReqDatum == observedReqDatum)
+    let sizeBoot = txSizeBytes signedBoot
+        sizeReq = txSizeBytes signedReq
+        size = max sizeBoot sizeReq
+    emitMeasureProv prov "CS02" mem cpu size
+    writeCSReceipt receiptsDir "CS02" Accepted [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS02: ACCEPTED datum bytes identical (state+request)"
+
+-- | Find the state inline datum in an unsigned transaction's outputs.
+findStateDatum :: ConwayTx -> Datum ConwayEra
+findStateDatum tx =
+    case [d | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just d <- [datumOfTxOut out], isStateDatum out] of
+        [d] -> d
+        _ -> error "CS02: unsigned tx has no single state datum"
+
+-- | Find the request inline datum for a key in an unsigned tx.
+findRequestDatum :: ByteString -> ConwayTx -> Datum ConwayEra
+findRequestDatum key tx =
+    case [d | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just d <- [datumOfTxOut out], isRequestDatum key out] of
+        [d] -> d
+        _ -> error "CS02: unsigned tx has no single request datum"
+
+isStateDatum :: TxOut ConwayEra -> Bool
+isStateDatum out = case extractCageDatum out of
+    Just (StateDatum _) -> True
+    _ -> False
+
+isRequestDatum :: ByteString -> TxOut ConwayEra -> Bool
+isRequestDatum key out = case extractCageDatum out of
+    Just (RequestDatum rq) -> requestKey rq == key
+    _ -> False
+
+datumOfTxOut :: TxOut ConwayEra -> Maybe (Datum ConwayEra)
+datumOfTxOut out = case out ^. datumTxOutL of
+    d@(Datum _) -> Just d
+    _ -> Nothing
+
+readStateDatum :: Cage.Provider IO -> CageConfig -> TokenId -> IO (Datum ConwayEra)
+readStateDatum prov cfg tid = do
+    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
+        Nothing -> failWith "CS02: no state UTxO on chain"
+        Just (_, out) -> case datumOfTxOut out of
+            Just d -> pure d
+            Nothing -> failWith "CS02: state UTxO has no inline datum"
+
+readRequestDatum :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO (Datum ConwayEra)
+readRequestDatum prov cfg tid key = do
+    utxos <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid (network cfg))
+    let reqs = findRequestUtxos tid utxos
+        matching = [out | (_, out) <- reqs, isRequestDatum key out]
+    case matching of
+        [out] -> case datumOfTxOut out of
+            Just d -> pure d
+            Nothing -> failWith "CS02: request UTxO has no inline datum"
+        _ -> failWith ("CS02: expected one request UTxO for key, found " <> show (length matching))
+
+-- | Measure execution units via the node, while inputs are unspent.
+measureUnitsProv :: Cage.Provider IO -> ConwayTx -> IO (Integer, Integer)
+measureUnitsProv prov tx = do
+    evalMap <- Cage.evaluateTx prov tx
+    let evalStr = Map.map (either (Left . show) Right) evalMap
+    units <- case sequence evalStr of
+        Left e -> failWith ("measure: node evaluation failed: " <> e)
+        Right m -> pure (Map.elems m)
+    let mem = sum [m | ExUnits m _ <- units]
+        cpu = sum [s | ExUnits _ s <- units]
+    pure (fromIntegral mem, fromIntegral cpu)
+
+-- | Emit one fold's units and size against the devnet maxima.
+emitMeasureProv :: Cage.Provider IO -> String -> Integer -> Integer -> Integer -> IO ()
+emitMeasureProv prov label mem cpu size = do
+    pp <- Cage.queryProtocolParams prov
+    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+        maxSize = fromIntegral (pp ^. ppMaxTxSizeL) :: Integer
+        pct :: Integer -> Integer -> Double
+        pct used maxV = fromIntegral used / fromIntegral maxV * 100 :: Double
+    emit
+        "measure"
+        (label
+            <> " mem="
+            <> show mem
+            <> "/"
+            <> show maxMem
+            <> " cpu="
+            <> show cpu
+            <> "/"
+            <> show maxSteps
+            <> " size="
+            <> show size
+            <> "/"
+            <> show maxSize
+            <> " (" <> show (pct size maxSize) <> "%)")
+
+writeCSReceipt ::
+    FilePath ->
+    String ->
+    Outcome ->
+    [String] ->
+    Maybe RefusalInfo ->
+    Maybe String ->
+    Maybe Integer ->
+    Maybe Integer ->
+    Maybe Integer ->
+    T.Text ->
+    String ->
+    Bool ->
+    String ->
+    String ->
+    IO ()
+writeCSReceipt dir row outcome txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
+    writeReceiptFile dir $
+        Receipt
+            { receiptRow = T.pack row
+            , receiptOutcome = outcome
+            , receiptTransactions = map T.pack txs
+            , receiptRefusal = refusal
+            , receiptRejected = fmap T.pack rejected
+            , receiptMem = mem
+            , receiptCpu = cpu
+            , receiptTxSize = size
+            , receiptBase = T.pack base
+            , receiptDirty = dirty
+            , receiptNode = T.pack nodeVer
+            , receiptBlueprint = T.pack blueprintIdStr
+            , receiptVenue = venue
+            }
