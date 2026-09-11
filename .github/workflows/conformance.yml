@@ -6,12 +6,16 @@ on:
     paths:
       - 'conformance/**'
       - 'onchain/**'
+      - 'lean/**'
+      - 'tools/**'
       - '.github/workflows/conformance.yml'
   pull_request:
     branches: [main]
     paths:
       - 'conformance/**'
       - 'onchain/**'
+      - 'lean/**'
+      - 'tools/**'
       - '.github/workflows/conformance.yml'
 permissions:
   contents: read
@@ -126,3 +130,48 @@ jobs:
         run: |
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
+  # Issue #80: the theorem-coverage gate. The ratchet (per-obligation,
+  # no offsetting) and the full-completion gate (strict, all axes zero) are
+  # two distinct results and both run. At the current honest baseline the
+  # completion gate REFUSES: mapping, implementation-layer and unclassified
+  # debt are nonzero, and an incremental PR must not make it pass. The
+  # negated step below asserts exactly that — if the gate ever exits zero
+  # here, the record claims completion and this workflow must be flipped
+  # deliberately, with the owner's acceptance, not silently.
+  coverage-gate:
+    name: Theorem coverage gate — inventory, ratchet and completion as distinct results
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage-gate"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Gate test suite incl. every armed failure control (frozen snapshot)
+        working-directory: conformance
+        run: nix build --quiet --no-link .#coverageGateTests
+      - name: Gate verdicts against the frozen snapshot (inventory, ratchet, honest refusal)
+        working-directory: conformance
+        run: nix build --quiet --no-link .#coverageGateSnapshot
+      - name: Inventory — reconcile manifests and discover the obligation population
+        run: nix run --quiet ./conformance#coverage-gate -- --root . inventory
+      - name: Ratchet — per-obligation regression against the protected base (must pass)
+        run: nix run --quiet ./conformance#coverage-gate -- --root . ratchet
+      - name: Completion — must refuse while debt is nonzero (flipping this is claiming completion)
+        run: |
+          if nix run --quiet ./conformance#coverage-gate -- --root . completion; then
+            echo "COMPLETION claimed complete; if this is real, flip this step deliberately"
+            exit 1
+          else
+            rc=$?
+            test "$rc" -eq 1 || { echo "completion gate failed closed (exit $rc), not INCOMPLETE"; exit 1; }
+            echo "COMPLETION: INCOMPLETE — the honest nonzero baseline, reported as its own result"
+          fi

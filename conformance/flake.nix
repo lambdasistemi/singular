@@ -82,6 +82,60 @@
           sed 's|^  \.$|  offchain\n  conformance|' ${offchainSrc}/cabal.project > $out/cabal.project
         '';
 
+        # -------------------------------------------------------
+        # Coverage gate root (issue #80)
+        # -------------------------------------------------------
+        # Separate from `src` above so the coverage gate's inputs — the
+        # frozen lean/ contract, tools/ (check_model.py) and the gate itself
+        # — are hash-bound for the snapshot tests WITHOUT touching the
+        # Haskell build graph: `nix build .#conformance` stays byte-identical.
+        coverageSrc = pkgs.runCommand "coverage-src" { } ''
+          mkdir -p $out/conformance
+          cp -r ${../lean} $out/lean
+          cp -r ${../tools} $out/tools
+          cp -r ${./.}/coverage $out/conformance/coverage
+        '';
+
+        coverageGate = pkgs.runCommand "coverage-gate" {
+          buildInputs = [ pkgs.makeWrapper pkgs.python3 ];
+          meta = {
+            mainProgram = "coverage-gate";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.python3}/bin/python3 $out/bin/coverage-gate \
+            --prefix PYTHONPATH : ${coverageSrc}/conformance/coverage \
+            --add-flags "-m singular_coverage.gate"
+        '';
+
+        # Gate unit suite over the frozen snapshot, including every armed
+        # failure control and the real-tree discovery/inventory assertions.
+        coverageGateTests = pkgs.runCommand "coverage-gate-tests" {
+          buildInputs = [ pkgs.python3 ];
+        } ''
+          cd ${coverageSrc}/conformance/coverage
+          PYTHONPATH=$PWD ${pkgs.python3}/bin/python3 -m unittest discover -s tests
+          touch $out
+        '';
+
+        # The gate's own verdicts against the same frozen snapshot: inventory
+        # reconciles, ratchet passes, completion honestly refuses.
+        coverageGateSnapshot = pkgs.runCommand "coverage-gate-snapshot" {
+          buildInputs = [ pkgs.python3 ];
+        } ''
+          export PYTHONPATH=${coverageSrc}/conformance/coverage
+          ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+            --root ${coverageSrc} inventory > /dev/null
+          ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+            --root ${coverageSrc} ratchet > /dev/null
+          if ${pkgs.python3}/bin/python3 -m singular_coverage.gate \
+              --root ${coverageSrc} completion > /dev/null 2>&1; then
+            echo "coverage gate: completion unexpectedly passed a nonzero-debt snapshot"
+            exit 1
+          fi
+          mkdir -p $out
+        '';
+
         project = import ./nix/project.nix {
           inherit CHaP pkgs src;
         };
@@ -118,11 +172,16 @@
           # locked as this flake's input, so the devnet run consumes the
           # locked identity instead of re-resolving a remote tag.
           cardano-node = cardanoNode;
+          # Theorem-coverage gate (issue #80): app + its two verification
+          # derivations, buildable without touching the Haskell graph.
+          inherit coverageGate coverageGateTests coverageGateSnapshot;
         };
 
         checks = {
           conformance-exe = components.exes.conformance;
           conformance-tests = components.tests.conformance-tests;
+          coverage-gate-tests = coverageGateTests;
+          coverage-gate-snapshot = coverageGateSnapshot;
         };
 
         apps = {
@@ -134,6 +193,10 @@
             type = "app";
             program =
               pkgs.lib.getExe components.tests.conformance-tests;
+          };
+          coverage-gate = {
+            type = "app";
+            program = "${coverageGate}/bin/coverage-gate";
           };
         };
 
