@@ -119,12 +119,18 @@
 
         checks = {
           conformance-exe = components.exes.conformance;
+          conformance-tests = components.tests.conformance-tests;
         };
 
         apps = {
           conformance = {
             type = "app";
             program = pkgs.lib.getExe conformance;
+          };
+          conformance-tests = {
+            type = "app";
+            program =
+              pkgs.lib.getExe components.tests.conformance-tests;
           };
         };
 

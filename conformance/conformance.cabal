@@ -13,6 +13,10 @@ author:        Paolo Veronelli
 maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
+extra-doc-files:
+  README.md
+data-files:
+  rows.json
 
 common warnings
   ghc-options:
@@ -23,9 +27,47 @@ common warnings
 
   default-language: GHC2021
 
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+library
+  import:           warnings
+  hs-source-dirs:   lib
+  exposed-modules:
+    Conformance.Refusal
+    Conformance.Rows
+  build-depends:
+    , aeson >=2.1 && <2.3
+    , base >=4.14 && <5
+    , bytestring >=0.11 && <0.13
+    , text >=2.0 && <2.2
+
 executable conformance
   import:           warnings
   hs-source-dirs:   app
   main-is:          Main.hs
+  other-modules:    Paths_conformance
   build-depends:
     , base >=4.14 && <5
+    , conformance
+    , text >=2.0 && <2.2
+
+test-suite conformance-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  other-modules:
+    Conformance.RefusalSpec
+    Conformance.RowsSpec
+    Paths_conformance
+  build-depends:
+    , aeson >=2.1 && <2.3
+    , base >=4.14 && <5
+    , bytestring >=0.11 && <0.13
+    , conformance
+    , hspec >=2.7 && <2.12
