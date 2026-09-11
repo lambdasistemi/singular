@@ -282,6 +282,7 @@ canonicalRows =
     , "CS01"
     , "CS02"
     , "CS06"
+    , "CS08"
     ]
 
 caRows, cgRows :: [String]
@@ -2603,6 +2604,7 @@ runCSRow ::
     IO ()
 runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
     "CS02" -> runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS08" -> runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
     _ -> failWith ("CS row not yet implemented: " <> row)
 
 -- | CS02: datum bytes constructed in Haskell and submitted are read
@@ -2779,3 +2781,89 @@ writeCSReceipt dir row outcome txs refusal rejected mem cpu size venue base dirt
             , receiptBlueprint = T.pack blueprintIdStr
             , receiptVenue = venue
             }
+
+-- | CS08: OnChainTokenState six fields survive with stake None and Some.
+runCS08 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    -- None cage.
+    (seedNone, _) <- largestWalletUtxo prov
+    let cfgNone = cageCfg stateBytes requestBytes (txInToRef seedNone)
+    unsignedBootNone <- bootTokenImpl cfgNone prov genesisAddr
+    (mem1, cpu1) <- measureUnitsProv prov unsignedBootNone
+    signedBootNone <- submitWithGenesis submit unsignedBootNone
+    tidNone <- extractTokenId cfgNone signedBootNone
+    observedNone <- readChainState cfgNone prov tidNone
+    expectedNone <- expectedStateFromTx unsignedBootNone
+    -- Some cage (staking script hash in datum).
+    stakingBytes <- loadStakingBytes
+    let stakeHash = computeScriptHash stakingBytes
+    (seedSome, _) <- largestWalletUtxo prov
+    let cfgSome0 = cageCfg stateBytes requestBytes (txInToRef seedSome)
+        cfgSome = cfgSome0 { cfgStakeScript = Just (stakingBytes, stakeHash) }
+    unsignedBootSome <- bootTokenImpl cfgSome prov genesisAddr
+    (mem2, cpu2) <- measureUnitsProv prov unsignedBootSome
+    signedBootSome <- submitWithGenesis submit unsignedBootSome
+    tidSome <- extractTokenId cfgSome signedBootSome
+    observedSome <- readChainState cfgSome prov tidSome
+    expectedSome <- expectedStateFromTx unsignedBootSome
+    case control of
+        FalseDatum -> do
+            emit "control" "false-datum armed: demanding None==Some"
+            require
+                ("CS08: None and Some states unexpectedly match (control)")
+                (observedNone == observedSome)
+        _ -> do
+            require
+                ("CS08: None state fields differ: expected " <> show expectedNone <> " vs chain " <> show observedNone)
+                (expectedNone == observedNone)
+            require
+                ("CS08: Some state fields differ: expected " <> show expectedSome <> " vs chain " <> show observedSome)
+                (expectedSome == observedSome)
+            require
+                ("CS08: stake_script None expected, got " <> show (stateStakeScript observedNone))
+                (stateStakeScript observedNone == Nothing)
+            case stateStakeScript observedSome of
+                Nothing -> failWith "CS08: stake_script Some expected, got None"
+                Just _ -> emit "check-stake-Some" "present ok"
+            -- Six fields each, explicitly.
+            require "CS08: None root mismatch" (stateRoot observedNone == stateRoot expectedNone)
+            require "CS08: Some root mismatch" (stateRoot observedSome == stateRoot expectedSome)
+            require "CS08: None tip mismatch" (stateMaxFee observedNone == stateMaxFee expectedNone)
+            require "CS08: Some tip mismatch" (stateMaxFee observedSome == stateMaxFee expectedSome)
+    let mem = max mem1 mem2
+        cpu = max cpu1 cpu2
+        size = max (txSizeBytes signedBootNone) (txSizeBytes signedBootSome)
+    emitMeasureProv prov "CS08" mem cpu size
+    writeCSReceipt receiptsDir "CS08" Accepted [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS08: ACCEPTED six fields survive (None+Some)"
+
+expectedStateFromTx :: ConwayTx -> IO OnChainTokenState
+expectedStateFromTx tx =
+    case [s | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just (StateDatum s) <- [extractCageDatum out]] of
+        [s] -> pure s
+        _ -> failWith "CS08: unsigned boot has no single StateDatum"
+
+loadStakingBytes :: IO SBS.ShortByteString
+loadStakingBytes = do
+    mPath <- lookupEnv "MPFS_BLUEPRINT"
+    path <- case mPath of
+        Just p -> pure p
+        Nothing -> failWith "run needs MPFS_BLUEPRINT pointing at a plutus blueprint"
+    ebp <- loadBlueprint path
+    bp <- case ebp of
+        Left err -> failWith ("blueprint does not parse: " <> err)
+        Right b -> pure b
+    case extractCompiledCode "staking.staking" bp of
+        Just c -> pure c
+        Nothing -> failWith "CS08 gap: blueprint has no staking.staking code"
