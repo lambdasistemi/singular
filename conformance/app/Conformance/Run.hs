@@ -107,7 +107,7 @@ import System.Process (readProcess, readProcessWithExitCode)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Datum (..))
+
 import Cardano.Ledger.Api.PParams (
     ppMaxTxExUnitsL,
     ppMaxTxSizeL,
