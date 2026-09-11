@@ -1,6 +1,7 @@
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{all, filter, find, has}
-use aiken/crypto.{VerificationKeyHash}
+use aiken/crypto.{VerificationKeyHash, blake2b_256}
+use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
@@ -42,6 +43,16 @@ pub type ApplicationRedeemer {
   Fold { representatives: List<ByteArray> }
   /// Retire a record: the datum must not continue.
   Retire { representatives: List<ByteArray> }
+  /// Recover control with the committed next key (`LR` rows, issue #62):
+  /// reveal the committed next-control address, prove its commitment,
+  /// require its payment-key signer, install it as controller with a
+  /// fresh commitment. Appended, never reordered: Maintain/Cancel/Fold/
+  /// Retire keep their indices or the existing lmlc encodings break.
+  Recover {
+    revealed_control: ByteArray,
+    representatives: List<ByteArray>,
+    registry: ByteArray,
+  }
 }
 
 /// Redeemer of the application policy's mint purpose: mint the
@@ -70,6 +81,16 @@ validator application {
         cancel(record, presented_refund, claim, own_hash, tx)
       Fold { representatives: _ } -> fold(record, claim, own_hash, tx)
       Retire { representatives: _ } -> retire(record, tx)
+      Recover { revealed_control, representatives, registry } ->
+        recover(
+          record,
+          revealed_control,
+          representatives,
+          registry,
+          claim,
+          own_hash,
+          tx,
+        )
     }
   }
 
@@ -124,6 +145,89 @@ fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
   expect successor.retirement_quorum == record.retirement_quorum
   // The record's value — including its representative — is preserved.
   expect value_preserved(claim.output.value, continuation.value)
+  True
+}
+
+/// `LR01` accepts; `LR02`/`LR04`/`LR06` (commitment), `LR03`/`LR07`
+/// (required signer), `LR08` (fresh commitment), `LR09` (representative),
+/// `LR10` (registry) and `LR11` (field preservation) refuse — in the
+/// accepted `recoverController` order, so each refusal is attributable:
+/// a transaction violating two conditions is refused for the one its row
+/// names. Each negative row is a single-defect mutant of the accepted one.
+///
+/// Ledger realisation (issue #62): the record carries exactly one
+/// representative token under the application policy; the redeemer claims
+/// it (`representatives`) and the registry binding (`registry`); the
+/// validator refuses when the claim disagrees with what the consumed
+/// record actually carries — its address (`own_hash`) and its token —
+/// making `LR09`/`LR10` real refusals rather than contrived ones. The
+/// successor carries the record's value, representative included:
+/// recovery moves control, never assets. The naming datum keeps exactly
+/// four fields; no fifth field, no new datum shape.
+fn recover(
+  record: NamingRecord,
+  revealed_control: ByteArray,
+  representatives: List<ByteArray>,
+  registry: ByteArray,
+  claim: Input,
+  own_hash: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  let Transaction { extra_signatories, .. } = tx
+  // The registry binding is the application validator's own hash, read
+  // from the spent input's address — the claim must name it (`LR10`).
+  expect registry == own_hash
+  // The claim must name exactly the representative the consumed record
+  // carries under the application policy (`LR09`): a single token, the
+  // single-representative shape.
+  expect [stored_rep] = keys(tokens(claim.output.value, own_hash))
+  expect representatives == [stored_rep]
+  // The reveal is a canonical payment-key address (`recovery-payment-key`:
+  // no row, but the order is load-bearing for attribution).
+  expect Some(shape) = naming.decode_address(revealed_control)
+  expect shape.payment_key
+  let revealed_hash = shape.payment_hash
+  // Domain-separated commitment over the whole binary address including
+  // header and network (`recovery-hash-shape` is vacuous — blake2b-256 is
+  // always 32 bytes — but the order mirrors the model).
+  let computed =
+    blake2b_256(
+      bytearray.concat(
+        bytearray.concat(
+          bytearray.from_string(@"singular/naming/next-control/v1"),
+          #"00",
+        ),
+        revealed_control,
+      ),
+    )
+  expect bytearray.length(computed) == 32
+  // The reveal's commitment equals the stored next-control commitment
+  // (`LR02`, `LR04`, `LR06` — including the forged-digest row that passes
+  // iff the domain separation is dropped).
+  expect computed == record.next_control_commitment
+  // The reveal's payment key is among the required signers (`LR03`,
+  // `LR07`). The old controller need not — and for `LR01` must not — sign:
+  // required signers are exactly the reveal's key (checked by the runner).
+  expect has(extra_signatories, revealed_hash)
+  // Exactly one continuation at the application address; its control is
+  // exactly the reveal, and its payment destination and quorum are
+  // unchanged (`LR11`).
+  expect [continuation] = continuation_outputs(record, claim, tx)
+  expect InlineDatum(successor_datum) = continuation.datum
+  let successor = naming.expect_naming(successor_datum)
+  expect successor.control_address == revealed_control
+  expect successor.payment_destination == record.payment_destination
+  expect successor.retirement_quorum == record.retirement_quorum
+  // The record's value — representative included — moves to the successor.
+  expect value_preserved(claim.output.value, continuation.value)
+  // The successor's commitment is 32 bytes and differs from the consumed
+  // one (`LR08`): the consumed commitment cannot be replayed.
+  expect bytearray.length(successor.next_control_commitment) == 32
+  expect successor.next_control_commitment != record.next_control_commitment
+  // The successor datum is well formed (`invalid-fixture`: no row, but the
+  // order closes the transition — expect_naming already enforced it, so
+  // this names the reason rather than re-checking it).
+  expect naming.well_formed(successor)
   True
 }
 

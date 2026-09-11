@@ -203,3 +203,53 @@ initialization row family into **three enforcement mechanisms** — not one:
    ledger refusal** against the frozen partition; the row asserts the
    accepted-and-bounded outcome instead (rival accepted, names differ,
    canonical registry unaffected — read back from the chain).
+
+## What t62 executed (2026-09-11)
+
+Issue #62 put recovery on a real ledger: the eleven rows `LR01..LR11`
+executed against Singular's naming application validator (pinned
+application hash `c368590a917e7459772a3e0c0fc96ed16faf638c1058e2a95067c56e`,
+0 parameters, so the pinned hash is the applied address — the
+`t52`-bound identity moved from `b180c93413…` by the appended `Recover`
+redeemer, representative unchanged `6f14bdea9a…`).
+
+**`applicationSpend` — the recovery spend is realised.** Its spend
+purpose takes the four-field naming datum in the accepted encoding and
+a `Recover { revealed_control, representatives, registry }` redeemer
+(index 4; `Maintain`/`Cancel`/`Fold`/`Retire` keep their indices or the
+`lmlc` encodings break). In model order it demands the claimed registry
+equal the spent input's own hash (`LR10`), the claimed representatives
+equal the single token the consumed record carries under the
+application policy (`LR09`), the reveal be a canonical payment-key
+address, its domain-separated `BLAKE2b-256` commitment equal the stored
+one (`LR02`, `LR04`, `LR06` — the forged row passes iff the domain
+separation is dropped), the reveal's payment key among the required
+signers (`LR03`, `LR07`), the successor's control exactly the reveal
+with payment destination and quorum unchanged (`LR11`), its commitment
+32 bytes and different (`LR08`), and a well-formed successor datum.
+The successor carries the record's value, representative included.
+Observed 2026-09-11: three setup transactions created main
+`92849eee96…#0`, refusals `c342224d68…#0` and forged `fe94f9d8cf…#0` at
+the application validator, each with the representative
+`0x606f82dec3b28e4c34b783ff746013d6e8541da83e32d98890bdc2cb70`;
+`LR01` accepted `5239793d44…` (required signers exactly the reveal, no
+old-controller signature), its successor read back field by field with
+the merged codec; every refusal came back phase-2 naming the
+application hash; `LR04` replayed the consumed reveal against the
+genuine successor and `LR05`'s old-controller maintenance was refused
+by the existing `Maintain` path; maintenance under the recovered key
+accepted `df93250129…`.
+
+**`requiredSigners` — the recovery authorisation is realised.** `LR01`'s
+transaction carries no old-controller signature: its required signers
+are exactly the revealed address's payment key, witnessed by that key
+alongside the funding key. `LR03` (no signer) and `LR07` (old
+controller's key) are refused on the required signer, each a
+single-defect mutant of the accepted row.
+
+**Limit (t62).** The representative for this slice rides under the
+application policy (minted via the existing `WithdrawApproval` branch
+with a canonical name) as a stand-in preserving the single-token
+shape; the full representative-policy NFT flow stays as bound in #52.
+The registry binding on ledger is the application validator hash
+itself. Retirement has no rows here.

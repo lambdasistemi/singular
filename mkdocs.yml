@@ -13,6 +13,7 @@ nav:
       - Certification: docs/certification.md
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
+  - Recovery and retirement: docs/recovery-retirement.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md
