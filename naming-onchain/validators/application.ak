@@ -5,7 +5,13 @@ use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
-use naming.{NamingRecord}
+use naming.{NamingRecord, RetirementQuorum}
+
+/// The retirement custody script hash (issue #66): the only address a
+/// `Retire` may place the representative at. Regenerated from the
+/// custody validator's own blueprint; never hand-typed.
+pub const retirement_custody_hash =
+  #"0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954"
 
 /// The naming application validator (issue #52; mint burn half added
 /// by #56's ledger run).
@@ -80,7 +86,8 @@ validator application {
       Cancel { presented_refund } ->
         cancel(record, presented_refund, claim, own_hash, tx)
       Fold { representatives: _ } -> fold(record, claim, own_hash, tx)
-      Retire { representatives: _ } -> retire(record, tx)
+      Retire { representatives: _ } ->
+        retire(record, claim, own_hash, tx)
       Recover { revealed_control, representatives, registry } ->
         recover(
           record,
@@ -304,10 +311,42 @@ fn fold(
   True
 }
 
-/// A retire consumes the record: its datum must not continue anywhere
-/// in the transaction.
-fn retire(record: NamingRecord, tx: Transaction) -> Bool {
-  let Transaction { outputs, .. } = tx
+/// A retire consumes the record into completion-only custody (issue
+/// #66, `beginRetirement` without the MPFS request layer): authorized by
+/// the controller or by a distinct-member quorum threshold
+/// (`retirement-authorization`), the representative lands at the custody
+/// script (`retirement-request`), and the record does not continue.
+///
+/// `LT05`/`LT06` are not retirements: they are `maintain` actions refused
+/// on `controller-signature` by the existing path.
+fn retire(
+  record: NamingRecord,
+  claim: Input,
+  own_hash: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  let Transaction { extra_signatories, outputs, .. } = tx
+  // Authorization by exactly one of two routes: the control address's
+  // payment key signs, or at least `threshold` distinct stored quorum
+  // members sign (`eraseDups` is load-bearing — one member signing twice
+  // does not reach a threshold of two).
+  expect
+    controller_authorized(record, extra_signatories)
+      || quorum_authorized(record, extra_signatories)
+  // Custody: the record carries a single representative under the
+  // application policy (the t62 stand-in shape); exactly its
+  // representative lands at the custody script address.
+  expect [stored_rep] = keys(tokens(claim.output.value, own_hash))
+  expect
+    filter(
+      outputs,
+      fn(output) {
+        output.address.payment_credential
+          == address.Script(retirement_custody_hash)
+          && quantity_of(output.value, own_hash, stored_rep) == 1
+      },
+    ) != []
+  // The record does not continue anywhere in the transaction.
   expect
     [] =
     filter(
@@ -320,6 +359,26 @@ fn retire(record: NamingRecord, tx: Transaction) -> Bool {
       },
     )
   True
+}
+
+/// The control address's payment key is among the required signers.
+fn controller_authorized(
+  record: NamingRecord,
+  extra_signatories: List<VerificationKeyHash>,
+) -> Bool {
+  has(extra_signatories, naming.control_hash(record))
+}
+
+/// At least `threshold` distinct members of the stored retirement quorum
+/// are among the required signatories.
+fn quorum_authorized(
+  record: NamingRecord,
+  extra_signatories: List<VerificationKeyHash>,
+) -> Bool {
+  let RetirementQuorum { threshold, members } = record.retirement_quorum
+  let signed =
+    filter(members, fn(member) { has(extra_signatories, member) })
+  threshold > 0 && naming.distinct_count(signed) >= threshold
 }
 
 /// The burn half of Fold/Cancel: the approval being burned must ride

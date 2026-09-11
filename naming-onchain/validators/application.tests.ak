@@ -2,11 +2,12 @@ use application.{Cancel, Fold, Maintain, Recover, Retire, WithdrawApproval}
 use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/assets.{add, from_lovelace, zero}
-use cardano/transaction.{InlineDatum, Output}
+use cardano/transaction.{InlineDatum, NoDatum, Output}
 use fixtures.{
   as_datum,
   altered_control, app_policy, burn_approval, claim_input,
-  claim_value_with_approval, continuation_output, controller, deposit,
+  claim_value_with_approval, continuation_output, controller, custody_address,
+  deposit, member2, member3,
   redirected_output_address,
   redirected_refund, refund_destination, refund_output_address, rep_policy,
   self_ref,
@@ -525,25 +526,6 @@ test cancel_double_burn_refuses() fail {
       [refund_output(record_value)],
       [],
       add(zero, app_policy, refund_destination, -2),
-      [],
-    ),
-  )
-}
-
-/// A retire consumes the record without a continuation.
-test retire_consumes_record_accepts() {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire {
-      representatives: [representative_name()],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), record_value)],
-      [],
-      [],
-      zero,
       [],
     ),
   )
@@ -1102,6 +1084,160 @@ test recovery_destination_tamper_refuses() fail {
         recovery_record_value(),
       )],
       [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+// ===========================================================================
+// Retirement — the LT rows (issue #66, RED: Retire is a stub)
+// ===========================================================================
+
+/// The retirement source: control distinct from the quorum so each route
+/// is shown sufficient alone — the controller hash (member1) is not among
+/// the quorum members [member2, member3], threshold 2.
+fn retirement_source() {
+  with_quorum(
+    source_record(),
+    RetirementQuorum { threshold: 2, members: [member2, member3] },
+  )
+}
+
+fn retirement_claim_value() {
+  add(record_value, app_policy, fixtures.representative_name, 1)
+}
+
+fn retirement_custody_output(value) {
+  Output {
+    address: custody_address,
+    value,
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+/// LT01-controller-retirement-accepts: the controller alone retires; the
+/// representative moves into custody; no quorum signature.
+test lt01_controller_retirement_accepts() {
+  let source = retirement_source()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [retirement_custody_output(retirement_claim_value())],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// LT02-quorum-retirement-accepts: the quorum alone retires with no
+/// controller signature.
+test lt02_quorum_retirement_accepts() {
+  let source = retirement_source()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [retirement_custody_output(retirement_claim_value())],
+      [member2, member3],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// LT03-insufficient-quorum-refused: one distinct signature short of the
+/// threshold, no controller signature.
+test lt03_insufficient_quorum_refuses() fail {
+  let source = retirement_source()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [retirement_custody_output(retirement_claim_value())],
+      [member2],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// eraseDups is load-bearing: one member signing twice does not reach a
+/// threshold of two.
+test lt03_duplicate_member_refuses() fail {
+  let source = retirement_source()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [retirement_custody_output(retirement_claim_value())],
+      [member2, member2],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// The duplication that matters on a ledger is in the stored quorum,
+/// which is ordinary datum content: members [member2, member2, member3]
+/// at threshold 2 are well-formed (distinct 2), but the duplicated
+/// member alone must not retire. A `length` in place of `distinct_count`
+/// would accept this.
+test lt03_duplicate_stored_member_refuses() fail {
+  let source =
+    with_quorum(
+      source_record(),
+      RetirementQuorum {
+        threshold: 2,
+        members: [member2, member2, member3],
+      },
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [retirement_custody_output(retirement_claim_value())],
+      [member2],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// LT08-wrong-retirement-custody-refused: authorized by the controller
+/// but the representative goes anywhere but the custody script — a plain
+/// output elsewhere carrying the representative, with no continuation of
+/// the record, so the stub would accept and only the custody check refuses.
+test lt08_wrong_custody_refuses() fail {
+  let source = retirement_source()
+  let elsewhere =
+    Output {
+      address: refund_output_address,
+      value: retirement_claim_value(),
+      datum: NoDatum,
+      reference_script: None,
+    }
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [elsewhere],
+      [controller],
       zero,
       [],
     ),

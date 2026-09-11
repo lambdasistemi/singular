@@ -337,6 +337,45 @@ jobs:
           mkdir -p /tmp/s62-devnet
           blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
           TMPDIR=/tmp/s62-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#recovery-rows
+  retirement-rows:
+    name: The LT retirement rows on a real devnet
+    needs: naming-validators
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-retirement-rows"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #66: the seven in-scope retirement rows (LT01..LT03, LT05,
+      # LT06, LT08, LT09) executed against a real devnet with Singular's
+      # own naming validators and the new completion-only custody script.
+      # `needs:` is ordering and fail-fast on the naming validator job:
+      # the runner consumes the naming-onchain blueprint (built here from
+      # that flake, so the consumed artifact is always built from the
+      # checked-out commit) and its pinned script-identity.json. Every
+      # refusal must come back as a phase-2 PlutusFailure naming the
+      # application validator (LT09's replay is the honest exception: the
+      # ledger itself refuses the consumed output in phase 1, the LC06
+      # precedent); custody and the record's end are proved from the chain
+      # after LT01 and LT02, and the run fails non-zero on any mismatch.
+      # The devnet runs under a private shallow TMPDIR so its node database
+      # cannot delete another lane's live database and its socket stays
+      # inside the AF_UNIX limit.
+      - name: Run the LT rows as a packaged app without a dev shell
+        working-directory: offchain
+        run: |
+          mkdir -p /tmp/s66-devnet
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#retirement-rows
   li-refusals:
     name: The LI02-LI08 initialization refusals on a real devnet
     needs: [blueprint, naming-validators]
