@@ -628,3 +628,40 @@ test withdraw_approval_wrong_quantity_refuses() fail {
     tx([], [], [controller], approval_mint(2), []),
   )
 }
+
+/// The fold/cancellation burn the spend purpose itself demands: exactly
+/// -1, riding a live input at the application address that carries the
+/// approval. Unsigned — the approval token is the authorization, and
+/// the LC rows demand no signers.
+test cancel_burn_riding_claim_accepts() {
+  application.application.mint(
+    WithdrawApproval {
+      controller,
+      destination: refund_destination,
+    },
+    app_policy,
+    tx(
+      [claim_input(
+        as_datum(source_record()),
+        claim_value_with_approval(record_value),
+      )],
+      [],
+      [],
+      approval_mint(-1),
+      [],
+    ),
+  )
+}
+
+/// Negation: a burn with no claim input carrying the approval refuses —
+/// the approval cannot leave the ledger without the claim it binds.
+test cancel_burn_without_claim_refuses() fail {
+  application.application.mint(
+    WithdrawApproval {
+      controller,
+      destination: refund_destination,
+    },
+    app_policy,
+    tx([], [], [], approval_mint(-1), []),
+  )
+}

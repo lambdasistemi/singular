@@ -117,6 +117,22 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The LM/LC maintenance and cancellation row runner (issue
+        # #56), wrapped the same way as journey and li01: the locked
+        # cardano-node on its own PATH, no store path baked in. The
+        # naming-onchain blueprint comes from the caller at run time
+        # (NAMING_BLUEPRINT).
+        naming-rows = pkgs.runCommand "naming-rows" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.naming-rows.meta or { }) // {
+            mainProgram = "naming-rows";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.naming-rows} $out/bin/naming-rows \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
         # -------------------------------------------------------
@@ -133,6 +149,10 @@
       {
         packages = {
           inherit test-vectors test-vectors-json;
+          # Issue #56: the wrapped LM/LC row runner exposed as a package
+          # too, so `nix build .#naming-rows` and `nix run .#naming-rows`
+          # hit the same derivation.
+          inherit naming-rows;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -152,6 +172,10 @@
           li01 = {
             type = "app";
             program = pkgs.lib.getExe li01;
+          };
+          naming-rows = {
+            type = "app";
+            program = pkgs.lib.getExe naming-rows;
           };
         };
 
