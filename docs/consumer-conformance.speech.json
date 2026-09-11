@@ -1,7 +1,7 @@
 {
   "the-contract-and-its-binding": [
     {
-      "text": "This page reports conformance evidence for the generic registry that cardano-keri consumes, bound to a pinned cardano-keri commit. cardano-keri needs Insert, Update and Delete; the naming demonstration refuses Delete by design, so no naming run can evidence these rows.",
+      "text": "This page reports conformance evidence for the generic registry that cardano-keri consumes, bound to a pinned cardano-keri commit. The canonical identity rows carry the correction epic sixteen executed: a permissionless ledger cannot prohibit a rival registry, so canonical identity is a derivation the consumer authenticates, not a refusal the chain performs.",
       "pause": 400
     }
   ],
@@ -17,52 +17,72 @@
   ],
   "what-this-slice-executes": [
     {
+      "text": "Two devnet sessions run in order, each on an isolated node with its own published world: the generic registry rows first, then the canonical identity rows.",
+      "pause": 400
+    }
+  ],
+  "the-generic-registry-rows": [
+    {
       "text": "One cage, one key, four rows in order. Update folds and the new value reads back from the chain. Delete folds and the key proves absent. Re-insert folds and the third value reads back. Insert on the occupied key is refused by the state script, and a fresh cage accepting a valid insert proves the refusal discriminates.",
       "pause": 400
     },
     {
-      "text": "Every accepting row carries a deliberately wrong variant the run requires to fail, and every refusal is attributed to the script that produced it.",
+      "text": "Every accepting row carries a deliberately wrong variant the run requires to fail, and every refusal is attributed to the script that produced it. Had the chain accepted the occupied insert, that would be a finding, never relabelled as a refusal.",
+      "pause": 400
+    }
+  ],
+  "the-canonical-identity-rows": [
+    {
+      "text": "A designation split publishes the canonical seed. The first row boots the canonical registry and matches its token name against the SHA two fifty-six of the published seed's reference, recomputed locally. A second row initializes a rival registry from a second seed through the same bootstrap path.",
+      "pause": 400
+    },
+    {
+      "text": "The ledger accepts that rival — the acceptance is the finding, and it is asserted from the chain: both names read back and differ, and the canonical registry is untouched. The consumer's authentication rejects the rival on the derived name while accepting the canonical registry.",
+      "pause": 400
+    },
+    {
+      "text": "A control authenticator that checks only policy and address accepts the rival, which is what makes the rejection attributable to the name alone. The identity rows also derive the applied address from the pinned unapplied hash and one declared parameter, and forge an output at the canonical address with no token: the ledger accepts it and no script executed.",
       "pause": 400
     }
   ],
   "measurements": [
     {
-      "text": "Ship run on a clean tree with cardano-node ten point seven. Execution units use under three percent of the devnet maxima, which are queried from the running node, never hardcoded.",
+      "text": "Ship run on a clean tree with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
       "pause": 400
     },
     {
-      "text": "Serialized size is the tight dimension at about seventy percent of the transaction maximum; the worst case across the three accepting folds is recorded in the CL zero one receipt.",
+      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The worst case across each session is recorded in that session's CL zero one receipt.",
       "pause": 400
     }
   ],
   "what-this-slice-does-not-establish": [
     {
-      "text": "Five rows rest on predecessor runs and are cited, not re-executed. Everything else prints uncovered, including four expected consumer gaps that are recorded to observe, not passed.",
+      "text": "Five rows rest on predecessor runs and are cited, not re-executed. The remaining uncovered rows include four expected consumer gaps that are recorded to observe, not passed.",
       "pause": 400
     },
     {
-      "text": "Checkpoint policy, naming rows and recovery rows belong to other owners. Single-request devnet folds say nothing about batch limits or other environments.",
+      "text": "The identity rows do not evidence the serialization boundary, constructor coverage or batch limits. Single-request devnet folds say nothing about other environments.",
       "pause": 400
     }
   ],
   "commands": [
     {
-      "text": "List prints the inventory. Run executes the four rows with measurements, controls and receipts under the run's own output directory. List against those receipts shows what executed.",
+      "text": "List prints the inventory. Each session runs with its own command and its own receipts directory; a mixed request is refused. List against those receipts shows what executed.",
       "pause": 400
     },
     {
-      "text": "Two armed controls — an impossible refusal marker and forged claim values — must each fail the run with a non-zero exit.",
+      "text": "Five armed controls — an impossible refusal marker, forged claim values, the fabricated derivation, the naive authenticator, and the unapplied address — must each fail the run with a non-zero exit.",
       "pause": 400
     }
   ],
   "observed-environment": [
     {
-      "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with both script hashes recorded. Any other environment is explicitly not covered.",
+      "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with the pinned unapplied hash and the applied hash recorded. Any other environment is explicitly not covered.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "3cb6e579d73bab82b9b56f2a39ebbf402d3bcf40c679d7e9848e8717e8d2762b"
+    "sha256": "0f852130c69943a2557877807930e113dc68c4b1740957c7972793d158a86275"
   }
 }
