@@ -1,0 +1,31 @@
+cabal-version: 3.4
+name:          conformance
+version:       0.1.0.0
+synopsis:      Singular consumer conformance rows on a real devnet
+description:
+  Row runner for epic 18 (issue #63): executes the generic registry
+  operations the naming demonstration cannot reach against a real
+  devnet, with attributable refusals, executing negative controls and
+  measurements against the devnet protocol maxima.
+license:       Apache-2.0
+license-file:  LICENSE
+author:        Paolo Veronelli
+maintainer:    paolo.veronelli@gmail.com
+category:      Cardano
+build-type:    Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-language: GHC2021
+
+executable conformance
+  import:           warnings
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:
+    , base >=4.14 && <5
