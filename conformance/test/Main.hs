@@ -7,10 +7,12 @@ module Main (main) where
 
 import Test.Hspec (hspec)
 
+import Conformance.ReceiptSpec qualified as ReceiptSpec
 import Conformance.RefusalSpec qualified as RefusalSpec
 import Conformance.RowsSpec qualified as RowsSpec
 
 main :: IO ()
 main = hspec $ do
-    RowsSpec.spec
+    ReceiptSpec.spec
     RefusalSpec.spec
+    RowsSpec.spec

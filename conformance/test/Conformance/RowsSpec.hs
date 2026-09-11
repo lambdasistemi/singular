@@ -22,21 +22,32 @@ import Conformance.Rows (
     Row (..),
     RowState (..),
     loadRows,
+    ownedDenominator,
+    rowId,
+    rowState,
     validateInventory,
  )
 import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Rows" $ do
-    it "loads the committed inventory: 40 rows, unique ids" $ do
+    it "loads the committed inventory: 41 rows, 40 owned, unique ids" $ do
         rows <- loadCommitted
-        length rows `shouldBe` 40
-        nub (map rowId rows) `shouldBe` map rowId rows
+        length rows `shouldBe` 41
+        length (nub (map rowId rows)) `shouldBe` 41
+        length
+            (filter ((/= OutOfScope) . rowState) rows)
+            `shouldBe` ownedDenominator
 
-    it "executes exactly CG02 CG03 CG04 CG05 and CL01" $ do
+    it "records CK06 out of scope under cardano-keri" $ do
         rows <- loadCommitted
-        [rowId r | r <- rows, rowState r == Executed]
-            `shouldBe` ["CG02", "CG03", "CG04", "CG05", "CL01"]
+        case filter ((== "CK06") . rowId) rows of
+            [ck06] -> rowState ck06 `shouldBe` OutOfScope
+            _ -> expectationFailure "inventory has no single CK06"
+
+    it "carries no executed rows in the committed file" $ do
+        rows <- loadCommitted
+        filter (isExecutedPlan . rowState) rows `shouldBe` []
 
     it "rejects an empty inventory" $
         validateInventory [] `shouldSatisfy` isLeft
@@ -45,9 +56,9 @@ spec = describe "Rows" $ do
         rows <- loadCommitted
         case validateInventory (drop 1 rows) of
             Left err ->
-                err `shouldSatisfy` ("39" `isInfixOf`)
+                err `shouldSatisfy` ("40" `isInfixOf`)
             Right _ ->
-                expectationFailure "a 39-row inventory validated"
+                expectationFailure "a 40-row inventory validated"
 
     it "rejects duplicate row ids" $ do
         rows <- loadCommitted
@@ -59,6 +70,11 @@ spec = describe "Rows" $ do
 
     it "rejects an unknown row state" $
         ( eitherDecode badStateRow :: Either String Row
+        )
+            `shouldSatisfy` isLeft
+
+    it "rejects the executed state in rows.json" $
+        ( eitherDecode executedStateRow :: Either String Row
         )
             `shouldSatisfy` isLeft
 
@@ -75,3 +91,17 @@ badStateRow =
     "{\"id\":\"CX01\",\"group\":\"CG\","
         <> "\"requirement\":\"r\",\"source\":\"s\","
         <> "\"expected\":\"accept\",\"state\":\"flying\"}"
+
+executedStateRow :: BSL.ByteString
+executedStateRow =
+    "{\"id\":\"CX01\",\"group\":\"CG\","
+        <> "\"requirement\":\"r\",\"source\":\"s\","
+        <> "\"expected\":\"accept\",\"state\":\"executed\"}"
+
+-- There is no Executed plan state; this guard fails the suite if
+-- one is ever reintroduced. Unreachable while the type holds,
+-- which is the point.
+isExecutedPlan :: RowState -> Bool
+isExecutedPlan Uncovered = False
+isExecutedPlan BoundElsewhere = False
+isExecutedPlan OutOfScope = False
