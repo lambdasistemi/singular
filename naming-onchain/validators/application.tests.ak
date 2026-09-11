@@ -1,4 +1,6 @@
-use application.{Cancel, Fold, Maintain, Retire, WithdrawApproval}
+use application.{Cancel, Fold, Maintain, Recover, Retire, WithdrawApproval}
+use aiken/crypto.{blake2b_256}
+use aiken/primitive/bytearray
 use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{InlineDatum, Output}
 use fixtures.{
@@ -6,7 +8,8 @@ use fixtures.{
   altered_control, app_policy, burn_approval, claim_input,
   claim_value_with_approval, continuation_output, controller, deposit,
   redirected_output_address,
-  redirected_refund, refund_destination, refund_output_address, self_ref,
+  redirected_refund, refund_destination, refund_output_address, rep_policy,
+  self_ref,
   source_record, record_value, tampered_commitment, tx, with_commitment,
   with_quorum,
 
@@ -663,5 +666,444 @@ test cancel_burn_without_claim_refuses() fail {
     },
     app_policy,
     tx([], [], [], approval_mint(-1), []),
+  )
+}
+
+// ===========================================================================
+// Recovery — the LR rows (issue #62, RED: Recover does not exist yet)
+// ===========================================================================
+
+const recovery_revealed =
+  #"611d1e1f202122232425262728292a2b2c2d2e2f303132333435363738"
+
+const recovery_revealed_hash =
+  #"1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738"
+
+const recovery_rep =
+  #"61aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0d1d2d3d4"
+
+fn recovery_commitment(revealed: ByteArray) -> ByteArray {
+  blake2b_256(
+    bytearray.concat(
+      bytearray.concat(
+        bytearray.from_string(@"singular/naming/next-control/v1"),
+        #"00",
+      ),
+      revealed,
+    ),
+  )
+}
+
+fn recovery_record_value() {
+  add(record_value, app_policy, recovery_rep, 1)
+}
+
+fn recovery_source() {
+  with_commitment(source_record(), recovery_commitment(recovery_revealed))
+}
+
+fn recovery_successor() {
+  let source = recovery_source()
+  let with_new_control = fixtures.with_control(source, recovery_revealed)
+  with_commitment(
+    with_new_control,
+    recovery_commitment(
+      #"61e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfc",
+    ),
+  )
+}
+
+test lr01_recovery_accepts() {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+const recovery_wrong_revealed =
+  #"61393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354"
+
+const recovery_wrong_hash =
+  #"393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354"
+
+const recovery_rep_tampered =
+  #"61aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0d1d2d3d5"
+
+const recovery_fresh_address =
+  #"61e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfc"
+
+const recovery_fresh_address2 =
+  #"61c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdc"
+
+const recovery_script_reveal =
+  #"710102030405060708090a0b0c0d0e0f101112131415161718191a1b1c"
+
+fn forged_commitment(revealed: ByteArray) -> ByteArray {
+  blake2b_256(revealed)
+}
+
+test lr02_wrong_reveal_refuses() fail {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_wrong_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [recovery_wrong_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr03_missing_signer_refuses() fail {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr04_replay_refuses() fail {
+  let consumed_reveal = recovery_revealed
+  let successor_as_source =
+    with_commitment(
+      fixtures.with_control(source_record(), consumed_reveal),
+      recovery_commitment(recovery_fresh_address),
+    )
+  let candidate =
+    with_commitment(
+      fixtures.with_control(source_record(), consumed_reveal),
+      recovery_commitment(recovery_fresh_address2),
+    )
+  let successor_value =
+    add(record_value, app_policy, recovery_rep, 1)
+  application.application.spend(
+    Some(fixtures.as_datum(successor_as_source)),
+    Recover {
+      revealed_control: consumed_reveal,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(successor_as_source), successor_value)],
+      [continuation_output(fixtures.as_datum(candidate), successor_value)],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr05_old_controller_refuses() fail {
+  let recovered =
+    fixtures.with_control(source_record(), recovery_revealed)
+  let maintained =
+    fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
+  application.application.spend(
+    Some(fixtures.as_datum(recovered)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(recovered), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(maintained),
+        recovery_record_value(),
+      )],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr05_recovered_controller_maintains_accepts() {
+  let recovered =
+    fixtures.with_control(source_record(), recovery_revealed)
+  let maintained =
+    fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
+  application.application.spend(
+    Some(fixtures.as_datum(recovered)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(recovered), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(maintained),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr06_forged_digest_refuses() fail {
+  let source =
+    with_commitment(source_record(), forged_commitment(recovery_revealed))
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr07_wrong_signer_refuses() fail {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr08_missing_fresh_refuses() fail {
+  let source = recovery_source()
+  let stale =
+    with_commitment(
+      fixtures.with_control(source, recovery_revealed),
+      recovery_commitment(recovery_revealed),
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(stale), recovery_record_value())],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr09_representative_tamper_refuses() fail {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep_tampered],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr10_registry_tamper_refuses() fail {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: rep_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test lr11_quorum_tamper_refuses() fail {
+  let source = recovery_source()
+  let tampered =
+    with_quorum(
+      fixtures.with_control(source, recovery_revealed),
+      RetirementQuorum {
+        threshold: 2,
+        members: [fixtures.member1, fixtures.member2],
+      },
+    )
+  let tampered_successor =
+    with_commitment(
+      tampered,
+      recovery_commitment(recovery_fresh_address),
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(tampered_successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test recovery_script_reveal_refuses() fail {
+  let source =
+    with_commitment(
+      source_record(),
+      recovery_commitment(recovery_script_reveal),
+    )
+  let successor =
+    with_commitment(
+      fixtures.with_control(source, recovery_script_reveal),
+      recovery_commitment(recovery_fresh_address),
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_script_reveal,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        recovery_record_value(),
+      )],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test recovery_destination_tamper_refuses() fail {
+  let source = recovery_source()
+  let maintained = fixtures.maintained_record()
+  let cleared_destination = maintained.payment_destination
+  let redirected =
+    fixtures.with_destination(
+      fixtures.with_control(source, recovery_revealed),
+      cleared_destination,
+    )
+  let redirected_successor =
+    with_commitment(
+      redirected,
+      recovery_commitment(recovery_fresh_address),
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(redirected_successor),
+        recovery_record_value(),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
   )
 }

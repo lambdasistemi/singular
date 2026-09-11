@@ -1,0 +1,30 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "This page is for a holder who lost the everyday control key but committed to a next controller in advance. You spend the record with the committed address, sign with its payment key alone, and the chain hands you control. Then you maintain normally under the new key while the old key stops working.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Run the eleven recovery rows on a real devnet with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker. Both must fail after executing rows.",
+      "pause": 400
+    }
+  ],
+  "what-the-run-observes": [
+    {
+      "text": "The accepted row installs the reveal with a fresh commitment and proves preservation and transfer from the chain. Each refusal is a single-defect mutant refused in phase two naming the application validator. Replay and the old controller are refused against the genuine successor, maintenance under the recovered key succeeds, and the state after refusals is unchanged.",
+      "pause": 400
+    }
+  ],
+  "limits-and-next-steps": [
+    {
+      "text": "The representative here rides under the application policy as a stand-in preserving the single-token shape, and the registry binding is the application hash itself. Retirement has no ledger rows yet and arrives later as an extension of the same runner.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "recovery-retirement.md",
+    "sha256": "27f609c48f1f47315b421025bb25de451104a1c437b5b255a49dc0459b4c067c"
+  }
+}

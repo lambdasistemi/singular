@@ -212,6 +212,44 @@ executable naming-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The LR recovery rows (issue #62): executes the contract rows
+-- LR01..LR11 on a real devnet against Singular's naming application
+-- validator, attributes every refusal to its phase-2 reason, proves LR01
+-- preservation and transfer from the chain, runs LR04/LR05 after a real
+-- LR01 against the genuine successor, proves maintenance under the
+-- recovered controller, and fails non-zero on any mismatch. Source lives
+-- in journey/recovery/; the naming codec comes from the library and every
+-- imported Haskell module stays untouched.
+executable recovery-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/recovery
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 -- The seven wrong canonical initialization refusals (issue #50):
 -- executes the contract rows LI02..LI08 on a real devnet against the
 -- frozen partitions (the applied state script for the bootstrap, the
