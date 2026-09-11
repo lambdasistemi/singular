@@ -252,6 +252,7 @@ import Conformance.Mirror (
     verifyPresentValue,
  )
 import Conformance.CS01 (runCS01)
+import Conformance.CS06 (runCS06)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -276,6 +277,7 @@ canonicalRows =
     , "CG04"
     , "CG05"
     , "CS01"
+    , "CS06"
     ]
 
 caRows, cgRows :: [String]
@@ -287,6 +289,7 @@ data Control
     | WrongReason
     | FalseClaim
     | WrongIndex
+    | WrongParams
     | -- | CA03 armed: the policy+address-only authenticator must
       -- reject the rival, which it cannot. Proves CA02's rejection
       -- is attributable to the derived name and nothing else.
@@ -305,6 +308,7 @@ readControl = do
         Just "wrong-reason" -> pure WrongReason
         Just "false-claim" -> pure FalseClaim
         Just "wrong-index" -> pure WrongIndex
+        Just "wrong-params" -> pure WrongParams
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just other ->
@@ -426,8 +430,8 @@ runRows rawRows receiptsDir = do
             )
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
     createDirectoryIfMissing True receiptsDir
-    let localRows = [r | r <- rows, r `elem` ["CS01"]]
-        devnetRows = [r | r <- rows, r `notElem` ["CS01"]]
+    let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
+        devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
     mapM_ (runLocalRow blueprintPath receiptsDir) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes) <- loadCodes blueprintPath
@@ -460,6 +464,7 @@ runRows rawRows receiptsDir = do
 runLocalRow :: FilePath -> FilePath -> String -> IO ()
 runLocalRow blueprintPath receiptsDir row = case row of
     "CS01" -> runCS01 blueprintPath receiptsDir
+    "CS06" -> runCS06 blueprintPath receiptsDir
     _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]

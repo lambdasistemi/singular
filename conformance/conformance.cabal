@@ -71,6 +71,7 @@ executable conformance
   main-is:          Main.hs
   other-modules:
     Conformance.CS01
+    Conformance.CS06
     Conformance.Mirror
     Conformance.Run
     Paths_conformance
