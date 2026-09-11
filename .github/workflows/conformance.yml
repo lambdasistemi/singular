@@ -1,0 +1,101 @@
+name: Conformance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - '.github/workflows/conformance.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - '.github/workflows/conformance.yml'
+permissions:
+  contents: read
+concurrency:
+  group: conformance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  lint:
+    name: Workflow parses, lints clean, owned docs page bound
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance-lint"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # A workflow that cannot be parsed cannot fail loudly: every
+      # workflow file must parse before anything else runs. yq-go
+      # comes from nixpkgs so the check needs nothing the runner
+      # lacks.
+      - name: Every workflow file parses as YAML
+        run: |
+          for f in .github/workflows/*.yml; do nix run --quiet nixpkgs#yq-go -- eval '.' "$f" > /dev/null; done
+      # actionlint over this workflow. The self-hosted `nixos` label
+      # is repo-wide (ci.yml, mpfs.yml carry it with no actionlint
+      # config): the step proves actionlint ran by requiring its known
+      # finding, then fails on anything else.
+      - name: actionlint carries no new findings
+        run: |
+          nix run --quiet nixpkgs#actionlint -- .github/workflows/conformance.yml 2>&1 | tee /tmp/actionlint.txt
+          grep -q 'label "nixos" is unknown' /tmp/actionlint.txt || { echo "actionlint did not run as expected"; exit 1; }
+          grep -E '\.yml:[0-9]+' /tmp/actionlint.txt | grep -v 'label "nixos" is unknown' && exit 1 || true
+      # The owned docs page keeps its speech companion: present and
+      # covering its headings, bound to its hash. The repository's
+      # own docs CI (just ci) remains the backstop for doc-only
+      # changes outside this workflow's path filter.
+      - name: Owned docs page passes the presentation gate
+        run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
+  conformance:
+    name: Generic registry rows CG02-CG05 on a real devnet
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #63: the four generic registry operations the naming
+      # demonstration can never exercise — Update, Delete,
+      # re-Insert after Delete, and the refusal of Insert on an
+      # occupied key — executed against a real devnet, each with its
+      # executing negative control and its measurements against the
+      # devnet's Conway protocol maxima. The unit suite (inventory
+      # denominator, receipt overlay, refusal matcher) runs first and
+      # fails fast; the devnet run is the expensive gate. The
+      # blueprint is built from the checked-out commit and passed at
+      # run time, so freshness is carried by the recipe, not the
+      # ordering edge. The runner sets its own unique TMPDIR and
+      # never touches the default path, so concurrent devnet lanes
+      # keep their databases.
+      - name: Run the unit suite as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance-tests
+      - name: List the inventory as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance -- list
+      - name: Run the generic rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./conformance-receipts
