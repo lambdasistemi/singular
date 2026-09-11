@@ -62,7 +62,7 @@ Maxima queried from the running node, never hardcoded:
 | fold | mem (headroom) | cpu (headroom) | size (headroom) |
 |---|---|---|---|
 | CG02 Update | 661904 (139338096) | 221168702 (9778831298) | 11423 (4961) |
-| CG03 Delete | 631100 (139368900) | 204773757 (9795226243) | 11423 (4961) |
+| CG03 Delete | 651306 (139348694) | 217790423 (9782209577) | 11423 (4961) |
 | CG04 re-Insert | 649502 (139350498) | 217245659 (9782754341) | 11423 (4961) |
 
 Execution units use under 3% of the maxima. Serialized size is the
