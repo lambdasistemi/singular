@@ -70,6 +70,7 @@ executable conformance
   hs-source-dirs:   app
   main-is:          Main.hs
   other-modules:
+    Conformance.CS01
     Conformance.Mirror
     Conformance.Run
     Paths_conformance
@@ -98,6 +99,7 @@ executable conformance
     , microlens
     , mts:mpf-write
     , ouroboros-network
+    , plutus-core
     , plutus-tx
     , process >=1.6 && <1.7
     , text >=2.0 && <2.2

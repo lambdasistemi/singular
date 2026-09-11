@@ -251,6 +251,7 @@ import Conformance.Mirror (
     verifyAbsentKey,
     verifyPresentValue,
  )
+import Conformance.CS01 (runCS01)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -274,16 +275,18 @@ canonicalRows =
     , "CG03"
     , "CG04"
     , "CG05"
+    , "CS01"
     ]
 
 caRows, cgRows :: [String]
 caRows = take 5 canonicalRows
-cgRows = drop 5 canonicalRows
+cgRows = take 4 (drop 5 canonicalRows)
 
 data Control
     = Normal
     | WrongReason
     | FalseClaim
+    | WrongIndex
     | -- | CA03 armed: the policy+address-only authenticator must
       -- reject the rival, which it cannot. Proves CA02's rejection
       -- is attributable to the derived name and nothing else.
@@ -301,6 +304,7 @@ readControl = do
         Nothing -> pure Normal
         Just "wrong-reason" -> pure WrongReason
         Just "false-claim" -> pure FalseClaim
+        Just "wrong-index" -> pure WrongIndex
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just other ->
@@ -421,31 +425,42 @@ runRows rawRows receiptsDir = do
               \vacuously"
             )
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
-    (stateBytes, requestBytes) <- loadCodes blueprintPath
-    nodeVer <- readNodeVersion
-    emit "node" nodeVer
-    base <- requireBase
-    emit "base" base
-    dirty <- requireTreeClean
-    emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
-    require
-        "forged control value collides with a row value"
-        (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
     createDirectoryIfMissing True receiptsDir
-    bracketTmpDir $ do
-        gDir <- genesisDir
-        checkGenesis gDir
-        withCardanoNode gDir $ \sock _startMs ->
-            runSession
-                rows
-                control
-                stateBytes
-                requestBytes
-                nodeVer
-                base
-                dirty
-                receiptsDir
-                sock
+    let localRows = [r | r <- rows, r `elem` ["CS01"]]
+        devnetRows = [r | r <- rows, r `notElem` ["CS01"]]
+    mapM_ (runLocalRow blueprintPath receiptsDir) localRows
+    unless (null devnetRows) $ do
+        (stateBytes, requestBytes) <- loadCodes blueprintPath
+        nodeVer <- readNodeVersion
+        emit "node" nodeVer
+        base <- requireBase
+        emit "base" base
+        dirty <- requireTreeClean
+        emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
+        require
+            "forged control value collides with a row value"
+            (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
+        bracketTmpDir $ do
+            gDir <- genesisDir
+            checkGenesis gDir
+            withCardanoNode gDir $ \sock _startMs ->
+                runSession
+                    devnetRows
+                    control
+                    stateBytes
+                    requestBytes
+                    nodeVer
+                    base
+                    dirty
+                    receiptsDir
+                    sock
+    when (null devnetRows) $
+        emit "complete" (show (length localRows) <> "/" <> show (length rows) <> " rows ok")
+
+runLocalRow :: FilePath -> FilePath -> String -> IO ()
+runLocalRow blueprintPath receiptsDir row = case row of
+    "CS01" -> runCS01 blueprintPath receiptsDir
+    _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]
 validateRows [] =
