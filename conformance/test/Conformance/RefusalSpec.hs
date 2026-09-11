@@ -12,7 +12,7 @@ both accept and refuse.
 module Conformance.RefusalSpec (spec) where
 
 import Data.Either (isLeft)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, isPrefixOf)
 import Test.Hspec (
     Spec,
     describe,
@@ -82,6 +82,15 @@ spec = describe "Refusal" $ do
         trimRefusal "something entirely new"
             `shouldBe` "something entirely new [unparsed]"
 
+    it "keeps every failed script hash when two scripts fail" $
+        let two = nodeShapedRefusal <> " second: " <> secondHashRefusal
+            trimmed = trimRefusal two
+         in do
+                -- Joined in ledger order as one field: a trimmer keeping
+                -- only the first hash cannot satisfy this.
+                trimmed `shouldSatisfy` ("scriptHash=874e476d,28726576" `isInfixOf`)
+                length trimmed `shouldSatisfy` (< 2000)
+
     it "trims the node-submit shape to its attribution" $
         let trimmed = trimRefusal nodeShapedRefusal
          in do
@@ -97,6 +106,17 @@ evalFailureSample = "updateToken: build failed: EvalFailure (ConwaySpending (AsI
 
 evalShapedRefusal :: String
 evalShapedRefusal = "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) \\\"ValidationFailure (CekError script error) [] (PlutusWithContext {pwcScript = Left (Plutus {plutusBinary = \\\"AAAABBBB\\\"}), pwcScriptHash = ScriptHash \\\"874e476d\\\", pwcExUnits = X, pwcCostModel = CostModel PlutusV3 [1, 2, 3]})\\\""
+
+-- | The node shape with a different failing script: a tampered fold can
+-- fail two scripts in one submission, and the failure-list order varies
+-- run to run, so attribution must keep every hash it names.
+secondHashRefusal :: String
+secondHashRefusal = replaceAll "874e476d" "28726576" nodeShapedRefusal
+  where
+    replaceAll _ _ [] = []
+    replaceAll from to s@(c : cs)
+        | from `isPrefixOf` s = to <> replaceAll from to (drop (length from) s)
+        | otherwise = c : replaceAll from to cs
 
 nodeShapedRefusal :: String
 nodeShapedRefusal = "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpectedly (PlutusFailure \"The PlutusV3 script failed: Base64-encoded script bytes: \\\"AAAABBBB\\\", ScriptHash \\\"874e476d\\\", The plutus evaluation error is: CekError script error. Caused by: error. The protocol version is: Version 10, ScriptInfo: more\")))"

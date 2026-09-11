@@ -80,7 +80,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (isInfixOf, sortOn)
+import Data.List (intercalate, isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust)
 import Data.Ord (Down (..))
@@ -156,6 +156,7 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
     applyPreviousPolicies,
+    applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -190,6 +191,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     mkCageScript,
     mkInlineDatum,
     mkRequestScript,
+    onChainTokenId,
     requestAddrFromCfg,
     scriptHashBytes,
     spendingIndex,
@@ -272,7 +274,7 @@ import Conformance.Receipt (
     RefusalInfo (..),
     writeReceiptFile,
  )
-import Conformance.Refusal (matchRefusal, trimRefusal, wrongReasonMarker)
+import Conformance.Refusal (matchRefusal, refusalScriptHashes, trimRefusal, wrongReasonMarker)
 
 -- ---------------------------------------------------------
 -- Row vocabulary and control modes
@@ -3171,13 +3173,25 @@ runCS04 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
     badTx <- tamperModifyToBadIndex prov unsignedFold
     let signedBad = addKeyWitness genesisSignKey badTx
     result <- submitTx submit signedBad
-    let stateMarker = hex (scriptHashBytes (computeScriptHash (applyPreviousPolicies [] stateBytes)))
+    let appliedState = computeScriptHash (applyPreviousPolicies [] stateBytes)
+        stateMarker = hex (scriptHashBytes appliedState)
+        requestMarker =
+            hex
+                ( scriptHashBytes
+                    ( computeScriptHash
+                        ( applyRequestParams
+                            (scriptHashBytes appliedState)
+                            (onChainTokenId tid)
+                            requestBytes
+                        )
+                    )
+                )
         marker = case control of
             WrongReason -> wrongReasonMarker
             _ -> stateMarker
     case result of
         Rejected reason ->
-            attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker (T.unpack (TE.decodeUtf8Lenient reason)) (txIdHex signedBad)
+            attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker (T.unpack (TE.decodeUtf8Lenient reason)) (txIdHex signedBad)
         Submitted txid ->
             failWith
                 ("CS04 FINDING: wrong-index fold accepted (txid " <> txInHex txid <> ") — reported, not relabelled")
@@ -3221,17 +3235,34 @@ tamperModifyToBadIndex prov tx = do
         newBody = body & scriptIntegrityHashTxBodyL .~ integrity
     pure (mkBasicTx newBody & witsTxL . scriptTxWitsL .~ scripts & witsTxL . rdmrsTxWitsL .~ badRedeemers)
 
-attributeCS04Refusal :: FilePath -> String -> Bool -> String -> String -> String -> String -> String -> IO ()
-attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker text rejectedTxid =
+{- | Attribute a CS04 refusal. The tampered fold breaks fold consistency
+shared by both cage scripts, so both can refuse in one submission and
+the ledger's failure-list order is not stable. The invariant the row
+asserts is that the state script — whose redeemer was tampered —
+refused; the recorded script set is derived from the observed hashes
+in ledger order, never tuned to a run.
+-}
+attributeCS04Refusal :: FilePath -> String -> Bool -> String -> String -> String -> String -> String -> String -> String -> IO ()
+attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
+            let hashes = refusalScriptHashes text
+            require
+                ("CS04: state script did not refuse; scripts named: " <> show hashes)
+                (stateMarker `elem` hashes)
+            roles <- mapM toRole hashes
             let trimmed = trimRefusal text
-            unless (marker `isInfixOf` trimmed) $
+            unless (stateMarker `isInfixOf` trimmed) $
                 failWith ("trimmer dropped the attribution; full reason: " <> take 20000 text)
-            writeCSReceipt receiptsDir "CS04" Refused [] (Just (RefusalInfo {refusalScript = "state", refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
-            emit "row" ("CS04: REFUSED wrong index, attributed to state (marker 0x" <> shortMarker marker <> ")")
+            writeCSReceipt receiptsDir "CS04" Refused [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
+            emit "row" ("CS04: REFUSED wrong index by " <> intercalate "+" roles <> " (state marker 0x" <> shortMarker stateMarker <> "; ledger order, unstable)")
         Left mismatch ->
             failWith ("CS04: refusal did not attribute (" <> show mismatch <> "): " <> text)
+  where
+    toRole h
+        | h == stateMarker = pure "state"
+        | h == requestMarker = pure "request"
+        | otherwise = failWith ("CS04: refusal names unknown script " <> h)
 
 -- | CS05: RequestAction + MintRedeemer coverage, Migrating as gap.
 runCS05 ::

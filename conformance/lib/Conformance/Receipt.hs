@@ -73,8 +73,10 @@ instance ToJSON Outcome where
     toJSON Accepted = toJSON ("accepted" :: Text)
     toJSON Refused = toJSON ("refused" :: Text)
 
-{- | The refusal attribution for a refused row: the script that
-refused and the node's phase-2 reason verbatim.
+{- | The refusal attribution for a refused row: the scripts that
+refused — one role, or several @+@-joined roles in ledger-reported
+order when a malformed transaction trips two validators at once —
+and the node's phase-2 reason verbatim.
 -}
 data RefusalInfo = RefusalInfo
     { refusalScript :: !Text
