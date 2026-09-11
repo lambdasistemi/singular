@@ -35,8 +35,8 @@ import Conformance.Rows (
     renderInventory,
     rowId,
  )
-import Conformance.ForkKeys (runCheckForkExclusion, runFindForkKeys, runShowAllProofs, runShowDProof, runShowNibbles)
-import Conformance.Run (runRows)
+import Conformance.ForkKeys (runCheckForkExclusion, runFindForkKeys, runGrindPresentFork, runShowAllProofs, runShowDProof, runShowNibbles)
+import Conformance.Run (runForkProbe, runRows)
 import Paths_conformance (getDataFileName)
 
 defaultReceiptsDir :: FilePath
@@ -48,6 +48,8 @@ main = do
     case args of
         ["find-fork-keys"] -> runFindForkKeys
         ["check-fork-exclusion"] -> runCheckForkExclusion
+        ["grind-present-fork"] -> runGrindPresentFork
+        ["probe-present-fork"] -> runForkProbe
         ["show-nibbles"] -> runShowNibbles
         ["show-d-proof"] -> runShowDProof
         ["show-all-proofs"] -> runShowAllProofs
