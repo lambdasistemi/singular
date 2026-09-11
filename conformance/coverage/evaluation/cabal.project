@@ -1,0 +1,4 @@
+packages: . deps
+
+-- tasty-bdd pinned to the inspected revision f55494c9b917ec12b4d01e506694b1a5c3b41b56,
+-- vendored by checkout at deps/ (git clone + checkout, no lock files refreshed).
