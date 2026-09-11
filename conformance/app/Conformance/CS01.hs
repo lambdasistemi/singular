@@ -36,9 +36,8 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import System.Directory (getFileSize)
 import System.Environment (lookupEnv)
-import System.Exit (ExitCode (..))
 import System.IO (BufferMode (..), hSetBuffering, stdout)
-import System.Process (readProcess, readProcessWithExitCode)
+import System.Process (readProcess)
 
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
@@ -80,8 +79,8 @@ import Conformance.Receipt (
  )
 
 -- | Run CS01 against the blueprint at the given path.
-runCS01 :: FilePath -> FilePath -> IO ()
-runCS01 blueprintPath receiptsDir = do
+runCS01 :: FilePath -> FilePath -> String -> Bool -> IO ()
+runCS01 blueprintPath receiptsDir base dirty = do
     control <- lookupEnv "CONFORMANCE_CONTROL"
     let spoil = control == Just "wrong-index"
     emit "control" (maybe "normal" id control)
@@ -96,8 +95,6 @@ runCS01 blueprintPath receiptsDir = do
     let defs = definitions bp
     checkAll defs titleMap spoil
     fsize <- getFileSize blueprintPath
-    base <- requireBase
-    dirty <- requireTreeClean
     nodeVer <- readNodeVersion
     bpId <- blueprintId bp
     let receipt =
@@ -581,20 +578,6 @@ blueprintId bp =
 
 hexBytes :: BS.ByteString -> String
 hexBytes = T.unpack . TE.decodeUtf8 . Base16.encode
-
-requireBase :: IO String
-requireBase = do
-    out <- readProcess "git" ["rev-parse", "HEAD"] ""
-    case lines out of
-        [] -> failWith "git base unknown; receipts need it"
-        (first : _) -> pure first
-
-requireTreeClean :: IO Bool
-requireTreeClean = do
-    (code, out, _) <- readProcessWithExitCode "git" ["status", "--porcelain"] ""
-    case code of
-        ExitSuccess -> pure (not (null (lines out)))
-        _ -> failWith "git status unknown; receipts need tree identity"
 
 readNodeVersion :: IO String
 readNodeVersion = do

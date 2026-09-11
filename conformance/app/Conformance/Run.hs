@@ -458,6 +458,12 @@ runRows rawRows receiptsDir = do
               \vacuously"
             )
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    -- Observe tree identity before any side effect: creating the
+    -- receipts directory first would always report dirty.
+    base <- requireBase
+    emit "base" base
+    dirty <- requireTreeClean
+    emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
@@ -468,15 +474,11 @@ runRows rawRows receiptsDir = do
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
-    mapM_ (runLocalRow blueprintPath receiptsDir) localRows
+    mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes) <- loadCodes blueprintPath
         nodeVer <- readNodeVersion
         emit "node" nodeVer
-        base <- requireBase
-        emit "base" base
-        dirty <- requireTreeClean
-        emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
         require
             "forged control value collides with a row value"
             (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
@@ -528,10 +530,10 @@ runRows rawRows receiptsDir = do
     when (null devnetRows) $
         emit "complete" (show (length localRows) <> "/" <> show (length rows) <> " rows ok")
 
-runLocalRow :: FilePath -> FilePath -> String -> IO ()
-runLocalRow blueprintPath receiptsDir row = case row of
-    "CS01" -> runCS01 blueprintPath receiptsDir
-    "CS06" -> runCS06 blueprintPath receiptsDir
+runLocalRow :: FilePath -> FilePath -> String -> Bool -> String -> IO ()
+runLocalRow blueprintPath receiptsDir base dirty row = case row of
+    "CS01" -> runCS01 blueprintPath receiptsDir base dirty
+    "CS06" -> runCS06 blueprintPath receiptsDir base dirty
     _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]
