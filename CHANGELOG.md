@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/lambdasistemi/singular/compare/v0.2.0...v0.3.0) (2026-09-11)
+
+
+### Features
+
+* author Singular's naming validators, and fix an unenforced LC04 ([330063c](https://github.com/lambdasistemi/singular/commit/330063c135f9c73438e2a4be64b1cab3352773ae))
+* execute the contract's LI01 canonical initialization on a real ledger ([b23199a](https://github.com/lambdasistemi/singular/commit/b23199a651a425ed00fa46d0fdbfe8b523c8eda7))
+* execute the maintenance and cancellation rows on a real ledger ([9fc92a7](https://github.com/lambdasistemi/singular/commit/9fc92a7d1e1734725e82f874a240b67b9858f1ac))
+* exercise the seven wrong canonical initializations on a real ledger ([0a6f6a1](https://github.com/lambdasistemi/singular/commit/0a6f6a12fa3d0afefab1bc66236810cad2e02a79))
+* implement the naming datum codec against the contract's own bytes ([5302fe6](https://github.com/lambdasistemi/singular/commit/5302fe61226f0b11372bf9c329bddc8e76c7f7bc))
+* make drift between the vendored vectors and the live corpus visible ([9e7a7d9](https://github.com/lambdasistemi/singular/commit/9e7a7d9ede0db028d79cdd338baf4c48ba93a7cc))
+* package the epic's on-chain work as a retrievable release ([43af209](https://github.com/lambdasistemi/singular/commit/43af209dc812f7314f335c83acf02eed153ebc0e))
+* tie the applied script identities to the pinned unapplied ones ([dd9f552](https://github.com/lambdasistemi/singular/commit/dd9f55208a9343e5a8518964eac8241878006835))
+
+
+### Fixes
+
+* keep the parameter counts when regenerating the identity manifest ([925222b](https://github.com/lambdasistemi/singular/commit/925222b6f3c91f87a03f43698528a0aad74a1e9d))
+* restore the newline that merged two workflow steps into one ([572182f](https://github.com/lambdasistemi/singular/commit/572182f43ec059576f7974c348f866ac9485cfcd))
+
 ## [0.2.0](https://github.com/lambdasistemi/singular/compare/v0.1.0...v0.2.0) (2026-09-10)
 
 
