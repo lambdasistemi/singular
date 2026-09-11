@@ -119,6 +119,21 @@ spec = describe "Receipt" $ do
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
+    it "accepts a blueprint-check receipt with no transactions" $ do
+        dir <- getDataFileName "test/fixtures/good-blueprint-check"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isRight
+
+    it "accepts a param-check receipt with no transactions" $ do
+        dir <- getDataFileName "test/fixtures/good-param-check"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isRight
+
+    it "rejects a blueprint-check receipt naming transactions" $ do
+        dir <- getDataFileName "test/fixtures/bad-blueprint-tx"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+
     it "accepts a small receipt under the size bound" $
         checkReceiptSize smallReceipt `shouldBe` Right ()
 

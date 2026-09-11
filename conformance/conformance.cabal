@@ -27,6 +27,9 @@ data-files:
   test/fixtures/duplicate/receipt-CG02-a.json
   test/fixtures/duplicate/receipt-CG02-b.json
   test/fixtures/malformed/receipt-CG02.json
+  test/fixtures/good-blueprint-check/receipt-CS01.json
+  test/fixtures/good-param-check/receipt-CS06.json
+  test/fixtures/bad-blueprint-tx/receipt-CS01.json
 
 common warnings
   ghc-options:

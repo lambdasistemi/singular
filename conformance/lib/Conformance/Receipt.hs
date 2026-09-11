@@ -12,6 +12,14 @@ base matches the current tree; otherwise it prints the declared
 plan. Receipts live under the run's own output directory — never in
 the tracked tree — and @list@ takes the directory as @--receipts@
 or @CONFORMANCE_RECEIPTS@, defaulting to none.
+
+Two venues need no node. CS01 checks Haskell encodings against the
+compiled blueprint's declared schemas read at run time
+(@blueprint-check@); CS06 checks parameter application in Haskell
+(@param-check@). Both record @mem@/@cpu@ zero — no script executed
+— and @txSize@ the measured serialized bytes, with no transactions.
+Every other accepted row is a @node-submit@ observation with
+transactions and units from the running node.
 -}
 module Conformance.Receipt (
     Outcome (..),
@@ -219,41 +227,7 @@ loadReceipts dir = do
                 Left (path <> " does not parse: " <> err)
             Right r -> checkOne path r
     checkOne path r = case receiptOutcome r of
-        Accepted
-            | null (receiptTransactions r) ->
-                Left
-                    ( path
-                        <> ": accepted row "
-                        <> T.unpack (receiptRow r)
-                        <> " names no transaction"
-                    )
-            | any
-                isNothing
-                [ receiptMem r
-                , receiptCpu r
-                , receiptTxSize r
-                ] ->
-                Left
-                    ( path
-                        <> ": accepted row "
-                        <> T.unpack (receiptRow r)
-                        <> " misses measurements"
-                    )
-            | receiptVenue r /= "node-submit" ->
-                Left
-                    ( path
-                        <> ": accepted row "
-                        <> T.unpack (receiptRow r)
-                        <> " must be a node-submit observation"
-                    )
-            | isJust (receiptRejected r) ->
-                Left
-                    ( path
-                        <> ": accepted row "
-                        <> T.unpack (receiptRow r)
-                        <> " must not name a rejected transaction"
-                    )
-            | otherwise -> Right r
+        Accepted -> checkAccepted path r
         Refused
             | null (receiptTransactions r)
             , Just _ <- receiptRefusal r
@@ -273,6 +247,81 @@ loadReceipts dir = do
                         <> " must carry a refusal, no transactions, and "
                         <> "a rejected id exactly for node-submit"
                     )
+    checkAccepted p x
+        | receiptVenue x == "node-submit" = checkNodeAccepted p x
+        | receiptVenue x == "blueprint-check", receiptRow x == "CS01" =
+            checkLocalAccepted p x
+        | receiptVenue x == "param-check", receiptRow x == "CS06" =
+            checkLocalAccepted p x
+        | otherwise =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " has venue "
+                    <> T.unpack (receiptVenue x)
+                    <> ", want node-submit or its own local venue"
+                )
+    checkNodeAccepted p x
+        | null (receiptTransactions x) =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " names no transaction"
+                )
+        | any isNothing [receiptMem x, receiptCpu x, receiptTxSize x] =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " misses measurements"
+                )
+        | isJust (receiptRejected x) =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " must not name a rejected transaction"
+                )
+        | otherwise = Right x
+    checkLocalAccepted p x
+        | not (null (receiptTransactions x)) =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " is local and must name no transaction"
+                )
+        | receiptMem x /= Just 0 || receiptCpu x /= Just 0 =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " is local and must record zero units"
+                )
+        | Nothing <- receiptTxSize x =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " misses measurements"
+                )
+        | isJust (receiptRejected x) =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " must not name a rejected transaction"
+                )
+        | isJust (receiptRefusal x) =
+            Left
+                ( p
+                    <> ": accepted row "
+                    <> T.unpack (receiptRow x)
+                    <> " must not carry a refusal"
+                )
+        | otherwise = Right x
     checkReceipts rs
         | length rows /= length (nub rows) =
             Left "two receipts for one row"
