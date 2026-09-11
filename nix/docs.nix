@@ -52,6 +52,7 @@ in {
   '';
   apps = {
     release-check = { type = "app"; program = pkgs.lib.getExe release.checker; };
+    release-artifacts = { type = "app"; program = pkgs.lib.getExe release.releaseArtifacts; };
     publish-docs = { type = "app"; program = pkgs.lib.getExe release.publisher; };
     docs-check = { type = "app"; program = pkgs.lib.getExe checker; };
     preview-check = { type = "app"; program = pkgs.lib.getExe previewCheck; };

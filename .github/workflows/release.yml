@@ -80,7 +80,14 @@ jobs:
           repositories: singular
           permission-contents: write
           permission-pull-requests: write
-      - name: Publish the authorized tagged documentation
+      - name: Upload the tagged documentation and on-chain release assets
+        # The publish-docs app uploads, from the tag this workflow ran on:
+        #   singular-docs-<version>.tar.gz      — the documentation release
+        #   singular-onchain-<version>.tar.gz   — the epic-scoped on-chain release
+        #   SHA256SUMS                          — checksums of both archives
+        # plus it creates the release with the epic-scope notes
+        # (onchain-release/RELEASE.md). The pipeline publishes; no person
+        # uploads by hand.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ github.ref_name }}

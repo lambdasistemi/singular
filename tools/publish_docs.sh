@@ -12,13 +12,16 @@ pr="$(gh pr list --repo lambdasistemi/singular --state merged --base main --limi
    | if length == 1 then .[0].number else error("tag must match one merged release PR") end')"
 if ! gh release view "$tag" --repo lambdasistemi/singular >/dev/null 2>&1; then
   gh release create "$tag" --repo lambdasistemi/singular --verify-tag \
-    --title "Singular documentation $DOCS_VERSION" --generate-notes
+    --title "Singular documentation and on-chain release $DOCS_VERSION" \
+    --notes-file "${RELEASE_NOTES:-onchain-release/RELEASE.md}"
 fi
 gh release upload "$tag" "$DOCS_ARCHIVE"/* --repo lambdasistemi/singular --clobber
 download="$(mktemp -d)"
 trap 'rm -rf "$download"' EXIT
 gh release download "$tag" --repo lambdasistemi/singular --dir "$download" \
-  --pattern "singular-docs-$DOCS_VERSION.tar.gz" --pattern SHA256SUMS
+  --pattern "singular-docs-$DOCS_VERSION.tar.gz" \
+  --pattern "singular-onchain-$DOCS_VERSION.tar.gz" \
+  --pattern SHA256SUMS
 cmp "$DOCS_ARCHIVE/SHA256SUMS" "$download/SHA256SUMS"
 (cd "$download" && sha256sum --check SHA256SUMS)
 gh pr edit "$pr" --repo lambdasistemi/singular \
