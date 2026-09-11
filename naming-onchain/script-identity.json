@@ -5,17 +5,17 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "hash": "e3576e3d0e31a85919c56fc6309a6eb8b397afbf364bfe2cc63b2a13",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "hash": "e3576e3d0e31a85919c56fc6309a6eb8b397afbf364bfe2cc63b2a13",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff",
+      "hash": "e3576e3d0e31a85919c56fc6309a6eb8b397afbf364bfe2cc63b2a13",
       "parameters": 0
     },
     {

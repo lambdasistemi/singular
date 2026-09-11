@@ -219,6 +219,41 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$blueprint" nix run --quiet .#li01
+  naming-rows:
+    name: The LM/LC maintenance and cancellation rows on a real devnet
+    needs: naming-validators
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming-rows"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #56: the ten maintenance and cancellation rows (LM01..LM04,
+      # WR01, LC01..LC06) executed against a real devnet with Singular's
+      # own naming validators. `needs:` is ordering and fail-fast on the
+      # naming validator job: the runner consumes the naming-onchain
+      # blueprint (built here from that flake, so the consumed artifact is
+      # always built from the checked-out commit) and its pinned
+      # script-identity.json. Every refusal must come back as a phase-2
+      # PlutusFailure naming the application validator (LC06's replay is
+      # the honest exception: the ledger itself refuses the consumed
+      # output); LM01's preservation, LC01's approval consumption, LC04
+      # after a real fold and LC06 after a real LC01 are asserted from the
+      # chain, and the run fails non-zero on any mismatch.
+      - name: Run the LM/LC rows as a packaged app without a dev shell
+        working-directory: offchain
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: blueprint

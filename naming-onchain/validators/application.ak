@@ -6,12 +6,15 @@ use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
 use naming.{NamingRecord}
 
-/// The naming application validator (issue #52).
+/// The naming application validator (issue #52; mint burn half added
+/// by #56's ledger run).
 ///
 /// One script serves both purposes, the way the imported partition's
 /// state script serves as both spending validator and bootstrap minting
 /// policy: the `mint` purpose is the application policy whose approval
-/// tokens carry the refund binding, the `spend` purpose governs the
+/// tokens carry the refund binding — minted on the controller's
+/// signature at request time, burned exactly once riding the claim the
+/// spend purpose folds or cancels — the `spend` purpose governs the
 /// naming records and claims whose datum is the four-field naming
 /// datum in the accepted encoding — nothing else, no fifth field.
 ///
@@ -77,17 +80,26 @@ validator application {
   ) {
     let WithdrawApproval { controller, destination } = redeemer
     let Transaction { extra_signatories, mint, .. } = tx
-    // The controller authorizes the approval (`LC03`: insert approval
-    // alone is insufficient; cancellation needs its own).
-    expect has(extra_signatories, controller)
     // The approval's asset name IS the refund destination it binds:
     // cancellation later compares against exactly these bytes.
     expect naming.canonical_address(destination)
     let policy_tokens = tokens(mint, policy_id)
     expect [bound] = keys(policy_tokens)
     expect bound == destination
-    expect get(policy_tokens, bound) == Some(1)
-    True
+    when get(policy_tokens, bound) is {
+      // Minting a fresh approval: exactly one, on the controller's
+      // signature (`LC03`: insert approval alone is insufficient;
+      // cancellation needs its own).
+      Some(1) -> has(extra_signatories, controller)
+      // The burn the spend purpose itself demands at Fold and Cancel:
+      // exactly -1, and the burned approval must ride exactly one live
+      // input at our own application address — the claim the spend
+      // purpose consumes with it. The cancellation is unsigned (the
+      // approval token is the authorization; the LC rows demand no
+      // signers), so no signature is required here.
+      Some(-1) -> burn_rides_claim(policy_id, bound, tx)
+      _ -> False
+    }
   }
 
   else(_) {
@@ -201,6 +213,27 @@ fn retire(record: NamingRecord, tx: Transaction) -> Bool {
           InlineDatum(datum) -> naming.is_same_record(datum, record)
           _ -> False
         }
+      },
+    )
+  True
+}
+
+/// The burn half of Fold/Cancel: the approval being burned must ride
+/// exactly one live input at the application validator's own address —
+/// the claim or record the spend purpose consumes with it. Without a
+/// claim carrying the approval, the burn cannot happen at all.
+fn burn_rides_claim(
+  policy_id: PolicyId,
+  bound: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  let own_credential = address.Script(policy_id)
+  expect [claim] =
+    filter(
+      tx.inputs,
+      fn(input) {
+        input.output.address.payment_credential == own_credential
+          && quantity_of(input.output.value, policy_id, bound) == 1
       },
     )
   True
