@@ -48,6 +48,7 @@ library
   import:           warnings
   hs-source-dirs:   lib
   exposed-modules:
+    Conformance.Authenticate
     Conformance.Receipt
     Conformance.Refusal
     Conformance.Rows
@@ -55,6 +56,7 @@ library
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5
     , bytestring >=0.11 && <0.13
+    , containers >=0.6 && <0.8
     , directory >=1.3 && <1.4
     , filepath >=1.4 && <1.6
     , process >=1.6 && <1.7
@@ -107,6 +109,7 @@ test-suite conformance-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Conformance.AuthenticateSpec
     Conformance.ReceiptSpec
     Conformance.RefusalSpec
     Conformance.RowsSpec
@@ -116,5 +119,6 @@ test-suite conformance-tests
     , base >=4.14 && <5
     , bytestring >=0.11 && <0.13
     , conformance
+    , containers >=0.6 && <0.8
     , hspec >=2.7 && <2.12
     , text >=2.0 && <2.2
