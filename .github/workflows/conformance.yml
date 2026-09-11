@@ -59,7 +59,7 @@ jobs:
       - name: Owned docs page passes the presentation gate
         run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
   conformance:
-    name: Generic and canonical-identity rows on a real devnet
+    name: Generic, canonical-identity and serialization rows on a real devnet
     runs-on: nixos
     timeout-minutes: 60
     steps:
@@ -114,3 +114,15 @@ jobs:
         run: |
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir ./conformance-receipts
+      # Issue #68: the serialization boundary — Haskell datum, redeemer
+      # and parameter encodings against the compiled blueprint plus
+      # compiled execution evidence, rather than a codec agreeing with
+      # itself. CS01 and CS06 check the blueprint locally and need no
+      # node; CS02-CS05 and CS08 execute on the devnet with one fresh
+      # cage per row. CS07 carries no receipt and runs nowhere: its
+      # Fork finding is escalated, and an unmarked row stays unmarked.
+      - name: Run the serialization rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
