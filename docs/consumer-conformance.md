@@ -98,7 +98,7 @@ acceptance of the rival is itself executed and required.
 
 ### Measurements
 
-Ship run: base `e56c7c1`, clean tree, cardano-node 10.7.0.
+Ship run: base `b3f4b5a`, clean tree, cardano-node 10.7.0.
 
 Maxima queried from the running node, never hardcoded:
 `maxTxExUnits` 140000000 mem / 10000000000 cpu,
