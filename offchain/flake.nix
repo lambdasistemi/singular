@@ -133,6 +133,23 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The seven wrong canonical initialization refusals (issue
+        # #50), wrapped the same way as journey, li01 and naming-rows:
+        # the locked cardano-node on its own PATH, no store path baked
+        # in. Both blueprints (the MPFS bootstrap and the naming
+        # policies) come from the caller at run time (MPFS_BLUEPRINT,
+        # NAMING_BLUEPRINT).
+        li-refusals = pkgs.runCommand "li-refusals" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.li-refusals.meta or { }) // {
+            mainProgram = "li-refusals";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.li-refusals} $out/bin/li-refusals \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
         # -------------------------------------------------------
@@ -151,8 +168,8 @@
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`
-          # hit the same derivation.
-          inherit naming-rows;
+          # hit the same derivation. Issue #50: same for li-refusals.
+          inherit naming-rows li-refusals;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -176,6 +193,10 @@
           naming-rows = {
             type = "app";
             program = pkgs.lib.getExe naming-rows;
+          };
+          li-refusals = {
+            type = "app";
+            program = pkgs.lib.getExe li-refusals;
           };
         };
 

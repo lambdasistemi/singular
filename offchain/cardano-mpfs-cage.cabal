@@ -212,6 +212,45 @@ executable naming-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The seven wrong canonical initialization refusals (issue #50):
+-- executes the contract rows LI02..LI08 on a real devnet against the
+-- frozen partitions (the applied state script for the bootstrap, the
+-- naming application and representative policies for the substituted
+-- identities), attributes every refusal to its reason, runs LI06 after
+-- a real LI01 on the genuinely consumed seed, proves the canonical
+-- state unchanged, and fails non-zero on any mismatch. Source lives in
+-- journey/li-refusals/.
+executable li-refusals
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/li-refusals
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0

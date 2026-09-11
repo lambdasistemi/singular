@@ -31,11 +31,11 @@ identities below are bound together at initialization or not at all.
 
 | abstract identity (LI row) | intended concrete ledger realisation | status |
 |---|---|---|
-| `registry` (1) | The singleton registry state UTxO held at the naming application validator, carrying the registry state token; the abstract `registry` nat indexes it (the state token's name/incarnation). | status: realised (#47) — the UTxO `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf#0` at the applied state script address, carrying exactly 1 registry token named `0xc1f1c9b09607e0f63d1580f3e9d3eb88b7d8a208f5a3d4be01b8fd009eebb632` |
+| `registry` (1) | The singleton registry state UTxO held at the naming application validator, carrying the registry state token; the abstract `registry` nat indexes it (the state token's name/incarnation). **Limit (t50, A-001): rival registries CAN exist** — a second seed can mint a second registry-shaped token under the same policy, and the ledger accepts it. Rivals are not prevented, they are distinguished: the canonical registry is the one whose token name is SHA-256 of the canonical seed's outRef, and a rival can never carry that name. | status: realised (#47) — the UTxO `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf#0` at the applied state script address, carrying exactly 1 registry token named `0xc1f1c9b09607e0f63d1580f3e9d3eb88b7d8a208f5a3d4be01b8fd009eebb632`; the t50 run observed an accepted rival (tx `6bad8f09…`) coexisting with the canonical registry, distinct by name and UTxO |
 | `applicationPolicy` (7) | The `PolicyId` (script hash) of the application minting policy compiled from the naming blueprint — mints the insert-request token on `insert` and burns it when the request folds or is cancelled. | status: bound (#52) — authored as the `mint` purpose of the naming application validator in `naming-onchain/` (one script hash serving both purposes, the imported partition's state-script pattern): pinned hash `b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff` (`naming-onchain/script-identity.json`, 0 parameters, so the pinned hash is the applied address). The policy branch currently mints and binds **withdraw approvals** (asset name = the refund destination it binds, minted on the controller's signature — the `LC03` "separate cancellation approval"); insert-request token minting remains unrealised until the insert flow is executed, and is recorded as the seam in the t52 report |
 | `representativePolicy` (8) | The `PolicyId` (script hash) of the representative minting policy — one representative NFT per naming record; `assetScope` is the record's incarnation, so reuse mints a fresh representative under the same policy. | status: bound (#52) — authored in `naming-onchain/` and pinned as `representative.representative.mint` `6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc` (`naming-onchain/script-identity.json`, 1 parameter: the application policy hash). It never moves an asset on its own authority: a mint or burn must ride a transaction spending a naming claim or record at the application validator, and the application spend's own redeemer (`Fold`/`Retire`) must name exactly the representatives moved, each at exactly ±1 |
 | `validatorScript` (12) | The compiled registry/application spending validator's script identity, from the pinned partition in `onchain/script-identity.json` (read at run time via `MPFS_BLUEPRINT`, never baked into the offchain tree). LI08 refuses a substituted validator script, so the identity is part of the initialization binding. | status: realised (#47) — the applied `state.state` script `0x874e476d7408de769e07a4ebf34f3c7379ebd7bd35ab8aad426b41d5` (derived from the pinned unapplied `0x64d1afbf…` with `previousPolicies=[]`), read back from the registry UTxO's address credential and carried as the tx's only script witness; the same script hash is the bootstrap minting policy |
-| `canonicalSeed` (400) | The canonical seed UTxO: a unique outRef consumed by the initialization transaction (`seedConsumed: true`). Uniqueness (LI02, LI03, LI06) is enforced by *spending* it — a second registry can never consume it again — not by referencing it. | status: realised (#47) — the lexically first UTxO of the devnet genesis wallet, consumed by tx `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf`; bound on chain by the registry token name, which is SHA-256 of the seed outRef |
+| `canonicalSeed` (400) | The canonical seed UTxO: a unique outRef consumed by the initialization transaction (`seedConsumed: true`). **Correction (t50, A-001):** uniqueness of THE canonical registry (LI02, LI06) is enforced by *spending* the canonical seed — it can never be consumed again — not by referencing it. That mechanism **does not hold against rivals from other seeds**: a consistent initialization from a second seed is accepted by the frozen bootstrap (t50 executed it; see the t50 section). What bounds a rival is *name derivation*, not a refusal: a rival's token name is SHA-256 of its own seed's outRef, so it can never carry the canonical name. | status: realised (#47) — the lexically first UTxO of the devnet genesis wallet, consumed by tx `3f444e1300346875d8462a4af81f16ca8fd0e26ef1d232b515b14a79a8b672cf`; bound on chain by the registry token name, which is SHA-256 of the seed outRef |
 
 ## `executingWitness` flag → intended concrete witness
 
@@ -173,3 +173,33 @@ are enforced by construction and observed refusing
 `lc06_cancellation_replay_refuses`); the application hash moved to
 `b180c9341384072edc93d75c573d10f5f590224ff117e9de1d6a06ff` and the
 manifest diff records it.
+
+## What t50 settled (2026-09-11)
+
+The seven refusal rows (LI02–LI08) met the ledger, and the run recut the
+initialization row family into **three enforcement mechanisms** — not one:
+
+1. **Validators refuse** LI02, LI04, LI05, LI07 and LI08. Each attempt is
+   well-formed except for the single substituted element, and the phase-2
+   `PlutusFailure` names the script that binds that element: the applied state
+   script for the seed check (LI02) and the registry identity (LI04); the
+   substituted application policy's own address discipline (LI05, with the
+   boundary probe showing a well-formed mint under it is accepted — the
+   refusal is the policy's rule, not the initialization binding); the
+   substituted representative policy's ride-along requirement (LI07); the
+   substituted validator script, which cannot perform the bootstrap (LI08).
+2. **The ledger refuses** LI06: after a real LI01, replaying the exact signed
+   initialization fails in phase 1 (`All inputs are spent`) — a consumed UTxO
+   cannot be re-spent, no validator involved (the LC06 precedent).
+3. **Name derivation bounds** LI03, which is **not refused at all**: a
+   consistent rival registry from a second seed passes every frozen check and
+   the node accepted it. The ruling (A-001, option 1) records this as the
+   design: a rival is not dangerous because it exists, it would be dangerous
+   if it were mistakable for the canonical registry, and it is not — its token
+   name is SHA-256 of its own seed's outRef, so it can never carry the
+   canonical name, and LI06 proves the canonical seed (hence the canonical
+   name's source) is spent exactly once. The model's LI03 refusal
+   (`canonical-seed` at the shape check) is therefore **not realisable as a
+   ledger refusal** against the frozen partition; the row asserts the
+   accepted-and-bounded outcome instead (rival accepted, names differ,
+   canonical registry unaffected — read back from the chain).

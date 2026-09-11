@@ -229,8 +229,7 @@ jobs:
         run: |
           cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming-rows"
           mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: cachix/cachix-action@v17
@@ -254,6 +253,44 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
           NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
+  li-refusals:
+    name: The LI02-LI08 initialization refusals on a real devnet
+    needs: [blueprint, naming-validators]
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-li-refusals"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #50: the seven wrong canonical initializations (LI02..LI08)
+      # executed against a real devnet, each attempt well-formed except for
+      # the single substitution under test. Three enforcement mechanisms,
+      # per the A-001 ruling: validators refuse LI02, LI04, LI05, LI07 and
+      # LI08 (each refusal asserted on its reason, naming the script that
+      # binds the substituted element); the LEDGER refuses LI06 in phase 1
+      # after a real LI01 (the consumed canonical seed, the LC06
+      # precedent); and LI03 is bounded by name derivation, not refused —
+      # the consistent rival from a second seed is accepted, and the row
+      # asserts from the chain that its token name differs from the
+      # canonical name and the canonical registry is unaffected. The run
+      # also proves the canonical state unchanged after the rows, and runs
+      # two required-to-fail controls (a canonical attempt against the
+      # armed guard, and a wrong-reason matcher).
+      - name: Run the initialization refusals as a packaged app without a dev shell
+        working-directory: offchain
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: blueprint
