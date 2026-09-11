@@ -13,10 +13,15 @@ against a real devnet.
 -}
 module Main (main) where
 
+import Control.Exception (
+    SomeException,
+    displayException,
+    try,
+ )
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import System.Environment (getArgs, lookupEnv)
-import System.Exit (exitFailure)
+import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
 import Conformance.Receipt (
@@ -30,7 +35,11 @@ import Conformance.Rows (
     renderInventory,
     rowId,
  )
+import Conformance.Run (runRows)
 import Paths_conformance (getDataFileName)
+
+defaultReceiptsDir :: FilePath
+defaultReceiptsDir = "conformance-receipts"
 
 main :: IO ()
 main = do
@@ -38,13 +47,40 @@ main = do
     case args of
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
-        _ -> do
-            hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
-            hPutStrLn stderr "       conformance -- run ROW..."
+        "run" : rest -> runDispatch rest
+        _ -> usage
+
+usage :: IO ()
+usage = do
+    hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
+    hPutStrLn
+        stderr
+        "       conformance -- run ROW... [--receipts-dir DIR]"
+    hPutStrLn
+        stderr
+        "env:   CONFORMANCE_RECEIPTS=DIR (list, when --receipts is absent)"
+    hPutStrLn
+        stderr
+        "env:   CONFORMANCE_CONTROL=wrong-reason|false-claim (run control)"
+    exitFailure
+
+runDispatch :: [String] -> IO ()
+runDispatch rest = case break (== "--receipts-dir") rest of
+    (rows, []) -> runGuarded rows defaultReceiptsDir
+    (rows, [_, dir]) -> runGuarded rows dir
+    _ -> usage
+
+runGuarded :: [String] -> FilePath -> IO ()
+runGuarded rows dir = do
+    outcome <- try (runRows rows dir) :: IO (Either SomeException ())
+    case outcome of
+        Right () -> putStrLn "exit_status: 0"
+        Left e -> do
             hPutStrLn
                 stderr
-                "env:   CONFORMANCE_RECEIPTS=DIR (when --receipts is absent)"
-            exitFailure
+                ("conformance run: FAILED: " <> displayException e)
+            hPutStrLn stderr "exit_status: 1"
+            exitWith (ExitFailure 1)
 
 runList :: Maybe FilePath -> IO ()
 runList flagDir = do
@@ -60,11 +96,10 @@ runList flagDir = do
                 Left err -> do
                     hPutStrLn stderr ("conformance list: FAILED: " <> err)
                     exitFailure
-                Right rs -> case
-                    [ receiptRow r
-                    | r <- rs
-                    , receiptRow r `notElem` map rowId rows
-                    ] of
+                Right rs -> case [ receiptRow r
+                                 | r <- rs
+                                 , receiptRow r `notElem` map rowId rows
+                                 ] of
                     (bad : _) -> do
                         hPutStrLn
                             stderr
@@ -80,8 +115,9 @@ runList flagDir = do
                             Just b ->
                                 TIO.putStr (renderInventory b rs rows)
 
--- | The receipt directory: @--receipts@, else @CONFORMANCE_RECEIPTS@,
--- else none (the declared plan prints, honestly uncovered).
+{- | The receipt directory: @--receipts@, else @CONFORMANCE_RECEIPTS@,
+else none (the declared plan prints, honestly uncovered).
+-}
 resolveReceipts :: Maybe FilePath -> IO (Either String [Receipt])
 resolveReceipts (Just dir) = loadReceipts dir
 resolveReceipts Nothing = do

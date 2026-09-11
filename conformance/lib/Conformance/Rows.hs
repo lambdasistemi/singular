@@ -56,8 +56,9 @@ rows (CK06) are carried for the boundary, never counted.
 ownedDenominator :: Int
 ownedDenominator = 40
 
--- | A row's declared coverage plan. @executed@ is unrepresentable
--- here by construction: only a run receipt can establish it.
+{- | A row's declared coverage plan. @executed@ is unrepresentable
+here by construction: only a run receipt can establish it.
+-}
 data RowState
     = Uncovered
     | BoundElsewhere
@@ -148,8 +149,9 @@ validateInventory rows
         length
             (filter ((/= OutOfScope) . rowState) rows)
 
--- | What @list@ prints for a row: executed iff a receipt for it
--- exists and matches the current base, else the declared plan.
+{- | What @list@ prints for a row: executed iff a receipt for it
+exists and matches the current base, else the declared plan.
+-}
 data ShownState
     = ShownExecuted
     | ShownPlanned RowState
@@ -157,25 +159,24 @@ data ShownState
 
 effectiveState :: Text -> [Receipt] -> Row -> ShownState
 effectiveState base receipts row =
-    case
-        [ r
-        | r <- receipts
-        , receiptRow r == rowId row
-        , receiptBase r == base
-        ]
-        of
+    case [ r
+         | r <- receipts
+         , receiptRow r == rowId row
+         , receiptBase r == base
+         ] of
         (_ : _) -> ShownExecuted
         [] -> ShownPlanned (rowState row)
 
--- | Render the full inventory table plus the state summary. The
--- summary counts effective states and names the owned denominator
--- with the out-of-scope rows excluded from it.
+{- | Render the full inventory table plus the state summary. The
+summary counts effective states and names the owned denominator
+with the out-of-scope rows excluded from it.
+-}
 renderInventory :: Text -> [Receipt] -> [Row] -> Text
 renderInventory base receipts rows =
     T.unlines
         ( header
             : map (renderRow . shown) sorted
-            <> ["", summary, ownedLine]
+                <> ["", summary, ownedLine]
         )
   where
     sorted = sort rows

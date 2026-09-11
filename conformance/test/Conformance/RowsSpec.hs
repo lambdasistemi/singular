@@ -69,13 +69,11 @@ spec = describe "Rows" $ do
                     `shouldSatisfy` isLeft
 
     it "rejects an unknown row state" $
-        ( eitherDecode badStateRow :: Either String Row
-        )
+        (eitherDecode badStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 
     it "rejects the executed state in rows.json" $
-        ( eitherDecode executedStateRow :: Either String Row
-        )
+        (eitherDecode executedStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 
 loadCommitted :: IO [Row]

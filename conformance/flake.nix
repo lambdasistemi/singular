@@ -93,7 +93,9 @@
           cardano-node.packages.${system}.cardano-node;
 
         # The row runner, wrapped so it brings the locked cardano-node
-        # on its own PATH like the offchain journey runners. The
+        # on its own PATH like the offchain journey runners, with the
+        # devnet genesis defaulting to the offchain sources carried in
+        # the synthesized root (E2E_GENESIS_DIR still overrides). The
         # blueprint comes from the caller at run time
         # (MPFS_BLUEPRINT); no store path is baked in.
         conformance = pkgs.runCommand "conformance" {
@@ -104,7 +106,8 @@
         } ''
           mkdir -p $out/bin
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
-            --prefix PATH : ${cardanoNode}/bin
+            --prefix PATH : ${cardanoNode}/bin \
+            --set-default E2E_GENESIS_DIR ${src}/offchain/e2e-test/genesis
         '';
 
       in

@@ -1,0 +1,69 @@
+# Consumer conformance (issue #63)
+
+Runs the generic registry rows the naming demonstration can never
+exercise against a real devnet, as a packaged app with no dev shell.
+
+```yaml
+name: Conformance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - '.github/workflows/conformance.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - '.github/workflows/conformance.yml'
+permissions:
+  contents: read
+concurrency:
+  group: conformance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  conformance:
+    name: Generic registry rows CG02-CG05 on a real devnet
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #63: the four generic registry operations the naming
+      # demonstration can never exercise — Update, Delete,
+      # re-Insert after Delete, and the refusal of Insert on an
+      # occupied key — executed against a real devnet, each with its
+      # executing negative control and its measurements against the
+      # devnet's Conway protocol maxima. The unit suite (inventory
+      # denominator, receipt overlay, refusal matcher) runs first and
+      # fails fast; the devnet run is the expensive gate. The
+      # blueprint is built from the checked-out commit and passed at
+      # run time, so freshness is carried by the recipe, not the
+      # ordering edge. The runner sets its own unique TMPDIR and
+      # never touches the default path, so concurrent devnet lanes
+      # keep their databases.
+      - name: Run the unit suite as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance-tests
+      - name: List the inventory as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance -- list
+      - name: Run the generic rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./conformance-receipts
+```

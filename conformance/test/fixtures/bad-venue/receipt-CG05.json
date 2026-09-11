@@ -1,0 +1,1 @@
+{"base": "fixture-base", "blueprint": "fixture-blueprint", "cpu": null, "mem": null, "node": "fixture-node", "outcome": "refused", "refusal": {"reason": "phase-2 PlutusFailure naming 0xf00d", "script": "state"}, "row": "CG05", "transactions": [], "txSize": null, "venue": "word-of-mouth"}

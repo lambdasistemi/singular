@@ -11,6 +11,7 @@ module Conformance.ReceiptSpec (spec) where
 
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
+import Data.Text qualified as T
 import Test.Hspec (
     Spec,
     describe,
@@ -19,7 +20,14 @@ import Test.Hspec (
     shouldSatisfy,
  )
 
-import Conformance.Receipt (loadReceipts)
+import Conformance.Receipt (
+    Outcome (..),
+    Receipt (..),
+    RefusalInfo (..),
+    checkReceiptSize,
+    loadReceipts,
+    maxReceiptBytes,
+ )
 import Conformance.Rows (
     Row (..),
     RowState (..),
@@ -95,6 +103,55 @@ spec = describe "Receipt" $ do
             Left err ->
                 err `shouldSatisfy` ("receipt-CG02.json" `isInfixOf`)
             Right _ -> fail "a malformed receipt loaded"
+
+    it "rejects a receipt with an unknown venue" $ do
+        dir <- getDataFileName "test/fixtures/bad-venue"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+
+    it "accepts a small receipt under the size bound" $
+        checkReceiptSize smallReceipt `shouldBe` Right ()
+
+    it "rejects an oversized receipt naming the row" $
+        case checkReceiptSize oversizedReceipt of
+            Left err ->
+                err `shouldSatisfy` ("CG05" `isInfixOf`)
+            Right () -> fail "a 20KB receipt passed the bound"
+
+smallReceipt :: Receipt
+smallReceipt =
+    Receipt
+        { receiptRow = "CG02"
+        , receiptOutcome = Accepted
+        , receiptTransactions = ["abc123"]
+        , receiptRefusal = Nothing
+        , receiptMem = Just 1
+        , receiptCpu = Just 2
+        , receiptTxSize = Just 500
+        , receiptBase = "base"
+        , receiptNode = "node"
+        , receiptBlueprint = "blueprint"
+        , receiptVenue = "node-submit"
+        }
+
+oversizedReceipt :: Receipt
+oversizedReceipt =
+    smallReceipt
+        { receiptRow = "CG05"
+        , receiptOutcome = Refused
+        , receiptTransactions = []
+        , receiptRefusal =
+            Just
+                ( RefusalInfo
+                    { refusalScript = "state"
+                    , refusalReason =
+                        T.pack (replicate (maxReceiptBytes + 4096) 'x')
+                    }
+                )
+        , receiptMem = Nothing
+        , receiptCpu = Nothing
+        , receiptTxSize = Nothing
+        }
 
 loadCommitted :: IO [Row]
 loadCommitted = do

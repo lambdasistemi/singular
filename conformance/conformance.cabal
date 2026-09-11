@@ -21,6 +21,7 @@ data-files:
   test/fixtures/receipts/receipt-CG05.json
   test/fixtures/bad-accepted/receipt-CG02.json
   test/fixtures/bad-refused/receipt-CG05.json
+  test/fixtures/bad-venue/receipt-CG05.json
   test/fixtures/duplicate/receipt-CG02-a.json
   test/fixtures/duplicate/receipt-CG02-b.json
   test/fixtures/malformed/receipt-CG02.json
@@ -61,11 +62,42 @@ executable conformance
   import:           warnings
   hs-source-dirs:   app
   main-is:          Main.hs
-  other-modules:    Paths_conformance
+  other-modules:
+    Conformance.Mirror
+    Conformance.Run
+    Paths_conformance
   build-depends:
+    , aeson >=2.1 && <2.3
+    , async
     , base >=4.14 && <5
+    , base16-bytestring
+    , bytestring >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
     , conformance
+    , containers >=0.6 && <0.8
+    , directory >=1.3 && <1.4
+    , filepath >=1.4 && <1.6
+    , microlens
+    , mts:mpf-write
+    , ouroboros-network
+    , plutus-tx
+    , process >=1.6 && <1.7
     , text >=2.0 && <2.2
+    , time
+    , unix
+
+  ghc-options:      -threaded -with-rtsopts=-N
 
 test-suite conformance-tests
   import:           warnings
@@ -83,3 +115,4 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , conformance
     , hspec >=2.7 && <2.12
+    , text >=2.0 && <2.2

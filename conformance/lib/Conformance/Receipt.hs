@@ -17,17 +17,26 @@ module Conformance.Receipt (
     Outcome (..),
     RefusalInfo (..),
     Receipt (..),
+    maxReceiptBytes,
+    checkReceiptSize,
     loadReceipts,
+    writeReceiptFile,
     currentBase,
 ) where
 
+import Control.Exception (ErrorCall (..), throwIO)
+
 import Data.Aeson (
     FromJSON (..),
+    ToJSON (..),
     eitherDecode,
+    encode,
+    object,
     withObject,
     withText,
     (.:),
     (.:?),
+    (.=),
  )
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (isPrefixOf, isSuffixOf)
@@ -52,8 +61,13 @@ instance FromJSON Outcome where
         "refused" -> pure Refused
         _ -> fail ("unknown receipt outcome: " <> T.unpack t)
 
--- | The refusal attribution for a refused row: the script that
--- refused and the node's phase-2 reason verbatim.
+instance ToJSON Outcome where
+    toJSON Accepted = toJSON ("accepted" :: Text)
+    toJSON Refused = toJSON ("refused" :: Text)
+
+{- | The refusal attribution for a refused row: the script that
+refused and the node's phase-2 reason verbatim.
+-}
 data RefusalInfo = RefusalInfo
     { refusalScript :: !Text
     , refusalReason :: !Text
@@ -66,9 +80,20 @@ instance FromJSON RefusalInfo where
             <$> o .: "script"
             <*> o .: "reason"
 
--- | Evidence that a row executed. Accepted rows name the chain's
--- transaction ids and carry measurements; refused rows carry the
--- attribution and no transactions.
+instance ToJSON RefusalInfo where
+    toJSON r =
+        object
+            [ "script" .= refusalScript r
+            , "reason" .= refusalReason r
+            ]
+
+{- | Evidence that a row executed. Accepted rows name the chain's
+transaction ids and carry measurements; refused rows carry the
+attribution and no transactions. @receiptVenue@ records where the
+refusal was observed: @node-submit@ (a node ruling on a submitted
+transaction) or @ledger-eval@ (local ledger evaluation only — never
+described as ledger execution).
+-}
 data Receipt = Receipt
     { receiptRow :: !Text
     , receiptOutcome :: !Outcome
@@ -80,6 +105,7 @@ data Receipt = Receipt
     , receiptBase :: !Text
     , receiptNode :: !Text
     , receiptBlueprint :: !Text
+    , receiptVenue :: !Text
     }
     deriving stock (Show, Eq)
 
@@ -96,6 +122,60 @@ instance FromJSON Receipt where
             <*> o .: "base"
             <*> o .: "node"
             <*> o .: "blueprint"
+            <*> o .: "venue"
+
+instance ToJSON Receipt where
+    toJSON r =
+        object
+            [ "row" .= receiptRow r
+            , "outcome" .= receiptOutcome r
+            , "transactions" .= receiptTransactions r
+            , "refusal" .= receiptRefusal r
+            , "mem" .= receiptMem r
+            , "cpu" .= receiptCpu r
+            , "txSize" .= receiptTxSize r
+            , "base" .= receiptBase r
+            , "node" .= receiptNode r
+            , "blueprint" .= receiptBlueprint r
+            , "venue" .= receiptVenue r
+            ]
+
+{- | Write one @receipt-<ROW>.json@ under the run's output directory.
+Receipts over 'maxReceiptBytes' fail the run: a receipt nobody
+can open is weak evidence, and a size convention would quietly
+break on a later row.
+-}
+writeReceiptFile :: FilePath -> Receipt -> IO ()
+writeReceiptFile dir r = case checkReceiptSize r of
+    Left err -> throwIO (ErrorCall err)
+    Right () ->
+        BSL.writeFile
+            (dir </> ("receipt-" <> T.unpack (receiptRow r) <> ".json"))
+            (encode r)
+
+{- | Receipts stay readable: the CG05 refusal once embedded the whole
+compiled validator (~30KB of base64) because @show@ on the
+evaluation context prints every script and cost model.
+-}
+maxReceiptBytes :: Int
+maxReceiptBytes = 16384
+
+{- | The size bound, purely: oversized receipts are an error naming
+the row and the byte count.
+-}
+checkReceiptSize :: Receipt -> Either String ()
+checkReceiptSize r
+    | BSL.length (encode r) <= fromIntegral maxReceiptBytes = Right ()
+    | otherwise =
+        Left
+            ( "receipt for row "
+                <> T.unpack (receiptRow r)
+                <> " is "
+                <> show (BSL.length (encode r))
+                <> " bytes, over the "
+                <> show maxReceiptBytes
+                <> " limit"
+            )
 
 {- | Load every @receipt-*.json@ in a directory. A malformed receipt,
 an accepted row with no transactions or measurements, a refused row
@@ -149,10 +229,18 @@ loadReceipts dir = do
                         <> T.unpack (receiptRow r)
                         <> " misses measurements"
                     )
+            | receiptVenue r /= "node-submit" ->
+                Left
+                    ( path
+                        <> ": accepted row "
+                        <> T.unpack (receiptRow r)
+                        <> " must be a node-submit observation"
+                    )
             | otherwise -> Right r
         Refused
             | null (receiptTransactions r)
-            , Just _ <- receiptRefusal r ->
+            , Just _ <- receiptRefusal r
+            , receiptVenue r `elem` ["node-submit", "ledger-eval"] ->
                 Right r
             | otherwise ->
                 Left
