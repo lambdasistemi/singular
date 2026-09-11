@@ -1,0 +1,19 @@
+cabal-version:      3.4
+name:               t80-tasty-bdd-spike
+version:            0.1.0.0
+build-type:         Simple
+
+executable spike
+    main-is:          Main.hs
+    hs-source-dirs:   app
+    default-language: GHC2021
+    default-extensions: LambdaCase
+    ghc-options:      -Wall
+    build-depends:    base
+                    , directory
+                    , filepath
+                    , process
+                    , tasty
+                    , tasty-hunit
+                    , tasty-bdd
+                    , text
