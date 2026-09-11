@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 from .completion import completion
-from .debt import UnknownRowError, compute_debt
+from .debt import PopulationError, UnknownRowError, compute_debt
 from .inventory import InventoryError, build_inventory
 from .record import RecordError, load_record
 from .report import (
@@ -110,16 +110,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="coverage-gate", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", default=".", help="repository root (default: cwd)")
-    parser.add_argument("--record", help="current coverage record (default: <gate>/record/record.json)")
-    parser.add_argument("--report", help="write the machine-readable verdict JSON here")
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--record", help="current coverage record (default: <gate>/record/record.json)")
+    common.add_argument("--report", help="write the machine-readable verdict JSON here")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("inventory", help="manifest reconciliation + discovery over all of lean/")
+    sub.add_parser("inventory", parents=[common],
+                   help="manifest reconciliation + discovery over all of lean/")
 
-    p_ratchet = sub.add_parser("ratchet", help="per-obligation regression check vs the protected base")
+    p_ratchet = sub.add_parser("ratchet", parents=[common],
+                               help="per-obligation regression check vs the protected base")
     p_ratchet.add_argument("--reference", help="base record (default: <gate>/record/base-record.json)")
 
-    p_completion = sub.add_parser("completion", help="strict full-completion verdict (fails closed)")
+    p_completion = sub.add_parser("completion", parents=[common],
+                                  help="strict full-completion verdict (fails closed)")
     p_completion.add_argument("--expect", choices=("INCOMPLETE", "COMPLETE"), default=None,
                               help="assert the expected verdict (explicit nonzero baseline for CI)")
 
@@ -140,6 +144,9 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_FAIL_CLOSED
     except UnknownRowError as exc:
         print(f"FAIL-CLOSED rows: {exc}", file=sys.stderr)
+        return EXIT_FAIL_CLOSED
+    except PopulationError as exc:
+        print(f"FAIL-CLOSED population: {exc}", file=sys.stderr)
         return EXIT_FAIL_CLOSED
     except FileNotFoundError as exc:
         print(f"FAIL-CLOSED input: {exc}", file=sys.stderr)

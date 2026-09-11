@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .debt import MAX_DISCARD_RATIO, UnknownRowError, unknown_rows
+from .debt import MAX_DISCARD_RATIO, PopulationError, UnknownRowError, check_current_population, unknown_rows
 from .inventory import Inventory
 from .record import Record
 
@@ -63,10 +63,25 @@ def structural_layers(checks) -> frozenset[str]:
 def ratchet(inventory: Inventory, base: Record, current: Record, root: Path) -> RatchetResult:
     unknown_rows(inventory, current)
     unknown_rows(inventory, base)
+    check_current_population(inventory, current)
 
     regressions: list[Regression] = []
     identities = inventory.by_identity()
     names = inventory.by_name()
+
+    # every identity in the protected base population must still exist —
+    # theorem removal cannot shrink the denominator, coverage record or not
+    for identity in sorted(set(base.discoveredPopulation)):
+        if identity not in identities:
+            regressions.append(
+                Regression(
+                    "obligation-vanished",
+                    identity,
+                    "the protected base discovered this obligation but current discovery does "
+                    "not — theorem removal cannot shrink the denominator",
+                )
+            )
+            continue
 
     # current rows keyed to stale statement digests: the invalidation signal
     from .debt import find_stale_bindings  # noqa: PLC0415
@@ -79,8 +94,8 @@ def ratchet(inventory: Inventory, base: Record, current: Record, root: Path) -> 
     current_checks = current.by_identity_checks()
     current_mappings = current.by_identity_mappings()
 
-    # every identity the base mentions must still exist (theorem removal,
-    # or any other denominator shrink, is a regression — never a cleanup)
+    # every identity the base rows mention must still exist (statement-edit
+    # invalidation surfaces here as well)
     for identity in sorted(set(base_checks) | set(base_mappings)):
         if identity not in identities:
             regressions.append(
@@ -88,7 +103,7 @@ def ratchet(inventory: Inventory, base: Record, current: Record, root: Path) -> 
                     "obligation-vanished",
                     identity,
                     "the protected base references this obligation but discovery no longer "
-                    "finds it — theorem removal cannot shrink the denominator",
+                    "finds it — coverage does not survive a statement edit",
                 )
             )
             continue

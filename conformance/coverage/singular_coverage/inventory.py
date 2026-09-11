@@ -55,10 +55,13 @@ class InventoryError(Exception):
 
 
 def _load_check_model(root: Path):
-    tools = root / "tools"
-    if not (tools / "check_model.py").exists():
+    candidates = [root / "tools", Path(__file__).resolve().parents[3] / "tools"]
+    for tools in candidates:
+        if (tools / "check_model.py").exists():
+            break
+    else:
         raise InventoryError(
-            f"{tools}/check_model.py not found — obligation identity is derived from the "
+            "tools/check_model.py not found — obligation identity is derived from the "
             "manifests via that extraction; refusing to run without it"
         )
     sys.path.insert(0, str(tools))

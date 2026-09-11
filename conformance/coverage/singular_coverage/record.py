@@ -102,6 +102,7 @@ class Mapping:
 class Record:
     checks: tuple[Check, ...]
     mappings: tuple[Mapping, ...]
+    discoveredPopulation: tuple[str, ...]
     path: str
 
     def by_identity_checks(self) -> dict[str, tuple[Check, ...]]:
@@ -251,9 +252,21 @@ def load_record(path: Path) -> Record:
         raise RecordError(f"record must be a JSON object: {path}")
     if raw.get("schema") != SCHEMA:
         raise RecordError(f"record schema must be {SCHEMA!r}, got {raw.get('schema')!r}")
-    unknown = set(raw) - {"schema", "checks", "mappings"}
+    unknown = set(raw) - {"schema", "checks", "mappings", "discoveredPopulation"}
     if unknown:
         raise RecordError(f"record has unknown top-level fields: {sorted(unknown)}")
+    if "discoveredPopulation" not in raw:
+        raise RecordError(
+            "record is missing discoveredPopulation — the obligation population the record "
+            "was cut against is what the ratchet protects; a record without it cannot be judged"
+        )
+    population = raw["discoveredPopulation"]
+    if not isinstance(population, list) or not all(
+        isinstance(i, str) and "@" in i for i in population
+    ):
+        raise RecordError("discoveredPopulation must be a list of name@digest identity strings")
+    if len(set(population)) != len(population):
+        raise RecordError("discoveredPopulation contains duplicate identities")
     checks_raw = raw.get("checks", [])
     mappings_raw = raw.get("mappings", [])
     if not isinstance(checks_raw, list) or not isinstance(mappings_raw, list):
@@ -263,7 +276,12 @@ def load_record(path: Path) -> Record:
     ids = [c.checkId for c in checks]
     if len(set(ids)) != len(ids):
         raise RecordError("duplicate checkId in record")
-    return Record(checks=checks, mappings=mappings, path=str(path))
+    return Record(
+        checks=checks,
+        mappings=mappings,
+        discoveredPopulation=tuple(population),
+        path=str(path),
+    )
 
 
 def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
@@ -289,15 +307,16 @@ def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
         accumulator.update(hashlib.sha256(path.read_bytes()).digest())
     return accumulator.hexdigest()
 def definition_digest(root: Path, qualified: str) -> str | None:
-    """Digest of a named definition's signature span (def/abbrev/structure/inductive).
+    """Digest of a named definition's full source span.
 
     Used to bind checks and mappings to the exact definitions an obligation
-    talks about, so a definition change invalidates the binding. Returns None
-    when no such definition exists. Signature spans end at the first
-    bracket-depth-zero ':=' or at the next top-level event, whichever comes
-    first.
+    talks about, so a definition change invalidates the binding. Unlike a
+    theorem signature, a definition's body is its semantics, so the span
+    covers the whole declaration: from the declaration keyword to the next
+    top-level event (namespace/section/mutual/end or next declaration).
+    Returns None when no such definition exists.
     """
-    from .leanscan import QUALIDENT, _signature_span, clean_source  # noqa: PLC0415
+    from .leanscan import QUALIDENT, clean_source  # noqa: PLC0415
 
     pattern = re.compile(
         rf"(?m)^(?:@\[[^\]\n]*\]\s*)*"
@@ -331,10 +350,6 @@ def definition_digest(root: Path, qualified: str) -> str | None:
             if name != qualified:
                 continue
             limit = events[idx + 1][0] if idx + 1 < len(events) else len(clean)
-            try:
-                end = _signature_span(clean, m.end(), limit)
-            except ValueError:
-                end = limit
-            signature = " ".join(clean[m.start():end].split())
-            return hashlib.sha256((name + "\n" + signature).encode()).hexdigest()
+            span = " ".join(clean[m.start():limit].split())
+            return hashlib.sha256((name + "\n" + span).encode()).hexdigest()
     return None

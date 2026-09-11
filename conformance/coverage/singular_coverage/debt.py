@@ -172,7 +172,19 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
                     )
                     # an alias does not add a layer; the original achievement stands
 
-        satisfied = all(
+        # the required layers must be backed by distinct executions: the same
+        # execution wearing two layer names is ONE layer aliased into two
+        distinct_executions = set(layers.values())
+        if len(layers) >= 2 and len(distinct_executions) < len(layers):
+            findings.append(
+                Finding(
+                    "duplicate-layer-identity",
+                    f"{obligation.name} claims {sorted(layers)} but they all resolve to "
+                    f"execution(s) {sorted(distinct_executions)} — one execution aliased into "
+                    "two layers",
+                )
+            )
+        satisfied = len(layers) >= 2 and len(distinct_executions) == len(layers) and all(
             any(layer in layers for layer in group) for group in REQUIRED_LAYERS
         )
         debts.append(
@@ -192,6 +204,30 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
 
 class UnknownRowError(Exception):
     """A record row references a name discovery never produced. Fail closed."""
+
+
+class PopulationError(Exception):
+    """The record's claimed population disagrees with live discovery."""
+
+
+def check_current_population(inventory: Inventory, record: Record) -> None:
+    """The current record must claim exactly the population discovery finds.
+
+    A record that omits a discovered obligation hides debt; one that claims a
+    vanished obligation is stale. Both fail closed: updating the record's
+    population is an explicit act that accompanies any inventory change.
+    """
+    claimed = set(record.discoveredPopulation)
+    live = set(inventory.by_identity())
+    missing = sorted(claimed - live)
+    extra = sorted(live - claimed)
+    if missing or extra:
+        raise PopulationError(
+            "current record population disagrees with discovery: "
+            f"{len(missing)} claimed but no longer discovered (e.g. {missing[:2]}), "
+            f"{len(extra)} discovered but unclaimed (e.g. {extra[:2]}) — re-emit the "
+            "record population; a shrinking denominator is a finding, never a cleanup"
+        )
 
 
 def unknown_rows(inventory: Inventory, record: Record) -> None:
