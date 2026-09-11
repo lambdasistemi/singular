@@ -144,6 +144,33 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#release-check
+  release-artifacts:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: On-chain release assembly and artifact checks
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-release-artifacts"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # The release pipeline itself, run end to end on the candidate: both
+      # compiled blueprints are built by their own locked flakes, the
+      # on-chain archive is assembled by the packaging tools, and the full
+      # release check — archive members, checksum manifests, release text,
+      # and the pinned identities verified from the extracted artifact —
+      # runs against the assembled bytes. The same assembler runs inside the
+      # publish job before anything is uploaded.
+      - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
@@ -194,7 +221,7 @@ jobs:
           comment: 'false'
   pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build-gate, model, simulator, browser, rendered-docs, dev-shell, release-check]
+    needs: [build-gate, model, simulator, browser, rendered-docs, dev-shell, release-check, release-artifacts]
     runs-on: nixos
     permissions:
       contents: read
