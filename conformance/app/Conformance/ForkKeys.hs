@@ -29,6 +29,7 @@ proof lacks a `Fork`.
 -}
 module Conformance.ForkKeys (
     findForkKeys,
+    runCheckForkExclusion,
     runFindForkKeys,
     runShowAllProofs,
     runShowDProof,
@@ -38,6 +39,7 @@ module Conformance.ForkKeys (
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as Base16
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Word (Word8)
@@ -48,11 +50,13 @@ import MPF.Interface (HexDigit (..), byteStringToHexKey)
 
 import Cardano.Ledger.Mary.Value (AssetName (..))
 
-import Cardano.MPFS.Cage.Ledger (TokenId (..))
+import Cardano.MPFS.Cage.Ledger (Root (..), TokenId (..))
 import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie qualified as CageTrie
+import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.Types (Neighbor (..), ProofStep (..))
+import Conformance.Mirror (mirrorExclusionSteps, mirrorExclusionVerifies, mirrorInsert, newMirror)
 
 -- | Hash pipeline nibbles for a candidate key: the exact mapping the
 -- trie uses to place the key.
@@ -275,6 +279,35 @@ runShowAllProofs = do
             keys
     mapM_ (emit "present-proof") strs
 
+-- | Offline verdict on the refused shape: cage/mirror backend root agreement
+-- plus mts-core exclusion verification of @D@ over mirror @{A,B}@.
+-- No node. A TRUE verdict with an on-chain refusal means the mts and
+-- Aiken implementations diverge on Fork absence proofs; FALSE means mts
+-- cannot verify the shape its sibling API generates.
+runCheckForkExclusion :: IO ()
+runCheckForkExclusion = do
+    mirror <- newMirror
+    mirrorInsert mirror "cs07-fork-A" "va"
+    mirrorInsert mirror "cs07-fork-B1294" "vb"
+    mirrorRoot <- unRoot <$> CageTrie.getRoot (mkPureTrieFromRef mirror)
+    tm <- mkPureTrieManager
+    let tid = TokenId (AssetName "cs07-fork-token")
+    createTrie tm tid
+    cageRoot <-
+        withSpeculativeTrie tm tid $ \trie -> do
+            _ <- CageTrie.insert trie "cs07-fork-A" "va"
+            _ <- CageTrie.insert trie "cs07-fork-B1294" "vb"
+            unRoot <$> CageTrie.getRoot trie
+    emit "mirror-root" (hexBytes mirrorRoot)
+    emit "cage-root" (hexBytes cageRoot)
+    require
+        ("cage and mirror roots disagree for {A,B}: " <> show (hexBytes cageRoot) <> " vs " <> show (hexBytes mirrorRoot))
+        (cageRoot == mirrorRoot)
+    verdict <- mirrorExclusionVerifies mirror "cs07-fork-D127" mirrorRoot
+    emit "mts-exclusion-verifies" (show verdict)
+    coreSteps <- mirrorExclusionSteps mirror "cs07-fork-D127"
+    emit "mts-core-exclusion-steps" (show coreSteps)
+
 runFindForkKeys :: IO ()
 runFindForkKeys = do
     (keyA, keyB, keyD, keyE, keyF, keyG, keyC, stepsC, stepsB, stepsA) <- findForkKeys
@@ -288,6 +321,9 @@ runFindForkKeys = do
     emit "c-proof" (show stepsC)
     emit "b-proof" (show stepsB)
     emit "a-update-proof" (show stepsA)
+
+hexBytes :: ByteString -> String
+hexBytes = T.unpack . TE.decodeUtf8 . Base16.encode
 
 emit :: String -> String -> IO ()
 emit stepName detail = do

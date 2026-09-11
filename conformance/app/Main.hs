@@ -35,7 +35,7 @@ import Conformance.Rows (
     renderInventory,
     rowId,
  )
-import Conformance.ForkKeys (runFindForkKeys, runShowAllProofs, runShowDProof, runShowNibbles)
+import Conformance.ForkKeys (runCheckForkExclusion, runFindForkKeys, runShowAllProofs, runShowDProof, runShowNibbles)
 import Conformance.Run (runRows)
 import Paths_conformance (getDataFileName)
 
@@ -47,6 +47,7 @@ main = do
     args <- getArgs
     case args of
         ["find-fork-keys"] -> runFindForkKeys
+        ["check-fork-exclusion"] -> runCheckForkExclusion
         ["show-nibbles"] -> runShowNibbles
         ["show-d-proof"] -> runShowDProof
         ["show-all-proofs"] -> runShowAllProofs

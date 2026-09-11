@@ -297,7 +297,6 @@ canonicalRows =
     , "CS04"
     , "CS05"
     , "CS06"
-    , "CS07"
     , "CS08"
     ]
 
@@ -308,7 +307,7 @@ canonicalRows =
 caRows, cgRows, csRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
-csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
+csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
 
 data Control
     = Normal
@@ -318,7 +317,6 @@ data Control
     | WrongParams
     | FalseDatum
     | MissingWitness
-    | SingleKey
     | -- | CA03 armed: the policy+address-only authenticator must
       -- reject the rival, which it cannot. Proves CA02's rejection
       -- is attributable to the derived name and nothing else.
@@ -340,7 +338,6 @@ readControl = do
         Just "wrong-params" -> pure WrongParams
         Just "false-datum" -> pure FalseDatum
         Just "missing-witness" -> pure MissingWitness
-        Just "single-key" -> pure SingleKey
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just other ->
@@ -2648,7 +2645,6 @@ runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir cont
     "CS03" -> runCS03 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS04" -> runCS04 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS05" -> runCS05 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS07" -> runCS07 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS08" -> runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
     _ -> failWith ("CS row not yet implemented: " <> row)
 
@@ -2939,44 +2935,11 @@ requestActionConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
     fromAction (PLC.Constr ix _) = [ix]
     fromAction _ = []
 
-proofStepConstrs :: ConwayTx -> [Integer]
-proofStepConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
-  where
-    fromDatum (PLC.Constr 2 [PLC.List actions]) = concatMap fromAction actions
-    fromDatum _ = []
-    fromAction (PLC.Constr 0 [PLC.List steps]) = concatMap fromStep steps
-    fromAction _ = []
-    fromStep (PLC.Constr ix _) = [ix]
-    fromStep _ = []
-
 cs03KeyA, cs03ValA, cs03KeyB, cs03ValB :: ByteString
 cs03KeyA = "cs03-modify-key"
 cs03ValA = "cs03-modify-val"
 cs03KeyB = "cs03-retract-key"
 cs03ValB = "cs03-retract-val"
-
--- | CS07 trie keys, ground offline via @find-fork-keys@ through the same
--- BLAKE2b nibble pipeline the trie uses, and verified there with a pure
--- trie: A,B share three nibbles (a sub-branch); D,E share two with A and
--- widen the sub-branch (a Branch level); C shares only the first nibble,
--- so at the root its sole sibling is the sub-branch (a Fork). ASCII
--- preimages, so the devnet run rebuilds exactly the verified shape.
-cs07KeyA, cs07ValA, cs07KeyB, cs07ValB, cs07KeyD, cs07ValD, cs07KeyE, cs07ValE, cs07KeyC, cs07ValC :: ByteString
-cs07KeyA = "cs07-fork-A"
-cs07ValA = "va"
-cs07KeyB = "cs07-fork-B1294"
-cs07ValB = "vb"
-cs07KeyD = "cs07-fork-D127"
-cs07ValD = "vd"
-cs07KeyE = "cs07-fork-E400"
-cs07ValE = "ve"
-cs07KeyC = "cs07-fork-C11"
-cs07ValC = "vc"
-cs07KeyF, cs07ValF, cs07KeyG, cs07ValG :: ByteString
-cs07KeyF = "cs07-fork-F1508"
-cs07ValF = "vf"
-cs07KeyG = "cs07-fork-G8495"
-cs07ValG = "vg"
 
 fastRetractCfgLocal :: CageConfig -> CageConfig
 fastRetractCfgLocal cfg =
@@ -3369,157 +3332,3 @@ writeGapMigrating receiptsDir base blueprintIdStr = do
                 <> "\n"
     BSL.writeFile (receiptsDir </> "gap-CS05-Migrating.txt") (BSL.fromStrict (TE.encodeUtf8 (T.pack gap)))
     emit "gap" "CS05 Migrating unreachable on previousPolicies=[] (state.ak FR1)"
-
--- | CS07: Branch/Fork/Leaf + Neighbor, each carried by an accepted fold.
--- Six sequential single-request folds stay under maxTxSize (one fold is
--- ~70% on its own; batching would press the CL02 size limit before
--- forcing any shape). Per-fold roles are read back from the submitted
--- redeemers, never assumed: C's insert carries the Fork, A's update
--- carries the Branch, B's insert carries the Leaf. Folds 1, 3 and 4 are
--- trie-shaping setup, unreceipted like the CG setup folds.
-runCS07 ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
-    String ->
-    String ->
-    Bool ->
-    FilePath ->
-    Control ->
-    String ->
-    IO ()
-runCS07 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
-    tm <- mkPureTrieManager
-    (seed, _) <- largestWalletUtxo prov
-    let cfg = cageCfg stateBytes requestBytes (txInToRef seed)
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-    signedBoot <- submitWithGenesis submit unsignedBoot
-    tid <- extractTokenId cfg signedBoot
-    createTrie tm tid
-    case control of
-        SingleKey -> do
-            unsignedReq <-
-                requestInsertImpl
-                    cfg
-                    prov
-                    (defaultTip cfg)
-                    tid
-                    "single-key"
-                    "single-val"
-                    genesisAddr
-            _ <- submitWithGenesis submit unsignedReq
-            unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
-            (mem, cpu) <- measureUnitsProv prov unsignedFold
-            let steps = proofStepConstrs unsignedFold
-            emit "proof-steps-single" (show steps)
-            emit "control" "single-key armed: demanding Fork"
-            require
-                "CS07: Fork missing on single-key trie (control)"
-                (1 `elem` steps)
-            signedFold <- submitWithGenesis submit unsignedFold
-            let size = txSizeBytes signedFold
-            emitMeasureProv prov "CS07" mem cpu size
-            writeCSReceipt receiptsDir "CS07" Accepted [txIdHex signedFold] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
-            emit "row" "CS07 control: single-key fold unexpectedly carries Fork"
-        _ -> do
-            (signed1, unsigned1, mem1, cpu1) <- insertFold tm cfg prov submit tid cs07KeyA cs07ValA
-            (signed2, unsigned2, mem2, cpu2) <- insertFold tm cfg prov submit tid cs07KeyB cs07ValB
-            (signed3, unsigned3, mem3, cpu3) <- insertFold tm cfg prov submit tid cs07KeyC cs07ValC
-            (signed4, unsigned4, mem4, cpu4) <- insertFold tm cfg prov submit tid cs07KeyD cs07ValD
-            (signed5, unsigned5, mem5, cpu5) <- insertFold tm cfg prov submit tid cs07KeyE cs07ValE
-            (signed6, unsigned6, mem6, cpu6) <- insertFold tm cfg prov submit tid cs07KeyF cs07ValF
-            (signed7, unsigned7, mem7, cpu7) <- insertFold tm cfg prov submit tid cs07KeyG cs07ValG
-            (signed8, unsigned8, mem8, cpu8) <- updateFold tm cfg prov submit tid cs07KeyA cs07ValA "va-upd"
-            let steps2 = proofStepConstrs unsigned2
-                steps3 = proofStepConstrs unsigned3
-                steps8 = proofStepConstrs unsigned8
-            emit "witness-Leaf" ("fold2 " <> show steps2)
-            emit "witness-Fork" ("fold3 " <> show steps3)
-            emit "witness-Branch" ("fold8 " <> show steps8)
-            require
-                ("CS07: Leaf missing in fold2 " <> show steps2)
-                (2 `elem` steps2)
-            require
-                ("CS07: Fork missing in fold3 " <> show steps3)
-                (1 `elem` steps3)
-            require
-                "CS07: Fork neighbor malformed in fold3"
-                (forkNeighborsWellFormed unsigned3)
-            require
-                ("CS07: Branch missing in fold8 " <> show steps8)
-                (0 `elem` steps8)
-            let _ = (signed1, unsigned1, mem1, cpu1, signed4, unsigned4, mem4, cpu4, signed5, unsigned5, mem5, cpu5, signed6, unsigned6, mem6, cpu6, signed7, unsigned7, mem7, cpu7)
-                mem = maximum [mem1, mem2, mem3, mem4, mem5, mem6, mem7, mem8]
-                cpu = maximum [cpu1, cpu2, cpu3, cpu4, cpu5, cpu6, cpu7, cpu8]
-                size =
-                    maximum
-                        [ txSizeBytes signed1
-                        , txSizeBytes signed2
-                        , txSizeBytes signed3
-                        , txSizeBytes signed4
-                        , txSizeBytes signed5
-                        , txSizeBytes signed6
-                        , txSizeBytes signed7
-                        , txSizeBytes signed8
-                        ]
-            emitMeasureProv prov "CS07" mem cpu size
-            writeCSReceipt receiptsDir "CS07" Accepted [txIdHex signed2, txIdHex signed3, txIdHex signed8] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
-            emit "row" "CS07: ACCEPTED Branch(fold8)/Fork(fold3)/Leaf(fold2)+Neighbor"
-  where
-    insertFold tmInner cfgInner provInner submitInner tidInner key val = do
-        unsignedReq <-
-            requestInsertImpl
-                cfgInner
-                provInner
-                (defaultTip cfgInner)
-                tidInner
-                key
-                val
-                genesisAddr
-        _ <- submitWithGenesis submitInner unsignedReq
-        unsignedFold <- updateTokenImpl cfgInner provInner tmInner tidInner genesisAddr
-        (memInner, cpuInner) <- measureUnitsProv provInner unsignedFold
-        signedFold <- submitWithGenesis submitInner unsignedFold
-        _ <- withTrie tmInner tidInner $ \t -> do
-            _ <- CageTrie.insert t key val
-            pure ()
-        emit ("fold-insert-" <> showBS key) (show (proofStepConstrs unsignedFold))
-        pure (signedFold, unsignedFold, memInner, cpuInner)
-    updateFold tmInner cfgInner provInner submitInner tidInner key old new = do
-        unsignedReq <-
-            requestUpdateImpl
-                cfgInner
-                provInner
-                (defaultTip cfgInner)
-                tidInner
-                key
-                old
-                new
-                genesisAddr
-        _ <- submitWithGenesis submitInner unsignedReq
-        unsignedFold <- updateTokenImpl cfgInner provInner tmInner tidInner genesisAddr
-        (memInner, cpuInner) <- measureUnitsProv provInner unsignedFold
-        signedFold <- submitWithGenesis submitInner unsignedFold
-        _ <- withTrie tmInner tidInner $ \t -> do
-            _ <- CageTrie.delete t key
-            _ <- CageTrie.insert t key new
-            pure ()
-        emit ("fold-update-" <> showBS key) (show (proofStepConstrs unsignedFold))
-        pure (signedFold, unsignedFold, memInner, cpuInner)
-    showBS :: ByteString -> String
-    showBS bs = T.unpack (TE.decodeUtf8Lenient bs)
-
--- | Every Fork step in the tx carries a well-formed 3-field Neighbor.
--- A Fork accepted with a malformed neighbor would fail the fold, so a
--- lame Neighbor claim cannot ride along with a real Fork witness.
-forkNeighborsWellFormed :: ConwayTx -> Bool
-forkNeighborsWellFormed tx = all fromDatum (redeemerPlutusDatas tx)
-  where
-    fromDatum (PLC.Constr 2 [PLC.List actions]) = all fromAction actions
-    fromDatum _ = True
-    fromAction (PLC.Constr 0 [PLC.List steps]) = all fromStep steps
-    fromAction _ = True
-    fromStep (PLC.Constr 1 [_, PLC.Constr 0 [_, _, _]]) = True
-    fromStep (PLC.Constr 1 _) = False
-    fromStep _ = True
