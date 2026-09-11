@@ -36,24 +36,31 @@ Story assertions that passed in positive mode (all computed from the runner's re
 exit success; `1/1 rows ok`; `REFUSED at submit` (script-attributed, phase-2 marker); the
 control line `the refusal discriminates`; the receipt artifact `receipt-CG05.json` exists.
 
-## Findings
+## Findings, each with its adoption consequence
 
-- **F-1 (conformance harness, for the epic owner):** the row runner leaks its devnet
-  **cardano-node process and session dir** on normal exit — two separate runs left two
-  running nodes (`/tmp/conformance-<pid>-<ts>/cardano-e2e`). Cleanup performed by the
-  evaluator; the fix belongs to the runner, not the BDD layer. (Both leaked processes and
-  dirs were cleaned during this evaluation.)
-- **F-2 (library semantics, adapter obligation):** under `defaultMain`'s default
-  ingredients, a scenario that fails **skips its `GivenAndAfter` teardown** (observed: the
-  receipts dir survived a failed scenario). The library exposes `afterEach`/`withResource`
-  as the escape hatch; our adapter must bind real resources through a failure-safe wrapper
-  and never rely on `GivenAndAfter` alone. This matches, and now verifies empirically, the
-  inspected reference's caveat about fail-fast and teardown.
+- **F-1 — the row runner leaks its devnet cardano-node process and session dir on normal
+  exit.** Two separate runs left two running nodes (`/tmp/conformance-<pid>-<ts>/cardano-e2e`);
+  cleanup performed by the evaluator; the fix belongs to the runner, not the BDD layer.
+  *Blocks adoption of devnet-bound stories in CI:* stories that drive real sessions must not
+  leak a node per run. *Does not block* pure/in-process stories, or CI-external use. To lift:
+  the runner tears down (or explicitly reuses) its session and node on exit, verified by a
+  no-leak assertion like the spike's.
+- **F-2 — under `defaultMain`'s default ingredients, a scenario that fails skips its
+  `GivenAndAfter` teardown** (observed: the receipts dir survived a failed scenario). The
+  library exposes `afterEach`/`withResource` as the escape hatch; this matches the inspected
+  reference's fail-fast caveat and now verifies it empirically. *Blocks adoption as-is:* any
+  real resource (devnet session, files, keys) bound through bare `GivenAndAfter` leaks on the
+  first red scenario — precisely when cleanup matters most. To lift: our adapter binds every
+  real resource through a failure-safe wrapper (`withResource`/`afterEach` or an explicit
+  finalizer test) and never through bare `GivenAndAfter`; demonstrated once on a real
+  resource before any scaled use.
 - **F-3 (minor, adapter ergonomics):** `Test.BDD.Language` exports a `when` combinator that
   collides with `Control.Monad.when`; adapters need a qualified-import convention.
+  *Does not block* — a naming convention in the adapter solves it.
 - **F-4 (README staleness, confirmed):** the README's `testBdd` example does not compile
   against the exported API; `testBehavior`/`testBehaviorIO`/`testBehaviorF` from source (and
   the repo's own tests) are the correct integration path, as the inspection said.
+  *Does not block* — upstream README fix or a note in our adapter docs.
 
 ## What the library supplies, and what our adapter must add
 
@@ -85,9 +92,9 @@ behind a thin Singular adapter, conditional on:**
    real resource;
 2. F-1 fixed or bounded in the conformance runner before stories drive devnet sessions in
    CI;
-3. operator review of the representative rendered story
-   (`../correspondence/naming_occupied_key_refuses_duplicate.md`) before any DSL scales
-   across the suite.
+3. operator review of the two representative rendered stories — the ground instance
+   (`../correspondence/naming_occupied_key_refuses_duplicate.md`) and the equivalence under
+   load (`../correspondence/fold_iff.md`) — before any DSL scales across the suite.
 
 GHC 9.12.3 compatibility is established for the evaluated surface by this spike's builds
 and runs. Alternative frameworks were not evaluated (out of scope by instruction). This
