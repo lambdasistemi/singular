@@ -1,0 +1,68 @@
+{
+  "the-contract-and-its-binding": [
+    {
+      "text": "This page reports conformance evidence for the generic registry that cardano-keri consumes, bound to a pinned cardano-keri commit. cardano-keri needs Insert, Update and Delete; the naming demonstration refuses Delete by design, so no naming run can evidence these rows.",
+      "pause": 400
+    }
+  ],
+  "the-denominator": [
+    {
+      "text": "The inventory file carries forty-one rows with forty owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
+      "pause": 400
+    },
+    {
+      "text": "The word executed never appears in the inventory file itself; a row prints as executed only when a run receipt for it exists and matches the current commit.",
+      "pause": 400
+    }
+  ],
+  "what-this-slice-executes": [
+    {
+      "text": "One cage, one key, four rows in order. Update folds and the new value reads back from the chain. Delete folds and the key proves absent. Re-insert folds and the third value reads back. Insert on the occupied key is refused by the state script, and a fresh cage accepting a valid insert proves the refusal discriminates.",
+      "pause": 400
+    },
+    {
+      "text": "Every accepting row carries a deliberately wrong variant the run requires to fail, and every refusal is attributed to the script that produced it.",
+      "pause": 400
+    }
+  ],
+  "measurements": [
+    {
+      "text": "Ship run on a clean tree with cardano-node ten point seven. Execution units use under three percent of the devnet maxima, which are queried from the running node, never hardcoded.",
+      "pause": 400
+    },
+    {
+      "text": "Serialized size is the tight dimension at about seventy percent of the transaction maximum; the worst case across the three accepting folds is recorded in the CL zero one receipt.",
+      "pause": 400
+    }
+  ],
+  "what-this-slice-does-not-establish": [
+    {
+      "text": "Five rows rest on predecessor runs and are cited, not re-executed. Everything else prints uncovered, including four expected consumer gaps that are recorded to observe, not passed.",
+      "pause": 400
+    },
+    {
+      "text": "Checkpoint policy, naming rows and recovery rows belong to other owners. Single-request devnet folds say nothing about batch limits or other environments.",
+      "pause": 400
+    }
+  ],
+  "commands": [
+    {
+      "text": "List prints the inventory. Run executes the four rows with measurements, controls and receipts under the run's own output directory. List against those receipts shows what executed.",
+      "pause": 400
+    },
+    {
+      "text": "Two armed controls — an impossible refusal marker and forged claim values — must each fail the run with a non-zero exit.",
+      "pause": 400
+    }
+  ],
+  "observed-environment": [
+    {
+      "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with both script hashes recorded. Any other environment is explicitly not covered.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "consumer-conformance.md",
+    "sha256": "3cb6e579d73bab82b9b56f2a39ebbf402d3bcf40c679d7e9848e8717e8d2762b"
+  }
+}

@@ -4,7 +4,7 @@
 
 The rows answer to the consumer contract source-bound to
 `lambdasistemi/cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2`:
-`docs/design/registry-as-mpfs.md` (rulings 1–11, theorems R1–R14) and
+`docs/design/registry-as-mpfs.md` (eleven operator rulings and fourteen registry theorems) and
 `docs/user/consumer-checklist.md`. cardano-keri consumes the
 **generic** registry — Insert, Update, Delete — not the naming
 application, whose restriction refuses Delete and reuse by design.
@@ -53,7 +53,9 @@ Had the chain accepted the occupied insert, that would be a
 **finding** reported with the accepted transaction — never relabelled
 as a refusal.
 
-### Measurements (ship run: base `8cd9ef0`, clean tree, cardano-node 10.7.0)
+### Measurements
+
+Ship run: base `8cd9ef0`, clean tree, cardano-node 10.7.0.
 
 Maxima queried from the running node, never hardcoded:
 `maxTxExUnits` 140000000 mem / 10000000000 cpu,
