@@ -40,7 +40,7 @@ import Data.Aeson (
  )
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (isPrefixOf, isSuffixOf)
-import Data.Maybe (isNothing)
+import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import System.Directory (doesDirectoryExist, listDirectory)
@@ -89,10 +89,14 @@ instance ToJSON RefusalInfo where
 
 {- | Evidence that a row executed. Accepted rows name the chain's
 transaction ids and carry measurements; refused rows carry the
-attribution and no transactions. @receiptVenue@ records where the
-refusal was observed: @node-submit@ (a node ruling on a submitted
-transaction) or @ledger-eval@ (local ledger evaluation only — never
-described as ledger execution).
+attribution and the submitted transaction's id under @rejected@
+(empty @transactions@: nothing was accepted). @receiptVenue@
+records where the refusal was observed: @node-submit@ (a node
+ruling on a submitted transaction) or @ledger-eval@ (local ledger
+evaluation only — never described as ledger execution).
+@receiptDirty@ records whether the running tree had uncommitted
+changes: a receipt from a dirty tree is honest working evidence,
+but only a clean-tree receipt names a commit that reproduces it.
 -}
 data Receipt = Receipt
     { receiptRow :: !Text
@@ -106,6 +110,8 @@ data Receipt = Receipt
     , receiptNode :: !Text
     , receiptBlueprint :: !Text
     , receiptVenue :: !Text
+    , receiptRejected :: !(Maybe Text)
+    , receiptDirty :: !Bool
     }
     deriving stock (Show, Eq)
 
@@ -123,6 +129,8 @@ instance FromJSON Receipt where
             <*> o .: "node"
             <*> o .: "blueprint"
             <*> o .: "venue"
+            <*> o .:? "rejected"
+            <*> o .: "dirty"
 
 instance ToJSON Receipt where
     toJSON r =
@@ -131,10 +139,12 @@ instance ToJSON Receipt where
             , "outcome" .= receiptOutcome r
             , "transactions" .= receiptTransactions r
             , "refusal" .= receiptRefusal r
+            , "rejected" .= receiptRejected r
             , "mem" .= receiptMem r
             , "cpu" .= receiptCpu r
             , "txSize" .= receiptTxSize r
             , "base" .= receiptBase r
+            , "dirty" .= receiptDirty r
             , "node" .= receiptNode r
             , "blueprint" .= receiptBlueprint r
             , "venue" .= receiptVenue r
@@ -236,18 +246,32 @@ loadReceipts dir = do
                         <> T.unpack (receiptRow r)
                         <> " must be a node-submit observation"
                     )
+            | isJust (receiptRejected r) ->
+                Left
+                    ( path
+                        <> ": accepted row "
+                        <> T.unpack (receiptRow r)
+                        <> " must not name a rejected transaction"
+                    )
             | otherwise -> Right r
         Refused
             | null (receiptTransactions r)
             , Just _ <- receiptRefusal r
-            , receiptVenue r `elem` ["node-submit", "ledger-eval"] ->
+            , receiptVenue r == "node-submit"
+            , Just _ <- receiptRejected r ->
+                Right r
+            | null (receiptTransactions r)
+            , Just _ <- receiptRefusal r
+            , receiptVenue r == "ledger-eval"
+            , Nothing <- receiptRejected r ->
                 Right r
             | otherwise ->
                 Left
                     ( path
                         <> ": refused row "
                         <> T.unpack (receiptRow r)
-                        <> " must carry a refusal and no transactions"
+                        <> " must carry a refusal, no transactions, and "
+                        <> "a rejected id exactly for node-submit"
                     )
     checkReceipts rs
         | length rows /= length (nub rows) =

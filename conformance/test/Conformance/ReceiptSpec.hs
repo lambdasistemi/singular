@@ -109,6 +109,16 @@ spec = describe "Receipt" $ do
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
+    it "rejects a node-submit refusal with no rejected id" $ do
+        dir <- getDataFileName "test/fixtures/bad-no-rejected"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+
+    it "rejects an accepted receipt naming a rejected id" $ do
+        dir <- getDataFileName "test/fixtures/bad-accepted-rejected"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+
     it "accepts a small receipt under the size bound" $
         checkReceiptSize smallReceipt `shouldBe` Right ()
 
@@ -125,10 +135,12 @@ smallReceipt =
         , receiptOutcome = Accepted
         , receiptTransactions = ["abc123"]
         , receiptRefusal = Nothing
+        , receiptRejected = Nothing
         , receiptMem = Just 1
         , receiptCpu = Just 2
         , receiptTxSize = Just 500
         , receiptBase = "base"
+        , receiptDirty = False
         , receiptNode = "node"
         , receiptBlueprint = "blueprint"
         , receiptVenue = "node-submit"
@@ -148,6 +160,7 @@ oversizedReceipt =
                         T.pack (replicate (maxReceiptBytes + 4096) 'x')
                     }
                 )
+        , receiptRejected = Just "abc123"
         , receiptMem = Nothing
         , receiptCpu = Nothing
         , receiptTxSize = Nothing

@@ -65,10 +65,11 @@ import System.Directory (
     removePathForcibly,
  )
 import System.Environment (lookupEnv)
+import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.Posix.Env (setEnv)
 import System.Posix.Process (getProcessID)
-import System.Process (readProcess)
+import System.Process (readProcess, readProcessWithExitCode)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
@@ -267,6 +268,7 @@ data Env = Env
     , envMirror :: Mirror
     , envControl :: Control
     , envBase :: String
+    , envDirty :: Bool
     , envNode :: String
     , envBlueprint :: String
     , envReceiptsDir :: FilePath
@@ -293,6 +295,8 @@ runRows rawRows receiptsDir = do
     emit "node" nodeVer
     base <- requireBase
     emit "base" base
+    dirty <- requireTreeClean
+    emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
     require
         "forged control value collides with a row value"
         (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
@@ -308,6 +312,7 @@ runRows rawRows receiptsDir = do
                 requestBytes
                 nodeVer
                 base
+                dirty
                 receiptsDir
                 sock
 
@@ -374,6 +379,17 @@ requireBase = do
         [] -> failWith "git base unknown; receipts need it"
         first : _ -> pure first
 
+{- | Whether the running tree has uncommitted changes. A dirty tree
+still runs — its receipts record @dirty: true@ — but only a clean
+tree names a commit that reproduces them.
+-}
+requireTreeClean :: IO Bool
+requireTreeClean = do
+    (code, out, _) <- readProcessWithExitCode "git" ["status", "--porcelain"] ""
+    case code of
+        ExitSuccess -> pure (not (null (lines out)))
+        _ -> failWith "git status unknown; receipts need tree identity"
+
 -- ---------------------------------------------------------
 -- Devnet isolation (not optional)
 -- ---------------------------------------------------------
@@ -427,6 +443,7 @@ runSession ::
     SBS.ShortByteString ->
     String ->
     String ->
+    Bool ->
     FilePath ->
     FilePath ->
     IO ()
@@ -437,6 +454,7 @@ runSession
     requestBytes
     nodeVer
     base
+    dirty
     receiptsDir
     sock = do
         lsqCh <- newLSQChannel 16
@@ -487,6 +505,7 @@ runSession
                     , envMirror = mirror
                     , envControl = control
                     , envBase = base
+                    , envDirty = dirty
                     , envNode = nodeVer
                     , envBlueprint = blueprintId
                     , envReceiptsDir = receiptsDir
@@ -518,6 +537,7 @@ writeCL01Receipt env rows = do
                     "CL01"
                     Accepted
                     (map T.unpack (concatMap receiptTransactions rs))
+                    Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
                     (Just (maximum (map getCpu rs)))
@@ -598,6 +618,7 @@ runCG02 env = do
         Accepted
         [txIdHex foldTx]
         Nothing
+        Nothing
         (Just mem)
         (Just cpu)
         (Just size)
@@ -630,6 +651,7 @@ runCG03 env = do
         Accepted
         [txIdHex foldTx]
         Nothing
+        Nothing
         (Just mem)
         (Just cpu)
         (Just size)
@@ -660,6 +682,7 @@ runCG04 env = do
         "CG04"
         Accepted
         [txIdHex foldTx]
+        Nothing
         Nothing
         (Just mem)
         (Just cpu)
@@ -720,6 +743,7 @@ runCG05 env marker = do
                 env
                 marker
                 (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex signed)
         Submitted txid ->
             failWith
                 ( "CG05 FINDING: the fold accepted an Insert on an \
@@ -730,8 +754,8 @@ runCG05 env marker = do
                 )
     controlFreshCage env
 
-attributeSubmitRefusal :: Env -> String -> String -> IO ()
-attributeSubmitRefusal env marker text =
+attributeSubmitRefusal :: Env -> String -> String -> String -> IO ()
+attributeSubmitRefusal env marker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
             let trimmed = trimRefusal text
@@ -752,6 +776,7 @@ attributeSubmitRefusal env marker text =
                         }
                     )
                 )
+                (Just rejectedTxid)
                 Nothing
                 Nothing
                 Nothing
@@ -1413,22 +1438,25 @@ writeRowReceipt ::
     Outcome ->
     [String] ->
     Maybe RefusalInfo ->
+    Maybe String ->
     Maybe Integer ->
     Maybe Integer ->
     Maybe Integer ->
     T.Text ->
     IO ()
-writeRowReceipt env row outcome txs refusal mem cpu size venue =
+writeRowReceipt env row outcome txs refusal rejected mem cpu size venue =
     writeReceiptFile (envReceiptsDir env) $
         Receipt
             { receiptRow = T.pack row
             , receiptOutcome = outcome
             , receiptTransactions = map T.pack txs
             , receiptRefusal = refusal
+            , receiptRejected = fmap T.pack rejected
             , receiptMem = mem
             , receiptCpu = cpu
             , receiptTxSize = size
             , receiptBase = T.pack (envBase env)
+            , receiptDirty = envDirty env
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = venue

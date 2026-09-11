@@ -22,6 +22,8 @@ data-files:
   test/fixtures/bad-accepted/receipt-CG02.json
   test/fixtures/bad-refused/receipt-CG05.json
   test/fixtures/bad-venue/receipt-CG05.json
+  test/fixtures/bad-no-rejected/receipt-CG05.json
+  test/fixtures/bad-accepted-rejected/receipt-CG02.json
   test/fixtures/duplicate/receipt-CG02-a.json
   test/fixtures/duplicate/receipt-CG02-b.json
   test/fixtures/malformed/receipt-CG02.json
