@@ -33,6 +33,9 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
+      # Issue #49: see the pull_request filter — the drift check also
+      # watches epic 15's live corpus.
+      - 'lean/**'
       - '.github/workflows/mpfs.yml'
   pull_request:
     branches: [main]
@@ -40,6 +43,12 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
+      # Issue #49: the drift check compares the vendored v0.2.0 vectors
+      # against epic 15's live corpus at lean/lifecycle-corpus.json, so
+      # a corpus-only revision must trigger this workflow too — without
+      # this entry the check would not fire exactly when the corpus
+      # moves (the blind spot the check exists to close).
+      - 'lean/**'
       - '.github/workflows/mpfs.yml'
 permissions:
   contents: read
@@ -181,6 +190,42 @@ jobs:
       # as the hermetic e2e, at unit-test cost).
       - name: Run the naming wire vector suite
         run: nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
+  vector-drift:
+    name: Vendored v0.2.0 vectors match the live corpus
+    runs-on: nixos
+    timeout-minutes: 15
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-vector-drift"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #49: the four wire vectors are pinned twice by design (D-016)
+      # — vendored into offchain/naming/src/Naming/Wire/Vectors.hs with
+      # their provenance, and live in epic 15's merged corpus at
+      # lean/lifecycle-corpus.json. If epic 15 revises its corpus, nothing
+      # said so — until now. The check compares every value the vendored
+      # module pins (five wire byte arrays, WD01's fixture and shape,
+      # WD02's attachment hash, WD03's encoded datum, WR01's proposal,
+      # shape, comparison result and refund addresses) against the
+      # corresponding field of the corpus row with the same id, and fails
+      # on divergence. Divergence is surfaced, never resolved: the vendored
+      # bytes stay pinned to v0.2.0 and a human decides whether to adopt
+      # the new contract (markers: vector-drift-check,
+      # drift-pinned-release, drift-live-corpus). The check is pure base +
+      # bytestring compiled with the dev-shell GHC (the run-suite.sh
+      # pattern) — no cabal, no package index, no network. The lean/**
+      # paths filter above is what makes this job fire when epic 15
+      # revises the corpus.
+      - name: Compare the vendored wire vectors with the live corpus
+        run: nix develop ./offchain --quiet --command bash offchain/naming/run-drift-check.sh
   li01:
     name: LI01 canonical initialization, packaged and hermetic
     needs: blueprint
