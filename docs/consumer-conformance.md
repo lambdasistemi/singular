@@ -1,4 +1,4 @@
-# Consumer conformance (epic 18, issues #63 and #69)
+# Consumer conformance (epic 18, issues #63, #69 and #68)
 
 ## The contract and its binding
 
@@ -38,9 +38,14 @@ current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
 
 ## What this slice executes
 
-Two devnet sessions run in order, each on an isolated node with its
+Three devnet sessions run in order, each on an isolated node with its
 own published world: the generic registry rows first, then the
-canonical identity rows.
+canonical identity rows, then the serialization boundary rows. Two
+further checks, CS01 and CS06, never start a node at all: they compare
+Haskell values against the compiled blueprint read at run time, so a
+reader totalling "rows executed on a real devnet" must count the five
+devnet rows below, not seven. The counts are kept visibly separate
+for exactly that reason.
 
 ### The generic registry rows
 
@@ -96,9 +101,58 @@ it is the accepted design. CA03 is what makes CA02 worth anything:
 a check that cannot fail proves nothing, so the weak authenticator's
 acceptance of the rival is itself executed and required.
 
+### The serialization boundary rows (devnet session)
+
+One fresh cage per row (two where a row needs two phases), each cage
+booted, exercised and — except where the row says otherwise — closed
+on the same isolated node, in canonical order:
+
+| row | outcome | evidence |
+|---|---|---|
+| CS02 datum bytes submitted and read back | accept | boot `StateDatum` plus one request `RequestDatum`, byte-compared submitted `Datum` versus chain-observed `Datum` for both; units from the boot minting, size the larger of the two transactions; corrupted comparison fails the run (control) |
+| CS03 every `UpdateRedeemer` constructor executed | accept | one executing witness per constructor — `End` 0, `Contribute` 1, `Modify` 2, `Retract` 3, `Sweep` 4 — each read back from the redeemer of a submitted transaction the validator executed (the `Modify` fold carries `Modify` and `Contribute` together); four witness transactions named; a skipped witness fails the run (control) |
+| CS04 redeemer at a wrong constructor index | **refuse** | valid fold retargeted to `Constr` 5 keeping its fields (same CBOR size, so fee and collateral stay sufficient and any refusal attributes to the script); node refuses in phase 2 with `CekError`, attributed to **both** cage scripts (`state+request`, ledger order, unstable — the tamper breaks fold consistency the request script also checks); fresh cage accepts a valid fold (control); impossible marker fails the run (control) |
+| CS05 `RequestAction` and `MintRedeemer` coverage | accept, with one recorded gap | `Update`, `Rejected` (phase-3 reject), `Minting` (boot), `Burning` (end) each executed and read back from its redeemer; `Migrating` is unreachable on the imported partition (`previousPolicies=[]`, so `has(previousPolicies, oldPolicy)` fails at `state.ak` `validateMigration` FR1) and is recorded as a gap with that reason in `gap-CS05-Migrating.txt` — never a pass, never omitted; a skipped witness fails the run (control) |
+| CS08 `OnChainTokenState` six fields round trip | accept | two boots, `stake_script` `None` and `Some` (staking hash), all six fields byte-identical submitted versus chain-observed; corrupted comparison fails the run (control) |
+
+### The serialization checks that need no node
+
+No transaction, no node, no execution units — hence `mem`/`cpu` zero
+and no transactions named. What is measured is stated per row, and
+these rows never appear in a devnet-executed count.
+
+| row | outcome | evidence |
+|---|---|---|
+| CS01 Haskell encodings against the blueprint schema | accept (`blueprint-check`) | all thirteen `ToData` types round-trip **and** each constructor index and field order matches the compiled blueprint's declared schema read at run time (`MPFS_BLUEPRINT`), including field-title order; no type needed a gap; `Constr` 99 validates against nothing and index 99 demanded for `End` fails the run (control); `txSize` is the blueprint file size in bytes, 92048 |
+| CS06 parameter application derived in Haskell | accept (`param-check`) | parameter counts and encodings published from the blueprint — state 1 (`previousPolicies`), request 2 (`statePolicyId`, `cageTokenName`, in source order), staking 0 — unapplied hashes match the pinned blueprint hashes, the applied state hash is `874e476d…`, non-empty allowlists and swapped request params discriminate; 2 demanded for state fails the run (control); `txSize` is the largest applied script size in bytes, 7805 |
+
+### CS07: unmarked and escalated
+
+CS07 carries no receipt and prints `uncovered`: `Branch` and `Leaf`
+are witnessed on chain across many accepted folds, but no accepted
+fold has ever carried a `Fork`, and two independently ground
+lone-`Fork` absence proofs — each verified by the mts Haskell stack
+against its own root — are refused by the compiled validator with a
+bare `CekError` at build-time evaluation. The full bundle (keys, trie
+shape, both verdicts, the refusal bytes, what could not be
+determined, and the bounded consumer consequence) is filed as a user
+story escalation; the offline oracle (`find-fork-keys`,
+`check-fork-exclusion`) and shape probes (`show-nibbles`,
+`show-d-proof`, `show-all-proofs`) reproduce every offline claim.
+This is a finding held open, not a gap and not a pass.
+
 ### Measurements
 
 Ship run: base `b3f4b5a`, clean tree, cardano-node 10.7.0.
+
+Serialization ship run: base `b2201c3`, clean tree, cardano-node
+10.7.0 — every receipt below names that base with `dirty: false`.
+Each invocation observes the tree before creating its output, and
+ships from a fresh output directory, so no run ever measures the
+previous run's receipts. The defect this guards against reported
+`dirty: true` on clean trees; its direction is conservative — it can
+block a valid ship, it can never let a dirty tree pass as clean — and
+no merged receipt ever claimed clean while dirty.
 
 Maxima queried from the running node, never hardcoded:
 `maxTxExUnits` 140000000 mem / 10000000000 cpu,
@@ -112,23 +166,35 @@ Maxima queried from the running node, never hardcoded:
 | CA01 canonical boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
 | CA02 rival boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
 | CA05 forged payment | 0 (140000000) | 0 (10000000000) | 333 (16051) |
+| CS02 datum round trip | 143440 (139856560) | 46848478 (9953151522) | 8466 (7918) |
+| CS03 five witnesses | 629296 (139370704) | 204228993 (9795771007) | 11423 (4961) |
+| CS05 four witnesses | 649502 (139350498) | 217245659 (9782754341) | 11423 (4961) |
+| CS08 state None+Some | 147634 (139852366) | 49473955 (9950526045) | 8497 (7887) |
 
 Execution units stay under 3% of the maxima for every row (CA05
 reports zeros honestly: no script purpose exists to evaluate).
 Serialized size is the tight dimension at ~70% of `maxTxSize` for
 folds and ~52% for boots; larger batches (CL02) may press against it
 first. The worst case across each session is recorded in that
-session's CL01 receipt (generic folds; canonical boots).
+session's CL01 receipt (generic folds; canonical boots); the CS rows
+carry their worst cases in the row receipts, and no CS CL01 is
+claimed yet. Refusal reasons keep every failing script hash in ledger
+order — a tampered fold can fail two scripts, and trimming volume
+never trims identities — under the same run-enforced 16KB bound.
 
 ## What this slice does not establish
 
 - **Bound, not re-executed**: CG01, CG06, CG08, CG16, CG18 rest on
   epic 16's `CageSpec` runs, cited per row. Nothing else in the
   inventory has ledger evidence.
-- **Uncovered**: all CS, CK(01–05), CL02–CL03 and the remaining CG
-  rows print `uncovered`. CG11–CG13 and CG19 are expected consumer
+- **Uncovered**: CS07, CK(01–05), CL02–CL03 and the remaining CG
+  rows print `uncovered`. CS07 is not merely uncovered: its `Fork`
+  finding is filed for a user story and the row stays unmarked until
+  that story resolves — an unmarked row with a finding, never a gap
+  and never a pass. CG11–CG13 and CG19 are expected consumer
   **gaps** (upstream `#100`/`#101`): unobserved here, recorded as gaps
-  to observe, not as passes.
+  to observe, not as passes. CS05's `Migrating` gap is of that
+  recorded kind, with its validator-read reason beside the receipts.
 - **Out of scope**: CK06 (cardano-keri), the naming rows (epic 16
   demonstration, not consumer evidence), LR/LT rows (epic 17).
 - The CA rows authenticate the canonical registry as the consumer
@@ -149,19 +215,37 @@ mpfs="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint
 MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./conformance-receipts
 # the canonical identity rows, as their own session
 MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir ./conformance-receipts
+# the serialization rows: local checks need no node, the rest run devnet
+MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
 # rows print executed only against matching receipts
 nix run ./conformance#conformance -- list --receipts ./conformance-receipts
 ```
 
-CA and CG rows run as separate sessions, one devnet each; a mixed
-request is refused. Armed controls (each must exit non-zero; all do):
+CA, CG and CS rows run as separate sessions, one devnet each (CS01
+and CS06 run local inside the CS invocation); a mixed CA/CG request
+is refused. Each family ships from a fresh receipts directory —
+receipts from one invocation would otherwise mark the next run dirty.
+Armed controls (each must exit non-zero; all do):
 
 ```sh
 CONFORMANCE_CONTROL=wrong-reason ... -- run CG02 CG03 CG04 CG05    # CG05 reason mismatch
 CONFORMANCE_CONTROL=false-claim ... -- run CG02 CG03 CG04 CG05     # forged value fails the chain check
 CONFORMANCE_CONTROL=false-claim ... -- run CA01 ... CA05           # fabricated derivation bound to CA01
 CONFORMANCE_CONTROL=naive-authenticator ... -- run CA01 ... CA05   # the weak authenticator must reject the rival; it cannot
-CONFORMANCE_CONTROL=unapplied-address ... -- run CA01 ... CA05     # the unapplied layer's address must pass; it cannot
+CONFORMANCE_CONTROL=unapplied-address ... -- run CA01 ... CA05   # the unapplied layer's address must pass; it cannot
+CONFORMANCE_CONTROL=wrong-index ... -- run CS01                   # index 99 demanded for End
+CONFORMANCE_CONTROL=wrong-params ... -- run CS06                  # two params demanded for state
+CONFORMANCE_CONTROL=false-datum ... -- run CS02 CS08              # corrupted bytes demanded to match
+CONFORMANCE_CONTROL=missing-witness ... -- run CS03 CS05          # a skipped witness demanded present
+CONFORMANCE_CONTROL=wrong-reason ... -- run CS04                  # impossible marker demanded in the reason
+```
+
+The offline Fork oracle and its probes need no node and no blueprint:
+
+```sh
+nix run ./conformance#conformance -- find-fork-keys     # ground keys plus pure-trie proof shapes
+nix run ./conformance#conformance -- check-fork-exclusion # cage/mirror roots plus mts-core exclusion verdict
+nix run ./conformance#conformance -- show-all-proofs     # present-key proofs over the seven-key set     # the unapplied layer's address must pass; it cannot
 ```
 
 The runner sets its own unique `TMPDIR` before starting a node and

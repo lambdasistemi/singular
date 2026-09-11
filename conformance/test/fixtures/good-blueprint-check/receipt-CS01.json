@@ -1,0 +1,1 @@
+{"base": "fixture-base", "blueprint": "fixture-blueprint", "cpu": 0, "mem": 0, "node": "fixture-node", "outcome": "accepted", "refusal": null, "row": "CS01", "transactions": [], "txSize": 1234, "venue": "blueprint-check", "dirty": false, "rejected": null}

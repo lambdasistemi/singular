@@ -35,6 +35,7 @@ import Conformance.Rows (
     renderInventory,
     rowId,
  )
+import Conformance.ForkKeys (runCheckForkExclusion, runFindForkKeys, runShowAllProofs, runShowDProof, runShowNibbles)
 import Conformance.Run (runRows)
 import Paths_conformance (getDataFileName)
 
@@ -45,6 +46,11 @@ main :: IO ()
 main = do
     args <- getArgs
     case args of
+        ["find-fork-keys"] -> runFindForkKeys
+        ["check-fork-exclusion"] -> runCheckForkExclusion
+        ["show-nibbles"] -> runShowNibbles
+        ["show-d-proof"] -> runShowDProof
+        ["show-all-proofs"] -> runShowAllProofs
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
         "run" : rest -> runDispatch rest
@@ -53,6 +59,7 @@ main = do
 usage :: IO ()
 usage = do
     hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
+    hPutStrLn stderr "       conformance -- find-fork-keys"
     hPutStrLn
         stderr
         "       conformance -- run ROW... [--receipts-dir DIR]"

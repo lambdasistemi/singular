@@ -22,6 +22,8 @@ module Conformance.Mirror (
     mirrorDelete,
     readChainState,
     inclusionProofFrom,
+    mirrorExclusionSteps,
+    mirrorExclusionVerifies,
     verifyPresentValue,
     verifyAbsentKey,
     emit,
@@ -73,10 +75,12 @@ import MPF.Interface (
 import MPF.Proof.Exclusion (
     MPFExclusionProof,
     mkMPFExclusionProof,
+    mpfExclusionProofSteps,
     verifyMPFExclusionProof,
  )
 import MPF.Proof.Insertion (
     MPFProof (..),
+    MPFProofStep (..),
     foldMPFProof,
     mkMPFInclusionProof,
  )
@@ -113,6 +117,40 @@ mirrorDelete :: Mirror -> ByteString -> IO ()
 mirrorDelete ref k = do
     _ <- CageTrie.delete (mkPureTrieFromRef ref) k
     pure ()
+
+{- | Whether mts itself verifies an absence proof for @key@ against the
+mirror\'s own root: prove via @mkMPFExclusionProof@, verify via
+@verifyMPFExclusionProof@. No node, no chain — it separates "the
+builder emits steps mts-core itself rejects" from "mts verifies but
+the on-chain validator refuses".
+-}
+{- | Constructor names of mts-core\'s exclusion proof for @key@, if one is
+constructible. Compares against what the cage layer emits for the same
+key and trie: same shape means the refusal lies across the
+Haskell/Aiken boundary; different shapes point at the builder.
+-}
+mirrorExclusionSteps :: Mirror -> ByteString -> IO (Maybe [String])
+mirrorExclusionSteps ref key = do
+    db <- readIORef ref
+    pure $ case exclusionProofFrom db key of
+        Nothing -> Nothing
+        Just proof -> Just (map stepName (mpfExclusionProofSteps proof))
+  where
+    stepName s = case s of
+        ProofStepLeaf{} -> "Leaf"
+        ProofStepFork{} -> "Fork"
+        ProofStepBranch{} -> "Branch"
+
+mirrorExclusionVerifies :: Mirror -> ByteString -> ByteString -> IO Bool
+mirrorExclusionVerifies ref key rootBytes = do
+    db <- readIORef ref
+    proof <- case exclusionProofFrom db key of
+        Just p -> pure p
+        Nothing ->
+            failWith
+                "mirrorExclusionVerifies: no exclusion proof constructible"
+    trusted <- trustedRootFromChain (OnChainRoot rootBytes)
+    pure (verifyMPFExclusionProof mpfHashing trusted proof)
 
 {- | Read the current state datum for a token straight from the
 chain: the state UTxO at the cage address. This is the only

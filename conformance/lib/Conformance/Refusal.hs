@@ -17,11 +17,12 @@ what came back (@CONFORMANCE_CONTROL=wrong-reason@).
 module Conformance.Refusal (
     RefusalMismatch (..),
     matchRefusal,
+    refusalScriptHashes,
     trimRefusal,
     wrongReasonMarker,
 ) where
 
-import Data.List (intercalate, isInfixOf, isPrefixOf, sortOn)
+import Data.List (intercalate, isInfixOf, isPrefixOf, nub, sortOn)
 
 -- | How a refusal failed to attribute.
 data RefusalMismatch
@@ -69,8 +70,8 @@ isPhase2 reason =
 carrying that is unreadable. Kept: the failure class and redeemer
 pointer, the failed script hash, the CEK error. Everything else —
 @plutusBinary@, @pwcCostModel@, the full @ScriptContext@ — comes
-out; the script hash already binds which script ran, and the
-receipt already carries the blueprint hashes.
+out; every failed script hash in ledger order binds which scripts
+ran, and the receipt already carries the blueprint hashes.
 -}
 trimRefusal :: String -> String
 trimRefusal text =
@@ -83,7 +84,7 @@ trimRefusal text =
         | Just part <-
             [ evalHead text
             , plutusFailed text
-            , scriptHash text
+            , scriptHashes text
             , cekError text
             ]
         ]
@@ -102,14 +103,32 @@ plutusFailed text
         Just "PlutusV3 script failed (node-submit)"
     | otherwise = Nothing
 
-{- | The failed script's hash. Both shapes name it as
-@ScriptHash \"...\"@: the eval shape via @pwcScriptHash@, the
-node-submit shape bare.
+{- | Every @ScriptHash \"...\"@ value in the reason, ledger order,
+first occurrence wins. A malformed transaction can trip two validators
+in one submission and the ledger's failure-list order is not stable,
+so attribution keeps them all: trim volume — the script binary, the
+cost model, the whole context — never the identities that attribute
+the refusal. Both shapes name hashes this way: the eval shape via
+@pwcScriptHash@, the node-submit shape in its failure headers.
+Unquoted ledger credentials never match this pattern.
 -}
-scriptHash :: String -> Maybe String
-scriptHash text = do
-    after <- findAfter "ScriptHash \\\"" text
-    pure ("scriptHash=" <> takeUntil "\\\"" after)
+refusalScriptHashes :: String -> [String]
+refusalScriptHashes text = nub (filter (not . null) (go text))
+  where
+    go s = case findAfter hashMarker s of
+        Nothing -> []
+        Just after ->
+            let h = takeUntil hashEnd after
+             in h : go (drop (length h + length hashEnd) after)
+    hashMarker = "ScriptHash \\\""
+    hashEnd = "\\\""
+
+{- | The failed scripts' hashes joined as one @scriptHash=@ field.
+-}
+scriptHashes :: String -> Maybe String
+scriptHashes text = case refusalScriptHashes text of
+    [] -> Nothing
+    hs -> Just ("scriptHash=" <> intercalate "," hs)
 
 {- | The machine error, capped: the cause, not the context. Ends at
 the eval shape's context close or the node shape's protocol

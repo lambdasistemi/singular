@@ -80,7 +80,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (isInfixOf, sortOn)
+import Data.List (intercalate, isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust)
 import Data.Ord (Down (..))
@@ -107,7 +107,7 @@ import System.Process (readProcess, readProcessWithExitCode)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Datum (..))
+
 import Cardano.Ledger.Api.PParams (
     ppMaxTxExUnitsL,
     ppMaxTxSizeL,
@@ -123,6 +123,10 @@ import Cardano.Ledger.Api.Tx.Body (
     reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
     vldtTxBodyL,
+ )
+import Cardano.Ledger.Api.Scripts.Data (
+    Data (..),
+    Datum (..),
  )
 import Cardano.Ledger.Api.Tx.Out (
     addrTxOutL,
@@ -152,6 +156,7 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
     applyPreviousPolicies,
+    applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -186,6 +191,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     mkCageScript,
     mkInlineDatum,
     mkRequestScript,
+    onChainTokenId,
     requestAddrFromCfg,
     scriptHashBytes,
     spendingIndex,
@@ -194,12 +200,20 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     trySlots,
     txInToRef,
  )
+import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
+import Cardano.MPFS.Cage.TxBuilder.Reject (rejectRequestsImpl)
 import Cardano.MPFS.Cage.TxBuilder.Request (
     requestDeleteImpl,
     requestInsertImpl,
     requestUpdateImpl,
  )
+import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
+import Cardano.MPFS.Cage.TxBuilder.Sweep (sweepUtxoImpl)
 import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
+import Cardano.Tx.Balance (
+    BalanceResult (..),
+    balanceTx,
+ )
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     OnChainOperation (..),
@@ -207,7 +221,7 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef (..),
-    ProofStep,
+    ProofStep (..),
     RequestAction (Update),
     UpdateRedeemer (..),
  )
@@ -230,6 +244,7 @@ import Cardano.Node.Client.Submitter (
     SubmitResult (..),
     Submitter (..),
  )
+import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 import Conformance.Authenticate (
@@ -251,13 +266,15 @@ import Conformance.Mirror (
     verifyAbsentKey,
     verifyPresentValue,
  )
+import Conformance.CS01 (runCS01)
+import Conformance.CS06 (runCS06)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
     RefusalInfo (..),
     writeReceiptFile,
  )
-import Conformance.Refusal (matchRefusal, trimRefusal, wrongReasonMarker)
+import Conformance.Refusal (matchRefusal, refusalScriptHashes, trimRefusal, wrongReasonMarker)
 
 -- ---------------------------------------------------------
 -- Row vocabulary and control modes
@@ -274,16 +291,32 @@ canonicalRows =
     , "CG03"
     , "CG04"
     , "CG05"
+    , "CS01"
+    , "CS02"
+    , "CS03"
+    , "CS04"
+    , "CS05"
+    , "CS06"
+    , "CS08"
     ]
 
-caRows, cgRows :: [String]
-caRows = take 5 canonicalRows
-cgRows = drop 5 canonicalRows
+-- | Row families by explicit membership. Every partition below filters by
+-- these lists, never by exclusion: a catch-all partition silently absorbs
+-- the next family of rows (CA01-CA05 were once routed into the CS
+-- session by a notElem-CG catch-all). A row in no family fails loudly.
+caRows, cgRows, csRows :: [String]
+caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
+cgRows = ["CG02", "CG03", "CG04", "CG05"]
+csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
 
 data Control
     = Normal
     | WrongReason
     | FalseClaim
+    | WrongIndex
+    | WrongParams
+    | FalseDatum
+    | MissingWitness
     | -- | CA03 armed: the policy+address-only authenticator must
       -- reject the rival, which it cannot. Proves CA02's rejection
       -- is attributable to the derived name and nothing else.
@@ -301,6 +334,10 @@ readControl = do
         Nothing -> pure Normal
         Just "wrong-reason" -> pure WrongReason
         Just "false-claim" -> pure FalseClaim
+        Just "wrong-index" -> pure WrongIndex
+        Just "wrong-params" -> pure WrongParams
+        Just "false-datum" -> pure FalseDatum
+        Just "missing-witness" -> pure MissingWitness
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just other ->
@@ -421,31 +458,83 @@ runRows rawRows receiptsDir = do
               \vacuously"
             )
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
-    (stateBytes, requestBytes) <- loadCodes blueprintPath
-    nodeVer <- readNodeVersion
-    emit "node" nodeVer
+    -- Observe tree identity before any side effect: creating the
+    -- receipts directory first would always report dirty.
     base <- requireBase
     emit "base" base
     dirty <- requireTreeClean
     emit "tree" (if dirty then "dirty (receipts record it)" else "clean")
-    require
-        "forged control value collides with a row value"
-        (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
     createDirectoryIfMissing True receiptsDir
-    bracketTmpDir $ do
-        gDir <- genesisDir
-        checkGenesis gDir
-        withCardanoNode gDir $ \sock _startMs ->
-            runSession
-                rows
-                control
-                stateBytes
-                requestBytes
-                nodeVer
-                base
-                dirty
-                receiptsDir
-                sock
+    let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
+        devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
+        cgDevnet = [r | r <- devnetRows, r `elem` cgRows]
+        caDevnet = [r | r <- devnetRows, r `elem` caRows]
+        csDevnet = [r | r <- devnetRows, r `elem` csRows]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows)]
+    unless (null unpartitioned) $
+        failWith
+            ("rows in no partition: " <> unwords unpartitioned)
+    mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
+    unless (null devnetRows) $ do
+        (stateBytes, requestBytes) <- loadCodes blueprintPath
+        nodeVer <- readNodeVersion
+        emit "node" nodeVer
+        require
+            "forged control value collides with a row value"
+            (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
+        unless (null caDevnet) $
+            bracketTmpDir $ do
+                gDir <- genesisDir
+                checkGenesis gDir
+                withCardanoNode gDir $ \sock _startMs ->
+                    runSession
+                        caDevnet
+                        control
+                        stateBytes
+                        requestBytes
+                        nodeVer
+                        base
+                        dirty
+                        receiptsDir
+                        sock
+        unless (null cgDevnet) $
+            bracketTmpDir $ do
+                gDir <- genesisDir
+                checkGenesis gDir
+                withCardanoNode gDir $ \sock _startMs ->
+                    runSession
+                        cgDevnet
+                        control
+                        stateBytes
+                        requestBytes
+                        nodeVer
+                        base
+                        dirty
+                        receiptsDir
+                        sock
+        unless (null csDevnet) $
+            bracketTmpDir $ do
+                gDir <- genesisDir
+                checkGenesis gDir
+                withCardanoNode gDir $ \sock _startMs ->
+                    runCSSession
+                        csDevnet
+                        control
+                        stateBytes
+                        requestBytes
+                        nodeVer
+                        base
+                        dirty
+                        receiptsDir
+                        sock
+    when (null devnetRows) $
+        emit "complete" (show (length localRows) <> "/" <> show (length rows) <> " rows ok")
+
+runLocalRow :: FilePath -> FilePath -> String -> Bool -> String -> IO ()
+runLocalRow blueprintPath receiptsDir base dirty row = case row of
+    "CS01" -> runCS01 blueprintPath receiptsDir base dirty
+    "CS06" -> runCS06 blueprintPath receiptsDir base dirty
+    _ -> failWith ("run cannot execute local row: " <> row)
 
 validateRows :: [String] -> IO [String]
 validateRows [] =
@@ -2488,3 +2577,760 @@ extractTokenId cfg tx =
 txInHex :: TxId -> String
 txInHex (TxId h) =
     hex (hashToBytes (extractHash h))
+
+-- ---------------------------------------------------------
+-- CS devnet session (serialization boundary)
+-- ---------------------------------------------------------
+
+cs02Key, cs02Val :: ByteString
+cs02Key = "cs02-key"
+cs02Val = "cs02-value"
+
+runCSSession ::
+    [String] ->
+    Control ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    FilePath ->
+    IO ()
+runCSSession rows control stateBytes requestBytes nodeVer base dirty receiptsDir sock = do
+    lsqCh <- newLSQChannel 16
+    ltxsCh <- newLTxSChannel 16
+    nodeThread <-
+        async $
+            runNodeClient
+                (NetworkMagic 42)
+                sock
+                lsqCh
+                ltxsCh
+    threadDelay 3_000_000
+    status <- poll nodeThread
+    case status of
+        Nothing -> pure ()
+        Just _ ->
+            failWith "node connection closed before queries ran"
+    let prov = adaptProvider (mkN2CProvider lsqCh)
+        submit = mkN2CSubmitter ltxsCh
+        stateMarker = hex (scriptHashBytes (computeScriptHash (applyPreviousPolicies [] stateBytes)))
+        blueprintIdStr =
+            "state:"
+                <> stateMarker
+                <> " request:"
+                <> hex
+                    (scriptHashBytes (computeScriptHash requestBytes))
+    _ <- Cage.queryProtocolParams prov
+    mapM_ (runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr) rows
+    cancel nodeThread
+    emit
+        "complete"
+        (show (length rows) <> "/" <> show (length rows) <> " rows ok")
+
+runCSRow ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    String ->
+    IO ()
+runCSRow prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
+    "CS02" -> runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS03" -> runCS03 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS04" -> runCS04 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS05" -> runCS05 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS08" -> runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    _ -> failWith ("CS row not yet implemented: " <> row)
+
+-- | CS02: datum bytes constructed in Haskell and submitted are read
+-- back identical (byte-compare submitted vs chain-observed).
+runCS02 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    (seedTxIn, _) <- largestWalletUtxo prov
+    let cfg = cageCfg stateBytes requestBytes (txInToRef seedTxIn)
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    let submittedStateDatum = findStateDatum unsignedBoot
+    (mem, cpu) <- measureUnitsProv prov unsignedBoot
+    signedBoot <- submitWithGenesis submit unsignedBoot
+    tid <- extractTokenId cfg signedBoot
+    unsignedReq <-
+        requestInsertImpl
+            cfg
+            prov
+            (defaultTip cfg)
+            tid
+            cs02Key
+            cs02Val
+            genesisAddr
+    let submittedReqDatum = findRequestDatum cs02Key unsignedReq
+    signedReq <- submitWithGenesis submit unsignedReq
+    observedStateDatum <- readStateDatum prov cfg tid
+    observedReqDatum <- readRequestDatum prov cfg tid cs02Key
+    case control of
+        FalseDatum -> do
+            emit "control" "false-datum armed: demanding state bytes match request bytes"
+            require
+                ("CS02: submitted state bytes differ from chain-observed (control)")
+                (submittedStateDatum == submittedReqDatum)
+        _ -> do
+            require
+                ("CS02: state datum bytes differ: submitted " <> show submittedStateDatum <> " vs chain " <> show observedStateDatum)
+                (submittedStateDatum == observedStateDatum)
+            require
+                ("CS02: request datum bytes differ: submitted " <> show submittedReqDatum <> " vs chain " <> show observedReqDatum)
+                (submittedReqDatum == observedReqDatum)
+    let sizeBoot = txSizeBytes signedBoot
+        sizeReq = txSizeBytes signedReq
+        size = max sizeBoot sizeReq
+    emitMeasureProv prov "CS02" mem cpu size
+    writeCSReceipt receiptsDir "CS02" Accepted [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS02: ACCEPTED datum bytes identical (state+request)"
+
+-- | Find the state inline datum in an unsigned transaction's outputs.
+findStateDatum :: ConwayTx -> Datum ConwayEra
+findStateDatum tx =
+    case [d | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just d <- [datumOfTxOut out], isStateDatum out] of
+        [d] -> d
+        _ -> error "CS02: unsigned tx has no single state datum"
+
+-- | Find the request inline datum for a key in an unsigned tx.
+findRequestDatum :: ByteString -> ConwayTx -> Datum ConwayEra
+findRequestDatum key tx =
+    case [d | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just d <- [datumOfTxOut out], isRequestDatum key out] of
+        [d] -> d
+        _ -> error "CS02: unsigned tx has no single request datum"
+
+isStateDatum :: TxOut ConwayEra -> Bool
+isStateDatum out = case extractCageDatum out of
+    Just (StateDatum _) -> True
+    _ -> False
+
+isRequestDatum :: ByteString -> TxOut ConwayEra -> Bool
+isRequestDatum key out = case extractCageDatum out of
+    Just (RequestDatum rq) -> requestKey rq == key
+    _ -> False
+
+datumOfTxOut :: TxOut ConwayEra -> Maybe (Datum ConwayEra)
+datumOfTxOut out = case out ^. datumTxOutL of
+    d@(Datum _) -> Just d
+    _ -> Nothing
+
+readStateDatum :: Cage.Provider IO -> CageConfig -> TokenId -> IO (Datum ConwayEra)
+readStateDatum prov cfg tid = do
+    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
+        Nothing -> failWith "CS02: no state UTxO on chain"
+        Just (_, out) -> case datumOfTxOut out of
+            Just d -> pure d
+            Nothing -> failWith "CS02: state UTxO has no inline datum"
+
+readRequestDatum :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO (Datum ConwayEra)
+readRequestDatum prov cfg tid key = do
+    utxos <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid (network cfg))
+    let reqs = findRequestUtxos tid utxos
+        matching = [out | (_, out) <- reqs, isRequestDatum key out]
+    case matching of
+        [out] -> case datumOfTxOut out of
+            Just d -> pure d
+            Nothing -> failWith "CS02: request UTxO has no inline datum"
+        _ -> failWith ("CS02: expected one request UTxO for key, found " <> show (length matching))
+
+-- | Measure execution units via the node, while inputs are unspent.
+measureUnitsProv :: Cage.Provider IO -> ConwayTx -> IO (Integer, Integer)
+measureUnitsProv prov tx = do
+    evalMap <- Cage.evaluateTx prov tx
+    let evalStr = Map.map (either (Left . show) Right) evalMap
+    units <- case sequence evalStr of
+        Left e -> failWith ("measure: node evaluation failed: " <> e)
+        Right m -> pure (Map.elems m)
+    let mem = sum [m | ExUnits m _ <- units]
+        cpu = sum [s | ExUnits _ s <- units]
+    pure (fromIntegral mem, fromIntegral cpu)
+
+-- | Emit one fold's units and size against the devnet maxima.
+emitMeasureProv :: Cage.Provider IO -> String -> Integer -> Integer -> Integer -> IO ()
+emitMeasureProv prov label mem cpu size = do
+    pp <- Cage.queryProtocolParams prov
+    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+        maxSize = fromIntegral (pp ^. ppMaxTxSizeL) :: Integer
+        pct :: Integer -> Integer -> Double
+        pct used maxV = fromIntegral used / fromIntegral maxV * 100 :: Double
+    emit
+        "measure"
+        (label
+            <> " mem="
+            <> show mem
+            <> "/"
+            <> show maxMem
+            <> " cpu="
+            <> show cpu
+            <> "/"
+            <> show maxSteps
+            <> " size="
+            <> show size
+            <> "/"
+            <> show maxSize
+            <> " (" <> show (pct size maxSize) <> "%)")
+
+writeCSReceipt ::
+    FilePath ->
+    String ->
+    Outcome ->
+    [String] ->
+    Maybe RefusalInfo ->
+    Maybe String ->
+    Maybe Integer ->
+    Maybe Integer ->
+    Maybe Integer ->
+    T.Text ->
+    String ->
+    Bool ->
+    String ->
+    String ->
+    IO ()
+writeCSReceipt dir row outcome txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
+    writeReceiptFile dir $
+        Receipt
+            { receiptRow = T.pack row
+            , receiptOutcome = outcome
+            , receiptTransactions = map T.pack txs
+            , receiptRefusal = refusal
+            , receiptRejected = fmap T.pack rejected
+            , receiptMem = mem
+            , receiptCpu = cpu
+            , receiptTxSize = size
+            , receiptBase = T.pack base
+            , receiptDirty = dirty
+            , receiptNode = T.pack nodeVer
+            , receiptBlueprint = T.pack blueprintIdStr
+            , receiptVenue = venue
+            }
+
+-- | CS08: OnChainTokenState six fields survive with stake None and Some.
+runCS08 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    -- None cage.
+    (seedNone, _) <- largestWalletUtxo prov
+    let cfgNone = cageCfg stateBytes requestBytes (txInToRef seedNone)
+    unsignedBootNone <- bootTokenImpl cfgNone prov genesisAddr
+    (mem1, cpu1) <- measureUnitsProv prov unsignedBootNone
+    signedBootNone <- submitWithGenesis submit unsignedBootNone
+    tidNone <- extractTokenId cfgNone signedBootNone
+    observedNone <- readChainState cfgNone prov tidNone
+    expectedNone <- expectedStateFromTx unsignedBootNone
+    -- Some cage (staking script hash in datum).
+    stakingBytes <- loadStakingBytes
+    let stakeHash = computeScriptHash stakingBytes
+    (seedSome, _) <- largestWalletUtxo prov
+    let cfgSome0 = cageCfg stateBytes requestBytes (txInToRef seedSome)
+        cfgSome = cfgSome0 { cfgStakeScript = Just (stakingBytes, stakeHash) }
+    unsignedBootSome <- bootTokenImpl cfgSome prov genesisAddr
+    (mem2, cpu2) <- measureUnitsProv prov unsignedBootSome
+    signedBootSome <- submitWithGenesis submit unsignedBootSome
+    tidSome <- extractTokenId cfgSome signedBootSome
+    observedSome <- readChainState cfgSome prov tidSome
+    expectedSome <- expectedStateFromTx unsignedBootSome
+    case control of
+        FalseDatum -> do
+            emit "control" "false-datum armed: demanding None==Some"
+            require
+                ("CS08: None and Some states unexpectedly match (control)")
+                (observedNone == observedSome)
+        _ -> do
+            require
+                ("CS08: None state fields differ: expected " <> show expectedNone <> " vs chain " <> show observedNone)
+                (expectedNone == observedNone)
+            require
+                ("CS08: Some state fields differ: expected " <> show expectedSome <> " vs chain " <> show observedSome)
+                (expectedSome == observedSome)
+            require
+                ("CS08: stake_script None expected, got " <> show (stateStakeScript observedNone))
+                (stateStakeScript observedNone == Nothing)
+            case stateStakeScript observedSome of
+                Nothing -> failWith "CS08: stake_script Some expected, got None"
+                Just _ -> emit "check-stake-Some" "present ok"
+            -- Six fields each, explicitly.
+            require "CS08: None root mismatch" (stateRoot observedNone == stateRoot expectedNone)
+            require "CS08: Some root mismatch" (stateRoot observedSome == stateRoot expectedSome)
+            require "CS08: None tip mismatch" (stateMaxFee observedNone == stateMaxFee expectedNone)
+            require "CS08: Some tip mismatch" (stateMaxFee observedSome == stateMaxFee expectedSome)
+    let mem = max mem1 mem2
+        cpu = max cpu1 cpu2
+        size = max (txSizeBytes signedBootNone) (txSizeBytes signedBootSome)
+    emitMeasureProv prov "CS08" mem cpu size
+    writeCSReceipt receiptsDir "CS08" Accepted [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS08: ACCEPTED six fields survive (None+Some)"
+
+expectedStateFromTx :: ConwayTx -> IO OnChainTokenState
+expectedStateFromTx tx =
+    case [s | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just (StateDatum s) <- [extractCageDatum out]] of
+        [s] -> pure s
+        _ -> failWith "CS08: unsigned boot has no single StateDatum"
+
+loadStakingBytes :: IO SBS.ShortByteString
+loadStakingBytes = do
+    mPath <- lookupEnv "MPFS_BLUEPRINT"
+    path <- case mPath of
+        Just p -> pure p
+        Nothing -> failWith "run needs MPFS_BLUEPRINT pointing at a plutus blueprint"
+    ebp <- loadBlueprint path
+    bp <- case ebp of
+        Left err -> failWith ("blueprint does not parse: " <> err)
+        Right b -> pure b
+    case extractCompiledCode "staking.staking" bp of
+        Just c -> pure c
+        Nothing -> failWith "CS08 gap: blueprint has no staking.staking code"
+-- ---------------------------------------------------------
+-- CS03-CS07: redeemer inspection + remaining rows
+-- ---------------------------------------------------------
+
+redeemerPlutusDatas :: ConwayTx -> [PLC.Data]
+redeemerPlutusDatas tx =
+    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+     in [plc | (Data plc, _) <- Map.elems m]
+
+spendingConstrs :: ConwayTx -> [Integer]
+spendingConstrs tx =
+    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+     in [ix | (ConwaySpending _, (Data (PLC.Constr ix _), _)) <- Map.toList m]
+
+mintConstrs :: ConwayTx -> [Integer]
+mintConstrs tx =
+    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+     in [ix | (ConwayMinting _, (Data (PLC.Constr ix _), _)) <- Map.toList m]
+
+requestActionConstrs :: ConwayTx -> [Integer]
+requestActionConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
+  where
+    fromDatum (PLC.Constr 2 [PLC.List actions]) = concatMap fromAction actions
+    fromDatum _ = []
+    fromAction (PLC.Constr ix _) = [ix]
+    fromAction _ = []
+
+cs03KeyA, cs03ValA, cs03KeyB, cs03ValB :: ByteString
+cs03KeyA = "cs03-modify-key"
+cs03ValA = "cs03-modify-val"
+cs03KeyB = "cs03-retract-key"
+cs03ValB = "cs03-retract-val"
+
+fastRetractCfgLocal :: CageConfig -> CageConfig
+fastRetractCfgLocal cfg =
+    cfg
+        { defaultProcessTime = 1_000
+        , defaultRetractTime = 30_000
+        }
+
+fastRejectCfgLocal :: CageConfig -> CageConfig
+fastRejectCfgLocal cfg =
+    cfg
+        { defaultProcessTime = 1_000
+        , defaultRetractTime = 1_000
+        }
+
+submitGarbage :: Cage.Provider IO -> Submitter IO -> CageConfig -> TokenId -> IO TxIn
+submitGarbage prov submit cfg tid = do
+    pp <- Cage.queryProtocolParams prov
+    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) walletUtxos of
+        [] -> failWith "garbage: no wallet UTxOs"
+        (u : _) -> pure u
+    let reqAddr = requestAddrFromCfg cfg tid (network cfg)
+        txOut = mkBasicTxOut reqAddr (MaryValue (Coin 3_000_000) mempty)
+        tx = mkBasicTx $ mkBasicTxBody & outputsTxBodyL .~ StrictSeq.singleton txOut
+    balanced <- case balanceTx pp [feeUtxo] [] genesisAddr tx of
+        Left err -> failWith ("garbage: balance failed: " <> show err)
+        Right br -> pure (balancedTx br)
+    _ <- submitWithGenesis submit balanced
+    utxos <- Cage.queryUTxOs prov reqAddr
+    case [i | (i, out) <- utxos, isGarbageOut out] of
+        [found] -> pure found
+        xs -> failWith ("garbage: expected one garbage UTxO, found " <> show (length xs))
+  where
+    isGarbageOut out = case datumOfTxOut out of
+        Nothing -> True
+        Just _ -> False
+-- | CS03: one executing witness per UpdateRedeemer constructor.
+runCS03 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS03 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    tm <- mkPureTrieManager
+    (seedA, _) <- largestWalletUtxo prov
+    let cfgA = cageCfg stateBytes requestBytes (txInToRef seedA)
+    unsignedBootA <- bootTokenImpl cfgA prov genesisAddr
+    (memBootA, cpuBootA) <- measureUnitsProv prov unsignedBootA
+    signedBootA <- submitWithGenesis submit unsignedBootA
+    tidA <- extractTokenId cfgA signedBootA
+    createTrie tm tidA
+    unsignedReqA <-
+        requestInsertImpl
+            cfgA
+            prov
+            (defaultTip cfgA)
+            tidA
+            cs03KeyA
+            cs03ValA
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReqA
+    unsignedFoldA <- updateTokenImpl cfgA prov tm tidA genesisAddr
+    require
+        "CS03: Modify witness missing Constr 2"
+        (2 `elem` spendingConstrs unsignedFoldA)
+    require
+        "CS03: Contribute witness missing Constr 1"
+        (1 `elem` spendingConstrs unsignedFoldA)
+    (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldA
+    signedFoldA <- submitWithGenesis submit unsignedFoldA
+    _ <- withTrie tm tidA $ \t -> do
+        _ <- CageTrie.insert t cs03KeyA cs03ValA
+        pure ()
+    garbIn <- submitGarbage prov submit cfgA tidA
+    unsignedSweep <- sweepUtxoImpl cfgA prov tidA garbIn genesisAddr
+    require
+        "CS03: Sweep witness missing Constr 4"
+        (4 `elem` spendingConstrs unsignedSweep)
+    (memSweep, cpuSweep) <- measureUnitsProv prov unsignedSweep
+    signedSweep <- submitWithGenesis submit unsignedSweep
+    (seedB, _) <- largestWalletUtxo prov
+    let cfgB = fastRetractCfgLocal (cageCfg stateBytes requestBytes (txInToRef seedB))
+    unsignedBootB <- bootTokenImpl cfgB prov genesisAddr
+    (memBootB, cpuBootB) <- measureUnitsProv prov unsignedBootB
+    signedBootB <- submitWithGenesis submit unsignedBootB
+    tidB <- extractTokenId cfgB signedBootB
+    createTrie tm tidB
+    unsignedReqB <-
+        requestInsertImpl
+            cfgB
+            prov
+            (defaultTip cfgB)
+            tidB
+            cs03KeyB
+            cs03ValB
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReqB
+    reqTxInB <- findRequestTxIn prov cfgB tidB cs03KeyB
+    threadDelay 3_000_000
+    unsignedRetract <- retractRequestImpl cfgB prov tidB reqTxInB genesisAddr
+    require
+        "CS03: Retract witness missing Constr 3"
+        (3 `elem` spendingConstrs unsignedRetract)
+    (memRetract, cpuRetract) <- measureUnitsProv prov unsignedRetract
+    signedRetract <- submitWithGenesis submit unsignedRetract
+    unsignedEnd <- endTokenImpl cfgA prov tidA genesisAddr
+    require
+        "CS03: End witness missing Constr 0"
+        (0 `elem` spendingConstrs unsignedEnd)
+    (memEnd, cpuEnd) <- measureUnitsProv prov unsignedEnd
+    signedEnd <- submitWithGenesis submit unsignedEnd
+    let got =
+            [ 2 `elem` spendingConstrs signedFoldA
+            , 1 `elem` spendingConstrs signedFoldA
+            , 3 `elem` spendingConstrs signedRetract
+            , 4 `elem` spendingConstrs signedSweep
+            , 0 `elem` spendingConstrs signedEnd
+            ]
+        labels = ["Modify", "Contribute", "Retract", "Sweep", "End"] :: [String]
+        missing = [l | (False, l) <- zip got labels]
+    case control of
+        MissingWitness -> do
+            emit "control" "missing-witness armed: demanding Sweep absent"
+            require
+                "CS03: Sweep unexpectedly present (control)"
+                (4 `notElem` spendingConstrs signedSweep)
+        _ ->
+            require
+                ("CS03: missing witnesses: " <> show missing)
+                (null missing)
+    let mem = maximum [memBootA, memFold, memSweep, memBootB, memRetract, memEnd]
+        cpu = maximum [cpuBootA, cpuFold, cpuSweep, cpuBootB, cpuRetract, cpuEnd]
+        size =
+            maximum
+                [ txSizeBytes signedBootA
+                , txSizeBytes signedFoldA
+                , txSizeBytes signedSweep
+                , txSizeBytes signedBootB
+                , txSizeBytes signedRetract
+                , txSizeBytes signedEnd
+                ]
+    emitMeasureProv prov "CS03" mem cpu size
+    writeCSReceipt receiptsDir "CS03" Accepted [txIdHex signedFoldA, txIdHex signedRetract, txIdHex signedSweep, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS03: ACCEPTED End/Contribute/Modify/Retract/Sweep executed"
+
+findRequestTxIn :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO TxIn
+findRequestTxIn prov cfg tid key = do
+    utxos <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid (network cfg))
+    let matching = [i | (i, out) <- findRequestUtxos tid utxos, isRequestDatum key out]
+    case matching of
+        [found] -> pure found
+        _ -> failWith ("findRequestTxIn: expected one request for key, found " <> show (length matching))
+
+-- | CS04: wrong constructor index refused, attributed to the script.
+runCS04 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS04 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    tm <- mkPureTrieManager
+    (seed, _) <- largestWalletUtxo prov
+    let cfg = cageCfg stateBytes requestBytes (txInToRef seed)
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    signedBoot <- submitWithGenesis submit unsignedBoot
+    tid <- extractTokenId cfg signedBoot
+    createTrie tm tid
+    unsignedReq <-
+        requestInsertImpl
+            cfg
+            prov
+            (defaultTip cfg)
+            tid
+            "cs04-key"
+            "cs04-val"
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReq
+    unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
+    badTx <- tamperModifyToBadIndex prov unsignedFold
+    let signedBad = addKeyWitness genesisSignKey badTx
+    result <- submitTx submit signedBad
+    let appliedState = computeScriptHash (applyPreviousPolicies [] stateBytes)
+        stateMarker = hex (scriptHashBytes appliedState)
+        requestMarker =
+            hex
+                ( scriptHashBytes
+                    ( computeScriptHash
+                        ( applyRequestParams
+                            (scriptHashBytes appliedState)
+                            (onChainTokenId tid)
+                            requestBytes
+                        )
+                    )
+                )
+        marker = case control of
+            WrongReason -> wrongReasonMarker
+            _ -> stateMarker
+    case result of
+        Rejected reason ->
+            attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker (T.unpack (TE.decodeUtf8Lenient reason)) (txIdHex signedBad)
+        Submitted txid ->
+            failWith
+                ("CS04 FINDING: wrong-index fold accepted (txid " <> txInHex txid <> ") — reported, not relabelled")
+    -- Control: fresh cage accepts a valid fold (refusal discriminates).
+    (seedC, _) <- largestWalletUtxo prov
+    let cfgC = cageCfg stateBytes requestBytes (txInToRef seedC)
+    unsignedBootC <- bootTokenImpl cfgC prov genesisAddr
+    signedBootC <- submitWithGenesis submit unsignedBootC
+    tidC <- extractTokenId cfgC signedBootC
+    createTrie tm tidC
+    unsignedReqC <-
+        requestInsertImpl
+            cfgC
+            prov
+            (defaultTip cfgC)
+            tidC
+            "cs04-control-key"
+            "cs04-control-val"
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReqC
+    unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
+    _ <- submitWithGenesis submit unsignedFoldC
+    emit "control" "CS04 control: fresh cage accepted a valid fold"
+
+-- | Retarget a valid Modify fold to Constr 5 keeping its fields:
+-- same CBOR size (tags 2 and 5 both one byte), so fee and collateral
+-- stay sufficient and any refusal attributes to the script, never to
+-- phase 1. Constr 5 names no UpdateRedeemer constructor and the
+-- validator must refuse it in phase 2.
+tamperModifyToBadIndex :: Cage.Provider IO -> ConwayTx -> IO ConwayTx
+tamperModifyToBadIndex prov tx = do
+    pp <- Cage.queryProtocolParams prov
+    let body = tx ^. bodyTxL
+        Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
+        scripts = tx ^. witsTxL . scriptTxWitsL
+        badMap = Map.map tamperOne m
+        tamperOne (Data (PLC.Constr 2 fields), units) = (Data (PLC.Constr 5 fields), units)
+        tamperOne other = other
+        badRedeemers = Redeemers badMap
+        integrity = computeScriptIntegrity pp badRedeemers
+        newBody = body & scriptIntegrityHashTxBodyL .~ integrity
+    pure (mkBasicTx newBody & witsTxL . scriptTxWitsL .~ scripts & witsTxL . rdmrsTxWitsL .~ badRedeemers)
+
+{- | Attribute a CS04 refusal. The tampered fold breaks fold consistency
+shared by both cage scripts, so both can refuse in one submission and
+the ledger's failure-list order is not stable. The invariant the row
+asserts is that the state script — whose redeemer was tampered —
+refused; the recorded script set is derived from the observed hashes
+in ledger order, never tuned to a run.
+-}
+attributeCS04Refusal :: FilePath -> String -> Bool -> String -> String -> String -> String -> String -> String -> String -> IO ()
+attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker text rejectedTxid =
+    case matchRefusal marker text of
+        Right () -> do
+            let hashes = refusalScriptHashes text
+            require
+                ("CS04: state script did not refuse; scripts named: " <> show hashes)
+                (stateMarker `elem` hashes)
+            roles <- mapM toRole hashes
+            let trimmed = trimRefusal text
+            unless (stateMarker `isInfixOf` trimmed) $
+                failWith ("trimmer dropped the attribution; full reason: " <> take 20000 text)
+            writeCSReceipt receiptsDir "CS04" Refused [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
+            emit "row" ("CS04: REFUSED wrong index by " <> intercalate "+" roles <> " (state marker 0x" <> shortMarker stateMarker <> "; ledger order, unstable)")
+        Left mismatch ->
+            failWith ("CS04: refusal did not attribute (" <> show mismatch <> "): " <> text)
+  where
+    toRole h
+        | h == stateMarker = pure "state"
+        | h == requestMarker = pure "request"
+        | otherwise = failWith ("CS04: refusal names unknown script " <> h)
+
+-- | CS05: RequestAction + MintRedeemer coverage, Migrating as gap.
+runCS05 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS05 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    tm <- mkPureTrieManager
+    (seedC, _) <- largestWalletUtxo prov
+    let cfgC = cageCfg stateBytes requestBytes (txInToRef seedC)
+    unsignedBootC <- bootTokenImpl cfgC prov genesisAddr
+    (memBoot, cpuBoot) <- measureUnitsProv prov unsignedBootC
+    signedBootC <- submitWithGenesis submit unsignedBootC
+    tidC <- extractTokenId cfgC signedBootC
+    createTrie tm tidC
+    require "CS05: Minting witness missing Constr 0" (0 `elem` mintConstrs signedBootC)
+    unsignedReqC <-
+        requestInsertImpl
+            cfgC
+            prov
+            (defaultTip cfgC)
+            tidC
+            "cs05-update-key"
+            "cs05-update-val"
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReqC
+    unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
+    require "CS05: Update witness missing Constr 0" (0 `elem` requestActionConstrs unsignedFoldC)
+    (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldC
+    signedFoldC <- submitWithGenesis submit unsignedFoldC
+    _ <- withTrie tm tidC $ \t -> do
+        _ <- CageTrie.insert t "cs05-update-key" "cs05-update-val"
+        pure ()
+    (seedD, _) <- largestWalletUtxo prov
+    let cfgD = fastRejectCfgLocal (cageCfg stateBytes requestBytes (txInToRef seedD))
+    unsignedBootD <- bootTokenImpl cfgD prov genesisAddr
+    signedBootD <- submitWithGenesis submit unsignedBootD
+    tidD <- extractTokenId cfgD signedBootD
+    createTrie tm tidD
+    unsignedReqD <-
+        requestInsertImpl
+            cfgD
+            prov
+            (defaultTip cfgD)
+            tidD
+            "cs05-reject-key"
+            "cs05-reject-val"
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedReqD
+    threadDelay 3_000_000
+    unsignedReject <- rejectRequestsImpl cfgD prov tidD genesisAddr
+    require "CS05: Rejected witness missing Constr 1" (1 `elem` requestActionConstrs unsignedReject)
+    (memReject, cpuReject) <- measureUnitsProv prov unsignedReject
+    signedReject <- submitWithGenesis submit unsignedReject
+    unsignedEnd <- endTokenImpl cfgC prov tidC genesisAddr
+    require "CS05: Burning witness missing Constr 2" (2 `elem` mintConstrs unsignedEnd)
+    (memEnd, cpuEnd) <- measureUnitsProv prov unsignedEnd
+    signedEnd <- submitWithGenesis submit unsignedEnd
+    let actionsFold = requestActionConstrs signedFoldC
+        actionsReject = requestActionConstrs signedReject
+        mintsBoot = mintConstrs signedBootC
+        mintsEnd = mintConstrs signedEnd
+        hasUpdate = 0 `elem` actionsFold
+        hasRejected = 1 `elem` actionsReject
+        hasMinting = 0 `elem` mintsBoot
+        hasBurning = 2 `elem` mintsEnd
+        missing =
+            [l | (False, l) <- zip [hasUpdate, hasRejected, hasMinting, hasBurning] (["Update", "Rejected", "Minting", "Burning"] :: [String])]
+    case control of
+        MissingWitness -> do
+            emit "control" "missing-witness armed: demanding Rejected absent"
+            require "CS05: Rejected unexpectedly present (control)" (1 `notElem` actionsReject)
+        _ ->
+            require ("CS05: missing witnesses: " <> show missing) (null missing)
+    writeGapMigrating receiptsDir base blueprintIdStr
+    let mem = maximum [memBoot, memFold, memReject, memEnd]
+        cpu = maximum [cpuBoot, cpuFold, cpuReject, cpuEnd]
+        size =
+            maximum
+                [ txSizeBytes signedBootC
+                , txSizeBytes signedFoldC
+                , txSizeBytes signedReject
+                , txSizeBytes signedEnd
+                ]
+    emitMeasureProv prov "CS05" mem cpu size
+    writeCSReceipt receiptsDir "CS05" Accepted [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    emit "row" "CS05: ACCEPTED Update/Rejected/Minting/Burning + Migrating gap"
+
+writeGapMigrating :: FilePath -> String -> String -> IO ()
+writeGapMigrating receiptsDir base blueprintIdStr = do
+    let gap =
+            "row: CS05\nconstructor: Migrating (MintRedeemer 1)\nstatus: gap\nreason: previousPolicies=[] on the imported partition, so has(previousPolicies, oldPolicy) fails at state.ak validateMigration FR1; migration needs an allowlisted predecessor plus its state UTxO spent atomically, none exists on a genesis cage.\nbase: "
+                <> base
+                <> "\nblueprint: "
+                <> blueprintIdStr
+                <> "\n"
+    BSL.writeFile (receiptsDir </> "gap-CS05-Migrating.txt") (BSL.fromStrict (TE.encodeUtf8 (T.pack gap)))
+    emit "gap" "CS05 Migrating unreachable on previousPolicies=[] (state.ak FR1)"

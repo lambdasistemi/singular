@@ -17,7 +17,7 @@
   ],
   "what-this-slice-executes": [
     {
-      "text": "Two devnet sessions run in order, each on an isolated node with its own published world: the generic registry rows first, then the canonical identity rows.",
+      "text": "Three devnet sessions run in order on isolated nodes: generic registry rows, canonical identity rows, then the serialization boundary rows. Two checks compare Haskell values against the compiled blueprint and never start a node, and are never counted as devnet-executed.",
       "pause": 400
     }
   ],
@@ -45,6 +45,32 @@
       "pause": 400
     }
   ],
+  "the-serialization-boundary-rows-devnet-session": [
+    {
+      "text": "One fresh cage per row: submitted datum bytes read back identical, one executing witness per spending redeemer constructor, a wrong constructor index refused by both cage scripts, request and mint constructors covered with the unreachable migration recorded, and the six-field token state round-tripped with the stake credential absent and present.",
+      "pause": 400
+    },
+    {
+      "text": "Every accepting row carries a skipped or corrupted variant the run requires to fail, and the refusal names every script that failed in ledger order. Had any verdict contradicted its contract it would be a finding, never relabelled.",
+      "pause": 400
+    }
+  ],
+  "the-serialization-checks-that-need-no-node": [
+    {
+      "text": "Thirteen Haskell encodings checked against the blueprint's own declared schemas read at run time, constructor by constructor with field order; parameter counts of one, two and zero with applied hashes derived in Haskell. Zero units honestly, measured sizes stated, and these rows never appear in a devnet-executed count.",
+      "pause": 400
+    }
+  ],
+  "cs07-unmarked-and-escalated": [
+    {
+      "text": "Branch and leaf proofs ride accepted folds, but no accepted fold has ever carried a fork, and two independently ground fork proofs verified by the Haskell stack are refused by the compiled validator with a bare machine error. The row carries no receipt and stays uncovered.",
+      "pause": 400
+    },
+    {
+      "text": "The full bundle of keys, shapes, both verdicts and the refusal bytes is filed as a user story escalation, and the offline oracle reproduces every offline claim without a node.",
+      "pause": 400
+    }
+  ],
   "measurements": [
     {
       "text": "Ship run on a clean tree with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
@@ -52,6 +78,10 @@
     },
     {
       "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The worst case across each session is recorded in that session's CL zero one receipt.",
+      "pause": 400
+    },
+    {
+      "text": "The serialization ship run names its own base with a clean tree. Its worst cases live in the row receipts: datum, witness and state folds beside the generic ones, size still the tight dimension.",
       "pause": 400
     }
   ],
@@ -63,15 +93,19 @@
     {
       "text": "The identity rows do not evidence the serialization boundary, constructor coverage or batch limits. Single-request devnet folds say nothing about other environments.",
       "pause": 400
+    },
+    {
+      "text": "Row CS zero seven is unmarked with a finding, never a gap and never a pass. The migrating constructor is recorded unreachable with its validator-read reason. Refusal reasons keep every failing script hash in ledger order.",
+      "pause": 400
     }
   ],
   "commands": [
     {
-      "text": "List prints the inventory. Each session runs with its own command and its own receipts directory; a mixed request is refused. List against those receipts shows what executed.",
+      "text": "List prints the inventory. Each session runs with its own command and a fresh receipts directory; a mixed request is refused. List against those receipts shows what executed.",
       "pause": 400
     },
     {
-      "text": "Five armed controls — an impossible refusal marker, forged claim values, the fabricated derivation, the naive authenticator, and the unapplied address — must each fail the run with a non-zero exit.",
+      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run with a non-zero exit.",
       "pause": 400
     }
   ],
@@ -83,6 +117,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "ff03e955fa464f0bc3baaa6b870554c108300e3d43d292d33fbac1b77bd5783f"
+    "sha256": "a678631acaa23dbc79cf345f32a45518d3d339d4451aa078052876ac1fa0e34f"
   }
 }

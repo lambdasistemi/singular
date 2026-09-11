@@ -27,6 +27,9 @@ data-files:
   test/fixtures/duplicate/receipt-CG02-a.json
   test/fixtures/duplicate/receipt-CG02-b.json
   test/fixtures/malformed/receipt-CG02.json
+  test/fixtures/good-blueprint-check/receipt-CS01.json
+  test/fixtures/good-param-check/receipt-CS06.json
+  test/fixtures/bad-blueprint-tx/receipt-CS01.json
 
 common warnings
   ghc-options:
@@ -67,6 +70,9 @@ executable conformance
   hs-source-dirs:   app
   main-is:          Main.hs
   other-modules:
+    Conformance.CS01
+    Conformance.CS06
+    Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run
     Paths_conformance
@@ -95,6 +101,7 @@ executable conformance
     , microlens
     , mts:mpf-write
     , ouroboros-network
+    , plutus-core
     , plutus-tx
     , process >=1.6 && <1.7
     , text >=2.0 && <2.2
