@@ -109,7 +109,8 @@ class ReleaseGateTest(unittest.TestCase):
         self.assertEqual(rc, 3, "a run not bound to its candidate must fail closed")
         self.assertIn("FAIL-CLOSED candidate", err)
 
-    def test_release_record_override_refused_as_unbound_input(self):        self.empty_record()
+    def test_release_record_override_refused_as_unbound_input(self):
+        self.empty_record()
         outside = Path(self._tmp.name) / "external-record.json"
         outside.write_text("{}")
         rc, err = run_release(self.tree, "--record", str(outside),
