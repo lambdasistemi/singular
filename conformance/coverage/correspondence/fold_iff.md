@@ -78,22 +78,37 @@ Feature: folding is exactly the five conditions — nothing more, nothing less
       | 4 | nonzero mint = true → w.representativeMint = true           |  # silent when mint nets to zero
       | 5 | actionNonzero net = true → w.applicationMint = true         |  # silent when net nets to zero
 
-  Scenario exhibit (one concrete case; exhibits, never replaces, the quantified property):
-    Given a one-item fold of a queued certified Insert from an initialized state,
-      | with w.nativeSpend = true,                                            |
-      | the item folding cleanly to t,                                        |
-      | the implied deltas equalling the (here empty) mint field,             |
-      | mint netting to zero so clause 4 is silent and no mint witness present,|
-      | and the action net empty so clause 5 is silent                         |
+  Scenario exhibit (one concrete case, executed; exhibits, never replaces,
+  the quantified property) — grounded in corpus case `S13d-fresh-insert-folded`
+  (`lean/corpus.json` index 8, `result.accepted: true`):
+    Given a one-item fold of queued certified Insert request 1 (outputId 2,
+      | key 42) from an initialized state, with                                 |
+      | 1 | w.nativeSpend = true                                                |
+      | 2 | the item folding cleanly to t                                       |
+      | 3 | mint [{rep42 scope0/policy8/reg1, +1}] equalling t.logical [{+1}]   |
+      | 4 | nonzero mint, so w.representativeMint = true is present             |
+      | 5 | action net [] so the clause is silent, applicationMint false        |
     When step runs the fold
-    Then it succeeds: 1 holds by the spend witness, 2 by the clean fold to t,
-      3 by the empty-mint equality, and 4–5 are satisfied silently — all five
-      conjuncts explicitly present, including the conditionals in their silent
-      form. A zero-mint, no-witness case still needs every other precondition
-      present to infer success.
+    Then it succeeds — accepted in the corpus run — with all five conjuncts
+explicitly present, the conditionals in firing (4) and silent (5) form.
     And a rival story asserting "also the state owner must have signed" is FALSE here —
       that requirement is exactly what the converse forbids, and what F-002 records
       the compiled validator as wrongly demanding.
+
+  Scenario zero-side (separate satisfiable case, model only — held on the
+  consumer, see below):
+    Given any State s with no requests, items [], mint [], net [], and
+      | w.nativeSpend = true, representativeMint = false, applicationMint = false |
+    When step runs the fold
+    Then it succeeds in the model: 1 holds, 2 holds because `foldItems s []`
+      is `.ok` with `logical` defaulting to `[]` (`Model.lean` empty equation
+      plus `Result.logical` default), 3 holds vacuously (`sameNet [] []`),
+      and 4–5 are silent with both mint witnesses absent. A zero mint alone
+      implies no such result — every other precondition must be present.
+    And the consumer side of this exact case is HELD, not established:
+      empty folds on the imported partition are the unresolved consumer
+      restriction (held — Q-002; CG11 gap, upstream #100). No Insert is
+      claimed to have zero net mint, here or anywhere on this page.
 ```
 
 Non-vacuity obligation this page fixes for the future story: each conditional's antecedent
