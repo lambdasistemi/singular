@@ -2147,11 +2147,11 @@ rowFoldTamperedRep env ks claimIn = do
     expectRefused
         MainRun
         env
-        "fold-tampered-representative-refused"
+        "fold-misnamed-representative-refused"
         "representative-identity"
         "the fold names a representative the record control does not determine"
         signed
-    noTrace env snapClaim "fold-tampered-representative"
+    noTrace env snapClaim "fold-misnamed-representative"
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
