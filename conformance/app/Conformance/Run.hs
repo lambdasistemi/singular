@@ -338,7 +338,14 @@ import Conformance.Receipt (
     Verdict (..),
     writeReceiptFile,
  )
-import Conformance.Refusal (matchRefusal, refusalScriptHashes, trimRefusal, wrongReasonMarker)
+import Conformance.Refusal (
+    RefusalRole (..),
+    attributeRefusalReceipt,
+    matchRefusal,
+    refusalScriptHashes,
+    trimRefusal,
+    wrongReasonMarker,
+ )
 
 -- ---------------------------------------------------------
 -- Row vocabulary and control modes
@@ -2055,57 +2062,113 @@ runCG05 env marker = do
     controlFreshCage env
 
 attributeSubmitRefusal :: Env -> String -> Verdict -> String -> String -> String -> IO ()
-attributeSubmitRefusal env row verdict marker text rejectedTxid =
+attributeSubmitRefusal env row verdict marker text rejectedTxid = do
     -- NOTE-003 discipline: the node may report several failing
     -- scripts in an order that is not stable, so the matcher asserts
     -- the expected script is AMONG them (the reason text is matched
-    -- raw, never a single first hash).
+    -- raw, never a single first hash). The write policy lives in the
+    -- library (A-002): a refusal ROW's receipt IS the row outcome.
     let script = if row `elem` ["CG07", "CG17"] then "request" else "state"
-     in case matchRefusal marker text of
-            Right () -> do
-                let trimmed = trimRefusal text
-                    -- A trimmer that keeps one hash can drop ours
-                    -- when several failed; the receipt then keeps a
-                    -- wider cut so the attribution survives.
-                    recorded =
-                        if marker `isInfixOf` trimmed
-                            then trimmed
-                            else take 2000 text
-                writeRowReceipt
-                    env
-                    row
-                    Refused
-                    verdict
-                    []
-                    ( Just
-                        ( RefusalInfo
-                            { refusalScript = T.pack script
-                            , refusalReason = T.pack recorded
-                            }
-                        )
-                    )
-                    (Just rejectedTxid)
-                    Nothing
-                    Nothing
-                    Nothing
-                    "node-submit"
-                emit
-                    "row"
-                    ( row
-                        <> ": REFUSED at submit, attributed to "
-                        <> script
-                        <> " (phase-2, marker 0x"
-                        <> shortMarker marker
-                        <> ")"
-                    )
-            Left mismatch ->
-                failWith
-                    ( row
-                        <> ": refusal did not attribute ("
-                        <> show mismatch
-                        <> "): "
-                        <> text
-                    )
+    r <-
+        attributeRefusalReceipt
+            RefusalRow
+            (envReceiptsDir env)
+            row
+            verdict
+            script
+            marker
+            text
+            rejectedTxid
+            (envBase env)
+            (envDirty env)
+            (envNode env)
+            (envBlueprint env)
+    case r of
+        Right () ->
+            emit
+                "row"
+                ( row
+                    <> ": REFUSED at submit, attributed to "
+                    <> script
+                    <> " (phase-2, marker 0x"
+                    <> shortMarker marker
+                    <> ")"
+                )
+        Left mismatch ->
+            failWith
+                ( row
+                    <> ": refusal did not attribute ("
+                    <> show mismatch
+                    <> "): "
+                    <> text
+                )
+
+{- | A refused CONTROL: submitted and attributed like a refusal row,
+but its outcome is run-log evidence under its own identity and never
+writes the row's receipt (A-002 — CG11/CG12/CG19's held receipts were
+being replaced by their controls' refusals). It cannot silently pass:
+an accepted control fails the run as a FINDING, and a refusal that
+does not attribute fails the run naming the mismatch.
+-}
+submitExpectRefusedControl :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
+submitExpectRefusedControl env row verdict marker tx = do
+    let signed = addKeyWitness genesisSignKey tx
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Rejected reason ->
+            attributeControlRefusal
+                env
+                row
+                verdict
+                marker
+                (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex signed)
+        Submitted txid ->
+            failWith
+                ( row
+                    <> " FINDING: the node ACCEPTED the control transaction "
+                    <> "expected to refuse (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+
+attributeControlRefusal :: Env -> String -> Verdict -> String -> String -> String -> IO ()
+attributeControlRefusal env row verdict marker text rejectedTxid = do
+    let script = if row `elem` ["CG07", "CG17"] then "request" else "state"
+    r <-
+        attributeRefusalReceipt
+            RefusalControl
+            (envReceiptsDir env)
+            row
+            verdict
+            script
+            marker
+            text
+            rejectedTxid
+            (envBase env)
+            (envDirty env)
+            (envNode env)
+            (envBlueprint env)
+    case r of
+        Right () ->
+            emit
+                "control"
+                ( row
+                    <> " control: REFUSED at submit, attributed to "
+                    <> script
+                    <> " (phase-2, marker 0x"
+                    <> shortMarker marker
+                    <> ") — run-log evidence only; the row's receipt is "
+                        <> "not overwritten (A-002)"
+                )
+        Left mismatch ->
+            failWith
+                ( row
+                    <> ": control refusal did not attribute ("
+                    <> show mismatch
+                    <> "): "
+                    <> text
+                )
 
 -- | The live-cage control: a fresh cage accepts a valid insert.
 controlFreshCage :: Env -> IO ()
@@ -3293,8 +3356,8 @@ runCG11 env = do
         "node-submit"
     recordHold
         env
-        "Q-002 (story 2)"
         "CG11"
+        "Q-002 (story 2)"
         ( "Singular's Lean PERMITS the empty fold — foldItems \
            \[] = ok (Model.lean 188-189) — so the acceptance agrees \
                \with Singular's model"
@@ -3332,7 +3395,7 @@ runCG11 env = do
     emit
         "row"
         "CG11 control: empty actions over a live request must be refused"
-    submitExpectRefused env "CG11" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    submitExpectRefusedControl env "CG11" AgreesWithModel (stateMarkerOf cfg) ctrlTx
     emit
         "control"
         "CG11 control: with a request waiting, empty actions are \
@@ -3390,8 +3453,8 @@ runCG12 env = do
         "node-submit"
     recordHold
         env
-        "Q-002 (story 2)"
         "CG12"
+        "Q-002 (story 2)"
         ( "Singular's Lean pairs each request with its action 1:1 in \
            \its FoldItem and has no action tail that could be surplus \
                \(Model.lean, FoldItem/foldItems) — the model \
@@ -3444,7 +3507,7 @@ runCG12 env = do
         "row"
         "CG12 control: two requests, one action — the deficit must be \
          \refused"
-    submitExpectRefused env "CG12" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    submitExpectRefusedControl env "CG12" AgreesWithModel (stateMarkerOf cfg) ctrlTx
     emit
         "control"
         "CG12 control: the deficit is refused while the surplus was \
@@ -3499,7 +3562,7 @@ runCG13 env = do
         env
         "CG13"
         Accepted
-        HeldQ002
+        ResolvedByRuling
         [txIdHex signed]
         Nothing
         Nothing
@@ -3507,19 +3570,12 @@ runCG13 env = do
         (Just cpu)
         (Just size)
         "node-submit"
-    recordHold
-        env
-        "CG13"
-        "Q-002 (story 2)"
-        ( "Singular's Lean State carries no owner field and states no \
-           \pinning constraint across a fold (Model.lean, State) — \
-               \the model constrains nothing here"
-        )
-        ( "R5_plugin_pinned — owner and hook pinned across a fold \
-           \(upstream cardano-mpfs-onchain#100 is the partition fix; \
-             \the partition's own types.ak documents owner transfer \
-             \as intentional)"
-        )
+    -- A-001: CG13 is NOT in the held-set. The owner-pinning question
+    -- was settled by the no-owner ruling (NOTE-025: no premise left
+    -- to be pending on), so the row is resolved-by-ruling with its
+    -- observation retained as DEFECT EVIDENCE of the outstanding
+    -- owner gate — never a pass, never an owner-semantics claim, and
+    -- no coverage credit for the reconciliation.
     emit
         "row"
         ( "CG13: the chain ACCEPTED a Modify that changed the state \
@@ -3527,8 +3583,9 @@ runCG13 env = do
             <> hex (BS.pack (replicate 28 0xab))
             <> " (signed by the previous owner; tx="
             <> txIdHex signed
-            <> ") — recorded, held pending Q-002, never read as a \
-               \pass"
+            <> ") — resolved-by-ruling: retained as defect evidence "
+                <> "of the outstanding owner gate (epic 17), never a "
+                <> "pass and never an owner-semantics claim"
         )
     -- NOTE-023 operator ruling: the registry has NO owner role
     -- whatsoever (not latent, not transferable, not gating End or
@@ -3538,8 +3595,9 @@ runCG13 env = do
     -- validateMigration still call validateOwnership: those are
     -- outstanding conformance defects, owned by epic 17's repair. The
     -- accepted owner change above is defect evidence with its
-    -- transaction id; CG13 stays held-q002 pending the user ruling on
-    -- owner pinning.
+    -- transaction id. A-001: CG13 is resolved-by-ruling (the ruling
+    -- left no owner-pinning question pending) and is NOT in the
+    -- session's held-set; CG11, CG12 and CG19 remain held-q002.
 
 {- | CG14: the stake_script hook set, a fold carrying the matching
 withdraw-zero (the partition's shared.ak/types.ak hook; first ever
@@ -3627,7 +3685,10 @@ runCG14 env = do
         "row"
         "CG14 control: withdrawal present but no owner declared — must \
          \be refused"
-    submitExpectRefused env "CG14" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    -- CG14 never executes (superseded could-not-execute history), but
+    -- its refused control is the same clobber class as CG11/12/19: the
+    -- accept row's receipt must survive it (A-002 policy).
+    submitExpectRefusedControl env "CG14" AgreesWithModel (stateMarkerOf cfg) ctrlTx
     emit
         "control"
         "CG14 control: the hook does not replace the owner signature — \
@@ -3989,7 +4050,7 @@ runCG19 env = do
             <> show floorTotal
             <> " lovelace, below the aggregate floor — must be refused"
         )
-    submitExpectRefused env "CG19" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    submitExpectRefusedControl env "CG19" AgreesWithModel (stateMarkerOf cfg) ctrlTx
     emit
         "control"
         "CG19 control: the aggregate floor refused the shortfall — \

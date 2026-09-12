@@ -13,6 +13,14 @@ module Conformance.RefusalSpec (spec) where
 
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf)
+import Data.Text qualified as T
+import System.Directory (
+    createDirectoryIfMissing,
+    doesFileExist,
+    getTemporaryDirectory,
+    removePathForcibly,
+ )
+import System.FilePath ((</>))
 import Test.Hspec (
     Spec,
     describe,
@@ -21,8 +29,18 @@ import Test.Hspec (
     shouldSatisfy,
  )
 
+import Conformance.Receipt (
+    Outcome (..),
+    Receipt (..),
+    RefusalInfo (..),
+    Verdict (..),
+    loadReceipts,
+    writeReceiptFile,
+ )
 import Conformance.Refusal (
     RefusalMismatch (..),
+    RefusalRole (..),
+    attributeRefusalReceipt,
     matchRefusal,
     trimRefusal,
     wrongReasonMarker,
@@ -101,6 +119,10 @@ spec = describe "Refusal" $ do
                 trimmed `shouldSatisfy` (not . ("Base64-encoded" `isInfixOf`))
                 length trimmed `shouldSatisfy` (< 500)
 
+    -- The A-002 receipt policy, as a nested suite: the control must
+    -- never overwrite, the row must write, nothing silent anywhere.
+    receiptPolicySpec
+
 evalFailureSample :: String
 evalFailureSample = "updateToken: build failed: EvalFailure (ConwaySpending (AsIx 2)) ValidationFailure (CekError script error) (PlutusWithContext {pwcScriptHash = ScriptHash 874e476d})"
 
@@ -120,3 +142,158 @@ secondHashRefusal = replaceAll "874e476d" "28726576" nodeShapedRefusal
 
 nodeShapedRefusal :: String
 nodeShapedRefusal = "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpectedly (PlutusFailure \"The PlutusV3 script failed: Base64-encoded script bytes: \\\"AAAABBBB\\\", ScriptHash \\\"874e476d\\\", The plutus evaluation error is: CekError script error. Caused by: error. The protocol version is: Version 10, ScriptInfo: more\")))"
+
+-- ============================================================================
+-- Receipt policy (A-002): who writes, and who must never overwrite.
+--
+-- The defect: a refused CONTROL submitted through the same helper as a
+-- refusal ROW wrote its refusal under the row's id, replacing the row's
+-- held receipt in every receipts directory (CG11/CG12/CG19). These tests
+-- deliberately clobber a main receipt and require the path to
+-- discriminate: the row writes, the control never does, a refusal that
+-- does not attribute writes nothing for either role.
+--
+-- The control cannot silently pass with no receipt: an accepted control
+-- fails the run as a FINDING and a refusal that does not attribute fails
+-- the run naming the mismatch — both upstream of the write this policy
+-- governs.
+
+-- | A deterministic receipts directory: wiped at the start of each use
+-- so a previous run's bytes can never flatter an assertion.
+freshReceiptsDir :: IO FilePath
+freshReceiptsDir = do
+    tmp <- getTemporaryDirectory
+    let dir = tmp </> "conformance-refusal-spec"
+    removePathForcibly dir
+    createDirectoryIfMissing True dir
+    pure dir
+
+-- | The row's own receipt as CG11's run writes it before its control
+-- fires: accepted, held-q002, transaction id and measurements present.
+heldRowReceipt :: Receipt
+heldRowReceipt =
+    Receipt
+        { receiptRow = "CG11"
+        , receiptOutcome = Accepted
+        , receiptVerdict = HeldQ002
+        , receiptTransactions = [T.pack "rowtxid"]
+        , receiptRefusal = Nothing
+        , receiptMem = Just 273449
+        , receiptCpu = Just 87149465
+        , receiptTxSize = Just 8388
+        , receiptBase = T.pack "base"
+        , receiptNode = T.pack "node"
+        , receiptBlueprint = T.pack "blueprint"
+        , receiptVenue = "node-submit"
+        , receiptRejected = Nothing
+        , receiptDirty = False
+        }
+
+-- | A phase-2 node refusal naming the expected script.
+policyMarker :: String
+policyMarker = "ce7615f6ba4d"
+
+policyReason :: String
+policyReason =
+    -- Raw node shape (what submitTxResilient hands the attributor):
+    -- the failure class token the matcher requires, the script hash
+    -- in its quoted ledger form, the machine error.
+    "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpectedly "
+        <> "(PlutusFailure \"The PlutusV3 script failed: Base64-encoded "
+        <> "script bytes, ScriptHash \\\""
+        <> policyMarker
+        <> "\\\", The plutus evaluation error is: CekError script error. "
+        <> "Caused by: error. The protocol version is: Version 10\")))"
+
+receiptPolicySpec :: Spec
+receiptPolicySpec = describe "receipt policy (A-002)" $ do
+    it "a refused control never overwrites the row's held receipt" $ do
+        dir <- freshReceiptsDir
+        writeReceiptFile dir heldRowReceipt
+        r <-
+            attributeRefusalReceipt
+                RefusalControl
+                dir
+                "CG11"
+                HeldQ002
+                "state"
+                policyMarker
+                policyReason
+                "controltxid"
+                "base"
+                False
+                "node"
+                "blueprint"
+        r `shouldBe` Right ()
+        rs <- loadReceipts dir
+        case rs of
+            Right [r0] -> do
+                receiptVerdict r0 `shouldBe` HeldQ002
+                receiptOutcome r0 `shouldBe` Accepted
+                receiptTransactions r0 `shouldBe` [T.pack "rowtxid"]
+                receiptRejected r0 `shouldBe` Nothing
+            other -> fail ("expected the untouched held receipt, got " <> show other)
+    it "a refusal row writes its refused receipt" $ do
+        dir <- freshReceiptsDir
+        r <-
+            attributeRefusalReceipt
+                RefusalRow
+                dir
+                "CG05"
+                AgreesWithModel
+                "state"
+                policyMarker
+                policyReason
+                "rejectedtxid"
+                "base"
+                False
+                "node"
+                "blueprint"
+        r `shouldBe` Right ()
+        rs <- loadReceipts dir
+        case rs of
+            Right [r0] -> do
+                receiptOutcome r0 `shouldBe` Refused
+                receiptVerdict r0 `shouldBe` AgreesWithModel
+                receiptRejected r0 `shouldBe` Just (T.pack "rejectedtxid")
+                fmap refusalScript (receiptRefusal r0) `shouldBe` Just (T.pack "state")
+                receiptVenue r0 `shouldBe` "node-submit"
+            other -> fail ("expected the row's refused receipt, got " <> show other)
+    it -- A control that attempted any write would throw here: the
+       -- directory does not exist, so Right () proves no write attempt.
+        "a control refusal writes nothing even where no receipts directory exists"
+        $ do
+            r <-
+                attributeRefusalReceipt
+                    RefusalControl
+                    "/nonexistent-conformance-refusal-spec"
+                    "CG12"
+                    HeldQ002
+                    "state"
+                    policyMarker
+                    policyReason
+                    "controltxid"
+                    "base"
+                    False
+                    "node"
+                    "blueprint"
+            r `shouldBe` Right ()
+    it "a refusal that does not attribute writes nothing and says why" $ do
+        dir <- freshReceiptsDir
+        r <-
+            attributeRefusalReceipt
+                RefusalRow
+                dir
+                "CG05"
+                AgreesWithModel
+                "state"
+                policyMarker
+                "phase-1 refusal that names no script at all"
+                "rejectedtxid"
+                "base"
+                False
+                "node"
+                "blueprint"
+        r `shouldSatisfy` isLeft
+        exists <- doesFileExist (dir </> "receipt-CG05.json")
+        exists `shouldBe` False

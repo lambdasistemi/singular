@@ -116,6 +116,11 @@ data Verdict
       HeldQ002
     | -- | the chain contradicts Singular's Lean itself
       DivergesFromLean
+    | -- | a user ruling resolved the row's question; the observation
+      -- is retained (as history or defect evidence) under the ruling,
+      -- never read as a pass and never as conformance credit (A-001:
+      -- CG13 is resolved-by-ruling, not a fourth unresolved hold)
+      ResolvedByRuling
     deriving stock (Show, Eq, Enum, Bounded)
 
 instance FromJSON Verdict where
@@ -123,12 +128,14 @@ instance FromJSON Verdict where
         "agrees-with-model" -> pure AgreesWithModel
         "held-q002" -> pure HeldQ002
         "diverges-from-lean" -> pure DivergesFromLean
+        "resolved-by-ruling" -> pure ResolvedByRuling
         _ -> fail ("unknown receipt verdict: " <> T.unpack t)
 
 instance ToJSON Verdict where
     toJSON AgreesWithModel = toJSON ("agrees-with-model" :: Text)
     toJSON HeldQ002 = toJSON ("held-q002" :: Text)
     toJSON DivergesFromLean = toJSON ("diverges-from-lean" :: Text)
+    toJSON ResolvedByRuling = toJSON ("resolved-by-ruling" :: Text)
 
 {- | Evidence that a row executed. Accepted rows name the chain's
 transaction ids and carry measurements; refused rows carry the
