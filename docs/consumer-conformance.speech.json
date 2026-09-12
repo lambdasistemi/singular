@@ -7,17 +7,17 @@
   ],
   "the-denominator": [
     {
-      "text": "The inventory file carries forty-one rows with forty owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
+      "text": "The inventory file carries forty-two rows with forty-one owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
       "pause": 400
     },
     {
-      "text": "The word executed never appears in the inventory file itself; a row prints as executed only when a run receipt for it exists and matches the current commit.",
+      "text": "The word executed never appears in the inventory file itself; a row prints as executed only when a run receipt for it exists and matches the current commit. Superseded and held rows stay in the denominator: relabelling a row pays no coverage and shrinks no board.",
       "pause": 400
     }
   ],
   "what-this-slice-executes": [
     {
-      "text": "Three devnet sessions run in order on isolated nodes: generic registry rows, canonical identity rows, then the serialization boundary rows. Two checks compare Haskell values against the compiled blueprint and never start a node, and are never counted as devnet-executed.",
+      "text": "Devnet sessions run in order on isolated nodes: the generic rows, now including the issue seventy rows, then canonical identity, then the serialization boundary. Two checks compare Haskell values against the compiled blueprint and never start a node, and are never counted as devnet-executed.",
       "pause": 400
     }
   ],
@@ -28,6 +28,16 @@
     },
     {
       "text": "Every accepting row carries a deliberately wrong variant the run requires to fail, and every refusal is attributed to the script that produced it. Had the chain accepted the occupied insert, that would be a finding, never relabelled as a refusal.",
+      "pause": 400
+    }
+  ],
+  "the-issue-70-generic-rows": [
+    {
+      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
+      "pause": 400
+    },
+    {
+      "text": "The permissionless fold row was refused by the unrepaired candidate and accepted after the repair, both by execution, at two clean tips, with the owner-signed control beside it. The receipts cited are the ship run taken fresh at the clean tip after the receipt repair, every held row carrying its transaction id and measurements.",
       "pause": 400
     }
   ],
@@ -51,7 +61,7 @@
       "pause": 400
     },
     {
-      "text": "Every accepting row carries a skipped or corrupted variant the run requires to fail, and the refusal names every script that failed in ledger order. Had any verdict contradicted its contract it would be a finding, never relabelled.",
+      "text": "Every accepting row carries a skipped or corrupted variant the run requires to fail. The six-field state schema is named pending epic seventeen's ownerless repair: the expectation is superseded at that repair and the row will be re-executed against the repaired blueprint.",
       "pause": 400
     }
   ],
@@ -73,11 +83,11 @@
   ],
   "measurements": [
     {
-      "text": "Ship run on a clean tree with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
+      "text": "Ship runs on clean trees with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three point eight percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
       "pause": 400
     },
     {
-      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The worst case across each session is recorded in that session's CL zero one receipt.",
+      "text": "Serialized size is the tight dimension: about seventy percent of the transaction maximum for folds, about half for boots. The canonical session records its worst case in its CL zero one receipt; the issue seventy session's CL zero one cannot close while a superseded row carries no receipt, so its worst cases live in the row receipts.",
       "pause": 400
     },
     {
@@ -87,7 +97,7 @@
   ],
   "what-this-slice-does-not-establish": [
     {
-      "text": "Five rows rest on predecessor runs and are cited, not re-executed. The remaining uncovered rows include four expected consumer gaps that are recorded to observe, not passed.",
+      "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now: the requirement stays unmet, and a held row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
       "pause": 400
     },
     {
@@ -101,22 +111,22 @@
   ],
   "commands": [
     {
-      "text": "List prints the inventory. Each session runs with its own command and a fresh receipts directory; a mixed request is refused. List against those receipts shows what executed.",
+      "text": "List prints the inventory. Each session runs with its own command and a fresh receipts directory; a mixed request is refused. The generic session ends non-zero while a row is held — that exit is the hold's visibility, not a crashed run.",
       "pause": 400
     },
     {
-      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run with a non-zero exit.",
+      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run. In continuous integration the expected-debt assertion checks the actual receipts and the exact held set, and a green step grants no conformance credit: strict completion and release stay red on that debt.",
       "pause": 400
     }
   ],
   "observed-environment": [
     {
-      "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with the pinned unapplied hash and the applied hash recorded. Any other environment is explicitly not covered.",
+      "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with the pinned unapplied hash and the applied hash recorded, and the issue seventy rows bound to the repaired blueprint identity. Any other environment is explicitly not covered.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "85dc8e8783e94f6347bc418c8fd5f67270d1ead44e47b19c9415d1c39bac315f"
+    "sha256": "5e6384584038c28c86d588d6dfb5bb13e4d717780c8efd7530209d8eb44cb12f"
   }
 }

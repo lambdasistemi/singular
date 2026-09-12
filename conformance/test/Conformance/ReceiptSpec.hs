@@ -9,7 +9,9 @@ matches the base. The fixture receipts carry base @fixture-base@;
 -}
 module Conformance.ReceiptSpec (spec) where
 
+import Data.Aeson (eitherDecode, encode)
 import Data.Either (isLeft, isRight)
+import Data.Foldable (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Test.Hspec (
@@ -24,6 +26,7 @@ import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
     RefusalInfo (..),
+    Verdict (..),
     checkReceiptSize,
     loadReceipts,
     maxReceiptBytes,
@@ -40,6 +43,11 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Receipt" $ do
+    it "round-trips every verdict class" $
+        forM_ [minBound :: Verdict .. maxBound] $ \v ->
+            case eitherDecode (encode v) :: Either String Verdict of
+                Right v' -> v' `shouldBe` v
+                Left err -> fail err
     it "loads the fixture receipts" $ do
         dir <- getDataFileName "test/fixtures/receipts"
         result <- loadReceipts dir
@@ -148,6 +156,7 @@ smallReceipt =
     Receipt
         { receiptRow = "CG02"
         , receiptOutcome = Accepted
+        , receiptVerdict = AgreesWithModel
         , receiptTransactions = ["abc123"]
         , receiptRefusal = Nothing
         , receiptRejected = Nothing

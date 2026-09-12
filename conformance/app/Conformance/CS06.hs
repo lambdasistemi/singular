@@ -63,6 +63,7 @@ import Cardano.MPFS.Cage.Types (
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
+    Verdict (..),
     writeReceiptFile,
  )
 
@@ -100,6 +101,7 @@ runCS06 blueprintPath receiptsDir base dirty = do
                 , receiptNode = T.pack nodeVer
                 , receiptBlueprint = T.pack bpId
                 , receiptVenue = "param-check"
+                , receiptVerdict = AgreesWithModel
                 , receiptRejected = Nothing
                 }
     writeReceiptFile receiptsDir receipt
