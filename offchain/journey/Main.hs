@@ -11,15 +11,15 @@ node and verifies it, one line per step:
   boot a cage, submit a request, prove the key absent, apply
   the request, prove the key present with the expected value,
   reject a false claim, read the resulting state back, then
-  submit three transactions the on-chain validators must
+  submit four transactions the on-chain validators must
   refuse — a forged state-token identity, a tampered
-  certified output, a missing required witness — and prove
-  the authenticated state took no trace from them.
+  certified output, a dropped proof witness, an ownerless End —
+  and prove the authenticated state took no trace from them.
 
-The three negative cases are MPFS cage negative cases. They
-exercise the imported validators' identity, certified-output
-and ownership guards; no Singular naming behaviour exists in
-this runner.
+The four negative cases are MPFS cage negative cases. They
+exercise the imported validators' identity, certified-output,
+witness and End-ownership guards; no Singular naming behaviour
+exists in this runner.
 
 Verification follows D-013: the library builds proofs
 ('mkMPFExclusionProof', 'mkMPFInclusionProof'); off-chain each
@@ -125,6 +125,7 @@ import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
+import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
@@ -147,6 +148,7 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
+    RequestAction (Update),
     UpdateRedeemer (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
@@ -709,9 +711,9 @@ phase2ScriptFailureMarker = isInfixOf "PlutusFailure"
 
 {- | The MPFS cage negative section. With one unapplied
 insert request pending, build the valid update transaction
-the oracle would submit, derive three transactions from it
+the oracle would submit, derive four transactions from it
 that are each invalid in exactly one intended way, and
-require the on-chain validators to refuse all three. Then
+require the on-chain validators to refuse all four. Then
 prove the authenticated state is unchanged: a rejected
 evaluation never applies, so the rejected transactions must
 have left no trace.
@@ -780,7 +782,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
     baseTx <- updateTokenImpl cfg prov tm tid genesisAddr
     newRoot <- baseTxStateRoot baseTx
     pp <- Cage.queryProtocolParams prov
-    -- The validators the three cases require to refuse, by
+    -- The validators the four cases require to refuse, by
     -- their script hashes as the node names them in a phase-2
     -- failure.
     let stateScriptHash =
@@ -807,16 +809,40 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         stateScriptHash
         submit
         (tamperStateOutputRoot newRoot tamperedRoot baseTx)
-    -- Case 3: missing required witness. The owner signature
-    -- is dropped from the body's required signers, so the
-    -- ledger no longer demands the vkey witness and phase 1
-    -- passes — but state.state.spend still requires it.
+    -- Case 3, re-cut under issue #79 (was: missing required
+    -- witness). The old case dropped the owner from the required
+    -- signers of this Modify and required a refusal. That expectation
+    -- encoded the pre-repair defect: Lean `Singular.step`'s `.fold`
+    -- case requires only `nativeSpend`, net-mint equality and the
+    -- conditional mint witnesses — it states no owner hypothesis — so
+    -- the repaired validator rightly accepts an ownerless Modify (the
+    -- `epic16-preserved` failure that exposed this row is the evidence).
+    -- The owner-signature refusal moved to Case 4 (`End`, which keeps
+    -- the requirement). This case instead drops the fold's Merkle proof
+    -- witness: Lean's `.fold` refuses a fold whose demanded witnesses
+    -- are absent (`representative-witness` / `application-mint-witness`
+    -- when the corresponding net is nonzero), and on this MPFS apply
+    -- the carried witness is the Merkle proof certifying the net
+    -- effect — `mpf` verification of a witnessless Update must fail.
     expectRejected
-        "reject-missing-witness"
-        "state.state.spend validateOwnership: the owner's required signature is absent"
+        "reject-missing-proof"
+        "state.state.spend validModify: a Modify with no Merkle proof witness is refused"
         stateScriptHash
         submit
-        (dropRequiredSigners baseTx)
+        (dropModifyProof pp baseTx)
+    -- Case 4, re-cut under issue #79: the owner-signature refusal the
+    -- old Case 3 asserted on the Modify path, retargeted to `End`.
+    -- `End` keeps `validateOwnership` (untouched by the repair), so an
+    -- ownerless `End` spend must still be refused by
+    -- `state.state.spend`, for that reason. After the repair this is
+    -- the only owner-authorization negative control.
+    unsignedEnd <- endTokenImpl cfg prov tid genesisAddr
+    expectRejected
+        "reject-end-without-owner"
+        "state.state.spend validateOwnership: End without the state owner's signature is refused"
+        stateScriptHash
+        submit
+        (dropRequiredSigners unsignedEnd)
     -- Positive control: the rejected transactions left no
     -- trace. The authenticated state is re-read from the
     -- chain and compared against the post-apply state.
@@ -830,7 +856,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         (length reqAfter == 1)
     emit
         "reject-control"
-        ( "authenticated state unchanged after 3 rejected transactions"
+        ( "authenticated state unchanged after 4 rejected transactions"
             <> " root=0x"
             <> hex (unOnChainRoot (stateRoot stateAfter))
             <> " request_utxos="
@@ -964,11 +990,37 @@ tamperStateOutputRoot expected tampered tx =
 
 {- | Drop every required signer from the body: the ledger no
 longer demands the owner's vkey witness, but the state
-validator still does.
+validator still does. Since the issue-#79 re-cut this helper
+serves the `End` case only: an ownerless `Modify` is now
+rightly accepted.
 -}
 dropRequiredSigners :: ConwayTx -> ConwayTx
 dropRequiredSigners tx =
     tx & bodyTxL . reqSignerHashesTxBodyL .~ Set.empty
+
+{- | Drop the Merkle proof witness from the Modify action, keeping
+the action shape: `UpdateAction` with an empty proof list. The
+value, size discipline and addresses are untouched (shrinking a
+redeemer only lowers the fee the body already covers), the
+script-integrity hash is re-stamped so ledger phase 1 stays valid,
+and only the on-chain proof verification stands between the
+transaction and the ledger.
+-}
+dropModifyProof ::
+    PParams ConwayEra ->
+    ConwayTx ->
+    ConwayTx
+dropModifyProof pp tx =
+    tx
+        & witsTxL . rdmrsTxWitsL .~ newRedeemers
+        & bodyTxL . scriptIntegrityHashTxBodyL .~ integrity
+  where
+    Redeemers rdmrMap = tx ^. witsTxL . rdmrsTxWitsL
+    newRedeemers = Redeemers (Map.map dropProof rdmrMap)
+    dropProof pair = case decodeUpdateRedeemer (fst pair) of
+        Just (Modify _) -> (toLedgerData (Modify [Update []]), snd pair)
+        _ -> pair
+    integrity = computeScriptIntegrity pp newRedeemers
 
 -- ---------------------------------------------------------
 -- Authenticated-state verification (D-013)

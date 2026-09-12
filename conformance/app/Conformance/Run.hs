@@ -78,7 +78,7 @@ unapplied layer's address to pass for the deployed script, which it
 cannot (the run must fail). All prove the harness fails when it
 should.
 -}
-module Conformance.Run (runRows) where
+module Conformance.Run (runForkProbe, runRows) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
@@ -330,6 +330,7 @@ import Conformance.Mirror (
  )
 import Conformance.CS01 (runCS01)
 import Conformance.CS06 (runCS06)
+import Conformance.ForkKeys (findPresentForkKeys)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -5342,6 +5343,31 @@ requestActionConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
     fromAction (PLC.Constr ix _) = [ix]
     fromAction _ = []
 
+-- | `ProofStep` indices inside `Update` actions (0 `Branch`, 1 `Fork`,
+-- 2 `Leaf`). Probe-only reader for the t81 present-key `Fork` control.
+proofStepConstrs :: ConwayTx -> [Integer]
+proofStepConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
+  where
+    fromDatum (PLC.Constr 2 [PLC.List actions]) = concatMap fromAction actions
+    fromDatum _ = []
+    fromAction (PLC.Constr 0 [PLC.List steps]) = concatMap fromStep steps
+    fromAction _ = []
+    fromStep (PLC.Constr ix _) = [ix]
+    fromStep _ = []
+
+-- | Every `Fork` step in the tx carries a well-formed 3-field
+-- `Neighbor`. Probe-only companion to `proofStepConstrs`.
+forkNeighborsWellFormed :: ConwayTx -> Bool
+forkNeighborsWellFormed tx = all fromDatum (redeemerPlutusDatas tx)
+  where
+    fromDatum (PLC.Constr 2 [PLC.List actions]) = all fromAction actions
+    fromDatum _ = True
+    fromAction (PLC.Constr 0 [PLC.List steps]) = all fromStep steps
+    fromAction _ = True
+    fromStep (PLC.Constr 1 [_, PLC.Constr 0 [_, _, _]]) = True
+    fromStep (PLC.Constr 1 _) = False
+    fromStep _ = True
+
 cs03KeyA, cs03ValA, cs03KeyB, cs03ValB :: ByteString
 cs03KeyA = "cs03-modify-key"
 cs03ValA = "cs03-modify-val"
@@ -5739,3 +5765,114 @@ writeGapMigrating receiptsDir base blueprintIdStr = do
                 <> "\n"
     BSL.writeFile (receiptsDir </> "gap-CS05-Migrating.txt") (BSL.fromStrict (TE.encodeUtf8 (T.pack gap)))
     emit "gap" "CS05 Migrating unreachable on previousPolicies=[] (state.ak FR1)"
+
+{- | t81 present-key `Fork` control (P-B): insert K1, P, Q (predicted
+`[]`, `Leaf`-class, `Leaf`-class, all accepted), then an update fold
+for present K1 whose proof carries `Fork` on the inclusion path — no
+`excluding()` involved. Predicted REFUSED (bare `CekError`): the
+divergence is about single-branch-sibling `Fork` per se. An ACCEPTED
+fold falsifies that and opens a green path for the row (re-marking
+stays an owner ruling). No receipts: this is an investigation probe,
+not a row; shapes and verdicts are the evidence.
+-}
+runForkProbe :: IO ()
+runForkProbe = do
+    blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    (stateBytes, requestBytes) <- loadCodes blueprintPath
+    nodeVer <- readNodeVersion
+    emit "node" nodeVer
+    base <- requireBase
+    emit "base" base
+    bracketTmpDir $ do
+        gDir <- genesisDir
+        checkGenesis gDir
+        withCardanoNode gDir $ \sock _startMs ->
+            runForkProbeSession stateBytes requestBytes sock
+
+runForkProbeSession :: SBS.ShortByteString -> SBS.ShortByteString -> FilePath -> IO ()
+runForkProbeSession stateBytes requestBytes sock = do
+    lsqCh <- newLSQChannel 16
+    ltxsCh <- newLTxSChannel 16
+    nodeThread <-
+        async $
+            runNodeClient
+                (NetworkMagic 42)
+                sock
+                lsqCh
+                ltxsCh
+    threadDelay 3_000_000
+    status <- poll nodeThread
+    case status of
+        Nothing -> pure ()
+        Just _ ->
+            failWith "node connection closed before queries ran"
+    let prov = adaptProvider (mkN2CProvider lsqCh)
+        submit = mkN2CSubmitter ltxsCh
+    tm <- mkPureTrieManager
+    (seed, _) <- largestWalletUtxo prov
+    let cfg = cageCfg stateBytes requestBytes (txInToRef seed)
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    signedBoot <- submitWithGenesis submit unsignedBoot
+    tid <- extractTokenId cfg signedBoot
+    createTrie tm tid
+    (keyK, keyP, keyQ, _, _, _) <- findPresentForkKeys
+    emit "probe-keys" (show (keyK, keyP, keyQ))
+    (_, unsigned1) <- insertProbe tm cfg prov submit tid keyK "t81-v1"
+    require
+        "probe setup unexpectedly carries Fork"
+        (1 `notElem` proofStepConstrs unsigned1)
+    (_, unsignedP) <- insertProbe tm cfg prov submit tid keyP "t81-vp"
+    require
+        ("probe setup P proof unexpected: " <> show (proofStepConstrs unsignedP))
+        (2 `elem` proofStepConstrs unsignedP)
+    (_, unsignedQ) <- insertProbe tm cfg prov submit tid keyQ "t81-vq"
+    require
+        ("probe setup Q unexpectedly carries Fork: " <> show (proofStepConstrs unsignedQ))
+        (1 `notElem` proofStepConstrs unsignedQ)
+    emit "probe" "update fold for present K1 (inclusion path, no excluding)"
+    unsignedProbeReq <-
+        requestUpdateImpl
+            cfg
+            prov
+            (defaultTip cfg)
+            tid
+            keyK
+            "t81-v1"
+            "t81-v1-upd"
+            genesisAddr
+    _ <- submitWithGenesis submit unsignedProbeReq
+    probeResult <- try @SomeException (updateTokenImpl cfg prov tm tid genesisAddr)
+    case probeResult of
+        Left err -> do
+            emit "verdict" "REFUSED as predicted"
+            emit "refusal" (take 600 (displayException err))
+            emit "complete" "probe done: inclusion-path Fork refused"
+        Right unsignedProbe -> do
+            emit "verdict" "ACCEPTED against prediction: Fork works on inclusion"
+            emit "probe-steps" (show (proofStepConstrs unsignedProbe))
+            require
+                "accepted probe lacks well-formed Fork neighbor"
+                (1 `elem` proofStepConstrs unsignedProbe && forkNeighborsWellFormed unsignedProbe)
+            signedProbe <- submitWithGenesis submit unsignedProbe
+            emit "probe-txid" (txIdHex signedProbe)
+            emit "complete" "probe done: inclusion-path Fork ACCEPTED (falsification)"
+    cancel nodeThread
+  where
+    insertProbe tmInner cfgInner provInner submitInner tidInner key val = do
+        unsignedReq <-
+            requestInsertImpl
+                cfgInner
+                provInner
+                (defaultTip cfgInner)
+                tidInner
+                key
+                val
+                genesisAddr
+        _ <- submitWithGenesis submitInner unsignedReq
+        unsignedFold <- updateTokenImpl cfgInner provInner tmInner tidInner genesisAddr
+        signedFold <- submitWithGenesis submitInner unsignedFold
+        _ <- withTrie tmInner tidInner $ \t -> do
+            _ <- CageTrie.insert t key val
+            pure ()
+        emit ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key)) (show (proofStepConstrs unsignedFold))
+        pure (signedFold, unsignedFold)

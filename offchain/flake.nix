@@ -180,6 +180,22 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The issue #79 repair rows (permissionless fold + insert-only
+        # retract), wrapped the same way as the other row runners: the
+        # locked cardano-node on its own PATH, no store path baked in.
+        # The MPFS blueprint comes from the caller at run time
+        # (MPFS_BLUEPRINT).
+        repair-rows = pkgs.runCommand "repair-rows" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.repair-rows.meta or { }) // {
+            mainProgram = "repair-rows";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.repair-rows} $out/bin/repair-rows \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
         # -------------------------------------------------------
@@ -201,7 +217,8 @@
           # hit the same derivation. Issue #50: same for li-refusals.
           # Issue #62: same for recovery-rows.
           # Issue #66: same for retirement-rows.
-          inherit naming-rows li-refusals recovery-rows retirement-rows;
+          # Issue #79: same for repair-rows.
+          inherit naming-rows li-refusals recovery-rows retirement-rows repair-rows;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -237,6 +254,10 @@
           li-refusals = {
             type = "app";
             program = pkgs.lib.getExe li-refusals;
+          };
+          repair-rows = {
+            type = "app";
+            program = pkgs.lib.getExe repair-rows;
           };
         };
 

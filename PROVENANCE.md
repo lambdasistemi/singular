@@ -198,3 +198,80 @@ The gate is a file-identity check. It says nothing about behavior.
 | `offchain/test/Cardano/MPFS/Cage/TypesSpec.hs` | `haskell/test/Cardano/MPFS/Cage/TypesSpec.hs` | `ce610af59afda86d5f3bf3acecb08697ef8d2b86` | 100644 |
 | `offchain/test/Main.hs` | `haskell/test/Main.hs` | `8e11a21bb148ee318873ec2d8aebc653fc58c7dc` | 100644 |
 
+
+## Authorized local divergence — issue #79 (imported-validator repair)
+
+The import above stays byte-exact at the frozen revision
+`34a5bfbb8cca2cb1911b7060d0e61db28ba21e83`. On top of it, this
+repository carries exactly one authorized local divergence, owned by
+epic 17 under A-002 and required by the repository constitution
+(Principle I: imported code carries the same obligation as our own
+code; Lean `lean/Singular/Model.lean` is the behavioral authority).
+
+### What diverged, and why
+
+Two behaviors of the imported validators contradicted Singular's Lean
+model:
+
+- Defect 1: `onchain/validators/state.ak` ran `validateOwnership`
+  before dispatching any redeemer, so every `Modify` (every fold)
+  required the registry owner. Lean's `.fold` requires only
+  `nativeSpend`, net mint equality and the mint witnesses — no owner.
+  Repair: the `Modify` path no longer requires the owner; `End` keeps
+  `validateOwnership`. Every structural, mint, proof and request check
+  on the `Modify` path is retained.
+- Defect 2: `onchain/validators/request.ak`'s `validateRetract` never
+  inspected the request operation, so an `Update` (retirement) request
+  was retractable. Lean's `.withdraw` throws `withdraw-insert-only`
+  for non-insert requests. Repair: retraction requires
+  `requestValue is Insert(_)`; the request-owner signature, the
+  phase-2 window and the state-token binding are retained.
+
+Only `onchain/validators/state.ak` and
+`onchain/validators/request.ak` differ from the import baseline.
+`onchain/validators/shared.ak` (home of `validateOwnership`) is
+unchanged, as are all locks and pins (`onchain/aiken.lock`,
+`onchain/flake.lock`, `offchain/cabal.project`) and every other
+imported file.
+
+### The patch (the gate, not just a document)
+
+`onchain/REPAIR.patch` applies to the import commit
+`34d7abec6ee4830e17a725fa84239af46c3ee206` (this history, offline)
+and yields exactly the working tree under `onchain/validators/`. The
+slice gate reconstructs baseline + patch and rejects any unlisted
+drift, and separately names any changed imported file the patch does
+not cover.
+
+### Script identities (derived, reviewed, propagated)
+
+`onchain/script-identity.json` still records the upstream source
+revision `34a5bfbb8cca2cb1911b7060d0e61db28ba21e83` and was
+regenerated from the actual pinned compilation
+(`just script-identity-regen` recipe — never hand-edited). Review of
+the resulting bytes: exactly the two repaired validators moved, the
+staking script is untouched, the compiler string is unchanged:
+
+| validator | before | after | why |
+|---|---|---|---|
+| `state.state.*` | `64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce` | `d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3` | ownership gate moved from top-level `spend` into the `End` branch |
+| `request.request.*` | `6b5ce70130332cee6fb016866d2a03c497d313e5df62a22e12af3e5f` | `8970c2865b1a6218b6baed938e8f5474514ba4db7e531fbc597b912c` | added the `Insert`-only operation check to `validateRetract` |
+| `staking.staking.*` | `4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10` | unchanged | out of scope |
+
+Builders consume the compiled blueprint at run time
+(`MPFS_BLUEPRINT`), so they pick up the repaired identities without
+baked hashes; the row runners assert the pinned unapplied identities
+against the build on every run. Documents that quoted observed
+identities (`docs/consumer-conformance.md` CA04, the LI01 rows in
+`offchain/naming-correspondence.md`) were updated to the values this
+repair produces (applied `state.state`:
+`ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e`,
+derived from unapplied `d42860fa…` with `previousPolicies=[]`).
+
+### Known stale prose (not repaired in this slice)
+
+`onchain/validators/types.ak` still documents the old owner-moderated
+architecture ("The `owner` field determines who can perform `Modify`
+and `End` operations"). It is byte-identical to the import baseline
+and outside this slice's owned paths; the behavior is repaired, the
+prose is not. Forwarded to the parent as a docs follow-up.

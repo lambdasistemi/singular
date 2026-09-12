@@ -29,7 +29,9 @@ proof lacks a `Fork`.
 -}
 module Conformance.ForkKeys (
     findForkKeys,
+    findPresentForkKeys,
     runCheckForkExclusion,
+    runGrindPresentFork,
     runFindForkKeys,
     runShowAllProofs,
     runShowDProof,
@@ -284,6 +286,64 @@ runShowAllProofs = do
 -- No node. A TRUE verdict with an on-chain refusal means the mts and
 -- Aiken implementations diverge on Fork absence proofs; FALSE means mts
 -- cannot verify the shape its sibling API generates.
+-- | Proof constructors for @target@ over a pure cage trie holding exactly
+-- @kvs@ (inserted in order). Present targets mirror update folds;
+-- targets inserted last mirror insert folds. No node.
+shapeOf :: [(ByteString, ByteString)] -> ByteString -> IO [String]
+shapeOf kvs target = do
+    tm <- mkPureTrieManager
+    let tid = TokenId (AssetName "t81-probe-token")
+    createTrie tm tid
+    strs <- withSpeculativeTrie tm tid $ \trie -> do
+        mapM_ (\(k, v) -> CageTrie.insert trie k v) kvs
+        mSteps <- CageTrie.getProofSteps trie target
+        pure $ case mSteps of
+            Nothing -> ["none"]
+            Just steps -> map constrName steps
+    pure strs
+
+-- | Present-key `Fork` grind (P-A): fixed K1; P shares nibble `[0]`;
+-- Q shares `[0]` with a fresh index-1 nibble. Verified in the pure
+-- cage trie with builder-identical call order.
+findPresentForkKeys :: IO (ByteString, ByteString, ByteString, [String], [String], [String])
+findPresentForkKeys = do
+    let keyK = "t81-k1"
+        nk = nibbles keyK
+    keyP <-
+        grind
+            "t81-p"
+            5000
+            (\np -> eqPrefix 1 np nk && diffAt 1 np nk)
+    let np1 = nibbles keyP
+    keyQ <-
+        grind
+            "t81-q"
+            50000
+            (\nq -> eqPrefix 2 nq np1 && diffAt 2 nq np1)
+    stepsP <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp")] keyP
+    require
+        ("P proof unexpected: " <> show stepsP)
+        ("Leaf" `elem` stepsP && "Fork" `notElem` stepsP)
+    stepsQ <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyQ
+    require
+        ("Q proof unexpected: " <> show stepsQ)
+        ("Fork" `notElem` stepsQ)
+    stepsK <- shapeOf [(keyK, "t81-v1"), (keyP, "t81-vp"), (keyQ, "t81-vq")] keyK
+    require
+        ("K1 proof lacks Fork: " <> show stepsK)
+        ("Fork" `elem` stepsK)
+    pure (keyK, keyP, keyQ, stepsP, stepsQ, stepsK)
+
+runGrindPresentFork :: IO ()
+runGrindPresentFork = do
+    (keyK, keyP, keyQ, stepsP, stepsQ, stepsK) <- findPresentForkKeys
+    emit "fork-key-k1" (show keyK)
+    emit "fork-key-p" (show keyP)
+    emit "fork-key-q" (show keyQ)
+    emit "p-proof" (show stepsP)
+    emit "q-proof" (show stepsQ)
+    emit "k1-proof" (show stepsK)
+
 runCheckForkExclusion :: IO ()
 runCheckForkExclusion = do
     mirror <- newMirror
