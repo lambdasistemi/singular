@@ -77,6 +77,18 @@ let
     text = ''
       export DOCS_VERSION=${version}
       export RELEASE_NOTES=${src}/onchain-release/RELEASE.md
+      # Coverage release boundary (issue #80 slice t80c): enforced only when
+      # COVERAGE_RELEASE_REQUIRED is set — integration activates it by
+      # exporting it in the release workflow. A direct publish-docs run
+      # without it warns and proceeds under operator governance: the
+      # operator must verify COMPLETE for the tag commit by hand. Uses the
+      # checkout's own flake so the gate version always matches the tree.
+      if [ -n "''${COVERAGE_RELEASE_REQUIRED:-}" ]; then
+        nix run --quiet "$PWD#coverage-gate" -- --root "$PWD" release \
+          --candidate "''${TAG_COMMIT:?COVERAGE_RELEASE_REQUIRED needs TAG_COMMIT}"
+      else
+        echo "warning: publish-docs without the coverage release boundary (COVERAGE_RELEASE_REQUIRED unset)" >&2
+      fi
       # Assemble the on-chain archive (blueprint builds included) and verify
       # the exact bytes to be published before anything is uploaded.
       release_dir="$(mktemp -d)"

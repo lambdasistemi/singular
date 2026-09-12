@@ -31,7 +31,9 @@ jobs:
   # integration commit removes it. When active, it binds the exact tag
   # commit as the release candidate and fails the job unless the
   # theorem-coverage gate reports COMPLETE for that candidate — blocking
-  # publication. A committed PASS row proves input identity (bytes bound
+  # the documentation and on-chain archive publication (the publish step
+  # uploads both through publish-docs; the workflow name understates it).
+  # A committed PASS row proves input identity (bytes bound
   # from the candidate commit), not that its claims were executed:
   # execution debt (unexecuted, skipped, failing, vacuous, invalid
   # control, stale-candidate evidence) still refuses as INCOMPLETE, and
