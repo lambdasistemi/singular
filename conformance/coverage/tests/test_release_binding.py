@@ -36,16 +36,17 @@ def git(repo, *args):
                    capture_output=True, text=True, timeout=60)
 
 
-def build_sufficient_tree(tree):
-    """A five-obligation tree with one mapping and two distinct valid
-    layers per obligation: enough for COMPLETE, so a clean run proves the
-    probe passed binding (binding failure would exit 3 first). Commits the
-    real tools/check_model.py bytes too: the release machinery binds the
-    extraction tool from the candidate, so the fixture must carry it."""
+def build_sufficient_content(tree):
+    """Write the five-obligation synthetic content (statements, manifests,
+    sufficient record, real extractor bytes) into tree, replacing any
+    existing lean/ tree. Returns the record path. Shared by the unit
+    fixtures and the publication full-clone fixture."""
     import shutil
 
     from tests.fixtures import REPO_ROOT
 
+    if (tree / "lean").exists():
+        shutil.rmtree(tree / "lean")
     (tree / "lean/Singular").mkdir(parents=True)
     (tree / "lean/Singular/Statements.lean").write_text(STATEMENTS)
     for rel, text in NAMING_STUBS.items():
@@ -102,6 +103,12 @@ def build_sufficient_tree(tree):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(record))
     return path
+
+
+def build_sufficient_tree(tree):
+    """Fresh-dir wrapper around build_sufficient_content (keeps existing callers)."""
+    tree.mkdir(parents=True, exist_ok=True)
+    return build_sufficient_content(tree)
 
 
 @unittest.skipUnless(GIT, "git binary required for the binding control")

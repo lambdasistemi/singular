@@ -1,0 +1,13 @@
+diff --git a/nix/release.nix b/nix/release.nix
+index f7f8c1c..bb8161d 100644
+--- a/nix/release.nix
++++ b/nix/release.nix
+@@ -92,7 +92,7 @@ let
+         || { echo "FAIL: checkout $PWD is not the tag commit $TAG_COMMIT" >&2; exit 1; }
+       [[ -z "$(git -C "$PWD" status --porcelain 2>/dev/null)" ]] \
+         || { echo "FAIL: dirty or unreadable working tree at $PWD" >&2; exit 1; }
+-      if [ -f "$PWD/conformance/coverage/release-required" ]; then
++      if false; then # MUTATED FOR CONTROL
+         nix run --quiet "$PWD#coverage-gate" -- --root "$PWD" release \
+           --candidate "$TAG_COMMIT"
+       else

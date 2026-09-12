@@ -30,7 +30,7 @@ from pathlib import Path
 
 provider, outdir = Path(sys.argv[1]), Path(sys.argv[2])
 sys.path.insert(0, str(provider / "conformance/coverage"))
-from tests.test_release_binding import build_sufficient_tree
+from tests.test_release_binding import build_sufficient_tree, build_sufficient_content
 
 
 def git(repo, *args):
@@ -88,4 +88,28 @@ miss_record.parent.mkdir(parents=True, exist_ok=True)
 miss_record.write_bytes(external_sufficient)
 miss_head = commit_all(miss, "unrecorded candidate plus release-required")
 print(f"MISSING_HEAD={miss_head}")
+
+# Full-clone sufficient fixture: the real provider tree at its HEAD with
+# only the coverage population swapped to the synthetic five obligations
+# (real flakes, tools, docs layout, manifests path, record path). The gate
+# verdict runs real code on real inputs; only the coverage CLAIMS are
+# synthetic, which the evidence labels as such.
+full = outdir / "fullclone"
+subprocess.run(["git", "clone", "-q", str(provider), str(full)], check=True,
+               capture_output=True)
+subprocess.run(["git", "-C", str(full), "checkout", "-q",
+                subprocess.run(["git", "-C", str(provider), "rev-parse", "HEAD"],
+                               check=True, capture_output=True, text=True).stdout.strip()],
+               check=True, capture_output=True)
+subprocess.run(["git", "-C", str(full), "rm", "-q", "-r", "lean"],
+               check=True, capture_output=True)
+build_sufficient_content(full)
+(full / "conformance/coverage/release-required").write_text("")
+full_head = commit_all(full, "full clone with synthetic coverage population")
+print(f"FULLCLONE_HEAD={full_head}")
+subprocess.run(["git", "-C", str(full), "tag", "-f", f"v{version}", full_head],
+               check=True, capture_output=True)
+subprocess.run(["git", "-C", str(full), "update-ref",
+                "refs/remotes/origin/main", full_head],
+               check=True, capture_output=True)
 PYEOF
