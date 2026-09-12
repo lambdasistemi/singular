@@ -1,7 +1,7 @@
 use application.{Cancel, Fold, Retire}
 use cardano/assets.{add, zero}
 use fixtures.{
-  app_policy, claim_input, record_value, representative_name, rep_policy,
+  app_policy, claim_input, controller, record_value, representative_name, rep_policy,
   source_record, spend_redeemer_data, tx,
 }
 use naming.{NamingDatum}
@@ -113,6 +113,7 @@ test retire_burns_named_representative_accepts() {
     rep_policy,
     app_spend_tx(burn_one(), Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
   )
 }
@@ -125,6 +126,7 @@ test retire_without_burn_refuses() fail {
     rep_policy,
     app_spend_tx(zero, Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
   )
 }
@@ -140,6 +142,7 @@ test burn_unbound_name_refuses() fail {
     rep_policy,
     app_spend_tx(extra, Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
   )
 }

@@ -731,10 +731,12 @@ data KeySetup = KeySetup
     , keyCommitment :: ByteString
     , keyControllerHash :: ByteString
     , keyControllerSeed :: ByteString
+    , keyRegistryToken :: ByteString
+    , keyRepName :: ByteString
     }
 
 setupKey :: Env -> String -> ByteString -> Address -> Addr -> ByteString -> ByteString -> ByteString -> IO KeySetup
-setupKey _env label spelling codec addr controllerHash controllerSeed revealSeed = do
+setupKey env label spelling codec addr controllerHash controllerSeed revealSeed = do
     let revealAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey revealSeed))
         commitment = nextControlCommitmentOf (serialiseAddr revealAddr)
         datum =
@@ -749,7 +751,14 @@ setupKey _env label spelling codec addr controllerHash controllerSeed revealSeed
                         }
                 }
         approval = insertApprovalName (serialiseAddr addr) commitment
-        repName = representativeName controllerHash freshIncarnation
+        -- Registry-bound representative (NOTE-007): name commits to the
+        -- cage token recorded in the environment (post-boot tok) under the
+        -- state policy, recomputed identically on chain from the supplied
+        -- state. Stored once; `keyRepName` reads it (accessor syntax at use
+        -- sites is unchanged from when it was a function).
+        TokenId (AssetName tokSbs) = envTok env
+        registryToken = SBS.fromShort tokSbs
+        repName = representativeName controllerHash (scriptHashBytes (envStateHash env)) registryToken freshIncarnation
     emit
         "key"
         ( label
@@ -773,10 +782,12 @@ setupKey _env label spelling codec addr controllerHash controllerSeed revealSeed
             , keyCommitment = commitment
             , keyControllerHash = controllerHash
             , keyControllerSeed = controllerSeed
+            , keyRegistryToken = registryToken
+            , keyRepName = repName
             }
 
-keyRepName :: KeySetup -> ByteString
-keyRepName ks = representativeName (keyControllerHash ks) freshIncarnation
+-- | The registry-bound representative name stored at setup (field
+-- accessor; use sites read `keyRepName ks` exactly as before).
 
 -- ---------------------------------------------------------
 -- Cage boot and requests
@@ -807,6 +818,7 @@ bootCage prov submit tm stateBytes requestBytes repPolicy evDir evNext = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
+                , cfgConsumerPin = SBS.pack (replicate 28 0)
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr

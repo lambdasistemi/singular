@@ -473,15 +473,15 @@ runMode mode blueprintPath mpfsPath = do
                 <> ": main="
                 <> showIn recMain
                 <> " (representative 0x"
-                <> hex (representativeName oldHash freshIncarnation)
+                <> hex (boundRepName cfg tok oldHash)
                 <> ") refusals="
                 <> showIn recRefusals
                 <> " (representative 0x"
-                <> hex (representativeName refusalsHash freshIncarnation)
+                <> hex (boundRepName cfg tok refusalsHash)
                 <> ") forged="
                 <> showIn recForged
                 <> " (representative 0x"
-                <> hex (representativeName forgedHash freshIncarnation)
+                <> hex (boundRepName cfg tok forgedHash)
                 <> ") — each folded from its own insert with its \
                    \representative minted +1 under the applied policy 0x"
                 <> repAppliedHex
@@ -1221,6 +1221,7 @@ bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
+                , cfgConsumerPin = SBS.pack (replicate 28 0)
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
@@ -1371,6 +1372,18 @@ chainRecoveryRoot env = do
 -- request keyed by the given spelling plus the naming claim, one state
 -- Modify, approval burn and representative mint. Returns the fold txid
 -- and the record input.
+-- | Registry-bound representative name (NOTE-007): recomputed identically
+-- on chain from the supplied state's token. Single source per file so
+-- displays and minted values cannot drift apart.
+boundRepName :: CageConfig -> TokenId -> ByteString -> ByteString
+boundRepName cfg tok controlHash =
+    let TokenId (AssetName tokSbs) = tok
+     in representativeName
+            controlHash
+            (scriptHashBytes (cfgScriptHash cfg))
+            (SBS.fromShort tokSbs)
+            freshIncarnation
+
 setupGenuineRecord ::
     Env ->
     ByteString ->
@@ -1383,7 +1396,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     let controlBytes = addressBytes (controlAddress datum)
         commitment = nextControlCommitment datum
         approval = insertApprovalName controlBytes commitment
-        repName = representativeName controllerHash freshIncarnation
+        repName = boundRepName (envCfg env) (envTok env) controllerHash
         approvalTokens =
             Map.singleton
                 (envAppPolicy env)

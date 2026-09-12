@@ -45,13 +45,10 @@ import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
-    coinTxOutL,
     datumTxOutL,
-    getMinCoinTxOut,
     mkBasicTxOut,
     valueTxOutL,
  )
-import Cardano.Ledger.BaseTypes (Inject (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
@@ -149,14 +146,7 @@ connectedFoldTx args = do
         feeUtxo = cfaFeeUtxo args
         pp = cfaPp args
     (proofs, newRoot) <- computeProofs tm tid reqUtxos
-    -- Refund floor at min-UTxO, twice-probed: the coin value itself is
-    -- part of the sized output, so a one-pass probe under-reports.
-    let minAt coin =
-            let probe = mkBasicTxOut feeAddr (inject (Coin coin))
-                Coin c = getMinCoinTxOut pp probe
-             in c
-        refundMin = minAt (minAt 1)
-        adjustedRoot = cfaAdjustRoot args newRoot
+    let adjustedRoot = cfaAdjustRoot args newRoot
         (oldState, newStateOut, script) =
             prepareState cfg stateOut adjustedRoot
         requestScript = mkRequestScript cfg tid
@@ -186,7 +176,6 @@ connectedFoldTx args = do
                 requestScript
                 proofs
                 upperSlot
-                refundMin
                 (cfaSpends args)
                 (cfaMints args)
                 (cfaOutputs args)
@@ -301,7 +290,10 @@ computeUpperSlot prov oldState reqUtxos = do
                     [30, 5, 2]
 
 -- | The TxBuild program: MPFS spends, attached spends and mints,
--- outputs, refunds, witnesses. No owner signature.
+-- outputs, witnesses. Processed requests lock into the state output
+-- (see `prepareState`); no refund outputs are emitted here because
+-- connected folds only ever process (`Update`); rejected rows are built
+-- by the reject path with `computeRefund`. No owner signature.
 buildProgram ::
     CageConfig ->
     TxIn ->
@@ -313,7 +305,6 @@ buildProgram ::
     Script ConwayEra ->
     [[ProofStep]] ->
     SlotNo ->
-    Integer ->
     [ConnectedSpend] ->
     [ConnectedMint] ->
     [TxOut ConwayEra] ->
@@ -322,17 +313,16 @@ buildProgram ::
     [Script ConwayEra] ->
     Tx.TxBuild NoCtx Void ()
 buildProgram
-    cfg
+    _cfg
     stateIn
     reqUtxos
     feeUtxo
-    oldState
+    _oldState
     newStateOut
     script
     requestScript
     proofs
     upperSlot
-    refundMin
     extraSpends
     extraMints
     extraOutputs
@@ -340,8 +330,6 @@ buildProgram
     refUtxos
     attachScripts = do
         let stateRef = txInToRef stateIn
-            OnChainTokenState{stateMaxFee = tipAmount} = oldState
-            nReqs = fromIntegral (length reqUtxos) :: Integer
             actions = map Update proofs
         _ <- Tx.spendScript stateIn (Modify actions)
         mapM_
@@ -354,30 +342,9 @@ buildProgram
             (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
             extraMints
         _ <- Tx.output newStateOut
-        Coin fee <- Tx.peek $ \tx ->
+        Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
-        let perReqFee = fee `div` nReqs
-            remainder = fee - perReqFee * nReqs
-        -- Refunds come immediately after the state output: the state
-        -- validator zips outputs[1..] with the request owners in order.
-        -- Each refund is floored at min-UTxO (the validator's own refund
-        -- equation blesses min-UTxO top-ups, bounded above by
-        -- totalInputs - n*tip); the folder's fee input absorbs the fee.
-        mapM_
-            (\(i, (_, reqOut)) -> do
-                let Coin reqVal = reqOut ^. coinTxOutL
-                    extra =
-                        if i == (0 :: Int) then remainder else 0
-                    rawRefund =
-                        max refundMin (reqVal - tipAmount - perReqFee - extra)
-                    refundAddr =
-                        addrFromKeyHashBytes
-                            (network cfg)
-                            (extractOwnerBytes reqOut)
-                Tx.output $ mkBasicTxOut refundAddr (inject (Coin rawRefund))
-            )
-            (zip [0 ..] reqUtxos)
         mapM_ Tx.output extraOutputs
         -- Scripts arrive by witness or by reference, never both: with
         -- reference UTxOs every purpose resolves through them (connected

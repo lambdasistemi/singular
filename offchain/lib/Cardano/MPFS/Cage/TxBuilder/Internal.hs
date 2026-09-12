@@ -629,18 +629,23 @@ extractOwnerBytes out =
                 "extractOwnerBytes: \
                 \not a request"
 
--- | Compute a refund output for a request.
+-- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
+-- routing): exactly `input lovelace − tip`, floored at min-UTxO with the
+-- top-up funded visibly. No fee share is deducted here and none is
+-- invented (fees ride funding inputs; the validator pins per-owner floors
+-- and exact lock accumulation instead of an aggregate envelope). THE shared
+-- helper for every rejected-refund emission — `Reject` and manual paths
+-- call it; processed rows emit no refunds at all (their bond locks).
 computeRefund ::
     PParams ConwayEra ->
     Network ->
     Integer ->
-    Integer ->
     TxOut ConwayEra ->
     TxOut ConwayEra
-computeRefund pp net tipAmount perReqFee reqOut =
+computeRefund pp net tipAmount reqOut =
     let Coin reqVal = reqOut ^. coinTxOutL
         rawRefund =
-            Coin (reqVal - tipAmount - perReqFee)
+            Coin (reqVal - tipAmount)
         refundAddr =
             addrFromKeyHashBytes
                 net
@@ -653,3 +658,4 @@ computeRefund pp net tipAmount perReqFee reqOut =
      in mkBasicTxOut
             refundAddr
             (inject (max rawRefund minCoin))
+

@@ -66,13 +66,20 @@ data CageConfig = CageConfig
     -- Naming journeys pass the honest applied representative hash derived
     -- from the blueprints; MPFS-only cages pass 28 zero bytes (no naming
     -- validator reads it there). Preserved immutable across every `Modify`.
+    , cfgConsumerPin :: !ShortByteString
+    -- ^ Pinned consumer script hash (28 raw bytes). Sixth `State` field
+    -- (NOTE-013/NOTE-019): the consumer selected at bootstrap. No bound
+    -- consumer exists yet, so every journey passes 28 zero bytes (an
+    -- unbound pin — `Modify`s refuse without a bound consumer,
+    -- fail-closed); epic 18 binds its adapter here.
     , network :: !Network
     -- ^ Target network (Mainnet or Testnet)
     }
 
 {- | Initial `State` datum from a cage configuration (issue #77, E-001
-repair): empty trie root, configured economics, and the expected
-representative policy carried by `cfgRepPolicy`. Single construction site
+repair; sixth field NOTE-013/NOTE-019): empty trie root, configured
+economics, the expected representative policy (`cfgRepPolicy`) and the
+pinned consumer (`cfgConsumerPin`). Single construction site
 for bootstrapped states — every journey boots through here or an
 identical local copy kept in sync by `cage-tests`/`TypesSpec` vectors.
 -}
@@ -86,4 +93,6 @@ bootStateFromCfg cfg root =
         , stateRetractTime = defaultRetractTime cfg
         , stateRepPolicy =
             BuiltinByteString (SBS.fromShort (cfgRepPolicy cfg))
+        , stateConsumerPin =
+            BuiltinByteString (SBS.fromShort (cfgConsumerPin cfg))
         }

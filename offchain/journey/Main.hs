@@ -1238,6 +1238,7 @@ cageCfg stateBytes requestBytes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , cfgRepPolicy = SBS.pack (replicate 28 0)
+            , cfgConsumerPin = SBS.pack (replicate 28 0)
             , network = Testnet
             }
 

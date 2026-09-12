@@ -21,6 +21,12 @@ genBytes n = BS.pack <$> vectorOf n arbitrary
 genKeyHash :: Gen ByteString
 genKeyHash = genBytes 28
 
+genPolicyBytes :: Gen ByteString
+genPolicyBytes = genBytes 28
+
+genTokenName :: Gen ByteString
+genTokenName = genBytes 32
+
 genControl :: Gen ByteString
 genControl = genBytes 29
 
@@ -49,6 +55,19 @@ vectorCommitment =
 vectorKeyHash :: ByteString
 vectorKeyHash =
     mustHex "adb59bbc097e8051233f8aa3c5a5113406e10c8510bc99378e78f242"
+
+-- | Registry-identity fixtures for the bound name (NOTE-007): a mock state
+-- policy and cage token name. INTERIM: the pinned name below is computed by
+-- the mirror itself (same-side) pending replacement with a devnet-observed
+-- triple after the new-names ledger run — see the handoff. It pins exact
+-- output bytes for consumers either way.
+vectorPolicy :: ByteString
+vectorPolicy =
+    mustHex "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+vectorToken :: ByteString
+vectorToken =
+    mustHex "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
 mustHex :: String -> ByteString
 mustHex s = case Base16.decode (TE.encodeUtf8 (T.pack s)) of
@@ -90,31 +109,55 @@ spec = describe "Naming.Register (issue #77 derivations)" $ do
                                 ==> insertApprovalName control commitment1
                                     /= insertApprovalName control commitment2
     describe "representativeName" $ do
-        it "is Rep || keyHash || incarnation, 32 bytes for a 28-byte key" $
+        it "is 32 bytes: Rep prefix, 28-byte digest, incarnation last" $
             property $
                 forAll genKeyHash $ \keyHash ->
-                    forAll genIncarnation $ \incarnation ->
-                        let name = representativeName keyHash incarnation
-                         in BS.length name == 32
-                                && BS.take 3 name == representativePrefix
-                                && BS.take 28 (BS.drop 3 name) == keyHash
-                                && BS.last name == incarnation
+                    forAll genPolicyBytes $ \policy ->
+                        forAll genTokenName $ \token ->
+                            forAll genIncarnation $ \incarnation ->
+                                let name = representativeName keyHash policy token incarnation
+                                 in BS.length name == 32
+                                        && BS.take 3 name == representativePrefix
+                                        && BS.last name == incarnation
+        it "binds the key: a different key hash gives a different name" $
+            property $
+                forAll genKeyHash $ \keyHash1 ->
+                    forAll genKeyHash $ \keyHash2 ->
+                        forAll genPolicyBytes $ \policy ->
+                            forAll genTokenName $ \token ->
+                                (keyHash1 /= keyHash2)
+                                    ==> representativeName keyHash1 policy token freshIncarnation
+                                        /= representativeName keyHash2 policy token freshIncarnation
+        it "binds the registry: a different policy or token gives a different name" $
+            property $
+                forAll genKeyHash $ \keyHash ->
+                    forAll genPolicyBytes $ \policy1 ->
+                        forAll genPolicyBytes $ \policy2 ->
+                            forAll genTokenName $ \token1 ->
+                                forAll genTokenName $ \token2 ->
+                                    ((policy1 /= policy2) || (token1 /= token2))
+                                        ==> representativeName keyHash policy1 token1 freshIncarnation
+                                            /= representativeName keyHash policy2 token2 freshIncarnation
         it "never decodes as a canonical address" $
             property $
                 forAll genKeyHash $ \keyHash ->
-                    forAll genIncarnation $ \incarnation ->
-                        decodeAddress (representativeName keyHash incarnation)
-                            == Nothing
+                    forAll genPolicyBytes $ \policy ->
+                        forAll genTokenName $ \token ->
+                            forAll genIncarnation $ \incarnation ->
+                                decodeAddress (representativeName keyHash policy token incarnation)
+                                    == Nothing
         it "fresh inserts scope incarnation 0x00" $
             property $
                 forAll genKeyHash $ \keyHash ->
-                    BS.last (representativeName keyHash freshIncarnation)
-                        == 0x00
+                    forAll genPolicyBytes $ \policy ->
+                        forAll genTokenName $ \token ->
+                            BS.last (representativeName keyHash policy token freshIncarnation)
+                                == 0x00
     describe "fixture vectors (observed on devnet, agreed by the Aiken \
              \recomputation in the accepting fold)" $ do
         it "insertApprovalName pins the observed proposal binding" $
             insertApprovalName vectorControl vectorCommitment
                 == mustHex "1f511271268613b7fecd6fe8946a2664e9c76caa24820dbb60ac295b0e593e43"
-        it "representativeName pins the observed representative" $
-            representativeName vectorKeyHash freshIncarnation
-                == mustHex "526570adb59bbc097e8051233f8aa3c5a5113406e10c8510bc99378e78f24200"
+        it "representativeName pins the registry-bound representative" $
+            representativeName vectorKeyHash vectorPolicy vectorToken freshIncarnation
+                `shouldBe` mustHex "526570eb5767e31501fe4dc985e03a9bb3b249b1b50009fe50dbc09536bd6d00"

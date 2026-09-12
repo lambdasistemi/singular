@@ -209,6 +209,16 @@ pub type State {
   /// `representative-policy`. Appended, never reordered: the first four
   /// fields keep their indices.
   representative_policy: PolicyId,
+  /// The pinned consumer script hash (NOTE-013/NOTE-019, sixth field):
+  /// `Singular.consumerPin` refined on chain. Selected at bootstrap — any
+  /// 28-byte script hash (permissionless boot chooses its consumer; only
+  /// the width is checked at mint) — preserved immutable across every
+  /// `Modify` (a fold altering it refuses). Every `Modify` that consumes
+  /// at least one request must withdraw this exact script (presence of the
+  /// exact withdrawal credential forces ledger execution of the consumer:
+  /// a caller-declared flag or datum is not an invocation). Appended,
+  /// never reordered: the first five fields keep their indices.
+  consumer_pin: ByteArray,
 }
 
 /// Operations that can be performed on the MPF.

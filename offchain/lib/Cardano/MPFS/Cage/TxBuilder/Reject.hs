@@ -40,12 +40,8 @@ import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     coinTxOutL,
     datumTxOutL,
-    getMinCoinTxOut,
     mkBasicTxOut,
     valueTxOutL,
- )
-import Cardano.Ledger.BaseTypes (
-    Inject (..),
  )
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
@@ -307,9 +303,6 @@ buildRejectProgram
             OnChainTokenState
                 { stateMaxFee = tipAmount
                 } = oldState
-            nReqs =
-                fromIntegral (length reqUtxos) ::
-                    Integer
         let actions =
                 replicate (length reqUtxos) Rejected
         _ <- Tx.spendScript stateIn (Modify actions)
@@ -321,41 +314,15 @@ buildRejectProgram
             )
             reqUtxos
         _ <- Tx.output newStateOut
-        Coin fee <- Tx.peek $ \tx ->
+        Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
-        let perReqFee = fee `div` nReqs
+        -- Rejected rows refund exactly `input − tip` floored at min-UTxO
+        -- (NOTE-014 item A2) via the single shared helper — no fee share.
         mapM_
-            ( \(_, reqOut) -> do
-                let Coin reqVal =
-                        reqOut ^. coinTxOutL
-                    rawRefund =
-                        Coin
-                            ( reqVal
-                                - tipAmount
-                                - perReqFee
-                            )
-                    refundAddr =
-                        addrFromKeyHashBytes
-                            (network cfg)
-                            ( extractOwnerBytes
-                                reqOut
-                            )
-                    draft =
-                        mkBasicTxOut
-                            refundAddr
-                            (inject rawRefund)
-                    minCoin =
-                        getMinCoinTxOut pp draft
-                Tx.output $
-                    mkBasicTxOut
-                        refundAddr
-                        ( inject
-                            (max rawRefund minCoin)
-                        )
-            )
+            (\(_, reqOut) -> Tx.output (computeRefund pp (network cfg) tipAmount reqOut))
             reqUtxos
         Tx.attachScript script
         Tx.attachScript requestScript

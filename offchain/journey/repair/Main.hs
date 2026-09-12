@@ -105,7 +105,6 @@ import Cardano.MPFS.Cage.Trie (Trie (..), TrieManager (..))
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
-    addrFromKeyHashBytes,
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
@@ -115,7 +114,6 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     currentPosixMs,
     evaluateAndBalance,
     extractCageDatum,
-    extractOwnerBytes,
     findRequestUtxos,
     findStateUtxo,
     findUtxoByTxIn,
@@ -331,6 +329,7 @@ bootRepairCage prov submit tm stateBytes requestBytes adjust = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = SBS.pack (replicate 28 0)
+                , cfgConsumerPin = SBS.pack (replicate 28 0)
                 , network = Testnet
                 }
         cfg = adjust cfg0
@@ -1379,28 +1378,15 @@ buildPermissionlessProgram ::
     [[ProofStep]] ->
     SlotNo ->
     Tx.TxBuild NoCtx Void ()
-buildPermissionlessProgram cfg stateIn reqUtxos feeUtxo oldState newStateOut script requestScript proofs upperSlot = do
+buildPermissionlessProgram _cfg stateIn reqUtxos feeUtxo _oldState newStateOut script requestScript proofs upperSlot = do
     let stateRef = txInToRef stateIn
-        OnChainTokenState { stateMaxFee = tipAmount } = oldState
-        nReqs = fromIntegral (length reqUtxos) :: Integer
         actions = map Update proofs
     _ <- Tx.spendScript stateIn (Modify actions)
     mapM_ (\(rIn, _) -> Tx.spendScript rIn (Contribute stateRef)) reqUtxos
     _ <- Tx.output newStateOut
-    Coin fee <- Tx.peek $ \tx ->
+    Coin _fee <- Tx.peek $ \tx ->
         let f = tx ^. bodyTxL . feeTxBodyL
          in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
-    let perReqFee = fee `div` nReqs
-        remainder = fee - perReqFee * nReqs
-    mapM_
-        ( \(i, (_, reqOut)) -> do
-            let Coin reqVal = reqOut ^. coinTxOutL
-                extra = if i == (0 :: Int) then remainder else 0
-                rawRefund = Coin (reqVal - tipAmount - perReqFee - extra)
-                refundAddr = addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut)
-            Tx.output $ mkBasicTxOut refundAddr (inject rawRefund)
-        )
-        (zip [0 ..] reqUtxos)
     Tx.attachScript script
     Tx.attachScript requestScript
     Tx.collateral (fst feeUtxo)

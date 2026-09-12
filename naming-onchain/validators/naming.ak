@@ -200,14 +200,16 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"2bf61b131e8910d467b0d0a43f61b66c347b5ac90f934268808bf8c0"
+  #"d38c7cdec07366effad7ead46687f7d3da00fb63396fab3f9ce635c6"
 
-/// Mirror of the MPFS `State` datum (issue #77, E-001 repair): the registry
-/// configuration carrying the expected representative policy. Field order
-/// matches onchain/validators/types.ak `State` byte-for-byte (the new field
-/// is appended fifth). The first arm is a unit placeholder so `StateDatum`
-/// keeps constr index 1 — folds and retires only decode spent states, never
-/// requests (a request datum does not match `MpfsStateDatum` and refuses).
+/// Mirror of the MPFS `State` datum (issue #77, E-001 repair; sixth field
+/// NOTE-013/NOTE-019): the registry configuration carrying the expected
+/// representative policy and the pinned consumer script hash. Field order
+/// matches onchain/validators/types.ak `State` byte-for-byte (the policy
+/// was appended fifth, the pin sixth). The first arm is a unit placeholder
+/// so `StateDatum` keeps constr index 1 — folds and retires only decode
+/// spent states, never requests (a request datum does not match
+/// `MpfsStateDatum` and refuses).
 pub type MpfsState {
   MpfsState {
     root: ByteArray,
@@ -215,6 +217,7 @@ pub type MpfsState {
     process_time: Int,
     retract_time: Int,
     representative_policy: PolicyId,
+    consumer_pin: ByteArray,
   }
 }
 
@@ -233,8 +236,9 @@ pub fn mpfs_state_policy(datum: Data) -> PolicyId {
 }
 
 /// Build a mock registry state datum carrying the given representative
-/// policy (test fixtures). Single construction site for the mirror shape.
-pub fn mpfs_state_datum(rep_policy: PolicyId) -> Data {
+/// policy and consumer pin (test fixtures). Single construction site for
+/// the mirror shape.
+pub fn mpfs_state_datum(rep_policy: PolicyId, consumer_pin: ByteArray) -> Data {
   let datum: Data =
     MpfsStateDatum(MpfsState {
       root: #"00",
@@ -242,6 +246,7 @@ pub fn mpfs_state_datum(rep_policy: PolicyId) -> Data {
       process_time: 0,
       retract_time: 0,
       representative_policy: rep_policy,
+      consumer_pin: consumer_pin,
     })
   datum
 }

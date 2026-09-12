@@ -319,7 +319,7 @@ def namingQueue (state : NamingState) (spelling : String) (fixture : NamingFixtu
 /-- The certified fold action for a queued Insert request. -/
 def namingFoldAction (state : NamingState) (requestId : Nat) : Except String Action :=
   match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Except.ok (Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true })
+  | some r => Except.ok (Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true })
   | none => Except.error "request-unavailable"
 
 /-- Fold one queued naming claim. The first valid absent-key fold accepts; a

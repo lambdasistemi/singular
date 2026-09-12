@@ -5,17 +5,17 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "52dbf57b2bf7f168c1ab1c06a19a6bb6ed32ecf56de49949f79901b0",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "52dbf57b2bf7f168c1ab1c06a19a6bb6ed32ecf56de49949f79901b0",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "52dbf57b2bf7f168c1ab1c06a19a6bb6ed32ecf56de49949f79901b0",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
       "parameters": 0
     },
     {
@@ -30,12 +30,12 @@
     },
     {
       "title": "representative.representative.mint",
-      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "hash": "24682e4a6f8477a6d4420fcd9be3058f1ad04d4910ade728a7303546",
       "parameters": 1
     },
     {
       "title": "representative.representative.else",
-      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "hash": "24682e4a6f8477a6d4420fcd9be3058f1ad04d4910ade728a7303546",
       "parameters": 1
     },
     {

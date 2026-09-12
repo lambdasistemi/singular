@@ -109,6 +109,7 @@ import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     mkBasicTxBody,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
@@ -371,7 +372,6 @@ runMode mode blueprintPath mpfsPath = do
             oldAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey oldSeed))
             quorum1Hash = addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey quorum1Seed)))
             quorum2Hash = addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey quorum2Seed)))
-            repBytes = representativeName oldHash freshIncarnation
             destAddr =
                 enterpriseAddr (keyHashFromSignKey (mkSignKey destSeed))
             wrongDestAddr =
@@ -418,10 +418,6 @@ runMode mode blueprintPath mpfsPath = do
             repAppliedPolicy = PolicyID repAppliedHash
             repAppliedScript =
                 scriptFromBytes "representative" repAppliedBytes
-            repTokens =
-                Map.singleton
-                    repAppliedPolicy
-                    (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
         checkPinnedRepresentative repUnappliedHex
         emit
             "identity"
@@ -431,6 +427,14 @@ runMode mode blueprintPath mpfsPath = do
             )
         tm <- mkPureTrieManager
         (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash))
+        -- Registry-bound names (NOTE-007): derived post-boot once the cage
+        -- token exists; every display, redeemer and minted value below uses
+        -- these bindings (never the control-only shape).
+        let repBytes = boundRepName cfg tok oldHash
+            repTokens =
+                Map.singleton
+                    repAppliedPolicy
+                    (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
         createTrie tm tok
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
@@ -953,49 +957,44 @@ retireTx ::
     [ByteString] ->
     IO ConwayTx
 retireTx env snap destination signers = do
-    -- State-anchored retire (issue #77, E-001 repair): the record spend
-    -- rides a connected transaction spending the registry state via a
-    -- no-op `Modify` (empty requests, root unchanged), so the application
-    -- validator reads the expected representative policy from validated
-    -- state. No mint rides a retire (the representative moves to custody;
-    -- completion burns it later). Local evaluation is skipped so the ledger
-    -- executes every purpose for real with stated budgets. `retireTx`
-    -- returns the unsigned transaction; callers add key witnesses exactly
-    -- as before.
-    snapLive <- mustOutAt env (envAppAddr env) (snapIn snap)
-    (stateIn, stateOut) <- queryRetirementState env
-    feeUtxo <- queryRetirementFee env
-    let custodyOut' =
+    -- Reference-anchored retire (NOTE-014 item A1): the record spend rides
+    -- a transaction that REFERENCES (never spends) the registry state, so
+    -- the application validator reads the expected policy and token from
+    -- validated-but-unspent configuration — no empty `Modify`, no filler
+    -- request, no state output, no mint (the representative moves to
+    -- custody; completion burns it later). All scripts resolve through
+    -- reference inputs; callers add key witnesses exactly as before.
+    _live <- mustOutAt env (envAppAddr env) (snapIn snap)
+    (stateIn, _stateOut) <- queryRetirementState env
+    (fund, collateral) <- takeFundCollateral env
+    let inputs = Set.fromList [snapIn snap, fst fund]
+        spendIdx = spendingIndex (snapIn snap) inputs
+        redeemers =
+            Redeemers
+                ( Map.singleton
+                    (ConwaySpending (AsIx spendIdx))
+                    (Data (redeemerRetire (envRepBytes env) (envOldHash env)), maxUnits)
+                )
+        integrity = computeScriptIntegrity (envPp env) redeemers
+        custodyOut' =
             custodyOut (envPp env) destination (snapCoin snap) (envRepTokens env)
-    (unsigned, _newRoot) <-
-        connectedFoldTx
-            ConnectedFoldArgs
-                { cfaCfg = envCfg env
-                , cfaProvider = envProv env
-                , cfaTrie = envTrie env
-                , cfaToken = envTok env
-                , cfaFeeAddr = genesisAddr
-                , cfaStateUtxo = (stateIn, stateOut)
-                , cfaReqUtxos = []
-                , cfaFeeUtxo = feeUtxo
-                , cfaPp = envPp env
-                , cfaSpends =
-                    [ ConnectedSpend
-                        { csUtxo = (snapIn snap, snapLive)
-                        , csRedeemer =
-                            RawRedeemer (redeemerRetire (envRepBytes env))
-                        , csScript = envScript env
-                        }
-                    ]
-                , cfaMints = []
-                , cfaOutputs = [custodyOut']
-                , cfaSigners = map addrWitnessKeyHash signers
-                , cfaRefUtxos = envRefUtxos env
-                , cfaAttachScripts = []
-                , cfaSkipEval = True
-                , cfaAdjustRoot = id
-                }
-    pure unsigned
+        change = changeOut (snapCoin snap + coinOf fund) flatFee [custodyOut']
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ inputs
+                & referenceInputsTxBodyL .~ Set.fromList ([stateIn] ++ map fst (envRefUtxos env))
+                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
+                & outputsTxBodyL .~ StrictSeq.fromList [custodyOut', change]
+                & feeTxBodyL .~ Coin flatFee
+                & reqSignerHashesTxBodyL
+                    .~ Set.fromList (map addrWitnessKeyHash signers)
+                & scriptIntegrityHashTxBodyL .~ integrity
+    pure $
+        ( mkBasicTx body
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+        )
+  where
+    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
 maintainTx ::
     Env ->
@@ -1086,6 +1085,18 @@ changeOut inCoin fee outs =
 -- Setup transactions
 -- ---------------------------------------------------------
 
+-- | Registry-bound representative name (NOTE-007): recomputed identically
+-- on chain from the supplied state's token. Single source per file so
+-- displays, redeemers and minted values cannot drift apart.
+boundRepName :: CageConfig -> TokenId -> ByteString -> ByteString
+boundRepName cfg tok controlHash =
+    let TokenId (AssetName tokSbs) = tok
+     in representativeName
+            controlHash
+            (scriptHashBytes (cfgScriptHash cfg))
+            (SBS.fromShort tokSbs)
+            freshIncarnation
+
 bootRetirementCage ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -1109,6 +1120,7 @@ bootRetirementCage prov submit tm stateBytes requestBytes repPolicy = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
+                , cfgConsumerPin = SBS.pack (replicate 28 0)
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
@@ -1287,7 +1299,7 @@ setupRecoveryRecord env datum label spelling = do
     let controlBytes = addressBytes (controlAddress datum)
         commitment = nextControlCommitment datum
         approval = insertApprovalName controlBytes commitment
-        repName = representativeName (envOldHash env) freshIncarnation
+        repName = boundRepName (envCfg env) (envTok env) (envOldHash env)
         approvalTokens =
             Map.singleton
                 (envAppPolicy env)
@@ -1628,9 +1640,14 @@ redeemerMaintain = PLC.Constr 0 []
 -- Recover 4): the naming application validator's redeemer for ending a
 -- name into custody. The list names the representative; the validator
 -- binds it to the chain-carried token.
-redeemerRetire :: ByteString -> PLC.Data
-redeemerRetire rep =
-    PLC.Constr 3 [PLC.List [PLC.B rep]]
+-- | Spend redeemer @Retire { representatives, key_hash }@ (NOTE-011: the
+-- authorized two-field shape — the creation control key hash the
+-- representative name commits to; this runner only retires records created
+-- by the original controller, so the creation hash is `envOldHash` at every
+-- call site. A one-field @Constr 3@ decodes to @headList []@ on chain.)
+redeemerRetire :: ByteString -> ByteString -> PLC.Data
+redeemerRetire rep keyHash =
+    PLC.Constr 3 [PLC.List [PLC.B rep], PLC.B keyHash]
 
 -- | Spend redeemer @Fold { representatives }@.
 foldRedeemer :: [ByteString] -> PLC.Data

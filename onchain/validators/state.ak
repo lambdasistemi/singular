@@ -1,5 +1,6 @@
 use aiken/collection/list.{find, foldl, head}
 use aiken/crypto.{VerificationKeyHash}
+use aiken/primitive/bytearray
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, empty, root}
 use aiken/merkle_patricia_forestry as mpf
 use aiken/option.{is_some}
@@ -79,13 +80,11 @@ fn mkAction(tokenId, stateTip, process_time, retract_time, validity_range) {
       MerklePatriciaForestry,
       List<RequestAction>,
       List<Pair<VerificationKeyHash, Int>>,
-      Int,
     ),
   ) -> (
     MerklePatriciaForestry,
     List<RequestAction>,
     List<Pair<VerificationKeyHash, Int>>,
-    Int,
   ) {
     when input.output.datum is {
       InlineDatum(datum) ->
@@ -100,7 +99,7 @@ fn mkAction(tokenId, stateTip, process_time, retract_time, validity_range) {
           } = request
           if requestToken == tokenId {
             expect tip == stateTip
-            let (root, actions, owners, totalInputLovelace) = acc
+            let (root, actions, owners) = acc
             let action, actionsTail <- uncons(actions)
             let inputLovelace = assets.lovelace_of(input.output.value)
             let newRoot =
@@ -125,17 +124,26 @@ fn mkAction(tokenId, stateTip, process_time, retract_time, validity_range) {
                   root
                 }
               }
+            // Refund rows (NOTE-014 item A2 as corrected by NOTE-017): only
+            // REJECTED rows are owed refunds, at `input − tip` with no fee
+            // share deducted and none invented. Processed rows add nothing
+            // here — their value may leave to a checkpoint lock or to
+            // change; the generic side admits the shape and the pinned
+            // consumer hook judges the allocation.
             let newOwners =
-              if inputLovelace > 0 {
-                [Pair(requestOwner, inputLovelace), ..owners]
-              } else {
-                owners
+              when action is {
+                UpdateAction(_) -> owners
+                Rejected ->
+                  if inputLovelace > 0 {
+                    [Pair(requestOwner, inputLovelace - stateTip), ..owners]
+                  } else {
+                    owners
+                  }
               }
             (
               newRoot,
               actionsTail,
               newOwners,
-              totalInputLovelace + inputLovelace,
             )
           } else {
             acc
@@ -151,14 +159,21 @@ fn mkAction(tokenId, stateTip, process_time, retract_time, validity_range) {
 fn sumRefunds(
   outputs: List<Output>,
   owners: List<Pair<VerificationKeyHash, Int>>,
-) -> Int {
+) -> Bool {
   when owners is {
-    [] -> 0
-    [Pair(owner, _), ..rest] -> {
+    [] -> True
+    [Pair(owner, owed), ..rest] -> {
       expect [output, ..remaining] = outputs
       expect address.VerificationKey(vkh) = output.address.payment_credential
       expect vkh == owner
-      assets.lovelace_of(output.value) + sumRefunds(remaining, rest)
+      // Per-owner no-underpayment (NOTE-014 item A2): this row's output
+      // carries at least exactly what is owed. Unequal crossed allocations
+      // fail here even when every credential passes and every total
+      // matches. Min-UTxO top-ups from funding inputs may only add — the
+      // ledger's conservation plus the state's no-drain rule below close
+      // the rest, with no upper envelope to maintain.
+      expect assets.lovelace_of(output.value) >= owed
+      sumRefunds(remaining, rest)
     }
   }
 }
@@ -171,8 +186,10 @@ fn validModify(
   tx: Transaction,
   actions: List<RequestAction>,
 ) {
-  let Transaction { outputs, inputs, validity_range, fee: tx_fee, .. } = tx
-  let State { root, tip, process_time, retract_time, representative_policy } = state
+  // Fees ride funding inputs and ledger conservation explicitly; the
+  // validator pins per-owner floors, state preservation, and the root.
+  let Transaction { outputs, inputs, withdrawals, validity_range, fee: _tx_fee, .. } = tx
+  let State { root, tip, process_time, retract_time, representative_policy, consumer_pin } = state
   expect Some(output) = head(outputs)
   expect InlineDatum(outState) = output.datum
   expect StateDatum(State {
@@ -181,6 +198,7 @@ fn validModify(
     process_time: outProcessTime,
     retract_time: outRetractTime,
     representative_policy: outRepresentativePolicy,
+    consumer_pin: outConsumerPin,
   }) = outState
   expect tip == outTip
   expect process_time == outProcessTime
@@ -189,34 +207,69 @@ fn validModify(
   // configuration — genesis sets it, every fold preserves it. A fold altering
   // it refuses here, before any root or refund check.
   expect representative_policy == outRepresentativePolicy
+  // Pinned consumer hook (NOTE-013/NOTE-019): the pin is registry
+  // configuration — genesis selects it (width-checked at mint), every fold
+  // preserves it exactly. A fold altering it refuses here, beside the
+  // representative policy above.
+  expect consumer_pin == outConsumerPin
 
-  let (expectedNewRoot, _, owners, totalInputLovelace) =
+  let (expectedNewRoot, actionsTail, owners) =
     inputs
       |> foldl(
-          (mpf.from_root(root), actions, [], 0),
+          (mpf.from_root(root), actions, []),
           mkAction(tokenId, tip, process_time, retract_time, validity_range),
         )
   expect (mpf.root(expectedNewRoot) == newRoot)?
   expect
     output.address.payment_credential == input.output.address.payment_credential
+  // No-drain rule only (NOTE-017): the generic cage does NOT absorb
+  // processed bonds — locking is the consumer's allocation, enforced at
+  // the pinned hook, not here. Processed value may leave to a checkpoint
+  // lock or (as our current builders route it) to change; what the generic
+  // side refuses is losing track of it silently, which ledger conservation
+  // plus the rejected-row floors below already close. See the boundary
+  // table for what is admitted vs checked.
   expect
     assets.lovelace_of(output.value) >= assets.lovelace_of(input.output.value)
   expect exactQuantity(policyId, output.value, tokenId, 1)
 
   let n = list.length(owners)
+  // Mandatory invocation (NOTE-013): a `Modify` that consumes at least one
+  // request must withdraw the exact pinned consumer script. Presence of the
+  // exact withdrawal credential forces ledger execution of that script — a
+  // caller-declared flag, an input datum, or a redeemer label is not an
+  // invocation. Absence refuses; a withdrawal from any other script does
+  // not satisfy this. Pure no-op `Modify`s (nothing consumed) need no
+  // authorization and stay accepted, matching the model (`empty-fold`
+  // refuses at the step level; on-chain no-ops admit).
+  let consumed = list.length(actions) - list.length(actionsTail)
+  expect
+    when consumed is {
+      0 -> True
+      _ ->
+        list.any(
+          withdrawals,
+          fn(w) {
+            when w is {
+              Pair(credential, _) ->
+                when credential is {
+                  address.Script(hash) -> hash == consumer_pin
+                  _ -> False
+                }
+            }
+          },
+        )
+    }
   when n is {
     0 -> True
     _ -> {
       expect [_, ..refundOutputs] = outputs
       let orderedOwners = list.reverse(owners)
-      let totalRefunded = sumRefunds(refundOutputs, orderedOwners)
-      let owed = totalInputLovelace - tx_fee - n * tip
-      let maxRefunded = totalInputLovelace - n * tip
-      // Refunds may exceed owed only to satisfy ledger min-UTxO. The state
-      // output preserves its lovelace above, so any bounded top-up comes from
-      // owner-signed funding inputs rather than from the cage.
-      expect totalRefunded >= owed
-      expect totalRefunded <= maxRefunded
+      // Exact per-owner floors above; totals are closed by ledger
+      // conservation (inputs + mint = outputs + fee), the state's lovelace
+      // no-drain rule above, and funding inputs covering fees and any
+      // min-UTxO top-ups visibly. No aggregate envelope to keep in sync.
+      expect sumRefunds(refundOutputs, orderedOwners)
       True
     }
   }
@@ -238,9 +291,15 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
       process_time: _processTime,
       retract_time: _retractTime,
       representative_policy: _representativePolicy,
+      consumer_pin: tokenConsumerPin,
     })
     = tokenState
   expect tokenRoot == root(empty)
+  // Pinned consumer hook (NOTE-013): genesis selects the pin — any 28-byte
+  // script hash. Boot is permissionless (no owner), so the mint authorizes
+  // no value, only the width: preservation plus mandatory invocation (both
+  // in `validModify` above) give the pin its force, not mint-time approval.
+  expect bytearray.length(tokenConsumerPin) == 28
   expect exactQuantity(policyId, output.value, tokenId, 1)
   True
 }

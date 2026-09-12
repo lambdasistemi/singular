@@ -101,6 +101,7 @@ genTokenState =
         <*> genNonNeg
         <*> genNonNeg
         <*> genBBS28
+        <*> genBBS28
 
 genCageDatum :: Gen CageDatum
 genCageDatum =
@@ -247,7 +248,7 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genTokenState roundtrips
-        it "encodes the ownerless five-field state in Aiken field order" $ do
+        it "encodes the ownerless six-field state in Aiken field order" $ do
             let state =
                     OnChainTokenState
                         { stateRoot =
@@ -259,6 +260,9 @@ spec = do
                         , stateRepPolicy =
                             BuiltinByteString $
                                 BS.replicate 28 0xaa
+                        , stateConsumerPin =
+                            BuiltinByteString $
+                                BS.replicate 28 0xcc
                         }
                 BuiltinData datum = toBuiltinData state
             datum
@@ -269,6 +273,7 @@ spec = do
                     , I 300000
                     , I 600000
                     , B $ BS.replicate 28 0xaa
+                    , B $ BS.replicate 28 0xcc
                     ]
 
     describe "CageDatum" $ do

@@ -37,6 +37,7 @@ module Cardano.MPFS.Cage.Types (
 
     -- * State helpers
     stateRepPolicyBytes,
+    stateConsumerPinBytes,
 ) where
 
 import Data.ByteString (ByteString)
@@ -136,6 +137,12 @@ data OnChainTokenState = OnChainTokenState
     -- ^ Expected representative minting policy (28-byte script hash).
     -- Issue #77 E-001 repair: `Singular.representativePolicy` refined on
     -- chain. Set at bootstrap, preserved immutable across every `Modify`.
+    , stateConsumerPin :: !BuiltinByteString
+    -- ^ Pinned consumer script hash (28-byte script hash). NOTE-013/
+    -- NOTE-019 sixth field: `Singular.consumerPin` refined on chain.
+    -- Selected at bootstrap (width-checked at mint), preserved immutable
+    -- across every `Modify`; every `Modify` consuming at least one request
+    -- must withdraw exactly this script.
     }
     deriving stock (Show, Eq)
 
@@ -257,6 +264,13 @@ data Neighbor = Neighbor
 -- unwraps the `BuiltinByteString` for hex comparison in verifiers.
 stateRepPolicyBytes :: OnChainTokenState -> ByteString
 stateRepPolicyBytes st = case stateRepPolicy st of
+    BuiltinByteString bs -> bs
+
+-- | The pinned consumer script hash as plain bytes (NOTE-013/NOTE-019):
+-- unwraps the `BuiltinByteString` for the withdrawal credential builders
+-- attach to every consuming `Modify`.
+stateConsumerPinBytes :: OnChainTokenState -> ByteString
+stateConsumerPinBytes st = case stateConsumerPin st of
     BuiltinByteString bs -> bs
 
 -- ---------------------------------------------------------
@@ -442,13 +456,15 @@ instance ToData OnChainTokenState where
                 , I stateProcessTime
                 , I stateRetractTime
                 , bbsToD stateRepPolicy
+                , bbsToD stateConsumerPin
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, rp] -> do
+        Constr 0 [r, I mf, I pt, I rt, rp, cp] -> do
             stateRoot <- fromBuiltinData (mkD r)
             stateRepPolicy <- bbsFromD rp
+            stateConsumerPin <- bbsFromD cp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
@@ -457,9 +473,9 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, rp] ->
-            case bbsFromD rp of
-                Just repPolicy ->
+        Constr 0 [r, I mf, I pt, I rt, rp, cp] ->
+            case (bbsFromD rp, bbsFromD cp) of
+                (Just repPolicy, Just consumerPin) ->
                     OnChainTokenState
                         { stateRoot =
                             unsafeFromBuiltinData (mkD r)
@@ -467,11 +483,12 @@ instance UnsafeFromData OnChainTokenState where
                         , stateProcessTime = pt
                         , stateRetractTime = rt
                         , stateRepPolicy = repPolicy
+                        , stateConsumerPin = consumerPin
                         }
                 _ ->
                     error
                         "unsafeFromBuiltinData:\
-                        \ OnChainTokenState.repPolicy"
+                        \ OnChainTokenState.pin-or-policy"
         _ ->
             error
                 "unsafeFromBuiltinData:\

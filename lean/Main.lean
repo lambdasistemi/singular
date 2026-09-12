@@ -15,7 +15,7 @@ def req : Request := { id := 1, operation := .insert, proposal,   token := some 
 def approval : Approval := { asset := insertAsset proposal, accepted := true }
 def wm : Witnesses := { applicationMint := true }
 def ws : Witnesses := { applicationSpend := true }
-def wn : Witnesses := { nativeSpend := true, representativeMint := true }
+def wn : Witnesses := { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
 def item : FoldItem := { request := 1, outputId := 2, output := some outA }
 def plus : List Delta := [{ asset := nft, quantity := 1 }]
 def minus : List Delta := [{ asset := nft, quantity := -1 }]

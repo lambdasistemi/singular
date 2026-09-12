@@ -90,6 +90,11 @@ pub const app_policy = "application_policy"
 /// Test stand-in for the compiled representative policy hash.
 pub const rep_policy = "representative_policy"
 
+/// Test stand-in for the pinned consumer script hash (NOTE-013/NOTE-019,
+/// sixth field): 28 bytes. Fixture state datums carry it; the naming side
+/// decodes but never enforces it (the generic hook does).
+pub const consumer_pin = "consumer_pin__________123456"
+
 pub const app_address = address.from_script(app_policy)
 
 pub const refund_output_address = address.from_verification_key(refund_hash)
@@ -105,12 +110,34 @@ pub const self_ref =
 pub const state_ref =
   OutputReference { transaction_id: "73746174650000000000000000000000", output_index: 0 }
 
+/// Mock cage token name (NOTE-007): the registry identity the mock state
+/// authenticates. Mirrors in tests recompute representative names over
+/// exactly these bytes with `mpfs_state_hash`, so mock folds and retires
+/// exercise the registry-bound equation rather than a fixed string.
+pub const mock_registry_token = #"6d6f636b2d746f6b656e"
+
+/// Second mock cage token (NOTE-009 §3 control): a state UTxO carrying two
+/// tokens under the state policy is not the registry and must be refused
+/// at the authentication boundary itself.
+pub const second_mock_token = #"7365636f6e642d6d6f636b2d746f6b656e"
+
+/// Foreign registry token for negative tests (NOTE-007): names bound to it
+/// mismatch the mock registry above, isolating the association check from
+/// the policy check (which uses `foreign_policy` as the mint/value policy).
+pub const foreign_registry_token = #"666f726569676e2d746f6b656e"
+
 /// Mock registry state datum (issue #77, E-001): a spent state at the MPFS
 /// address carrying the expected representative policy — the `rep_policy`
 /// placeholder, matching test mints and values. Built by the naming
 /// module's single construction site (no mirror drift).
 pub fn state_datum() -> Data {
-  naming.mpfs_state_datum(rep_policy)
+  naming.mpfs_state_datum(rep_policy, consumer_pin)
+}
+
+/// Attach spent-or-reference registry inputs to a built transaction
+/// (NOTE-014 item A1 tests): record update keeps every other field.
+pub fn with_state_reference(base: Transaction, state_ref_input: Input) -> Transaction {
+  Transaction { ..base, reference_inputs: [state_ref_input] }
 }
 
 /// Mock spent registry state input for insert-fold and retire tests: at the
@@ -125,9 +152,67 @@ pub fn state_input() -> Input {
       value: add(
         from_lovelace(deposit),
         mpfs_state_hash,
-        #"6d6f636b2d746f6b656e",
+        mock_registry_token,
         1,
       ),
+      datum: InlineDatum(state_datum()),
+      reference_script: None,
+    },
+  }
+}
+
+/// Boundary control input (NOTE-009 §3): same address and datum as the mock
+/// state but TWO cage tokens — the predicate must refuse it there.
+pub fn state_input_two_tokens() -> Input {
+  Input {
+    output_reference: state_ref,
+    output: Output {
+      address: address.from_script(mpfs_state_hash),
+      value: add(
+        add(from_lovelace(deposit), mpfs_state_hash, mock_registry_token, 1),
+        mpfs_state_hash,
+        second_mock_token,
+        1,
+      ),
+      datum: InlineDatum(state_datum()),
+      reference_script: None,
+    },
+  }
+}
+
+/// Mock registry state datum carrying a foreign representative policy with
+/// an honest cage token (NOTE-014 item A1 control): the datum lies, the
+/// token does not. A retire referencing it must refuse on the policy
+/// mismatch between the declared expected policy and the carried value.
+pub fn foreign_state_datum() -> Data {
+  naming.mpfs_state_datum("foreign_policy", consumer_pin)
+}
+
+/// Reference input carrying the foreign datum above under the honest cage
+/// token (NOTE-014 item A1 control).
+pub fn state_input_foreign_datum() -> Input {
+  Input {
+    output_reference: state_ref,
+    output: Output {
+      address: address.from_script(mpfs_state_hash),
+      value: add(
+        from_lovelace(deposit),
+        mpfs_state_hash,
+        mock_registry_token,
+        1,
+      ),
+      datum: InlineDatum(foreign_state_datum()),
+      reference_script: None,
+    },
+  }
+}
+/// token — requests and forgeries at the address carry none and must refuse.
+pub fn state_input_no_token() -> Input {
+  Input {
+    output_reference: state_ref,
+    output: Output {
+      address: address.from_script(mpfs_state_hash),
+      value: from_lovelace(deposit),
       datum: InlineDatum(state_datum()),
       reference_script: None,
     },

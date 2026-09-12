@@ -325,6 +325,8 @@ datumEncodingVectors =
                 , stateRetractTime = 600000
                 , stateRepPolicy =
                     BuiltinByteString $ BS.replicate 28 0xaa
+                , stateConsumerPin =
+                    BuiltinByteString $ BS.replicate 28 0xcc
                 }
        in Aeson.object
             [ "description" .= txt "StateDatum encoding"

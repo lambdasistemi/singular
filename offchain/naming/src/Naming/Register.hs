@@ -15,10 +15,11 @@ module Naming.Register
   , insertApprovalName
   , representativePrefix
   , freshIncarnation
+  , registryAssetId
   , representativeName
   ) where
 
-import Crypto.Hash (Blake2b_256, Digest, hash)
+import Crypto.Hash (Blake2b_224, Blake2b_256, Digest, hash)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -53,11 +54,33 @@ representativePrefix = "Rep"
 freshIncarnation :: Word8
 freshIncarnation = 0x00
 
--- | The representative asset name: @Rep || keyHash || incarnation@ — 32
--- bytes for a 28-byte control key hash, so never a canonical address.
--- The registry half of @Singular.representative@'s scope lives in the
--- representative policy itself (parameterized by the application policy
--- hash); the name carries key and incarnation.
-representativeName :: ByteString -> Word8 -> ByteString
-representativeName keyHash incarnation =
-    representativePrefix <> keyHash <> BS.singleton incarnation
+-- | The registry asset identity (NOTE-007/008/009): the FULL native asset
+-- identity — state policy id bytes (28, fixed) followed by cage token name
+-- bytes (variable) — concatenated with no framing and no textual hex step
+-- (the same bytes the ledger pairs in every `Value`; fixed 28-byte policy
+-- prefix keeps the parse unambiguous for hashing). The ONE place the
+-- identity bytes are formed off chain; `representative_name`'s Aiken mirror
+-- (`application.ak:registry_asset_id`) is the other. Widths enforced below,
+-- not assumed: policy and control must be 28 bytes or this fails loudly.
+registryAssetId :: ByteString -> ByteString -> ByteString
+registryAssetId policyBytes tokenName
+    | BS.length policyBytes == 28 = policyBytes <> tokenName
+    | otherwise = error "registryAssetId: state policy bytes must be 28"
+
+-- | The representative asset name: @Rep ‖ blake2b_224(registry ‖ control) ‖
+-- incarnation@ — 32 bytes, so never a canonical address. Mirrors
+-- `application.ak:representative_name` byte-for-byte (NOTE-008 byte
+-- contract): prefix, digest over `registryAssetId` then control hash, then
+-- incarnation. Control must be 28 bytes (payment-key hash); enforced here
+-- as on chain (`bytearray.length` expects there).
+representativeName :: ByteString -> ByteString -> ByteString -> Word8 -> ByteString
+representativeName keyHash policyBytes tokenName incarnation
+    | BS.length keyHash == 28 =
+        representativePrefix
+            <> convert
+                ( hash
+                    ( registryAssetId policyBytes tokenName <> keyHash
+                    ) :: Digest Blake2b_224
+                )
+            <> BS.singleton incarnation
+    | otherwise = error "representativeName: control key hash must be 28 bytes"

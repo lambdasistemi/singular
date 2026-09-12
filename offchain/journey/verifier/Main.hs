@@ -942,12 +942,44 @@ vRepresentativeAsset ctx = case foldActiveBody ctx of
     policyBytes (PolicyID sh) = scriptHashBytes sh
 
 -- | The expected representative name, re-derived from the observed
--- claim datum: control address to key hash, incarnation 0x00.
+-- claim datum plus the spent state's own authenticating token (NOTE-007):
+-- control address to key hash, registry token from the state value NFT,
+-- state policy from identities, incarnation 0x00. `Nothing` when the claim,
+-- the state input, or a single token name does not resolve (fail closed).
 expectedRepName :: Ctx -> ConwayTx -> Maybe ByteString
 expectedRepName ctx tx = do
     (_, _, datum, _) <- foldClaim ctx tx
     shape <- decodeAddress (addressBytes (controlAddress datum))
-    pure (representativeName (addressPaymentHash shape) freshIncarnation)
+    tokName <- foldStateToken ctx tx
+    pure
+        ( representativeName
+            (addressPaymentHash shape)
+            (idStateHash (ctxIdentities ctx))
+            tokName
+            freshIncarnation
+        )
+
+-- | The single cage-token name carried by the fold's spent state value
+-- (NOTE-007 association input). `Nothing` unless exactly one distinct
+-- asset name sits under the state policy — the on-chain rule requires
+-- exactly one token at quantity 1, so ambiguity here is CNE, never a guess.
+foldStateToken :: Ctx -> ConwayTx -> Maybe ByteString
+foldStateToken ctx tx = do
+    let ids = ctxIdentities ctx
+    inp <- case [i | RStateSpend i 2 <- resolvePurposes ids (evUtxos (ctxEvidence ctx)) tx] of
+        [i] -> Just i
+        _ -> Nothing
+    out <- Map.lookup (showInShort inp) (evUtxos (ctxEvidence ctx))
+    case out ^. valueTxOutL of
+        MaryValue _ (MultiAsset ma) -> case
+            [ n
+            | (pid, ns) <- Map.toList ma
+            , let PolicyID sh = pid
+            , scriptHashBytes sh == idStateHash ids
+            , (AssetName n, _) <- Map.toList ns
+            ] of
+                [n] -> Just (SBS.fromShort n)
+                _ -> Nothing
 
 vRepresentativeApproval :: Ctx -> Verdict
 vRepresentativeApproval ctx = case foldActiveBody ctx of

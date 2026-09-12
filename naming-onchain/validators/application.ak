@@ -1,31 +1,66 @@
 use aiken/collection/dict.{get, keys}
-use aiken/collection/list.{all, filter, find, has, length}
-use aiken/crypto.{VerificationKeyHash, blake2b_256}
+use aiken/collection/list.{all, filter, find, has}
+use aiken/crypto.{VerificationKeyHash, blake2b_224, blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
 use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 
-/// The expected representative policy from the spent registry state (issue
-/// #77, E-001): genesis sets it, `validModify` preserves it. The spent state
-/// is the input at the MPFS address carrying exactly one cage token under
-/// the state policy — requests and forgeries at the same address carry none
-/// (the cage NFT is seed-gated and unforgeable), so the token authenticates
-/// without decoding. Folds and retires without a spent state refuse — honest
-/// connected transactions always spend the state via `Modify`.
+/// The expected representative policy from the registry state (issue
+/// #77, E-001): genesis sets it, `validModify` preserves it. Read from the
+/// spent state when present, else from the reference (NOTE-014 item A1) —
+/// retires authenticate without spending.
 fn expected_rep_policy(tx: Transaction) -> PolicyId {
-  expect Some(state_input) =
-    find(tx.inputs, fn(input) {
-      when input.output.address.payment_credential is {
-        address.Script(hash) ->
-          hash == mpfs_state_hash
-            && length(keys(tokens(input.output.value, mpfs_state_hash))) == 1
-        _ -> False
-      }
-    })
-  expect InlineDatum(datum) = state_input.output.datum
+  expect InlineDatum(datum) = find_registry_state(tx).output.datum
   naming.mpfs_state_policy(datum)
+}
+
+/// The registry state input, NFT-authenticated (issue #77, registry
+/// association, NOTE-007; reference path NOTE-014 item A1): the spent state
+/// if present, else the referenced state. Spent is searched first so
+/// connected folds behave exactly as before; retires read the reference
+/// without spending (no empty `Modify`, no filler request). Both lists use
+/// the identical `is_registry_state` predicate — one authentication shape
+/// for both paths. The ONE place that decides which UTxO is the registry.
+fn find_registry_state(tx: Transaction) -> Input {
+  when find(tx.inputs, is_registry_state) is {
+    Some(spent) -> spent
+    None -> {
+      expect Some(referenced) = find(tx.reference_inputs, is_registry_state)
+      referenced
+    }
+  }
+}
+
+fn is_registry_state(input: Input) -> Bool {
+  when input.output.address.payment_credential is {
+    address.Script(hash) ->
+      hash == mpfs_state_hash && has_single_cage_token(input.output.value)
+    _ -> False
+  }
+}
+
+/// Exactly one cage token under the state policy (NOTE-009 §3): a single
+/// asset NAME is not enough — its quantity must be exactly 1, checked here
+/// where the authentication happens, not incidentally elsewhere. A state
+/// UTxO carrying two tokens (or zero) under this policy is not the registry
+/// and refuses at this boundary.
+fn has_single_cage_token(value: Value) -> Bool {
+  let policy_tokens = tokens(value, mpfs_state_hash)
+  when keys(policy_tokens) is {
+    [name] -> get(policy_tokens, name) == Some(1)
+    _ -> False
+  }
+}
+
+/// The supplied state's own authenticating token name (NOTE-007): the cage
+/// token the NFT check above authenticated. Read from the same input the
+/// policy came from — never from a second lookup that could disagree.
+fn expected_rep_token(tx: Transaction) -> ByteArray {
+  let policy_tokens = tokens(find_registry_state(tx).output.value, mpfs_state_hash)
+  expect [token_name] = keys(policy_tokens)
+  token_name
 }
 
 /// The retirement custody script hash (issue #66): the only address a
@@ -68,8 +103,13 @@ pub type ApplicationRedeemer {
   /// representative names are carried for the representative policy to
   /// bind.
   Fold { representatives: List<ByteArray> }
-  /// Retire a record: the datum must not continue.
-  Retire { representatives: List<ByteArray> }
+  /// Retire a record: the datum must not continue. Carries the creation
+  /// control key hash (28 bytes, NOTE-010/011): the immutable key material
+  /// the representative name commits to. At retire time the record's
+  /// control may have rotated via recovery, so the validator recomputes
+  /// over this supplied value and checks it against the minted token
+  /// commitment — a wrong key, a wrong length, or a rival registry fails.
+  Retire { representatives: List<ByteArray>, key_hash: ByteArray }
   /// Recover control with the committed next key (`LR` rows, issue #62):
   /// reveal the committed next-control address, prove its commitment,
   /// require its payment-key signer, install it as controller with a
@@ -116,8 +156,8 @@ validator application {
         cancel(record, presented_refund, claim, own_hash, tx)
       Fold { representatives } ->
         fold(record, representatives, claim, own_hash, tx)
-      Retire { representatives: _ } ->
-        retire(record, claim, tx)
+      Retire { representatives, key_hash } ->
+        retire(record, claim, key_hash, tx)
       Recover { revealed_control, representatives, registry } ->
         recover(
           record,
@@ -371,9 +411,17 @@ fn fold(
           record.next_control_commitment,
         )
       // `representative-identity`: the names are exactly this
-      // record's representative under the representative policy.
+      // record's representative for this registry — control plus the
+      // supplied state's own authenticating token (NOTE-007). A copied
+      // name from another cage carries a different token hash and refuses.
       expect representatives
-        == [representative_name(naming.control_hash(record))]
+        == [
+          representative_name(
+            naming.control_hash(record),
+            mpfs_state_hash,
+            expected_rep_token(tx),
+          ),
+        ]
       // `representative-policy` (issue #77, E-001): the moved
       // representative's policy is the registry's own configuration — the
       // spent state's expected policy, genesis-set and `Modify`-preserved.
@@ -406,6 +454,7 @@ fn fold(
 fn retire(
   record: NamingRecord,
   claim: Input,
+  key_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
@@ -424,6 +473,19 @@ fn retire(
   // (completion burns it later) — so no mint rides a retire.
   let stored_rep = single_asset_name(claim.output.value)
   let expected = expected_rep_policy(tx)
+  // Registry association (NOTE-007/010/011): the carried name must equal
+  // the recomputation over the SUPPLIED creation key hash and the supplied
+  // state's own authenticating token — never the possibly-rotated current
+  // control. A record from another cage (copied-policy rival included)
+  // carries a different token hash and refuses here, on the token rather
+  // than the field. Wrong key and wrong length refuse for their own reasons.
+  expect bytearray.length(key_hash) == 28
+  expect stored_rep
+    == representative_name(
+      key_hash,
+      mpfs_state_hash,
+      expected_rep_token(tx),
+    )
   expect quantity_of(claim.output.value, expected, stored_rep) == 1
   expect
     filter(
@@ -489,15 +551,45 @@ fn insert_approval_name(control: ByteArray, commitment: ByteArray) -> ByteArray 
   )
 }
 
+/// The registry asset identity (NOTE-007): the FULL native asset identity
+/// of the cage token — state policy id plus cage token name — as the raw
+/// component bytes in that order (the same bytes the ledger pairs in every
+/// `Value`). Not a textual hex concatenation: fixed 28-byte policy prefix
+/// keeps the parse unambiguous for hashing purposes, mirroring how
+/// `insert_approval_name` domain-separates raw fields. The ONE place the
+/// identity bytes are formed; both name sites call it.
+fn registry_asset_id(state_policy_bytes: ByteArray, token_name: ByteArray) -> ByteArray {
+  expect bytearray.length(state_policy_bytes) == 28
+  bytearray.concat(state_policy_bytes, token_name)
+}
+
 /// The representative asset name for a record (`Singular.representative`
-/// scoped by the entry's incarnation): `Rep || control key hash ||
-/// incarnation byte`. Fresh inserts carry incarnation `0x00`; the
-/// registry half of the scope lives in the representative policy
-/// itself, parameterized by the application policy hash. 32 bytes, so
-/// never a canonical address.
-fn representative_name(control_hash: ByteArray) -> ByteArray {
+/// with `registry` made concrete, NOTE-007): `0x526570 ‖
+/// blake2b_224(registry_asset_id ‖ control_hash) ‖ incarnation` — 32 bytes
+/// (3 + 28 + 1), so never a canonical address. The prefix and incarnation
+/// shape is unchanged; the middle 28 bytes bind key AND registry (previously
+/// key alone — the same omission shape as E-001). Two `blake2b_224` calls
+/// per guarded transition (fold, retire); not on-chain program-parameter
+/// application. Exact type, order and bytes: `(control_hash : ByteArray,
+/// state_policy_bytes : ByteArray (28, the state script hash as bytes),
+/// token_name : ByteArray (cage token name))`;
+/// preimage `registry_asset_id(state_policy_bytes, token_name) ‖ control_hash`.
+fn representative_name(
+  control_hash: ByteArray,
+  state_policy_bytes: ByteArray,
+  token_name: ByteArray,
+) -> ByteArray {
+  expect bytearray.length(control_hash) == 28
   bytearray.concat(
-    bytearray.concat(#"526570", control_hash),
+    bytearray.concat(
+      #"526570",
+      blake2b_224(
+        bytearray.concat(
+          registry_asset_id(state_policy_bytes, token_name),
+          control_hash,
+        ),
+      ),
+    ),
     #"00",
   )
 }
@@ -518,21 +610,6 @@ fn single_asset_name(value: Value) -> ByteArray {
   expect [only] = named
   let (_policy, asset_name, _quantity) = only
   asset_name
-}
-
-/// Does this value carry exactly one unit of the named asset under any
-/// policy but ADA? The representative policy's exact-movement rule
-/// fixes which policy may move the name; here the name is what binds.
-fn value_carries_name(value: Value, asset_name: ByteArray) -> Bool {
-  length(
-    filter(
-      flatten(value),
-      fn(entry) {
-        let (policy_id, name, quantity) = entry
-        policy_id != #"" && name == asset_name && quantity == 1
-      },
-    ),
-  ) == 1
 }
 
 /// The shared mint/burn roundtrip both approval arms ride: a fresh

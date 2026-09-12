@@ -56,6 +56,13 @@ const testRetractTime = 10_000
 const testRepPolicy =
   #"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
+/// The pinned consumer script hash in test State datums (NOTE-013/NOTE-019,
+/// sixth field): 28 bytes of 0xcc. Preservation tests use a distinct 0xdd
+/// value for the altered-pin refusal case; the swapped-hook refusal case
+/// uses a distinct 0xee withdrawal credential.
+const testConsumerPin =
+  #"cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+
 // Phase 1 validity range: [0, 5_000] — entirely before submitted_at(0) + process_time(10_000)
 const phase1Range = interval.between(0, 5_000)
 
@@ -144,6 +151,7 @@ const state =
     process_time: testProcessTime,
     retract_time: testRetractTime,
     representative_policy: testRepPolicy,
+    consumer_pin: testConsumerPin
   }
 
 // Raw datum for input/output UTxOs (no Option wrapper)
@@ -202,6 +210,7 @@ const output =
           process_time: testProcessTime,
           retract_time: testRetractTime,
           representative_policy: testRepPolicy,
+          consumer_pin: testConsumerPin
         },
       ),
     ),
@@ -222,6 +231,7 @@ test canCage() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [output],
       extra_signatories: ["owner"],
@@ -233,6 +243,7 @@ test canCage() {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update, request],
       redeemers: [
@@ -267,6 +278,7 @@ const minted =
           process_time: testProcessTime,
           retract_time: testRetractTime,
           representative_policy: testRepPolicy,
+          consumer_pin: testConsumerPin
         },
       ),
     ),
@@ -294,6 +306,7 @@ test canMint() {
     "policy_id",
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       outputs: [minted],
       mint: minted_value,
       inputs: [Input { output_reference: reference, output: consumed_utxo }],
@@ -308,6 +321,7 @@ test canMint() {
 fn mint_tx() -> Transaction {
   Transaction {
     ..transaction.placeholder,
+    withdrawals: [Pair(address.Script(testConsumerPin), 0)],
     outputs: [minted],
     mint: minted_value,
     inputs: [Input { output_reference: reference, output: consumed_utxo }],
@@ -382,6 +396,7 @@ test mint_nonempty_root() fail {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -468,6 +483,7 @@ test retract_happy() {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       extra_signatories: ["owner"],
       reference_inputs: [update],
@@ -484,6 +500,7 @@ test retract_wrong_signer() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       extra_signatories: ["someone_else"],
       reference_inputs: [update],
@@ -500,6 +517,7 @@ test retract_in_phase1() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       extra_signatories: ["owner"],
       reference_inputs: [update],
@@ -516,6 +534,7 @@ test retract_in_phase3() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       extra_signatories: ["owner"],
       reference_inputs: [update],
@@ -547,6 +566,7 @@ test contribute_wrong_token() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update, request],
     },
@@ -564,6 +584,7 @@ test contribute_missing_ref() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update, request],
     },
@@ -580,6 +601,7 @@ test contribute_reference_only_state_rejected() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [request],
       reference_inputs: [update],
@@ -606,6 +628,7 @@ test contribute_rejects_foreign_policy_state_same_asset() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [fake_state_input, request],
     },
@@ -621,6 +644,7 @@ test contribute_in_phase2() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       inputs: [update, request],
     },
@@ -636,6 +660,7 @@ test contribute_in_phase3() {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       inputs: [update, request],
       redeemers: [
@@ -655,6 +680,7 @@ test contribute_with_state_end_rejected() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update, request],
       redeemers: [stateSpendRedeemerData(endRedeemerData())],
@@ -681,6 +707,7 @@ test modify_without_owner_succeeds() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [output],
       extra_signatories: [],
@@ -699,6 +726,7 @@ test end_stake_withdrawal_refuses() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       withdrawals: [Pair(address.Script(testStakeScript), 1)],
       inputs: [update],
@@ -716,6 +744,7 @@ test end_owner_signed_no_withdrawal_refuses() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
       mint: burn_value,
@@ -735,6 +764,7 @@ test modify_wrong_address() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [bad_output],
       extra_signatories: ["owner"],
@@ -754,6 +784,7 @@ test modify_advances_root_accepts() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [output],
       extra_signatories: ["owner"],
@@ -777,6 +808,7 @@ test modify_no_requests() {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -788,6 +820,7 @@ test modify_no_requests() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [unchanged_output],
       extra_signatories: ["owner"],
@@ -836,6 +869,7 @@ test modify_skip_other_token() {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -847,6 +881,7 @@ test modify_skip_other_token() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [unchanged_output],
       extra_signatories: ["owner"],
@@ -864,6 +899,7 @@ test modify_too_few_proofs() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [output],
       extra_signatories: ["owner"],
@@ -881,6 +917,7 @@ test modify_extra_proofs() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [output],
       extra_signatories: ["owner"],
@@ -904,6 +941,7 @@ test modify_wrong_root() fail {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -915,6 +953,7 @@ test modify_wrong_root() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [bad_root_output],
       extra_signatories: ["owner"],
@@ -939,6 +978,7 @@ test modify_altered_representative_policy_refuses() fail {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: #"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -950,10 +990,127 @@ test modify_altered_representative_policy_refuses() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [altered_policy_output],
       extra_signatories: ["owner"],
       inputs: [update],
+    },
+  )
+}
+
+/// Pinned-hook pin preservation (NOTE-013/NOTE-019): the pin is registry
+/// configuration beside the representative policy. A fold altering it —
+/// representative policy intact — refuses here.
+test modify_altered_pin_refuses() fail {
+  let altered_pin_output =
+    Output {
+      address: testScriptAddress,
+      value: testValue,
+      datum: InlineDatum(
+        StateDatum(
+          State {
+            root: root(empty),
+            tip: 0,
+            process_time: testProcessTime,
+            retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
+            consumer_pin: #"dddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          },
+        ),
+      ),
+      reference_script: None,
+    }
+  spend(
+    stateDatum,
+    Modify([]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase1Range,
+      outputs: [altered_pin_output],
+      extra_signatories: ["owner"],
+      inputs: [update],
+    },
+  )
+}
+
+/// Omitted hook (NOTE-013 control 1): a `Modify` that consumes a request
+/// but carries no withdrawal of the pinned consumer refuses — even though
+/// the refund shape is exactly the admitted one (`modify_with_refund`
+/// passes with the withdrawal present, so the delta is the hook alone).
+/// Admission is not invocation.
+test modify_omitted_hook_refuses() fail {
+  spend(
+    feeStateDatum,
+    Modify([UpdateAction([])]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: phase1Range,
+      outputs: [feeStateOutput, refundOutput],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, feeRequestInput],
+    },
+  )
+}
+
+/// Swapped hook (NOTE-013 control 2): a withdrawal from a DIFFERENT script
+/// does not satisfy the mandate — only the exact pinned credential invokes.
+test modify_swapped_hook_refuses() fail {
+  spend(
+    feeStateDatum,
+    Modify([UpdateAction([])]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [
+        Pair(
+          address.Script(
+            #"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          ),
+          0,
+        ),
+      ],
+      validity_range: phase1Range,
+      outputs: [feeStateOutput, refundOutput],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, feeRequestInput],
+    },
+  )
+}
+
+/// Mint width gate (NOTE-013): genesis selects any 28-byte pin — but not
+/// 27. A boot datum with a short pin refuses at mint, before any fold.
+test mint_pin_width_refuses() fail {
+  let short_pin_minted =
+    Output {
+      address: output_address,
+      value: minted_value,
+      datum: InlineDatum(
+        StateDatum(
+          State {
+            root: root(empty),
+            tip: 0,
+            process_time: testProcessTime,
+            retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
+            consumer_pin: #"dddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          },
+        ),
+      ),
+      reference_script: None,
+    }
+  mint(
+    Minting(testSeed),
+    "policy_id",
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      outputs: [short_pin_minted],
+      mint: minted_value,
+      inputs: [Input { output_reference: reference, output: consumed_utxo }],
     },
   )
 }
@@ -967,6 +1124,7 @@ test modify_in_phase2() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       outputs: [output],
       extra_signatories: ["owner"],
@@ -999,6 +1157,7 @@ test modify_output_must_hold_token() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [tokenless_state_output, wallet_token_output],
       extra_signatories: ["owner"],
@@ -1024,6 +1183,7 @@ test end_owner_signed_refuses() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
       mint: burn_value,
@@ -1040,6 +1200,7 @@ test end_missing_signature() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: [],
       inputs: [update],
       mint: burn_value,
@@ -1058,6 +1219,7 @@ test end_wrong_token_in_mint() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
       mint: wrong_burn,
@@ -1075,6 +1237,7 @@ test modify_rejects_foreign_policy_same_asset() fail {
       process_time: testProcessTime,
       retract_time: testRetractTime,
       representative_policy: testRepPolicy,
+      consumer_pin: testConsumerPin
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -1100,6 +1263,7 @@ test modify_rejects_foreign_policy_same_asset() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [fake_output],
       extra_signatories: ["attacker"],
@@ -1119,6 +1283,7 @@ test end_rejects_foreign_policy_same_asset() fail {
       process_time: testProcessTime,
       retract_time: testRetractTime,
       representative_policy: testRepPolicy,
+      consumer_pin: testConsumerPin
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -1137,6 +1302,7 @@ test end_rejects_foreign_policy_same_asset() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["attacker"],
       inputs: [fake_input],
       mint: burn_value,
@@ -1162,6 +1328,7 @@ test retract_on_state_datum() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       extra_signatories: ["owner"],
       reference_inputs: [update],
@@ -1178,6 +1345,7 @@ test contribute_on_state_datum() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update],
     },
@@ -1193,6 +1361,7 @@ test modify_on_request_datum() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       extra_signatories: ["owner"],
       inputs: [request],
@@ -1209,6 +1378,7 @@ test end_on_request_datum() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [request],
       mint: burn_value,
@@ -1266,6 +1436,7 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       extra_signatories: [signer],
       reference_inputs: [update],
@@ -1295,6 +1466,7 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
       process_time: testProcessTime,
       retract_time: testRetractTime,
       representative_policy: testRepPolicy,
+      consumer_pin: testConsumerPin
     }
   let unchanged_output =
     Output {
@@ -1308,6 +1480,7 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -1329,6 +1502,7 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [unchanged_output],
       extra_signatories: [signer],
@@ -1366,6 +1540,7 @@ test prop_mint_roundtrip(
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -1385,6 +1560,7 @@ test prop_mint_roundtrip(
     "policy_id",
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       outputs: [out],
       mint: val,
       inputs: [Input { output_reference: ref, output: utxo }],
@@ -1422,6 +1598,7 @@ const migrate_predecessor_state =
     process_time: testProcessTime,
     retract_time: testRetractTime,
     representative_policy: testRepPolicy,
+    consumer_pin: testConsumerPin
   }
 
 const migrate_predecessor_ref =
@@ -1456,6 +1633,7 @@ test migrating_owner_signed_refuses() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
@@ -1473,6 +1651,7 @@ test migrate_no_burn() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
@@ -1494,6 +1673,7 @@ test migrate_to_wallet() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [wallet_output],
@@ -1513,6 +1693,7 @@ test migrate_wrong_old_policy() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
@@ -1532,6 +1713,7 @@ test migrate_extra_state_policy_asset() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
@@ -1557,6 +1739,7 @@ test migrate_output_must_hold_token() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [tokenless_state_output, wallet_token_output],
@@ -1584,6 +1767,7 @@ test migrate_old_policy_not_allowlisted() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       outputs: [migrate_output],
       mint: mint_val,
@@ -1599,6 +1783,7 @@ test migrate_no_predecessor_input() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [],
       outputs: [migrate_output],
@@ -1615,6 +1800,7 @@ test migrate_missing_owner_signature() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
       mint: migrate_mint,
@@ -1637,6 +1823,7 @@ test migrate_changes_tip() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [migrate_predecessor_input],
       outputs: [bad_output],
@@ -1669,6 +1856,7 @@ test migrate_forged_token_cannot_sweep() fail {
     new_policy,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       outputs: [forged_output],
       mint: forged_mint,
     },
@@ -1676,11 +1864,14 @@ test migrate_forged_token_cannot_sweep() fail {
 }
 
 // ============================================================================
-// Refund enforcement tests
+// Refund enforcement tests (NOTE-014 item A2 as corrected by NOTE-017)
 //
-// When a request is processed (Modify) or rejected (Reject), the requester
-// is owed a refund: (input lovelace - fee). These tests verify that refund
-// outputs are present, sufficient, and sent to the correct address.
+// Only REJECTED rows are owed refunds: input lovelace less tip each, no fee
+// share deducted and none invented. Processed rows carry no generic refund
+// expectation: admission shapes below are permitted, never endorsed (the
+// pinned consumer hook judges allocations, locking included). Per-owner
+// floors catch crossed allocations aggregates cannot see; min-UTxO top-ups
+// from funding inputs may only add.
 // ============================================================================
 
 const testFee = 500_000
@@ -1692,6 +1883,7 @@ const feeState =
     process_time: testProcessTime,
     retract_time: testRetractTime,
     representative_policy: testRepPolicy,
+    consumer_pin: testConsumerPin
   }
 
 const feeStateDatum = Some(StateDatum(feeState))
@@ -1742,6 +1934,7 @@ const feeStateOutput =
           process_time: testProcessTime,
           retract_time: testRetractTime,
           representative_policy: testRepPolicy,
+          consumer_pin: testConsumerPin
         },
       ),
     ),
@@ -1753,6 +1946,18 @@ const refundOutput =
     address: address.from_verification_key("requester_key_aaaaaaaaaaaaaaa"),
     value: from_lovelace(1_500_000),
     datum: NoDatum,
+    reference_script: None,
+  }
+
+/// State output for rejected-only folds (NOTE-014 item A2): empty root
+/// (rejections move no trie entries) with the input state's value, so the
+/// locked-exactness rule (`output == input + locked`, locked 0 here) holds
+/// by construction and the tests below isolate refund behavior.
+const rejectedStateOutput =
+  Output {
+    address: testScriptAddress,
+    value: testValue,
+    datum: InlineDatum(StateDatum(feeState)),
     reference_script: None,
   }
 
@@ -1769,6 +1974,7 @@ const capturedRefundState =
     process_time: testProcessTime,
     retract_time: testRetractTime,
     representative_policy: testRepPolicy,
+    consumer_pin: testConsumerPin
   }
 
 const capturedRefundStateDatum = Some(StateDatum(capturedRefundState))
@@ -1823,6 +2029,61 @@ const capturedMinUtxoRefundOutput =
     reference_script: None,
   }
 
+/// Small lodger for the top-up test (NOTE-014 item A2): the same 2M-tip
+/// datum with 2.5M lovelace, so 500k is owed — below any min-UTxO floor —
+/// and the 849_070 floor output above is a genuine top-up from funding.
+const topupSmallRequestInput =
+  Input {
+    output_reference: testRequestRef,
+    output: Output {
+      address: testScriptAddress,
+      value: from_lovelace(2_500_000),
+      datum: InlineDatum(capturedRefundRequest),
+      reference_script: None,
+    },
+  }
+
+/// Second rejected row for the crossed-amounts control (NOTE-014 item A2):
+/// distinct key, owner and outref; 3M lovelace at the 500k fee-state tip so
+/// 2.5M is owed — unequal to the first row's 1.5M, which is what makes the
+/// cross detectable while credentials pass and totals match.
+const crossedRequestRef =
+  OutputReference { transaction_id: "2234567890abcdef", output_index: 253 }
+
+const crossedRequest =
+  RequestDatum(
+    Request {
+      requestToken: testToken,
+      requestKey: "43",
+      requestValue: Insert("43"),
+      requestOwner: "requester_key_bbbbbbbbbbbbbbb",
+      tip: testFee,
+      submitted_at: 0,
+    },
+  )
+
+const crossedRequestInput =
+  Input {
+    output_reference: crossedRequestRef,
+    output: Output {
+      address: testScriptAddress,
+      value: from_lovelace(3_000_000),
+      datum: InlineDatum(crossedRequest),
+      reference_script: None,
+    },
+  }
+
+const crossedRefundB =
+  Output {
+    address: address.from_verification_key("requester_key_bbbbbbbbbbbbbbb"),
+    value: from_lovelace(2_500_000),
+    datum: NoDatum,
+    reference_script: None,
+  }
+
+/// Processed rows carry no generic refund expectation (NOTE-017): this
+/// accepted shape shows admission, not endorsement — the bond shown refunded
+/// here is permitted by the generic side and judged by the pinned consumer.
 /// Happy path: Modify with fee. Request has 2 ADA, fee is 0.5 ADA,
 /// so refund of 1.5 ADA goes to the requester's address.
 test modify_with_refund() {
@@ -1832,6 +2093,7 @@ test modify_with_refund() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [feeStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -1840,43 +2102,49 @@ test modify_with_refund() {
   )
 }
 
-/// A refund output must be present for each processed request.
-/// Omitting it steals the requester's locked ADA.
+/// A refund output must be present for each REJECTED request, carrying at
+/// least exactly what is owed (input lovelace less tip). Omitting it with
+/// rejected rows present fails the output shape — nothing here can be
+/// confused with a processed lock (which carries no refund at all).
 test modify_missing_refund() fail {
   spend(
     feeStateDatum,
-    Modify([UpdateAction([])]),
+    Modify([Rejected]),
     testStateRef,
     Transaction {
       ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [feeStateOutput],
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase3Range,
+      outputs: [rejectedStateOutput],
       extra_signatories: ["owner"],
       inputs: [feeStateInput, feeRequestInput],
     },
   )
 }
 
-/// The refund must be at least (input_lovelace - fee). Underpaying shortchanges
-/// the requester.
+/// Each rejected refund must carry at least its row's exact owed amount
+/// (input lovelace less tip — 1.5 ADA here). Underpaying shortchanges the
+/// requester even when every other row is exact.
 test modify_insufficient_refund() fail {
   let bad_refund = Output { ..refundOutput, value: from_lovelace(1_000_000) }
   spend(
     feeStateDatum,
-    Modify([UpdateAction([])]),
+    Modify([Rejected]),
     testStateRef,
     Transaction {
       ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [feeStateOutput, bad_refund],
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase3Range,
+      outputs: [rejectedStateOutput, bad_refund],
       extra_signatories: ["owner"],
       inputs: [feeStateInput, feeRequestInput],
     },
   )
 }
 
-/// The refund must go to the request owner's address. Sending it elsewhere
-/// is theft even if the amount is correct.
+/// Each rejected refund must go to the request owner's address: the
+/// credential check is per row, so sending an otherwise-exact refund
+/// elsewhere refuses even with matching totals.
 test modify_wrong_refund_address() fail {
   let wrong_addr_refund =
     Output {
@@ -1885,20 +2153,60 @@ test modify_wrong_refund_address() fail {
     }
   spend(
     feeStateDatum,
-    Modify([UpdateAction([])]),
+    Modify([Rejected]),
     testStateRef,
     Transaction {
       ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [feeStateOutput, wrong_addr_refund],
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase3Range,
+      outputs: [rejectedStateOutput, wrong_addr_refund],
       extra_signatories: ["owner"],
       inputs: [feeStateInput, feeRequestInput],
     },
   )
 }
 
-/// When fee is 0, the full input ADA is refunded. No ADA is retained by the
-/// cage owner. This is the "free service" case.
+/// Two rejected rows paid exactly (NOTE-014 item A2): the honest twin of the
+/// crossed control below — same inputs, same totals, correct positions.
+/// If this does not accept, the crossed refusal proves nothing.
+test modify_two_rejected_exact_accepts() {
+  spend(
+    feeStateDatum,
+    Modify([Rejected, Rejected]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase3Range,
+      outputs: [rejectedStateOutput, refundOutput, crossedRefundB],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, feeRequestInput, crossedRequestInput],
+    },
+  )
+}
+
+/// Crossed allocations (NOTE-014 item A2 control): two rejected rows with
+/// unequal oweds (1.5M and 2.5M), every credential passing and totals
+/// matching, but each owner receiving the other's amount. The underpaid row
+/// fails its floor — the case aggregate-only checking cannot see.
+test modify_crossed_amounts_refused() fail {
+  spend(
+    feeStateDatum,
+    Modify([Rejected, Rejected]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase3Range,
+      outputs: [rejectedStateOutput, crossedRefundB, refundOutput],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, feeRequestInput, crossedRequestInput],
+    },
+  )
+}
+
+/// When tip is 0 the bonded value routes visibly (NOTE-017: generic
+/// admission — the consumer judges the allocation, not this test).
 test modify_zero_fee() {
   let zf_state =
     State {
@@ -1907,6 +2215,7 @@ test modify_zero_fee() {
       process_time: testProcessTime,
       retract_time: testRetractTime,
       representative_policy: testRepPolicy,
+      consumer_pin: testConsumerPin
     }
   let zf_request =
     RequestDatum(
@@ -1951,6 +2260,7 @@ test modify_zero_fee() {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -1969,6 +2279,7 @@ test modify_zero_fee() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [zf_state_output, zf_refund],
       extra_signatories: ["owner"],
@@ -2007,6 +2318,7 @@ test modify_fee_mismatch() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [feeStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2028,6 +2340,7 @@ test end_with_extra_mint_policy() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
       mint: extra_mint,
@@ -2046,6 +2359,7 @@ test end_with_extra_state_policy_asset() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
       mint: extra_mint,
@@ -2072,6 +2386,7 @@ const rejectStateOutput =
           process_time: testProcessTime,
           retract_time: testRetractTime,
           representative_policy: testRepPolicy,
+          consumer_pin: testConsumerPin
         },
       ),
     ),
@@ -2087,6 +2402,7 @@ test reject_happy() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       outputs: [rejectStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2103,6 +2419,7 @@ test reject_in_phase1() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [rejectStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2120,6 +2437,7 @@ test reject_in_phase2() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase2Range,
       outputs: [rejectStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2158,6 +2476,7 @@ test reject_future_submitted_at() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [rejectStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2179,6 +2498,7 @@ test end_wrong_signer() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["someone_else"],
       inputs: [update],
       mint: burn_value,
@@ -2200,6 +2520,7 @@ test reject_root_changes() fail {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -2211,6 +2532,7 @@ test reject_root_changes() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       outputs: [bad_reject_output, refundOutput],
       extra_signatories: ["owner"],
@@ -2228,6 +2550,7 @@ test reject_wrong_refund() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       outputs: [rejectStateOutput, bad_refund],
       extra_signatories: ["owner"],
@@ -2243,6 +2566,7 @@ test reject_refund_owed_above_min_utxo_passes() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase3Range,
       outputs: [rejectStateOutput, refundOutput],
       extra_signatories: ["owner"],
@@ -2260,11 +2584,12 @@ test reject_refund_min_utxo_topup_passes() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       fee: capturedRefundTxFee,
       validity_range: phase3Range,
       outputs: [capturedRefundStateOutput, capturedMinUtxoRefundOutput],
       extra_signatories: ["owner"],
-      inputs: [capturedRefundStateInput, capturedRefundRequestInput],
+      inputs: [capturedRefundStateInput, topupSmallRequestInput],
     },
   )
 }
@@ -2278,6 +2603,7 @@ test reject_refund_under_owed_fails() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       fee: capturedRefundTxFee,
       validity_range: phase3Range,
       outputs: [capturedRefundStateOutput, under_refund],
@@ -2295,6 +2621,7 @@ test reject_refund_topup_cannot_drain_state() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       fee: capturedRefundTxFee,
       validity_range: phase3Range,
       outputs: [drained_state, capturedMinUtxoRefundOutput],
@@ -2379,6 +2706,7 @@ test sweep_owner_signed_refuses() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [sweepNoDatumInput],
       reference_inputs: [update],
@@ -2395,6 +2723,7 @@ test sweep_wrong_token_request() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [sweepWrongTokenInput],
       reference_inputs: [update],
@@ -2410,6 +2739,7 @@ test sweep_fake_state_no_nft() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [sweepFakeStateInput],
       reference_inputs: [update],
@@ -2430,6 +2760,7 @@ test sweep_alongside_modify() fail {
   let bundled_tx =
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [bundled_state_output],
       extra_signatories: ["owner"],
@@ -2452,6 +2783,7 @@ test sweep_wrong_signer() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["someone_else"],
       inputs: [sweepNoDatumInput],
       reference_inputs: [update],
@@ -2469,6 +2801,7 @@ test sweep_fake_state_ref() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [sweepNoDatumInput],
       reference_inputs: [update],
@@ -2485,6 +2818,7 @@ test state_sweep_rejected() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [update],
     },
@@ -2501,6 +2835,7 @@ test sweep_legitimate_request() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [request],
       reference_inputs: [update],
@@ -2538,6 +2873,7 @@ test sweep_mismatched_tip_request() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [mismatch_input],
       reference_inputs: [feeStateInput],
@@ -2574,6 +2910,7 @@ test sweep_underfunded_matching_request() fail {
     sweepRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       extra_signatories: ["owner"],
       inputs: [underfunded_input],
       reference_inputs: [feeStateInput],
@@ -2607,6 +2944,7 @@ test modify_zero_requests_happy() {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [zeroRequestStateOutput],
       extra_signatories: ["owner"],
@@ -2629,6 +2967,7 @@ test modify_zero_requests_root_changes() fail {
             process_time: testProcessTime,
             retract_time: testRetractTime,
             representative_policy: testRepPolicy,
+            consumer_pin: testConsumerPin
           },
         ),
       ),
@@ -2639,6 +2978,7 @@ test modify_zero_requests_root_changes() fail {
     testStateRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       outputs: [bad_output],
       extra_signatories: ["owner"],
@@ -2674,6 +3014,7 @@ test wrong_request_parameter_rejects_this_cage_token() fail {
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       validity_range: phase1Range,
       inputs: [update, request],
       redeemers: [
@@ -2700,6 +3041,7 @@ test burning_token_refuses() fail {
     "policy_id",
     Transaction {
       ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
       mint: burn_value,
     },
   )

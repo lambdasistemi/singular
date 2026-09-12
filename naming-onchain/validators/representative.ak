@@ -40,7 +40,7 @@ validator representative(application_policy: PolicyId) {
       }
       BurnRepresentative -> {
         expect
-          application.Retire { representatives }: ApplicationRedeemer =
+          application.Retire { representatives, key_hash: _ }: ApplicationRedeemer =
           app_redeemer
         expect exact_movement(tx.mint, policy_id, representatives, -1)
         True
