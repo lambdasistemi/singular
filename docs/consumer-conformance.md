@@ -139,7 +139,8 @@ routing lives in the consumer's `Registry.processBody`, `Registry.stepFn`
 and the `Cage.delegated_is_registry` equality, and it is
 **operation-specific**: register/revive lock the deposit into a
 checkpoint, goDormant/goConvicted/convict refund to the recorded owner,
-rejection returns the operation bond, and the fold tip goes to the
+rejection returns the operation bond — guarded by `rejectable` **and**
+`userPostable`, not on demand — and the fold tip goes to the
 folder. A blanket exact-refund repair would preserve the wrong value
 mode and prevent checkpoint funding. Upstream cardano-mpfs-onchain
 `#100`/`#101` are referenced proposals, **not a delivered partition fix**: `#101` is open, and **Singular owns the required local repair**. `R5_plugin_pinned` needs a distinction this page

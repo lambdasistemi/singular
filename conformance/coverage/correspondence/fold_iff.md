@@ -122,8 +122,12 @@ explicitly present, the conditionals in firing (4) and silent (5) form.
       and 4–5 are silent with both mint witnesses absent. A zero mint alone
       implies no such result — every other precondition must be present.
     And the consumer side of this exact case is HELD, not established:
-      empty folds on the imported partition are the unresolved consumer
-      restriction (held — Q-002; CG11 gap, upstream #100). No Insert is
+      empty folds on the imported partition were the consumer restriction
+      held under Q-002 (CG11). **That ruling has since been given: empty
+      processing batches are to be rejected** (approved 2026-09-12). The
+      equation below remains an exact reading of the **pinned pre-revision**
+      contract at `012e404`; the approved nonempty revision is **pending
+      implementation** and is not shown here. No Insert is
       claimed to have zero net mint, here or anywhere on this page.
     Check: no corpus case covers it — of the 23 fold cases in
       `lean/corpus.json`, none has empty `items` (same `nix run … nixpkgs#jq`
@@ -157,8 +161,10 @@ the starting root and an empty `Modify` validates. That is the mechanism
 behind CG11's observed acceptance, and what cardano-keri's audit described.
 
 Verification notes for this table (renderer's, per NOTE-004's "tell me where you disagree").
-All `state.ak` and `spec.md` pins below were read directly at worktree base
-`012e404` (`onchain/`, `specs/` unmodified — the frozen contract):
+Pins below bind to **two different commits, and the distinction matters**:
+**historical** facts (the pre-#79 owner gate, the zero-side exhibit's reading of the pre-revision
+contract) were read at worktree base `012e404`; **current** facts (the post-#79 `Modify` dispatch)
+are read at current `main`. Each statement below says which it is.
 
 - **Verified directly, current source:** `onchain/validators/state.ak` dispatches
   `Modify(actions) -> validModify(state, input, policyId, cageToken, tx, actions)` with **no
@@ -177,7 +183,9 @@ All `state.ak` and `spec.md` pins below were read directly at worktree base
   **Confirmed by execution, both halves:** regression row **CG20 failed pre-#79 and is `accepted`
   post-#79**, verdict `agrees-with-model`, tx `4142f7d6…`, candidate `1d98d51a`, `dirty:false`.
   The contradiction is closed. **The coverage debt is not**: this page still renders an obligation
-  that is unmapped and insufficient-layer, and final `617e434` acceptance remains outstanding.
+  that is unmapped and insufficient-layer. Producer acceptance is **outstanding** — `fe89e68` is now
+  submitted for owner acceptance, superseding `617e434` as the candidate under review — and that is
+  a **producer-acceptance** boundary, not statement or coverage debt.
 - **Mapping obligation added by this page:** the conditionals (4, 5) need a reachable
   antecedent case and a zero-side case in the future story; neither exists in any merged row
   today (rows always supply both witnesses). That is mapping/execution debt, tracked in the
@@ -199,8 +207,8 @@ state it, and epic 17's `A-002` identified the owner gate in the
 compiled validator as an implementation defect assigned to #79. **That
 repair has landed, and CG20 pins the fixed behaviour by execution.**
 What remains open is the coverage debt around this obligation and final
-`617e434` acceptance — the debt and the evidence, never the design
-question. This page renders the theorem as stated and will not
+producer acceptance (`fe89e68` submitted, superseding `617e434`) — the
+debt and the evidence, never the design question. This page renders the theorem as stated and will not
 be adjusted to fit the code.
 
 ## 7. Machine anchors
