@@ -55,10 +55,21 @@ def patched_binding(bind=True):
 
 
 def run_release(tree, *argv, bind=True):
-    """release against tmp-tree record paths with binding stubbed; returns (rc, err)."""
+    """release with binding and input preparation stubbed.
+
+    The stubbed prepare hands the verdict the authoritative-path record
+    bytes directly, so these controls exercise verdicts, not the
+    object-store machinery (covered for real in test_release_binding).
+    Returns (rc, err)."""
+    from singular_coverage.gate import RECORD_REL
+
+    record_bytes = (tree / RECORD_REL).read_bytes()
     stub = patched_binding(bind)
+    prep = patch("singular_coverage.gate.prepare_release_tree",
+                 return_value=(tree, record_bytes.decode("utf-8")))
+    disp = patch("singular_coverage.gate.dispose_release_tree", return_value=None)
     err = io.StringIO()
-    with stub, redirect_stderr(err):
+    with stub, prep, disp, redirect_stderr(err):
         rc = main(["--root", str(tree), "release", *argv])
     return rc, err.getvalue()
 
@@ -98,14 +109,20 @@ class ReleaseGateTest(unittest.TestCase):
         self.assertEqual(rc, 3, "a run not bound to its candidate must fail closed")
         self.assertIn("FAIL-CLOSED candidate", err)
 
-    def test_release_record_override_refused_as_unbound_input(self):
-        self.empty_record()
+    def test_release_record_override_refused_as_unbound_input(self):        self.empty_record()
         outside = Path(self._tmp.name) / "external-record.json"
         outside.write_text("{}")
         rc, err = run_release(self.tree, "--record", str(outside),
                               "--candidate", HEAD)
         self.assertEqual(rc, 3, "release must not accept --record")
         self.assertIn("unbound release input", err)
+
+    def test_candidate_path_escape_fails_closed_not_crash(self):
+        from singular_coverage.record import RecordError, candidate_digest
+
+        with self.assertRaises(RecordError) as ctx:
+            candidate_digest(self.tree, ("../../outside-escape",))
+        self.assertIn("escapes the candidate root", str(ctx.exception))
 
     def test_release_without_git_refuses(self):
         # No stubs: a tree that is not inside a repository cannot bind a
@@ -286,8 +303,11 @@ class ReleaseGateTest(unittest.TestCase):
         path = write_tree_record(mini, record)
         report = mini / "release.json"
         stub = patched_binding()
+        prep = patch("singular_coverage.gate.prepare_release_tree",
+                     return_value=(mini, path.read_text()))
+        disp = patch("singular_coverage.gate.dispose_release_tree", return_value=None)
         err = io.StringIO()
-        with stub, redirect_stderr(err):
+        with stub, prep, disp, redirect_stderr(err):
             rc = main(["--root", str(mini), "release",
                        "--candidate", HEAD,
                        "--report", str(report)])

@@ -39,11 +39,19 @@ def git(repo, *args):
 def build_sufficient_tree(tree):
     """A five-obligation tree with one mapping and two distinct valid
     layers per obligation: enough for COMPLETE, so a clean run proves the
-    probe passed binding (binding failure would exit 3 first)."""
+    probe passed binding (binding failure would exit 3 first). Commits the
+    real tools/check_model.py bytes too: the release machinery binds the
+    extraction tool from the candidate, so the fixture must carry it."""
+    import shutil
+
+    from tests.fixtures import REPO_ROOT
+
     (tree / "lean/Singular").mkdir(parents=True)
     (tree / "lean/Singular/Statements.lean").write_text(STATEMENTS)
     for rel, text in NAMING_STUBS.items():
         (tree / rel).write_text(text)
+    (tree / "tools").mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO_ROOT / "tools/check_model.py", tree / "tools/check_model.py")
     export_manifests(tree)
     obligations = build_inventory(tree).obligations
     assert len(obligations) == 5
@@ -139,6 +147,57 @@ class ReleaseBindingTest(unittest.TestCase):
                              check=True, capture_output=True, text=True, timeout=60)
         rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
         self.assertEqual(rc, 1, f"insufficient record must refuse as debt; stderr: {err}")
+
+    def test_committed_symlink_at_canonical_path_fails_closed(self):
+        # The canonical path is a committed symlink to a SUFFICIENT record
+        # outside the candidate: HEAD and status are clean, but the bytes
+        # are not candidate content. Must fail closed, not COMPLETE.
+        external = Path(self._tmp.name) / "external-record.json"
+        external.write_bytes(
+            (self.repo / "conformance/coverage/record/record.json").read_bytes())
+        target = self.repo / "conformance/coverage/record/record.json"
+        target.unlink()
+        target.symlink_to(external)
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "symlinked record")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
+        self.assertEqual(rc, 3)
+        self.assertIn("not a regular blob", err)
+
+    def test_ignored_canonical_input_fails_closed(self):
+        # The record is absent at the commit; a sufficient working-tree
+        # file is git-ignored, so status stays clean. Ignored bytes must
+        # not feed the verdict.
+        git(self.repo, "rm", "-q", "conformance/coverage/record/record.json")
+        (self.repo / ".gitignore").write_text(
+            "conformance/coverage/record/record.json\n")
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "unrecorded candidate")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
+        self.assertEqual(rc, 3)
+        self.assertIn("not a single committed path", err)
+
+    def test_parent_path_escape_in_candidate_paths_fails_closed(self):
+        # A committed record naming inputs outside the candidate root must
+        # fail closed, not crash and not read outside bytes.
+        path = self.repo / "conformance/coverage/record/record.json"
+        raw = json.loads(path.read_text())
+        raw["checks"][0]["evidence"]["candidatePaths"] = ["../../outside-escape"]
+        path.write_text(json.dumps(raw))
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "escaping record")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
+        self.assertEqual(rc, 3)
+        self.assertIn("escapes the candidate root", err)
 
     def test_external_complete_substitution_refused_as_unbound_input(self):
         # The committed record is INCOMPLETE (empty); a sufficient record
