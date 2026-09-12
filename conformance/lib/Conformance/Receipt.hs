@@ -23,6 +23,7 @@ transactions and units from the running node.
 -}
 module Conformance.Receipt (
     Outcome (..),
+    Verdict (..),
     RefusalInfo (..),
     Receipt (..),
     maxReceiptBytes,
@@ -97,6 +98,38 @@ instance ToJSON RefusalInfo where
             , "reason" .= refusalReason r
             ]
 
+-- | How a completed row stands against the behavioral models. The
+-- chain outcome ('Outcome') is a fact; the verdict compares it with
+-- what the models require. Q-002 (story 2, escalated to the user)
+-- decides which model is the behavioral authority where Singular's
+-- Lean and the consumer's theorems disagree; a row whose observation
+-- contradicts the consumer's theorem while Singular's Lean permits
+-- it is 'HeldQ002' — recorded, published, and never read as a pass:
+-- the run exits non-zero while any row is held.
+data Verdict
+    = -- | the observation is what the behavioral model requires (or
+      -- the model constrains nothing here)
+      AgreesWithModel
+    | -- | Singular's Lean and the consumer's theorem disagree and
+      -- the chain sided with Singular's Lean: held pending the user
+      -- ruling (Q-002, story 2)
+      HeldQ002
+    | -- | the chain contradicts Singular's Lean itself
+      DivergesFromLean
+    deriving stock (Show, Eq, Enum, Bounded)
+
+instance FromJSON Verdict where
+    parseJSON = withText "Verdict" $ \t -> case t of
+        "agrees-with-model" -> pure AgreesWithModel
+        "held-q002" -> pure HeldQ002
+        "diverges-from-lean" -> pure DivergesFromLean
+        _ -> fail ("unknown receipt verdict: " <> T.unpack t)
+
+instance ToJSON Verdict where
+    toJSON AgreesWithModel = toJSON ("agrees-with-model" :: Text)
+    toJSON HeldQ002 = toJSON ("held-q002" :: Text)
+    toJSON DivergesFromLean = toJSON ("diverges-from-lean" :: Text)
+
 {- | Evidence that a row executed. Accepted rows name the chain's
 transaction ids and carry measurements; refused rows carry the
 attribution and the submitted transaction's id under @rejected@
@@ -111,6 +144,7 @@ but only a clean-tree receipt names a commit that reproduces it.
 data Receipt = Receipt
     { receiptRow :: !Text
     , receiptOutcome :: !Outcome
+    , receiptVerdict :: !Verdict
     , receiptTransactions :: ![Text]
     , receiptRefusal :: !(Maybe RefusalInfo)
     , receiptMem :: !(Maybe Integer)
@@ -130,6 +164,7 @@ instance FromJSON Receipt where
         Receipt
             <$> o .: "row"
             <*> o .: "outcome"
+            <*> o .: "verdict"
             <*> o .: "transactions"
             <*> o .:? "refusal"
             <*> o .:? "mem"
@@ -147,6 +182,7 @@ instance ToJSON Receipt where
         object
             [ "row" .= receiptRow r
             , "outcome" .= receiptOutcome r
+            , "verdict" .= receiptVerdict r
             , "transactions" .= receiptTransactions r
             , "refusal" .= receiptRefusal r
             , "rejected" .= receiptRejected r
