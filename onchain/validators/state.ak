@@ -39,9 +39,11 @@ validator state() {
     tx: Transaction,
   ) {
     expect Some(StateDatum(state)) = maybeDatum
-    // Permissionless fold (issue #79, Defect 1): Modify must NOT require the
-    // registry owner. Lean `step .fold` checks only nativeSpend, net mint
-    // equality and the mint witnesses — no owner. End keeps ownership.
+    // Permissionless fold (issue #79, Defect 1): Modify must NOT require
+    // any owner — there is no registry-owner role (operator ruling
+    // NOTE-028/A-003). Lean `step .fold` checks only nativeSpend, net
+    // mint equality and the mint witnesses. `End` refuses for every
+    // party; see its arm below.
     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
     expect address.Script(policyId) = input.output.address.payment_credential
     expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)

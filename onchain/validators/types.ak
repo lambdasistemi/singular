@@ -25,9 +25,11 @@ use lib.{TokenId}
 /// distinguished by their datum type:
 ///
 /// 1. **State UTxOs** (`StateDatum`): Hold the caged NFT and the current
-///    MPF root hash. Only one State UTxO exists per caged token. The owner
-///    field determines who can perform the `End` operation; `Modify`
-///    (folding) is permissionless since issue #79.
+///    MPF root hash. Only one State UTxO exists per caged token. There is
+///    no registry-owner role (operator ruling NOTE-028/A-003): `Modify`
+///    (folding) is permissionless since issue #79, and `End`, migration,
+///    burning and `Sweep` refuse for every party. Request and application
+///    authority and ordinary funding signatures keep their own clauses.
 ///
 /// 2. **Request UTxOs** (`RequestDatum`): Created by users who want to
 ///    contribute data to someone else's caged token. They do NOT hold the
@@ -46,13 +48,16 @@ use lib.{TokenId}
 ///                |
 ///                v
 ///            State UTxO (updated root)
-///                |
-///                v
-///             End (burns the NFT)
 /// ```
 ///
+/// The M1 action set has no termination, migration or deposit-recovery
+/// operation: `End` (burns the NFT), migration, burning and `Sweep`
+/// refuse. This statement is about this design, not about all possible
+/// future registries.
+///
 /// Request UTxOs that are not yet accepted can be reclaimed by their
-/// creator via the `Retract` redeemer.
+/// creator via the `Retract` redeemer (request-owner authority, a
+/// separate domain, untouched).
 ///
 /// ## Test Planning Notes
 ///
@@ -316,10 +321,11 @@ pub type Request {
 /// The spending validator pattern-matches on the datum to determine
 /// which operations are valid:
 ///
-/// - `RequestDatum` + `Retract` -> owner reclaims request
+/// - `RequestDatum` + `Retract` -> request owner reclaims request
 /// - `RequestDatum` + `Contribute(ref)` -> validate request targets correct token
 /// - `StateDatum` + `Modify(proofs)` -> fold requests into MPF
-/// - `StateDatum` + `End` -> burn the caged NFT
+/// - `StateDatum` + `End` -> REFUSED (no owner role; no termination)
+/// - mint `Migrating` / `Burning`, any `Sweep` -> REFUSED
 ///
 /// Any other combination (e.g., `RequestDatum` + `End`) will fail because
 /// the `expect` pattern match in the validator will not succeed.

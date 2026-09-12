@@ -39,13 +39,13 @@ use types.{
 ///   - Phase 3 (rejectable/expired): [20_000, ...)    — validity range [20_000, 25_000]
 ///
 /// - **State UTxO** (`update`): holds `testToken` at `testScriptAddress` with
-///   an empty MPF root, owned by "owner".
+///   an empty MPF root (no owner field exists).
 ///
 /// - **Request UTxO** (`request`): an Insert("42") request targeting `testToken`,
-///   submitted by "owner" at time 0.
+///   submitted at time 0.
 ///
 /// - **Expected output** (`output`): the State UTxO after processing the Insert,
-///   with the computed MPF root and ownership transferred to "new-owner".
+///   with the computed MPF root.
 const testProcessTime = 10_000
 
 const testRetractTime = 10_000
@@ -498,7 +498,7 @@ test retract_in_phase1() fail {
 }
 
 /// Retract is forbidden in Phase 3 (after the retract window expires).
-/// Once Phase 3 begins, the request becomes rejectable by the cage owner instead.
+/// Once Phase 3 begins, the request becomes rejectable by any folder instead.
 test retract_in_phase3() fail {
   spend(
     Some(aRequest),
@@ -636,7 +636,7 @@ test contribute_in_phase3() {
 }
 
 /// Contribute must be paired with state `Modify`, not merely any state spend.
-/// Otherwise the state owner could consume request UTxOs while ending the cage,
+/// Otherwise request UTxOs could be consumed without folding them,
 /// bypassing the refund equation.
 test contribute_with_state_end_rejected() fail {
   spend(
