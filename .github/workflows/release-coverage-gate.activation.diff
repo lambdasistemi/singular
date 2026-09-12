@@ -1,0 +1,24 @@
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index 20c1951..de3139f 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -42,7 +42,6 @@ jobs:
+   # Integration: delete the `if: false` line below and add
+   # `coverage-release-gate` to the publish job's `needs:`.
+   coverage-release-gate:
+-    if: false
+     name: Theorem coverage release boundary (must be COMPLETE)
+     needs: build-gate
+     runs-on: nixos
+@@ -94,7 +93,7 @@ jobs:
+           skip-github-release: true
+   publish:
+     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+-    needs: build-gate
++    needs: [build-gate, coverage-release-gate]
+     runs-on: nixos
+     steps:
+       - name: Isolate Nix cache
+diff --git a/conformance/coverage/release-required b/conformance/coverage/release-required
+new file mode 100644
+index 0000000..e69de29

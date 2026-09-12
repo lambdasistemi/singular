@@ -1,0 +1,341 @@
+provider: /code/singular-e18-cov2 @ 64f042ea9cea713212df3ae3839953606bc4e514
+provider status:  M conformance/coverage/publication-boundary-check.sh; M conformance/coverage/publication-boundary-evidence.log; M conformance/coverage/publication_fixtures.sh; M conformance/coverage/tests/test_release_binding.py; M nix/docs.nix;?? conformance/coverage/publication-mutant-guard-removed.diff;?? conformance/coverage/publication-mutant-no-final.diff;
+test publisher: /nix/store/s9yrqa9yqizw6grgkbshdgp7f07bp1d3-publish-docs/bin/publish-docs
+production publisher: /nix/store/6ff73r4133jpwkilyv3sqcnbmf2gffny-publish-docs/bin/publish-docs
+fullclone fixture: /tmp/pub-harness/fixtures/fullclone @ 3db58c4b311ed52afc95400f76dfbb36e6df546b
+missing fixture: /tmp/pub-harness/fixtures/missing @ 29d6dbe44303accef2fdc5c9386b586164f3e199
+version tag: v0.3.0
+unmarked fixture: /tmp/pub-harness/unmarked @ 2d112ae155e50891ae40249de68bb98011200f86
+incomplete fixture: /tmp/pub-harness/incomplete @ c59c5c71280ec2cfc60bb6475adb7e79639ffadb (provider HEAD plus test marker)
+=== case positive (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/fixtures/fullclone @ 3db58c4b311ed52afc95400f76dfbb36e6df546b
+tag: v0.3.0 sha: 3db58c4b311ed52afc95400f76dfbb36e6df546b TAG_COMMIT: 3db58c4b311ed52afc95400f76dfbb36e6df546b
+publisher exit: 0
+--- publisher output (/tmp/pub-harness/case-positive.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+COMPLETION: COMPLETE
+  mapping debt rows: 0
+  implementation-layer debt rows: 0
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+DEBT axes (reported separately, never summed)
+  mapping debt: 0 obligations without a bound story representation
+  implementation-layer debt: 0 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+candidate: 3db58c4b311ed52afc95400f76dfbb36e6df546b (bound: HEAD matches; tree clean; root is top level)
+on-chain release assembly: PASS (/tmp/tmp.0Fzt3vhlDM/singular-onchain-0.3.0.tar.gz)
+{"version": "0.3.0", "unreleasedBaseline": false, "archive": "singular-docs-0.3.0.tar.gz", "onchainArchive": "singular-onchain-0.3.0.tar.gz", "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS", "identityFromArtifact": "PASS"}
+singular-docs-0.3.0.tar.gz: OK
+singular-onchain-0.3.0.tar.gz: OK
+--- gh calls (positive):
+GHCALL: pr list --repo lambdasistemi/singular --state merged --base main --limit 100 --json number,mergeCommit,headRefName,labels
+GHCALL: release view v0.3.0 --repo lambdasistemi/singular
+GHCALL: release create v0.3.0 --repo lambdasistemi/singular --verify-tag --title Singular documentation and on-chain release 0.3.0 --notes-file /nix/store/nvviw9sc5mnl315pmg4rslcvi9gfhiln-source/onchain-release/RELEASE.md
+GHCALL: release upload v0.3.0 /tmp/tmp.0Fzt3vhlDM/SHA256SUMS /tmp/tmp.0Fzt3vhlDM/singular-docs-0.3.0.tar.gz /tmp/tmp.0Fzt3vhlDM/singular-onchain-0.3.0.tar.gz --repo lambdasistemi/singular --clobber
+GHCALL: release download v0.3.0 --repo lambdasistemi/singular --dir /tmp/tmp.m5eiVBxW8u --pattern singular-docs-0.3.0.tar.gz --pattern singular-onchain-0.3.0.tar.gz --pattern SHA256SUMS
+GHCALL: pr edit 42 --repo lambdasistemi/singular --remove-label autorelease: pending --add-label autorelease: tagged
+case positive: HELD (continuous path, upload recorded with exact identities)
+=== case incomplete (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/incomplete @ c59c5c71280ec2cfc60bb6475adb7e79639ffadb
+tag: v0.3.0 sha: c59c5c71280ec2cfc60bb6475adb7e79639ffadb TAG_COMMIT: c59c5c71280ec2cfc60bb6475adb7e79639ffadb
+publisher exit: 1
+--- publisher output (/tmp/pub-harness/case-incomplete.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+COMPLETION: INCOMPLETE
+  mapping debt rows: 192
+  implementation-layer debt rows: 192
+  execution debt findings: 0
+  unclassified rows: 83
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 192 obligations without a bound story representation
+  implementation-layer debt: 192 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 83 declarations outside the manifests
+    Singular.requireSome_none: unmapped; no-layer; unclassified
+    Singular.requireSome_some: unmapped; no-layer; unclassified
+    Singular.entry_key: unmapped; no-layer; unclassified
+    Singular.consume_config: unmapped; no-layer; unclassified
+    Singular.consume_entries: unmapped; no-layer; unclassified
+    Singular.consume_used: unmapped; no-layer; unclassified
+    Singular.consume_applications: unmapped; no-layer; unclassified
+    Singular.consume_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_config: unmapped; no-layer; unclassified
+    Singular.setEntry_applications: unmapped; no-layer; unclassified
+    Singular.setEntry_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_used: unmapped; no-layer; unclassified
+    Singular.setEntry_entries: unmapped; no-layer; unclassified
+    Singular.entry_of_entries: unmapped; no-layer; unclassified
+    Singular.find?_filter_key_ne: unmapped; no-layer; unclassified
+    Singular.entry_setEntry: unmapped; no-layer; unclassified
+    Singular.representative_of: unmapped; no-layer; unclassified
+    Singular.representative_key: unmapped; no-layer; unclassified
+    Singular.representative_key_eq: unmapped; no-layer; unclassified
+    Singular.supply_eq: unmapped; no-layer; unclassified
+    Singular.filter_ne_of_forall: unmapped; no-layer; unclassified
+    Singular.countP_filter_ne_of_nodup: unmapped; no-layer; unclassified
+    Singular.countP_filter_le: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append': unmapped; no-layer; unclassified
+    Singular.createInsert_ok: unmapped; no-layer; unclassified
+    Singular.mintWithdraw_ok: unmapped; no-layer; unclassified
+    Singular.release_ok: unmapped; no-layer; unclassified
+    Singular.evolve_ok: unmapped; no-layer; unclassified
+    Singular.outsider_ok: unmapped; no-layer; unclassified
+    Singular.withdraw_ok: unmapped; no-layer; unclassified
+    Singular.fold_ok: unmapped; no-layer; unclassified
+    Singular.moveAction_ok: unmapped; no-layer; unclassified
+    Singular.escape_error: unmapped; no-layer; unclassified
+    Singular.foldOne_insert_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_terminal_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_ok_find: unmapped; no-layer; unclassified
+    Singular.foldItems_cons_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_entry_over: unmapped; no-layer; unclassified
+    Singular.foldItems_entry_over: unmapped; no-layer; unclassified
+    Singular.inv_initial: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_applications: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_requests: unmapped; no-layer; unclassified
+    Singular.Inv.filter_applications: unmapped; no-layer; unclassified
+    Singular.Inv.filter_requests: unmapped; no-layer; unclassified
+    Singular.Inv.fresh_id: unmapped; no-layer; unclassified
+    Singular.sublist_ids: unmapped; no-layer; unclassified
+    Singular.nodup_middle_of: unmapped; no-layer; unclassified
+    Singular.inv_of_eq: unmapped; no-layer; unclassified
+    Singular.inv_add_request: unmapped; no-layer; unclassified
+    Singular.inv_release: unmapped; no-layer; unclassified
+    Singular.inv_evolve: unmapped; no-layer; unclassified
+    Singular.inv_remove_request: unmapped; no-layer; unclassified
+    Singular.inv_fold_insert: unmapped; no-layer; unclassified
+    Singular.inv_fold_terminal: unmapped; no-layer; unclassified
+    Singular.inv_foldOne: unmapped; no-layer; unclassified
+    Singular.inv_foldItems: unmapped; no-layer; unclassified
+    Singular.inv_step: unmapped; no-layer; unclassified
+    Singular.reachable_inv: unmapped; no-layer; unclassified
+    Singular.insertNative_entries: unmapped; no-layer; unclassified
+    Singular.releaseNative_entries: unmapped; no-layer; unclassified
+    Singular.approved_entries: unmapped; no-layer; unclassified
+    Singular.fresh_entries: unmapped; no-layer; unclassified
+    Singular.step_createInsert_entries: unmapped; no-layer; unclassified
+    Singular.step_release_entries: unmapped; no-layer; unclassified
+    Singular.exceptBindOkClaim: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAction: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAction: unmapped; no-layer; unclassified
+    Singular.exceptBindOkRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindErrRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAny: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapOkAny: unmapped; no-layer; unclassified
+    Singular.exceptMapErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapEqAny: unmapped; no-layer; unclassified
+    Singular.exceptBindResultEqAction: unmapped; no-layer; unclassified
+    Singular.exceptMapEq: unmapped; no-layer; unclassified
+    Singular.throwEqError: unmapped; no-layer; unclassified
+    Singular.insertNeSelfFalse: unmapped; no-layer; unclassified
+    Singular.namingStepFoldActionEq: unmapped; no-layer; unclassified
+    Singular.foldElseBindEq: unmapped; no-layer; unclassified
+    Singular.namingTerminalFalse: unmapped; no-layer; unclassified
+    Singular.namingFoldInsertPreservesFixture: unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.supported_address_roundtrips: unmapped; no-layer
+    Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes: unmapped; no-layer
+    Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_stored_refund_committed_and_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_redirect_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insert_attestation_alone_cannot_cancel: unmapped; no-layer
+    Singular.NamingLifecycleStatements.folded_claim_cancellation_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_clear_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_unauthorized_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_commitment_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer: unmapped; no-layer
+    Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_representative_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_registry_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.old_controller_dead_after_recovery: unmapped; no-layer
+    Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insufficient_quorum_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_withdrawal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_pending_then_over: unmapped; no-layer
+    Singular.NamingLifecycleStatements.re_registration_after_over_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash: unmapped; no-layer
+    Singular.NamingLifecycleStatements.alternate_registry_seed_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once: unmapped; no-layer
+    Singular.NamingLifecycleStatements.second_seed_rival_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_representative_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_validator_script_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example: unmapped; no-layer
+    Singular.NamingStatements.naming_delete_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_approval_reserves_nothing: unmapped; no-layer
+    Singular.NamingStatements.naming_absent_certified_insert_activates: unmapped; no-layer
+    Singular.NamingStatements.naming_occupied_key_refuses_duplicate: unmapped; no-layer
+    Singular.NamingStatements.naming_fixture_fields_preserved_on_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_unauthenticated_resolve: unmapped; no-layer
+    Singular.NamingStatements.naming_payment_destination_distinct_from_control: unmapped; no-layer
+    Singular.NamingStatements.naming_step_create_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_fold_generic_when_all_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_refuses_other: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unknown_spelling_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_malformed_fixture_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unapproved_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_unauthenticated_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_active_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_pending_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_absent_iff: unmapped; no-layer
+    Singular.NamingWireStatements.naming_datum_serialises_byte_exact: unmapped; no-layer
+    Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape: unmapped; no-layer
+    Singular.NamingWireStatements.inline_datum_only: unmapped; no-layer
+    Singular.NamingWireStatements.payment_destination_zero_or_one: unmapped; no-layer
+    Singular.NamingWireStatements.insert_request_fixture_is_the_queued_request: unmapped; no-layer
+    Singular.NamingWireStatements.insert_request_serialises_byte_exact: unmapped; no-layer
+    Singular.NamingWireStatements.insert_request_roundtrip_and_declared_shape: unmapped; no-layer
+    Singular.NamingWireStatements.insert_request_malformed_and_redirect_refused: unmapped; no-layer
+    Singular.Statements.insert_commitment_injective: unmapped; no-layer
+    Singular.Statements.action_domain_separation: unmapped; no-layer
+    Singular.Statements.createInsert_iff: unmapped; no-layer
+    Singular.Statements.mintWithdraw_iff: unmapped; no-layer
+    Singular.Statements.release_iff: unmapped; no-layer
+    Singular.Statements.evolve_iff: unmapped; no-layer
+    Singular.Statements.outsider_iff: unmapped; no-layer
+    Singular.Statements.withdraw_iff: unmapped; no-layer
+    Singular.Statements.fold_iff: unmapped; no-layer
+    Singular.Statements.moveAction_iff: unmapped; no-layer
+    Singular.Statements.escape_refused: unmapped; no-layer
+    Singular.Statements.foldOne_insert_iff: unmapped; no-layer
+    Singular.Statements.foldOne_terminal_iff: unmapped; no-layer
+    Singular.Statements.sequential_fold_cons: unmapped; no-layer
+    Singular.Statements.supply_conservation: unmapped; no-layer
+    Singular.Statements.over_terminal: unmapped; no-layer
+    Singular.Statements.over_no_representative: unmapped; no-layer
+    Singular.Statements.pending_insert_no_representative: unmapped; no-layer
+    Singular.Statements.minting_requires_configured_issuer: unmapped; no-layer
+    Singular.Statements.withdrawal_preserves_registry_supply: unmapped; no-layer
+    Singular.Statements.exact_withdraw_scope: unmapped; no-layer
+    Singular.Statements.local_evolution_registry_unchanged: unmapped; no-layer
+    Singular.Statements.release_is_operation_specific: unmapped; no-layer
+    Singular.Statements.release_removes_application_custody: unmapped; no-layer
+    Singular.Statements.request_single_spend: unmapped; no-layer
+    Singular.Statements.approval_scope_checked: unmapped; no-layer
+    Singular.Statements.outsider_not_admitted: unmapped; no-layer
+    Singular.Statements.native_witness_even_zero_net: unmapped; no-layer
+    Singular.Statements.nonzero_action_invokes_policy: unmapped; no-layer
+    Singular.Statements.existing_action_does_not_refresh_scope: unmapped; no-layer
+    Singular.Statements.resolve_unauthenticated: unmapped; no-layer
+    Singular.Statements.resolve_absent: unmapped; no-layer
+    Singular.Statements.resolve_over: unmapped; no-layer
+    Singular.Statements.resolve_address_iff: unmapped; no-layer
+    Singular.Statements.resolve_pending_iff: unmapped; no-layer
+    Singular.Statements.release_registry_independent: unmapped; no-layer
+    Singular.Statements.insert_creation_registry_independent: unmapped; no-layer
+    Singular.Statements.whole_release_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_release_refusal_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_refusal_independent: unmapped; no-layer
+candidate: c59c5c71280ec2cfc60bb6475adb7e79639ffadb (bound: HEAD matches; tree clean; root is top level)
+--- gh calls (incomplete):
+case incomplete: HELD (exit 1, 'INCOMPLETE', no upload)
+=== case missing (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/fixtures/missing @ 29d6dbe44303accef2fdc5c9386b586164f3e199
+tag: v0.3.0 sha: 29d6dbe44303accef2fdc5c9386b586164f3e199 TAG_COMMIT: 29d6dbe44303accef2fdc5c9386b586164f3e199
+publisher exit: 3
+--- publisher output (/tmp/pub-harness/case-missing.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+FAIL-CLOSED unbound release input: conformance/coverage/record/record.json is not a single committed path at 29d6dbe44303accef2fdc5c9386b586164f3e199
+--- gh calls (missing):
+case missing: HELD (exit 3, 'not a single committed path', no upload)
+=== case injected-fault (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/fixtures/fullclone @ 3db58c4b311ed52afc95400f76dfbb36e6df546b
+tag: v0.3.0 sha: 3db58c4b311ed52afc95400f76dfbb36e6df546b TAG_COMMIT: 0000000000000000000000000000000000000000
+publisher exit: 1
+--- publisher output (/tmp/pub-harness/case-injected-fault.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+FAIL: checkout /tmp/pub-harness/fixtures/fullclone is not the tag commit 0000000000000000000000000000000000000000
+--- gh calls (injected-fault):
+case injected-fault: HELD (exit 1, 'FAIL: checkout .* is not the tag commit', no upload)
+marker-deleted fixture: /tmp/pub-harness/markdel @ c59c5c71280ec2cfc60bb6475adb7e79639ffadb (dirty tree)
+=== case marker-deleted (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/markdel @ c59c5c71280ec2cfc60bb6475adb7e79639ffadb
+tag: v0.3.0 sha: c59c5c71280ec2cfc60bb6475adb7e79639ffadb TAG_COMMIT: c59c5c71280ec2cfc60bb6475adb7e79639ffadb
+publisher exit: 1
+--- publisher output (/tmp/pub-harness/case-marker-deleted.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+FAIL: dirty or unreadable working tree at /tmp/pub-harness/markdel
+--- gh calls (marker-deleted):
+case marker-deleted: HELD (exit 1, 'FAIL: dirty or unreadable working tree', no upload)
+=== case nonrepo (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness @ non-git
+tag: v0.3.0 sha: 3db58c4b311ed52afc95400f76dfbb36e6df546b TAG_COMMIT: 3db58c4b311ed52afc95400f76dfbb36e6df546b
+publisher exit: 1
+--- publisher output (/tmp/pub-harness/case-nonrepo.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+FAIL: checkout /tmp/pub-harness is not the tag commit 3db58c4b311ed52afc95400f76dfbb36e6df546b
+--- gh calls (nonrepo):
+case nonrepo: HELD (exit 1, 'FAIL: checkout .* is not the tag commit', no upload)
+=== case guard-absent (via publish-docs-boundary-test)
+pwd: /tmp/pub-harness/unmarked @ 2d112ae155e50891ae40249de68bb98011200f86
+tag: v0.3.0 sha: 2d112ae155e50891ae40249de68bb98011200f86 TAG_COMMIT: 2d112ae155e50891ae40249de68bb98011200f86
+publisher exit: 1
+--- publisher output (/tmp/pub-harness/case-guard-absent.log):
+warning: Git tree '/code/singular-e18-cov2' is dirty
+warning: publish-docs without the coverage release boundary (no conformance/coverage/release-required in /tmp/pub-harness/unmarked)
+error: getting status of '/tmp/pub-harness/unmarked/onchain': No such file or directory
+--- gh calls (guard-absent):
+case guard-absent: HELD (exit 1, assembly attempted, missing-flake env failure, pre-integration proceed)
+baseline test-publisher closure: /nix/store/s9yrqa9yqizw6grgkbshdgp7f07bp1d3-publish-docs/bin/publish-docs
+mutant copy guard-removed: /tmp/pub-harness/mut-guard-removed (baseline 64f042ea9cea713212df3ae3839953606bc4e514)
+mutation patch: /code/singular-e18-cov2/conformance/coverage/publication-mutant-guard-removed.diff sha256 bae4334106df4b1be69456e9c2034b3aeae486b05b8a199b01e76179f4cabdb3
+mutant tree fingerprint: 3b54add479ca53632adb856d150d5c70c9ac3f775647de8e5b6b0ecf3728d6fd
+mutant-A closure: /nix/store/r40gq50v6kl9wssz5d7v1442wrqwq5m2-publish-docs/bin/publish-docs
+=== case guard-removed (mutant publisher, incomplete fixture)
+mutant publisher exit: 1
+warning: publish-docs without the coverage release boundary (no conformance/coverage/release-required in /tmp/pub-harness/incomplete)
+on-chain release assembly: PASS (/tmp/tmp.jvqdZs96Mv/singular-onchain-0.3.0.tar.gz)
+{"version": "0.3.0", "unreleasedBaseline": false, "archive": "singular-docs-0.3.0.tar.gz", "onchainArchive": "singular-onchain-0.3.0.tar.gz", "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS", "identityFromArtifact": "PASS"}
+--- gh calls (guard-removed):
+mutant copy destroyed (patch, fingerprint and logs retained above)
+case guard-removed: HELD (assembly PASSED on INCOMPLETE without guard, no upload — guard is load-bearing)
+mutant copy no-final: /tmp/pub-harness/mut-no-final (baseline 64f042ea9cea713212df3ae3839953606bc4e514)
+mutation patch: /code/singular-e18-cov2/conformance/coverage/publication-mutant-no-final.diff sha256 a8c2c4afc1153561657d6f490f6113c208ce7435232b3eb1ddc6f333bccd3ad4
+mutant tree fingerprint: 6adc506c7ba1f347db84f9ad2d715829f894d71cc3cbaca92714284f207c12df
+mutant-B closure: /nix/store/5gmrb9mmaad98lgjlvc10mkg8ry982rd-publish-docs/bin/publish-docs
+=== case no-final (mutant publisher, sufficient fixture)
+mutant publisher exit: 0
+COMPLETION: COMPLETE
+  mapping debt rows: 0
+  implementation-layer debt rows: 0
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+DEBT axes (reported separately, never summed)
+  mapping debt: 0 obligations without a bound story representation
+  implementation-layer debt: 0 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+candidate: 3db58c4b311ed52afc95400f76dfbb36e6df546b (bound: HEAD matches; tree clean; root is top level)
+on-chain release assembly: PASS (/tmp/tmp.Qd3y2JMDtD/singular-onchain-0.3.0.tar.gz)
+{"version": "0.3.0", "unreleasedBaseline": false, "archive": "singular-docs-0.3.0.tar.gz", "onchainArchive": "singular-onchain-0.3.0.tar.gz", "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS", "identityFromArtifact": "PASS"}
+MUTED-FINAL
+--- gh calls (no-final, must show no upload):
+mutant copy destroyed (patch, fingerprint and logs retained above)
+case no-final: HELD (exit 0, assembly PASS, mutated path executed, no upload — composition proven)
+resolved recorder: /nix/store/n8gbksbsxk4nj89d5ypqig2bkh7w5vmy-upload-recorder
+closure audit: recorder present, no gh package present
+executable audit: recorder referenced
+--- gh calls (uploads recorded only by the positive case):
+ALL CASES HELD
