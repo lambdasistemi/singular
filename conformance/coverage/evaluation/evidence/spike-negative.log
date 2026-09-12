@@ -1,0 +1,20 @@
+command: spike negative -j1
+commit: PENDING-SHIP-COMMIT (tree-exact build)
+exit: 1
+--- output ---
+tasty-bdd evaluation: CG05 occupied-key refusal
+  real boundary: occupied insert refused, script-attributed, control discriminates: FAIL
+    Exception: user error (deliberate lie: the refusal must not have happened, but the story ran: True)
+
+1 out of 1 tests failed (63.39s)
+--- release proof ---
+mode: negative
+receiptsRemoved: False
+markerNodesReaped: []
+markerNodesRemaining: []
+baselineNodeCount: 6
+mode: negative
+receiptsRemoved: False
+markerNodesReaped: []
+markerNodesRemaining: []
+baselineNodeCount: 6

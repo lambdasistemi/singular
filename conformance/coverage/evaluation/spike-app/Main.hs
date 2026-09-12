@@ -35,11 +35,12 @@ import qualified Control.Monad as CM
 import Data.Char (isDigit)
 import Data.List (isInfixOf)
 import Data.Unique (hashUnique, newUnique)
-import System.Directory (doesDirectoryExist, doesFileExist, removePathForcibly)
+
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, removePathForcibly)
 import System.Environment (getArgs, getEnvironment, lookupEnv, withArgs)
 import System.Exit (ExitCode (..), die, exitFailure, exitSuccess)
 import System.FilePath ((</>))
-import System.Process (CreateProcess (cwd, env), proc, readCreateProcessWithExitCode, readProcessWithExitCode)
+import System.Process (CreateProcess (cwd, env), proc, readCreateProcessWithExitCode, readProcess, readProcessWithExitCode)
 
 import Test.BDD.Language
 import Test.Tasty (defaultMain, testGroup, withResource)
@@ -106,11 +107,15 @@ reapMarkerNodes marker = do
 
 acquireSession :: String -> IO Session
 acquireSession tag = do
+  -- Unique across processes sharing /tmp with sibling lanes: wall-clock
+  -- nanoseconds (a process-local counter alone collides, as a merged run
+  -- once proved) plus the per-process counter for same-instant starts.
+  -- Only base/directory/filepath/process are used — no new dependencies.
+  stamp <- init . filter (/= '\n') <$> readProcess "date" ["+%s%N"] ""
   n <- abs <$> hashUnique <$> newUnique
-  let marker = "/tmp/t80-story-" <> tag <> "-" <> show n
+  let marker = "/tmp/t80-story-" <> tag <> "-" <> stamp <> "-" <> show n
       receipts = marker </> "receipts"
-  exists <- doesDirectoryExist marker
-  CM.when exists (removePathForcibly marker)
+  createDirectoryIfMissing True marker
   baseline <- nodePids
   return (Session receipts marker baseline)
 

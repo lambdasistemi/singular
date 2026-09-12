@@ -1,0 +1,15 @@
+command: spike positive -j1
+commit: PENDING-SHIP-COMMIT (tree-exact build, see below)
+exit: 0
+build: pristine copy of committed tree state (diffed identical), cabal.project source-repository pin lambdasistemi/tasty-bdd@f55494c9
+--- output ---
+tasty-bdd evaluation: CG05 occupied-key refusal
+  real boundary: occupied insert refused, script-attributed, control discriminates: OK (62.24s)
+
+All 1 tests passed (78.50s)
+--- release proof ---
+mode: positive
+receiptsRemoved: False
+markerNodesReaped: []
+markerNodesRemaining: []
+baselineNodeCount: 6

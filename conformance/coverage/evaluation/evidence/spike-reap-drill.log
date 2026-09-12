@@ -1,0 +1,5 @@
+command: spike positive started in background, SIGKILLed mid-devnet, then: spike reap MARKERDIR
+commit: PENDING-SHIP-COMMIT (tree-exact build)
+reap exit: 0
+--- drill transcript (abridged, full interleaved log discarded after verification) ---
+marker node orphaned by SIGKILL; reap printed: reaped: ["2053884"], remaining: [], dirGone: True; post-checks: node dead, marker dir gone.

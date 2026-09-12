@@ -36,9 +36,9 @@ committed file wrongly said `app` and could never have built), `cabal.project`
 | 2. deliberately failing scenario compiles and runs | PASS | `spike negative` fails exactly the lying assertion ("deliberate lie: the refusal must not have happened…") |
 | 3. failing assertion produces a failing process status | PASS | `spike negative` exits **1** (`1 out of 2 tests failed`) |
 | 4. teardown behaviour on real resources | **PARTIAL — see findings** | the scenario's own `GivenAndAfter` teardown removed the receipts dir on success; on a *failed* scenario the teardown did not run (see F-2) |
-| 5. repaired adapter: passing story cleans up, proven | PASS | `spike positive` exits 0 with all assertions green; the release proof records the receipts dir gone and no marker nodes remaining |
-| 6. repaired adapter: failing story cleans up, proven | PASS | `spike negative` exits 1 on the deliberate lie; the release proof still exists with the dir gone and no marker nodes remaining — the F-2 repair |
-| 7. repaired adapter: SIGKILL-abandoned session reaped | PASS | spike `SIGKILL`ed mid-devnet leaves an orphaned node; `spike reap` finds it by marker, terminates it, removes the session dir and exits 0 with none remaining — the abnormal-exit class no in-process bracket survives |
+| 5. repaired adapter: passing story cleans up, proven | PASS | `spike positive` exits 0 with all assertions green; the release proof records the receipts dir gone and no marker nodes remaining (`evaluation/evidence/spike-positive.log`) |
+| 6. repaired adapter: failing story cleans up, proven | PASS | `spike negative` exits 1 on the deliberate lie; the release proof still exists with the dir gone and no marker nodes remaining — the F-2 repair (`evaluation/evidence/spike-negative.log`) |
+| 7. repaired adapter: SIGKILL-abandoned session reaped | PASS | spike `SIGKILL`ed mid-devnet leaves an orphaned node; `spike reap` finds it by marker, terminates it, removes the session dir and exits 0 with none remaining — the abnormal-exit class no in-process bracket survives (`evaluation/evidence/spike-reap-drill.log`) |
 
 Story assertions that passed in positive mode (all computed from the runner's real output):
 exit success; `1/1 rows ok`; `REFUSED at submit` (script-attributed, phase-2 marker); the
