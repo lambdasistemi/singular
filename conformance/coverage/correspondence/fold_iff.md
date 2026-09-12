@@ -8,8 +8,9 @@ in `handoffs/80-correspondence-example-fold-iff.md`, independently verified here
 page states facts (verification notes inline; disagreements surfaced, none silent).
 
 **This page is not execution evidence and does not reduce debt** — the obligation it
-renders is still unmapped and insufficient-layer in the committed record, and one direction
-of it is under an unresolved user ruling (below).
+renders is still unmapped and insufficient-layer in the committed record. Its
+permissionless direction is settled design contradicted by the implementation
+(a defect assigned to epic 17 under #79), never an undecided reading (below).
 
 ## 1. The pinned Lean claim
 
@@ -38,7 +39,8 @@ An **equivalence**, universally quantified over *any* starting state `s`, *any* 
 list, *any* mint deltas, *any* action-asset net, *any* witness set, *any* result. Both
 directions carry meaning.
 
-Left to right — **if a fold succeeds, all five hold**:
+Left to right — **necessity**: if a fold succeeds, all five hold. This
+is what forbids the validator accepting a fold that violates one of them:
 
 | # | Lean | reading |
 |---|---|---|
@@ -48,9 +50,12 @@ Left to right — **if a fold succeeds, all five hold**:
 | 4 | `nonzero mint = true → w.representativeMint = true` | **conditional**: if the mint field is non-zero on some asset, the representative-mint witness is present; if the mint nets to zero, this clause requires nothing |
 | 5 | `actionNonzero net = true → w.applicationMint = true` | **conditional**: likewise for the application action assets |
 
-Right to left — **the direction that carries the product promise**: if the five hold, the
-fold **succeeds**. Nothing further may be required: no owner, no privileged folder, no
-signature beyond the named witnesses. The right-hand side is the *complete* precondition.
+Right to left — **sufficiency**, and this is the direction that
+establishes permissionlessness: if the five hold, the fold **succeeds**.
+Nothing further may be required: no owner, no privileged folder, no
+signature beyond the named witnesses. The right-hand side is the *complete*
+precondition, and checking this direction is precisely what shows success
+requires nothing else.
 
 ## 3. The story, in the same vocabulary
 
@@ -75,9 +80,17 @@ Feature: folding is exactly the five conditions — nothing more, nothing less
 
   Scenario exhibit (one concrete case; exhibits, never replaces, the quantified property):
     Given a one-item fold of a queued certified Insert from an initialized state,
-      | with w.nativeSpend = true and a non-zero representative mint witnessed |
+      | with w.nativeSpend = true,                                            |
+      | the item folding cleanly to t,                                        |
+      | the implied deltas equalling the (here empty) mint field,             |
+      | mint netting to zero so clause 4 is silent and no mint witness present,|
+      | and the action net empty so clause 5 is silent                         |
     When step runs the fold
-    Then it succeeds, and clauses 1–3 hold with the mint witnessed by 4
+    Then it succeeds: 1 holds by the spend witness, 2 by the clean fold to t,
+      3 by the empty-mint equality, and 4–5 are satisfied silently — all five
+      conjuncts explicitly present, including the conditionals in their silent
+      form. A zero-mint, no-witness case still needs every other precondition
+      present to infer success.
     And a rival story asserting "also the state owner must have signed" is FALSE here —
       that requirement is exactly what the converse forbids, and what F-002 records
       the compiled validator as wrongly demanding.
@@ -93,22 +106,30 @@ tested clause 4; it has skipped it.
 
 | clause | implementation boundary | status |
 |---|---|---|
-| 1, 3, 4, 5 | `state.ak` `validModify` witness and mint checks | partially exercised by merged CG rows |
+| per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (`onchain/validators/state.ak:71`), driven per input by `validModify` (`state.ak:162`) | partially exercised by merged CG rows |
+| frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (`state.ak:162-196`) | partially exercised by merged CG rows |
 | 2 | `foldItems` sequencing vs the on-chain fold | exercised for single-item folds; multi-item sequencing not isolated |
-| **converse: nothing else required** | `state.ak` `spend` calls `expect validateOwnership(state, tx)` **before** dispatching `Modify` to `validModify` | **CONTRADICTED — F-002** |
+| **converse: nothing else required** | `state.ak` `spend:36` calls `expect validateOwnership(state, tx)` **before** dispatching `Modify` to `validModify` (`state.ak:42`) | **implementation contradicts the accepted design — defect, epic 17 repair #79** |
 
-Verification notes for this table (renderer's, per NOTE-004's "tell me where you disagree"):
+Empty-fold note, read directly: the fold accumulates over `inputs` carrying
+actions as state and discards the tail (`let (expectedNewRoot, _, …)` at
+`state.ak:185`), so with no matching request input the recomputed root is
+the starting root and an empty `Modify` validates. That is the mechanism
+behind CG11's observed acceptance, and what cardano-keri's audit described.
 
-- **Verified directly:** `onchain/validators/state.ak`, `spend`: `expect validateOwnership(state, tx)`
-  precedes the `when redeemer is { Modify(actions) -> validModify(...) }` dispatch. The F-002
-  contradiction stands as stated: a witness set satisfying all five clauses exists whose fold
-  the compiled validator refuses (owner unsigned). Our own runner supplied the owner signature
+Verification notes for this table (renderer's, per NOTE-004's "tell me where you disagree").
+All `state.ak` and `spec.md` pins below were read directly at worktree base
+`012e404` (`onchain/`, `specs/` unmodified — the frozen contract):
+
+- **Verified directly:** `onchain/validators/state.ak`, `spend:36`: `expect validateOwnership(state, tx)`
+  precedes the `when redeemer is { Modify(actions) -> validModify(...) }` dispatch (`state.ak:42`).
+  A witness set satisfying all five clauses exists whose fold the compiled validator refuses
+  (owner unsigned) — an implementation defect per epic 17's `A-002`, assigned to #79 for repair.
+  The design was never in doubt: this theorem's sufficiency direction and
+  `specs/protocol/spec.md:117` ("no native owner, privileged requester or privileged folder
+  gate") both state permissionlessness. Our own runner supplied the owner signature
   on every fold, which is why no row observed it — recorded, not defended. Regression control:
-  row CG20; behaviour held for a user ruling.
-- **Refinement, not disagreement:** the witness and mint checks for clauses 1, 3, 4, 5 are
-  not literally inside `validModify`'s body — it drives the per-action fold (`mkAction`) and
-  validates the resulting root and outputs. The enforcement lives in that fold path. The
-  owner's "partially exercised by merged CG rows" is accepted with this precision added.
+  row CG20; the contradiction, the evidence and the coverage debt all remain open.
 - **Mapping obligation added by this page:** the conditionals (4, 5) need a reachable
   antecedent case and a zero-side case in the future story; neither exists in any merged row
   today (rows always supply both witnesses). That is mapping/execution debt, tracked in the
@@ -122,12 +143,17 @@ Verification notes for this table (renderer's, per NOTE-004's "tell me where you
 - No **fees, tips, bonds or refund routing** — `.fold` has no value accounting at all.
 - No **submitter condition** — its absence *is* the permissionless claim, and is the point.
 
-## 6. Unresolved interpretation
+## 6. Settled design, open repair
 
-Whether the registry is permissionless — this theorem's converse and
-`specs/protocol/spec.md` — or owner-gated, as the compiled validator enforces, is with the
-user (Q-002, story 3). Until ruled, no reading of this theorem is adjusted to fit the code,
-and this page renders the theorem as stated.
+Whether the registry is permissionless is not undecided: this
+theorem's sufficiency direction and `specs/protocol/spec.md:117` both
+state it, and epic 17's `A-002` identifies the owner gate in the
+compiled validator as an implementation defect assigned to #79 for
+repair. What remains open is the repair landing, the CG20 regression
+row that pins the fixed behaviour, and the coverage debt around this
+obligation — the contradiction, the evidence and the debt, not the
+design question. This page renders the theorem as stated and will not
+be adjusted to fit the code.
 
 ## 7. Machine anchors
 
@@ -146,7 +172,7 @@ and this page renders the theorem as stated.
   },
   "evidence": {
     "checkId": "none yet — rows CG01-CG05/CG10-12 exercise folds generically but no row is bound to this identity",
-    "knownContradiction": "F-002 (validateOwnership before Modify), held for user ruling Q-002"
+    "knownContradiction": "F-002: spend:36 demands the owner before Modify dispatch; implementation defect per A-002, repair assigned #79 (epic 17); design settled, contradiction and debt open"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"
 }
