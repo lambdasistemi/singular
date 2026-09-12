@@ -1,4 +1,12 @@
-packages: . deps
+packages: .
 
--- tasty-bdd pinned to the inspected revision f55494c9b917ec12b4d01e506694b1a5c3b41b56,
--- vendored by checkout at deps/ (git clone + checkout, no lock files refreshed).
+-- tasty-bdd pinned to the inspected revision f55494c9b917ec12b4d01e506694b1a5c3b41b56
+-- Verified same as lambdasistemi/tasty-bdd master HEAD (ls-remote); fetched as a
+-- source-repository package so the tree carries no vendored copy and no
+-- lock file is refreshed.
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/tasty-bdd
+  tag: f55494c9b917ec12b4d01e506694b1a5c3b41b56
+  --sha256: 0wnhy8p33kad1qj8g1mclvr5bkbwwp83bjy6153g5l84c1fhihss
