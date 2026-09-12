@@ -198,12 +198,35 @@ fork81Spec stateBytes requestBytes = do
                 case res of
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"
-                    Left e ->
+                    Left e -> do
+                        -- Retain the full refusal text (NOTE-005): the
+                        -- occupied-key negative is a builder-evaluation
+                        -- refusal, and this is its actual error body.
+                        putStrLn
+                            ( "occupied EvalFailure (retained evidence): "
+                                <> show e
+                            )
                         case (fromException e :: Maybe ErrorCall) of
-                            Just ec -> show ec `shouldContain` "EvalFailure"
+                            Just ec -> do
+                                let msg = show ec
+                                -- Strongest stable discriminants: the
+                                -- refusal is the ledger evaluation of the
+                                -- STATE script spend (ConwaySpending) of
+                                -- THIS packaged patched validator (its
+                                -- script hash), and the body is a CekError.
+                                -- An unrelated ErrorCall mentioning
+                                -- EvalFailure must not go green, and the
+                                -- unpatched staging (different script hash)
+                                -- cannot satisfy the hash conjunct.
+                                msg `shouldContain` "EvalFailure"
+                                msg `shouldContain` "ConwaySpending"
+                                msg `shouldContain` "CekError"
+                                msg
+                                    `shouldContain` "fa90391a470d726da369275cc1ae1be9c35a6d1f3885107e4227794d"
                             Nothing ->
                                 expectationFailure
-                                    ("unexpected exception: " <> show e)
+                                    ( "unexpected exception: " <> show e
+                                    )
   where
     -- The speculative session inside updateTokenImpl starts from the
     -- manager's committed trie and is discarded; the production caller
