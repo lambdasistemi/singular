@@ -595,6 +595,7 @@ obligationKeys =
     , "refusal.migration"
     , "refusal.sweep"
     , "refusal.burning"
+    , "refusal.representative-policy"
     , "control.free-key"
     , "control.supported-action"
     ]
@@ -633,6 +634,7 @@ checkAll evd ids =
     , ("refusal.migration", vRefusalMigration ctx)
     , ("refusal.sweep", vRefusalSweep ctx)
     , ("refusal.burning", vRefusalBurning ctx)
+    , ("refusal.representative-policy", vRefusalRepPolicy ctx)
     , ("control.free-key", vControlFreeKey ctx)
     , ("control.supported-action", vControlSupported ctx)
     ]
@@ -1111,6 +1113,67 @@ vRefusalSweep ctx = case requestAppliedHex ctx of
         fromMaybe
             (cne "no refused Sweep body retained")
             (refusedAttributed ctx SweepSpend "sweep" reqHex)
+
+-- | The E-001 refusal cause, recomputed (issue #77): the connected fold
+-- naming the correct representative but minting it under a foreign policy
+-- is refused with the spent state pinning a different (expected) policy.
+-- Reads only submitted bodies, retained outcomes/listings and the built
+-- blueprints — never narration or any retained report.
+vRefusalRepPolicy :: Ctx -> Verdict
+vRefusalRepPolicy ctx = case foreignFolds ctx of
+    [] -> cne "no foreign-policy fold body retained"
+    ((tag, tx, foreignHex, expected) : _) -> case evOutcome ctx tag >>= outcomeStatus of
+        Just "accepted" ->
+            refuted
+                ( "foreign-policy fold accepted as "
+                    <> fromMaybe "?" (evOutcome ctx tag >>= outcomeTxid)
+                    <> ": the policy check does not hold"
+                )
+        Just "refused" -> case evOutcome ctx tag >>= outcomeReason of
+            Nothing -> cne "representative-policy: refusal reason not retained"
+            Just reason
+                | "PlutusFailure" `isInfixOf` reason
+                , idAppHex (ctxIdentities ctx) `isInfixOf` reason -> case consumedStateRep ctx tx of
+                    Nothing ->
+                        cne "representative-policy: spent state datum does not decode"
+                    Just repBs
+                        | hexStr repBs /= foreignHex ->
+                            established
+                                ( "foreign-policy fold refused by the application validator; minted under "
+                                    <> foreignHex
+                                    <> " but the spent state pins "
+                                    <> hexStr repBs
+                                    <> " for representative "
+                                    <> hexStr expected
+                                )
+                        | otherwise ->
+                            refuted "foreign mint is under the state-pinned policy: no foreign-policy attack present"
+                | "PlutusFailure" `isInfixOf` reason ->
+                    cne "representative-policy: refusal does not name the application validator"
+                | otherwise -> refuted "representative-policy: refused without phase-2 evidence"
+        _ -> cne "representative-policy: fold outcome not retained"
+
+-- | Connected folds minting the expected representative name at +1 under a
+-- policy that is neither the application policy nor the derived applied
+-- representative policy — the structural shape of the E-001 row. Returns
+-- (foldTag, body, foreignPolicyHex, expectedName). Honest folds (mint under
+-- the pinned policy) and the occupied-key duplicate (pinned mint, refused
+-- by state) never match: only a foreign mint qualifies.
+foreignFolds :: Ctx -> [(String, ConwayTx, String, ByteString)]
+foreignFolds ctx =
+    [ (tag, tx, foreignHex, expected)
+    | (tag, tx) <- bodiesOfShape ctx ConnectedFold
+    , Just expected <- [expectedRepName ctx tx]
+    , (p, n, q) <- txMint tx
+    , q == 1
+    , n == expected
+    , let foreignHex = hexStr (policyHex p)
+    , foreignHex /= idAppHex ids
+    , foreignHex /= idRepAppliedHex ids
+    ]
+  where
+    ids = ctxIdentities ctx
+    policyHex (PolicyID sh) = scriptHashBytes sh
 
 -- ---------------------------------------------------------
 -- Control obligations

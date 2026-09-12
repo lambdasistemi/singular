@@ -2171,6 +2171,7 @@ rowForeignPolicyRefused env ks = do
                 , cfaAdjustRoot = id
                 }
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
+    retainListings env "eve-fold-pre"
     expectRefused
         MainRun
         env
@@ -2179,6 +2180,7 @@ rowForeignPolicyRefused env ks = do
         "the fold names the correct representative but moves it under the \
         \attacker's always-true policy instead of the registry's expected policy"
         signed
+    retainListings env "eve-fold-post"
     noTrace env snapClaim "fold-foreign-policy"
 
 rowFoldTamperedRep :: Env -> KeySetup -> TxIn -> IO ()
