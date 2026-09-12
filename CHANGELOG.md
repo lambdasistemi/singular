@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.4.0](https://github.com/lambdasistemi/singular/compare/v0.3.0...v0.4.0) (2026-09-12)
+
+
+### Features
+
+* **conformance:** 40-row inventory with list and unit tests ([284bbc4](https://github.com/lambdasistemi/singular/commit/284bbc4920d20d17d1cb14ac33981e1a345229b7))
+* **conformance:** CA01-CA05 canonical identity rows on the devnet ([619969e](https://github.com/lambdasistemi/singular/commit/619969ebc7f01154ac3fbb43e1ce0241f5a2e7e6))
+* **conformance:** CG02-CG05 rows with node verdicts and receipts ([f59f542](https://github.com/lambdasistemi/singular/commit/f59f5427d9e8c5c45b71768787ac87fd154f074b))
+* **conformance:** CS01 Haskell encodings vs compiled blueprint schema ([d36e992](https://github.com/lambdasistemi/singular/commit/d36e9927e770154080b3bc20444b74bf76734506))
+* **conformance:** CS02 datum bytes survive chain round trip ([792ae19](https://github.com/lambdasistemi/singular/commit/792ae19a2b28dfaf89e49c602df3820f054ed2bd))
+* **conformance:** CS06 parameter application derived in Haskell ([fe7a30c](https://github.com/lambdasistemi/singular/commit/fe7a30c2864f68ca5a176dd54433c52be3ef7237))
+* **conformance:** CS07 unmarked, Fork instruments retained as finding tools ([d3e74da](https://github.com/lambdasistemi/singular/commit/d3e74da3bb84ac95402c563f1213dc4fcc7c821c))
+* **conformance:** CS08 token state six fields survive None and Some ([59f7e0f](https://github.com/lambdasistemi/singular/commit/59f7e0f3b494e2495b9b638c56971795b1cccd62))
+* **conformance:** executed is a receipt, not a field ([bc4af9c](https://github.com/lambdasistemi/singular/commit/bc4af9c45c2e89e686757e2baa087df48b68eae3))
+* **conformance:** explicit CA/CG/CS partitions; CS07 vector-shaped Fork retry ([07aa224](https://github.com/lambdasistemi/singular/commit/07aa22478706b1d158298bff78f961b69f32cc90))
+* **conformance:** local-check receipts for CS01 blueprint and CS06 params ([5fa914c](https://github.com/lambdasistemi/singular/commit/5fa914cd61440b17ec7683e6bd290e64cfc23e2d))
+* **conformance:** present-key Fork grind and devnet probe instruments ([4a5cf1c](https://github.com/lambdasistemi/singular/commit/4a5cf1c36f7ce30871b1eb6e307945bd529c40ee))
+* **conformance:** receipts bind tree state and rejected txids ([d1fd8cd](https://github.com/lambdasistemi/singular/commit/d1fd8cd160d4e7a94f7943dbd07663bb3cb8cf17))
+* **conformance:** spike the synthesized-src build mechanism ([995f92a](https://github.com/lambdasistemi/singular/commit/995f92a1ca93e93e0fc4d787c654f3b0a7c49cbc))
+* **conformance:** the pure canonical authenticator and its CA03 control ([22afeb7](https://github.com/lambdasistemi/singular/commit/22afeb79062d23b05a6ff71909f9b299d91a7851))
+* **coverage:** obligation gate core — discovery, manifests, three debt axes, ratchet, completion (issue [#80](https://github.com/lambdasistemi/singular/issues/80)) ([3460896](https://github.com/lambdasistemi/singular/commit/34608963e485c5b08d1e733ae6eed0fc0fd29d39))
+* **coverage:** package the gate — nix app, nix-built tests, CI job with distinct results (issue [#80](https://github.com/lambdasistemi/singular/issues/80)) ([dfb5215](https://github.com/lambdasistemi/singular/commit/dfb5215b1bdc1464bd4460b655b33d7dc11d871b))
+* **coverage:** strict completion check and reporting CI job ([fb654d7](https://github.com/lambdasistemi/singular/commit/fb654d7ea9688491ce2fde1e7ee9583985a2f3ba))
+* recover control with the committed next key on a real ledger ([f01493e](https://github.com/lambdasistemi/singular/commit/f01493ef7f6580ab512490ce273a819104a584a6))
+* retire by controller or registration quorum into completion-only custody ([646cc1b](https://github.com/lambdasistemi/singular/commit/646cc1b5e986a4a2543041b1c55fb3da695bf8b6))
+
+
+### Fixes
+
+* **conformance:** keep every failing script hash in refusal attribution ([3a74b5d](https://github.com/lambdasistemi/singular/commit/3a74b5d4b1886669b58119c3fe54c2466f4c4dd0))
+* **conformance:** observe tree identity before creating receipts output ([b2201c3](https://github.com/lambdasistemi/singular/commit/b2201c3b2e3cd27b7ad261ee2f6a0fcbeedc5a8b))
+* **conformance:** parseable workflow, speech companion, lint gate ([ca3af4a](https://github.com/lambdasistemi/singular/commit/ca3af4a2b06c68814da83fa14467bba6d0960fce))
+* **coverage:** failure-safe session teardown for devnet stories ([e48de2c](https://github.com/lambdasistemi/singular/commit/e48de2c889a8670b88704c9b6cb15f4dba4d41ee))
+* make folding permissionless and retraction insert-only ([bf9f42d](https://github.com/lambdasistemi/singular/commit/bf9f42db5ca420171f9f13cd892f005292a1aa7e))
+* **rebase:** merge duplicate Scripts.Data import after CA rebase ([a5104c2](https://github.com/lambdasistemi/singular/commit/a5104c21e64ddca5ccc5ce4651dfd791dacb5801))
+
+
+### Documentation
+
+* **conformance:** bind measurements to the ship run ([6252912](https://github.com/lambdasistemi/singular/commit/62529127294893fa6c5020105a3f8902e190e676))
+* **conformance:** bind measurements to the ship run ([b08e458](https://github.com/lambdasistemi/singular/commit/b08e458717db02a561067f8ab909957d82bc53dd))
+* **conformance:** CS boundary rows, unmarked CS07, workflow family step ([b6f7a51](https://github.com/lambdasistemi/singular/commit/b6f7a518cce96925aaefeeee19c81f63c335c817))
+* **conformance:** numbers from the clean-tree run ([8cd9ef0](https://github.com/lambdasistemi/singular/commit/8cd9ef02d1934abf77b6f25a884145e93afc02c2))
+* **conformance:** the canonical identity rows in the consumer page ([b3f4b5a](https://github.com/lambdasistemi/singular/commit/b3f4b5a8f243a72627d74bc6a0fe112ea614bb28))
+* correct fold value-routing citation and owner-pinning framing ([#89](https://github.com/lambdasistemi/singular/issues/89)) ([c800023](https://github.com/lambdasistemi/singular/commit/c8000231afc32510fe9851c6727f3e0fe8961c96))
+* **coverage:** bind cleanup evidence to transcripts, fix marker uniqueness ([8fcc532](https://github.com/lambdasistemi/singular/commit/8fcc532b180e367b5fcbf5616ecea76b9405dc36))
+* **coverage:** correct fold_iff correspondence page ([7db148b](https://github.com/lambdasistemi/singular/commit/7db148b2c2a43a03faab056442fe0d185985a4ed))
+* **coverage:** inhabit the fold_iff Insert exhibit, separate held zero-side ([30b6d03](https://github.com/lambdasistemi/singular/commit/30b6d0378e10b0b36d771d14a7505fbd6c420c91))
+* **coverage:** name the candidate commit in evidence transcripts ([0aba3ae](https://github.com/lambdasistemi/singular/commit/0aba3ae7c77e4ff309703a0b12e5e3976d0369c6))
+* **coverage:** qualify non-vacuity wording both directions ([062017c](https://github.com/lambdasistemi/singular/commit/062017cfecd3cf54aff9e0141ae65282efa8de1d))
+* **coverage:** render fold_iff — the correspondence format under load (issue [#80](https://github.com/lambdasistemi/singular/issues/80); NOTE-004/005 repair) ([569bfa7](https://github.com/lambdasistemi/singular/commit/569bfa700aaa63f9f4c09883a3fdfff151cf0962))
+* **coverage:** show the S13d arithmetic and the empty-fold absence check ([64567dd](https://github.com/lambdasistemi/singular/commit/64567dd54fed8af19e85ca9e99e797a054940077))
+* **coverage:** tasty-bdd bounded evaluation, human-correspondence view, gate README (issue [#80](https://github.com/lambdasistemi/singular/issues/80)) ([c1865d9](https://github.com/lambdasistemi/singular/commit/c1865d9900bf94986d53f12ea233fe182472106d))
+* establish Lean authority in the repository constitution ([91f0053](https://github.com/lambdasistemi/singular/commit/91f005321d3678c423e1656121fb18cca06ae466))
+* make Lean authority binding across implementation and releases ([ef25464](https://github.com/lambdasistemi/singular/commit/ef25464775d871e230f095740100738738647cac))
+
+
+### Automation
+
+* **conformance:** run the canonical-identity rows ([21246cb](https://github.com/lambdasistemi/singular/commit/21246cb51ea2305172ff0cd042b8232665effbca))
+
 ## [0.3.0](https://github.com/lambdasistemi/singular/compare/v0.2.0...v0.3.0) (2026-09-11)
 
 
