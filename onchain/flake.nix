@@ -84,6 +84,19 @@
           hash = "sha256-uHVQxA1dYDuPbH+pf6SkGNBF7nBlDXdULrPFkfUDjzU=";
         };
 
+        # Vendored fix (ticket #81): v2.0.0's `do_excluding` lone-Fork arm
+        # drops the walked common prefix, refusing real absence proofs whose
+        # sole step is a root-level Fork with skip > 0. See
+        # patches/README.md for provenance and the full patch digest. Every
+        # reproduction path below stages THIS patched source, so the
+        # blueprint, the checks, and the dev shell never disagree about the
+        # vendored bytes.
+        merkle-patricia-forestry-patched = pkgs.applyPatches {
+          name = "merkle-patricia-forestry-v2.0.0-lone-fork-exclusion";
+          src = merkle-patricia-forestry;
+          patches = [ ./patches/mpf-v2.0.0-lone-fork-exclusion.patch ];
+        };
+
         packagesToml = pkgs.writeText "packages.toml" ''
           [[packages]]
           name = "aiken-lang/stdlib"
@@ -111,7 +124,7 @@
           cp ${packagesToml} build/packages/packages.toml
           cp -r ${stdlib} build/packages/aiken-lang-stdlib
           cp -r ${fuzz} build/packages/aiken-lang-fuzz
-          cp -r ${merkle-patricia-forestry} build/packages/aiken-lang-merkle-patricia-forestry
+          cp -r ${merkle-patricia-forestry-patched} build/packages/aiken-lang-merkle-patricia-forestry
           chmod -R u+w build/packages
         '';
 
@@ -141,6 +154,38 @@
           installPhase = "touch $out";
         };
 
+        # Run the VENDORED PACKAGE's own test suite (including the
+        # reg_lone_fork_* regression vectors the vendored patch adds) as a
+        # standalone aiken project. This is the reproduction entrypoint for
+        # the #81 lone-Fork exclusion fix: it fails on the unpatched v2.0.0
+        # fetch and passes on the patched source.
+        mpf-lone-fork-regression = pkgs.stdenv.mkDerivation {
+          pname = "mpf-lone-fork-regression";
+          version = "0.0.0";
+          src = merkle-patricia-forestry-patched;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            export HOME=$PWD
+            mkdir -p validators build/packages
+            cp -r lib/. validators/
+            printf '%s\n' \
+              'name = "vendored/mpf-regression"' \
+              'version = "0.0.0"' \
+              'compiler = "v1.1.21"' \
+              'plutus = "v3"' \
+              'license = "MPL-2.0"' > aiken.toml
+            printf '%s\n' \
+              '[[packages]]' \
+              'name = "aiken-lang/stdlib"' \
+              'version = "v2.2.0"' \
+              'source = "github"' > build/packages/packages.toml
+            cp -r ${stdlib} build/packages/aiken-lang-stdlib
+            chmod -R u+w .
+            aiken check
+          '';
+          installPhase = "touch $out";
+        };
+
         # (Haskell block deleted: project, components, haskellChecks,
         #  haskellApps, test-vectors, test-vectors-json all move to
         #  offchain/flake.nix. Breaks 2-4.)
@@ -151,6 +196,7 @@
         aikenChecks = {
           aiken-build = plutus-blueprint;
           inherit aiken-check;
+          inherit mpf-lone-fork-regression;
         };
 
         # -------------------------------------------------------
@@ -219,12 +265,30 @@
 
         # The Aiken dev shell, bound once so `default` and the
         # back-compat `aiken` name expose the same shell.
+        #
+        # The shellHook stages the SAME patched vendored sources the
+        # build/check derivations use into ./build/packages, so an
+        # interactive `aiken build`/`aiken check` in the dev shell can
+        # never silently resolve the UNPATCHED upstream v2.0.0 from the
+        # user cache (ticket #81, A-001: every reproduction path must be
+        # honest about the same patched bytes). build/ is gitignored.
         aikenShell = pkgs.mkShell {
           packages = [
             pkgs.aiken
             pkgs.just
             pkgs.lean4
           ];
+          shellHook = ''
+            if [ -f aiken.toml ]; then
+              mkdir -p build/packages
+              cp ${packagesToml} build/packages/packages.toml
+              cp -r ${stdlib} build/packages/aiken-lang-stdlib
+              cp -r ${fuzz} build/packages/aiken-lang-fuzz
+              cp -r ${merkle-patricia-forestry-patched} build/packages/aiken-lang-merkle-patricia-forestry
+              chmod -R u+w build/packages
+              echo "vendored aiken deps staged (mpf v2.0.0 + lone-fork-exclusion patch)"
+            fi
+          '';
         };
 
       in
@@ -236,6 +300,18 @@
           # package so recipes and CI can address it without naming the
           # system (`nix build .#script-identity`).
           inherit script-identity;
+          # Mechanical digest of the vendored, patched mpf source. Compare
+          # against the digest recorded in patches/README.md; a mismatch
+          # means some path staged different bytes than the patch discloses.
+          vendored-mpf-digest = pkgs.runCommand "vendored-mpf-digest" {
+            src = merkle-patricia-forestry-patched;
+            nativeBuildInputs = [ pkgs.coreutils ];
+          } ''
+            digest=$(find $src -type f -print0 | sort -z | xargs -0 sha256sum \
+              | sha256sum | cut -d' ' -f1)
+            echo "$digest" > $out
+            echo "vendored mpf source digest: $digest"
+          '';
         };
 
         checks = aikenChecks // scriptIdentityChecks;
