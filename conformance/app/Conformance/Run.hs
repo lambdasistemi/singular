@@ -3553,14 +3553,15 @@ runCG13 env = do
     ctrlTx <- assembleFoldWithFee env ctrlSpec
     emit
         "row"
-        ( "CG13 control: the previous owner folds the transferred cage \
-           \— must be refused"
+        ( "CG13 control: post-repair, the transferred cage is folded \
+           \by the previous owner — folding is permissionless, so \
+               \this is an observation of the repaired candidate"
         )
-    submitExpectRefused env "CG13" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
     emit
         "control"
-        "CG13 control: the previous owner is refused — the observed \
-         \transfer took effect"
+        "CG13 control: the transferred cage folds under the repaired \
+         \validator — permissionless folding observed, not confirmed"
 
 {- | CG14: the stake_script hook set, a fold carrying the matching
 withdraw-zero (the partition's shared.ak/types.ak hook; first ever
