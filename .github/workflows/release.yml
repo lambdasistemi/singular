@@ -25,6 +25,44 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build --quiet --no-eval-cache .#build-gate
+  # ---
+  # Coverage release boundary (issue #80 slice t80c). PREPARED AND INERT:
+  # `if: false` keeps this job out of every trigger path until the
+  # integration commit removes it. When active, it binds the exact tag
+  # commit as the release candidate and fails the job unless the
+  # theorem-coverage gate reports COMPLETE for that candidate — blocking
+  # publication. A committed PASS row proves input identity (bytes bound
+  # from the candidate commit), not that its claims were executed:
+  # execution debt (unexecuted, skipped, failing, vacuous, invalid
+  # control, stale-candidate evidence) still refuses as INCOMPLETE, and
+  # current debt is preserved (denominator 192, no exclusions, no
+  # reclassification) until fresh attributable evidence exists.
+  # Integration: delete the `if: false` line below and add
+  # `coverage-release-gate` to the publish job's `needs:`.
+  coverage-release-gate:
+    if: false
+    name: Theorem coverage release boundary (must be COMPLETE)
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage-release"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # The exact candidate identity is bound into the command: the tag
+      # commit this workflow ran on. Any nonzero exit fails the job and,
+      # once wired into publish's needs, blocks publication.
+      - name: Release gate must report COMPLETE for the tag commit
+        run: nix run --quiet .#coverage-gate -- --root . release --candidate ${{ github.sha }}
   release-pr:
     if: github.ref == 'refs/heads/main'
     needs: build-gate
