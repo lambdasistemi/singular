@@ -586,7 +586,7 @@ runRows rawRows receiptsDir = do
         cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -2515,10 +2515,13 @@ assembleFoldSpec env fs = do
     oldState <- case extractCageDatum (snd (fsState fs)) of
         Just (StateDatum s) -> pure s
         _ -> failWith "hand-build: state output has no StateDatum"
+    -- A near-now upper bound: the tx is submitted immediately after
+    -- assembly, and a slot 30s+ ahead lands past the node's ledger
+    -- translation horizon (epoch-safe-zone) and fails phase 1.
+    nowMs <- currentPosixMs
     upperSlot <- case fsUpper fs of
         Just s -> pure s
-        Nothing ->
-            foldUpperSlot prov oldState (map snd (fsReqs fs))
+        Nothing -> trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
     let tipAmount = stateMaxFee oldState
         feeAmt = case fsFee fs of
             Just f -> f
@@ -2591,17 +2594,13 @@ assembleFoldSpec env fs = do
             & witsTxL . rdmrsTxWitsL .~ redeemers
   where
     units = fsUnits fs
-    deriveRefunds tipAmount feeAmt
+    deriveRefunds tipAmount _feeAmt
         | null (fsReqs fs) = pure []
-        | otherwise = do
-            let n = toInteger (length (fsReqs fs))
-                perReqFee = feeAmt `div` n
-                remainder = feeAmt - perReqFee * n
+        | otherwise =
             pure
                 [ let Coin reqVal = o ^. coinTxOutL
-                      extra = if i == (0 :: Int) then remainder else 0
-                   in reqVal - tipAmount - perReqFee - extra
-                | (i, (_, o)) <- zip [0 ..] (fsReqs fs)
+                   in reqVal - tipAmount
+                | (_, o) <- fsReqs fs
                 ]
     refundOuts explicit =
         [ mkBasicTxOut
@@ -5108,7 +5107,7 @@ runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
         sizeReq = txSizeBytes signedReq
         size = max sizeBoot sizeReq
     emitMeasureProv prov "CS02" mem cpu size
-    writeCSReceipt receiptsDir "CS02" Accepted [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS02" Accepted AgreesWithModel [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS02: ACCEPTED datum bytes identical (state+request)"
 
 -- | Find the state inline datum in an unsigned transaction's outputs.
@@ -5201,6 +5200,7 @@ writeCSReceipt ::
     FilePath ->
     String ->
     Outcome ->
+    Verdict ->
     [String] ->
     Maybe RefusalInfo ->
     Maybe String ->
@@ -5213,11 +5213,12 @@ writeCSReceipt ::
     String ->
     String ->
     IO ()
-writeCSReceipt dir row outcome txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
+writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
     writeReceiptFile dir $
         Receipt
             { receiptRow = T.pack row
             , receiptOutcome = outcome
+            , receiptVerdict = verdict
             , receiptTransactions = map T.pack txs
             , receiptRefusal = refusal
             , receiptRejected = fmap T.pack rejected
@@ -5294,7 +5295,7 @@ runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
         cpu = max cpu1 cpu2
         size = max (txSizeBytes signedBootNone) (txSizeBytes signedBootSome)
     emitMeasureProv prov "CS08" mem cpu size
-    writeCSReceipt receiptsDir "CS08" Accepted [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS08" Accepted AgreesWithModel [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS08: ACCEPTED six fields survive (None+Some)"
 
 expectedStateFromTx :: ConwayTx -> IO OnChainTokenState
@@ -5523,7 +5524,7 @@ runCS03 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
                 , txSizeBytes signedEnd
                 ]
     emitMeasureProv prov "CS03" mem cpu size
-    writeCSReceipt receiptsDir "CS03" Accepted [txIdHex signedFoldA, txIdHex signedRetract, txIdHex signedSweep, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS03" Accepted AgreesWithModel [txIdHex signedFoldA, txIdHex signedRetract, txIdHex signedSweep, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS03: ACCEPTED End/Contribute/Modify/Retract/Sweep executed"
 
 findRequestTxIn :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO TxIn
@@ -5650,7 +5651,7 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
             let trimmed = trimRefusal text
             unless (stateMarker `isInfixOf` trimmed) $
                 failWith ("trimmer dropped the attribution; full reason: " <> take 20000 text)
-            writeCSReceipt receiptsDir "CS04" Refused [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
+            writeCSReceipt receiptsDir "CS04" Refused AgreesWithModel [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
             emit "row" ("CS04: REFUSED wrong index by " <> intercalate "+" roles <> " (state marker 0x" <> shortMarker stateMarker <> "; ledger order, unstable)")
         Left mismatch ->
             failWith ("CS04: refusal did not attribute (" <> show mismatch <> "): " <> text)
@@ -5752,7 +5753,7 @@ runCS05 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
                 , txSizeBytes signedEnd
                 ]
     emitMeasureProv prov "CS05" mem cpu size
-    writeCSReceipt receiptsDir "CS05" Accepted [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS05" Accepted AgreesWithModel [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS05: ACCEPTED Update/Rejected/Minting/Burning + Migrating gap"
 
 writeGapMigrating :: FilePath -> String -> String -> IO ()
