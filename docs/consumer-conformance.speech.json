@@ -33,11 +33,11 @@
   ],
   "the-issue-70-generic-rows": [
     {
-      "text": "Eleven rows: nine executed with receipts, two superseded with could-not-execute history. Three refusals are attributed to the script that produced them, each with a same-run control that accepts. Three acceptances are held: the chain permits what the consumer's theorems refuse — the empty fold, the surplus action, the crossed refunds — and the run ends non-zero while anything is held, never reading a hold as a pass.",
+      "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
       "pause": 400
     },
     {
-      "text": "The permissionless fold row was refused by the unrepaired candidate and accepted after the repair, both by execution, with the owner-signed control beside it: the two transactions differ in the signer set alone. The owner change is retained as defect evidence of the outstanding owner gate. The superseded rows keep their observations, their claims are withdrawn, and no receipt can credit them as current conformance.",
+      "text": "The permissionless fold row was refused by the unrepaired candidate and accepted after the repair, both by execution, at two clean tips, with the owner-signed control beside it. The receipts cited are the ship run taken fresh at the clean tip after the receipt repair, every held row carrying its transaction id and measurements.",
       "pause": 400
     }
   ],
@@ -83,7 +83,7 @@
   ],
   "measurements": [
     {
-      "text": "Ship runs on clean trees with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three point seven percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
+      "text": "Ship runs on clean trees with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three point eight percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
       "pause": 400
     },
     {
@@ -115,7 +115,7 @@
       "pause": 400
     },
     {
-      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run with a non-zero exit.",
+      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run. In continuous integration the expected-debt assertion checks the actual receipts and the exact held set, and a green step grants no conformance credit: strict completion and release stay red on that debt.",
       "pause": 400
     }
   ],
@@ -127,6 +127,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "6d1ee0d7024ecfbdb69f91e123035cd936d6a8c15f778a95023f312e2e7d8fd5"
+    "sha256": "5e6384584038c28c86d588d6dfb5bb13e4d717780c8efd7530209d8eb44cb12f"
   }
 }

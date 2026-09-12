@@ -88,16 +88,37 @@ deliberately wrong variant the same run requires to fail.
 
 | row | outcome | evidence |
 |---|---|---|
-| CG07 retract inside the phase-2 window | **refuse** | node refuses in phase 2, attributed to the request script (`0aa40fce…`, `CekError`); the same retract made phase-2-valid is accepted in-run (control) |
+| CG07 retract inside the phase-2 window | **refuse** | node refuses in phase 2, attributed to the request script (`146332de…`, `CekError`); the same retract made phase-2-valid is accepted in-run (control) |
 | CG09 stale request | **refuse** | node refuses in phase 2, attributed to the state script (`ce7615f6…`); the same request rejected by the library in phase 3 is accepted in-run (control) |
 | CG10 fold with stale proofs | **refuse** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape |
-| CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `1070f1bd…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
-| CG12 surplus action | accept — **held-q002** | two actions over one request, the second garbage, accepted (tx `24910134…`); one action FEWER than there are requests is refused in-run (control) — the surplus is unchecked, the deficit is fatal, exactly the audit's asymmetry |
-| CG13 owner change via Modify | accept — **defect evidence** | the chain accepted a Modify changing the state owner to `0xab…ab`, signed by the previous owner (tx `47932f1c…`); resolved-by-ruling: the registry has no owner role at all, so the transfer is a privilege that must not exist — retained as defect evidence of the outstanding owner gate |
-| CG17 sweep by a non-owner | **refuse** — superseded claim | the sweep is refused, attributed to the request script (`07fceb6d…`); the same sweep signed as the owner is accepted in-run (control). SUPERSEDED: it asserted registry-owner authority, which does not exist — observation preserved, conformance claim withdrawn |
-| CG19 crossed refunds | accept — **held-q002** | bonds of 5 and 3 ada refunded crossed (4 and 2 ada, aggregate exactly the validator's ceiling), accepted (tx `635ae938…`); refunds totalling below the aggregate floor are refused in-run (control) — the range is real, and it is still not the requirement |
-| CG20 permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `fe54d3a6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
+| CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
+| CG12 surplus action | accept — **held-q002** | two actions over one request, the second garbage, accepted (tx `facebfe6…`); one action FEWER than there are requests is refused in-run (control) — the surplus is unchecked, the deficit is fatal, exactly the audit's asymmetry |
+| CG13 owner change via Modify | accept — **defect evidence** | the chain accepted a Modify changing the state owner to `0xab…ab`, signed by the previous owner (tx `78e49eea…`); resolved-by-ruling: the registry has no owner role at all, so the transfer is a privilege that must not exist — retained as defect evidence of the outstanding owner gate |
+| CG17 sweep by a non-owner | **refuse** — superseded claim | the sweep is refused, attributed to the request script (`7f32c3e7…`); the same sweep signed as the owner is accepted in-run (control). SUPERSEDED: it asserted registry-owner authority, which does not exist — observation preserved, conformance claim withdrawn |
+| CG19 crossed refunds | accept — **held-q002** | bonds of 5 and 3 ada refunded crossed (4 and 2 ada, aggregate exactly the validator's ceiling), accepted (tx `566ddc80…`); refunds totalling below the aggregate floor are refused in-run (control) — the range is real, and it is still not the requirement |
+| CG20 permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `4142f7d6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
 | CG14 / CG15 stake_script hook | **could-not-execute — superseded** | the pinned staking credential cannot register: `MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it — the staking validator has only a withdraw handler. Superseded inherited-hook expectations, not pending work (below) |
+
+**Three dispositions, never to be mistaken for one another.**
+**Held** (`held-q002`; CG11, CG12, CG19): executed, and the consumer's
+requirement is unmet while Singular's Lean permits the chain's
+outcome — only the user's Q-002 story-2 ruling can move them.
+**Resolved-by-ruling** (CG13): a ruling settled the row's question;
+the observation is retained as defect evidence of the outstanding
+owner gate — never a pass, never an owner-semantics claim.
+**Superseded** (CG14, CG15, CG16, CG17): the expectation asserted
+authority or a schema that does not exist at this commit; observations
+are preserved, claims are withdrawn, and no execution credit attaches.
+
+**Evidence provenance.** The receipts cited in this section are the
+generic session's ship run, taken fresh at clean tip `1d98d51` after
+the receipt-overwrite repair (blueprint
+`state:ce7615f6… request:8970c286…`, cardano-node 10.7.0, every
+receipt `dirty: false`, every held row carrying its acceptance with
+transaction id and measurements). CG20's first post-repair execution
+was at clean tip `748c4a9` (txid `fe54d3a6…`); its ship-run repetition
+at `1d98d51` is `4142f7d6…`. The overwritten pre-repair receipts are
+retained only as evidence of that defect.
 
 **Held rows (Q-002, story 2).** CG11, CG12 and CG19 are executed
 holds, never gaps and never passes: the chain sided with Singular's
@@ -145,9 +166,10 @@ against the pre-#79 candidate it was REFUSED, attributed to the state
 script, and recorded `diverges-from-lean` (receipt retained as
 history). After epic 17's #79 repair it was executed again: the fold
 with no owner signer is accepted (`agrees-with-model`, txid
-`fe54d3a6…`, blueprint `state:ce7615f6… request:8970c286…`), and the
-same fold with the owner signer is accepted in-run. Both acceptances
-are the post-repair evidence, not a weakened test: the two
+`4142f7d6…` at the ship run, `fe54d3a6…` at the first post-repair
+execution, blueprint `state:ce7615f6… request:8970c286…` both times),
+and the same fold with the owner signer is accepted in-run. Both
+acceptances are the post-repair evidence, not a weakened test: the two
 transactions differ in the signer set alone, so the acceptance is
 attributable to the removed gate. The expectation was always accept;
 what moved is the candidate, and the verdict moved by execution only —
@@ -256,7 +278,11 @@ This is a finding held open, not a gap and not a pass.
 
 ### Measurements
 
-Ship run: base `b3f4b5a`, clean tree, cardano-node 10.7.0.
+Ship run: base `b3f4b5a`, clean tree, cardano-node 10.7.0. The
+issue-#70 generic session's ship run: base `1d98d51`, clean tree,
+cardano-node 10.7.0 — every generic receipt below names that base
+with `dirty: false`, and the held rows carry their acceptances with
+transaction ids and measurements because their controls write none.
 
 Serialization ship run: base `b2201c3`, clean tree, cardano-node
 10.7.0 — every receipt below names that base with `dirty: false`.
@@ -273,13 +299,13 @@ Maxima queried from the running node, never hardcoded:
 
 | fold | mem (headroom) | cpu (headroom) | size (headroom) |
 |---|---|---|---|
-| CG02 Update | 641698 (139358302) | 208152036 (9791847964) | 11423 (4961) |
-| CG03 Delete | 631100 (139368900) | 204773757 (9795226243) | 11423 (4961) |
-| CG04 re-Insert | 629296 (139370704) | 204228993 (9795771007) | 11423 (4961) |
+| CG02 Update | 649162 (139350838) | 217096102 (9782903898) | 11451 (4933) |
+| CG03 Delete | 638564 (139361436) | 213717823 (9786282177) | 11451 (4933) |
+| CG04 re-Insert | 616554 (139383446) | 200156393 (9799843607) | 11451 (4933) |
 | CG11 empty fold (held) | 273449 (139726551) | 87149465 (9912850535) | 8388 (7996) |
-| CG12 surplus action (held) | 884862 (139115138) | 282795627 (9717204373) | 11555 (4829) |
-| CG13 owner change (defect) | 616554 (139383446) | 200139681 (9799860319) | 11403 (4981) |
-| CG19 crossed refunds (held) | 1102927 (138897073) | 363996836 (9636003164) | 11613 (4771) |
+| CG12 surplus action (held) | 905068 (139094932) | 295812293 (9704187707) | 11555 (4829) |
+| CG13 owner change (defect) | 628372 (139371628) | 207905393 (9792094607) | 11403 (4981) |
+| CG19 crossed refunds (held) | 1122369 (138877631) | 376904236 (9623095764) | 11613 (4771) |
 | CG20 permissionless fold | 717070 (139282930) | 231585673 (9768414327) | 11442 (4942) |
 | CA01 canonical boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
 | CA02 rival boot | 143440 (139856560) | 46848478 (9953151522) | 8502 (7882) |
@@ -289,8 +315,8 @@ Maxima queried from the running node, never hardcoded:
 | CS05 four witnesses | 649502 (139350498) | 217245659 (9782754341) | 11423 (4961) |
 | CS08 state None+Some | 147634 (139852366) | 49473955 (9950526045) | 8497 (7887) |
 
-Execution units stay under 3.7% of the maxima for every row (worst:
-CG19's crossed-refunds fold at 3.64% cpu, still ~27× headroom; CA05
+Execution units stay under 3.8% of the maxima for every row (worst:
+CG19's crossed-refunds fold at 3.77% cpu, still ~26× headroom; CA05
 reports zeros honestly: no script purpose exists to evaluate).
 Serialized size is the tight dimension at ~71% of `maxTxSize` for
 folds and ~52% for boots; larger batches (CL02) may press against it
@@ -336,7 +362,18 @@ never trims identities — under the same run-enforced 16KB bound.
   repair is pending; their expectations are superseded at that repair,
   their receipts stay valid as history, and the rows will be
   re-executed with fresh receipts against the repaired blueprint —
-  coverage is not inherited across a wire-format change.
+  coverage is not inherited across a wire-format change. Epic 17's
+  antecedent ownerless repair exists locally (`f3a68b1`) but is **not
+  accepted and not merged**; nothing here cherry-picks it, and the
+  affected runtime checks follow the definitive schema artifacts when
+  the explicit handoff arrives — integration stays serialized behind
+  it.
+- **Green expected-debt CI grants no conformance credit**: the
+  workflow's generic-rows step asserts declared debt — exact receipt
+  set, exact verdict per receipt, held set exactly CG11 CG12 CG19,
+  nothing failing — and nothing more. It pays neither the held rows
+  nor a full CL01, and strict completion and release stay RED on that
+  debt.
 - **Out of scope**: CK06 (cardano-keri), the naming rows (epic 16
   demonstration, not consumer evidence), LR/LT rows (epic 17).
 - The CA rows authenticate the canonical registry as the consumer
