@@ -241,15 +241,13 @@ def _parse_mapping(raw, where: str) -> Mapping:
     )
 
 
-def load_record(path: Path) -> Record:
+def parse_record_text(text: str, label: str) -> Record:
     try:
-        raw = json.loads(path.read_text())
-    except FileNotFoundError as exc:
-        raise RecordError(f"record not found: {path}") from exc
+        raw = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise RecordError(f"record is not valid JSON: {path}: {exc}") from exc
+        raise RecordError(f"record is not valid JSON: {label}: {exc}") from exc
     if not isinstance(raw, dict):
-        raise RecordError(f"record must be a JSON object: {path}")
+        raise RecordError(f"record must be a JSON object: {label}")
     if raw.get("schema") != SCHEMA:
         raise RecordError(f"record schema must be {SCHEMA!r}, got {raw.get('schema')!r}")
     unknown = set(raw) - {"schema", "checks", "mappings", "discoveredPopulation"}
@@ -280,8 +278,16 @@ def load_record(path: Path) -> Record:
         checks=checks,
         mappings=mappings,
         discoveredPopulation=tuple(population),
-        path=str(path),
+        path=label,
     )
+
+
+def load_record(path: Path) -> Record:
+    try:
+        text = path.read_text()
+    except FileNotFoundError as exc:
+        raise RecordError(f"record not found: {path}") from exc
+    return parse_record_text(text, str(path))
 
 
 def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
@@ -292,8 +298,11 @@ def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
     """
     accumulator = hashlib.sha256()
     files: list[Path] = []
+    anchor = root.resolve()
     for rel in paths:
         base = (root / rel).resolve()
+        if not base.is_relative_to(anchor):
+            raise RecordError(f"candidatePath escapes the candidate root: {rel}")
         if not base.exists():
             raise RecordError(f"candidatePath does not exist: {rel}")
         if base.is_dir():
@@ -303,7 +312,11 @@ def candidate_digest(root: Path, paths: tuple[str, ...]) -> str:
     if not files:
         raise RecordError(f"candidatePaths bind no files: {paths}")
     for path in sorted(files):
-        accumulator.update(str(path.relative_to(root)).encode())
+        try:
+            shown = path.relative_to(root)
+        except ValueError:
+            raise RecordError(f"candidatePath escapes the candidate root: {path}") from None
+        accumulator.update(str(shown).encode())
         accumulator.update(hashlib.sha256(path.read_bytes()).digest())
     return accumulator.hexdigest()
 def definition_digest(root: Path, qualified: str) -> str | None:

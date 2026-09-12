@@ -22,6 +22,19 @@ let
     '';
   };
   release = import ./release.nix { inherit pkgs src docs; };
+  # Test-only publisher for the publication-boundary control (NOTE-024):
+  # the UNCHANGED publisher definition above, with only the upload tool
+  # replaced by a recorder. Production logic and assembly are intact.
+  # The recorder is bash plus coreutils only (no network possible).
+  uploadRecorder = pkgs.runCommand "upload-recorder" {} ''
+    mkdir -p $out/bin
+    cp ${./../conformance/coverage/publication_gh_stub.sh} $out/bin/gh
+    chmod +x $out/bin/gh
+  '';
+  releaseTest = import ./release.nix {
+    pkgs = pkgs // { gh = uploadRecorder; };
+    inherit src docs;
+  };
   checker = pkgs.writeShellApplication {
     name = "docs-check";
     runtimeInputs = [ pkgs.python3 ];
@@ -54,6 +67,7 @@ in {
     release-check = { type = "app"; program = pkgs.lib.getExe release.checker; };
     release-artifacts = { type = "app"; program = pkgs.lib.getExe release.releaseArtifacts; };
     publish-docs = { type = "app"; program = pkgs.lib.getExe release.publisher; };
+    publish-docs-boundary-test = { type = "app"; program = pkgs.lib.getExe releaseTest.publisher; };
     docs-check = { type = "app"; program = pkgs.lib.getExe checker; };
     preview-check = { type = "app"; program = pkgs.lib.getExe previewCheck; };
     docs-serve = { type = "app"; program = pkgs.lib.getExe serve; };
