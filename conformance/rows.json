@@ -142,40 +142,41 @@
       "state": "uncovered"
     },
     {
-      "expected": "observe — defect evidence (owner change accepted); held-q002",
+      "expected": "observe — defect evidence (owner change accepted); resolved-by-ruling",
       "group": "CG",
       "id": "CG13",
-      "note": "Owner-change acceptance RETAINED AS DEFECT EVIDENCE (txid in receipt). NOTE-023 operator ruling: the registry has NO owner role whatsoever — owner transfer is a privilege that must not exist, so the former previous-owner-refused control is retired, not landed. state.ak End/migration validateOwnership calls are outstanding conformance defects (epic 17 owns the repair). Held-q002 pending the user ruling on owner pinning.",
+      "note": "RESOLVED-BY-RULING (2026-09-12 operator order: the registry has NO owner role whatsoever, settling the owner-pinning question — there is no premise left to be pending on). Observation retained as DEFECT EVIDENCE: the chain accepted a Modify that changed the state owner (txid in receipt). state.ak End/migration validateOwnership calls are outstanding conformance defects owned by epic 17; the former previous-owner-refused control is retired, never landed. If any independent application-policy or hook requirement hides inside this row, it gets its own Lean clause and Given/When/Then — it does not inherit the closed question.",
       "requirement": "Owner/hook pinning: a Modify that changes the state owner.",
       "source": "cardano-keri R5_plugin_pinned",
       "state": "uncovered"
     },
     {
-      "expected": "accept",
+      "expected": "could-not-execute — superseded imported-partition material",
       "group": "CG",
       "id": "CG14",
-      "note": "Hook exists in the imported partition; never executed on a ledger.",
+      "note": "Authority hook of the imported partition (shared.ak validateOwnership Some branch: owner signatory + withdrawal under stake_script credential). Never executed on a ledger: credential registration is blocked (pinned staking validator fails its cert purpose) and the underlying stake_script owner authority is being REMOVED by epic 17 — proving it is not a Singular promise. Changing applicability earns no execution credit; preserved could-not-execute history: registration refused (MissingScriptWitnessesUTXOW without witness; cert-purpose CekError with it).",
       "requirement": "stake_script hook set: a fold carrying the matching withdrawal.",
       "source": "imported partition shared.ak, types.ak",
       "state": "uncovered"
     },
     {
-      "expected": "refuse",
+      "expected": "could-not-execute — superseded imported-partition material",
       "group": "CG",
       "id": "CG15",
-      "note": "Hook exists in the imported partition; never executed on a ledger.",
+      "note": "Authority hook of the imported partition (withdrawal absent leg of the same shared.ak validateOwnership check). Never executed on a ledger; same registration blocker and same epic-17 removal of stake_script authority. Preserved could-not-execute history unchanged.",
       "requirement": "stake_script hook set, withdrawal absent.",
       "source": "imported partition shared.ak, types.ak",
       "state": "uncovered"
     },
     {
       "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: sweeps malformed request-address UTxOs",
-      "expected": "accept",
+      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
       "group": "CG",
       "id": "CG16",
       "requirement": "Sweep of a non-legitimate UTxO, owner-signed.",
       "source": "cage custody",
-      "state": "bound-elsewhere"
+      "state": "bound-elsewhere",
+      "note": "SUPERSEDED by the 2026-09-12 no-owner operator ruling. Original observation preserved (epic-16 CageSpec sweep of a malformed request-address UTxO, owner-signed, accepted): valid as history, superseded as expectation — the sweep custody gate tests authority that does not exist. epic 17 owns the validator repair; re-execute against the repaired blueprint only if the repaired design reinstates a sweep authorization path."
     },
     {
       "expected": "SUPERSEDED by operator ruling (registry has no owner role): observation preserved, claim withdrawn",

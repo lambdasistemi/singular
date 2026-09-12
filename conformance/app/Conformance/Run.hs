@@ -3779,8 +3779,11 @@ runCG17 env = do
                 & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut]
     emit
         "row"
-        ( "CG17: sweep declaring a non-owner required signer submitted; \
-           \the request script must refuse"
+        ( "CG17 [SUPERSEDED observation, claim withdrawn — the \
+           \registry has no owner role]: sweep declaring a non-owner \
+               \required signer submitted; recorded as defect evidence \
+                   \of the outstanding owner gate in the request \
+                       \validator"
         )
     -- Pre-signed by the second key: the tx's required signer is the
     -- NON-owner; submitExpectRefused adds the genesis witness for the
