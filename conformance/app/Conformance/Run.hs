@@ -258,7 +258,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     txInToRef,
  )
 import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Reject (rejectRequestsImpl)
+import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
 import Cardano.MPFS.Cage.TxBuilder.Request (
     requestDeleteImpl,
     requestInsertImpl,
@@ -343,31 +343,11 @@ import Conformance.Refusal (matchRefusal, refusalScriptHashes, trimRefusal, wron
 -- Row vocabulary and control modes
 -- ---------------------------------------------------------
 
-caRows :: [String]
-caRows =
-    [ "CA01"
-    , "CA02"
-    , "CA03"
-    , "CA04"
-    , "CA05"
-    , "CG02"
-    , "CG03"
-    , "CG04"
-    , "CG05"
-    , "CS01"
-    , "CS02"
-    , "CS03"
-    , "CS04"
-    , "CS05"
-    , "CS06"
-    , "CS08"
-    ]
-
 -- | Row families by explicit membership. Every partition below filters by
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
@@ -375,7 +355,6 @@ csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
 -- The issue #70 rows, listed by membership — never by exclusion or
 -- position: a partition defined by what it is not silently absorbs
 -- whatever the next slice adds.
-issue70Rows :: [String]
 issue70Rows =
     [ "CG07"
     , "CG09"
@@ -392,12 +371,10 @@ issue70Rows =
 
 -- The issue #70 rows that close a CL01 receipt when the full session
 -- ran: every accepting fold in the session.
-issue70AcceptingRows :: [String]
 issue70AcceptingRows = ["CG11", "CG12", "CG13", "CG14", "CG19"]
 
 canonicalRows :: [String]
 canonicalRows = caRows <> cgRows <> csRows <> issue70Rows
-cgRows = ["CG02", "CG03", "CG04", "CG05"]
 
 data Control
     = Normal
@@ -677,8 +654,9 @@ runLocalRow blueprintPath receiptsDir base dirty row = case row of
 validateRows :: [String] -> IO [String]
 validateRows [] =
     failWith
-        "run needs at least one row: run CA01..CA05, CG02..CG05, or \
-         \the issue #70 rows CG07 CG09 CG10 CG11 CG12 CG13 CG14 CG15 \
+        "run needs at least one row: run CA01..CA05, CG02..CG05, CS \
+         \families, or the issue #70 rows CG07 CG09 CG10 CG11 CG12 \
+             \CG13 CG14 CG15 CG17 CG19 CG20"
 validateRows raw = do
     let bad = [r | r <- raw, r `notElem` canonicalRows]
     unless (null bad) $
