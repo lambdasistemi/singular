@@ -100,9 +100,12 @@ deliberately wrong variant the same run requires to fail.
 | CG14 / CG15 stake_script hook | **could-not-execute — superseded** | the pinned staking credential cannot register: `MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it — the staking validator has only a withdraw handler. Superseded inherited-hook expectations, not pending work (below) |
 
 **Three dispositions, never to be mistaken for one another.**
-**Held** (`held-q002`; CG11, CG12, CG19): executed, and the consumer's
-requirement is unmet while Singular's Lean permits the chain's
-outcome — only the user's Q-002 story-2 ruling can move them.
+**Held** (`held-q002`; CG11, CG12, CG19): executed, with the consumer
+requirements still unmet. CG11 recorded a conflict with the pre-revision
+Singular model; rejecting empty batches is now approved. CG12's
+representation mapping remains under review. CG19 requires the
+operation-specific value-routing repair. The rows move only after the
+required implementation and execution evidence is accepted.
 **Resolved-by-ruling** (CG13): a ruling settled the row's question;
 the observation is retained as defect evidence of the outstanding
 owner gate — never a pass, never an owner-semantics claim.
@@ -121,20 +124,38 @@ at `1d98d51` is `4142f7d6…`. The overwritten pre-repair receipts are
 retained only as evidence of that defect.
 
 **Held rows (Q-002, story 2).** CG11, CG12 and CG19 are executed
-holds, never gaps and never passes: the chain sided with Singular's
-Lean where the consumer's theorem disagrees. Singular's Lean permits
-the empty fold (`foldItems`, `| s, [] => .ok` — `Model.lean`
+holds, never passes. Only CG11 was established as a direct conflict
+between the two model results. In the pinned pre-revision contract,
+Singular's Lean permits the empty fold (`foldItems`, `| s, [] => .ok` — `Model.lean`
 188–189) and pairs each request with exactly one action in its
 `FoldItem`, so a surplus tail is unmodelled; `State` carries no owner
 field and `Action.fold` routes no refunds. `Singular.Statements.fold_iff`
 (`Model.lean` 250–256) makes its five conjuncts sufficient — native
 spend, fold items, net-mint match, representative-mint and
 application-mint witnesses — and no owner is among them: folding is
-permissionless. The consumer's theorems (R5_plugin_pinned,
-R8_empty_fold_refused, R11_contribute_value) require the empty
-batch refused, the 1:1 accounting, the owner/hook pinned across a fold
-and the refund routing (upstream cardano-mpfs-onchain #100/#101 is the
-partition fix). Those requirements stay unmet; the receipts carry
+permissionless. The consumer's theorems require the empty batch refused
+(`R8_empty_fold_refused`) and the 1:1 accounting. Its fold value
+routing is not `R11_contribute_value` — that states the deposit
+amount, and `R11_retract_value` states bond+tip on retract; fold
+routing lives in the consumer's `Registry.processBody`, `Registry.stepFn`
+and the `Cage.delegated_is_registry` equality, and it is
+**operation-specific**: register/revive lock the deposit into a
+checkpoint, goDormant/goConvicted/convict refund to the recorded owner,
+rejection returns the operation bond — guarded by `rejectable` **and**
+`userPostable`, not on demand — and the fold tip goes to the
+folder. A blanket exact-refund repair would preserve the wrong value
+mode and prevent checkpoint funding. Upstream cardano-mpfs-onchain
+`#100`/`#101` are referenced proposals, **not a delivered partition fix**: `#101` is open, and **Singular owns the required local repair**. `R5_plugin_pinned` needs a distinction this page
+previously collapsed. It is about **the plugin, not a registry owner**:
+the bound `Registry.Sys` carries `plugin`, and the consumer's fold checks
+`pl = s.plugin`. So **registry-owner privileges and fields are
+superseded** — the operator ruled Singular has no registry-owner role,
+and there is no owner to pin — but the **application/plugin identity
+correspondence is not waived by that**. The required application and
+native-witness bindings and the policy bindings **remain required**, and
+must be established through the actual ownerless representation; this is
+not a reason to reintroduce `stake_script` or to assert its old mechanism
+is the required one. The remaining requirements stay unmet; the receipts carry
 verdict `held-q002` and the session ends non-zero while anything is
 held — a hold can never read as a pass, and a verdict moves only by
 execution. CG13 is resolved-by-ruling, not a fourth unresolved hold:
@@ -337,11 +358,17 @@ never trims identities — under the same run-enforced 16KB bound.
   removes entirely — the epic-16 observation is preserved as history
   and earns no conformance credit. Nothing else in the inventory has
   ledger evidence without a receipt.
-- **Executed holds, not passes**: CG11, CG12 and CG19 are held
-  (`held-q002`) by execution — the chain's outcome agrees with
-  Singular's Lean and contradicts consumer R5_plugin_pinned,
-  R8_empty_fold_refused and R11_contribute_value (upstream
-  `#100`/`#101`). The consumer requirements stay unmet; a held row is
+- **Executed holds, not passes**: CG11, CG12 and CG19 remain held by
+  execution. CG11 records the pre-revision empty-fold conflict with
+  R8_empty_fold_refused; CG12 still needs a faithful representation
+  mapping; CG19 violates the consumer's required operation-specific fold
+  value routing (`Registry.processBody`, `Registry.stepFn`,
+  `Cage.delegated_is_registry`). `R11_contribute_value` states the
+  deposit amount and is not that fold requirement. Upstream
+  `#100`/`#101` are referenced proposals, **not a delivered partition fix**:
+  `#101` is open, and **Singular owns the required local repair**.
+  `R5_plugin_pinned` concerns the plugin, not a registry owner. The
+  consumer requirements stay unmet; a held row is
   never a pass, and the verdicts move only by execution. CG13's owner
   change is retained as **defect evidence** of the outstanding owner
   gate, resolved-by-ruling, with its defect owned by epic 17.
@@ -411,8 +438,9 @@ visibility, not a crashed run. In CI the step asserts the expected
 debt over the session's actual results (exact receipt set, exact
 verdict per row, held set exactly CG11 CG12 CG19, nothing failing
 against the candidate) — and a green step is a green regression
-check, **not** a fulfilled consumer promise: R5_plugin_pinned,
-R8_empty_fold_refused and R11_contribute_value stay unmet,
+check, **not** a fulfilled consumer promise: R5_plugin_pinned (plugin
+identity, not a registry owner), R8_empty_fold_refused and the
+operation-specific fold value routing stay unmet,
 and strict completion and release stay RED on that debt. Each family ships from a fresh receipts directory —
 receipts from one invocation would otherwise mark the next run dirty.
 Armed controls (each must exit non-zero; all do):
