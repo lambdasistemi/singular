@@ -1,4 +1,4 @@
-use aiken/collection/list.{find, foldl, has, head}
+use aiken/collection/list.{find, foldl, head}
 use aiken/crypto.{VerificationKeyHash}
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, empty, root}
 use aiken/merkle_patricia_forestry as mpf
@@ -9,20 +9,26 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
 use lib.{TokenId, assetName, exactQuantity, tokenFromPolicy}
-use shared.{in_phase1, is_rejectable, readState, validateOwnership}
+use shared.{in_phase1, is_rejectable}
 use types.{
-  Burning, CageDatum, Delete, End, Insert, Migrating, Migration, MintRedeemer,
-  Minting, Modify, Rejected, Request, RequestAction, RequestDatum, State,
-  StateDatum, Update, UpdateAction, UpdateRedeemer,
+  Burning, CageDatum, Delete, End, Insert, Migrating, MintRedeemer, Minting,
+  Modify, Rejected, Request, RequestAction, RequestDatum, State, StateDatum,
+  Update, UpdateAction, UpdateRedeemer,
 }
 
-validator state(previousPolicies: List<PolicyId>) {
+// Ownerless registry (operator ruling NOTE-028/A-003, issue #77 repair):
+// the state validator takes no parameters. The former `previousPolicies`
+// migration allowlist is gone with migration itself.
+validator state() {
   mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) {
     when redeemer is {
       Minting(seed) -> validateMint(seed, policyId, tx)
-      Migrating(migration) ->
-        validateMigration(previousPolicies, migration, policyId, tx)
-      Burning(tokenId) -> validateBurn(tokenId, policyId, tx)
+      // Ownerless registry (operator ruling NOTE-028/A-003, issue #77
+      // repair): migration and burning destroy or re-policy the registry
+      // with no ownerless justification. Both refuse for every party;
+      // the constructors stay for the wire shape.
+      Migrating(_) -> fail
+      Burning(_) -> fail
     }
   }
 
@@ -43,10 +49,11 @@ validator state(previousPolicies: List<PolicyId>) {
     when redeemer is {
       Modify(actions) ->
         validModify(state, input, policyId, cageToken, tx, actions)
-      End -> {
-        expect validateOwnership(state, tx)
-        validateEnd(policyId, cageToken, tx)
-      }
+      // Ownerless registry (operator ruling NOTE-028/A-003, issue #77
+      // repair): termination is refused for every party — there is no
+      // registry-owner role, creator or otherwise. The constructor stays
+      // for the wire shape.
+      End -> fail
       _ -> fail
     }
   }
@@ -54,16 +61,6 @@ validator state(previousPolicies: List<PolicyId>) {
   else(_) {
     fail
   }
-}
-
-fn validateBurn(tokenId: TokenId, policyId: PolicyId, tx: Transaction) {
-  let Transaction { mint, .. } = tx
-  expect exactQuantity(policyId, mint, tokenId, -1)
-  True
-}
-
-fn validateEnd(policyId: PolicyId, tokenId: TokenId, tx: Transaction) {
-  validateBurn(tokenId, policyId, tx)
 }
 
 fn uncons(list: List<a>, cont: fn(a, List<a>) -> b) -> b {
@@ -173,7 +170,7 @@ fn validModify(
   actions: List<RequestAction>,
 ) {
   let Transaction { outputs, inputs, validity_range, fee: tx_fee, .. } = tx
-  let State { root, tip, process_time, retract_time, .. } = state
+  let State { root, tip, process_time, retract_time } = state
   expect Some(output) = head(outputs)
   expect InlineDatum(outState) = output.datum
   expect StateDatum(State {
@@ -181,7 +178,6 @@ fn validModify(
     tip: outTip,
     process_time: outProcessTime,
     retract_time: outRetractTime,
-    ..
   }) = outState
   expect tip == outTip
   expect process_time == outProcessTime
@@ -228,40 +224,15 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
   expect address.Script(targetScriptHash) = output.address.payment_credential
   expect targetScriptHash == policyId
   expect InlineDatum(tokenState) = output.datum
-  expect StateDatum(State { root: tokenRoot, .. }) = tokenState
+  expect
+    StateDatum(State {
+      root: tokenRoot,
+      tip: _tip,
+      process_time: _processTime,
+      retract_time: _retractTime,
+    })
+    = tokenState
   expect tokenRoot == root(empty)
   expect exactQuantity(policyId, output.value, tokenId, 1)
-  True
-}
-
-pub fn validateMigration(
-  previousPolicies: List<PolicyId>,
-  migration: Migration,
-  policyId: PolicyId,
-  tx: Transaction,
-) {
-  let Migration { oldPolicy, tokenId } = migration
-  let Transaction { outputs, mint, inputs, .. } = tx
-  // FR1: oldPolicy must be an audited, allowlisted predecessor.
-  expect has(previousPolicies, oldPolicy)
-  // FR5: mint integrity — burn the old token, mint exactly one new one.
-  expect exactQuantity(oldPolicy, mint, tokenId, -1)
-  expect exactQuantity(policyId, mint, tokenId, 1)
-  // FR2: the predecessor state UTxO carrying (oldPolicy, tokenId) must
-  // actually be spent; the migrated State is read from it.
-  expect Some(predIn) =
-    find(inputs, fn(i) { exactQuantity(oldPolicy, i.output.value, tokenId, 1) })
-  let predState = readState(predIn)
-  // FR3: the predecessor owner authorizes the migration.
-  expect validateOwnership(predState, tx)
-  // FR5: output[0] goes to the new state script and holds the new token.
-  expect Some(output) = head(outputs)
-  expect address.Script(targetScriptHash) = output.address.payment_credential
-  expect targetScriptHash == policyId
-  expect exactQuantity(policyId, output.value, tokenId, 1)
-  expect InlineDatum(tokenState) = output.datum
-  expect StateDatum(outState) = tokenState
-  // FR4: migration is a pure re-policy operation — every field is preserved.
-  expect outState == predState
   True
 }

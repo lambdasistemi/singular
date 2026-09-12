@@ -13,7 +13,7 @@ use lib.{TokenId, assetName, valueFromToken}
 use request
 use state
 use types.{
-  CageDatum, Contribute, End, Insert, Migrating, Migration, MintRedeemer,
+  Burning, CageDatum, Contribute, End, Insert, Migrating, Migration, MintRedeemer,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
   Sweep, UpdateAction, UpdateRedeemer,
 }
@@ -102,12 +102,12 @@ fn spend(
         self,
         tx,
       )
-    _ -> state.state.spend([], maybeDatum, redeemer, self, tx)
+    _ -> state.state.spend(maybeDatum, redeemer, self, tx)
   }
 }
 
 fn mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) -> Bool {
-  state.state.mint(previousPolicies, redeemer, policyId, tx)
+  state.state.mint(redeemer, policyId, tx)
 }
 
 fn endRedeemerData() -> Data {
@@ -130,11 +130,9 @@ fn stateSpendRedeemerData(redeemer: Data) -> Pair<ScriptPurpose, Data> {
   Pair(Spend(testStateRef), redeemer)
 }
 
-// Test constants: a State with the owner "owner" and an empty MPF root
+// Test constants: a State with an empty MPF root
 const state =
   State {
-    owner: "owner",
-    stake_script: None,
     root: root(mpf.empty),
     tip: 0,
     process_time: testProcessTime,
@@ -192,8 +190,6 @@ const output =
     datum: InlineDatum(
       StateDatum(
         State {
-          owner: "new-owner",
-          stake_script: None,
           root: #"484dee386bcb51e285896271048baf6ea4396b2ee95be6fd29a92a0eeb8462ea",
           tip: 0,
           process_time: testProcessTime,
@@ -258,8 +254,6 @@ const minted =
     datum: InlineDatum(
       StateDatum(
         State {
-          owner: "owner",
-          stake_script: None,
           root: root(empty),
           tip: 0,
           process_time: testProcessTime,
@@ -374,8 +368,6 @@ test mint_nonempty_root() fail {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: "nonempty_root",
             tip: 0,
             process_time: testProcessTime,
@@ -687,156 +679,42 @@ test modify_without_owner_succeeds() {
   )
 }
 
-/// A cage configured with a staking script can be modified by any submitter
-/// when the transaction withdraws through that script credential.
-test modify_with_stake_script_withdrawal() {
-  let stake_state = State { ..state, stake_script: Some(testStakeScript) }
-  let stake_input =
-    Input {
-      output_reference: testStateRef,
-      output: Output {
-        address: testScriptAddress,
-        value: testValue,
-        datum: InlineDatum(StateDatum(stake_state)),
-        reference_script: None,
-      },
-    }
-  let stake_output =
-    Output {
-      ..output,
-      datum: InlineDatum(
-        StateDatum(
-          State {
-            ..stake_state,
-            owner: "new-owner",
-            stake_script: Some(testStakeScript),
-            root: #"484dee386bcb51e285896271048baf6ea4396b2ee95be6fd29a92a0eeb8462ea",
-          },
-        ),
-      ),
-    }
-  spend(
-    Some(StateDatum(stake_state)),
-    Modify([UpdateAction([])]),
-    testStateRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [stake_output],
-      extra_signatories: ["owner"],
-      withdrawals: [Pair(address.Script(testStakeScript), 1)],
-      inputs: [stake_input, request],
-    },
-  )
-}
 
-/// Modify ignores the stake-script hook (re-cut under issue #79; was
-/// `modify_with_stake_script_no_withdrawal`, which required a refusal
-/// when the withdrawal was absent). The repaired `Modify` path never
-/// consults `validateOwnership` — neither the owner nor the stake-script
-/// withdrawal — so this transaction is accepted. That is the current
-/// Aiken-level meaning of the hook on `Modify`, not a ruling on its
-/// ledger reachability: epic 18 found the stake credential may be
-/// unreachable on a ledger (`staking.ak` serves only `withdraw`), an
-/// open question owned by a separate slice sequenced after this one.
-/// Do not read this test as approval to add a stake or owner
-/// prerequisite back to permissionless `Modify`.
-test modify_ignores_stake_script_hook() {
-  let stake_state = State { ..state, stake_script: Some(testStakeScript) }
-  let stake_input =
-    Input {
-      output_reference: testStateRef,
-      output: Output {
-        address: testScriptAddress,
-        value: testValue,
-        datum: InlineDatum(StateDatum(stake_state)),
-        reference_script: None,
-      },
-    }
-  let stake_output =
-    Output {
-      ..output,
-      datum: InlineDatum(
-        StateDatum(
-          State {
-            ..stake_state,
-            owner: "new-owner",
-            stake_script: Some(testStakeScript),
-            root: #"484dee386bcb51e285896271048baf6ea4396b2ee95be6fd29a92a0eeb8462ea",
-          },
-        ),
-      ),
-    }
+/// Owner-signed End with a staking withdrawal — refused: termination is
+/// refused for every party under the ownerless ruling, stake or no stake.
+test end_stake_withdrawal_refuses() fail {
   spend(
-    Some(StateDatum(stake_state)),
-    Modify([UpdateAction([])]),
-    testStateRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: phase1Range,
-      outputs: [stake_output],
-      extra_signatories: ["owner"],
-      inputs: [stake_input, request],
-    },
-  )
-}
-
-/// End succeeds when stake_script is Some and the transaction supplies
-/// both the owner signature and the required staking withdrawal.
-test end_with_stake_script() {
-  let stake_state = State { ..state, stake_script: Some(testStakeScript) }
-  let stake_input =
-    Input {
-      output_reference: testStateRef,
-      output: Output {
-        address: testScriptAddress,
-        value: testValue,
-        datum: InlineDatum(StateDatum(stake_state)),
-        reference_script: None,
-      },
-    }
-  spend(
-    Some(StateDatum(stake_state)),
+    stateDatum,
     End,
     testStateRef,
     Transaction {
       ..transaction.placeholder,
       extra_signatories: ["owner"],
       withdrawals: [Pair(address.Script(testStakeScript), 1)],
-      inputs: [stake_input],
+      inputs: [update],
       mint: burn_value,
     },
   )
 }
 
-/// End must fail when stake_script is Some but the withdrawal is absent.
-test end_with_stake_script_no_withdrawal() fail {
-  let stake_state = State { ..state, stake_script: Some(testStakeScript) }
-  let stake_input =
-    Input {
-      output_reference: testStateRef,
-      output: Output {
-        address: testScriptAddress,
-        value: testValue,
-        datum: InlineDatum(StateDatum(stake_state)),
-        reference_script: None,
-      },
-    }
+/// Owner-signed End without withdrawal — refused: same ruling, no
+/// signature authorizes termination.
+test end_owner_signed_no_withdrawal_refuses() fail {
   spend(
-    Some(StateDatum(stake_state)),
+    stateDatum,
     End,
     testStateRef,
     Transaction {
       ..transaction.placeholder,
       extra_signatories: ["owner"],
-      inputs: [stake_input],
+      inputs: [update],
       mint: burn_value,
     },
   )
 }
 
 /// The output must stay at the same script address as the input.
-/// Without this check, the owner could steal the token by redirecting
+/// Without this check, anyone could steal the token by redirecting
 /// the output to a different script they control.
 test modify_wrong_address() fail {
   let bad_output =
@@ -883,8 +761,6 @@ test modify_no_requests() {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: root(empty),
             tip: 0,
             process_time: testProcessTime,
@@ -943,8 +819,6 @@ test modify_skip_other_token() {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: root(empty),
             tip: 0,
             process_time: testProcessTime,
@@ -1012,8 +886,6 @@ test modify_wrong_root() fail {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "new-owner",
-            stake_script: None,
             root: "wrong_root_hash",
             tip: 0,
             process_time: testProcessTime,
@@ -1092,9 +964,11 @@ test modify_output_must_hold_token() fail {
 
 const burn_value = from_asset("policy_id", testToken.assetName, -1)
 
-/// Happy path: the cage owner burns the token, destroying the cage.
-/// Requires the owner's signature and the token in the mint field with qty -1.
-test end_happy() {
+/// Owner-signed End — refused (operator ruling NOTE-028/A-003, issue #77
+/// repair): there is no registry-owner role, so no signature authorizes
+/// termination. Neither the registry's creator nor any other party can
+/// terminate through `End`.
+test end_owner_signed_refuses() fail {
   spend(
     stateDatum,
     End,
@@ -1147,8 +1021,6 @@ test end_wrong_token_in_mint() fail {
 test modify_rejects_foreign_policy_same_asset() fail {
   let fake_state =
     State {
-      owner: "attacker",
-      stake_script: None,
       root: root(empty),
       tip: 0,
       process_time: testProcessTime,
@@ -1192,8 +1064,6 @@ test modify_rejects_foreign_policy_same_asset() fail {
 test end_rejects_foreign_policy_same_asset() fail {
   let fake_state =
     State {
-      owner: "attacker",
-      stake_script: None,
       root: root(empty),
       tip: 0,
       process_time: testProcessTime,
@@ -1369,8 +1239,6 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
 test prop_modify_no_owner_required(signer via owner_fuzzer()) {
   let s =
     State {
-      owner: "the_real_owner_key_aaaaaaaaaa",
-      stake_script: None,
       root: root(empty),
       tip: 0,
       process_time: testProcessTime,
@@ -1383,8 +1251,6 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "the_real_owner_key_aaaaaaaaaa",
-            stake_script: None,
             root: root(empty),
             tip: 0,
             process_time: testProcessTime,
@@ -1442,8 +1308,6 @@ test prop_mint_roundtrip(
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: root(empty),
             tip: 0,
             process_time: testProcessTime,
@@ -1486,12 +1350,6 @@ const old_policy = "old_policy_id"
 
 const new_policy = "new_policy_id"
 
-// The `mint` test wrapper applies this fixed allowlist to every mint-path
-// call. `old_policy` is the only audited predecessor; migrations must spend
-// a genuine predecessor UTxO under it, so plain `Minting` tests (which never
-// reach `validateMigration`) are unaffected by its presence.
-const previousPolicies = [old_policy]
-
 const migrate_token = TokenId { assetName: assetName(testSeed) }
 
 const migrate_redeemer =
@@ -1505,8 +1363,6 @@ const migrate_mint =
 // state exactly as-is (field preservation), authorized by its own owner.
 const migrate_predecessor_state =
   State {
-    owner: "owner",
-    stake_script: None,
     root: "nonempty_root_hash_aaaaaaaaa",
     tip: 0,
     process_time: testProcessTime,
@@ -1535,11 +1391,11 @@ const migrate_output =
     reference_script: None,
   }
 
-/// Happy path: migrate a cage from old_policy to new_policy.
-/// Burns old token (-1) and mints new token (+1) atomically, spending the
-/// allowlisted predecessor state input (owner-signed) and preserving every
-/// field of its `State` in the migrated output.
-test canMigrate() {
+/// Owner-signed migration — refused (operator ruling NOTE-028/A-003, issue
+/// #77 repair): migration is a destructive re-policying with no ownerless
+/// justification. Neither the registry's creator nor any other party can
+/// migrate through `Migrating`.
+test migrating_owner_signed_refuses() fail {
   mint(
     Migrating(migrate_redeemer),
     new_policy,
@@ -1696,8 +1552,8 @@ test migrate_no_predecessor_input() fail {
   )
 }
 
-/// FR3: the predecessor `State`'s owner must sign; an unsigned migration of
-/// an otherwise-genuine predecessor is rejected.
+/// Unsigned migration — refused under the wholesale `Migrating` refusal
+/// (formerly FR3 owner-signature coverage; the branch refuses regardless).
 test migrate_missing_owner_signature() fail {
   mint(
     Migrating(migrate_redeemer),
@@ -1706,29 +1562,6 @@ test migrate_missing_owner_signature() fail {
       ..transaction.placeholder,
       inputs: [migrate_predecessor_input],
       outputs: [migrate_output],
-      mint: migrate_mint,
-    },
-  )
-}
-
-/// FR4: the migrated output must preserve every field of the predecessor
-/// `State`. Changing `owner` is exactly the exploit's forged-ownership move.
-test migrate_changes_owner() fail {
-  let bad_output =
-    Output {
-      ..migrate_output,
-      datum: InlineDatum(
-        StateDatum(State { ..migrate_predecessor_state, owner: "attacker" }),
-      ),
-    }
-  mint(
-    Migrating(migrate_redeemer),
-    new_policy,
-    Transaction {
-      ..transaction.placeholder,
-      extra_signatories: ["owner"],
-      inputs: [migrate_predecessor_input],
-      outputs: [bad_output],
       mint: migrate_mint,
     },
   )
@@ -1774,9 +1607,7 @@ test migrate_forged_token_cannot_sweep() fail {
   let forged_output =
     Output {
       ..migrate_output,
-      datum: InlineDatum(
-        StateDatum(State { ..migrate_predecessor_state, owner: "attacker" }),
-      ),
+      datum: InlineDatum(StateDatum(migrate_predecessor_state)),
     }
   mint(
     Migrating(forged_redeemer),
@@ -1801,8 +1632,6 @@ const testFee = 500_000
 
 const feeState =
   State {
-    owner: "owner",
-    stake_script: None,
     root: root(mpf.empty),
     tip: testFee,
     process_time: testProcessTime,
@@ -1852,8 +1681,6 @@ const feeStateOutput =
     datum: InlineDatum(
       StateDatum(
         State {
-          owner: "new-owner",
-          stake_script: None,
           root: #"484dee386bcb51e285896271048baf6ea4396b2ee95be6fd29a92a0eeb8462ea",
           tip: testFee,
           process_time: testProcessTime,
@@ -1880,8 +1707,6 @@ const capturedStateValue = testValue |> assets.merge(from_lovelace(2_000_000))
 
 const capturedRefundState =
   State {
-    owner: "owner",
-    stake_script: None,
     root: root(mpf.empty),
     tip: capturedRefundTip,
     process_time: testProcessTime,
@@ -2019,8 +1844,6 @@ test modify_wrong_refund_address() fail {
 test modify_zero_fee() {
   let zf_state =
     State {
-      owner: "owner",
-      stake_script: None,
       root: root(mpf.empty),
       tip: 0,
       process_time: testProcessTime,
@@ -2064,8 +1887,6 @@ test modify_zero_fee() {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "new-owner",
-            stake_script: None,
             root: #"484dee386bcb51e285896271048baf6ea4396b2ee95be6fd29a92a0eeb8462ea",
             tip: 0,
             process_time: testProcessTime,
@@ -2137,7 +1958,7 @@ test modify_fee_mismatch() fail {
 /// End succeeds even when the mint field contains additional policies beyond
 /// the cage's own burn. This supports atomic migration where a new token is
 /// minted under a different policy in the same transaction.
-test end_with_extra_mint_policy() {
+test end_with_extra_mint_policy() fail {
   let extra_mint =
     from_asset("policy_id", testToken.assetName, -1)
       |> assets.merge(from_asset("other_policy", "other_asset", 1))
@@ -2186,8 +2007,6 @@ const rejectStateOutput =
     datum: InlineDatum(
       StateDatum(
         State {
-          owner: "owner",
-          stake_script: None,
           root: root(mpf.empty),
           tip: testFee,
           process_time: testProcessTime,
@@ -2315,8 +2134,6 @@ test reject_root_changes() fail {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: "different_root_aaaaaaaaaaaaa",
             tip: testFee,
             process_time: testProcessTime,
@@ -2489,9 +2306,11 @@ const sweepFakeStateInput =
     },
   }
 
-/// Happy path: owner sweeps a no-datum garbage UTxO, with the legitimate
-/// state UTxO included as a reference input.
-test sweep_no_datum() {
+/// Owner-signed sweep — refused (operator ruling NOTE-028/A-003, issue #77
+/// repair): seizing UTxOs at the cage address is an owner operation and
+/// there is no owner. Neither the registry's creator nor any other party
+/// can seize through `Sweep`.
+test sweep_owner_signed_refuses() fail {
   spend(
     None,
     Sweep(testStateRef),
@@ -2505,8 +2324,9 @@ test sweep_no_datum() {
   )
 }
 
-/// Happy path: owner sweeps a wrong-token RequestDatum garbage UTxO.
-test sweep_wrong_token_request() {
+/// Wrong-token sweep — refused under the same ruling (shape no longer
+/// matters; every `Sweep` refuses).
+test sweep_wrong_token_request() fail {
   spend(
     Some(sweepWrongTokenRequest),
     Sweep(testStateRef),
@@ -2520,8 +2340,8 @@ test sweep_wrong_token_request() {
   )
 }
 
-/// Happy path: owner sweeps a fake-state UTxO whose value carries no cage NFT.
-test sweep_fake_state_no_nft() {
+/// Fake-state sweep — refused under the same ruling.
+test sweep_fake_state_no_nft() fail {
   spend(
     Some(rawStateDatum),
     Sweep(testStateRef),
@@ -2535,9 +2355,9 @@ test sweep_fake_state_no_nft() {
   )
 }
 
-/// Happy path: Sweep bundled with Modify in the same tx — the state UTxO is
-/// in `tx.inputs` (being spent by Modify), not in reference_inputs.
-test sweep_alongside_modify() {
+/// Sweep bundled with Modify — refused under the same ruling (bundling
+/// changes nothing; every `Sweep` refuses).
+test sweep_alongside_modify() fail {
   let bundled_state_output =
     Output {
       address: testScriptAddress,
@@ -2598,8 +2418,7 @@ test sweep_fake_state_ref() fail {
 /// ignored by policy-id discovery instead of reclaimed by the protocol.
 test state_sweep_rejected() fail {
   state.state.spend(
-    [],
-    Some(rawStateDatum),
+        Some(rawStateDatum),
     Sweep(testStateRef),
     testStateRef,
     Transaction {
@@ -2627,9 +2446,9 @@ test sweep_legitimate_request() fail {
   )
 }
 
-/// A matching-token request with the wrong tip can never be processed by
-/// state Modify, so the owner may sweep it from the request address.
-test sweep_mismatched_tip_request() {
+/// A mismatched-tip request — refused under the wholesale `Sweep`
+/// refusal (the spam-collection premise is gone with the owner).
+test sweep_mismatched_tip_request() fail {
   let mismatch_request =
     RequestDatum(
       Request {
@@ -2664,9 +2483,8 @@ test sweep_mismatched_tip_request() {
   )
 }
 
-/// A matching-token request that cannot cover the agreed tip is also
-/// malformed and sweepable.
-test sweep_underfunded_matching_request() {
+/// An underfunded request — refused under the same wholesale refusal.
+test sweep_underfunded_matching_request() fail {
   let underfunded_request =
     RequestDatum(
       Request {
@@ -2719,8 +2537,7 @@ const zeroRequestStateOutput =
     reference_script: None,
   }
 
-/// Happy path: Modify with no requests, root unchanged. Owner ticks the state
-/// (e.g. so a paired Sweep can run alongside).
+/// Modify with no requests, root unchanged.
 test modify_zero_requests_happy() {
   spend(
     stateDatum,
@@ -2745,8 +2562,6 @@ test modify_zero_requests_root_changes() fail {
       datum: InlineDatum(
         StateDatum(
           State {
-            owner: "owner",
-            stake_script: None,
             root: "different_root_aaaaaaaaaaaaa",
             tip: 0,
             process_time: testProcessTime,
@@ -2804,3 +2619,26 @@ test wrong_request_parameter_rejects_this_cage_token() fail {
     },
   )
 }
+
+// ===========================================================================
+// Ownerless registry (operator ruling NOTE-028/A-003, issue #77 repair)
+// ===========================================================================
+//
+// Destructive paths executable before the repair now refuse: neither the
+// registry's creator nor any other party can terminate, migrate or seize
+// registry authority through any inherited operation.
+
+/// Burning the caged token through the mint purpose — refused: it destroys
+/// the registry without touching End at all. Neither the registry's
+/// creator nor any other party can terminate through `Burning`.
+test burning_token_refuses() fail {
+  mint(
+    Burning(testToken),
+    "policy_id",
+    Transaction {
+      ..transaction.placeholder,
+      mint: burn_value,
+    },
+  )
+}
+

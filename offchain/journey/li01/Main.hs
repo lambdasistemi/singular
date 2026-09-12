@@ -163,7 +163,6 @@ import Cardano.Ledger.TxIn (TxId (..))
 
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
-    applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
@@ -450,7 +449,7 @@ runLi01 control si stateBytes requestBytes = do
         -- request script is named by derivation only.
         let unappliedHex =
                 hex (scriptHashBytes (computeScriptHash stateBytes))
-            appliedBytes = applyPreviousPolicies [] stateBytes
+            appliedBytes = stateBytes
             appliedHash = computeScriptHash appliedBytes
             appliedHex = hex (scriptHashBytes appliedHash)
             tokenId = TokenId (AssetName (SBS.toShort seedName))
@@ -483,7 +482,6 @@ runLi01 control si stateBytes requestBytes = do
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
                     , network = Testnet
-                    , cfgStakeScript = Nothing
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
         -- The naming checkpoint fixture: the four-field datum the
@@ -615,10 +613,7 @@ buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
         stateDatum =
             StateDatum
                 OnChainTokenState
-                    { stateOwner =
-                        BuiltinByteString (addrKeyHashBytes genesisAddr)
-                    , stateStakeScript = Nothing
-                    , stateRoot = OnChainRoot emptyRoot
+                    { stateRoot = OnChainRoot emptyRoot
                     , stateMaxFee =
                         let Coin c = defaultTip cfg in c
                     , stateProcessTime = defaultProcessTime cfg

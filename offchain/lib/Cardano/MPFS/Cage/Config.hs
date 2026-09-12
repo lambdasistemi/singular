@@ -34,12 +34,9 @@ flat-encoded request validator before applying
 is the state script hash and therefore the state
 policy ID. The 'cageSeed' records the
 @OutputReference@ consumed by boot minting.
-
-When 'cfgStakeScript' is @Just (bytes, hash)@, the
-boot datum carries @stake_script = Some(hash)@, and
-every Modify\/End transaction must include a
-withdraw-zero from the corresponding staking
-credential.
+(Ownerless registry, ruling NOTE-028/A-003: no staking
+surface remains; the former @cfgStakeScript@ hook is
+gone with the owner role.)
 -}
 data CageConfig = CageConfig
     { cageScriptBytes :: !ShortByteString
@@ -58,10 +55,4 @@ data CageConfig = CageConfig
     -- ^ Default oracle tip for newly booted tokens
     , network :: !Network
     -- ^ Target network (Mainnet or Testnet)
-    , cfgStakeScript :: !(Maybe (ShortByteString, ScriptHash))
-    {- ^ Optional staking script: bytes + hash.
-    When set, boot stores the hash in
-    @stake_script@ and Modify\/End include a
-    withdraw-zero from the staking credential.
-    -}
     }

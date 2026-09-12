@@ -70,12 +70,10 @@ library
     Cardano.MPFS.Cage.Trie.Pure
     Cardano.MPFS.Cage.Trie.PureManager
     Cardano.MPFS.Cage.TxBuilder.Boot
-    Cardano.MPFS.Cage.TxBuilder.End
     Cardano.MPFS.Cage.TxBuilder.Internal
     Cardano.MPFS.Cage.TxBuilder.Reject
     Cardano.MPFS.Cage.TxBuilder.Request
     Cardano.MPFS.Cage.TxBuilder.Retract
-    Cardano.MPFS.Cage.TxBuilder.Sweep
     Cardano.MPFS.Cage.TxBuilder.Update
     Cardano.MPFS.Cage.Types
     Naming.Datum
@@ -339,10 +337,12 @@ executable repair-rows
   hs-source-dirs:   journey/repair
   main-is:          Main.hs
   build-depends:
+    , aeson
     , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
+    , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
@@ -388,15 +388,12 @@ test-suite e2e-tests
     , async
     , base
     , bytestring
-    , cardano-ledger-alonzo
     , cardano-ledger-api
-    , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-mpfs-cage
     , cardano-node-clients
     , cardano-node-clients:devnet
-    , cardano-strict-containers
     , cardano-tx-tools:tx-build
     , containers
     , hspec

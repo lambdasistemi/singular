@@ -117,14 +117,10 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 {- | On-chain token state. Matches Aiken
-@types\/State@ (6 fields).
+@types\/State@ (4 fields, ownerless per ruling NOTE-028/A-003).
 -}
 data OnChainTokenState = OnChainTokenState
-    { stateOwner :: !BuiltinByteString
-    -- ^ Payment key hash of the token owner (28 bytes)
-    , stateStakeScript :: !(Maybe BuiltinByteString)
-    -- ^ Optional staking script hash authorizing owner actions (28 bytes)
-    , stateRoot :: !OnChainRoot
+    { stateRoot :: !OnChainRoot
     -- ^ Current Merkle root of the token's trie
     , stateMaxFee :: !Integer
     -- ^ Oracle tip (lovelace) charged per request
@@ -285,25 +281,6 @@ bbsFromD :: Data -> Maybe BuiltinByteString
 bbsFromD (B bs) = Just (BuiltinByteString bs)
 bbsFromD _ = Nothing
 
--- | Encode an Aiken @Option<ScriptHash>@ value.
-maybeBbsToD :: Maybe BuiltinByteString -> Data
-maybeBbsToD (Just bbs) = Constr 0 [bbsToD bbs]
-maybeBbsToD Nothing = Constr 1 []
-
--- | Decode an Aiken @Option<ScriptHash>@ value.
-maybeBbsFromD :: Data -> Maybe (Maybe BuiltinByteString)
-maybeBbsFromD (Constr 0 [x]) = Just <$> bbsFromD x
-maybeBbsFromD (Constr 1 []) = Just Nothing
-maybeBbsFromD _ = Nothing
-
--- | Decode an Aiken @Option<ScriptHash>@ or fail.
-unsafeMaybeBbsFromD :: Data -> Maybe BuiltinByteString
-unsafeMaybeBbsFromD (Constr 0 [B bs]) = Just (BuiltinByteString bs)
-unsafeMaybeBbsFromD (Constr 1 []) = Nothing
-unsafeMaybeBbsFromD _ =
-    error
-        "unsafeFromBuiltinData: Option<ScriptHash>"
-
 -- ---------------------------------------------------------
 -- ToData / FromData instances
 -- ---------------------------------------------------------
@@ -448,9 +425,7 @@ instance ToData OnChainTokenState where
         mkD $
             Constr
                 0
-                [ bbsToD stateOwner
-                , maybeBbsToD stateStakeScript
-                , unD (toBuiltinData stateRoot)
+                [ unD (toBuiltinData stateRoot)
                 , I stateMaxFee
                 , I stateProcessTime
                 , I stateRetractTime
@@ -458,9 +433,7 @@ instance ToData OnChainTokenState where
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [own, stake, r, I mf, I pt, I rt] -> do
-            stateOwner <- bbsFromD own
-            stateStakeScript <- maybeBbsFromD stake
+        Constr 0 [r, I mf, I pt, I rt] -> do
             stateRoot <- fromBuiltinData (mkD r)
             let stateMaxFee = mf
                 stateProcessTime = pt
@@ -470,13 +443,9 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [B own, stake, r, I mf, I pt, I rt] ->
+        Constr 0 [r, I mf, I pt, I rt] ->
             OnChainTokenState
-                { stateOwner =
-                    BuiltinByteString own
-                , stateStakeScript =
-                    unsafeMaybeBbsFromD stake
-                , stateRoot =
+                { stateRoot =
                     unsafeFromBuiltinData (mkD r)
                 , stateMaxFee = mf
                 , stateProcessTime = pt

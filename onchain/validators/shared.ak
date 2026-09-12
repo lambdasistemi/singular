@@ -1,28 +1,9 @@
-use aiken/collection/list.{find, has}
-use aiken/collection/pairs
+use aiken/collection/list.{find}
 use aiken/interval
-use cardano/address.{Script}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use lib.{TokenId, exactQuantity}
 use types.{CageDatum, Request, State, StateDatum}
-
-/// Validate that the state owner has signed the transaction.
-pub fn validateOwnership(state: State, tx: Transaction) {
-  let Transaction { extra_signatories, withdrawals, .. } = tx
-  let State { owner, stake_script, .. } = state
-  when stake_script is {
-    None -> {
-      expect has(extra_signatories, owner)
-      True
-    }
-    Some(script) -> {
-      expect has(extra_signatories, owner)
-      expect pairs.has_key(withdrawals, Script(script))
-      True
-    }
-  }
-}
 
 /// Read the State from a transaction input's inline datum.
 pub fn readState(input: Input) -> State {

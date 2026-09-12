@@ -56,9 +56,6 @@ import Cardano.Ledger.Mary.Value (
  )
 import Cardano.Ledger.TxIn (TxIn)
 import Data.List (find)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Config (
@@ -129,22 +126,12 @@ bootTokenImpl cfg prov addr = do
                 $ Map.singleton
                     assetName
                     1
+    -- Ownerless registry (ruling NOTE-028/A-003): the state datum carries
+    -- no owner and no stake script.
     let stateDatum =
             StateDatum
                 OnChainTokenState
-                    { stateOwner =
-                        BuiltinByteString
-                            ( addrKeyHashBytes
-                                addr
-                            )
-                    , stateStakeScript =
-                        fmap
-                            ( BuiltinByteString
-                                . scriptHashBytes
-                                . snd
-                            )
-                            (cfgStakeScript cfg)
-                    , stateRoot =
+                    { stateRoot =
                         OnChainRoot emptyRoot
                     , stateMaxFee =
                         let Coin c =

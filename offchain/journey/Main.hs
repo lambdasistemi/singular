@@ -11,14 +11,16 @@ node and verifies it, one line per step:
   boot a cage, submit a request, prove the key absent, apply
   the request, prove the key present with the expected value,
   reject a false claim, read the resulting state back, then
-  submit four transactions the on-chain validators must
+  submit three transactions the on-chain validators must
   refuse — a forged state-token identity, a tampered
-  certified output, a dropped proof witness, an ownerless End —
+  certified output and a dropped proof witness —
   and prove the authenticated state took no trace from them.
+  (`End` refuses for every party under the ownerless ruling;
+  that evidence lives in repair-rows.)
 
-The four negative cases are MPFS cage negative cases. They
-exercise the imported validators' identity, certified-output,
-witness and End-ownership guards; no Singular naming behaviour
+The three negative cases are MPFS cage negative cases. They
+exercise the imported validators' identity, certified-output and
+witness guards; no Singular naming behaviour
 exists in this runner.
 
 Verification follows D-013: the library builds proofs
@@ -90,7 +92,6 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     outputsTxBodyL,
-    reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
@@ -105,7 +106,6 @@ import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import PlutusTx.IsData.Class (FromData (..))
 
 import Cardano.MPFS.Cage.Blueprint (
-    applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
@@ -125,7 +125,6 @@ import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
@@ -204,7 +203,7 @@ import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
+import PlutusTx.Builtins.Internal (BuiltinData (..))
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -355,7 +354,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
     checkPinnedUnapplied si "staking.staking" unappliedStaking
     -- Derivation: apply this instance's parameters to the
     -- unapplied code and hash the result.
-    let stateHash = computeScriptHash (applyPreviousPolicies [] rawState)
+    let stateHash = computeScriptHash (rawState)
         stateHex = hashHex stateHash
         stateParams = "previousPolicies=[]"
         tokenName = let TokenId (AssetName an) = tid in fromShort an
@@ -680,8 +679,6 @@ stepReadBack cfg prov tid bootRoot = do
             <> show (stateProcessTime st)
             <> " retract_window_ms="
             <> show (stateRetractTime st)
-            <> " stake_script="
-            <> maybe "none" (\(BuiltinByteString bs) -> hex bs) (stateStakeScript st)
         )
     pure st
 
@@ -830,19 +827,10 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         stateScriptHash
         submit
         (dropModifyProof pp baseTx)
-    -- Case 4, re-cut under issue #79: the owner-signature refusal the
-    -- old Case 3 asserted on the Modify path, retargeted to `End`.
-    -- `End` keeps `validateOwnership` (untouched by the repair), so an
-    -- ownerless `End` spend must still be refused by
-    -- `state.state.spend`, for that reason. After the repair this is
-    -- the only owner-authorization negative control.
-    unsignedEnd <- endTokenImpl cfg prov tid genesisAddr
-    expectRejected
-        "reject-end-without-owner"
-        "state.state.spend validateOwnership: End without the state owner's signature is refused"
-        stateScriptHash
-        submit
-        (dropRequiredSigners unsignedEnd)
+    -- No Case 4: the old owner-authorization negative control (`End`
+    -- without owner signature) is gone with the owner role itself.
+    -- `End` refuses for every party now; that evidence lives in
+    -- repair-rows (ownerless-end, receipted) instead of here.
     -- Positive control: the rejected transactions left no
     -- trace. The authenticated state is re-read from the
     -- chain and compared against the post-apply state.
@@ -856,7 +844,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         (length reqAfter == 1)
     emit
         "reject-control"
-        ( "authenticated state unchanged after 4 rejected transactions"
+        ( "authenticated state unchanged after 3 rejected transactions"
             <> " root=0x"
             <> hex (unOnChainRoot (stateRoot stateAfter))
             <> " request_utxos="
@@ -987,16 +975,6 @@ tamperStateOutputRoot expected tampered tx =
                     .~ mkInlineDatum
                         (toPlcData (StateDatum s{stateRoot = tampered}))
         _ -> out
-
-{- | Drop every required signer from the body: the ledger no
-longer demands the owner's vkey witness, but the state
-validator still does. Since the issue-#79 re-cut this helper
-serves the `End` case only: an ownerless `Modify` is now
-rightly accepted.
--}
-dropRequiredSigners :: ConwayTx -> ConwayTx
-dropRequiredSigners tx =
-    tx & bodyTxL . reqSignerHashesTxBodyL .~ Set.empty
 
 {- | Drop the Merkle proof witness from the Modify action, keeping
 the action shape: `UpdateAction` with an empty proof list. The
@@ -1249,7 +1227,7 @@ cageCfg ::
     OnChainTxOutRef ->
     CageConfig
 cageCfg stateBytes requestBytes seed =
-    let appliedStateBytes = applyPreviousPolicies [] stateBytes
+    let appliedStateBytes = stateBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
@@ -1260,7 +1238,6 @@ cageCfg stateBytes requestBytes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , network = Testnet
-            , cfgStakeScript = Nothing
             }
 
 {- | Extract the 'TokenId' from a boot transaction's mint

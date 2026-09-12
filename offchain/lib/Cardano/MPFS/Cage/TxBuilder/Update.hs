@@ -31,11 +31,7 @@ import Data.Time.Clock.POSIX (
 import Data.Void (Void)
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Ledger.Address (
-    AccountAddress (..),
-    AccountId (..),
-    Addr,
- )
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
 import Cardano.Ledger.Api.Tx (
     bodyTxL,
@@ -58,17 +54,7 @@ import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Credential (
-    Credential (ScriptHashObj),
- )
-import Cardano.Ledger.Keys (
-    KeyHash,
-    KeyRole (..),
- )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.Config (
     CageConfig (..),
@@ -119,7 +105,7 @@ updateTokenImpl cfg prov tm tid addr = do
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         computeProofs tm tid reqUtxos
-    let (oldState, newStateOut, script, ownerKh) =
+    let (oldState, newStateOut, script) =
             prepareState
                 cfg
                 stateOut
@@ -140,7 +126,6 @@ updateTokenImpl cfg prov tm tid addr = do
                 newStateOut
                 script
                 requestScript
-                ownerKh
                 proofs
                 upperSlot
     result <-
@@ -225,11 +210,7 @@ prepareState ::
     CageConfig ->
     TxOut ConwayEra ->
     Root ->
-    ( OnChainTokenState
-    , TxOut ConwayEra
-    , Script ConwayEra
-    , KeyHash Guard
-    )
+    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareState cfg stateOut newRoot =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -240,10 +221,6 @@ prepareState cfg stateOut newRoot =
                     error
                         "updateToken: invalid \
                         \state datum"
-        OnChainTokenState
-            { stateOwner =
-                BuiltinByteString ownerBs
-            } = oldState
         newStateDatum =
             StateDatum
                 oldState
@@ -259,8 +236,7 @@ prepareState cfg stateOut newRoot =
                     .~ mkInlineDatum
                         (toPlcData newStateDatum)
         script = mkCageScript cfg
-        ownerKh = addrWitnessKeyHash ownerBs
-     in (oldState, newStateOut, script, ownerKh)
+     in (oldState, newStateOut, script)
 
 -- | Compute the validity upper slot.
 computeUpperSlot ::
@@ -334,7 +310,6 @@ buildProgram ::
     TxOut ConwayEra ->
     Script ConwayEra ->
     Script ConwayEra ->
-    KeyHash Guard ->
     [[ProofStep]] ->
     SlotNo ->
     Tx.TxBuild NoCtx Void ()
@@ -349,7 +324,6 @@ buildProgram
     newStateOut
     script
     requestScript
-    ownerKh
     proofs
     upperSlot = do
         let stateRef = txInToRef stateIn
@@ -405,22 +379,8 @@ buildProgram
             (zip [0 ..] reqUtxos)
         Tx.attachScript script
         Tx.attachScript requestScript
-        Tx.requireSignature ownerKh
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
-        case cfgStakeScript cfg of
-            Nothing -> pure ()
-            Just (stakeBytes, stakeHash) -> do
-                let stakeScript =
-                        scriptFromBytes
-                            "updateToken.stakeScript"
-                            stakeBytes
-                    rewardAcct =
-                        AccountAddress
-                            (network cfg)
-                            (AccountId (ScriptHashObj stakeHash))
-                Tx.withdrawScript rewardAcct (Coin 0) (0 :: Integer)
-                Tx.attachScript stakeScript
 
 -- | Process a single request.
 processRequest ::

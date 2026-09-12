@@ -13,12 +13,8 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
-import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, isNothing)
-import Data.Ord (Down (..))
-import Data.Sequence.Strict qualified as StrictSeq
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((^.))
 import System.Environment (lookupEnv)
 import Test.Hspec (
     Spec,
@@ -29,39 +25,19 @@ import Test.Hspec (
     shouldSatisfy,
  )
 
-import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (
     bodyTxL,
-    mkBasicTx,
     txIdTx,
  )
-import Cardano.Ledger.Api.Tx.Body (
-    mintTxBodyL,
-    mkBasicTxBody,
-    outputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    mkBasicTxOut,
- )
-import Cardano.Ledger.BaseTypes (
-    Inject (..),
-    Network (..),
-    TxIx (..),
- )
+import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Mary.Value (
     MultiAsset (..),
  )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-import Cardano.Ledger.Alonzo.Scripts (AsIx)
-import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose)
-import Cardano.Ledger.Hashes (ScriptHash)
-import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
 import Cardano.MPFS.Cage.Blueprint (
-    applyPreviousPolicies,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -70,7 +46,6 @@ import Cardano.MPFS.Cage.Config (
  )
 import Cardano.MPFS.Cage.Ledger (
     Coin (..),
-    ConwayEra,
     TokenId (..),
  )
 import Cardano.MPFS.Cage.Provider qualified as Cage
@@ -81,15 +56,10 @@ import Cardano.MPFS.Cage.Trie.PureManager (
 import Cardano.MPFS.Cage.TxBuilder.Boot (
     bootTokenImpl,
  )
-import Cardano.MPFS.Cage.TxBuilder.End (
-    endTokenImpl,
- )
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
-    findStateUtxo,
-    findUtxoByTxIn,
     requestAddrFromCfg,
     txInToRef,
  )
@@ -101,9 +71,6 @@ import Cardano.MPFS.Cage.TxBuilder.Request (
  )
 import Cardano.MPFS.Cage.TxBuilder.Retract (
     retractRequestImpl,
- )
-import Cardano.MPFS.Cage.TxBuilder.Sweep (
-    sweepUtxoImpl,
  )
 import Cardano.MPFS.Cage.TxBuilder.Update (
     updateTokenImpl,
@@ -134,16 +101,8 @@ import Cardano.Node.Client.Submitter (
     SubmitResult (..),
     Submitter (..),
  )
-import Cardano.Tx.Balance (
-    BalanceResult (balancedTx),
-    balanceTx,
- )
-import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
-
--- | Uninhabited query context for registration programs.
-data NoCtx a
 
 {- | Full cage protocol E2E test spec.
 Skips when @MPFS_BLUEPRINT@ is not set.
@@ -179,8 +138,8 @@ spec = describe "Cage E2E" $ do
                             "staking.staking"
                             bp
                          ) of
-                        (Just stateBytes, Just requestBytes, mStakingBytes) ->
-                            cageFlowSpec stateBytes requestBytes mStakingBytes
+                        (Just stateBytes, Just requestBytes, _) ->
+                            cageFlowSpec stateBytes requestBytes
                         _ ->
                             it "no compiled code" $
                                 expectationFailure
@@ -195,9 +154,8 @@ spec = describe "Cage E2E" $ do
 cageFlowSpec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    Maybe SBS.ShortByteString ->
     Spec
-cageFlowSpec stateBytes requestBytes mStakingBytes = do
+cageFlowSpec stateBytes requestBytes = do
     it "boots state and applies a request update"
         $ withBootedCage
             id
@@ -316,147 +274,10 @@ cageFlowSpec stateBytes requestBytes mStakingBytes = do
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
-    it "ends a cage by burning the state token"
-        $ withBootedCage
-            id
-            stateBytes
-            requestBytes
-        $ \cfg prov submit _tm tokenId -> do
-            let stateAddr =
-                    cageAddrFromCfg cfg Testnet
-                policyId =
-                    cagePolicyIdFromCfg cfg
-            stateUtxosBefore <-
-                Cage.queryUTxOs prov stateAddr
-            findStateUtxo
-                policyId
-                tokenId
-                stateUtxosBefore
-                `shouldSatisfy` isJust
-
-            unsignedEnd <-
-                endTokenImpl
-                    cfg
-                    prov
-                    tokenId
-                    genesisAddr
-            _ <- submitWithGenesis submit unsignedEnd
-
-            stateUtxosAfter <-
-                Cage.queryUTxOs prov stateAddr
-            findStateUtxo
-                policyId
-                tokenId
-                stateUtxosAfter
-                `shouldSatisfy` isNothing
-
-    it "sweeps malformed request-address UTxOs"
-        $ withBootedCage
-            id
-            stateBytes
-            requestBytes
-        $ \cfg prov submit _tm tokenId -> do
-            let requestAddr =
-                    requestAddrFromCfg
-                        cfg
-                        tokenId
-                        Testnet
-
-            garbageIn <-
-                submitMalformedRequestUtxo
-                    cfg
-                    prov
-                    submit
-                    tokenId
-                    genesisAddr
-            reqUtxosBefore <-
-                Cage.queryUTxOs prov requestAddr
-            findUtxoByTxIn
-                garbageIn
-                reqUtxosBefore
-                `shouldSatisfy` isJust
-
-            unsignedSweep <-
-                sweepUtxoImpl
-                    cfg
-                    prov
-                    tokenId
-                    garbageIn
-                    genesisAddr
-            _ <- submitWithGenesis submit unsignedSweep
-
-            reqUtxosAfter <-
-                Cage.queryUTxOs prov requestAddr
-            findUtxoByTxIn
-                garbageIn
-                reqUtxosAfter
-                `shouldSatisfy` isNothing
-
-    case mStakingBytes of
-        Nothing ->
-            it
-                "skipped (staking.staking not \
-                \in blueprint)"
-                (pure () :: IO ())
-        Just stakingBytes ->
-            let stakeHash = computeScriptHash stakingBytes
-             in it "Modify and End succeed with staking-script withdrawal"
-                    $ withBootedCage
-                        ( \cfg0 ->
-                            cfg0
-                                { cfgStakeScript =
-                                    Just (stakingBytes, stakeHash)
-                                }
-                        )
-                        stateBytes
-                        requestBytes
-                    $ \cfg prov submit tm tokenId -> do
-                        registerStakingCredential
-                            stakeHash
-                            cfg
-                            prov
-                            submit
-                        _ <-
-                            submitInsertRequest
-                                cfg
-                                prov
-                                submit
-                                tokenId
-                                "stake-key"
-                                "stake-value"
-                        let reqAddr =
-                                requestAddrFromCfg cfg tokenId Testnet
-                        reqsBefore <-
-                            Cage.queryUTxOs prov reqAddr
-                        length reqsBefore `shouldSatisfy` (> 0)
-                        unsignedUpdate <-
-                            updateTokenImpl
-                                cfg
-                                prov
-                                tm
-                                tokenId
-                                genesisAddr
-                        _ <- submitWithGenesis submit unsignedUpdate
-                        reqsAfter <-
-                            Cage.queryUTxOs prov reqAddr
-                        length reqsAfter
-                            `shouldSatisfy` (< length reqsBefore)
-                        let policyId = cagePolicyIdFromCfg cfg
-                            stateAddr = cageAddrFromCfg cfg Testnet
-                        unsignedEnd <-
-                            endTokenImpl
-                                cfg
-                                prov
-                                tokenId
-                                genesisAddr
-                        _ <- submitWithGenesis submit unsignedEnd
-                        stateUtxosAfter <-
-                            Cage.queryUTxOs prov stateAddr
-                        findStateUtxo
-                            policyId
-                            tokenId
-                            stateUtxosAfter
-                            `shouldSatisfy` isNothing
+    -- No End / Sweep / staking cases: termination, migration and seizure
+    -- refuse for every party under the ownerless ruling (NOTE-028/A-003).
+    -- That refusal evidence, with success controls, lives in repair-rows
+    -- (ownerless-end/migration/sweep, receipted) instead of here.
 
 withBootedCage ::
     (CageConfig -> CageConfig) ->
@@ -525,49 +346,6 @@ submitInsertRequest cfg prov submit tokenId key value = do
             (txIdTx signedReq)
             (TxIx 0)
 
-submitMalformedRequestUtxo ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    Addr ->
-    IO TxIn
-submitMalformedRequestUtxo cfg prov submit tokenId addr = do
-    pp <- Cage.queryProtocolParams prov
-    walletUtxos <- Cage.queryUTxOs prov addr
-    feeUtxo <-
-        largestUtxo
-            "submitMalformedRequestUtxo"
-            walletUtxos
-    let requestAddr =
-            requestAddrFromCfg
-                cfg
-                tokenId
-                (network cfg)
-        txOut =
-            mkBasicTxOut
-                requestAddr
-                (inject (Coin 3_000_000))
-        tx =
-            mkBasicTx $
-                mkBasicTxBody
-                    & outputsTxBodyL
-                        .~ StrictSeq.singleton txOut
-    case balanceTx pp [feeUtxo] [] addr tx of
-        Left err ->
-            error $
-                "submitMalformedRequestUtxo: "
-                    <> show err
-        Right br -> do
-            signed <-
-                submitWithGenesis
-                    submit
-                    (balancedTx br)
-            pure $
-                TxIn
-                    (txIdTx signed)
-                    (TxIx 0)
-
 submitWithGenesis ::
     Submitter IO ->
     ConwayTx ->
@@ -582,64 +360,6 @@ submitWithGenesis submit unsignedTx = do
     assertSubmitted result
     awaitTx
     pure signedTx
-
-largestUtxo ::
-    String ->
-    [(TxIn, TxOut ConwayEra)] ->
-    IO (TxIn, TxOut ConwayEra)
-largestUtxo label utxos =
-    case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] ->
-            error $
-                label <> ": no UTxOs"
-        u : _ -> pure u
-
-{- | Submit a @ConwayRegCert@ for a script staking
-credential. Required before the first
-withdraw-zero in an End or Modify transaction.
--}
-registerStakingCredential ::
-    ScriptHash ->
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    IO ()
-registerStakingCredential stakeHash _cfg prov submit = do
-    pp <- Cage.queryProtocolParams prov
-    walletUtxos <- Cage.queryUTxOs prov genesisAddr
-    feeUtxo <- largestUtxo "registerStakingCredential" walletUtxos
-    let evalTx :: ConwayTx -> IO (Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits))
-        evalTx tx = do
-            r <- Cage.evaluateTx prov tx
-            pure $
-                Map.map
-                    ( \case
-                        Left e -> Left (show e)
-                        Right eu -> Right eu
-                    )
-                    r
-        prog :: Tx.TxBuild NoCtx String ()
-        prog = do
-            _ <- Tx.spend (fst feeUtxo)
-            _ <- Tx.registerStakeScript stakeHash
-            pure ()
-    result <-
-        Tx.build
-            (Tx.mkPParamsBound pp)
-            (Tx.InterpretIO (error "no ctx"))
-            evalTx
-            [feeUtxo]
-            []
-            genesisAddr
-            prog
-    case result of
-        Left err ->
-            error $
-                "registerStakingCredential: "
-                    <> show err
-        Right tx -> do
-            _ <- submitWithGenesis submit tx
-            pure ()
 
 fastRetractCfg :: CageConfig -> CageConfig
 fastRetractCfg cfg =
@@ -803,7 +523,7 @@ cageCfg ::
     OnChainTxOutRef ->
     CageConfig
 cageCfg stateBytes requestBytes seed =
-    let appliedStateBytes = applyPreviousPolicies [] stateBytes
+    let appliedStateBytes = stateBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
@@ -814,5 +534,4 @@ cageCfg stateBytes requestBytes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , network = Testnet
-            , cfgStakeScript = Nothing
             }

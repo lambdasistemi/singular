@@ -51,14 +51,7 @@ import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Keys (
-    KeyHash,
-    KeyRole (..),
- )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.Config (
     CageConfig (..),
@@ -101,7 +94,7 @@ rejectRequestsImpl cfg prov tid addr = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryRejectContext cfg prov tid addr
     let (_stateIn, stateOut) = stateUtxo
-    let (oldState, newStateOut, script, ownerKh) =
+    let (oldState, newStateOut, script) =
             prepareRejectState cfg stateOut
         requestScript = mkRequestScript cfg tid
     lowerSlot <-
@@ -118,7 +111,6 @@ rejectRequestsImpl cfg prov tid addr = do
                 newStateOut
                 script
                 requestScript
-                ownerKh
                 lowerSlot
     result <-
         Tx.build
@@ -206,11 +198,7 @@ queryRejectContext cfg prov tid addr = do
 prepareRejectState ::
     CageConfig ->
     TxOut ConwayEra ->
-    ( OnChainTokenState
-    , TxOut ConwayEra
-    , Script ConwayEra
-    , KeyHash Guard
-    )
+    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareRejectState cfg stateOut =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -221,10 +209,6 @@ prepareRejectState cfg stateOut =
                     error
                         "rejectRequests: invalid \
                         \state datum"
-        OnChainTokenState
-            { stateOwner =
-                BuiltinByteString ownerBs
-            } = oldState
         newStateOut =
             mkBasicTxOut
                 scriptAddr
@@ -235,8 +219,7 @@ prepareRejectState cfg stateOut =
                             (StateDatum oldState)
                         )
         script = mkCageScript cfg
-        ownerKh = addrWitnessKeyHash ownerBs
-     in (oldState, newStateOut, script, ownerKh)
+     in (oldState, newStateOut, script)
 
 -- | Compute the validity lower slot.
 computeLowerSlot ::
@@ -307,7 +290,6 @@ buildRejectProgram ::
     TxOut ConwayEra ->
     Script ConwayEra ->
     Script ConwayEra ->
-    KeyHash Guard ->
     SlotNo ->
     Tx.TxBuild NoCtx Void ()
 buildRejectProgram
@@ -320,7 +302,6 @@ buildRejectProgram
     newStateOut
     script
     requestScript
-    ownerKh
     lowerSlot = do
         let stateRef = txInToRef stateIn
             OnChainTokenState
@@ -378,6 +359,5 @@ buildRejectProgram
             reqUtxos
         Tx.attachScript script
         Tx.attachScript requestScript
-        Tx.requireSignature ownerKh
         Tx.collateral (fst feeUtxo)
         Tx.validFrom lowerSlot

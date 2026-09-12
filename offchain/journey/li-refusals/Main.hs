@@ -161,7 +161,6 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
     applyBytesParam,
-    applyPreviousPolicies,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -367,7 +366,7 @@ runMode mode mpfsPath namingPath = do
         -- hash; the representative script is applied with the
         -- application policy hash.
         let unappliedHex = hex (scriptHashBytes (computeScriptHash stateBytes))
-            appliedBytes = applyPreviousPolicies [] stateBytes
+            appliedBytes = stateBytes
             appliedHash = computeScriptHash appliedBytes
             appliedHex = hex (scriptHashBytes appliedHash)
         checkPinnedUnapplied si "state.state" unappliedHex
@@ -435,7 +434,6 @@ runMode mode mpfsPath namingPath = do
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
                     , network = Testnet
-                    , cfgStakeScript = Nothing
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
             appliedScript = mkCageScript cfg
@@ -1530,9 +1528,7 @@ registryOut env addr policy name =
         stateDatum =
             StateDatum
                 OnChainTokenState
-                    { stateOwner = BuiltinByteString (envCtrlHash env)
-                    , stateStakeScript = Nothing
-                    , stateRoot = OnChainRoot emptyRoot
+                    { stateRoot = OnChainRoot emptyRoot
                     , stateMaxFee =
                         let Coin c = defaultTip (envCfg env) in c
                     , stateProcessTime = defaultProcessTime (envCfg env)
@@ -1665,9 +1661,7 @@ buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
         stateDatum =
             StateDatum
                 OnChainTokenState
-                    { stateOwner = BuiltinByteString (addrKeyHashBytes genesisAddr)
-                    , stateStakeScript = Nothing
-                    , stateRoot = OnChainRoot emptyRoot
+                    { stateRoot = OnChainRoot emptyRoot
                     , stateMaxFee =
                         let Coin c = defaultTip cfg in c
                     , stateProcessTime = defaultProcessTime cfg

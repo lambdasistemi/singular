@@ -319,9 +319,7 @@ datumEncodingVectors :: [Aeson.Value]
 datumEncodingVectors =
     [ let state =
             OnChainTokenState
-                { stateOwner = BuiltinByteString $ BS.replicate 28 0xaa
-                , stateStakeScript = Nothing
-                , stateRoot = OnChainRoot $ BS.replicate 32 0xbb
+                { stateRoot = OnChainRoot $ BS.replicate 32 0xbb
                 , stateMaxFee = 2000000
                 , stateProcessTime = 300000
                 , stateRetractTime = 600000

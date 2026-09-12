@@ -7,12 +7,12 @@
   "validators": [
     {
       "title": "request.request.spend",
-      "hash": "8970c2865b1a6218b6baed938e8f5474514ba4db7e531fbc597b912c",
+      "hash": "44420f946ac27adc2efa60bb6d0008ed0a78250776db5a10c49f8c25",
       "parameters": 2
     },
     {
       "title": "request.request.else",
-      "hash": "8970c2865b1a6218b6baed938e8f5474514ba4db7e531fbc597b912c",
+      "hash": "44420f946ac27adc2efa60bb6d0008ed0a78250776db5a10c49f8c25",
       "parameters": 2
     },
     {
@@ -27,18 +27,18 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "e51b35f3fa65899fd0e35610ec422ce5bc6951fa91f8ed220d7effb7",
+      "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "e51b35f3fa65899fd0e35610ec422ce5bc6951fa91f8ed220d7effb7",
+      "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "e51b35f3fa65899fd0e35610ec422ce5bc6951fa91f8ed220d7effb7",
+      "parameters": 0
     }
   ]
 }
