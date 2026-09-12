@@ -1,0 +1,160 @@
+"""Candidate-binding integration control: the release command against real Git.
+
+No monkeypatching anywhere in this file: a temporary repository exercises
+the publication boundary end to end. A clean tree at the exact candidate
+proceeds past binding; a modified tracked input is rejected specifically
+as a candidate-tree mismatch (binding runs before any debt computation,
+so the reason is isolated); a nested root and a non-repository root are
+rejected as unestablishable identity. Skipped where git is unavailable —
+run with git on PATH (e.g. `nix shell nixpkgs#python3 nixpkgs#git`).
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from contextlib import redirect_stderr
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from singular_coverage.gate import main
+from singular_coverage.inventory import build_inventory
+from singular_coverage.record import candidate_digest
+from tests.fixtures import NAMING_STUBS, STATEMENTS, export_manifests
+
+GIT = shutil.which("git")
+
+
+def git(repo, *args):
+    subprocess.run(["git", *args], cwd=repo, check=True,
+                   capture_output=True, text=True, timeout=60)
+
+
+def build_sufficient_tree(tree):
+    """A five-obligation tree with one mapping and two distinct valid
+    layers per obligation: enough for COMPLETE, so a clean run proves the
+    probe passed binding (binding failure would exit 3 first)."""
+    (tree / "lean/Singular").mkdir(parents=True)
+    (tree / "lean/Singular/Statements.lean").write_text(STATEMENTS)
+    for rel, text in NAMING_STUBS.items():
+        (tree / rel).write_text(text)
+    export_manifests(tree)
+    obligations = build_inventory(tree).obligations
+    assert len(obligations) == 5
+    paths = ["lean/Singular/Statements.lean"]
+    candidate = candidate_digest(tree, paths)
+
+    def check(obligation, digest, layer, execution, check_id):
+        return {
+            "checkId": check_id,
+            "obligation": obligation,
+            "statementSha256": digest,
+            "layer": layer,
+            "executionIdentity": execution,
+            "entryPoints": ["src/Synth.hs:f"],
+            "definitionDigests": {},
+            "evidence": {
+                "status": "pass",
+                "candidateDigest": candidate,
+                "candidatePaths": paths,
+                "command": "nix run .#synth-check",
+                "seed": "11",
+                "cases": 64,
+                "discards": 1,
+                "thenAssertions": 3,
+                "resultDigest": "c" * 64,
+            },
+            "control": {"kind": "mutation", "target": "Synth.f", "status": "valid"},
+        }
+
+    record = {
+        "schema": "singular-coverage-record-v1",
+        "checks": [
+            check(o.name, o.statementSha256, layer, f"exec-synth-{o.name}-{layer}",
+                  f"C-synth-{o.name}-{layer}")
+            for o in obligations
+            for layer in ("property", "integration-story")
+        ],
+        "mappings": [{
+            "obligation": o.name,
+            "statementSha256": o.statementSha256,
+            "storyId": f"SYNTH-{o.name}",
+            "clauses": {"then": ["x"]},
+            "vocabulary": {},
+        } for o in obligations],
+        "discoveredPopulation": sorted(build_inventory(tree).by_identity()),
+    }
+    path = tree / "record.json"
+    path.write_text(json.dumps(record))
+    return path
+
+
+@unittest.skipUnless(GIT, "git binary required for the binding control")
+class ReleaseBindingTest(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.repo = Path(self._tmp.name) / "repo"
+        self.repo.mkdir()
+        self.record = build_sufficient_tree(self.repo)
+        git(self.repo, "init", "-q")
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "sufficient fixture")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        self.head = out.stdout.strip()
+        self.assertRegex(self.head, r"^[0-9a-f]{40}$")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def release(self, root, *argv):
+        err = io.StringIO()
+        with redirect_stderr(err):
+            rc = main(["--root", str(root), "release", *argv])
+        return rc, err.getvalue()
+
+    def test_clean_tree_at_exact_candidate_proceeds_past_binding(self):
+        rc, err = self.release(self.repo, "--record", str(self.record),
+                               "--candidate", self.head)
+        self.assertEqual(rc, 0, f"a clean sufficient tree must pass; stderr: {err}")
+        self.assertEqual(err, "")
+
+    def test_wrong_candidate_rejected_as_mismatch(self):
+        rc, err = self.release(self.repo, "--record", str(self.record),
+                               "--candidate", "0" * 40)
+        self.assertEqual(rc, 3)
+        self.assertIn("candidate mismatch", err)
+
+    def test_dirty_tracked_input_rejected_as_tree_mismatch(self):
+        target = self.repo / "lean/Singular/Statements.lean"
+        with target.open("a") as fh:
+            fh.write("\n-- binding control: tracked modification, HEAD unchanged\n")
+        rc, err = self.release(self.repo, "--record", str(self.record),
+                               "--candidate", self.head)
+        self.assertEqual(rc, 3)
+        self.assertIn("candidate-tree mismatch", err)
+
+    def test_nested_root_rejected_as_root_mismatch(self):
+        rc, err = self.release(self.repo / "lean", "--record", str(self.record),
+                               "--candidate", self.head)
+        self.assertEqual(rc, 3)
+        self.assertIn("candidate root mismatch", err)
+
+    def test_non_repository_root_rejected_as_unknown(self):
+        outside = Path(self._tmp.name) / "not-a-repo"
+        outside.mkdir()
+        rc, err = self.release(outside, "--record", str(self.record),
+                               "--candidate", self.head)
+        self.assertEqual(rc, 3)
+        self.assertIn("candidate identity unknown", err)
+
+
+if __name__ == "__main__":
+    unittest.main()
