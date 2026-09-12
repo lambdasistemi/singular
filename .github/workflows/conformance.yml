@@ -84,7 +84,24 @@ jobs:
       # re-Insert after Delete, and the refusal of Insert on an
       # occupied key — executed against a real devnet, each with its
       # executing negative control and its measurements against the
-      # devnet's Conway protocol maxima. Issue #69 then runs the CA
+      # devnet's Conway protocol maxima. Issue #70 then extends the
+      # same session with its rows: three attributed refusals
+      # (CG07/CG09/CG10), the permissionless-fold regression CG20
+      # (accepted against the #79-repaired candidate), the superseded
+      # CG17 observation, and the held rows CG11/CG12/CG19. CG14/CG15
+      # are NOT run: superseded inherited-hook expectations with
+      # could-not-execute history — no work waits behind them.
+      #
+      # A session containing held rows ends NON-ZERO by design (a held
+      # row must never read as a pass). Per the A-001 ruling this step
+      # never treats that exit — or any error label — as success: the
+      # expected-debt assertion below reads the session's ACTUAL
+      # results and demands exactly the thirteen rows, exactly the
+      # expected verdict per row (receipts), no divergence, and a
+      # non-zero exit accounted for by exactly the held rows CG11
+      # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
+      # CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101);
+      # strict completion and release stay RED on that debt. Issue #69 then runs the CA
       # rows as their own session: the consumer's authentication of
       # the canonical registry identity, with the rival the ledger
       # cannot refuse executed beside it. The unit suite (inventory
@@ -104,8 +121,45 @@ jobs:
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
+          set -e
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./conformance-receipts
+          mkdir -p ./conformance-receipts
+          set +e
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 --receipts-dir ./conformance-receipts 2>&1 | tee /tmp/generic-rows.log
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          echo "generic session exit: $run_rc (non-zero expected while rows are held)"
+          # --- expected-debt assertion over ACTUAL session results (A-001)
+          # exactly the thirteen rows plus the session CL01, no extras
+          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 CL01 | sort > /tmp/expected-rows.txt
+          nix run --quiet nixpkgs#jq -- -r '.row' ./conformance-receipts/receipt-*.json | sort > /tmp/receipt-rows.txt
+          diff /tmp/expected-rows.txt /tmp/receipt-rows.txt || { echo 'FAIL: receipt set mismatch (missing or extra row)'; exit 1; }
+          # exactly the expected verdict per row, from the receipts
+          expect_verdict() {
+            case "$1" in
+              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG17|CG20) printf 'agrees-with-model' ;;
+              CG11|CG12|CG19) printf 'held-q002' ;;
+              CG13) printf 'resolved-by-ruling' ;;
+              *) printf 'UNKNOWN-ROW' ;;
+            esac
+          }
+          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20; do
+            f="./conformance-receipts/receipt-$row.json"
+            test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
+            v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
+            want="$(expect_verdict "$row")"
+            [ "$v" = "$want" ] || { echo "FAIL: unexpected verdict for $row: got '$v', expected '$want'"; exit 1; }
+          done
+          # the session must not claim success while rows are held
+          [ "$run_rc" -ne 0 ] || { echo 'FAIL: session exited 0 while held rows are in it — the held-set moved; update this assertion deliberately, never silently'; exit 1; }
+          # the run's own accounting must name exactly the expected held set
+          held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
+          [ "$held" = "CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"; exit 1; }
+          # nothing may fail against this candidate
+          failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
+          [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.'
+          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
       # seed — the settled finding, never relabelled as a refusal —
