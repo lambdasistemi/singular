@@ -134,9 +134,11 @@ explicitly present, the conditionals in firing (4) and silent (5) form.
 
 Non-vacuity obligation this page fixes for the future story: each conditional's antecedent
 (clauses 4, 5) must be **reached** by at least one generated case, and the zero side must
-also be exercised — a mint that nets to zero with the witness **absent** must still succeed,
-because clause 4 asserts nothing there. A suite that only ever tests non-zero mints has not
-tested clause 4; it has skipped it.
+also be exercised — a mint that nets to zero with the witness **absent** must still succeed
+when every other fold condition holds, because clause 4 asserts nothing there. A suite
+that only ever tests non-zero mints genuinely exercises clause 4 (the antecedent holds,
+so the consequent is really required) — what it leaves untested is narrower and exact:
+the zero-net / no-witness branch, where the antecedent is false.
 
 ## 4. Implementation boundary — where this must be checked, and what is known today
 
