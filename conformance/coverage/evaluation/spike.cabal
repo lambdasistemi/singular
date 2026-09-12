@@ -5,7 +5,7 @@ build-type:         Simple
 
 executable spike
     main-is:          Main.hs
-    hs-source-dirs:   app
+    hs-source-dirs:   spike-app
     default-language: GHC2021
     default-extensions: LambdaCase
     ghc-options:      -Wall
