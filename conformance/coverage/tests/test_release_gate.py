@@ -1,13 +1,14 @@
 """Release-boundary controls: the `release` command refuses (nonzero) on honest
-debt, on every fail-closed absence, on candidate mismatch and on checker
-crashes — each labelled distinctly — and only a COMPLETE verdict for the
-declared candidate exits 0.
+debt, on every fail-closed absence, on candidate mismatch, on unbound
+release inputs and on checker crashes — each labelled distinctly — and only
+a COMPLETE verdict for the declared candidate exits 0.
 
-git-dependent binding is monkeypatched (the nix check derivation has no git
-binary); the debt verdicts themselves run against real fixture trees through
-the real inventory/record/debt code. The COMPLETE fixture is a synthetic
-single-obligation tree proving the exit-0 path is reachable — it represents
-no project state, and definition-free checks are documented as such below.
+The record that authorizes publication is resolved from the candidate
+root, never from `--record` (which `release` refuses) and never from the
+tool closure. Binding is stubbed in this file; the debt verdicts run
+against real fixture trees through the real inventory/record/debt code.
+The COMPLETE fixture is a synthetic five-obligation tree proving the
+exit-0 path is reachable — it represents no project state.
 """
 
 from __future__ import annotations
@@ -25,6 +26,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from singular_coverage.gate import CandidateBinding, main
 from tests.fixtures import build_base_tree, export_manifests, identity_of, mapping_row
+
+RECORD_REL = Path("conformance/coverage/record/record.json")
+"""Authoritative record path under the candidate root."""
+
+
+def write_tree_record(tree, record):
+    """Write a record dict to the candidate-root authoritative path."""
+    path = tree / RECORD_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(record))
+    return path
+
 
 HEAD = "f" * 40
 OTHER = "e" * 40
@@ -59,17 +72,17 @@ class ReleaseGateTest(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def empty_record(self, name="record.json"):
+    def empty_record(self):
         from tests.fixtures import write_record
 
         empty = {"schema": "singular-coverage-record-v1", "checks": [], "mappings": []}
-        return write_record(self.tree, empty, name)
+        write_record(self.tree, empty)
+        return write_tree_record(self.tree, empty)
 
     def test_release_refuses_honest_debt(self):
-        record = self.empty_record()
+        self.empty_record()
         report = self.tree / "release.json"
-        rc, err = run_release(self.tree, "--record", str(record),
-                              "--candidate", HEAD, "--report", str(report))
+        rc, err = run_release(self.tree, "--candidate", HEAD, "--report", str(report))
         self.assertEqual(rc, 1, "honest nonzero debt must refuse the release")
         payload = json.loads(report.read_text())
         self.assertEqual(payload["verdict"], "INCOMPLETE")
@@ -79,32 +92,39 @@ class ReleaseGateTest(unittest.TestCase):
         self.assertEqual(err, "")
 
     def test_release_candidate_mismatch_refuses(self):
-        record = self.empty_record()
-        rc, err = run_release(self.tree, "--record", str(record),
+        self.empty_record()
+        rc, err = run_release(self.tree,
                               "--candidate", OTHER, bind="mismatch")
         self.assertEqual(rc, 3, "a run not bound to its candidate must fail closed")
         self.assertIn("FAIL-CLOSED candidate", err)
 
+    def test_release_record_override_refused_as_unbound_input(self):
+        self.empty_record()
+        outside = Path(self._tmp.name) / "external-record.json"
+        outside.write_text("{}")
+        rc, err = run_release(self.tree, "--record", str(outside),
+                              "--candidate", HEAD)
+        self.assertEqual(rc, 3, "release must not accept --record")
+        self.assertIn("unbound release input", err)
+
     def test_release_without_git_refuses(self):
         # No stubs: a tree that is not inside a repository cannot bind a
         # candidate at all. Uses the real git calls, which fail outside repos.
-        record = self.empty_record()
+        self.empty_record()
         err = io.StringIO()
         with redirect_stderr(err):
-            rc = main(["--root", str(self.tree), "release",
-                       "--record", str(record), "--candidate", HEAD])
+            rc = main(["--root", str(self.tree), "release", "--candidate", HEAD])
         self.assertEqual(rc, 3)
-        self.assertIn("FAIL-CLOSED candidate", err.getvalue())
+        self.assertIn("candidate identity unknown", err.getvalue())
 
     def test_release_missing_inventory_refuses(self):
         import shutil
 
         shutil.rmtree(self.tree / "lean")
-        record = self.tree / "record.json"
-        record.write_text(json.dumps({"schema": "singular-coverage-record-v1",
-                                      "checks": [], "mappings": []}))
+        write_tree_record(self.tree, {"schema": "singular-coverage-record-v1",
+                                       "checks": [], "mappings": []})
         # binding stubbed clean so the probe reaches the inventory step.
-        rc, err = run_release(self.tree, "--record", str(record), "--candidate", HEAD)
+        rc, err = run_release(self.tree, "--candidate", HEAD)
         self.assertEqual(rc, 3, "missing inventory must fail closed, not refuse as debt")
         self.assertIn("FAIL-CLOSED", err)
 
@@ -126,9 +146,8 @@ class ReleaseGateTest(unittest.TestCase):
         record = {"schema": "singular-coverage-record-v1", "checks": [row],
                   "mappings": [],
                   "discoveredPopulation": sorted(build_inventory(self.tree).by_identity())}
-        path = self.tree / "record.json"
-        path.write_text(json.dumps(record))
-        rc, err = run_release(self.tree, "--record", str(path), "--candidate", HEAD)
+        write_tree_record(self.tree, record)
+        rc, err = run_release(self.tree, "--candidate", HEAD)
         self.assertEqual(rc, 3, "evidence with absent fields must fail closed")
         self.assertIn("FAIL-CLOSED", err)
 
@@ -162,10 +181,9 @@ class ReleaseGateTest(unittest.TestCase):
         record = {"schema": "singular-coverage-record-v1", "checks": [row],
                   "mappings": [],
                   "discoveredPopulation": sorted(build_inventory(self.tree).by_identity())}
-        path = self.tree / "record.json"
-        path.write_text(json.dumps(record))
+        write_tree_record(self.tree, record)
         report = self.tree / "release.json"
-        rc, _ = run_release(self.tree, "--record", str(path), "--candidate", HEAD,
+        rc, _ = run_release(self.tree, "--candidate", HEAD,
                             "--report", str(report))
         self.assertEqual(rc, 1, "absent execution blocks the release as honest debt")
         self.assertEqual(json.loads(report.read_text())["verdict"], "INCOMPLETE")
@@ -181,17 +199,16 @@ class ReleaseGateTest(unittest.TestCase):
         record = {"schema": "singular-coverage-record-v1", "checks": [row],
                   "mappings": [],
                   "discoveredPopulation": sorted(build_inventory(self.tree).by_identity())}
-        path = self.tree / "record.json"
-        path.write_text(json.dumps(record))
-        rc, err = run_release(self.tree, "--record", str(path), "--candidate", HEAD)
+        write_tree_record(self.tree, record)
+        rc, err = run_release(self.tree, "--candidate", HEAD)
         self.assertEqual(rc, 3, "an unknown evidence status must fail closed")
         self.assertIn("FAIL-CLOSED", err)
 
     def test_release_crash_is_neither_green_nor_incomplete(self):
-        record = self.empty_record()
+        self.empty_record()
         report = self.tree / "release.json"
         with patch("singular_coverage.gate.build_inventory", side_effect=RuntimeError("boom")):
-            rc, err = run_release(self.tree, "--record", str(record),
+            rc, err = run_release(self.tree,
                                   "--candidate", HEAD, "--report", str(report))
         self.assertEqual(rc, 5, "an unexpected checker exception must exit CRASH")
         self.assertIn("CRASH", err)
@@ -266,14 +283,13 @@ class ReleaseGateTest(unittest.TestCase):
             } for o in obligations],
             "discoveredPopulation": sorted(build_inventory(mini).by_identity()),
         }
-        path = mini / "record.json"
-        path.write_text(json.dumps(record))
+        path = write_tree_record(mini, record)
         report = mini / "release.json"
         stub = patched_binding()
         err = io.StringIO()
         with stub, redirect_stderr(err):
             rc = main(["--root", str(mini), "release",
-                       "--record", str(path), "--candidate", HEAD,
+                       "--candidate", HEAD,
                        "--report", str(report)])
         self.assertEqual(rc, 0, "a sufficient tree must pass the release gate")
         self.assertEqual(json.loads(report.read_text())["verdict"], "COMPLETE")

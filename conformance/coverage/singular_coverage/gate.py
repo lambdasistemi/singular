@@ -16,13 +16,18 @@ Four commands, distinct verdicts:
                at a nonzero baseline; flipping that expectation to COMPLETE is
                the explicit act of claiming completion.
   release      the release-boundary gate: `completion` bound to an exact
-               candidate commit, blocking. Exit 0 = COMPLETE for that
+               candidate commit, blocking. The record that authorizes
+               publication is resolved from the candidate root
+               (conformance/coverage/record/record.json under it) — never
+               from the tool closure and never from a `--record` override,
+               which `release` refuses. Exit 0 = COMPLETE for that
                candidate (publish may proceed); 1 = honest INCOMPLETE
                (refused, labelled as debt, never as a crash); 3 = fail-closed
                (candidate mismatch, missing inventory, absent execution,
-               unknown status); 5 = checker crash (any unexpected exception,
-               labelled CRASH, never green, never INCOMPLETE). No --expect
-               escape hatch exists on this command by design.
+               unknown status, unbound release input); 5 = checker crash (any
+               unexpected exception, labelled CRASH, never green, never
+               INCOMPLETE). No --expect escape hatch exists on this command
+               by design.
 
 The gate never writes the base record and never derives PASS from typed
 status alone — every layer must be paid by executed, fresh, non-vacuous,
@@ -172,11 +177,21 @@ def cmd_release(args: argparse.Namespace) -> int:
     """Release-boundary gate: strict completion bound to an exact candidate.
 
     Refuses (nonzero) on honest debt, on any fail-closed absence, on
-    candidate mismatch, and on checker crashes — each labelled distinctly.
-    Only a COMPLETE verdict for the declared candidate exits 0.
+    candidate mismatch, on unbound release inputs, and on checker
+    crashes — each labelled distinctly. Only a COMPLETE verdict for the
+    declared candidate exits 0.
     """
-    root, record_path, _ = _defaults(args)
+    root, _, _ = _defaults(args)
     candidate = args.candidate
+    if args.record is not None:
+        print(
+            "FAIL-CLOSED unbound release input: release resolves its record "
+            "from the candidate root and does not accept --record",
+            file=sys.stderr,
+        )
+        return EXIT_FAIL_CLOSED
+    # Authoritative record: the candidate's own, never the tool closure's.
+    record_path = root / "conformance/coverage/record/record.json"
     binding = check_candidate_binding(root, candidate)
     if not binding.ok:
         print(f"FAIL-CLOSED {binding.reason}", file=sys.stderr)

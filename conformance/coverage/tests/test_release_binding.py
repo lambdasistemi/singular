@@ -90,7 +90,8 @@ def build_sufficient_tree(tree):
         } for o in obligations],
         "discoveredPopulation": sorted(build_inventory(tree).by_identity()),
     }
-    path = tree / "record.json"
+    path = tree / "conformance/coverage/record/record.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(record))
     return path
 
@@ -121,14 +122,45 @@ class ReleaseBindingTest(unittest.TestCase):
         return rc, err.getvalue()
 
     def test_clean_tree_at_exact_candidate_proceeds_past_binding(self):
-        rc, err = self.release(self.repo, "--record", str(self.record),
-                               "--candidate", self.head)
+        rc, err = self.release(self.repo, "--candidate", self.head)
         self.assertEqual(rc, 0, f"a clean sufficient tree must pass; stderr: {err}")
         self.assertEqual(err, "")
 
+    def test_committed_incomplete_record_still_refuses_as_debt(self):
+        (self.repo / "conformance/coverage/record/record.json").write_text(
+            json.dumps({"schema": "singular-coverage-record-v1",
+                        "checks": [], "mappings": [],
+                        "discoveredPopulation": sorted(
+                            build_inventory(self.repo).by_identity())}))
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "insufficient record")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        rc, err = self.release(self.repo, "--candidate", out.stdout.strip())
+        self.assertEqual(rc, 1, f"insufficient record must refuse as debt; stderr: {err}")
+
+    def test_external_complete_substitution_refused_as_unbound_input(self):
+        # The committed record is INCOMPLETE (empty); a sufficient record
+        # smuggled via --record must not authorize publication.
+        external = Path(self._tmp.name) / "external-record.json"
+        external.write_bytes(
+            (self.repo / "conformance/coverage/record/record.json").read_bytes())
+        (self.repo / "conformance/coverage/record/record.json").write_text(
+            json.dumps({"schema": "singular-coverage-record-v1",
+                        "checks": [], "mappings": []}))
+        git(self.repo, "add", "-A")
+        git(self.repo, "-c", "user.email=binding@t", "-c", "user.name=binding",
+            "commit", "-qm", "insufficient record")
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                             check=True, capture_output=True, text=True, timeout=60)
+        rc, err = self.release(self.repo, "--record", str(external),
+                               "--candidate", out.stdout.strip())
+        self.assertEqual(rc, 3)
+        self.assertIn("unbound release input", err)
+
     def test_wrong_candidate_rejected_as_mismatch(self):
-        rc, err = self.release(self.repo, "--record", str(self.record),
-                               "--candidate", "0" * 40)
+        rc, err = self.release(self.repo, "--candidate", "0" * 40)
         self.assertEqual(rc, 3)
         self.assertIn("candidate mismatch", err)
 
@@ -136,22 +168,19 @@ class ReleaseBindingTest(unittest.TestCase):
         target = self.repo / "lean/Singular/Statements.lean"
         with target.open("a") as fh:
             fh.write("\n-- binding control: tracked modification, HEAD unchanged\n")
-        rc, err = self.release(self.repo, "--record", str(self.record),
-                               "--candidate", self.head)
+        rc, err = self.release(self.repo, "--candidate", self.head)
         self.assertEqual(rc, 3)
         self.assertIn("candidate-tree mismatch", err)
 
     def test_nested_root_rejected_as_root_mismatch(self):
-        rc, err = self.release(self.repo / "lean", "--record", str(self.record),
-                               "--candidate", self.head)
+        rc, err = self.release(self.repo / "lean", "--candidate", self.head)
         self.assertEqual(rc, 3)
         self.assertIn("candidate root mismatch", err)
 
     def test_non_repository_root_rejected_as_unknown(self):
         outside = Path(self._tmp.name) / "not-a-repo"
         outside.mkdir()
-        rc, err = self.release(outside, "--record", str(self.record),
-                               "--candidate", self.head)
+        rc, err = self.release(outside, "--candidate", self.head)
         self.assertEqual(rc, 3)
         self.assertIn("candidate identity unknown", err)
 
