@@ -130,11 +130,21 @@ field and `Action.fold` routes no refunds. `Singular.Statements.fold_iff`
 (`Model.lean` 250–256) makes its five conjuncts sufficient — native
 spend, fold items, net-mint match, representative-mint and
 application-mint witnesses — and no owner is among them: folding is
-permissionless. The consumer's theorems (R5_plugin_pinned,
-R8_empty_fold_refused, R11_contribute_value) require the empty
-batch refused, the 1:1 accounting, the owner/hook pinned across a fold
-and the refund routing (upstream cardano-mpfs-onchain #100/#101 is the
-partition fix). Those requirements stay unmet; the receipts carry
+permissionless. The consumer's theorems require the empty batch refused
+(`R8_empty_fold_refused`) and the 1:1 accounting. Its fold value
+routing is not `R11_contribute_value` — that states the deposit
+amount, and `R11_retract_value` states bond+tip on retract; fold
+routing lives in the consumer's `Registry.processBody`, `Registry.stepFn`
+and the `Cage.delegated_is_registry` equality, and it is
+**operation-specific**: register/revive lock the deposit into a
+checkpoint, goDormant/goConvicted/convict refund to the recorded owner,
+rejection returns the operation bond, and the fold tip goes to the
+folder. A blanket exact-refund repair would preserve the wrong value
+mode and prevent checkpoint funding. Upstream cardano-mpfs-onchain
+#100/#101 is the partition fix. The owner/hook pinning those theorems
+also assumed is **superseded, not unmet**: the operator ruled Singular
+has no registry-owner role at all, so there is no owner to pin. The
+remaining requirements stay unmet; the receipts carry
 verdict `held-q002` and the session ends non-zero while anything is
 held — a hold can never read as a pass, and a verdict moves only by
 execution. CG13 is resolved-by-ruling, not a fourth unresolved hold:
