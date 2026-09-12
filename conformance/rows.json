@@ -341,12 +341,12 @@
       "state": "uncovered"
     },
     {
-      "expected": "accept against a repaired candidate; FAILS against the current one (owner gate)",
+      "expected": "accept",
       "group": "CG",
       "id": "CG20",
-      "note": "F-002 was withdrawn on 2026-09-12: epic 17 A-002 already identifies permissionless Modify folding as an implementation defect with #79 assigned. Singular's Lean fold_iff requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; the protocol spec forbids a privileged folder gate; the compiled validator still calls validateOwnership, so the row FAILS against the current candidate (verdict diverges-from-lean) and should flip to accept after #79.",
+      "note": "Expectation: accept — Singular.Statements.fold_iff (sufficiency direction) requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; no owner signer may be required. Observation history: the row FAILED against the pre-#79 candidate (owner gate refused the no-signer mutant, verdict diverges-from-lean) and ACCEPTED against the repaired candidate by execution (verdict agrees-with-model). The expectation never changed; the candidate did.",
       "requirement": "Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification (F-002) specified.",
-      "source": "F-002 independent verification; Lean Model.lean Action.fold + Statements.fold_iff; specs/protocol/spec.md Folding and actor permissions",
+      "source": "Singular.Statements.fold_iff sufficiency direction (Lean); observation history: FAILED against the pre-#79 candidate (owner gate), ACCEPTED against the repaired candidate by execution",
       "state": "uncovered"
     }
   ]
