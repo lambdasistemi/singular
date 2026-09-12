@@ -1,5 +1,5 @@
 --- .github/workflows/release.yml	2026-09-12 09:39:08.203711143 +0100
-+++ /tmp/release-yml-activated.yml	2026-09-12 09:39:12.083951202 +0100
++++ /tmp/release-yml-activated.yml	2026-09-12 10:06:52.278790999 +0100
 @@ -42,7 +42,6 @@
    # Integration: delete the `if: false` line below and add
    # `coverage-release-gate` to the publish job's `needs:`.
@@ -8,15 +8,15 @@
      name: Theorem coverage release boundary (must be COMPLETE)
      needs: build-gate
      runs-on: nixos
-@@ -94,8 +93,10 @@
+@@ -94,7 +93,7 @@
            skip-github-release: true
    publish:
      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
 -    needs: build-gate
 +    needs: [build-gate, coverage-release-gate]
      runs-on: nixos
-+    env:
-+      COVERAGE_RELEASE_REQUIRED: 1
      steps:
        - name: Isolate Nix cache
-         run: |
+diff --git a/conformance/coverage/release-required b/conformance/coverage/release-required
+new file mode 100644
+index 0000000..e69de29
