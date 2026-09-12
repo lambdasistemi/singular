@@ -733,10 +733,11 @@ test modify_wrong_address() fail {
   )
 }
 
-/// Ownership transfer is permitted during Modify. The output datum can have
-/// a different owner than the input. This is intentional: it allows the
-/// current owner to hand off the cage to someone else.
-test modify_owner_transfer() {
+/// A well-formed Modify advancing the root is accepted. (Named
+/// `modify_owner_transfer` before the ownerless repair, when the output
+/// fixture carried a new owner; the owner field is gone and the test now
+/// pins only the root-advancing fold it always executed.)
+test modify_advances_root_accepts() {
   spend(
     stateDatum,
     Modify([UpdateAction([])]),

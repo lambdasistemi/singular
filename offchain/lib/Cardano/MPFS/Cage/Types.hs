@@ -186,10 +186,8 @@ data RequestAction
 {- | Spending redeemer. Matches Aiken
 @types\/UpdateRedeemer@.
 
-@Sweep stateRef@ is gated by the cage owner's
-signature; the @stateRef@ payload points at the
-cage's legitimate state UTxO so the validator can
-locate it directly in @tx.inputs ++ tx.reference_inputs@.
+@Sweep stateRef@ is refused for every party (operator ruling
+NOTE-028/A-003); the constructor stays for the wire shape.
 -}
 data UpdateRedeemer
     = -- | End the token (Constr 0)

@@ -177,7 +177,13 @@ test migrate_changes_owner() fail {
 - end_with_stake_script_no_withdrawal ->
   end_owner_signed_no_withdrawal_refuses
 
-## 5. Added (no predecessor)
+## 5. Renamed (premise evaporated, behaviour kept)
+
+- `modify_owner_transfer` -> `modify_advances_root_accepts`: the test
+  always executed a root-advancing fold; only the owner-difference
+  framing is gone with the field.
+
+## 6. Added (no predecessor)
 
 - burning_token_refuses (the mint-purpose burn had no test)
 - end_owner_signed_no_withdrawal_refuses, end_stake_withdrawal_refuses,
