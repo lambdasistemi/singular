@@ -1,6 +1,8 @@
---- .github/workflows/release.yml	2026-09-12 09:39:08.203711143 +0100
-+++ /tmp/release-yml-activated.yml	2026-09-12 10:06:52.278790999 +0100
-@@ -42,7 +42,6 @@
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+index 20c1951..de3139f 100644
+--- a/.github/workflows/release.yml
++++ b/.github/workflows/release.yml
+@@ -42,7 +42,6 @@ jobs:
    # Integration: delete the `if: false` line below and add
    # `coverage-release-gate` to the publish job's `needs:`.
    coverage-release-gate:
@@ -8,7 +10,7 @@
      name: Theorem coverage release boundary (must be COMPLETE)
      needs: build-gate
      runs-on: nixos
-@@ -94,7 +93,7 @@
+@@ -94,7 +93,7 @@ jobs:
            skip-github-release: true
    publish:
      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
