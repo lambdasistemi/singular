@@ -30,6 +30,8 @@
 -- Run with `-j1`.
 module Main (main) where
 
+import Cleanup (cleanupFailure)
+import Control.Exception (ErrorCall (..), throwIO)
 import qualified Control.Concurrent as CC
 import qualified Control.Monad as CM
 import Data.Char (isDigit)
@@ -119,25 +121,35 @@ acquireSession tag = do
   baseline <- nodePids
   return (Session receipts marker baseline)
 
--- | Unconditional release: reap our nodes, remove the whole marker tree,
--- then record what happened where the shell demonstration can read it.
--- Runs on pass and on failure alike — that is the F-2 repair.
+-- | Unconditional release: assert a clean marker, reap our nodes, remove the
+-- whole marker tree, then record what happened where the shell demonstration
+-- can read it. Runs on pass and on failure alike — that is the F-2 repair.
+-- The leftover check sits BEFORE reaping on purpose: reaping first would kill
+-- any witness, so a control seeding a synthetic marker process could never
+-- reach this assertion (the reaper would harvest it and the check would pass
+-- while observing nothing).
 releaseSession :: String -> Session -> IO ()
 releaseSession tag sess = do
+  observed <- markerNodePids (sessMarker sess)
   (reaped, _) <- reapMarkerNodes (sessMarker sess)
   removePathForcibly (sessMarker sess)
-  gone <- doesDirectoryExist (sessMarker sess)
+  dirExists <- doesDirectoryExist (sessMarker sess)
   still <- markerNodePids (sessMarker sess)
   writeFile
     (sessMarker sess <> ".released")
     ( unlines
         [ "mode: " <> tag
-        , "receiptsRemoved: " <> show gone
+        , "markerDirExists: " <> show dirExists
+        , "  (doesDirectoryExist after removal; False means the tree is gone)"
         , "markerNodesReaped: " <> show reaped
         , "markerNodesRemaining: " <> show still
         , "baselineNodeCount: " <> show (length (sessBaseline sess))
         ]
     )
+  case cleanupFailure dirExists observed of
+    Just reason ->
+      throwIO . ErrorCall $ "cleanup failed (" <> tag <> "): " <> reason
+    Nothing -> pure ()
 
 blueprintPath :: IO FilePath
 blueprintPath = lookupEnv "MPFS_BLUEPRINT" >>= maybe (die "MPFS_BLUEPRINT unset") return
