@@ -164,7 +164,8 @@ Verification notes for this table (renderer's, per NOTE-004's "tell me where you
 Pins below bind to **two different commits, and the distinction matters**:
 **historical** facts (the pre-#79 owner gate, the zero-side exhibit's reading of the pre-revision
 contract) were read at worktree base `012e404`; **current** facts (the post-#79 `Modify` dispatch)
-are read at current `main`. Each statement below says which it is.
+are read at `6fd02c7ed6602153de71a555298337cb89443447` — a commit pin, verified to carry that dispatch,
+not the movable `main` label. Each statement below says which it is.
 
 - **Verified directly, current source:** `onchain/validators/state.ak` dispatches
   `Modify(actions) -> validModify(state, input, policyId, cageToken, tx, actions)` with **no
@@ -228,7 +229,7 @@ be adjusted to fit the code.
   },
   "evidence": {
     "checkId": "none yet — rows CG01-CG05/CG10-12 exercise folds generically but no row is bound to this identity",
-    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per A-002). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — CG20 REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt and final 617e434 acceptance remain open"
+    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per A-002). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — CG20 REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt remains open and producer acceptance is outstanding"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"
 }
