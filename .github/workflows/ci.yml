@@ -111,6 +111,9 @@ jobs:
       # expectation being updated. Reporting only — never added to the pages
       # job's needs, so a red completion state can never block docs deploys.
       - run: nix run --quiet .#coverage-check
+      # Packaged unit controls, including the real-git candidate-binding
+      # suite (runs with git on PATH, so the controls run, not skip).
+      - run: nix run --quiet .#coverage-tests
   rendered-docs:
     if: github.event.action != 'closed'
     needs: build-gate
