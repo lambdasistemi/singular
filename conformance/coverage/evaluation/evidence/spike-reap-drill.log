@@ -1,5 +1,5 @@
 command: spike positive started in background, SIGKILLed mid-devnet, then: spike reap MARKERDIR
-commit: PENDING-SHIP-COMMIT (tree-exact build)
+commit: fb654d7 plus the uncommitted marker-uniqueness fix (committed alongside this transcript; Main.hs diffed identical between run tree and this commit)
 reap exit: 0
 --- drill transcript (abridged, full interleaved log discarded after verification) ---
 marker node orphaned by SIGKILL; reap printed: reaped: ["2053884"], remaining: [], dirGone: True; post-checks: node dead, marker dir gone.

@@ -1,5 +1,5 @@
 command: spike negative -j1
-commit: PENDING-SHIP-COMMIT (tree-exact build)
+commit: fb654d7 plus the uncommitted marker-uniqueness fix (committed alongside this transcript; Main.hs diffed identical between run tree and this commit)
 exit: 1
 --- output ---
 tasty-bdd evaluation: CG05 occupied-key refusal

@@ -1,5 +1,5 @@
 command: spike positive -j1
-commit: PENDING-SHIP-COMMIT (tree-exact build, see below)
+commit: fb654d7 plus the uncommitted marker-uniqueness fix (committed alongside this transcript; Main.hs diffed identical between run tree and this commit)
 exit: 0
 build: pristine copy of committed tree state (diffed identical), cabal.project source-repository pin lambdasistemi/tasty-bdd@f55494c9
 --- output ---
