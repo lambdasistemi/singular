@@ -88,7 +88,7 @@ funder.
 | CA01 derived name recomputed and matched | accept | the state UTxO carries exactly the SHA-256 of the published seed's outRef, quantity 1; a fabricated outRef's derivation does not match (control) |
 | CA02 rival registry from a second seed | **rival accepted on chain; authentication rejects** | the node accepts the rival's bootstrap tx; both token names read back from the chain differ (each SHA-256 of its own seed's outRef); the canonical registry is unaffected — same UTxO, value and datum bytes as the CA01 snapshot; the derived name accepts the canonical and rejects the rival |
 | CA03 policy+address-only authenticator | control must fail the run | the weak authenticator accepts the rival read back from the chain while the full authenticator rejects the same value — the name is the only discriminator; armed (`naive-authenticator`), the run fails naming the accepted rival |
-| CA04 applied-address derivation | accept | the manifest pins unapplied `64d1afbfe585…` with 1 declared parameter; applied in Haskell to `874e476d7408…`; the derived address equals the address the chain reports and the library's; the unapplied address does not pass (control; armed run fails) |
+| CA04 applied-address derivation | accept | the manifest pins unapplied `d42860fa97…` with 1 declared parameter; applied in Haskell to `ce7615f6ba4…`; the derived address equals the address the chain reports and the library's; the unapplied address does not pass (control; armed run fails) |
 | CA05 forged output at the canonical address | authentication rejects; no script ran | a forged output carrying the canonical address and datum but no token is accepted by the ledger with **no script executed** — no witness, no redeemer, no mint, empty node evaluation — and the same detector fires on the boot tx (control); authentication rejects it on the missing token |
 
 CA02 asserts an **acceptance**: the ledger takes the rival, and the
@@ -257,8 +257,11 @@ directory, never in the tracked tree.
 
 cardano-node 10.7.0, GHC 9.12.3, Aiken compiler v1.1.21
 (blueprint `hal/mpf 0.0.0`), unapplied state script pinned
-`64d1afbfe585b496a325ecacf2600210ff773368010bbab96e5cf1ce` with one
+`d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3` with one
 declared parameter, applied state script
-`874e476d7408de769e07a4ebf34f3c7379ebd7bd35ab8aad426b41d5`,
-unapplied request script hash `6b5ce7…`. Environments other than
+`ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e`,
+unapplied request script hash `8970c286…` (re-pinned from
+`64d1afbfe585…`/`874e476d7408…`/`6b5ce7…` by the issue-#79
+imported-validator repair; `onchain/REPAIR.patch` records the change,
+`PROVENANCE.md` the authority). Environments other than
 this devnet shape are explicitly not covered.

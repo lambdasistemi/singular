@@ -14,8 +14,9 @@ use lib.{TokenId}
 /// ## Cage Pattern Overview
 ///
 /// A "caged" token is an NFT locked at a script address with an associated
-/// Merkle Patricia Forestry (MPF) root. The owner can update the MPF by
-/// accepting requests from other users, enabling collaborative data structures
+/// Merkle Patricia Forestry (MPF) root. Anyone can fold pending requests
+/// into the MPF via permissionless `Modify` (no owner signs since issue
+/// #79), enabling collaborative data structures
 /// on-chain.
 ///
 /// ## Two-UTxO Architecture
@@ -25,7 +26,8 @@ use lib.{TokenId}
 ///
 /// 1. **State UTxOs** (`StateDatum`): Hold the caged NFT and the current
 ///    MPF root hash. Only one State UTxO exists per caged token. The owner
-///    field determines who can perform `Modify` and `End` operations.
+///    field determines who can perform the `End` operation; `Modify`
+///    (folding) is permissionless since issue #79.
 ///
 /// 2. **Request UTxOs** (`RequestDatum`): Created by users who want to
 ///    contribute data to someone else's caged token. They do NOT hold the
@@ -135,7 +137,7 @@ pub type RequestAction {
 /// |----------------|------------------------|-------------------------|--------------------------------------------|
 /// | `End`          | `StateDatum`           | State owner             | Burn the caged NFT                         |
 /// | `Contribute`   | `RequestDatum`         | Anyone (permissionless) | Link a request to a State UTxO             |
-/// | `Modify`       | `StateDatum`           | State owner             | Process requests (update/reject)           |
+/// | `Modify`       | `StateDatum`           | Anyone (permissionless fold) | Process requests (update/reject)           |
 /// | `Retract`      | `RequestDatum`         | Request owner           | Reclaim an unprocessed request             |
 /// | `Sweep`        | any (incl. `None`)     | State owner             | Reclaim non-legitimate UTxOs at the cage   |
 ///
@@ -151,7 +153,8 @@ pub type RequestAction {
 /// ## Test Hints
 /// - Using `End` on a `RequestDatum` UTxO -> should fail (expects StateDatum)
 /// - Using `Retract` on a `StateDatum` UTxO -> should fail (expects RequestDatum)
-/// - Using `Modify` without owner signature -> should fail
+/// - Using `Modify` without owner signature -> succeeds when the fold is
+///   otherwise valid (permissionless since issue #79)
 /// - Using `Contribute` with a request targeting a different token -> should fail
 /// - Using `Retract` without request owner signature -> should fail
 /// - Using `Sweep` without state-owner signature -> should fail
@@ -183,10 +186,11 @@ pub type UpdateRedeemer {
 /// A State value lives inside a `StateDatum` wrapper as part of a `CageDatum`.
 ///
 /// ## Ownership Model
-/// The `owner` field is a `VerificationKeyHash`, meaning only a single
-/// key holder controls the cage by default. When `stake_script` is set,
-/// `Modify` or `End` can instead be authorized by a withdrawal under that
-/// staking script credential.
+/// The `owner` field is a `VerificationKeyHash` naming who can terminate
+/// the cage (`End`) and migrate it; it confers no privilege over `Modify`,
+/// which any party may submit since issue #79. When `stake_script` is set,
+/// `End` (and migration) can instead be authorized by a withdrawal under
+/// that staking script credential.
 ///
 /// ## Root Hash
 /// The `root` field is a raw `ByteArray` (32 bytes for SHA2-256) representing
@@ -206,8 +210,9 @@ pub type UpdateRedeemer {
 /// - Verify initial root is `root(empty)` after minting
 pub type State {
   /// The verification key hash of the token owner.
-  /// When `stake_script` is absent, only the owner can modify the MPF state
-  /// or end the cage.
+  /// It authorizes `End` and migration (with the `stake_script`
+  /// withdrawal as an alternative when set). `Modify` requires no owner
+  /// or stake authorization since issue #79.
   owner: VerificationKeyHash,
   /// Optional staking script credential that can authorize owner operations.
   stake_script: Option<ScriptHash>,
@@ -272,8 +277,8 @@ pub type Operation {
 /// A request to modify a caged token's MPF.
 ///
 /// Requests are created by users who want to contribute data to
-/// someone else's caged token. The token owner can then accept
-/// the request by including it in a Modify transaction.
+/// someone else's caged token. Anyone can then fold the request by
+/// including it in a permissionless `Modify` transaction.
 ///
 /// ## Request Lifecycle
 ///
@@ -290,9 +295,11 @@ pub type Operation {
 ///    applies the operation to the MPF using the provided proof, and
 ///    advances the root hash.
 ///
-/// 4. **Retraction** (alternative to 2-3): If the owner hasn't processed
-///    the request, the request creator can spend it with `Retract`,
-///    which only requires `requestOwner`'s signature.
+/// 4. **Retraction** (alternative to 2-3): If the request is still
+///    pending, the request creator can spend it back with `Retract`
+///    when it is an insert request (`Update`/`Delete` requests are not
+///    retractable since issue #79), which requires `requestOwner`'s
+///    signature.
 ///
 /// ## Linking Mechanism
 /// The `requestToken` field is a `TokenId` (just an asset name). It must

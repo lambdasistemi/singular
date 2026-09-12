@@ -327,6 +327,40 @@ executable li-refusals
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The issue #79 repair rows: permissionless folding and insert-only
+-- retraction on a real devnet (Defects 1 and 2 with their controls).
+-- Source lives in journey/repair/; every imported Haskell module stays
+-- untouched (the permissionless fold and ownerless End builders are local
+-- copies of the imported TxBuild programs with the owner-signature line
+-- omitted, not edits to the library).
+executable repair-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/repair
+  main-is:          Main.hs
+  build-depends:
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-slotting
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , plutus-tx
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
