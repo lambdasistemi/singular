@@ -22,7 +22,7 @@ sources in `flake.nix`. A reviewer reads this file first.
      value `fbef6b6d9a253acf2ecf645fd62e663535b828595b8ea38ae2118038d4f9c5a7`,
      including value `cd1f3928377ab7e6d67e05a217d73c6e63dc796fcb90b752fb554ac3049defcf`).
 - **Full patch sha256:**
-  `bb522955089eb686c3a1629c4a24c11908e77b6838dd48d89541313619480091`
+  `2897c4cfda9af673f464ac2c62ddfea1c1777ce8d82e89d4efb0bbf5d3acaf69`
 - **Applied by:** `onchain/flake.nix` (`mpfPatched`, `applyPatches` over the
   immutable fetch). The blueprint, `aiken-check`, and the standalone
   `mpf-lone-fork-regression` check all consume the same patched source.

@@ -166,20 +166,36 @@
           nativeBuildInputs = [ pkgs.aiken ];
           buildPhase = ''
             export HOME=$PWD
-            mkdir -p validators build/packages
-            cp -r lib/. validators/
+            mkdir -p build/packages
+            mv lib validators
             printf '%s\n' \
               'name = "vendored/mpf-regression"' \
               'version = "0.0.0"' \
               'compiler = "v1.1.21"' \
               'plutus = "v3"' \
-              'license = "MPL-2.0"' > aiken.toml
+              'license = "MPL-2.0"' \
+              ''' \
+              '[[dependencies]]' \
+              'name = "aiken-lang/stdlib"' \
+              'version = "v2.2.0"' \
+              'source = "github"' \
+              ''' \
+              '[[dependencies]]' \
+              'name = "aiken-lang/fuzz"' \
+              'version = "v2.1.1"' \
+              'source = "github"' > aiken.toml
             printf '%s\n' \
               '[[packages]]' \
               'name = "aiken-lang/stdlib"' \
               'version = "v2.2.0"' \
+              'source = "github"' \
+              ''' \
+              '[[packages]]' \
+              'name = "aiken-lang/fuzz"' \
+              'version = "v2.1.1"' \
               'source = "github"' > build/packages/packages.toml
             cp -r ${stdlib} build/packages/aiken-lang-stdlib
+            cp -r ${fuzz} build/packages/aiken-lang-fuzz
             chmod -R u+w .
             aiken check
           '';

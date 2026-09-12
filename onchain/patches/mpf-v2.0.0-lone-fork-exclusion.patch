@@ -23,7 +23,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.ak b/lib/aiken/merkle-patricia-f
  
 diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patricia-forestry.tests.ak
 --- a/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:23:29.740002579 +0100
-+++ b/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:25:14.602496998 +0100
++++ b/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:42:26.932181754 +0100
 @@ -1086,3 +1086,70 @@
    mpf.from_root(
      #"366a84bbb2274658080acb85026bba389054782b4681f4cf9e29141ac98de253",
@@ -67,7 +67,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patr
 +  mpf.root(
 +    mpf.insert(
 +      mpf.from_root(reg_pre_root),
-+      #"6373372d666f726b2d433131",
++      #"637330372d666f726b2d433131",
 +      #"7663",
 +      reg_witness(),
 +    ),
@@ -79,7 +79,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patr
 +test reg_lone_fork_including_reproduces_post_root() {
 +  mpf.has(
 +    mpf.from_root(reg_post_root),
-+    #"6373372d666f726b2d433131",
++    #"637330372d666f726b2d433131",
 +    #"7663",
 +    reg_witness(),
 +  )
@@ -90,7 +90,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patr
 +test reg_lone_fork_control_has_fails_against_pre_root() {
 +  !mpf.has(
 +    mpf.from_root(reg_pre_root),
-+    #"6373372d666f726b2d433131",
++    #"637330372d666f726b2d433131",
 +    #"7663",
 +    reg_witness(),
 +  )
