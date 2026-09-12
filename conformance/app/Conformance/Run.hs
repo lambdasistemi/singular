@@ -3463,9 +3463,7 @@ the cage really did change hands.
 -}
 runCG13 :: Env -> IO ()
 runCG13 env = do
-    (sk2, _addr2) <- secondWallet env
     cage <- ensureRowCage env "cg13" 30_000 30_000 Nothing
-    let cfg = rcCfg cage
     tid <- cageTid cage
     req <-
         rowRequestInsert env cage "cg13-key" "cg13-value"
@@ -3473,7 +3471,7 @@ runCG13 env = do
         speculativeInsert env cage tid "cg13-key" "cg13-value"
     state <- cageStateUtxo env cage
     oldState <- extractState (snd state)
-    let fabOwner = BuiltinByteString (addrKeyHashBytes _addr2)
+    let fabOwner = BuiltinByteString (BS.pack (replicate 28 0xab))
     require
         "CG13: the fabricated owner collides with the real one"
         (fabOwner /= stateOwner oldState)
@@ -3532,141 +3530,28 @@ runCG13 env = do
             <> ") — recorded, held pending Q-002, never read as a \
                \pass"
         )
-    -- Control: the End pair — the one authorization path the repair
-    -- did NOT remove. Previous-owner End must be refused; the
-    -- new-owner End (key2, a real signable key) is accepted — both on
-    -- the same transferred cage, differing only in the signer.
-    let genesisKh = addrWitnessKeyHash (addrKeyHashBytes genesisAddr)
-        key2Kh = addrWitnessKeyHash (addrKeyHashBytes _addr2)
-    pp13 <- Cage.queryProtocolParams (envProv env)
-    (stateIn2, stateOut2) <- cageStateUtxo env cage
-    _ <- pure stateOut2
-    let policyId = cagePolicyIdFromCfg cfg
-        assetName = unTokenId tid
-        stateScript = mkCageScript cfg
-        burnDatum = toLedgerData (CageTypes.Burning (onChainTokenId tid))
-        endBody signers feeSrc feeAmt recipient =
-            let purposes =
-                    [
-                      ( ConwaySpending
-                          (AsIx (spendingIndex stateIn2 (Set.fromList [stateIn2, fst feeSrc])))
-                      , (toLedgerData End, units)
-                      )
-                    ,
-                      ( ConwayMinting (AsIx 0)
-                      , (burnDatum, units)
-                      )
-                    ]
-                rdmrs = Redeemers (Map.fromList purposes)
-             in mkBasicTx
-                    ( mkBasicTxBody
-                        & inputsTxBodyL
-                            .~ Set.fromList [stateIn2, fst feeSrc]
-                        & outputsTxBodyL
-                            .~ StrictSeq.fromList
-                                [ mkBasicTxOut
-                                    recipient
-                                    (MaryValue (Coin feeAmt) mempty)
-                                ]
-                        & mintTxBodyL
-                            .~ MultiAsset
-                                ( Map.singleton
-                                    policyId
-                                    (Map.singleton assetName (-1))
-                                )
-                        & feeTxBodyL .~ Coin feeAmt
-                        & reqSignerHashesTxBodyL .~ Set.fromList signers
-                        & vldtTxBodyL .~ ValidityInterval SNothing SNothing
-                        & scriptIntegrityHashTxBodyL
-                            .~ computeScriptIntegrity pp13 rdmrs
-                    )
-                        & witsTxL . scriptTxWitsL
-                            .~ Map.singleton (hashScript stateScript) stateScript
-                        & witsTxL . rdmrsTxWitsL .~ rdmrs
-    emit
-        "row"
-        ( "CG13 End discriminator: the previous owner attempts End on \
-           \the transferred cage — must be refused"
-        )
-    -- The previous owner's attempt pays from the previous owner's own
-    -- wallet — a genuine previous-owner transaction.
-    (feeSrcG, feeSrcGOut) <- largestWalletUtxo (envProv env)
-    let Coin feeBalG = feeSrcGOut ^. coinTxOutL
-        feeAmtG = 500_000
-    require "CG13 End: genesis wallet too small" (feeBalG > feeAmtG + 1_000_000)
-    submitExpectRefused
-        env
-        "CG13"
-        AgreesWithModel
-        (stateMarkerOf cfg)
-        (endBody [genesisKh] (feeSrcG, feeSrcGOut) feeAmtG genesisAddr)
-    emit
-        "control"
-        "CG13 control: the previous owner cannot end the transferred \
-         \cage — the transfer really bound"
-    -- The new owner (key2) ends the same cage from their own wallet:
-    -- accepted, proving the transfer bound and the gate is exactly
-    -- the signer.
-    utxos2 <- Cage.queryUTxOs (envProv env) _addr2
-    feeSrc2@(_, feeSrc2Out) <-
-        case sortOn (Down . (^. coinTxOutL) . snd) utxos2 of
-            [] -> failWith "CG13: key2 wallet has no UTxOs"
-            (u : _) -> pure u
-    let Coin feeBal2 = feeSrc2Out ^. coinTxOutL
-        feeAmt2 = 500_000
-    require "CG13 End: key2 wallet too small" (feeBal2 > feeAmt2 + 1_000_000)
-    endAccepted0 <- pure (endBody [key2Kh] feeSrc2 feeAmt2 _addr2)
-    _ <- submitExpectAccepted env (addKeyWitness sk2 endAccepted0)
-    pure ()
+    -- NOTE-023 operator ruling: the registry has NO owner role
+    -- whatsoever (not latent, not transferable, not gating End or
+    -- migration). The former End-pair control — "previous owner's End
+    -- refused, new owner's End accepted" — tested behaviour that
+    -- should not exist and is RETIRED, not landed. state.ak's End and
+    -- validateMigration still call validateOwnership: those are
+    -- outstanding conformance defects, owned by epic 17's repair. The
+    -- accepted owner change above is defect evidence with its
+    -- transaction id; CG13 stays held-q002 pending the user ruling on
+    -- owner pinning.
 
-    -- Control: the End pair — the one authorization path the repair
-    -- did NOT remove (validateOwnership still gates End). Both legs
-    -- build the IDENTICAL end transaction from the transferred cage
-    -- (the builder reads the datum owner, now key2); only the
-    -- witness set differs.
-    -- Previous owner: signs with genesis's key only. The node demands
-    -- the new owner's vkey (phase-1 MissingVKeyWitnesses naming the
-    -- new owner's hash) — the exact mechanical reason the old owner
-    -- cannot end a cage that changed hands.
-    endPrev <- endTokenImpl cfg (envProv env) tid genesisAddr
-    let signedPrev = addKeyWitness genesisSignKey endPrev
-    result <- submitTxResilient (envSubmit env) signedPrev
-    case result of
-        Rejected reason -> do
-            let text = T.unpack (TE.decodeUtf8Lenient reason)
-                newOwnerHex =
-                    hex (BS.pack (replicate 28 0x00))
-            unless ("MissingVKeyWitnesses" `isInfixOf` text) $
-                failWith
-                    ( "CG13 End discriminator: expected the refusal to \
-                       \name the missing new-owner witness, got: "
-                        <> take 400 text
-                    )
-            emit
-                "control"
-                ( "CG13 control: the previous owner's End is refused — \
-                   \the node names the new owner's key as the missing \
-                       \witness, so the transfer really bound"
-                )
-            _ <- pure newOwnerHex
-            pure ()
-        Submitted txid ->
-            failWith
-                ( "CG13 End discriminator FINDING: the previous owner's \
-                   \End was ACCEPTED (txid "
-                    <> txInHex txid
-                    <> ") — under the repaired validator the transfer \\\n                       \\would not have bound; this contradicts the \\\n                           \\handoff's account of the repair"
-                )
-    -- New owner: the identical end transaction, witnessed by key2 —
-    -- accepted.
-    (skCG13, addrCG13) <- secondWallet env
-    endNew <- endTokenImpl cfg (envProv env) tid addrCG13
-    _ <- submitExpectAccepted env (addKeyWitness skCG13 endNew)
-    emit
-        "control"
-        "CG13 control: the same end transaction witnessed by the new \
-         \owner is accepted — the discriminator is the signer alone"
-
+{- | CG14: the stake_script hook set, a fold carrying the matching
+withdraw-zero (the partition's shared.ak/types.ak hook; first ever
+ledger execution — epic 16 found two validator defects exactly by
+executing what green Aiken suites had already passed). The library
+fold adds the withdrawal and the staking script witness when the
+config carries the hook; the credential is registered first (a
+withdrawal from an unregistered account is a phase-1 error, not a
+verdict on the hook). The control: the same fold carrying the
+withdrawal but declaring NO owner — the hook must accompany the
+owner signature, never replace it — must be refused.
+-}
 {- | CG14: the stake_script hook set, a fold carrying the matching
 withdraw-zero (the partition's shared.ak/types.ak hook; first ever
 ledger execution — epic 16 found two validator defects exactly by

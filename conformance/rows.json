@@ -142,10 +142,10 @@
       "state": "uncovered"
     },
     {
-      "expected": "observe; expected gap on the imported partition",
+      "expected": "observe — defect evidence (owner change accepted); held-q002",
       "group": "CG",
       "id": "CG13",
-      "note": "Expected gap: upstream cardano-mpfs-onchain#100 pins owner and hook.",
+      "note": "Owner-change acceptance RETAINED AS DEFECT EVIDENCE (txid in receipt). NOTE-023 operator ruling: the registry has NO owner role whatsoever — owner transfer is a privilege that must not exist, so the former previous-owner-refused control is retired, not landed. state.ak End/migration validateOwnership calls are outstanding conformance defects (epic 17 owns the repair). Held-q002 pending the user ruling on owner pinning.",
       "requirement": "Owner/hook pinning: a Modify that changes the state owner.",
       "source": "cardano-keri R5_plugin_pinned",
       "state": "uncovered"
@@ -178,12 +178,13 @@
       "state": "bound-elsewhere"
     },
     {
-      "expected": "refuse",
+      "expected": "SUPERSEDED by operator ruling (registry has no owner role): observation preserved, claim withdrawn",
       "group": "CG",
       "id": "CG17",
       "requirement": "Sweep by a non-owner.",
       "source": "cage custody",
-      "state": "uncovered"
+      "state": "uncovered",
+      "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator — epic 17 owns the repair."
     },
     {
       "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: ends a cage by burning the state token",
