@@ -91,6 +91,21 @@ Feature: folding is exactly the five conditions — nothing more, nothing less
     When step runs the fold
     Then it succeeds — accepted in the corpus run — with all five conjuncts
 explicitly present, the conditionals in firing (4) and silent (5) form.
+    The arithmetic, shown so a reader need not re-derive it: `t.logical`
+      is `[{rep42, +1}]` (the Insert implication), `mint` is `[{rep42, +1}]`,
+      and `sameNet` checks `quantity a rep42 == quantity b rep42`, i.e.
+      `1 == 1` → true; `nonzero mint` is true (`1 ≠ 0`), so clause 4 fires
+      with its witness present; `actionNet` is `[]`, so clause 5 is silent
+      with `applicationMint` false. The previous exhibit failed here with
+      `1 == 0`; this one shows `1 == 1`.
+    Check (one line, tested on this host — no `jq`/`python3` outside a dev
+      shell is needed):
+      `nix run --quiet nixpkgs#jq -- -c '.cases[] | select(.case.id ==
+      "S13d-fresh-insert-folded") | {mint: .case.action.fold.mint,
+      logical: .result.value.logical, accepted: .result.accepted}'
+      lean/corpus.json`
+      prints `mint` `[{rep42 scope0/policy8/reg1/key42, +1}]`, `logical`
+      identical, `accepted: true`.
     And a rival story asserting "also the state owner must have signed" is FALSE here —
       that requirement is exactly what the converse forbids, and what F-002 records
       the compiled validator as wrongly demanding.
@@ -109,6 +124,12 @@ explicitly present, the conditionals in firing (4) and silent (5) form.
       empty folds on the imported partition are the unresolved consumer
       restriction (held — Q-002; CG11 gap, upstream #100). No Insert is
       claimed to have zero net mint, here or anywhere on this page.
+    Check: no corpus case covers it — of the 23 fold cases in
+      `lean/corpus.json`, none has empty `items` (same `nix run … nixpkgs#jq`
+      host command with `select(.case.action.fold.items == [])` prints
+      nothing). The satisfiability above is therefore definitional
+      (`foldItems` empty equation, `Result.logical` default, `sameNet`
+      vacuous, `nonzero` false), stated as such, not executed evidence.
 ```
 
 Non-vacuity obligation this page fixes for the future story: each conditional's antecedent
