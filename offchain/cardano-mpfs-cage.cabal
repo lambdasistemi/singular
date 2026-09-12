@@ -383,7 +383,9 @@ test-suite e2e-tests
   default-language: GHC2021
   hs-source-dirs:   e2e-test
   main-is:          main.hs
-  other-modules:    Cardano.MPFS.Cage.E2E.CageSpec
+  other-modules:
+    Cardano.MPFS.Cage.E2E.CageSpec
+    Cardano.MPFS.Cage.E2E.Fork81Spec
   build-depends:
     , async
     , base
@@ -401,6 +403,7 @@ test-suite e2e-tests
     , containers
     , hspec
     , microlens
+    , mts:mpf-write
     , ouroboros-network
 
   ghc-options:      -threaded -with-rtsopts=-N
