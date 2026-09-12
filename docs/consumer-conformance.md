@@ -141,10 +141,17 @@ checkpoint, goDormant/goConvicted/convict refund to the recorded owner,
 rejection returns the operation bond, and the fold tip goes to the
 folder. A blanket exact-refund repair would preserve the wrong value
 mode and prevent checkpoint funding. Upstream cardano-mpfs-onchain
-#100/#101 is the partition fix. The owner/hook pinning those theorems
-also assumed is **superseded, not unmet**: the operator ruled Singular
-has no registry-owner role at all, so there is no owner to pin. The
-remaining requirements stay unmet; the receipts carry
+#100/#101 is the partition fix. `R5_plugin_pinned` needs a distinction this page
+previously collapsed. It is about **the plugin, not a registry owner**:
+the bound `Registry.Sys` carries `plugin`, and the consumer's fold checks
+`pl = s.plugin`. So **registry-owner privileges and fields are
+superseded** — the operator ruled Singular has no registry-owner role,
+and there is no owner to pin — but the **application/plugin identity
+correspondence is not waived by that**. The required application and
+native-witness bindings and the policy bindings **remain required**, and
+must be established through the actual ownerless representation; this is
+not a reason to reintroduce `stake_script` or to assert its old mechanism
+is the required one. The remaining requirements stay unmet; the receipts carry
 verdict `held-q002` and the session ends non-zero while anything is
 held — a hold can never read as a pass, and a verdict moves only by
 execution. CG13 is resolved-by-ruling, not a fourth unresolved hold:

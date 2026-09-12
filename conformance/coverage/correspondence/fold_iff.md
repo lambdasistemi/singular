@@ -9,8 +9,9 @@ page states facts (verification notes inline; disagreements surfaced, none silen
 
 **This page is not execution evidence and does not reduce debt** — the obligation it
 renders is still unmapped and insufficient-layer in the committed record. Its
-permissionless direction is settled design contradicted by the implementation
-(a defect assigned to epic 17 under #79), never an undecided reading (below).
+permissionless direction was settled design contradicted by the implementation; that defect
+(epic 17, #79) is **repaired and landed**, and the repair is confirmed by execution (below).
+It was never an undecided reading.
 
 ## 1. The pinned Lean claim
 
@@ -147,7 +148,7 @@ the zero-net / no-witness branch, where the antecedent is false.
 | per-request checks (1, 3, 4, 5 as exercised per action) | `mkAction` (`onchain/validators/state.ak:71`), driven per input by `validModify` (`state.ak:162`) | partially exercised by merged CG rows |
 | frame conditions (output tip, process/retract times, recomputed root, credential, lovelace, token) | `validModify` body (`state.ak:162-196`) | partially exercised by merged CG rows |
 | 2 | `foldItems` sequencing vs the on-chain fold | exercised for single-item folds; multi-item sequencing not isolated |
-| **converse: nothing else required** | `state.ak` `spend:36` calls `expect validateOwnership(state, tx)` **before** dispatching `Modify` to `validModify` (`state.ak:42`) | **implementation contradicts the accepted design — defect, epic 17 repair #79** |
+| **converse: nothing else required** | `state.ak` dispatches `Modify(actions) -> validModify(…)` with **no ownership check**; the site carries the comment *"Permissionless fold (issue #79, Defect 1): Modify must NOT require the owner"* | **repaired and landed**; confirmed by execution — CG20 `accepted`, verdict `agrees-with-model`, tx `4142f7d6…`. Historically **REFUSED** pre-#79 — both halves by execution |
 
 Empty-fold note, read directly: the fold accumulates over `inputs` carrying
 actions as state and discards the tail (`let (expectedNewRoot, _, …)` at
@@ -159,15 +160,24 @@ Verification notes for this table (renderer's, per NOTE-004's "tell me where you
 All `state.ak` and `spec.md` pins below were read directly at worktree base
 `012e404` (`onchain/`, `specs/` unmodified — the frozen contract):
 
-- **Verified directly:** `onchain/validators/state.ak`, `spend:36`: `expect validateOwnership(state, tx)`
-  precedes the `when redeemer is { Modify(actions) -> validModify(...) }` dispatch (`state.ak:42`).
-  A witness set satisfying all five clauses exists whose fold the compiled validator refuses
-  (owner unsigned) — an implementation defect per epic 17's `A-002`, assigned to #79 for repair.
-  The design was never in doubt: this theorem's sufficiency direction and
-  `specs/protocol/spec.md:117` ("no native owner, privileged requester or privileged folder
-  gate") both state permissionlessness. Our own runner supplied the owner signature
-  on every fold, which is why no row observed it — recorded, not defended. Regression control:
-  row CG20; the contradiction, the evidence and the coverage debt all remain open.
+- **Verified directly, current source:** `onchain/validators/state.ak` dispatches
+  `Modify(actions) -> validModify(state, input, policyId, cageToken, tx, actions)` with **no
+  ownership check**, the site carrying the comment *"Permissionless fold (issue #79, Defect 1):
+  Modify must NOT require the owner"*. `validateOwnership` survives only on other branches, and
+  those are what the operator's no-owner ruling and epic 17's ownerless repair remove.
+  **The #79 defect is repaired and landed.**
+
+  **Historical, and kept as history:** before that repair a witness set satisfying all five clauses
+  existed whose fold the compiled validator refused (owner unsigned) — an implementation defect per
+  epic 17's `A-002`. Our own runner supplied the owner signature on every fold, which is why no row
+  observed it: recorded, not defended. The design was never in doubt — this theorem's sufficiency
+  direction and `specs/protocol/spec.md:117` ("no native owner, privileged requester or privileged
+  folder gate") both state permissionlessness.
+
+  **Confirmed by execution, both halves:** regression row **CG20 failed pre-#79 and is `accepted`
+  post-#79**, verdict `agrees-with-model`, tx `4142f7d6…`, candidate `1d98d51a`, `dirty:false`.
+  The contradiction is closed. **The coverage debt is not**: this page still renders an obligation
+  that is unmapped and insufficient-layer, and final `617e434` acceptance remains outstanding.
 - **Mapping obligation added by this page:** the conditionals (4, 5) need a reachable
   antecedent case and a zero-side case in the future story; neither exists in any merged row
   today (rows always supply both witnesses). That is mapping/execution debt, tracked in the
@@ -185,12 +195,12 @@ All `state.ak` and `spec.md` pins below were read directly at worktree base
 
 Whether the registry is permissionless is not undecided: this
 theorem's sufficiency direction and `specs/protocol/spec.md:117` both
-state it, and epic 17's `A-002` identifies the owner gate in the
-compiled validator as an implementation defect assigned to #79 for
-repair. What remains open is the repair landing, the CG20 regression
-row that pins the fixed behaviour, and the coverage debt around this
-obligation — the contradiction, the evidence and the debt, not the
-design question. This page renders the theorem as stated and will not
+state it, and epic 17's `A-002` identified the owner gate in the
+compiled validator as an implementation defect assigned to #79. **That
+repair has landed, and CG20 pins the fixed behaviour by execution.**
+What remains open is the coverage debt around this obligation and final
+`617e434` acceptance — the debt and the evidence, never the design
+question. This page renders the theorem as stated and will not
 be adjusted to fit the code.
 
 ## 7. Machine anchors
@@ -210,7 +220,7 @@ be adjusted to fit the code.
   },
   "evidence": {
     "checkId": "none yet — rows CG01-CG05/CG10-12 exercise folds generically but no row is bound to this identity",
-    "knownContradiction": "F-002: spend:36 demands the owner before Modify dispatch; implementation defect per A-002, repair assigned #79 (epic 17); design settled, contradiction and debt open"
+    "resolvedContradiction": "F-002: pre-#79 spend demanded the owner before Modify dispatch (implementation defect per A-002). REPAIRED AND LANDED: Modify dispatches to validModify with no ownership check. Confirmed by execution both halves — CG20 REFUSED pre-#79, accepted post-#79 (agrees-with-model, tx 4142f7d6, candidate 1d98d51a). Design was always settled; coverage debt and final 617e434 acceptance remain open"
   },
   "recordStatus": "unmapped, insufficient-layer — this page is correspondence, not coverage"
 }
