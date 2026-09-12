@@ -430,7 +430,7 @@ runMode mode blueprintPath mpfsPath = do
                 <> " (the applied mint identity this run mints representatives under)"
             )
         tm <- mkPureTrieManager
-        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes
+        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash))
         createTrie tm tok
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
@@ -953,36 +953,49 @@ retireTx ::
     [ByteString] ->
     IO ConwayTx
 retireTx env snap destination signers = do
-    (fund, collateral) <- takeFundCollateral env
-    let inputs = Set.fromList [snapIn snap, fst fund]
-        spendIdx = spendingIndex (snapIn snap) inputs
-        redeemers =
-            Redeemers
-                ( Map.singleton
-                    (ConwaySpending (AsIx spendIdx))
-                    (Data (redeemerRetire (envRepBytes env)), maxUnits)
-                )
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        custodyOut' =
+    -- State-anchored retire (issue #77, E-001 repair): the record spend
+    -- rides a connected transaction spending the registry state via a
+    -- no-op `Modify` (empty requests, root unchanged), so the application
+    -- validator reads the expected representative policy from validated
+    -- state. No mint rides a retire (the representative moves to custody;
+    -- completion burns it later). Local evaluation is skipped so the ledger
+    -- executes every purpose for real with stated budgets. `retireTx`
+    -- returns the unsigned transaction; callers add key witnesses exactly
+    -- as before.
+    snapLive <- mustOutAt env (envAppAddr env) (snapIn snap)
+    (stateIn, stateOut) <- queryRetirementState env
+    feeUtxo <- queryRetirementFee env
+    let custodyOut' =
             custodyOut (envPp env) destination (snapCoin snap) (envRepTokens env)
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [custodyOut']
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ inputs
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [custodyOut', change]
-                & feeTxBodyL .~ Coin flatFee
-                & reqSignerHashesTxBodyL
-                    .~ Set.fromList (map addrWitnessKeyHash signers)
-                & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
-        ( mkBasicTx body
-            & witsTxL . scriptTxWitsL
-                .~ Map.singleton (envScriptHash env) (envScript env)
-            & witsTxL . rdmrsTxWitsL .~ redeemers
-        )
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
+    (unsigned, _newRoot) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = genesisAddr
+                , cfaStateUtxo = (stateIn, stateOut)
+                , cfaReqUtxos = []
+                , cfaFeeUtxo = feeUtxo
+                , cfaPp = envPp env
+                , cfaSpends =
+                    [ ConnectedSpend
+                        { csUtxo = (snapIn snap, snapLive)
+                        , csRedeemer =
+                            RawRedeemer (redeemerRetire (envRepBytes env))
+                        , csScript = envScript env
+                        }
+                    ]
+                , cfaMints = []
+                , cfaOutputs = [custodyOut']
+                , cfaSigners = map addrWitnessKeyHash signers
+                , cfaRefUtxos = envRefUtxos env
+                , cfaAttachScripts = []
+                , cfaSkipEval = True
+                , cfaAdjustRoot = id
+                }
+    pure unsigned
 
 maintainTx ::
     Env ->
@@ -1079,8 +1092,9 @@ bootRetirementCage ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO (CageConfig, TokenId)
-bootRetirementCage prov submit tm stateBytes requestBytes = do
+bootRetirementCage prov submit tm stateBytes requestBytes repPolicy = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
@@ -1094,6 +1108,7 @@ bootRetirementCage prov submit tm stateBytes requestBytes = do
                 , defaultProcessTime = 120_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
+                , cfgRepPolicy = repPolicy
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr

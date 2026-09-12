@@ -104,6 +104,7 @@ import Cardano.MPFS.Cage.Types (
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
+    stateRepPolicyBytes,
  )
 import Cardano.Tx.Ledger (ConwayTx)
 import Naming.Datum
@@ -880,14 +881,41 @@ vRepresentativeApplied ctx = case foldActiveBody ctx of
          in if idRepAppliedHex ids == idRepUnappliedHex ids
                 then refuted "applied identity equals the unapplied hash: the parameter was never applied"
                 else case repMints of
-                    [(_, 1)] ->
-                        established
-                            ("mint policy recomputed by applying the bound parameter: " <> idRepAppliedHex ids)
+                    [(_, 1)] -> case consumedStateRep ctx tx of
+                        Nothing ->
+                            cne "consumed state datum does not decode: the state anchor is unreachable"
+                        Just repBs
+                            | hexStr repBs == idRepAppliedHex ids ->
+                                established
+                                    ( "mint policy recomputed by applying the bound parameter: "
+                                        <> idRepAppliedHex ids
+                                        <> "; spent state pins the same policy (E-001 anchor)"
+                                    )
+                            | otherwise ->
+                                refuted
+                                    ( "spent state pins "
+                                        <> hexStr repBs
+                                        <> " but the derived applied policy is "
+                                        <> idRepAppliedHex ids
+                                    )
                     _ ->
                         refuted
                             ("no +1 mint under the derived applied policy " <> idRepAppliedHex ids <> ": " <> show minted)
   where
     policyBytes (PolicyID sh) = scriptHashBytes sh
+
+-- | The expected representative policy pinned by the consumed state datum
+-- (issue #77, E-001 repair): genesis-set, `Modify`-preserved. `Nothing`
+-- when no single state input resolves or its datum does not decode.
+consumedStateRep :: Ctx -> ConwayTx -> Maybe ByteString
+consumedStateRep ctx tx =
+    case [inp | RStateSpend inp 2 <- resolvePurposes ids (evUtxos (ctxEvidence ctx)) tx] of
+        [inp] -> case Map.lookup (showInShort inp) (evUtxos (ctxEvidence ctx)) >>= outCageDatum of
+            Just (StateDatum st) -> Just (stateRepPolicyBytes st)
+            _ -> Nothing
+        _ -> Nothing
+  where
+    ids = ctxIdentities ctx
 
 vRepresentativeAsset :: Ctx -> Verdict
 vRepresentativeAsset ctx = case foldActiveBody ctx of

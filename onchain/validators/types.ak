@@ -200,6 +200,15 @@ pub type State {
   /// Duration (in milliseconds) of Phase 2 — the requester retract window.
   /// Set at mint time; enforced immutable across Modify/Reject operations.
   retract_time: Int,
+  /// The expected representative minting policy (issue #77, E-001 repair):
+  /// `Singular.representativePolicy` refined on chain. Set at bootstrap from
+  /// the honest applied representative policy; preserved immutable across
+  /// every `Modify` (a fold altering it refuses). The naming application
+  /// validator reads this field from the spent state and requires the moved
+  /// representative's policy to equal it — foreign-policy fakes refuse with
+  /// `representative-policy`. Appended, never reordered: the first four
+  /// fields keep their indices.
+  representative_policy: PolicyId,
 }
 
 /// Operations that can be performed on the MPF.

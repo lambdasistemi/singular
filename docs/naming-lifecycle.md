@@ -36,7 +36,7 @@ The transition refuses a missing or wrong controller witness, more than one dest
 
 ## Fold a pending claim into an active name
 
-A controller who inserted a claim for a spelling folds it into an active name in one connected transaction: the state validator advances the registry, the registry request contributes the spelling, and the naming claim folds. The fold burns the single-use insert approval and mints the representative NFT under the applied representative policy; the registry key is the spelling itself and the registry value is the representative name. Anyone may submit the fold once the claim and the spelling-keyed request both exist — the controller's signature was already checked when the claim was inserted, so the fold needs no owner and no registry-owner role exists.
+A controller who inserted a claim for a spelling folds it into an active name in one connected transaction: the state validator advances the registry, the registry request contributes the spelling, and the naming claim folds. The fold burns the single-use insert approval and mints the representative NFT under the applied representative policy; the registry key is the spelling itself and the registry value is the representative name. The expected policy is the registry's own configuration: the spent state's `representative_policy` field, set at bootstrap and preserved immutable across every `Modify`. The fold requires the mint and the record to carry the named representative exactly once under that expected policy — a correct name under a foreign always-true policy refuses on `representative-policy` (issue #77, E-001 repair). Anyone may submit the fold once the claim and the spelling-keyed request both exist — the controller's signature was already checked when the claim was inserted, so the fold needs no owner and no registry-owner role exists.
 
 ```mermaid
 sequenceDiagram
@@ -49,7 +49,7 @@ sequenceDiagram
   App-->>Anyone: active record carrying the representative
 ```
 
-The transition refuses a second fold of the same spelling, a fold with no live claim, an approval that does not bind the claim's control and commitment, and a representative that does not name the controller at incarnation zero. Maintenance, recovery, and retirement all start from records this fold creates.
+The transition refuses a second fold of the same spelling, a fold with no live claim, an approval that does not bind the claim's control and commitment, a representative that does not name the controller at incarnation zero, and a correctly named representative moved under any policy but the spent state's expected one. Maintenance, recovery, and retirement all start from records this fold creates.
 
 ## Recover with the committed next controller
 
@@ -83,7 +83,7 @@ stateDiagram-v2
   Over --> Over: re-registration refused
 ```
 
-Pending retirement is observably different from `Over`. The transition refuses an insufficient quorum, a quorum attempt that changes payment routing or control fields, wrong representative custody, replay, Delete/release, retirement withdrawal, and registration after `Over`. The quorum is a retirement authorization selected by the application; it is not next-controller recovery and it is not a death oracle.
+Pending retirement is observably different from `Over`. The transition refuses an insufficient quorum, a quorum attempt that changes payment routing or control fields, wrong representative custody, a representative moved under any policy but the spent state's expected one (input, burn and custody all bind it — issue #77, E-001 repair), replay, Delete/release, retirement withdrawal, and registration after `Over`. The quorum is a retirement authorization selected by the application; it is not next-controller recovery and it is not a death oracle.
 
 Retirement prevents name-based resolution. It cannot prevent someone from sending directly to a previously saved raw Cardano address: the protocol cannot retract an address another person already knows.
 

@@ -34,6 +34,9 @@ module Cardano.MPFS.Cage.Types (
     -- * Proof steps (Aiken MPF proof encoding)
     ProofStep (..),
     Neighbor (..),
+
+    -- * State helpers
+    stateRepPolicyBytes,
 ) where
 
 import Data.ByteString (ByteString)
@@ -117,7 +120,8 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 {- | On-chain token state. Matches Aiken
-@types\/State@ (4 fields, ownerless per ruling NOTE-028/A-003).
+@types\/State@ (5 fields: ownerless per ruling NOTE-028/A-003, plus
+the expected representative policy per issue #77 E-001 repair).
 -}
 data OnChainTokenState = OnChainTokenState
     { stateRoot :: !OnChainRoot
@@ -128,6 +132,10 @@ data OnChainTokenState = OnChainTokenState
     -- ^ Oracle processing window duration (ms)
     , stateRetractTime :: !Integer
     -- ^ Requester retract window duration (ms)
+    , stateRepPolicy :: !BuiltinByteString
+    -- ^ Expected representative minting policy (28-byte script hash).
+    -- Issue #77 E-001 repair: `Singular.representativePolicy` refined on
+    -- chain. Set at bootstrap, preserved immutable across every `Modify`.
     }
     deriving stock (Show, Eq)
 
@@ -244,6 +252,12 @@ data Neighbor = Neighbor
     -- ^ Merkle root hash of the neighbor subtree
     }
     deriving stock (Show, Eq)
+
+-- | The expected representative policy as plain bytes (issue #77, E-001):
+-- unwraps the `BuiltinByteString` for hex comparison in verifiers.
+stateRepPolicyBytes :: OnChainTokenState -> ByteString
+stateRepPolicyBytes st = case stateRepPolicy st of
+    BuiltinByteString bs -> bs
 
 -- ---------------------------------------------------------
 -- Helpers for manual Data construction
@@ -427,12 +441,14 @@ instance ToData OnChainTokenState where
                 , I stateMaxFee
                 , I stateProcessTime
                 , I stateRetractTime
+                , bbsToD stateRepPolicy
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt] -> do
+        Constr 0 [r, I mf, I pt, I rt, rp] -> do
             stateRoot <- fromBuiltinData (mkD r)
+            stateRepPolicy <- bbsFromD rp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
@@ -441,14 +457,21 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt] ->
-            OnChainTokenState
-                { stateRoot =
-                    unsafeFromBuiltinData (mkD r)
-                , stateMaxFee = mf
-                , stateProcessTime = pt
-                , stateRetractTime = rt
-                }
+        Constr 0 [r, I mf, I pt, I rt, rp] ->
+            case bbsFromD rp of
+                Just repPolicy ->
+                    OnChainTokenState
+                        { stateRoot =
+                            unsafeFromBuiltinData (mkD r)
+                        , stateMaxFee = mf
+                        , stateProcessTime = pt
+                        , stateRetractTime = rt
+                        , stateRepPolicy = repPolicy
+                        }
+                _ ->
+                    error
+                        "unsafeFromBuiltinData:\
+                        \ OnChainTokenState.repPolicy"
         _ ->
             error
                 "unsafeFromBuiltinData:\

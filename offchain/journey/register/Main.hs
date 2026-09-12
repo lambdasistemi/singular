@@ -403,6 +403,12 @@ runMode mode namingPath mpfsPath = do
             failWith
                 "representative.representative compiled code not found in \
                 \the naming blueprint"
+    attackerBytes <- case extractCompiledCode "e001_attacker.e001_attacker" nbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "e001_attacker.e001_attacker compiled code not found in \
+                \the naming blueprint (E-001 foreign-policy row needs it)"
     embp <- loadBlueprint mpfsPath
     mbp <- either failWith pure embp
     stateBytes <- case extractCompiledCode "state.state" mbp of
@@ -439,6 +445,8 @@ runMode mode namingPath mpfsPath = do
             repAppliedPolicy = PolicyID repAppliedHash
             repAppliedScript =
                 scriptFromBytes "representative" repAppliedBytes
+            attackerScript = scriptFromBytes "e001-attacker" attackerBytes
+            attackerPolicy = PolicyID (computeScriptHash attackerBytes)
             stateUnappliedHex =
                 hex (scriptHashBytes (computeScriptHash stateBytes))
             appliedStateBytes = stateBytes
@@ -514,7 +522,7 @@ runMode mode namingPath mpfsPath = do
         (candidate, worktreeDirty) <- candidateFromRepo
         writeEvidenceMeta evDir candidate worktreeDirty namingPath mpfsPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <-
-            bootCage prov submit tm appliedStateBytes requestBytes evDir evNext
+            bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) evDir evNext
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
@@ -551,6 +559,8 @@ runMode mode namingPath mpfsPath = do
                     , envRepHash = repAppliedHash
                     , envRepHex = repAppliedHex
                     , envRepPolicy = repAppliedPolicy
+                    , envAttackerScript = attackerScript
+                    , envAttackerPolicy = attackerPolicy
                     , envOwnerHash = ownerHash
                     , envPartyHash = partyHash
                     , envPartyAddr = partyAddr
@@ -614,6 +624,8 @@ data Env = Env
     , envRepHash :: ScriptHash
     , envRepHex :: String
     , envRepPolicy :: PolicyID
+    , envAttackerScript :: Script ConwayEra
+    , envAttackerPolicy :: PolicyID
     , envOwnerHash :: ByteString
     , envPartyHash :: ByteString
     , envPartyAddr :: Addr
@@ -666,6 +678,11 @@ runRows env record = do
         "row"
         "free-key-control: bob folded clean in the same run — the \
         \occupied-name refusal is about alice being taken, not about folding"
+    -- E-001 (issue #77): a connected fold carrying the right name under a
+    -- foreign always-true policy refuses on `representative-policy` while
+    -- the honest folds above stay accepted in the same run.
+    eve <- setupKey env "eve" "eve" (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed nextSeed
+    rowForeignPolicyRefused env eve
     -- Mint negatives: the insert-approval arm refuses.
     rowMintBadName env
     rowMintNoSigner env
@@ -771,10 +788,11 @@ bootCage ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     FilePath ->
     IORef Int ->
     IO (CageConfig, TokenId)
-bootCage prov submit tm stateBytes requestBytes evDir evNext = do
+bootCage prov submit tm stateBytes requestBytes repPolicy evDir evNext = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
@@ -788,6 +806,7 @@ bootCage prov submit tm stateBytes requestBytes evDir evNext = do
                 , defaultProcessTime = 120_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
+                , cfgRepPolicy = repPolicy
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
@@ -2070,6 +2089,97 @@ rowMintNoSigner env = do
         signed
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
+
+-- | E-001 foreign-policy refusal (issue #77): the connected fold names the
+-- correct representative for a fresh spelling but mints and carries it under
+-- the always-true attack policy. The spent state pins the honest applied
+-- policy, so the application validator refuses on `representative-policy`.
+-- Local evaluation is skipped (the ledger must refuse for real, attributed
+-- to the application script); the honest alice/bob folds stay accepted.
+rowForeignPolicyRefused :: Env -> KeySetup -> IO ()
+rowForeignPolicyRefused env ks = do
+    (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
+    snapClaim <- mustSnap env claimIn
+    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling ks) (keyRepName ks)
+    (stateIn, stateOut) <- queryStateUtxo env
+    feeUtxo <- queryFeeUtxo env
+    let repName = keyRepName ks
+        approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
+        foreignTokens =
+            MultiAsset $
+                Map.singleton
+                    (envAttackerPolicy env)
+                    (Map.singleton (AssetName (SBS.toShort repName)) 1)
+        recordOut =
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                (snapCoin snapClaim)
+                foreignTokens
+                (keyDatum ks)
+    (unsigned, _newRoot) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = envFolderAddr env
+                , cfaStateUtxo = (stateIn, stateOut)
+                , cfaReqUtxos = [(reqIn, reqOut)]
+                , cfaFeeUtxo = feeUtxo
+                , cfaPp = envPp env
+                , cfaSpends =
+                    [ ConnectedSpend
+                        { csUtxo = (claimIn, claimOut)
+                        , csRedeemer =
+                            RawRedeemer (foldRedeemer [repName])
+                        , csScript = envAppScript env
+                        }
+                    ]
+                , cfaMints =
+                    [ ConnectedMint
+                        { cmPolicy = envAppPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort approval))
+                                (-1)
+                        , cmRedeemer =
+                            RawRedeemer
+                                ( insertApprovalRedeemer
+                                    (keyControllerHash ks)
+                                    (keyControlBytes ks)
+                                    (keyCommitment ks)
+                                )
+                        , cmScript = envAppScript env
+                        }
+                    , ConnectedMint
+                        { cmPolicy = envAttackerPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort repName))
+                                1
+                        , cmRedeemer = RawRedeemer (PLC.B "")
+                        , cmScript = envAttackerScript env
+                        }
+                    ]
+                , cfaOutputs = [recordOut]
+                , cfaSigners = []
+                , cfaRefUtxos = envRefUtxos env
+                , cfaAttachScripts = [envAttackerScript env]
+                , cfaSkipEval = True
+                , cfaAdjustRoot = id
+                }
+    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
+    expectRefused
+        MainRun
+        env
+        "fold-foreign-policy-refused"
+        "representative-policy"
+        "the fold names the correct representative but moves it under the \
+        \attacker's always-true policy instead of the registry's expected policy"
+        signed
+    noTrace env snapClaim "fold-foreign-policy"
 
 rowFoldTamperedRep :: Env -> KeySetup -> TxIn -> IO ()
 rowFoldTamperedRep env ks claimIn = do

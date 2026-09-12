@@ -368,3 +368,28 @@ through co-consumption inside one transaction; nothing on the ledger
 maps a spelling to its controller outside the fold that carries both.
 The model treats that table as external, and this slice does not
 change that.
+
+**E-001 repair (t77 follow-up).** The predecessor proved on chain that a
+foreign-policy representative is accepted (accepted tx `ae4fb32d…`, witness
+retained in the ticket runtime, never deleted): `fold()`/`retire()` mapped
+the abstract `Representative` onto the asset name only, dropping the `policy`
+component that `DecidableEq`, `foldOne .insert` (`representative-identity`,
+`Model.lean:177`), `sameNet` and `LI07-substituted-representative-policy`
+require. The faithful refinement: the MPFS `State` datum carries
+`representative_policy` (appended fifth field, set at bootstrap from the
+honest applied policy, preserved immutable across every `Modify` with a
+refusal test); `fold()` requires the mint and the record to carry the named
+representative exactly once under the spent state's expected policy, and
+`retire()` requires input, burn and custody under it — foreign-policy fakes
+refuse on `representative-policy`. The `connected-verifier` recomputes the
+anchor (`representative.applied` now also requires the spent state to pin the
+derived applied policy). The `register-rows` MainRun executes the attack
+(`fold-foreign-policy-refused`, correct name under the versioned always-true
+`e001_attacker` policy, fresh spelling `eve`) and requires refusal while
+`alice`/`bob` stay accepted; the misnamed row keeps its corrected name
+(`fold-misnamed-representative-refused`). Known residue: the `key3`
+naming-only negatives now refuse on missing state (same application script,
+unattributed at node-text layer) rather than isolating `identity` — the name
+check's devnet isolation is restored by giving those rows a no-op state when
+the census demands it; unit-level discrimination stands (`fold_insert_…`
+and `lt08_foreign_policy_refuses` fail-tests).

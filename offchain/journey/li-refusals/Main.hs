@@ -164,7 +164,7 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
+import Cardano.MPFS.Cage.Config (CageConfig (..), bootStateFromCfg)
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
@@ -196,7 +196,6 @@ import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
-    OnChainTokenState (..),
     OnChainTxOutRef (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
@@ -433,6 +432,7 @@ runMode mode mpfsPath namingPath = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
+                    , cfgRepPolicy = SBS.pack (replicate 28 0)
                     , network = Testnet
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
@@ -1525,15 +1525,7 @@ registryOut env addr policy name =
     let mintMA =
             MultiAsset $
                 Map.singleton policy (Map.singleton (AssetName (SBS.toShort name)) 1)
-        stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateRoot = OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c = defaultTip (envCfg env) in c
-                    , stateProcessTime = defaultProcessTime (envCfg env)
-                    , stateRetractTime = defaultRetractTime (envCfg env)
-                    }
+        stateDatum = StateDatum (bootStateFromCfg (envCfg env) (OnChainRoot emptyRoot))
      in mkBasicTxOut addr (MaryValue (Coin 2_000_000) mintMA)
             & datumTxOutL .~ mkInlineDatum (toPlcData stateDatum)
 
@@ -1658,15 +1650,7 @@ buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
                 Map.singleton
                     (cagePolicyIdFromCfg cfg)
                     (Map.singleton (AssetName (SBS.toShort seedName)) 1)
-        stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateRoot = OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c = defaultTip cfg in c
-                    , stateProcessTime = defaultProcessTime cfg
-                    , stateRetractTime = defaultRetractTime cfg
-                    }
+        stateDatum = StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))
         stateOut =
             mkBasicTxOut
                 scriptAddr

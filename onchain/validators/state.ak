@@ -172,7 +172,7 @@ fn validModify(
   actions: List<RequestAction>,
 ) {
   let Transaction { outputs, inputs, validity_range, fee: tx_fee, .. } = tx
-  let State { root, tip, process_time, retract_time } = state
+  let State { root, tip, process_time, retract_time, representative_policy } = state
   expect Some(output) = head(outputs)
   expect InlineDatum(outState) = output.datum
   expect StateDatum(State {
@@ -180,10 +180,15 @@ fn validModify(
     tip: outTip,
     process_time: outProcessTime,
     retract_time: outRetractTime,
+    representative_policy: outRepresentativePolicy,
   }) = outState
   expect tip == outTip
   expect process_time == outProcessTime
   expect retract_time == outRetractTime
+  // E-001 repair (issue #77): the expected representative policy is registry
+  // configuration — genesis sets it, every fold preserves it. A fold altering
+  // it refuses here, before any root or refund check.
+  expect representative_policy == outRepresentativePolicy
 
   let (expectedNewRoot, _, owners, totalInputLovelace) =
     inputs
@@ -232,6 +237,7 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
       tip: _tip,
       process_time: _processTime,
       retract_time: _retractTime,
+      representative_policy: _representativePolicy,
     })
     = tokenState
   expect tokenRoot == root(empty)

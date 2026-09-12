@@ -418,7 +418,7 @@ runMode mode blueprintPath mpfsPath = do
             datumRefusals = mkDatum refusalsCodec refusalsHash storedC
             datumForged = mkDatum forgedCodec forgedHash forgedC
         tm <- mkPureTrieManager
-        (cfg, tok) <- bootRecoveryCage prov submit tm stateBytes requestBytes
+        (cfg, tok) <- bootRecoveryCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash))
         createTrie tm tok
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
@@ -1204,8 +1204,9 @@ bootRecoveryCage ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO (CageConfig, TokenId)
-bootRecoveryCage prov submit tm stateBytes requestBytes = do
+bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
@@ -1219,6 +1220,7 @@ bootRecoveryCage prov submit tm stateBytes requestBytes = do
                 , defaultProcessTime = 120_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
+                , cfgRepPolicy = repPolicy
                 , network = Testnet
                 }
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr

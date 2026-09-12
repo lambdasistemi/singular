@@ -330,6 +330,7 @@ bootRepairCage prov submit tm stateBytes requestBytes adjust = do
                 , defaultProcessTime = 30_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
+                , cfgRepPolicy = SBS.pack (replicate 28 0)
                 , network = Testnet
                 }
         cfg = adjust cfg0

@@ -1,6 +1,7 @@
 use aiken/collection/list.{all, foldl, has, length}
 use aiken/primitive/bytearray.{at, length as byte_length, slice}
 use cardano/address.{Credential, Script, VerificationKey}
+use cardano/assets.{PolicyId}
 
 /// The four-field naming datum and the address/datum rules the naming
 /// application validator enforces.
@@ -190,4 +191,57 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
       }
     },
   ))
+}
+
+/// The MPFS registry state hash (issue #77, E-001 repair): the spent state
+/// input's address. Regenerated from the MPFS blueprint; never hand-typed.
+/// Source: onchain/script-identity.json state.state hash — regen via
+/// `just script-identity-regen` in onchain, then update this constant.
+/// Lives here (not in the application validator) so both the validator and
+/// test fixtures share one source with no library→validator import edge.
+pub const mpfs_state_hash =
+  #"2bf61b131e8910d467b0d0a43f61b66c347b5ac90f934268808bf8c0"
+
+/// Mirror of the MPFS `State` datum (issue #77, E-001 repair): the registry
+/// configuration carrying the expected representative policy. Field order
+/// matches onchain/validators/types.ak `State` byte-for-byte (the new field
+/// is appended fifth). The first arm is a unit placeholder so `StateDatum`
+/// keeps constr index 1 — folds and retires only decode spent states, never
+/// requests (a request datum does not match `MpfsStateDatum` and refuses).
+pub type MpfsState {
+  MpfsState {
+    root: ByteArray,
+    tip: Int,
+    process_time: Int,
+    retract_time: Int,
+    representative_policy: PolicyId,
+  }
+}
+
+pub type MpfsCageDatum {
+  MpfsRequest
+  MpfsStateDatum(MpfsState)
+}
+
+/// Decode a spent registry state datum to its expected representative policy
+/// (issue #77, E-001 repair). Same-module `expect` on the mirror above —
+/// callers in other modules use this helper and never pattern-match the
+/// mirror across a module boundary.
+pub fn mpfs_state_policy(datum: Data) -> PolicyId {
+  expect MpfsStateDatum(state) = datum
+  state.representative_policy
+}
+
+/// Build a mock registry state datum carrying the given representative
+/// policy (test fixtures). Single construction site for the mirror shape.
+pub fn mpfs_state_datum(rep_policy: PolicyId) -> Data {
+  let datum: Data =
+    MpfsStateDatum(MpfsState {
+      root: #"00",
+      tip: 0,
+      process_time: 0,
+      retract_time: 0,
+      representative_policy: rep_policy,
+    })
+  datum
 }

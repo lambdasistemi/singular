@@ -7,7 +7,7 @@ use cardano/transaction.{
 use naming.{
   NamingDatum,
   NamingRecord, NoDestination, PaymentDestination, RetirementQuorum,
-  SomeDestination,
+  SomeDestination, mpfs_state_hash,
 }
 
 /// Shared fixtures for the naming validators, taken from the accepted
@@ -99,6 +99,40 @@ pub const redirected_output_address =
 
 pub const self_ref =
   OutputReference { transaction_id: "1234567890abcdef", output_index: 3 }
+
+/// Distinct out-ref for the mock registry state input (issue #77, E-001):
+/// never equal to `self_ref`, so claim and state inputs coexist.
+pub const state_ref =
+  OutputReference { transaction_id: "73746174650000000000000000000000", output_index: 0 }
+
+/// Mock registry state datum (issue #77, E-001): a spent state at the MPFS
+/// address carrying the expected representative policy — the `rep_policy`
+/// placeholder, matching test mints and values. Built by the naming
+/// module's single construction site (no mirror drift).
+pub fn state_datum() -> Data {
+  naming.mpfs_state_datum(rep_policy)
+}
+
+/// Mock spent registry state input for insert-fold and retire tests: at the
+/// MPFS state address with the mock state datum above. Included so
+/// `expected_rep_policy` resolves to `rep_policy`; tests without it refuse
+/// on missing state (same script, unattributed at the node-text layer).
+pub fn state_input() -> Input {
+  Input {
+    output_reference: state_ref,
+    output: Output {
+      address: address.from_script(mpfs_state_hash),
+      value: add(
+        from_lovelace(deposit),
+        mpfs_state_hash,
+        #"6d6f636b2d746f6b656e",
+        1,
+      ),
+      datum: InlineDatum(state_datum()),
+      reference_script: None,
+    },
+  }
+}
 
 pub const deposit = 5_000_000
 

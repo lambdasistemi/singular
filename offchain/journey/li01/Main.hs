@@ -167,7 +167,7 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
+import Cardano.MPFS.Cage.Config (CageConfig (..), bootStateFromCfg)
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
@@ -198,7 +198,6 @@ import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
-    OnChainTokenState (..),
     OnChainTxOutRef (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
@@ -481,6 +480,7 @@ runLi01 control si stateBytes requestBytes = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
+                    , cfgRepPolicy = SBS.pack (replicate 28 0)
                     , network = Testnet
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
@@ -610,15 +610,7 @@ buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
                 $ Map.singleton
                     (AssetName (SBS.toShort seedName))
                     1
-        stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateRoot = OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c = defaultTip cfg in c
-                    , stateProcessTime = defaultProcessTime cfg
-                    , stateRetractTime = defaultRetractTime cfg
-                    }
+        stateDatum = StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))
         stateOut =
             mkBasicTxOut
                 scriptAddr

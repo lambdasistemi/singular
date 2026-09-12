@@ -1105,7 +1105,7 @@ fn retirement_source() {
 }
 
 fn retirement_claim_value() {
-  add(record_value, app_policy, fixtures.representative_name, 1)
+  add(record_value, rep_policy, fixtures.representative_name, 1)
 }
 
 fn retirement_custody_output(value) {
@@ -1126,7 +1126,10 @@ test lt01_controller_retirement_accepts() {
     Retire { representatives: [fixtures.representative_name] },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), retirement_claim_value()),
+        fixtures.state_input(),
+      ],
       [retirement_custody_output(retirement_claim_value())],
       [controller],
       zero,
@@ -1144,7 +1147,10 @@ test lt02_quorum_retirement_accepts() {
     Retire { representatives: [fixtures.representative_name] },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), retirement_claim_value()),
+        fixtures.state_input(),
+      ],
       [retirement_custody_output(retirement_claim_value())],
       [member2, member3],
       zero,
@@ -1235,8 +1241,36 @@ test lt08_wrong_custody_refuses() fail {
     Retire { representatives: [fixtures.representative_name] },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), retirement_claim_value()),
+        fixtures.state_input(),
+      ],
       [elsewhere],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+/// `representative-policy` (issue #77, E-001): retiring a record carrying a
+/// foreign-policy representative refuses — the moved policy must equal the
+/// registry state's expected policy. The claim, burn and custody all move
+/// the name under `foreign_policy` while the spent state pins `rep_policy`.
+test lt08_foreign_policy_refuses() fail {
+  let source = retirement_source()
+  let foreign_value =
+    add(record_value, "foreign_policy", fixtures.representative_name, 1)
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [fixtures.representative_name] },
+    self_ref,
+    tx(
+      [
+        claim_input(fixtures.as_datum(source), foreign_value),
+        fixtures.state_input(),
+      ],
+      [retirement_custody_output(foreign_value)],
       [controller],
       zero,
       [],
@@ -1286,7 +1320,12 @@ fn insert_claim_value() {
 }
 
 fn insert_burn() {
-  add(zero, app_policy, insert_approval_name_mirror(), -1)
+  add(
+    add(zero, app_policy, insert_approval_name_mirror(), -1),
+    rep_policy,
+    insert_rep_name_mirror(),
+    1,
+  )
 }
 
 fn insert_record_value() {
@@ -1377,7 +1416,10 @@ test fold_insert_freezes_and_mints_accepts() {
     },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), insert_claim_value()),
+        fixtures.state_input(),
+      ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
@@ -1402,7 +1444,10 @@ test fold_insert_tampered_representative_refuses() fail {
     },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), insert_claim_value()),
+        fixtures.state_input(),
+      ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
@@ -1422,7 +1467,10 @@ test fold_insert_missing_record_representative_refuses() fail {
     },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), insert_claim_value()),
+        fixtures.state_input(),
+      ],
       [continuation_output(fixtures.as_datum(source), record_value)],
       [],
       insert_burn(),
@@ -1442,10 +1490,48 @@ test fold_insert_withdraw_approval_refuses() fail {
     },
     self_ref,
     tx(
-      [claim_input(fixtures.as_datum(source), live_claim_value())],
+      [
+        claim_input(fixtures.as_datum(source), live_claim_value()),
+        fixtures.state_input(),
+      ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       fold_burn(),
+      [],
+    ),
+  )
+}
+
+/// Negation (`representative-policy`, issue #77 E-001): a fold carrying the
+/// right name under a foreign policy refuses — the moved representative's
+/// policy must equal the registry state's expected policy, not just any
+/// policy. The mint and the record both move the name under `foreign_policy`
+/// while the spent state pins `rep_policy`.
+test fold_insert_foreign_policy_refuses() fail {
+  let source = source_record()
+  let foreign_mint =
+    add(
+      add(zero, app_policy, insert_approval_name_mirror(), -1),
+      "foreign_policy",
+      insert_rep_name_mirror(),
+      1,
+    )
+  let foreign_record_value =
+    add(record_value, "foreign_policy", insert_rep_name_mirror(), 1)
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [insert_rep_name_mirror()],
+    },
+    self_ref,
+    tx(
+      [
+        claim_input(fixtures.as_datum(source), insert_claim_value()),
+        fixtures.state_input(),
+      ],
+      [continuation_output(fixtures.as_datum(source), foreign_record_value)],
+      [],
+      foreign_mint,
       [],
     ),
   )

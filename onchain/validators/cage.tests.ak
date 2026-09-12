@@ -50,6 +50,12 @@ const testProcessTime = 10_000
 
 const testRetractTime = 10_000
 
+/// The expected representative minting policy pinned in test State datums
+/// (issue #77, E-001 repair): 28 bytes of 0xaa. Preservation tests use a
+/// distinct 0xbb value for the altered-policy refusal case.
+const testRepPolicy =
+  #"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
 // Phase 1 validity range: [0, 5_000] — entirely before submitted_at(0) + process_time(10_000)
 const phase1Range = interval.between(0, 5_000)
 
@@ -137,6 +143,7 @@ const state =
     tip: 0,
     process_time: testProcessTime,
     retract_time: testRetractTime,
+    representative_policy: testRepPolicy,
   }
 
 // Raw datum for input/output UTxOs (no Option wrapper)
@@ -194,6 +201,7 @@ const output =
           tip: 0,
           process_time: testProcessTime,
           retract_time: testRetractTime,
+          representative_policy: testRepPolicy,
         },
       ),
     ),
@@ -258,6 +266,7 @@ const minted =
           tip: 0,
           process_time: testProcessTime,
           retract_time: testRetractTime,
+          representative_policy: testRepPolicy,
         },
       ),
     ),
@@ -372,6 +381,7 @@ test mint_nonempty_root() fail {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -766,6 +776,7 @@ test modify_no_requests() {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -824,6 +835,7 @@ test modify_skip_other_token() {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -891,6 +903,7 @@ test modify_wrong_root() fail {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -906,6 +919,41 @@ test modify_wrong_root() fail {
       outputs: [bad_root_output],
       extra_signatories: ["owner"],
       inputs: [update, request],
+    },
+  )
+}
+
+/// Modify must preserve the expected representative policy (issue #77, E-001
+/// repair): the registry configuration set at bootstrap. A fold altering it —
+/// even with the root, token, address and economics intact — refuses.
+test modify_altered_representative_policy_refuses() fail {
+  let altered_policy_output =
+    Output {
+      address: testScriptAddress,
+      value: testValue,
+      datum: InlineDatum(
+        StateDatum(
+          State {
+            root: root(empty),
+            tip: 0,
+            process_time: testProcessTime,
+            retract_time: testRetractTime,
+            representative_policy: #"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          },
+        ),
+      ),
+      reference_script: None,
+    }
+  spend(
+    stateDatum,
+    Modify([]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: phase1Range,
+      outputs: [altered_policy_output],
+      extra_signatories: ["owner"],
+      inputs: [update],
     },
   )
 }
@@ -1026,6 +1074,7 @@ test modify_rejects_foreign_policy_same_asset() fail {
       tip: 0,
       process_time: testProcessTime,
       retract_time: testRetractTime,
+      representative_policy: testRepPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -1069,6 +1118,7 @@ test end_rejects_foreign_policy_same_asset() fail {
       tip: 0,
       process_time: testProcessTime,
       retract_time: testRetractTime,
+      representative_policy: testRepPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -1244,6 +1294,7 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
       tip: 0,
       process_time: testProcessTime,
       retract_time: testRetractTime,
+      representative_policy: testRepPolicy,
     }
   let unchanged_output =
     Output {
@@ -1256,6 +1307,7 @@ test prop_modify_no_owner_required(signer via owner_fuzzer()) {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -1313,6 +1365,7 @@ test prop_mint_roundtrip(
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -1368,6 +1421,7 @@ const migrate_predecessor_state =
     tip: 0,
     process_time: testProcessTime,
     retract_time: testRetractTime,
+    representative_policy: testRepPolicy,
   }
 
 const migrate_predecessor_ref =
@@ -1637,6 +1691,7 @@ const feeState =
     tip: testFee,
     process_time: testProcessTime,
     retract_time: testRetractTime,
+    representative_policy: testRepPolicy,
   }
 
 const feeStateDatum = Some(StateDatum(feeState))
@@ -1686,6 +1741,7 @@ const feeStateOutput =
           tip: testFee,
           process_time: testProcessTime,
           retract_time: testRetractTime,
+          representative_policy: testRepPolicy,
         },
       ),
     ),
@@ -1712,6 +1768,7 @@ const capturedRefundState =
     tip: capturedRefundTip,
     process_time: testProcessTime,
     retract_time: testRetractTime,
+    representative_policy: testRepPolicy,
   }
 
 const capturedRefundStateDatum = Some(StateDatum(capturedRefundState))
@@ -1849,6 +1906,7 @@ test modify_zero_fee() {
       tip: 0,
       process_time: testProcessTime,
       retract_time: testRetractTime,
+      representative_policy: testRepPolicy,
     }
   let zf_request =
     RequestDatum(
@@ -1892,6 +1950,7 @@ test modify_zero_fee() {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -2012,6 +2071,7 @@ const rejectStateOutput =
           tip: testFee,
           process_time: testProcessTime,
           retract_time: testRetractTime,
+          representative_policy: testRepPolicy,
         },
       ),
     ),
@@ -2139,6 +2199,7 @@ test reject_root_changes() fail {
             tip: testFee,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),
@@ -2567,6 +2628,7 @@ test modify_zero_requests_root_changes() fail {
             tip: 0,
             process_time: testProcessTime,
             retract_time: testRetractTime,
+            representative_policy: testRepPolicy,
           },
         ),
       ),

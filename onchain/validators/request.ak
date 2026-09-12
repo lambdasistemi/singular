@@ -55,7 +55,7 @@ fn validateContribute(
   let stateInput = inputByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)
   expect stateSpentWithModify(stateRef, tx)
-  let State { root: _root, tip: _tip, process_time, retract_time } = readState(stateInput)
+  let State { root: _root, tip: _tip, process_time, retract_time, .. } = readState(stateInput)
   let Transaction { validity_range, .. } = tx
   expect
     in_phase1(validity_range, submitted_at, process_time) || is_rejectable(
@@ -104,7 +104,7 @@ fn validateRetract(
   expect has(extra_signatories, requestOwner)
   let stateInput = inputOrReferenceByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)
-  let State { root: _root, tip: _tip, process_time, retract_time } = readState(stateInput)
+  let State { root: _root, tip: _tip, process_time, retract_time, .. } = readState(stateInput)
   expect in_phase2(validity_range, submitted_at, process_time, retract_time)
   True
 }

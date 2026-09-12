@@ -5,7 +5,28 @@ use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
-use naming.{NamingRecord, RetirementQuorum}
+use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
+
+/// The expected representative policy from the spent registry state (issue
+/// #77, E-001): genesis sets it, `validModify` preserves it. The spent state
+/// is the input at the MPFS address carrying exactly one cage token under
+/// the state policy — requests and forgeries at the same address carry none
+/// (the cage NFT is seed-gated and unforgeable), so the token authenticates
+/// without decoding. Folds and retires without a spent state refuse — honest
+/// connected transactions always spend the state via `Modify`.
+fn expected_rep_policy(tx: Transaction) -> PolicyId {
+  expect Some(state_input) =
+    find(tx.inputs, fn(input) {
+      when input.output.address.payment_credential is {
+        address.Script(hash) ->
+          hash == mpfs_state_hash
+            && length(keys(tokens(input.output.value, mpfs_state_hash))) == 1
+        _ -> False
+      }
+    })
+  expect InlineDatum(datum) = state_input.output.datum
+  naming.mpfs_state_policy(datum)
+}
 
 /// The retirement custody script hash (issue #66): the only address a
 /// `Retire` may place the representative at. Regenerated from the
@@ -353,11 +374,21 @@ fn fold(
       // record's representative under the representative policy.
       expect representatives
         == [representative_name(naming.control_hash(record))]
-      // Certified output, value half: the record carries each named
-      // representative exactly once.
+      // `representative-policy` (issue #77, E-001): the moved
+      // representative's policy is the registry's own configuration — the
+      // spent state's expected policy, genesis-set and `Modify`-preserved.
+      // A foreign-policy fake carries the right name under the wrong
+      // policy and refuses here. Certified output, mint and value thirds:
+      // the fold mints exactly once under the expected policy, and the
+      // record carries each named representative exactly once under it.
+      let expected = expected_rep_policy(tx)
       expect
         all(representatives, fn(name) {
-          value_carries_name(continuation.value, name)
+          quantity_of(mint, expected, name) == 1
+        })
+      expect
+        all(representatives, fn(name) {
+          quantity_of(continuation.value, expected, name) == 1
         })
       True
     }
@@ -387,15 +418,20 @@ fn retire(
       || quorum_authorized(record, extra_signatories)
   // Custody: the record carries a single representative (issue #77: the
   // insert fold minted it under the representative policy); exactly
-  // that asset lands at the custody script address.
+  // that asset, under the registry's expected policy (issue #77, E-001),
+  // lands at the custody script address. `representative-policy` refuses
+  // foreign-policy fakes. The representative moves, it does not burn here
+  // (completion burns it later) — so no mint rides a retire.
   let stored_rep = single_asset_name(claim.output.value)
+  let expected = expected_rep_policy(tx)
+  expect quantity_of(claim.output.value, expected, stored_rep) == 1
   expect
     filter(
       outputs,
       fn(output) {
         output.address.payment_credential
           == address.Script(retirement_custody_hash)
-          && value_carries_name(output.value, stored_rep)
+          && quantity_of(output.value, expected, stored_rep) == 1
       },
     ) != []
   // The record does not continue anywhere in the transaction.

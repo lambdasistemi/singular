@@ -323,6 +323,8 @@ datumEncodingVectors =
                 , stateMaxFee = 2000000
                 , stateProcessTime = 300000
                 , stateRetractTime = 600000
+                , stateRepPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xaa
                 }
        in Aeson.object
             [ "description" .= txt "StateDatum encoding"
