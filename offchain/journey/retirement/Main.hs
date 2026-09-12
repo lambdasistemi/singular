@@ -19,10 +19,10 @@ Ledger realisation (offchain\/naming-correspondence.md, t66 entries):
 
   * the record is a UTxO at the naming application validator carrying
     the four-field naming datum inline (merged 'Naming.Datum' codec)
-    and exactly one representative token under the application policy
-    (a canonical 29-byte enterprise address as its asset name, minted
-    via the existing WithdrawApproval branch as a stand-in for the
-    full representative-policy NFT flow bound in #52 — the t62 shape);
+    and exactly one representative token under the applied representative
+    policy (the 34-byte representative name for the retiring controller at
+    incarnation zero, minted by the connected fold that burns the claim's
+    insert approval — the genuine t77 shape (the former stand-in removed);
 
   * authorization is the controller's payment key among the required
     signers, or at least `threshold` distinct stored quorum members
@@ -83,10 +83,10 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
-import Data.List (isInfixOf, sortBy)
+import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Ord (comparing)
+import Data.Ord (Down (..), comparing)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -119,6 +119,7 @@ import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     getMinCoinTxOut,
     mkBasicTxOut,
+    referenceScriptTxOutL,
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (
@@ -126,7 +127,7 @@ import Cardano.Ledger.Api.Tx.Wits (
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
@@ -135,23 +136,54 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.Blueprint (extractCompiledCode, loadBlueprint)
+import Cardano.MPFS.Cage.Blueprint (
+    applyBytesParam,
+    extractCompiledCode,
+    loadBlueprint,
+ )
+import Cardano.MPFS.Cage.Config (CageConfig (..))
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
     PParams,
+    TokenId (..),
  )
 import Cardano.MPFS.Cage.Provider qualified as Cage
+import Cardano.MPFS.Cage.Trie (TrieManager (..))
+import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
+import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
+import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
+    ConnectedFoldArgs (..),
+    ConnectedMint (..),
+    ConnectedSpend (..),
+    RawRedeemer (..),
+    connectedFoldTx,
+    syncFoldedRequests,
+ )
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
+    cageAddrFromCfg,
+    cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    extractCageDatum,
+    findStateUtxo,
+    mkCageScript,
     mkInlineDatum,
+    mkRequestScript,
+    requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
     spendingIndex,
+    txInToRef,
+ )
+import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
+import Cardano.MPFS.Cage.Types (
+    CageDatum (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
@@ -175,6 +207,7 @@ import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
+import Naming.Register
 import Naming.Wire
     ( Address (..)
     , WireData (..)
@@ -212,11 +245,10 @@ wrongReasonMarker =
 -- Fixture seeds (each exactly 32 bytes for mkSignKey)
 -- ---------------------------------------------------------
 
-oldSeed, quorum1Seed, quorum2Seed, repSeed, destSeed, wrongDestSeed :: ByteString
+oldSeed, quorum1Seed, quorum2Seed, destSeed, wrongDestSeed :: ByteString
 oldSeed = "s66-old-controller00000000000000"
 quorum1Seed = "s66-quorum-member-one00000000000"
 quorum2Seed = "s66-quorum-member-two00000000000"
-repSeed = "s66-representative00000000000000"
 destSeed = "s66-destination00000000000000000"
 wrongDestSeed = "s66-wrong-custody0000000000000000"
 
@@ -258,8 +290,9 @@ main = do
                 "wrong-reason control: refusals matched against a marker \
                 \that cannot occur, so the matcher must fail the run"
     blueprintPath <- requireEnv "NAMING_BLUEPRINT"
+    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
     outcome <-
-        try (runMode mode blueprintPath) :: IO (Either SomeException ())
+        try (runMode mode blueprintPath mpfsPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -270,10 +303,12 @@ main = do
 -- The run
 -- ---------------------------------------------------------
 
-runMode :: Mode -> FilePath -> IO ()
-runMode mode blueprintPath = do
+runMode :: Mode -> FilePath -> FilePath -> IO ()
+runMode mode blueprintPath mpfsPath = do
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
+    embp <- loadBlueprint mpfsPath
+    mbp <- either failWith pure embp
     appBytes <- case extractCompiledCode "application.application" bp of
         Just bytes -> pure bytes
         Nothing ->
@@ -289,6 +324,18 @@ runMode mode blueprintPath = do
             failWith
                 "retirement_custody.retirement_custody compiled code not \
                 \found in the naming blueprint"
+    repUnappliedBytes <- case extractCompiledCode "representative.representative" bp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "representative.representative compiled code not found in \
+                \the naming blueprint"
+    stateBytes <- case extractCompiledCode "state.state" mbp of
+        Just bytes -> pure bytes
+        Nothing -> failWith "state.state compiled code not found in the MPFS blueprint"
+    requestBytes <- case extractCompiledCode "request.request" mbp of
+        Just bytes -> pure bytes
+        Nothing -> failWith "request.request compiled code not found in the MPFS blueprint"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -324,9 +371,7 @@ runMode mode blueprintPath = do
             oldAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey oldSeed))
             quorum1Hash = addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey quorum1Seed)))
             quorum2Hash = addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey quorum2Seed)))
-            repAddr =
-                enterpriseAddr (keyHashFromSignKey (mkSignKey repSeed))
-            repBytes = serialiseAddr repAddr
+            repBytes = representativeName oldHash freshIncarnation
             destAddr =
                 enterpriseAddr (keyHashFromSignKey (mkSignKey destSeed))
             wrongDestAddr =
@@ -364,13 +409,33 @@ runMode mode blueprintPath = do
                             , quorumThreshold = 2
                             }
                     }
+        let repUnappliedHex =
+                hex (scriptHashBytes (computeScriptHash repUnappliedBytes))
+            repAppliedBytes =
+                applyBytesParam (scriptHashBytes appHash) repUnappliedBytes
+            repAppliedHash = computeScriptHash repAppliedBytes
+            repAppliedHex = hex (scriptHashBytes repAppliedHash)
+            repAppliedPolicy = PolicyID repAppliedHash
+            repAppliedScript =
+                scriptFromBytes "representative" repAppliedBytes
             repTokens =
                 Map.singleton
-                    appPolicy
+                    repAppliedPolicy
                     (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
+        checkPinnedRepresentative repUnappliedHex
+        emit
+            "identity"
+            ( "representative applied policy 0x"
+                <> repAppliedHex
+                <> " (the applied mint identity this run mints representatives under)"
+            )
+        tm <- mkPureTrieManager
+        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes
+        createTrie tm tok
         emit "split" "splitting the genesis wallet into funding UTxOs"
-        pool <- splitGenesis prov submit 40
+        pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
+        scriptRefs <- publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript
         let env =
                 Env
                     { envProv = prov
@@ -387,6 +452,14 @@ runMode mode blueprintPath = do
                     , envQuorum2Hash = quorum2Hash
                     , envRepBytes = repBytes
                     , envRepTokens = repTokens
+                    , envRepPolicy = repAppliedPolicy
+                    , envRepScript = repAppliedScript
+                    , envRepHash = repAppliedHash
+                    , envRepHex = repAppliedHex
+                    , envCfg = cfg
+                    , envTok = tok
+                    , envTrie = tm
+                    , envRefUtxos = scriptRefs
                     , envDestCodec = destCodec
                     , envWrongDestAddr = wrongDestAddr
                     , envCustodyHash = custodyHash
@@ -396,13 +469,13 @@ runMode mode blueprintPath = do
                     , envDatumDup = mkDatumDup
                     }
         emit "setup" "creating the three retirement records (accept1, accept2, refusals)"
-        (txA1, recAccept1) <- setupRecoveryRecord env mkDatum "accept1"
+        (txA1, recAccept1) <- setupRecoveryRecord env mkDatum "accept1" "rt-accept1"
         _ <- waitConfirmation (txA1 <> " (setup: accept1)")
-        (txA2, recAccept2) <- setupRecoveryRecord env mkDatum "accept2"
+        (txA2, recAccept2) <- setupRecoveryRecord env mkDatum "accept2" "rt-accept2"
         _ <- waitConfirmation (txA2 <> " (setup: accept2)")
-        (txRef, recRefusals) <- setupRecoveryRecord env mkDatum "refusals"
+        (txRef, recRefusals) <- setupRecoveryRecord env mkDatum "refusals" "rt-refusals"
         _ <- waitConfirmation (txRef <> " (setup: refusals)")
-        (txDup, recDuplicates) <- setupRecoveryRecord env mkDatumDup "duplicates"
+        (txDup, recDuplicates) <- setupRecoveryRecord env mkDatumDup "duplicates" "rt-duplicates"
         _ <- waitConfirmation (txDup <> " (setup: duplicates)")
         emit
             "setup"
@@ -418,7 +491,9 @@ runMode mode blueprintPath = do
                 <> showIn recDuplicates
                 <> "; each carries the single representative 0x"
                 <> hex repBytes
-                <> " under the application policy with control 0x"
+                <> " under the applied representative policy 0x"
+                <> repAppliedHex
+                <> " with control 0x"
                 <> hex (serialiseAddr oldAddr)
                 <> " and quorum threshold 2 over two distinct members; \
                    \custody is the script 0x"
@@ -445,6 +520,14 @@ data Env = Env
     , envQuorum2Hash :: ByteString
     , envRepBytes :: ByteString
     , envRepTokens :: Map.Map PolicyID (Map.Map AssetName Integer)
+    , envRepPolicy :: PolicyID
+    , envRepScript :: Script ConwayEra
+    , envRepHash :: ScriptHash
+    , envRepHex :: String
+    , envCfg :: CageConfig
+    , envTok :: TokenId
+    , envTrie :: TrieManager IO
+    , envRefUtxos :: [(TxIn, TxOut ConwayEra)]
     , envDestCodec :: Address
     , envWrongDestAddr :: Addr
     , envCustodyHash :: ScriptHash
@@ -699,7 +782,7 @@ assertCustody env label signed = do
     let hasRep :: (TxIn, TxOut ConwayEra) -> Bool
         hasRep (_, o) = case o ^. valueTxOutL of
             MaryValue _ (MultiAsset ma) ->
-                ( Map.lookup (envAppPolicy env) ma
+                ( Map.lookup (envRepPolicy env) ma
                     >>= Map.lookup (AssetName (SBS.toShort (envRepBytes env)))
                 )
                     == Just 1
@@ -990,58 +1073,355 @@ changeOut inCoin fee outs =
 -- Setup transactions
 -- ---------------------------------------------------------
 
+bootRetirementCage ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    IO (CageConfig, TokenId)
+bootRetirementCage prov submit tm stateBytes requestBytes = do
+    utxos <- Cage.queryUTxOs prov genesisAddr
+    seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "boot: genesis wallet has no UTxOs"
+        (txIn, _) : _ -> pure (txInToRef txIn)
+    let cfg =
+            CageConfig
+                { cageScriptBytes = stateBytes
+                , requestScriptBytes = requestBytes
+                , cfgScriptHash = computeScriptHash stateBytes
+                , cageSeed = seedRef
+                , defaultProcessTime = 120_000
+                , defaultRetractTime = 30_000
+                , defaultTip = Coin 1_000_000
+                , network = Testnet
+                }
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    let signedBoot = addKeyWitness genesisSignKey unsignedBoot
+    result <- submitTx submit signedBoot
+    case result of
+        Submitted _ -> pure ()
+        Rejected reason -> failWith ("boot: rejected: " <> show reason)
+    threadDelay 5_000_000
+    let MultiAsset ma = signedBoot ^. bodyTxL . mintTxBodyL
+        assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
+    tok <- case assets of
+        [(an, _)] -> pure (TokenId an)
+        _ -> failWith "boot: unexpected minted assets"
+    createTrie tm tok
+    emit "boot" "booted the retirement registry cage"
+    pure (cfg, tok)
+
+-- | Publish the four scripts as reference outputs so connected folds
+-- resolve every purpose through reference inputs.
+publishRetirementRefs ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    PParams ConwayEra ->
+    IORef [(TxIn, TxOut ConwayEra)] ->
+    CageConfig ->
+    TokenId ->
+    Script ConwayEra ->
+    Script ConwayEra ->
+    IO [(TxIn, TxOut ConwayEra)]
+publishRetirementRefs prov submit pp poolRef cfg tok appScript repScript = do
+    let scripts =
+            [ mkCageScript cfg
+            , mkRequestScript cfg tok
+            , appScript
+            , repScript
+            ]
+    concat <$> mapM (publishBatch prov submit pp poolRef genesisAddr) (batches scripts)
+  where
+    batches [] = []
+    batches xs = take 2 xs : batches (drop 2 xs)
+
+publishBatch ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    PParams ConwayEra ->
+    IORef [(TxIn, TxOut ConwayEra)] ->
+    Addr ->
+    [Script ConwayEra] ->
+    IO [(TxIn, TxOut ConwayEra)]
+publishBatch prov submit pp poolRef addr scripts = do
+    pool <- readIORef poolRef
+    (fund, rest) <- case pool of
+        (f : fs) -> pure (f, fs)
+        [] -> failWith "the funding pool is exhausted"
+    writeIORef poolRef rest
+    let mkRefOut script =
+            let probe =
+                    mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                        & referenceScriptTxOutL .~ SJust script
+                Coin minCoin = getMinCoinTxOut pp probe
+             in mkBasicTxOut
+                    addr
+                    (MaryValue (Coin (minCoin + 1_000_000)) mempty)
+                    & referenceScriptTxOutL .~ SJust script
+        outs = map mkRefOut scripts
+        spent = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
+        Coin inCoin = (snd fund) ^. coinTxOutL
+        changeCoin = inCoin - 1_000_000 - spent
+    unless (changeCoin > 1_000_000) $
+        failWith "publish: funding UTxO too small for script outputs"
+    let changeOutTx =
+            mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton (fst fund)
+                & outputsTxBodyL .~ StrictSeq.fromList (outs <> [changeOutTx])
+                & feeTxBodyL .~ Coin 1_000_000
+        tx = mkBasicTx body
+        signed = addKeyWitness genesisSignKey tx
+    result <- submitTx submit signed
+    case result of
+        Submitted _ -> pure ()
+        Rejected reason -> failWith ("publish: refused: " <> show reason)
+    let txid = txIdHex tx
+    threadDelay 5_000_000
+    after <- Cage.queryUTxOs prov addr
+    let mine =
+            sortBy
+                (comparing (txInIndex . fst))
+                (utxosByTxId after txid)
+    unless (length mine >= length scripts) $
+        failWith "publish: script outputs not found"
+    pure (take (length scripts) mine)
+
+-- | Submit one MPFS insert request (spelling -> representative name),
+-- genesis-funded like the rest of this runner.
+submitRetirementRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+submitRetirementRequest env spelling value = do
+    let cfg = envCfg env
+        tok = envTok env
+    unsigned <-
+        requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
+    let signed = addKeyWitness genesisSignKey unsigned
+    result <- submitTx (envSubmit env) signed
+    case result of
+        Submitted _ -> pure ()
+        Rejected reason -> failWith ("request: rejected: " <> show reason)
+    let txid = txIdHex signed
+    _ <- waitConfirmation (txid <> " (MPFS request " <> show spelling <> ")")
+    let reqAddr = requestAddrFromCfg cfg tok Testnet
+    reqIn <- mustFindUTxO (envProv env) reqAddr txid "MPFS request"
+    reqOut <- mustOutAt env reqAddr reqIn
+    pure (reqIn, reqOut)
+
+queryRetirementState :: Env -> IO (TxIn, TxOut ConwayEra)
+queryRetirementState env = do
+    let cfg = envCfg env
+        tok = envTok env
+        stateAddr = cageAddrFromCfg cfg Testnet
+    utxos <- Cage.queryUTxOs (envProv env) stateAddr
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
+        Just x -> pure x
+        Nothing -> failWith "state UTxO not found"
+
+queryRetirementFee :: Env -> IO (TxIn, TxOut ConwayEra)
+queryRetirementFee env = do
+    (fund, _collateral) <- takeFundCollateral env
+    pure fund
+
+mustOutAt :: Env -> Addr -> TxIn -> IO (TxOut ConwayEra)
+mustOutAt env addr txin = do
+    utxos <- Cage.queryUTxOs (envProv env) addr
+    case filter ((== txin) . fst) utxos of
+        [(_, o)] -> pure o
+        _ -> failWith ("output " <> showIn txin <> " is not live")
+
+mustFindUTxO ::
+    Cage.Provider IO ->
+    Addr ->
+    String ->
+    String ->
+    IO TxIn
+mustFindUTxO prov addr txid label = do
+    utxos <- Cage.queryUTxOs prov addr
+    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos txid)
+    case mine of
+        ((i, _) : _) -> pure i
+        [] ->
+            failWith
+                ( label
+                    <> ": no output of tx "
+                    <> txid
+                    <> " is live at the given address"
+                )
+
+chainRetirementRoot :: Env -> IO String
+chainRetirementRoot env = do
+    (_, stateOut) <- queryRetirementState env
+    case extractCageDatum stateOut of
+        Just (StateDatum st) ->
+            let OnChainRoot bs = stateRoot st
+             in pure (hex bs)
+        _ -> failWith "the state UTxO carries no state datum"
+
+-- | Fold one genuine record through the CONNECTED transaction: MPFS
+-- request keyed by the given spelling plus the naming claim, one state
+-- Modify, approval burn and representative mint. Returns the fold txid
 setupRecoveryRecord ::
     Env ->
     NamingDatum ->
     String ->
+    ByteString ->
     IO (String, TxIn)
-setupRecoveryRecord env datum label = do
-    (fund, collateral) <- takeFundCollateral env
-    let repBytes = envRepBytes env
+setupRecoveryRecord env datum label spelling = do
+    let controlBytes = addressBytes (controlAddress datum)
+        commitment = nextControlCommitment datum
+        approval = insertApprovalName controlBytes commitment
+        repName = representativeName (envOldHash env) freshIncarnation
         approvalTokens =
             Map.singleton
                 (envAppPolicy env)
-                (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
-        recordOut =
-            scriptOut (envPp env) (envAppAddr env) claimCoin approvalTokens datum
-        redeemers =
-            Redeemers
-                ( Map.singleton
+                (Map.singleton (AssetName (SBS.toShort approval)) 1)
+    -- The insert request (claim) at the application validator.
+    (fundA, collateralA) <- takeFundCollateral env
+    let claimOut =
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                claimCoin
+                approvalTokens
+                datum
+        changeA = changeOut (coinOf fundA) flatFee [claimOut]
+        redeemersA =
+            Redeemers $
+                Map.singleton
                     (ConwayMinting (AsIx 0))
-                    (Data (withdrawApprovalRedeemer repBytes), maxUnits)
-                )
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        change = changeOut (coinOf fund) flatFee [recordOut]
-        body =
+                    ( Data
+                        ( insertApprovalRedeemer
+                            (envOldHash env)
+                            controlBytes
+                            commitment
+                        )
+                    , maxUnits
+                    )
+        integrityA = computeScriptIntegrity (envPp env) redeemersA
+        bodyA =
             mkBasicTxBody
-                & inputsTxBodyL .~ Set.fromList [fst fund]
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [recordOut, change]
+                & inputsTxBodyL .~ Set.fromList [fst fundA]
+                & collateralInputsTxBodyL .~ Set.singleton (fst collateralA)
+                & outputsTxBodyL .~ StrictSeq.fromList [claimOut, changeA]
                 & feeTxBodyL .~ Coin flatFee
                 & mintTxBodyL .~ MultiAsset approvalTokens
                 & reqSignerHashesTxBodyL
-                    .~ Set.singleton (addrWitnessKeyHash (addrKeyHashBytes genesisAddr))
-                & scriptIntegrityHashTxBodyL .~ integrity
-        tx =
-            mkBasicTx body
+                    .~ Set.singleton (addrWitnessKeyHash (envOldHash env))
+                & scriptIntegrityHashTxBodyL .~ integrityA
+        txA =
+            mkBasicTx bodyA
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton (envScriptHash env) (envScript env)
-                & witsTxL . rdmrsTxWitsL .~ redeemers
-    let signed = addKeyWitness genesisSignKey tx
-    assertWitness env signed
-    submitAccepted env ("setup-" <> label) signed
-    utxos <- queryAfterDelay env
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
-    case mine of
-        ((cin, _) : _) -> pure (txIdHex signed, cin)
-        [] ->
-            failWith ("setup: " <> label <> " record not found at the application validator")
+                & witsTxL . rdmrsTxWitsL .~ redeemersA
+    let signedA =
+            addKeyWitness
+                (mkSignKey oldSeed)
+                (addKeyWitness genesisSignKey txA)
+    submitAccepted env ("setup-" <> label <> "-insert") signedA
+    _ <- waitConfirmation (txIdHex signedA <> " (setup: " <> label <> " claim)")
+    claimIn <-
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            (txIdHex signedA)
+            ("setup: " <> label <> " claim")
+    snapClaim <- mustSnap env claimIn
+    claimLive <- mustOutAt env (envAppAddr env) claimIn
+    -- The MPFS request keyed by the spelling.
+    (reqIn, reqOut) <- submitRetirementRequest env spelling repName
+    -- The connected fold: state Modify, request Contribute, claim Fold.
+    (stateIn, stateOut) <- queryRetirementState env
+    feeUtxo <- queryRetirementFee env
+    let recordTokens =
+            Map.singleton
+                (envRepPolicy env)
+                (Map.singleton (AssetName (SBS.toShort repName)) 1)
+        recordOut =
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                (snapCoin snapClaim)
+                recordTokens
+                datum
+    (unsignedF, _newRoot) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = genesisAddr
+                , cfaStateUtxo = (stateIn, stateOut)
+                , cfaReqUtxos = [(reqIn, reqOut)]
+                , cfaFeeUtxo = feeUtxo
+                , cfaPp = envPp env
+                , cfaSpends =
+                    [ ConnectedSpend
+                        { csUtxo = (claimIn, claimLive)
+                        , csRedeemer = RawRedeemer (foldRedeemer [repName])
+                        , csScript = envScript env
+                        }
+                    ]
+                , cfaMints =
+                    [ ConnectedMint
+                        { cmPolicy = envAppPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort approval))
+                                (-1)
+                        , cmRedeemer =
+                            RawRedeemer
+                                ( insertApprovalRedeemer
+                                    (envOldHash env)
+                                    controlBytes
+                                    commitment
+                                )
+                        , cmScript = envScript env
+                        }
+                    , ConnectedMint
+                        { cmPolicy = envRepPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort repName))
+                                1
+                        , cmRedeemer = RawRedeemer mintRepresentativeRedeemer
+                        , cmScript = envRepScript env
+                        }
+                    ]
+                , cfaOutputs = [recordOut]
+                , cfaSigners = []
+                , cfaRefUtxos = envRefUtxos env
+                , cfaSkipEval = False
+                , cfaAttachScripts = []
+                , cfaAdjustRoot = id
+                }
+    let signedF = addKeyWitness genesisSignKey unsignedF
+    submitAccepted env ("setup-" <> label <> "-fold") signedF
+    _ <- waitConfirmation (txIdHex signedF <> " (setup: " <> label <> " fold)")
+    syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
+    rootAfter <- chainRetirementRoot env
+    emit
+        "setup-fold"
+        ( label
+            <> " folded connected into Active as "
+            <> txIdHex signedF
+            <> " (spelling "
+            <> show spelling
+            <> ", root "
+            <> rootAfter
+            <> ")"
+        )
+    recordIn <-
+        mustFindUTxO
+            (envProv env)
+            (envAppAddr env)
+            (txIdHex signedF)
+            ("setup: " <> label <> " record")
+    pure (txIdHex signedF, recordIn)
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
-
-withdrawApprovalRedeemer :: ByteString -> PLC.Data
-withdrawApprovalRedeemer destination =
-    PLC.Constr 0 [PLC.B (addrKeyHashBytes genesisAddr), PLC.B destination]
 
 splitGenesis :: Cage.Provider IO -> Submitter IO -> Integer -> IO [(TxIn, TxOut ConwayEra)]
 splitGenesis prov submit nSplits = do
@@ -1128,14 +1508,15 @@ mustSnap env txin = do
     case filter ((== txin) . fst) utxos of
         [(_, o)] -> do
             let Coin c = o ^. coinTxOutL
-                tokens = case o ^. valueTxOutL of
+                ofPolicy pid = case o ^. valueTxOutL of
                     MaryValue _ (MultiAsset ma) ->
                         maybe
                             []
                             ( Map.toAscList
                                 . Map.mapKeys (SBS.fromShort . assetNameBytes)
                             )
-                            (Map.lookup (envAppPolicy env) ma)
+                            (Map.lookup pid ma)
+                tokens = ofPolicy (envAppPolicy env) <> ofPolicy (envRepPolicy env)
                 datum = datumDataOf o
             pure (Snap txin c tokens datum)
         _ ->
@@ -1236,6 +1617,19 @@ redeemerRetire :: ByteString -> PLC.Data
 redeemerRetire rep =
     PLC.Constr 3 [PLC.List [PLC.B rep]]
 
+-- | Spend redeemer @Fold { representatives }@.
+foldRedeemer :: [ByteString] -> PLC.Data
+foldRedeemer reps = PLC.Constr 2 [PLC.List (map PLC.B reps)]
+
+-- | Mint redeemer @InsertApproval { controller, control, commitment }@.
+insertApprovalRedeemer :: ByteString -> ByteString -> ByteString -> PLC.Data
+insertApprovalRedeemer controller control commitment =
+    PLC.Constr 1 [PLC.B controller, PLC.B control, PLC.B commitment]
+
+-- | Mint redeemer @MintRepresentative@.
+mintRepresentativeRedeemer :: PLC.Data
+mintRepresentativeRedeemer = PLC.Constr 0 []
+
 -- ---------------------------------------------------------
 -- Submission helpers
 -- ---------------------------------------------------------
@@ -1252,30 +1646,10 @@ submitAccepted env label signed =
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
 
-assertWitness :: Env -> ConwayTx -> IO ()
-assertWitness env signed = do
-    let witnessHashes =
-            Set.fromList
-                [ hex (scriptHashBytes sh)
-                | sh <- Map.keys (signed ^. witsTxL . scriptTxWitsL)
-                ]
-    unless (witnessHashes == Set.singleton (envAppHex env)) $
-        failWith $
-            "identity: expected the tx witness to carry exactly the derived \
-            \applied hash 0x"
-                <> envAppHex env
-                <> " but it held "
-                <> show (Set.toList witnessHashes)
-
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
     threadDelay 5_000_000
     emit "confirm" ("confirmed on chain: " <> what)
-
-queryAfterDelay :: Env -> IO [(TxIn, TxOut ConwayEra)]
-queryAfterDelay env = do
-    threadDelay 5_000_000
-    Cage.queryUTxOs (envProv env) (envAppAddr env)
 
 -- ---------------------------------------------------------
 -- Pinned identity
@@ -1320,6 +1694,30 @@ checkPinnedApplication appHex = do
                 <> show pins
                 <> " but this run's blueprint hashes to 0x"
                 <> appHex
+            )
+
+checkPinnedRepresentative :: String -> IO ()
+checkPinnedRepresentative unappliedHex = do
+    path <-
+        fromMaybe "../naming-onchain/script-identity.json"
+            <$> lookupEnv "NAMING_SCRIPT_IDENTITY"
+    bytes <- BS.readFile path
+    manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
+    let pins =
+            [ mpHash p
+            | p <- manifestValidators manifest
+            , "representative.representative.mint" `T.isPrefixOf` mpTitle p
+            ]
+    unless (length pins >= 1) $
+        failWith
+            "identity: no representative.representative.mint pin in the \
+            \manifest"
+    unless (all (== T.pack unappliedHex) pins) $
+        failWith
+            ( "identity: the manifest pins unapplied representative hash(es) "
+                <> show pins
+                <> " but this run's blueprint code hashes to 0x"
+                <> unappliedHex
             )
 
 checkPinnedCustody :: String -> IO ()

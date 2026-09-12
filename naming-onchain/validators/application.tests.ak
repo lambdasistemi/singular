@@ -1,4 +1,4 @@
-use application.{Cancel, Fold, Maintain, Recover, Retire, WithdrawApproval}
+use application.{Cancel, Fold, InsertApproval, Maintain, Recover, Retire, WithdrawApproval}
 use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/assets.{add, from_lovelace, zero}
@@ -387,7 +387,7 @@ test fold_freezes_datum_accepts() {
   application.application.spend(
     Some(fixtures.as_datum(source)),
     Fold {
-      representatives: [representative_name()],
+      representatives: [],
     },
     self_ref,
     tx(
@@ -406,7 +406,7 @@ test fold_altering_datum_refuses() fail {
   application.application.spend(
     Some(fixtures.as_datum(source)),
     Fold {
-      representatives: [representative_name()],
+      representatives: [],
     },
     self_ref,
     tx(
@@ -429,7 +429,7 @@ test fold_without_approval_refuses() fail {
   application.application.spend(
     Some(fixtures.as_datum(source)),
     Fold {
-      representatives: [representative_name()],
+      representatives: [],
     },
     self_ref,
     tx(
@@ -448,7 +448,7 @@ test fold_without_burn_refuses() fail {
   application.application.spend(
     Some(fixtures.as_datum(source)),
     Fold {
-      representatives: [representative_name()],
+      representatives: [],
     },
     self_ref,
     tx(
@@ -1239,6 +1239,234 @@ test lt08_wrong_custody_refuses() fail {
       [elsewhere],
       [controller],
       zero,
+      [],
+    ),
+  )
+}
+
+// ===========================================================================
+// Insert approvals and the insert fold — the real representative (issue #77)
+// ===========================================================================
+//
+// RED: `InsertApproval` does not exist yet. These tests demand the
+// appended mint arm (`step .createInsert` needs the request token to be
+// `insertAsset r.proposal`) and the insert half of the fold
+// (`Singular.foldOne` `.insert`: approval bound to the datum,
+// `representative-identity`, certified output carrying the minted name).
+
+/// Mirror of the validator's insert-approval name equation, copied — not
+/// called — so the test binds the formula, not the function.
+fn insert_approval_name_mirror() {
+  blake2b_256(
+    bytearray.concat(
+      bytearray.concat(
+        bytearray.concat(
+          bytearray.from_string(@"singular/naming/insert-approval/v1"),
+          #"00",
+        ),
+        fixtures.control,
+      ),
+      fixtures.commitment,
+    ),
+  )
+}
+
+/// The representative name the insert fold must mint for the source
+/// record: `Rep || control key hash || incarnation 0x00` — 32 bytes, so
+/// never a canonical address. Copied, not called.
+fn insert_rep_name_mirror() {
+  bytearray.concat(
+    bytearray.concat(#"526570", fixtures.controller),
+    #"00",
+  )
+}
+
+fn insert_claim_value() {
+  add(record_value, app_policy, insert_approval_name_mirror(), 1)
+}
+
+fn insert_burn() {
+  add(zero, app_policy, insert_approval_name_mirror(), -1)
+}
+
+fn insert_record_value() {
+  add(record_value, rep_policy, insert_rep_name_mirror(), 1)
+}
+
+/// Minting an insert approval binds the proposal core (control address
+/// and next-control commitment) in the asset name, on the controller's
+/// signature.
+test insert_approval_binds_proposal_accepts() {
+  application.application.mint(
+    InsertApproval {
+      controller,
+      control: fixtures.control,
+      commitment: fixtures.commitment,
+    },
+    app_policy,
+    tx([], [], [controller], add(
+      zero,
+      app_policy,
+      insert_approval_name_mirror(),
+      1,
+    ), []),
+  )
+}
+
+/// Negation: the approval's name must be the bound proposal hash.
+test insert_approval_name_mismatch_refuses() fail {
+  application.application.mint(
+    InsertApproval {
+      controller,
+      control: fixtures.control,
+      commitment: fixtures.commitment,
+    },
+    app_policy,
+    tx([], [], [controller], add(zero, app_policy, refund_destination, 1), []),
+  )
+}
+
+/// Negation: without the controller's signature no insert approval mints.
+test insert_approval_without_controller_refuses() fail {
+  application.application.mint(
+    InsertApproval {
+      controller,
+      control: fixtures.control,
+      commitment: fixtures.commitment,
+    },
+    app_policy,
+    tx(
+      [],
+      [],
+      [],
+      add(zero, app_policy, insert_approval_name_mirror(), 1),
+      [],
+    ),
+  )
+}
+
+/// The fold-time burn of an insert approval rides the claim that carries
+/// it, exactly as the withdraw-approval burn does.
+test insert_burn_riding_claim_accepts() {
+  application.application.mint(
+    InsertApproval {
+      controller,
+      control: fixtures.control,
+      commitment: fixtures.commitment,
+    },
+    app_policy,
+    tx(
+      [claim_input(fixtures.as_datum(source_record()), insert_claim_value())],
+      [],
+      [],
+      insert_burn(),
+      [],
+    ),
+  )
+}
+
+/// An insert fold freezes the datum, consumes the bound approval, and
+/// the record inherits the claim's value minus the approval plus the
+/// representative the fold mints under the representative policy.
+test fold_insert_freezes_and_mints_accepts() {
+  let source = source_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [insert_rep_name_mirror()],
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [continuation_output(fixtures.as_datum(source), insert_record_value())],
+      [],
+      insert_burn(),
+      [],
+    ),
+  )
+}
+
+/// Negation (`representative-identity`): a fold naming a representative
+/// the record's control does not determine refuses.
+test fold_insert_tampered_representative_refuses() fail {
+  let source = source_record()
+  let tampered =
+    bytearray.concat(
+      bytearray.concat(#"526570", member2),
+      #"00",
+    )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [tampered],
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [continuation_output(fixtures.as_datum(source), insert_record_value())],
+      [],
+      insert_burn(),
+      [],
+    ),
+  )
+}
+
+/// Negation (certified output): a fold whose record does not carry the
+/// named representative refuses.
+test fold_insert_missing_record_representative_refuses() fail {
+  let source = source_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [insert_rep_name_mirror()],
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [continuation_output(fixtures.as_datum(source), record_value)],
+      [],
+      insert_burn(),
+      [],
+    ),
+  )
+}
+
+/// Negation (insert binding): a withdraw approval cannot ride an insert
+/// fold — the burned approval must be the datum-bound insert approval.
+test fold_insert_withdraw_approval_refuses() fail {
+  let source = source_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [insert_rep_name_mirror()],
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), live_claim_value())],
+      [continuation_output(fixtures.as_datum(source), insert_record_value())],
+      [],
+      fold_burn(),
+      [],
+    ),
+  )
+}
+
+/// Negation (path separation): an insert approval cannot be consumed by
+/// an empty-representatives fold — that path is the withdraw-approval
+/// fold and demands a canonical approval name.
+test fold_empty_with_insert_approval_refuses() fail {
+  let source = source_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [],
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), insert_claim_value())],
+      [continuation_output(fixtures.as_datum(source), record_value)],
+      [],
+      insert_burn(),
       [],
     ),
   )

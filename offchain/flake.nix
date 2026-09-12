@@ -180,6 +180,36 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The genuine insert rows (issue #77), wrapped the same way as the
+        # other row runners: the locked cardano-node on its own PATH, no
+        # store path baked in. The naming-onchain blueprint comes from the
+        # caller at run time (NAMING_BLUEPRINT).
+        register-rows = pkgs.runCommand "register-rows" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.register-rows.meta or { }) // {
+            mainProgram = "register-rows";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.register-rows} $out/bin/register-rows \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
+        # The connected verifier (issue #77, S3): recomputes verdicts from
+        # raw run evidence. Pure offline tool: no node on PATH needed, but
+        # wrapped like the runners for uniformity. Blueprints come from the
+        # caller at run time (--blueprint/--mpfs-blueprint).
+        connected-verifier = pkgs.runCommand "connected-verifier" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.connected-verifier.meta or { }) // {
+            mainProgram = "connected-verifier";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.connected-verifier} $out/bin/connected-verifier \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # The issue #79 repair rows (permissionless fold + insert-only
         # retract), wrapped the same way as the other row runners: the
         # locked cardano-node on its own PATH, no store path baked in.
@@ -218,7 +248,8 @@
           # Issue #62: same for recovery-rows.
           # Issue #66: same for retirement-rows.
           # Issue #79: same for repair-rows.
-          inherit naming-rows li-refusals recovery-rows retirement-rows repair-rows;
+          # Issue #77: same for register-rows.
+          inherit naming-rows li-refusals recovery-rows retirement-rows repair-rows register-rows connected-verifier;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -258,6 +289,14 @@
           repair-rows = {
             type = "app";
             program = pkgs.lib.getExe repair-rows;
+          };
+          register-rows = {
+            type = "app";
+            program = pkgs.lib.getExe register-rows;
+          };
+          connected-verifier = {
+            type = "app";
+            program = pkgs.lib.getExe connected-verifier;
           };
         };
 

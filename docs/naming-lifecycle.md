@@ -34,6 +34,23 @@ sequenceDiagram
 
 The transition refuses a missing or wrong controller witness, more than one destination, and any attempt to alter the controller, committed next controller, quorum, registry binding, or representative while presenting the action as destination maintenance.
 
+## Fold a pending claim into an active name
+
+A controller who inserted a claim for a spelling folds it into an active name in one connected transaction: the state validator advances the registry, the registry request contributes the spelling, and the naming claim folds. The fold burns the single-use insert approval and mints the representative NFT under the applied representative policy; the registry key is the spelling itself and the registry value is the representative name. Anyone may submit the fold once the claim and the spelling-keyed request both exist — the controller's signature was already checked when the claim was inserted, so the fold needs no owner and no registry-owner role exists.
+
+```mermaid
+sequenceDiagram
+  participant Anyone
+  participant App as Naming application output
+  participant Registry
+  Anyone->>Registry: state Modify plus request Contribute for the spelling
+  Anyone->>App: spend claim with Fold, naming the new representatives
+  App->>App: burn insert approval, mint representative NFT
+  App-->>Anyone: active record carrying the representative
+```
+
+The transition refuses a second fold of the same spelling, a fold with no live claim, an approval that does not bind the claim's control and commitment, and a representative that does not name the controller at incarnation zero. Maintenance, recovery, and retirement all start from records this fold creates.
+
 ## Recover with the committed next controller
 
 Recovery reveals the complete next controller address, proves that its canonical binary encoding matches the stored commitment, and requires the transaction signer for that address's payment-key credential. The current controller does not need to sign. The successor keeps the representative, installs the revealed address as controller, and stores a fresh next commitment. The consumed commitment cannot be replayed, and the old controller is no longer authoritative.

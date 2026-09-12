@@ -74,9 +74,11 @@ library
     Cardano.MPFS.Cage.TxBuilder.Reject
     Cardano.MPFS.Cage.TxBuilder.Request
     Cardano.MPFS.Cage.TxBuilder.Retract
+    Cardano.MPFS.Cage.TxBuilder.ConnectedFold
     Cardano.MPFS.Cage.TxBuilder.Update
     Cardano.MPFS.Cage.Types
     Naming.Datum
+    Naming.Register
     Naming.Request
     Naming.Wire
     Naming.Wire.Vectors
@@ -286,6 +288,46 @@ executable retirement-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- The genuine insert flow (issue #77): mints the insert approval binding
+-- the proposal core, queues the insert request, folds it into Active with
+-- the representative minted +1 under the applied representative policy,
+-- refuses the occupied-key second insert with its free-key control, and
+-- refuses every new mint/fold check on its reason — all on a real devnet,
+-- with a machine-readable receipt. Source lives in journey/register/.
+executable register-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/register
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-binary
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , directory
+    , filepath
+    , memory
+    , process
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 -- The seven wrong canonical initialization refusals (issue #50):
 -- executes the contract rows LI02..LI08 on a real devnet against the
 -- frozen partitions (the applied state script for the bootstrap, the
@@ -361,21 +403,53 @@ executable repair-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+executable connected-verifier
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/verifier
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , filepath
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
   default-language: GHC2021
   hs-source-dirs:   test
   main-is:          Main.hs
-  other-modules:    Cardano.MPFS.Cage.TypesSpec
+  other-modules:
+    Cardano.MPFS.Cage.TypesSpec
+    Naming.RegisterSpec
   build-depends:
     , base               >=4.14 && <5
+    , base16-bytestring
     , bytestring
     , cardano-mpfs-cage
     , hspec
     , plutus-core
     , plutus-tx
     , QuickCheck
+    , text
 
 test-suite e2e-tests
   import:           warnings
