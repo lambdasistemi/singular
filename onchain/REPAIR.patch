@@ -1,0 +1,264 @@
+diff --git a/onchain/validators/cage.tests.ak b/onchain/validators/cage.tests.ak
+index c662775..9d43fdb 100644
+--- a/onchain/validators/cage.tests.ak
++++ b/onchain/validators/cage.tests.ak
+@@ -664,9 +664,15 @@ test contribute_with_state_end_rejected() fail {
+ // Modify tests
+ // ============================================================================
+
+-/// Only the cage owner can Modify. Without the owner's signature, anyone
+-/// could update the MPF root with arbitrary data.
+-test modify_missing_signature() fail {
++/// Permissionless Modify (re-cut under issue #79; was
++/// `modify_missing_signature`, which required a refusal when the owner
++/// signature was absent). That expectation encoded the pre-repair defect:
++/// Lean `Singular.step`'s `.fold` case requires only `nativeSpend`, net
++/// mint equality and the conditional mint witnesses — it states no owner
++/// hypothesis — so the repaired validator accepts an ownerless Modify.
++/// This test pins the repaired truth: a well-formed fold with no owner
++/// signer is accepted.
++test modify_without_owner_succeeds() {
+   spend(
+     stateDatum,
+     Modify([UpdateAction([])]),
+@@ -724,9 +730,18 @@ test modify_with_stake_script_withdrawal() {
+   )
+ }
+
+-/// Modify must fail when stake_script is Some but no matching withdrawal is
+-/// present. Signature alone is not enough when the plugin is active.
+-test modify_with_stake_script_no_withdrawal() fail {
++/// Modify ignores the stake-script hook (re-cut under issue #79; was
++/// `modify_with_stake_script_no_withdrawal`, which required a refusal
++/// when the withdrawal was absent). The repaired `Modify` path never
++/// consults `validateOwnership` — neither the owner nor the stake-script
++/// withdrawal — so this transaction is accepted. That is the current
++/// Aiken-level meaning of the hook on `Modify`, not a ruling on its
++/// ledger reachability: epic 18 found the stake credential may be
++/// unreachable on a ledger (`staking.ak` serves only `withdraw`), an
++/// open question owned by a separate slice sequenced after this one.
++/// Do not read this test as approval to add a stake or owner
++/// prerequisite back to permissionless `Modify`.
++test modify_ignores_stake_script_hook() {
+   let stake_state = State { ..state, stake_script: Some(testStakeScript) }
+   let stake_input =
+     Input {
+@@ -1337,13 +1352,21 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
+   )
+ }
+
+-/// **Property: Modify requires the exact owner key.**
++/// **Property: Modify requires no owner key (re-cut under issue #79; was
++/// `prop_modify_requires_owner`, which required failure for any non-owner
++/// signer).**
+ ///
+-/// Same approach as prop_retract_requires_owner but for the Modify path.
+-/// Generates random signers and confirms Modify fails when the signer
+-/// doesn't match the state owner. This verifies `has(extra_signatories, owner)`
+-/// protects the MPF state from unauthorized modifications.
+-test prop_modify_requires_owner(signer via owner_fuzzer()) fail once {
++/// That expectation encoded the pre-repair defect. Lean `Singular.step`'s
++/// `.fold` case obliges only `nativeSpend`, net-mint equality and the
++/// conditional mint witnesses — no owner hypothesis — so a `Modify` whose
++/// nets are empty (no requests, unchanged root, no mint) must be accepted
++/// for EVERY signer, owner or not.
++///
++/// Generates random 28-byte signers (the same `owner_fuzzer`) and verifies
++/// the empty fold is accepted regardless of who signs. This keeps a
++/// `Modify` property quantified over signers while stating what Lean
++/// actually guarantees.
++test prop_modify_no_owner_required(signer via owner_fuzzer()) {
+   let s =
+     State {
+       owner: "the_real_owner_key_aaaaaaaaaa",
+@@ -2263,18 +2286,22 @@ test reject_future_submitted_at() {
+   )
+ }
+
+-/// Only the cage owner can reject requests.
+-test reject_missing_signature() fail {
++/// Only the state owner can End the cage (re-cut under issue #79; was
++/// `reject_missing_signature`, which asserted an owner refusal for a
++/// Phase-3 `Modify`). The owner-authorization obligation now lives only
++/// on `End`, so the refusal moved here: a non-owner signer attempting to
++/// burn the cage token is refused. (The empty-signers variant is
++/// `end_missing_signature`, which still holds unchanged.)
++test end_wrong_signer() fail {
+   spend(
+-    feeStateDatum,
+-    Modify([Rejected]),
++    stateDatum,
++    End,
+     testStateRef,
+     Transaction {
+       ..transaction.placeholder,
+-      validity_range: phase3Range,
+-      outputs: [rejectStateOutput, refundOutput],
+-      extra_signatories: [],
+-      inputs: [feeStateInput, feeRequestInput],
++      extra_signatories: ["someone_else"],
++      inputs: [update],
++      mint: burn_value,
+     },
+   )
+ }
+diff --git a/onchain/validators/request.ak b/onchain/validators/request.ak
+index 062c19f..efa0b8d 100644
+--- a/onchain/validators/request.ak
++++ b/onchain/validators/request.ak
+@@ -8,7 +8,7 @@ use shared.{
+   is_rejectable, processableRequest, readState,
+ }
+ use types.{
+-  CageDatum, Contribute, Modify, Request, RequestDatum, Retract, State, Sweep,
++  CageDatum, Contribute, Insert, Modify, Request, RequestDatum, Retract, State, Sweep,
+   UpdateRedeemer,
+ }
+
+@@ -85,9 +85,19 @@ fn validateRetract(
+   stateRef: OutputReference,
+   tx: Transaction,
+ ) {
+-  let Request { requestOwner, requestToken, submitted_at, .. } = request
++  let Request { requestOwner, requestToken, requestValue, submitted_at, .. } =
++    request
+   let Transaction { extra_signatories, validity_range, .. } = tx
+   expect requestToken == cageToken
++  // Insert-only retraction (issue #79, Defect 2): Lean `step .withdraw`
++  // throws `withdraw-insert-only` for any non-insert request, and
++  // `step .escape` throws `completion-only-custody`. An Update (retirement)
++  // or Delete request must NOT be retractable. Owner sig, phase-2 window
++  // and state-token binding below are retained.
++  expect when requestValue is {
++    Insert(_) -> True
++    _ -> False
++  }
+   expect has(extra_signatories, requestOwner)
+   let stateInput = inputOrReferenceByRef(stateRef, tx)
+   expect carriesStateToken(statePolicyId, cageToken, stateInput)
+diff --git a/onchain/validators/state.ak b/onchain/validators/state.ak
+index 30f01e4..61c663a 100644
+--- a/onchain/validators/state.ak
++++ b/onchain/validators/state.ak
+@@ -33,7 +33,9 @@ validator state(previousPolicies: List<PolicyId>) {
+     tx: Transaction,
+   ) {
+     expect Some(StateDatum(state)) = maybeDatum
+-    expect validateOwnership(state, tx)
++    // Permissionless fold (issue #79, Defect 1): Modify must NOT require the
++    // registry owner. Lean `step .fold` checks only nativeSpend, net mint
++    // equality and the mint witnesses — no owner. End keeps ownership.
+     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
+     expect address.Script(policyId) = input.output.address.payment_credential
+     expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+@@ -41,7 +43,10 @@ validator state(previousPolicies: List<PolicyId>) {
+     when redeemer is {
+       Modify(actions) ->
+         validModify(state, input, policyId, cageToken, tx, actions)
+-      End -> validateEnd(policyId, cageToken, tx)
++      End -> {
++        expect validateOwnership(state, tx)
++        validateEnd(policyId, cageToken, tx)
++      }
+       _ -> fail
+     }
+   }
+diff --git a/onchain/validators/types.ak b/onchain/validators/types.ak
+index f293a21..a3fcb80 100644
+--- a/onchain/validators/types.ak
++++ b/onchain/validators/types.ak
+@@ -14,8 +14,9 @@ use lib.{TokenId}
+ /// ## Cage Pattern Overview
+ ///
+ /// A "caged" token is an NFT locked at a script address with an associated
+-/// Merkle Patricia Forestry (MPF) root. The owner can update the MPF by
+-/// accepting requests from other users, enabling collaborative data structures
++/// Merkle Patricia Forestry (MPF) root. Anyone can fold pending requests
++/// into the MPF via permissionless `Modify` (no owner signs since issue
++/// #79), enabling collaborative data structures
+ /// on-chain.
+ ///
+ /// ## Two-UTxO Architecture
+@@ -25,7 +26,8 @@ use lib.{TokenId}
+ ///
+ /// 1. **State UTxOs** (`StateDatum`): Hold the caged NFT and the current
+ ///    MPF root hash. Only one State UTxO exists per caged token. The owner
+-///    field determines who can perform `Modify` and `End` operations.
++///    field determines who can perform the `End` operation; `Modify`
++///    (folding) is permissionless since issue #79.
+ ///
+ /// 2. **Request UTxOs** (`RequestDatum`): Created by users who want to
+ ///    contribute data to someone else's caged token. They do NOT hold the
+@@ -135,7 +137,7 @@ pub type RequestAction {
+ /// |----------------|------------------------|-------------------------|--------------------------------------------|
+ /// | `End`          | `StateDatum`           | State owner             | Burn the caged NFT                         |
+ /// | `Contribute`   | `RequestDatum`         | Anyone (permissionless) | Link a request to a State UTxO             |
+-/// | `Modify`       | `StateDatum`           | State owner             | Process requests (update/reject)           |
++/// | `Modify`       | `StateDatum`           | Anyone (permissionless fold) | Process requests (update/reject)           |
+ /// | `Retract`      | `RequestDatum`         | Request owner           | Reclaim an unprocessed request             |
+ /// | `Sweep`        | any (incl. `None`)     | State owner             | Reclaim non-legitimate UTxOs at the cage   |
+ ///
+@@ -151,7 +153,8 @@ pub type RequestAction {
+ /// ## Test Hints
+ /// - Using `End` on a `RequestDatum` UTxO -> should fail (expects StateDatum)
+ /// - Using `Retract` on a `StateDatum` UTxO -> should fail (expects RequestDatum)
+-/// - Using `Modify` without owner signature -> should fail
++/// - Using `Modify` without owner signature -> succeeds when the fold is
++///   otherwise valid (permissionless since issue #79)
+ /// - Using `Contribute` with a request targeting a different token -> should fail
+ /// - Using `Retract` without request owner signature -> should fail
+ /// - Using `Sweep` without state-owner signature -> should fail
+@@ -183,10 +186,11 @@ pub type UpdateRedeemer {
+ /// A State value lives inside a `StateDatum` wrapper as part of a `CageDatum`.
+ ///
+ /// ## Ownership Model
+-/// The `owner` field is a `VerificationKeyHash`, meaning only a single
+-/// key holder controls the cage by default. When `stake_script` is set,
+-/// `Modify` or `End` can instead be authorized by a withdrawal under that
+-/// staking script credential.
++/// The `owner` field is a `VerificationKeyHash` naming who can terminate
++/// the cage (`End`) and migrate it; it confers no privilege over `Modify`,
++/// which any party may submit since issue #79. When `stake_script` is set,
++/// `End` (and migration) can instead be authorized by a withdrawal under
++/// that staking script credential.
+ ///
+ /// ## Root Hash
+ /// The `root` field is a raw `ByteArray` (32 bytes for SHA2-256) representing
+@@ -206,8 +210,9 @@ pub type UpdateRedeemer {
+ /// - Verify initial root is `root(empty)` after minting
+ pub type State {
+   /// The verification key hash of the token owner.
+-  /// When `stake_script` is absent, only the owner can modify the MPF state
+-  /// or end the cage.
++  /// It authorizes `End` and migration (with the `stake_script`
++  /// withdrawal as an alternative when set). `Modify` requires no owner
++  /// or stake authorization since issue #79.
+   owner: VerificationKeyHash,
+   /// Optional staking script credential that can authorize owner operations.
+   stake_script: Option<ScriptHash>,
+@@ -272,8 +277,8 @@ pub type Operation {
+ /// A request to modify a caged token's MPF.
+ ///
+ /// Requests are created by users who want to contribute data to
+-/// someone else's caged token. The token owner can then accept
+-/// the request by including it in a Modify transaction.
++/// someone else's caged token. Anyone can then fold the request by
++/// including it in a permissionless `Modify` transaction.
+ ///
+ /// ## Request Lifecycle
+ ///
+@@ -290,9 +295,11 @@ pub type Operation {
+ ///    applies the operation to the MPF using the provided proof, and
+ ///    advances the root hash.
+ ///
+-/// 4. **Retraction** (alternative to 2-3): If the owner hasn't processed
+-///    the request, the request creator can spend it with `Retract`,
+-///    which only requires `requestOwner`'s signature.
++/// 4. **Retraction** (alternative to 2-3): If the request is still
++///    pending, the request creator can spend it back with `Retract`
++///    when it is an insert request (`Update`/`Delete` requests are not
++///    retractable since issue #79), which requires `requestOwner`'s
++///    signature.
+ ///
+ /// ## Linking Mechanism
+ /// The `requestToken` field is a `TokenId` (just an asset name). It must

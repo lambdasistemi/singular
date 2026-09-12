@@ -8,7 +8,7 @@ use shared.{
   is_rejectable, processableRequest, readState,
 }
 use types.{
-  CageDatum, Contribute, Modify, Request, RequestDatum, Retract, State, Sweep,
+  CageDatum, Contribute, Insert, Modify, Request, RequestDatum, Retract, State, Sweep,
   UpdateRedeemer,
 }
 
@@ -85,9 +85,19 @@ fn validateRetract(
   stateRef: OutputReference,
   tx: Transaction,
 ) {
-  let Request { requestOwner, requestToken, submitted_at, .. } = request
+  let Request { requestOwner, requestToken, requestValue, submitted_at, .. } =
+    request
   let Transaction { extra_signatories, validity_range, .. } = tx
   expect requestToken == cageToken
+  // Insert-only retraction (issue #79, Defect 2): Lean `step .withdraw`
+  // throws `withdraw-insert-only` for any non-insert request, and
+  // `step .escape` throws `completion-only-custody`. An Update (retirement)
+  // or Delete request must NOT be retractable. Owner sig, phase-2 window
+  // and state-token binding below are retained.
+  expect when requestValue is {
+    Insert(_) -> True
+    _ -> False
+  }
   expect has(extra_signatories, requestOwner)
   let stateInput = inputOrReferenceByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)

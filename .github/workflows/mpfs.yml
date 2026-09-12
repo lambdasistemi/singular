@@ -139,6 +139,42 @@ jobs:
       - name: Compare the committed manifest with a fresh blueprint build
         working-directory: onchain
         run: nix build --quiet --no-link --print-out-paths .#script-identity
+  aiken-suite:
+    name: Onchain Aiken unit and property suite passes
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-aiken-suite"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #79 (NOTE-005/NOTE-006): the onchain Aiken suite is an
+      # enforced check, not documentation. Four of its tests asserted
+      # the removed owner gate on `Modify` (`modify_missing_signature`,
+      # `modify_with_stake_script_no_withdrawal`,
+      # `prop_modify_requires_owner`, `reject_missing_signature`) with
+      # nothing executing them — a suite nobody runs cannot catch the
+      # next person who "fixes" those tests by reverting the repair.
+      # The tests are re-cut to what Lean mandates (permissionless
+      # `Modify`, owner obligation on `End` only), and this job runs
+      # the whole suite (`nix flake check` in onchain/: the Aiken unit
+      # and property tests plus the blueprint and identity checks) with
+      # the pinned toolchain from that flake's own lock — no dev shell,
+      # no ambient state. A red test fails the job (markers:
+      # aiken-suite-green, aiken-suite-pinned-toolchain). It covers the
+      # validator unit/property surface only — ledger behavior stays
+      # with the devnet row runners.
+      - name: Run the onchain Aiken suite as a flake check
+        working-directory: onchain
+        run: nix flake check
   vectors-fresh:
     name: Cage vectors match the generator
     runs-on: nixos
@@ -414,6 +450,45 @@ jobs:
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
+  repair-rows:
+    name: The issue-79 repair rows on a real devnet
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-repair-rows"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #79: the imported-validator repair rows (permissionless
+      # folding and insert-only retraction) executed against a real
+      # devnet with the repaired MPFS validators. `needs:` is ordering
+      # and fail-fast on the blueprint job: the runner consumes the
+      # onchain blueprint (built here from that flake, so the consumed
+      # artifact is always built from the checked-out commit) and its
+      # regenerated script-identity.json. A valid fold is accepted with
+      # no registry-owner signer; a defective fold, an ownerless End, an
+      # Update/Delete retraction and a wrong-signer retract are refused
+      # by the validators for their named reasons; an owner-signed End
+      # and an Insert retract are accepted; a six-case generated fold
+      # property with a bisection shrinker corroborates the story rows.
+      # The devnet runs under a private shallow TMPDIR so its node
+      # database cannot delete another lane's live database and its
+      # socket stays inside the AF_UNIX limit.
+      - name: Run the repair rows as a packaged app without a dev shell
+        working-directory: offchain
+        run: |
+          mkdir -p /tmp/s79-devnet
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          TMPDIR=/tmp/s79-devnet MPFS_BLUEPRINT="$blueprint" nix run --quiet .#repair-rows
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: blueprint

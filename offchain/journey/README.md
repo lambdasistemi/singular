@@ -80,7 +80,7 @@ this document.
    unapplied insert request is submitted (`reject-request`), the
    applied insert is replayed into the trie manager so its proofs
    stand on the root the chain actually has, and the valid oracle
-   update is built but never submitted. Three single-defect mutants
+   update is built but never submitted. Four single-defect mutants
    of it are derived and each must be refused by the node for the
    matched reason (a phase-2 `PlutusFailure` naming the expected
    validator's script hash):
@@ -93,10 +93,18 @@ this document.
      `StateDatum` shape but its root is the byte complement of the
      root the proofs certify; `state.state.spend` refuses it (same
      size, so fee and min-UTxO rules still hold).
-   - `reject-missing-witness` — the owner signature is dropped from
-     the body's required signers, so the ledger no longer demands
-     the vkey witness and phase 1 passes; `state.state.spend`'s
-     ownership check refuses it.
+   - `reject-missing-proof` — the Merkle proof witness is dropped
+     from the `Modify` action (re-cut under issue #79 from
+     `reject-missing-witness`, which dropped the owner signature and
+     required a refusal the repaired validator rightly no longer
+     gives: Lean's `.fold` states no owner hypothesis). A fold whose
+     demanded witness is absent must be refused, and
+     `state.state.spend` refuses it.
+   - `reject-end-without-owner` — the owner signature is dropped from
+     an `End` spend, so the ledger no longer demands the vkey witness
+     and phase 1 passes; `state.state.spend`'s ownership check (kept
+     on `End` by the repair) refuses it. After the repair this is the
+     only owner-authorization negative control.
    A transaction accepted by the node fails the run naming the guard
    that did not hold; a rejection that does not match the expected
    reason fails the run naming what came back. Afterwards

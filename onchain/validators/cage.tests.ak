@@ -664,9 +664,15 @@ test contribute_with_state_end_rejected() fail {
 // Modify tests
 // ============================================================================
 
-/// Only the cage owner can Modify. Without the owner's signature, anyone
-/// could update the MPF root with arbitrary data.
-test modify_missing_signature() fail {
+/// Permissionless Modify (re-cut under issue #79; was
+/// `modify_missing_signature`, which required a refusal when the owner
+/// signature was absent). That expectation encoded the pre-repair defect:
+/// Lean `Singular.step`'s `.fold` case requires only `nativeSpend`, net
+/// mint equality and the conditional mint witnesses — it states no owner
+/// hypothesis — so the repaired validator accepts an ownerless Modify.
+/// This test pins the repaired truth: a well-formed fold with no owner
+/// signer is accepted.
+test modify_without_owner_succeeds() {
   spend(
     stateDatum,
     Modify([UpdateAction([])]),
@@ -724,9 +730,18 @@ test modify_with_stake_script_withdrawal() {
   )
 }
 
-/// Modify must fail when stake_script is Some but no matching withdrawal is
-/// present. Signature alone is not enough when the plugin is active.
-test modify_with_stake_script_no_withdrawal() fail {
+/// Modify ignores the stake-script hook (re-cut under issue #79; was
+/// `modify_with_stake_script_no_withdrawal`, which required a refusal
+/// when the withdrawal was absent). The repaired `Modify` path never
+/// consults `validateOwnership` — neither the owner nor the stake-script
+/// withdrawal — so this transaction is accepted. That is the current
+/// Aiken-level meaning of the hook on `Modify`, not a ruling on its
+/// ledger reachability: epic 18 found the stake credential may be
+/// unreachable on a ledger (`staking.ak` serves only `withdraw`), an
+/// open question owned by a separate slice sequenced after this one.
+/// Do not read this test as approval to add a stake or owner
+/// prerequisite back to permissionless `Modify`.
+test modify_ignores_stake_script_hook() {
   let stake_state = State { ..state, stake_script: Some(testStakeScript) }
   let stake_input =
     Input {
@@ -1337,13 +1352,21 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
   )
 }
 
-/// **Property: Modify requires the exact owner key.**
+/// **Property: Modify requires no owner key (re-cut under issue #79; was
+/// `prop_modify_requires_owner`, which required failure for any non-owner
+/// signer).**
 ///
-/// Same approach as prop_retract_requires_owner but for the Modify path.
-/// Generates random signers and confirms Modify fails when the signer
-/// doesn't match the state owner. This verifies `has(extra_signatories, owner)`
-/// protects the MPF state from unauthorized modifications.
-test prop_modify_requires_owner(signer via owner_fuzzer()) fail once {
+/// That expectation encoded the pre-repair defect. Lean `Singular.step`'s
+/// `.fold` case obliges only `nativeSpend`, net-mint equality and the
+/// conditional mint witnesses — no owner hypothesis — so a `Modify` whose
+/// nets are empty (no requests, unchanged root, no mint) must be accepted
+/// for EVERY signer, owner or not.
+///
+/// Generates random 28-byte signers (the same `owner_fuzzer`) and verifies
+/// the empty fold is accepted regardless of who signs. This keeps a
+/// `Modify` property quantified over signers while stating what Lean
+/// actually guarantees.
+test prop_modify_no_owner_required(signer via owner_fuzzer()) {
   let s =
     State {
       owner: "the_real_owner_key_aaaaaaaaaa",
@@ -2263,18 +2286,22 @@ test reject_future_submitted_at() {
   )
 }
 
-/// Only the cage owner can reject requests.
-test reject_missing_signature() fail {
+/// Only the state owner can End the cage (re-cut under issue #79; was
+/// `reject_missing_signature`, which asserted an owner refusal for a
+/// Phase-3 `Modify`). The owner-authorization obligation now lives only
+/// on `End`, so the refusal moved here: a non-owner signer attempting to
+/// burn the cage token is refused. (The empty-signers variant is
+/// `end_missing_signature`, which still holds unchanged.)
+test end_wrong_signer() fail {
   spend(
-    feeStateDatum,
-    Modify([Rejected]),
+    stateDatum,
+    End,
     testStateRef,
     Transaction {
       ..transaction.placeholder,
-      validity_range: phase3Range,
-      outputs: [rejectStateOutput, refundOutput],
-      extra_signatories: [],
-      inputs: [feeStateInput, feeRequestInput],
+      extra_signatories: ["someone_else"],
+      inputs: [update],
+      mint: burn_value,
     },
   )
 }
