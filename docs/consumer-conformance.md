@@ -100,10 +100,12 @@ deliberately wrong variant the same run requires to fail.
 | CG14 / CG15 stake_script hook | **could-not-execute — superseded** | the pinned staking credential cannot register: `MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it — the staking validator has only a withdraw handler. Superseded inherited-hook expectations, not pending work (below) |
 
 **Three dispositions, never to be mistaken for one another.**
-**Held** (`held-q002`; CG11, CG12, CG19): executed, and the consumer's
-requirement is unmet while Singular's Lean permits the chain's
-outcome. CG11's story-2 ruling has since been given — empty processing batches are rejected — so
-CG11 moves by execution against the revised contract; CG12 and CG19 still await their dispositions.
+**Held** (`held-q002`; CG11, CG12, CG19): executed, with the consumer
+requirements still unmet. CG11 recorded a conflict with the pre-revision
+Singular model; rejecting empty batches is now approved. CG12's
+representation mapping remains under review. CG19 requires the
+operation-specific value-routing repair. The rows move only after the
+required implementation and execution evidence is accepted.
 **Resolved-by-ruling** (CG13): a ruling settled the row's question;
 the observation is retained as defect evidence of the outstanding
 owner gate — never a pass, never an owner-semantics claim.
@@ -122,9 +124,9 @@ at `1d98d51` is `4142f7d6…`. The overwritten pre-repair receipts are
 retained only as evidence of that defect.
 
 **Held rows (Q-002, story 2).** CG11, CG12 and CG19 are executed
-holds, never gaps and never passes: the chain sided with Singular's
-Lean where the consumer's theorem disagrees. Singular's Lean permits
-the empty fold (`foldItems`, `| s, [] => .ok` — `Model.lean`
+holds, never passes. Only CG11 was established as a direct conflict
+between the two model results. In the pinned pre-revision contract,
+Singular's Lean permits the empty fold (`foldItems`, `| s, [] => .ok` — `Model.lean`
 188–189) and pairs each request with exactly one action in its
 `FoldItem`, so a surplus tail is unmodelled; `State` carries no owner
 field and `Action.fold` routes no refunds. `Singular.Statements.fold_iff`
@@ -356,12 +358,13 @@ never trims identities — under the same run-enforced 16KB bound.
   removes entirely — the epic-16 observation is preserved as history
   and earns no conformance credit. Nothing else in the inventory has
   ledger evidence without a receipt.
-- **Executed holds, not passes**: CG11, CG12 and CG19 are held
-  (`held-q002`) by execution — the chain's outcome agrees with
-  Singular's Lean and contradicts consumer R8_empty_fold_refused and the
-  consumer's operation-specific fold value routing (`Registry.processBody`,
-  `Registry.stepFn`, `Cage.delegated_is_registry`) — not
-  `R11_contribute_value`, which states the deposit amount. Upstream
+- **Executed holds, not passes**: CG11, CG12 and CG19 remain held by
+  execution. CG11 records the pre-revision empty-fold conflict with
+  R8_empty_fold_refused; CG12 still needs a faithful representation
+  mapping; CG19 violates the consumer's required operation-specific fold
+  value routing (`Registry.processBody`, `Registry.stepFn`,
+  `Cage.delegated_is_registry`). `R11_contribute_value` states the
+  deposit amount and is not that fold requirement. Upstream
   `#100`/`#101` are referenced proposals, **not a delivered partition fix**:
   `#101` is open, and **Singular owns the required local repair**.
   `R5_plugin_pinned` concerns the plugin, not a registry owner. The
