@@ -1,26 +1,25 @@
-command: spike negative -j1 (same environment)
+command: spike positive -j1 with a synthetic marker process seeded mid-run (copied bash binary named cardano-node carrying the marker path; a shell, not a node)
 commit: 3980e000531c351fd3d125ab1d3040ff5c136dea
 tree: DIRTY (correction uncommitted at capture; verify Main.hs hash against the commit below)
-exit: 1
+exit: 0
 source-binding:
   Main.hs sha256: 92b41457da69f369d1b65f2385c7026c1aab6241b0b2749ce1403179f1e6a39d
 git rev-parse HEAD: 3980e000531c351fd3d125ab1d3040ff5c136dea
 git status --porcelain evaluation:  M conformance/coverage/evaluation/spike-app/Main.hs;
-note: story fails on the deliberate lie; release bracket still runs and records
+note: synthetic pid 2454211 observed at entry, reaped, remaining empty; detection evidence, not an orphan proof
 
 --- run output (complete) ---
 tasty-bdd evaluation: CG05 occupied-key refusal
-  real boundary: occupied insert refused, script-attributed, control discriminates: FAIL
-    Exception: user error (deliberate lie: the refusal must not have happened, but the story ran: True)
+  real boundary: occupied insert refused, script-attributed, control discriminates: OK (46.57s)
 
-1 out of 1 tests failed (67.51s)
+All 1 tests passed (75.14s)
 
 --- release proof (exact file, single block) ---
-mode: negative
-markerNodesObservedAtEntry: []
+mode: positive
+markerNodesObservedAtEntry: ["2454211"]
   (diagnostic only; the oracle uses post-reap remaining)
 markerDirExists: False
   (doesDirectoryExist after removal; False means the tree is gone)
-markerNodesReaped: []
+markerNodesReaped: ["2454211"]
 markerNodesRemaining: []
-baselineNodeCount: 6
+baselineNodeCount: 7

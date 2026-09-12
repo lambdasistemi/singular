@@ -35,6 +35,7 @@ import Control.Exception (ErrorCall (..), throwIO)
 import qualified Control.Concurrent as CC
 import qualified Control.Monad as CM
 import Data.Char (isDigit)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf)
 import Data.Unique (hashUnique, newUnique)
 
@@ -124,21 +125,30 @@ acquireSession tag = do
 -- | Unconditional release: assert a clean marker, reap our nodes, remove the
 -- whole marker tree, then record what happened where the shell demonstration
 -- can read it. Runs on pass and on failure alike — that is the F-2 repair.
--- The leftover check sits BEFORE reaping on purpose: reaping first would kill
--- any witness, so a control seeding a synthetic marker process could never
--- reach this assertion (the reaper would harvest it and the check would pass
--- while observing nothing).
+-- The oracle is the POST-teardown state: a process present and successfully
+-- reaped is a success (that is the reaper's job); a process present only in
+-- the final observation must fail. The pre-reap list is recorded as
+-- diagnostics only and never feeds the assertion.
 releaseSession :: String -> Session -> IO ()
-releaseSession tag sess = do
-  observed <- markerNodePids (sessMarker sess)
+releaseSession = releaseSessionWith markerNodePids
+
+-- | `releaseSession` with the pid observation injected. Production passes
+-- `markerNodePids`; the `control-finalizer` mode passes a scripted observer.
+-- Injected observations are a synthetic exercise of the checker path, NOT a
+-- real-ledger orphan proof.
+releaseSessionWith :: (FilePath -> IO [String]) -> String -> Session -> IO ()
+releaseSessionWith observe tag sess = do
+  observed <- observe (sessMarker sess)
   (reaped, _) <- reapMarkerNodes (sessMarker sess)
   removePathForcibly (sessMarker sess)
   dirExists <- doesDirectoryExist (sessMarker sess)
-  still <- markerNodePids (sessMarker sess)
+  still <- observe (sessMarker sess)
   writeFile
     (sessMarker sess <> ".released")
     ( unlines
         [ "mode: " <> tag
+        , "markerNodesObservedAtEntry: " <> show observed
+        , "  (diagnostic only; the oracle uses post-reap remaining)"
         , "markerDirExists: " <> show dirExists
         , "  (doesDirectoryExist after removal; False means the tree is gone)"
         , "markerNodesReaped: " <> show reaped
@@ -146,7 +156,7 @@ releaseSession tag sess = do
         , "baselineNodeCount: " <> show (length (sessBaseline sess))
         ]
     )
-  case cleanupFailure dirExists observed of
+  case cleanupFailure dirExists still of
     Just reason ->
       throwIO . ErrorCall $ "cleanup failed (" <> tag <> "): " <> reason
     Nothing -> pure ()
@@ -179,6 +189,18 @@ main = do
   (mode, rest) <- getArgs >>= \case
     ("positive" : r) -> return ("positive" :: String, r)
     ("negative" : r) -> return ("negative", r)
+    ("control-finalizer" : which : _) -> do
+      prePost <- case which of
+        "reaped" -> return [["424242"], []]
+        "remained" -> return [[], ["424243"]]
+        _ -> die "usage: spike control-finalizer reaped|remained"
+      sess <- acquireSession "control"
+      script <- newIORef prePost
+      let observe _ = readIORef script >>= \case
+            (h : t) -> writeIORef script t >> return h
+            [] -> return []
+      releaseSessionWith observe ("control-finalizer-" <> which) sess
+      exitSuccess
     ("reap" : d : _) -> do
       CM.unless ("t80-story-" `isInfixOf` d) (die ("reap refuses path outside t80-story- markers: " <> d))
       (reaped, _) <- reapMarkerNodes d

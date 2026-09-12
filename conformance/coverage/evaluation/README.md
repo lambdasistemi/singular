@@ -36,9 +36,12 @@ committed file wrongly said `app` and could never have built), `cabal.project`
 | 2. deliberately failing scenario compiles and runs | PASS | `spike negative` fails exactly the lying assertion ("deliberate lie: the refusal must not have happened…") |
 | 3. failing assertion produces a failing process status | PASS | `spike negative` exits **1** (`1 out of 2 tests failed`) |
 | 4. teardown behaviour on real resources | **PARTIAL — see findings** | the scenario's own `GivenAndAfter` teardown removed the receipts dir on success; on a *failed* scenario the teardown did not run (see F-2) |
-| 5. repaired adapter: passing story cleans up, proven | PASS | `spike positive` exits 0 with all assertions green; the release proof records the receipts dir gone and no marker nodes remaining (`evaluation/evidence/spike-positive.log`) |
-| 6. repaired adapter: failing story cleans up, proven | PASS | `spike negative` exits 1 on the deliberate lie; the release proof still exists with the dir gone and no marker nodes remaining — the F-2 repair (`evaluation/evidence/spike-negative.log`) |
-| 7. repaired adapter: SIGKILL-abandoned session reaped | PASS | spike `SIGKILL`ed mid-devnet leaves an orphaned node; `spike reap` finds it by marker, terminates it, removes the session dir and exits 0 with none remaining — the abnormal-exit class no in-process bracket survives (`evaluation/evidence/spike-reap-drill.log`) |
+| 5. repaired adapter: passing story cleans up, proven | PASS | `spike positive` exits 0 with all assertions green; the release proof records `markerDirExists: False` (doesDirectoryExist after removal; False means the tree is gone) and `markerNodesRemaining: []` (`evaluation/evidence/spike-positive.log`) |
+| 6. repaired adapter: failing story cleans up, proven | PASS | `spike negative` exits 1 on the deliberate lie; the release proof still exists with `markerDirExists: False` and `markerNodesRemaining: []` — the F-2 repair (`evaluation/evidence/spike-negative.log`) |
+| 7. repaired adapter: SIGKILL-abandoned session reaped | DESCRIBED, NOT CAPTURED | the abnormal-exit class no in-process bracket survives is handled by `spike reap` (reap by marker, terminate, remove, exit 0 iff none remain); the SIGKILL-orphan drill is described, not captured — rebuilding it is held, not spent while the finalizer assertion was missing |
+| 8. repaired adapter: marker-scoped detection proven on a live process | PASS | a synthetic marker process (copied shell named `cardano-node` carrying the marker path — a shell, not a node) seeded mid-run is observed at entry and reaped: proof shows `markerNodesObservedAtEntry: ["2454211"]`, `markerNodesReaped: ["2454211"]`, `markerNodesRemaining: []`, exit 0 — detection evidence, not an orphan proof (`evaluation/evidence/spike-detection.log`) |
+| 9. finalizer control: reaped-then-gone passes | PASS | injected observer scripts pre `["424242"]`, post `[]` through the real `releaseSession` call site; the run exits 0 — a process present and successfully reaped is a success. Synthetic exercise of the checker path, not a real-ledger orphan proof (`evaluation/evidence/control-finalizer-reaped.log`) |
+| 10. finalizer control: remained-after-teardown fails naming the pid | PASS | injected observer scripts pre `[]`, post `["424243"]`; the run exits 1 with `cleanup failed (control-finalizer-remained): marker nodes present at release: ["424243"]` — the oracle is the post-teardown state (`evaluation/evidence/control-finalizer-remained.log`) |
 
 Story assertions that passed in positive mode (all computed from the runner's real output):
 exit success; `1/1 rows ok`; `REFUSED at submit` (script-attributed, phase-2 marker); the
@@ -56,8 +59,10 @@ control line `the refusal discriminates`; the receipt artifact `receipt-CG05.jso
   session teardown outright: every story run exports a unique marker `TMPDIR`, and release
   (SIGTERM, grace, SIGKILL, verify) plus the standalone `spike reap` mode reclaim exactly
   that marker's nodes and directory — sibling lanes and infra nodes can never match.
-  Demonstrated on a SIGKILL-orphaned live node (reaped by marker, verified gone).
-  *Blocks adoption* until this teardown exists — now present and proven above (checks 5–7).
+  Demonstrated on a live marker process (observed at entry, reaped, none
+  remaining — check 8); the SIGKILL-orphan drill itself is described, not
+  captured (check 7).
+  *Blocks adoption* until this teardown exists — now present and proven above (checks 5, 6, 8–10).
   Neither the row runner (`conformance/app/Conformance/Run.hs`, sibling-owned) nor the
   devnet library (epic 17) was touched.
 - **F-2 — repaired in the adapter; mechanism read from source, not inferred.**
@@ -67,7 +72,10 @@ control line `the refusal discriminates`; the receipt artifact `receipt-CG05.jso
   through tasty's `withResource` (acquire: marker dir, receipts dir, node baseline;
   release: reap, remove, write the release proof) and binds **no** real resource lifetime
   through `GivenAndAfter`. Demonstrated: the negative run exits 1 with the release proof
-  present, the dir gone and no marker nodes left (check 6). A cleanup claim with no
+  present, the dir gone and no marker nodes left (check 6). The finalizer asserts the
+  post-teardown state (`cleanupFailure dirExists still`, factored pure and unit-tested
+  in four cases): reaped-then-gone passes, remained-after-teardown fails naming the pid
+  (checks 9–10). A cleanup claim with no
   failing-path demonstration would be the honour system this epic rejects.
 - **F-3 (minor, adapter ergonomics):** `Test.BDD.Language` exports a `when` combinator that
   collides with `Control.Monad.when`; adapters need a qualified-import convention.
@@ -110,7 +118,7 @@ behind a thin Singular adapter, conditional on:**
 
 1. F-2 handled in the adapter (failure-safe teardown wrapper) before any scenario binds a
    real resource — done, checks 5–6;
-2. F-1 session teardown present and proven (checks 5–7) before stories drive devnet sessions in
+2. F-1 session teardown present and proven (checks 5, 6, 8–10) before stories drive devnet sessions in
    CI;
 3. operator review of the two representative rendered stories — the ground instance
    (`../correspondence/naming_occupied_key_refuses_duplicate.md`) and the equivalence under
