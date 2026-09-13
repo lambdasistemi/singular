@@ -124,8 +124,9 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 {- | On-chain token state. Matches Aiken
-@types\/State@ (5 fields: ownerless per ruling NOTE-028/A-003, plus
-the expected representative policy per issue #77 E-001 repair).
+@types\/State@ (6 fields: ownerless per ruling NOTE-028/A-003, plus
+the expected representative policy per issue #77 E-001 repair and
+the pinned consumer script per NOTE-013/019).
 -}
 data OnChainTokenState = OnChainTokenState
     { stateRoot :: !OnChainRoot

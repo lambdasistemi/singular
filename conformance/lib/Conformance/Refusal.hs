@@ -32,6 +32,7 @@ import Conformance.Receipt (
     Verdict (..),
     writeReceiptFile,
  )
+import Data.Char (isHexDigit)
 import Data.List (intercalate, isInfixOf, isPrefixOf, nub, sortOn)
 import Data.Text qualified as T
 
@@ -52,7 +53,9 @@ data RefusalMismatch
 
 {- | Require @reason@ to be a phase-2 script failure naming @marker@.
 @marker@ is the applied refusing script's hash hex; @reason@ is the
-node's refusal text verbatim.
+node's refusal text verbatim. The marker must be AMONG the
+extracted failure script hashes (NOTE-071) — a hash appearing in
+unrelated diagnostic text must not satisfy the check.
 
 Two vocabularies, one discipline. At submit the node speaks
 @PlutusFailure@ (the li-refusals precedent). At build evaluation
@@ -65,7 +68,7 @@ matchRefusal :: String -> String -> Either RefusalMismatch ()
 matchRefusal marker reason
     | not (isPhase2 reason) =
         Left (NotPhase2 reason)
-    | not (marker `isInfixOf` reason) =
+    | marker `notElem` refusalScriptHashes reason =
         Left (MarkerAbsent marker reason)
     | otherwise = Right ()
 
@@ -129,10 +132,14 @@ refusalScriptHashes text = nub (filter (not . null) (go text))
     go s = case findAfter hashMarker s of
         Nothing -> []
         Just after ->
-            let h = takeUntil hashEnd after
-             in h : go (drop (length h + length hashEnd) after)
-    hashMarker = "ScriptHash \\\""
-    hashEnd = "\\\""
+            let digits = dropWhile isQuoteOrEscape after
+                h = takeWhile isHexDigit digits
+             in h : go (drop (length h) digits)
+    -- Both node shapes: quoted ledger form and bare Haskell Show
+    -- form. Only the marker-anchored hex run counts; unquoted
+    -- ledger credentials never match this pattern.
+    hashMarker = "ScriptHash "
+    isQuoteOrEscape c = c == '"' || c == '\\'
 
 {- | The failed scripts' hashes joined as one @scriptHash=@ field.
 -}
@@ -279,6 +286,13 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                                     ( RefusalInfo
                                         { refusalScript = T.pack script
                                         , refusalReason = T.pack recorded
+                                        , refusalPhase = "phase-2"
+                                        , refusalHashes =
+                                            map T.pack (refusalScriptHashes text)
+                                        , refusalBranch = Nothing
+                                        , refusalLimit =
+                                            Just
+                                                "no named validator branch in this compiled trace; attribution is script hash plus phase-2 only"
                                         }
                                     )
                             , receiptMem = Nothing
@@ -290,6 +304,8 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                             , receiptVenue = "node-submit"
                             , receiptRejected = Just (T.pack rejectedTxid)
                             , receiptDirty = dirty
+                            , receiptPartial = Nothing
+                            , receiptDerivation = Nothing
                             }
             else pure ()
             pure (Right ())

@@ -85,18 +85,21 @@ jobs:
       # occupied key — executed against a real devnet, each with its
       # executing negative control and its measurements against the
       # devnet's Conway protocol maxima. Issue #70 then extends the
-      # same session with its rows: three attributed refusals
-      # (CG07/CG09/CG10), the permissionless-fold regression CG20
-      # (accepted against the #79-repaired candidate), the superseded
-      # CG17 observation, and the held rows CG11/CG12/CG19. CG14/CG15
-      # are NOT run: superseded inherited-hook expectations with
-      # could-not-execute history — no work waits behind them.
+      # same session with its active rows: three attributed refusals
+      # (CG07/CG09/CG10) and the held rows CG11/CG12/CG19. CG13, CG17
+      # and CG20 are NOT run: retired superseded history per E18
+      # (NOTE-046, CG16 template) — the owner-pinning transfer, the
+      # custody sweep and the removed-signer regression tested an
+      # owner role the registry does not have; their observations
+      # live in rows.json, never as coverage. CG14/CG15 are NOT run:
+      # superseded inherited-hook expectations with could-not-execute
+      # history — no work waits behind them.
       #
       # A session containing held rows ends NON-ZERO by design (a held
       # row must never read as a pass). Per the A-001 ruling this step
       # never treats that exit — or any error label — as success: the
       # expected-debt assertion below reads the session's ACTUAL
-      # results and demands exactly the thirteen rows, exactly the
+      # results and demands exactly the ten rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
       # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
@@ -128,7 +131,7 @@ jobs:
           rm -rf ./conformance-receipts
           mkdir -p ./conformance-receipts
           set +e
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 --receipts-dir ./conformance-receipts 2>&1 | tee /tmp/generic-rows.log
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir ./conformance-receipts 2>&1 | tee /tmp/generic-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
@@ -141,12 +144,12 @@ jobs:
           #    exit 1 is the intended result ONLY together with the
           #    complete terminal evidence asserted below.
           [ "$run_rc" -eq 1 ] || { echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"; exit 1; }
-          # 2. complete session evidence: all 13 rows executed...
-          grep -q 'complete: 13/13 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 13 rows (mid-run failure or crash)'; exit 1; }
+          # 2. complete session evidence: all 10 rows executed...
+          grep -q 'complete: 10/10 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 10 rows (mid-run failure or crash)'; exit 1; }
           #    ...and the terminal failure is the held-rows debt report
           grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || { echo 'FAIL: the terminal failure is not the held-rows debt report'; exit 1; }
-          # 3. exactly the thirteen rows plus the session CL01, no extras
-          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 CL01 | sort > /tmp/expected-rows.txt
+          # 3. exactly the ten rows plus the session CL01, no extras
+          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01 | sort > /tmp/expected-rows.txt
           nix run --quiet nixpkgs#jq -- -r '.row' ./conformance-receipts/receipt-*.json | sort > /tmp/receipt-rows.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
@@ -162,13 +165,12 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG17|CG20|CL01) printf 'agrees-with-model' ;;
+              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CL01) printf 'agrees-with-model' ;;
               CG11|CG12|CG19) printf 'held-q002' ;;
-              CG13) printf 'resolved-by-ruling' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
-          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 CL01; do
+          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01; do
             f="./conformance-receipts/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
@@ -187,7 +189,36 @@ jobs:
           # nothing may fail against this candidate
           failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
           [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 13 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
+          # 7. held observations: outcome refused (CG11/CG12) or
+          #    accepted (CG19) with structural phase/hash/limit, plus
+          #    each exact accepting-control txid from this run (NOTE-071:
+          #    verdicts alone are not the observation).
+          for row in CG11 CG12; do
+            f="./conformance-receipts/receipt-$row.json"
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.outcome' "$f")" = "refused" ] || { echo "FAIL: $row outcome is not refused"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.phase' "$f")" = "phase-2" ] || { echo "FAIL: $row refusal phase is not phase-2"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.hashes | length' "$f")" -ge 1 ] || { echo "FAIL: $row names no extracted hashes"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.limit // empty' "$f")" != "" ] || { echo "FAIL: $row states no limit"; exit 1; }
+            marker="$(sed -n "s/.*$row: .* marker 0x\([0-9a-f]*\).*/\1/p" /tmp/generic-rows.log | head -n 1)"
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.hashes[0]' "$f")" = "$marker" ] || { echo "FAIL: $row receipt hash does not match run marker ($marker)"; exit 1; }
+          done
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.outcome' ./conformance-receipts/receipt-CG19.json)" = "accepted" ] || { echo 'FAIL: CG19 outcome is not accepted'; exit 1; }
+          grep -q 'CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64,\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
+          grep -q 'CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64,\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
+          # 8. standalone rejected-floor control receipt mandatory:
+          #    two nonempty obligations, ordered pair, paid-vs-owed,
+          #    phase/hash/limit, both txids, counterpart, identity.
+          c="./conformance-receipts/control-CG19-rejected-floor.json"
+          test -f "$c" || { echo 'FAIL: missing CG19-rejected-floor control receipt'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.control' "$c")" = "CG19-rejected-floor" ] || { echo 'FAIL: control identity moved'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.obligations | length' "$c")" = "2" ] || { echo 'FAIL: control obligations are not a pair'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.outcome' "$c")" = "refused" ] || { echo 'FAIL: control underpaid leg is not refused'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.phase' "$c")" = "phase-2" ] || { echo 'FAIL: control underpaid phase is not phase-2'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.hashes | length' "$c")" -ge 1 ] || { echo 'FAIL: control underpaid names no hashes'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.funded.outcome' "$c")" = "accepted" ] || { echo 'FAIL: control funded leg is not accepted'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.funded.txid | length' "$c")" -ge 10 ] || { echo 'FAIL: control funded txid missing'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$c")" = "$head_sha" ] || { echo 'FAIL: control receipt not bound to candidate'; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
@@ -201,18 +232,110 @@ jobs:
         run: |
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir ./conformance-receipts
+          # exact CA04 derivation evidence: state arity-0 match,
+          # request arity-2 distinct, corrupted refusal — off-chain
+          # venue throughout, boot txid as provenance.
+          nix run --quiet nixpkgs#jq -- -e '.verdict == "agrees-with-model" and .venue == "off-chain-identity (not phase-2)" and ([.derivation[] | .validator + "/" + .outcome] | sort == ["request.request/distinct", "state.state/match", "state.state/refused"])' ./conformance-receipts/receipt-CA04.json > /dev/null || { echo 'FAIL: CA04 derivation evidence moved'; exit 1; }
+      # Armed CA04 negative (NOTE-062/067, E18 venue): the same
+      # checker demanding the corrupted derivation pass must fail
+      # with the exact message. A control that cannot fail proves
+      # nothing; this step fails if the run unexpectedly succeeds.
+      - name: Prove the CA04 corrupted-derivation check can fail
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          rm -rf ./conformance-armed && mkdir -p ./conformance-armed
+          set +e
+          CONFORMANCE_CONTROL=unapplied-address MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA04 --receipts-dir ./conformance-armed 2>&1 | tee /tmp/ca04-armed.log
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          [ "$run_rc" -ne 0 ] || { echo 'FAIL: armed CA04 negative unexpectedly passed'; exit 1; }
+          grep -q 'CA04 ARMED (unapplied-address)' /tmp/ca04-armed.log || { echo 'FAIL: armed CA04 did not fail with the exact message'; exit 1; }
+          echo 'ARMED = corrupted-derivation check proved able to fail.'
       # Issue #68: the serialization boundary — Haskell datum, redeemer
       # and parameter encodings against the compiled blueprint plus
       # compiled execution evidence, rather than a codec agreeing with
       # itself. CS01 and CS06 check the blueprint locally and need no
       # node; CS02-CS05 and CS08 execute on the devnet with one fresh
-      # cage per row. CS07 carries no receipt and runs nowhere: its
-      # Fork finding is escalated, and an unmarked row stays unmarked.
+      # cage per row. CS03 and CS05 report PARTIAL (E18 section3/4,
+      # NOTE-052): their accepting legs execute with submitted
+      # transactions while End/Sweep (CS03) and Burning (CS05) stay
+      # named unexercised residuals with reason and limit inside the
+      # receipts — never green. CS07 carries no receipt and runs
+      # nowhere: its Fork finding is escalated, and an unmarked row
+      # stays unmarked. CS01/CS06 run locally (blueprint-check and
+      # param-check, no node); the devnet terminal therefore reports
+      # the five devnet rows (complete: 5/5) before the partial
+      # exception. The assertion binds that five-devnet completion
+      # plus the two local receipts, requiring all seven CS receipt
+      # IDs with no missing/extra, then the exact verdicts and the
+      # loader/inventory enforcement.
       - name: Run the serialization rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
+          set +e
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts 2>&1 | tee /tmp/serialization-rows.log
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          echo "serialization session exit: $run_rc (expected: exactly 1, the known-partial status)"
+          head_sha="$(git rev-parse HEAD)"
+          [ "$run_rc" -eq 1 ] || { echo "FAIL: serialization exit $run_rc is not the known-partial exit 1"; exit 1; }
+          grep -q 'complete: 5/5 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: serialization did not complete all 5 devnet rows'; exit 1; }
+          grep -q 'ROWS PARTIAL' /tmp/serialization-rows.log || { echo 'FAIL: serialization terminal is not the partial report'; exit 1; }
+          partial="$(sed -n 's/^- Partial: //p' /tmp/serialization-rows.log)"
+          [ "$partial" = "CS03 CS05" ] || [ "$partial" = "CS05 CS03" ] || { echo "FAIL: partial set moved: got '$partial', expected 'CS03 CS05'"; exit 1; }
+          # all seven CS receipt IDs present, no missing/extra
+          printf '%s\n' CS01 CS02 CS03 CS04 CS05 CS06 CS08 | sort > /tmp/expected-cs.txt
+          nix run --quiet nixpkgs#jq -- -r '.row' ./conformance-receipts/receipt-CS*.json | sort > /tmp/receipt-cs.txt
+          if [ "$(</tmp/expected-cs.txt)" != "$(</tmp/receipt-cs.txt)" ]; then
+            echo 'FAIL: CS receipt set mismatch (missing or extra row)'
+            echo '--- expected ---'; while IFS= read -r l; do echo "$l"; done < /tmp/expected-cs.txt
+            echo '--- receipts ---'; while IFS= read -r l; do echo "$l"; done < /tmp/receipt-cs.txt
+            exit 1
+          fi
+          # exact per-receipt verdicts, every receipt candidate-bound
+          for row in CS01 CS02 CS04 CS06 CS08; do
+            f="./conformance-receipts/receipt-$row.json"
+            test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "agrees-with-model" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
+          done
+          for row in CS03 CS05; do
+            f="./conformance-receipts/receipt-$row.json"
+            test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "partial" ] || { echo "FAIL: $row is not partial"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
+            [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
+          done
+          # exact named residual constructor sets (never green, never omitted)
+          [ "$(nix run --quiet nixpkgs#jq -- -r '[.partial.constructors[] | select(.standing != "accepted") | .constructor] | sort | join(",")' ./conformance-receipts/receipt-CS03.json)" = "End,Sweep" ] || { echo 'FAIL: CS03 residual set moved'; exit 1; }
+          [ "$(nix run --quiet nixpkgs#jq -- -r '[.partial.constructors[] | select(.standing != "accepted") | .constructor] | sort | join(",")' ./conformance-receipts/receipt-CS05.json)" = "Burning,Migrating" ] || { echo 'FAIL: CS05 residual set moved'; exit 1; }
+          echo 'PARTIAL = known-partial assertion held: 5 devnet rows executed plus CS01/CS06 local receipts, CS03/CS05 partial with exact named residuals, rest agrees-with-model.'
+      # Loader and inventory enforcement over the session receipts:
+      # the loader validates every receipt (constructor accounting
+      # included — a false success or omitted constructor fails
+      # here), and the inventory renders partial rows partial, never
+      # executed. Neither an arbitrary exit1 nor grep alone is
+      # acceptance: the assertions above bind verdicts and residuals.
+      # NOTE-058: the state assertion parses the TSV (column 4),
+      # never a substring — the EXPECTED prose also says partial.
+      - name: Enforce receipt accounting and inventory rendering
+        working-directory: conformance
+        run: |
+          nix run --quiet .#conformance -- list --receipts ./conformance-receipts 2>&1 | tee /tmp/inventory-render.log
+          awk -F'\t' '
+            $1 == "CS03" { c3++; s3 = $4 }
+            $1 == "CS05" { c5++; s5 = $4 }
+            END {
+              if (c3 != 1) { print "FAIL: CS03 rows: " c3+0; exit 1 }
+              if (c5 != 1) { print "FAIL: CS05 rows: " c5+0; exit 1 }
+              if (s3 != "partial") { print "FAIL: CS03 state: " s3; exit 1 }
+              if (s5 != "partial") { print "FAIL: CS05 state: " s5; exit 1 }
+            }
+          ' /tmp/inventory-render.log
+          echo 'INVENTORY = partial rows render partial (column 4, unique), loader accepted the accounting.'
   # Issue #80: the theorem-coverage gate. The ratchet (per-obligation,
   # no offsetting) and the full-completion gate (strict, all axes zero) are
   # two distinct results and both run. At the current honest baseline the

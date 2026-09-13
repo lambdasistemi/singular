@@ -28,6 +28,7 @@ import Conformance.Receipt (
     RefusalInfo (..),
     Verdict (..),
     checkReceiptSize,
+    derivationMatches,
     loadReceipts,
     maxReceiptBytes,
  )
@@ -37,6 +38,7 @@ import Conformance.Rows (
     ShownState (..),
     effectiveState,
     loadRows,
+    renderInventory,
     rowId,
  )
 import Paths_conformance (getDataFileName)
@@ -98,6 +100,24 @@ spec = describe "Receipt" $ do
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
+    it "rejects a phase-1 refusal as unattributed" $ do
+        dir <- getDataFileName "test/fixtures/bad-phase"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("phase is not phase-2" `isInfixOf`)
+            Right _ -> fail "a phase-1 refusal loaded as attributed"
+
+    it "rejects an empty attribution limit" $ do
+        dir <- getDataFileName "test/fixtures/bad-limit"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("empty branch or limit" `isInfixOf`)
+            Right _ -> fail "an empty limit loaded as explicit"
+
     it "rejects two receipts for one row" $ do
         dir <- getDataFileName "test/fixtures/duplicate"
         result <- loadReceipts dir
@@ -151,6 +171,147 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("CG05" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
 
+    it "loads a valid partial receipt and keeps it partial" $ do
+        dir <- getDataFileName "test/fixtures/partial-valid"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isRight
+        case result of
+            Right [r] -> receiptVerdict r `shouldBe` Partial
+            Right rs -> fail ("expected one receipt, got " <> show (length rs))
+            Left err -> fail err
+
+    it "renders a partial receipt as partial, never executed" $ do
+        dir <- getDataFileName "test/fixtures/partial-valid"
+        result <- loadReceipts dir
+        case result of
+            Left err -> fail err
+            Right rs -> do
+                rows <- loadCommitted
+                case filter ((== "CS03") . rowId) rows of
+                    [cs03] ->
+                        effectiveState "fixture-base" rs cs03
+                            `shouldBe` ShownPartial
+                    _ -> fail "fixture inventory has no single CS03"
+
+    it "renders the inventory table with partial in column four" $ do
+        dir <- getDataFileName "test/fixtures/partial-valid"
+        result <- loadReceipts dir
+        case result of
+            Left err -> fail err
+            Right rs -> do
+                rows <- loadCommitted
+                let rendered = T.lines (renderInventory "fixture-base" rs rows)
+                    cs03line =
+                        [ l
+                        | l <- rendered
+                        , "CS03\t" `T.isPrefixOf` l
+                        ]
+                case cs03line of
+                    [l] -> T.splitOn "\t" l !! 3 `shouldBe` "partial"
+                    _ -> fail "inventory has no single CS03 line"
+                let bare = T.lines (renderInventory "fixture-base" [] rows)
+                    cs03bare =
+                        [ l
+                        | l <- bare
+                        , "CS03\t" `T.isPrefixOf` l
+                        ]
+                case cs03bare of
+                    [l] -> T.splitOn "\t" l !! 3 `shouldBe` "uncovered"
+                    _ -> fail "bare inventory has no single CS03 line"
+
+    it "rejects a success verdict carrying partial constructors" $ do
+        dir <- getDataFileName "test/fixtures/partial-success"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err -> do
+                err `shouldSatisfy` ("carrying partial constructors" `isInfixOf`)
+                err `shouldSatisfy` (not . ("does not parse" `isInfixOf`))
+            Right _ -> fail "a false-success receipt loaded"
+
+    it "rejects a partial receipt omitting a declared constructor" $ do
+        dir <- getDataFileName "test/fixtures/partial-incomplete"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err -> do
+                err `shouldSatisfy` ("accounts" `isInfixOf`)
+                err `shouldSatisfy` ("Sweep" `isInfixOf`)
+            Right _ -> fail "an incomplete partial receipt loaded"
+
+    it "rejects a partial verdict with no residual or gap" $ do
+        dir <- getDataFileName "test/fixtures/partial-empty"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("no residual or gap" `isInfixOf`)
+            Right _ -> fail "a vacuous partial receipt loaded"
+
+    it "rejects partial accounting for a row with no declared set" $ do
+        dir <- getDataFileName "test/fixtures/partial-nodecl"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("declares no constructor set" `isInfixOf`)
+            Right _ -> fail "undeclared partial accounting loaded"
+
+    it "rejects a refused constructor witness as fail-closed" $ do
+        dir <- getDataFileName "test/fixtures/partial-refused"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("refused constructor witness" `isInfixOf`)
+            Right _ -> fail "a refused-standing receipt loaded"
+
+    it "loads a valid derivation receipt" $ do
+        dir <- getDataFileName "test/fixtures/derivation-valid"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isRight
+
+    it "rejects a derivation receipt with a non-identity venue" $ do
+        dir <- getDataFileName "test/fixtures/derivation-venue"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("derivation venue must be" `isInfixOf`)
+            Right _ -> fail "a misvenued derivation receipt loaded"
+
+    it "rejects a CA04 receipt missing the executed negative" $ do
+        dir <- getDataFileName "test/fixtures/derivation-incomplete"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("incomplete" `isInfixOf`)
+            Right _ -> fail "an incomplete derivation receipt loaded"
+
+    it "rejects a CA04 receipt with legacy node-submit venue" $ do
+        dir <- getDataFileName "test/fixtures/derivation-legacyvenue"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("CA04 venue must be" `isInfixOf`)
+            Right _ -> fail "a legacy-venue CA04 receipt loaded"
+
+    it "decides derivation matches from the comparison" $ do
+        derivationMatches ("a" :: T.Text) "a" `shouldBe` ("a", True)
+        derivationMatches ("a" :: T.Text) "b" `shouldBe` ("a", False)
+
+    it "rejects a legacy constructor row with no accounting as unknown" $ do
+        dir <- getDataFileName "test/fixtures/partial-legacy"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err -> do
+                err `shouldSatisfy` ("no constructor accounting" `isInfixOf`)
+                err `shouldSatisfy` ("never covered" `isInfixOf`)
+            Right _ -> fail "a legacy no-accounting receipt read as covered"
+
 smallReceipt :: Receipt
 smallReceipt =
     Receipt
@@ -168,6 +329,8 @@ smallReceipt =
         , receiptNode = "node"
         , receiptBlueprint = "blueprint"
         , receiptVenue = "node-submit"
+        , receiptPartial = Nothing
+        , receiptDerivation = Nothing
         }
 
 oversizedReceipt :: Receipt
@@ -182,6 +345,10 @@ oversizedReceipt =
                     { refusalScript = "state"
                     , refusalReason =
                         T.pack (replicate (maxReceiptBytes + 4096) 'x')
+                    , refusalPhase = "phase-2"
+                    , refusalHashes = ["abc123"]
+                    , refusalBranch = Nothing
+                    , refusalLimit = Just "test limit"
                     }
                 )
         , receiptRejected = Just "abc123"

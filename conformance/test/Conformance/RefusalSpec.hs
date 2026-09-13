@@ -51,7 +51,7 @@ spec = describe "Refusal" $ do
     it "accepts a phase-2 failure naming the script" $
         matchRefusal
             "abcdef01"
-            "phase-2 PlutusFailure naming 0xabcdef01: \
+            "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldBe` Right ()
 
@@ -71,21 +71,33 @@ spec = describe "Refusal" $ do
     it "rejects a phase-2 failure naming another script" $
         matchRefusal
             "abcdef01"
-            "phase-2 PlutusFailure naming 0x99999999: \
+            "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
             \script evaluation failed"
             `shouldBe` Left
                 ( MarkerAbsent
                     "abcdef01"
-                    "phase-2 PlutusFailure naming 0x99999999: \
+                    "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
                     \script evaluation failed"
                 )
 
     it "never matches the wrong-reason control marker" $
         matchRefusal
             wrongReasonMarker
-            "phase-2 PlutusFailure naming 0xabcdef01: \
+            "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldSatisfy` isLeft
+
+    it "refuses a different hash merely mentioning the expected hash" $
+        matchRefusal
+            "abcdef01"
+            "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
+            \diagnostic context abcdef01 unquoted"
+            `shouldBe` Left
+                ( MarkerAbsent
+                    "abcdef01"
+                    "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
+                    \diagnostic context abcdef01 unquoted"
+                )
 
     it "trims the script binary out of an eval refusal" $
         let trimmed = trimRefusal evalShapedRefusal
@@ -187,6 +199,8 @@ heldRowReceipt =
         , receiptVenue = "node-submit"
         , receiptRejected = Nothing
         , receiptDirty = False
+        , receiptPartial = Nothing
+        , receiptDerivation = Nothing
         }
 
 -- | A phase-2 node refusal naming the expected script.
