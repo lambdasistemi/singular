@@ -126,10 +126,12 @@ import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    deriveConsumerBinding,
     extractCageDatum,
     findStateUtxo,
     mkInlineDatum,
@@ -140,6 +142,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
 import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
 import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
 import Cardano.MPFS.Cage.Types (
@@ -226,13 +229,14 @@ journey = do
         ( extractCompiledCode "state.state" bp
         , extractCompiledCode "request.request" bp
         , extractCompiledCode "staking.staking" bp
+        , extractCompiledCode "consumer.consumer" bp
         ) of
-        (Just stateBytes, Just requestBytes, Just stakingBytes) ->
-            runJourney si stateBytes requestBytes stakingBytes
+        (Just stateBytes, Just requestBytes, Just stakingBytes, Just consumerBytes) ->
+            runJourney si stateBytes requestBytes stakingBytes consumerBytes
         _ ->
             failWith
-                "state.state, request.request or staking.staking \
-                \compiled code not found in blueprint"
+                "state.state, request.request, staking.staking or \
+                \consumer.consumer compiled code not found in blueprint"
 
 -- ---------------------------------------------------------
 -- Identity: which contracts this run exercises
@@ -337,21 +341,24 @@ stepDerivedIdentity ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     TokenId ->
     ConwayTx ->
     ConwayTx ->
     IO ()
-stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = do
+stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx updateTx = do
     let hashHex = hex . scriptHashBytes
         -- The unapplied layer: the blueprint's raw code hashes.
         unappliedState = hashHex (computeScriptHash rawState)
         unappliedRequest = hashHex (computeScriptHash rawRequest)
         unappliedStaking = hashHex (computeScriptHash rawStaking)
+        unappliedConsumer = hashHex (computeScriptHash rawConsumer)
     -- The pinned layer is the unapplied code this run's
     -- blueprint actually contains.
     checkPinnedUnapplied si "state.state" unappliedState
     checkPinnedUnapplied si "request.request" unappliedRequest
     checkPinnedUnapplied si "staking.staking" unappliedStaking
+    checkPinnedUnapplied si "consumer.consumer" unappliedConsumer
     -- Derivation: apply this instance's parameters to the
     -- unapplied code and hash the result.
     let stateHash = computeScriptHash (rawState)
@@ -370,7 +377,17 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> stateHex
                 <> " cageToken=0x"
                 <> hex tokenName
-    -- The run's config follows from the same derivation.
+        consumerHash = computeScriptHash rawConsumer
+        consumerHex = hashHex consumerHash
+    -- The run's config follows from the same derivation (the consumer
+    -- takes no parameters — applied and unapplied coincide).
+    unless (SBS.fromShort (cfgConsumerPin cfg) == scriptHashBytes consumerHash) $
+        failWith $
+            "derived-applied-identity failed for consumer: \
+            \the run's pinned consumer hash is 0x"
+                <> hex (SBS.fromShort (cfgConsumerPin cfg))
+                <> " but this run's blueprint code hashes to 0x"
+                <> consumerHex
     unless (cfgScriptHash cfg == stateHash) $
         failWith $
             "derived-applied-identity failed for state: \
@@ -393,14 +410,16 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> stateParams
                 <> ") but its script witness held "
                 <> show (Set.toList bootWitness)
-    unless (updateWitness == Set.fromList [stateHex, requestHex]) $
+    unless (updateWitness == Set.fromList [stateHex, requestHex, consumerHex]) $
         failWith $
             "derived-applied-identity failed for request: \
             \expected the update transaction to carry exactly \
             \the derived applied hashes 0x"
                 <> stateHex
-                <> " and 0x"
+                <> ", 0x"
                 <> requestHex
+                <> " and consumer 0x"
+                <> consumerHex
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "
@@ -433,6 +452,14 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
             <> unappliedStaking
             <> " takes no parameters (0) — applied and \
                \unapplied coincide, matching the pin"
+        )
+    emit
+        "derived-applied-identity"
+        ( "consumer applied hash 0x"
+            <> consumerHex
+            <> " takes no parameters (0) — applied and \
+               \unapplied coincide, and the update tx carried \
+               \exactly this script as the hook witness"
         )
 
 -- | Require every manifest entry under the validator
@@ -484,8 +511,9 @@ runJourney ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO ()
-runJourney si stateBytes requestBytes stakingBytes = do
+runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -519,8 +547,14 @@ runJourney si stateBytes requestBytes stakingBytes = do
                 failWith
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
-        let cfg = cageCfg stateBytes requestBytes seedRef
+        let cfg = cageCfg stateBytes requestBytes consumerBytes seedRef
         (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
+        -- Consumer stake registration (NOTE-020 item 2): the pinned
+        -- consumer's credential must be registered before the first
+        -- Modify withdraws it. Funded by genesis (the cage funder here).
+        regTx <- registerConsumerImpl cfg prov genesisAddr
+        _ <- submitWithGenesis submit regTx
+        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         reqCount <- stepRequest cfg prov submit tokenId
         stepVerifyAbsent cfg prov mirrorRef tokenId
         appliedTx <- stepApply cfg prov submit tm tokenId reqCount
@@ -530,6 +564,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             stateBytes
             requestBytes
             stakingBytes
+            consumerBytes
             tokenId
             bootTx
             appliedTx
@@ -1224,10 +1259,15 @@ stepVerifyPresent cfg prov mirrorRef tid = do
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes seed =
+cageCfg stateBytes requestBytes consumerBytes seed =
     let appliedStateBytes = stateBytes
+        ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            } = deriveConsumerBinding consumerBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
@@ -1238,7 +1278,8 @@ cageCfg stateBytes requestBytes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , cfgRepPolicy = SBS.pack (replicate 28 0)
-            , cfgConsumerPin = SBS.pack (replicate 28 0)
+            , cfgConsumerPin = consumerPin
+            , cfgConsumerScript = consumerScriptBytes
             , network = Testnet
             }
 

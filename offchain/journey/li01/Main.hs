@@ -482,6 +482,11 @@ runLi01 control si stateBytes requestBytes = do
                     , defaultTip = Coin 1_000_000
                     , cfgRepPolicy = SBS.pack (replicate 28 0)
                     , cfgConsumerPin = SBS.pack (replicate 28 0)
+                    -- NOTE-020: compile-only placeholder (this journey
+                    -- submits no Modify: bootstrap-enforcement rows only).
+                    -- Any future Modify path must pin a bound consumer and
+                    -- register it first (see register/recovery/retirement).
+                    , cfgConsumerScript = SBS.empty
                     , network = Testnet
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet

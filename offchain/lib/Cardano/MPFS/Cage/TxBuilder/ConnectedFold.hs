@@ -74,6 +74,7 @@ import Cardano.MPFS.Cage.Trie (
 import Cardano.MPFS.Cage.TxBuilder.Internal
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -81,6 +82,7 @@ import Cardano.MPFS.Cage.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
+    stateConsumerPinBytes,
  )
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
@@ -198,8 +200,18 @@ connectedFoldTx args = do
 
 -- | Generous per-purpose budget stated when local evaluation is
 -- skipped (adversarial path only); the ledger re-executes for real.
+-- Sized 2026-09-13 from MEASURED minima (NOTE-023): the crosswired
+-- exhibit tx overspent 3M mem (needed 5.39M+ and counting — the error
+-- reports the next step only, not completion) and 200M cpu (needed
+-- 200.05M+); the honest consumer measures 295M cpu on tiny Aiken
+-- fixtures; the full-fold app script likewise exceeds 3M/200M (double
+-- budget failure on the same tx). 14M mem / 1B steps per purpose sits
+-- at 10% of this devnet's tx limits (140M mem / 10B steps) with ~3x
+-- headroom over every measured minimum; stated fees (~0.9 ADA/purpose)
+-- stay covered by folder funding (balance fails loudly otherwise).
+-- Revisit if ledgers tighten limits or scripts grow.
 generousUnits :: ExUnits
-generousUnits = ExUnits 3_000_000 200_000_000
+generousUnits = ExUnits 14_000_000 1_000_000_000
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -346,6 +358,20 @@ buildProgram
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
         mapM_ Tx.output extraOutputs
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network _cfg)
+                (stateConsumerPinBytes _oldState)
+            )
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript _cfg)
         -- Scripts arrive by witness or by reference, never both: with
         -- reference UTxOs every purpose resolves through them (connected
         -- folds carry four scripts and would otherwise breach the max tx

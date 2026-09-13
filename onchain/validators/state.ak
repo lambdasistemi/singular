@@ -42,9 +42,9 @@ validator state() {
     expect Some(StateDatum(state)) = maybeDatum
     // Permissionless fold (issue #79, Defect 1): Modify must NOT require
     // any owner — there is no registry-owner role (operator ruling
-    // NOTE-028/A-003). Lean `step .fold` checks only nativeSpend, net
-    // mint equality and the mint witnesses. `End` refuses for every
-    // party; see its arm below.
+    // NOTE-028/A-003). Lean `step .fold` checks nativeSpend, nonempty
+    // items, net mint equality, the mint witnesses, and the consumer
+    // invocation witness. `End` refuses for every party; see its arm below.
     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
     expect address.Script(policyId) = input.output.address.payment_credential
     expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
@@ -234,32 +234,34 @@ fn validModify(
   expect exactQuantity(policyId, output.value, tokenId, 1)
 
   let n = list.length(owners)
+  // Exact request/action pairing (NOTE-020, A001/root 071): empty
+  // processing refuses — no matching request consumed, no batch. A dummy
+  // withdrawal, or a nonempty action list with no matching request, does
+  // not manufacture nonemptiness. Surplus unconsumed actions refuse —
+  // every supplied action must pair with an actual matching request, and
+  // missing actions still refuse at `uncons`. Both are checked before the
+  // hook predicate below and before fee/refund failures, so each control
+  // fails on its own reason.
   // Mandatory invocation (NOTE-013): a `Modify` that consumes at least one
   // request must withdraw the exact pinned consumer script. Presence of the
   // exact withdrawal credential forces ledger execution of that script — a
   // caller-declared flag, an input datum, or a redeemer label is not an
   // invocation. Absence refuses; a withdrawal from any other script does
-  // not satisfy this. Pure no-op `Modify`s (nothing consumed) need no
-  // authorization and stay accepted, matching the model (`empty-fold`
-  // refuses at the step level; on-chain no-ops admit).
+  // not satisfy this.
   let consumed = list.length(actions) - list.length(actionsTail)
+  expect consumed > 0
+  expect actionsTail == []
   expect
-    when consumed is {
-      0 -> True
-      _ ->
-        list.any(
+    list.any(
           withdrawals,
           fn(w) {
-            when w is {
-              Pair(credential, _) ->
-                when credential is {
-                  address.Script(hash) -> hash == consumer_pin
-                  _ -> False
-                }
+            let Pair(credential, _) = w
+            when credential is {
+              address.Script(hash) -> hash == consumer_pin
+              _ -> False
             }
           },
         )
-    }
   when n is {
     0 -> True
     _ -> {

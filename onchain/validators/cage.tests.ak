@@ -793,9 +793,40 @@ test modify_advances_root_accepts() {
   )
 }
 
-/// Modify with no matching requests leaves the MPF root unchanged.
-/// This is a valid no-op that the validator must accept.
-test modify_no_requests() {
+/// Genuine nonempty zero-net positive (NOTE-020): real processed work with
+/// zero state-value delta. One Insert consumed (the root advances, the
+/// consumer permits via the pinned withdrawal); the state output carries
+/// EXACTLY the input state's value — net zero, no lock absorbed and none
+/// required; the admitted bond routes visibly to a change output
+/// (permitted, never endorsed). Do not confuse with zero consumed requests
+/// (refused below): work happened here, the trie proves it.
+test modify_zero_net_state_preserved_accepts() {
+  let change_output =
+    Output {
+      address: address.from_verification_key("folder_key"),
+      value: from_lovelace(1_500_000),
+      datum: NoDatum,
+      reference_script: None,
+    }
+  spend(
+    feeStateDatum,
+    Modify([UpdateAction([])]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      withdrawals: [Pair(address.Script(testConsumerPin), 0)],
+      validity_range: phase1Range,
+      outputs: [feeStateOutput, change_output],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, feeRequestInput],
+    },
+  )
+}
+
+/// Modify with no matching requests refuses (NOTE-020, A001/root 071):
+/// empty processing is not a valid no-op. The root is unchanged and the
+/// hook withdrawal is even present — neither manufactures nonemptiness.
+test modify_no_requests() fail {
   let unchanged_output =
     Output {
       address: testScriptAddress,
@@ -831,8 +862,10 @@ test modify_no_requests() {
 
 /// Requests targeting a different token are silently skipped — no proof is
 /// consumed for them. Only requests whose `requestToken` matches the cage's
-/// token participate in the MPF fold.
-test modify_skip_other_token() {
+/// token participate in the MPF fold. A batch with NOTHING matching refuses
+/// for empty processing (NOTE-020): skipping is real, and so is the
+/// emptiness refusal — the skipped request consumes no action.
+test modify_skip_other_token() fail {
   let other_request_datum =
     RequestDatum(
       Request {
@@ -910,7 +943,11 @@ test modify_too_few_proofs() fail {
 
 /// Extra proofs beyond what's needed are silently ignored. The fold consumes
 /// one proof per matching request; leftover proofs are discarded.
-test modify_extra_proofs() {
+/// Surplus actions refuse (NOTE-020): every supplied action must pair with
+/// an actual matching request. Two actions for one request leave one
+/// unconsumed — the batch refuses even though the root, the refunds, and
+/// the hook withdrawal are all otherwise valid.
+test modify_extra_proofs() fail {
   spend(
     stateDatum,
     Modify([UpdateAction([]), UpdateAction([])]),
@@ -1444,21 +1481,15 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
   )
 }
 
-/// **Property: Modify requires no owner key (re-cut under issue #79; was
-/// `prop_modify_requires_owner`, which required failure for any non-owner
-/// signer).**
+/// **Property: empty Modify refuses regardless of signer (NOTE-020).**
 ///
-/// That expectation encoded the pre-repair defect. Lean `Singular.step`'s
-/// `.fold` case obliges only `nativeSpend`, net-mint equality and the
-/// conditional mint witnesses — no owner hypothesis — so a `Modify` whose
-/// nets are empty (no requests, unchanged root, no mint) must be accepted
-/// for EVERY signer, owner or not.
-///
-/// Generates random 28-byte signers (the same `owner_fuzzer`) and verifies
-/// the empty fold is accepted regardless of who signs. This keeps a
-/// `Modify` property quantified over signers while stating what Lean
-/// actually guarantees.
-test prop_modify_no_owner_required(signer via owner_fuzzer()) {
+/// The pre-repair defect this prop re-cut is gone; what remains is the
+/// pairing rule: a `Modify` that consumes no request refuses for EVERY
+/// signer, owner or not. Generates random 28-byte signers and verifies
+/// the empty fold refuses no matter who signs — no signer manufactures
+/// nonemptiness, and permissionlessness is about the absence of an owner
+/// hypothesis, not the acceptance of empty batches.
+test prop_empty_modify_refuses(signer via owner_fuzzer()) fail {
   let s =
     State {
       root: root(empty),
@@ -1949,10 +1980,10 @@ const refundOutput =
     reference_script: None,
   }
 
-/// State output for rejected-only folds (NOTE-014 item A2): empty root
-/// (rejections move no trie entries) with the input state's value, so the
-/// locked-exactness rule (`output == input + locked`, locked 0 here) holds
-/// by construction and the tests below isolate refund behavior.
+/// State output for rejected-only folds (NOTE-014 item A2 as corrected by
+/// NOTE-017): empty root (rejections move no trie entries) with the input
+/// state's value. No lock is absorbed or required — the state simply
+/// preserves — so the tests below isolate refund behavior.
 const rejectedStateOutput =
   Output {
     address: testScriptAddress,
@@ -2936,8 +2967,10 @@ const zeroRequestStateOutput =
     reference_script: None,
   }
 
-/// Modify with no requests, root unchanged.
-test modify_zero_requests_happy() {
+/// Modify with no requests refuses (NOTE-020): root unchanged or not, an
+/// unconsuming batch is refused. `modify_zero_requests_root_changes`
+/// below keeps the root-mutation half; this one keeps the emptiness half.
+test modify_zero_requests_refuses() fail {
   spend(
     stateDatum,
     Modify([]),

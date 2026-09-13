@@ -57,11 +57,16 @@ import Cardano.MPFS.Cage.TxBuilder.Boot (
     bootTokenImpl,
  )
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
+    deriveConsumerBinding,
     requestAddrFromCfg,
     txInToRef,
+ )
+import Cardano.MPFS.Cage.TxBuilder.Register (
+    registerConsumerImpl,
  )
 import Cardano.MPFS.Cage.TxBuilder.Reject (
     rejectRequestsImpl,
@@ -137,9 +142,12 @@ spec = describe "Cage E2E" $ do
                          , extractCompiledCode
                             "staking.staking"
                             bp
+                         , extractCompiledCode
+                            "consumer.consumer"
+                            bp
                          ) of
-                        (Just stateBytes, Just requestBytes, _) ->
-                            cageFlowSpec stateBytes requestBytes
+                        (Just stateBytes, Just requestBytes, _, Just consumerBytes) ->
+                            cageFlowSpec stateBytes requestBytes consumerBytes
                         _ ->
                             it "no compiled code" $
                                 expectationFailure
@@ -154,13 +162,15 @@ spec = describe "Cage E2E" $ do
 cageFlowSpec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     Spec
-cageFlowSpec stateBytes requestBytes = do
+cageFlowSpec stateBytes requestBytes consumerBytes = do
     it "boots state and applies a request update"
         $ withBootedCage
             id
             stateBytes
             requestBytes
+            consumerBytes
         $ \cfg prov submit tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -200,6 +210,7 @@ cageFlowSpec stateBytes requestBytes = do
             fastRetractCfg
             stateBytes
             requestBytes
+            consumerBytes
         $ \cfg prov submit _tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -240,6 +251,7 @@ cageFlowSpec stateBytes requestBytes = do
             fastRejectCfg
             stateBytes
             requestBytes
+            consumerBytes
         $ \cfg prov submit _tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -283,6 +295,7 @@ withBootedCage ::
     (CageConfig -> CageConfig) ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     ( CageConfig ->
       Cage.Provider IO ->
       Submitter IO ->
@@ -291,8 +304,8 @@ withBootedCage ::
       IO a
     ) ->
     IO a
-withBootedCage adjustCfg stateBytes requestBytes action =
-    withE2E stateBytes requestBytes $
+withBootedCage adjustCfg stateBytes requestBytes consumerBytes action =
+    withE2E stateBytes requestBytes consumerBytes $
         \cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             tokenId <- bootCage cfg prov submit tm
@@ -313,6 +326,10 @@ bootCage cfg prov submit tm = do
             prov
             genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
+    -- Consumer stake registration (NOTE-020 item 2): fresh devnet per
+    -- test, so register every boot. Funded by genesis (the cage funder).
+    regTx <- registerConsumerImpl cfg prov genesisAddr
+    _ <- submitWithGenesis submit regTx
     let tokenId =
             extractTokenId cfg signedBoot
     createTrie tm tokenId
@@ -387,6 +404,9 @@ withE2E ::
     SBS.ShortByteString ->
     -- | Unparameterized request compiled-code bytes
     SBS.ShortByteString ->
+    -- | Unparameterized consumer compiled-code bytes (the consumer
+    -- takes no parameters — NOTE-021).
+    SBS.ShortByteString ->
     ( CageConfig ->
       Cage.Provider IO ->
       Submitter IO ->
@@ -394,7 +414,7 @@ withE2E ::
       IO a
     ) ->
     IO a
-withE2E stateBytes requestBytes action = do
+withE2E stateBytes requestBytes consumerBytes action = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -447,6 +467,7 @@ withE2E stateBytes requestBytes action = do
                 cageCfg
                     stateBytes
                     requestBytes
+                    consumerBytes
                     seedRef
         result <- action cfg prov submit tm
         cancel nodeThread
@@ -520,10 +541,15 @@ script.
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes seed =
+cageCfg stateBytes requestBytes consumerBytes seed =
     let appliedStateBytes = stateBytes
+        ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            } = deriveConsumerBinding consumerBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
@@ -534,6 +560,7 @@ cageCfg stateBytes requestBytes seed =
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
             , cfgRepPolicy = SBS.pack (replicate 28 0)
-            , cfgConsumerPin = SBS.pack (replicate 28 0)
+            , cfgConsumerPin = consumerPin
+            , cfgConsumerScript = consumerScriptBytes
             , network = Testnet
             }

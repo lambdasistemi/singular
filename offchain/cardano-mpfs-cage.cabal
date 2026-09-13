@@ -71,6 +71,7 @@ library
     Cardano.MPFS.Cage.Trie.PureManager
     Cardano.MPFS.Cage.TxBuilder.Boot
     Cardano.MPFS.Cage.TxBuilder.Internal
+    Cardano.MPFS.Cage.TxBuilder.Register
     Cardano.MPFS.Cage.TxBuilder.Reject
     Cardano.MPFS.Cage.TxBuilder.Request
     Cardano.MPFS.Cage.TxBuilder.Retract
@@ -314,6 +315,7 @@ executable register-rows
     , cardano-mpfs-cage
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , plutus-tx
     , cardano-crypto-class
     , cardano-strict-containers
     , containers
@@ -438,6 +440,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Cardano.MPFS.Cage.FailureMatchSpec
     Cardano.MPFS.Cage.TypesSpec
     Naming.RegisterSpec
   build-depends:

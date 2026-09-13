@@ -68,18 +68,32 @@ module Cardano.MPFS.Cage.TxBuilder.Internal (
 
     -- * Refund computation
     computeRefund,
+
+    -- * Pinned-hook invocation (NOTE-021)
+    pinScriptHash,
+    hookAccountAddress,
+    keyAccountAddress,
+    ConsumerBinding (..),
+    deriveConsumerBinding,
+    mkConsumerScript,
+
+    -- * Failure attribution (NOTE-023)
+    failedWitnessHash,
+    isBudgetFailure,
 ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
+import Data.Char (isHexDigit)
+import Data.List (isInfixOf, isPrefixOf, tails)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
-import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Address (AccountAddress (..), AccountId (..), Addr (..))
 import Cardano.Ledger.Alonzo.PParams (
     LangDepView,
     getLanguageView,
@@ -658,4 +672,120 @@ computeRefund pp net tipAmount reqOut =
      in mkBasicTxOut
             refundAddr
             (inject (max rawRefund minCoin))
+
+-- ---------------------------------------------------------
+-- Pinned-hook invocation (NOTE-020 item 1)
+-- ---------------------------------------------------------
+
+{- | The consumer pin as a ledger 'ScriptHash'. Loud on bad width
+(the mint gate enforces 28 bytes on chain; this mirrors it
+builder-side so a misconfigured pin fails at build, not on
+ledger).
+-}
+pinScriptHash :: ByteString -> ScriptHash
+pinScriptHash bs = case hashFromBytes bs of
+    Just h -> ScriptHash h
+    Nothing ->
+        error
+            "pinScriptHash: consumer pin must be 28 bytes"
+
+{- | The withdrawal account for the pinned consumer: the exact script
+credential from the pin, on the cage's network.
+-}
+hookAccountAddress :: Network -> ByteString -> AccountAddress
+hookAccountAddress net pinBs =
+    AccountAddress net (AccountId (ScriptHashObj (pinScriptHash pinBs)))
+
+{- | A key-hash withdrawal account (exhibit controls only): lets a
+row point a withdrawal at an ordinary key, where no script executes
+and only the cage's own credential check can refuse. Loud on bad
+width, like the pin helper above.
+-}
+keyAccountAddress :: Network -> ByteString -> AccountAddress
+keyAccountAddress net khBs = case hashFromBytes khBs of
+    Just h ->
+        AccountAddress
+            net
+            ( AccountId
+                ( KeyHashObj
+                    (coerce (KeyHash h :: KeyHash Payment))
+                )
+            )
+    Nothing ->
+        error
+            "keyAccountAddress: key hash must be 28 bytes"
+
+{- | The bound exhibit consumer, unparameterized (NOTE-021): no
+operator key, no appointed processor — the consumer authenticates
+batches from transaction evidence alone. One derivation, used for
+boot pinning, builder witnesses, and identity checks — never separate
+computations that could disagree.
+-}
+data ConsumerBinding = ConsumerBinding
+    { cbPin :: SBS.ShortByteString
+    , cbScriptBytes :: SBS.ShortByteString
+    , cbScript :: Script ConwayEra
+    , cbHash :: ScriptHash
+    }
+
+deriveConsumerBinding ::
+    SBS.ShortByteString -> ConsumerBinding
+deriveConsumerBinding unapplied =
+    let h = computeScriptHash unapplied
+     in ConsumerBinding
+            (SBS.toShort (scriptHashBytes h))
+            unapplied
+            (scriptFromBytes "consumer" unapplied)
+            h
+
+{- | Build the bound consumer 'Script' from config bytes (mirror of
+'mkCageScript'). Builders attach this as the hook withdrawal witness.
+-}
+mkConsumerScript :: CageConfig -> Script ConwayEra
+mkConsumerScript cfg =
+    scriptFromBytes
+        "mkConsumerScript"
+        (cfgConsumerScript cfg)
+
+-- ---------------------------------------------------------
+-- Failure attribution (NOTE-023 item 2)
+-- ---------------------------------------------------------
+
+{- | Parse the node's named failed-witness field
+(@The script hash is:ScriptHash "HEX"@) and return the hash — the
+FIRST occurrence, which names the failing script (later occurrences
+repeat the same failure's context). Anchored on the opening quote
+(hash letters also occur in @ScriptHash@ itself, so a hex scan from
+the marker misfires). Length-checked to 56 hex chars (a 28-byte
+script hash) so partial garbage never matches. @Nothing@ when the
+reason carries no named field (non-script failures: extraneous
+witnesses, unregistered withdrawals, balance errors).
+-}
+failedWitnessHash :: String -> Maybe String
+failedWitnessHash s =
+    case findAfter "The script hash is:" s of
+        Nothing -> Nothing
+        Just rest -> case dropWhile (/= '"') rest of
+            ('"' : after) ->
+                let hex = takeWhile isHexDigit after
+                 in if length hex == 56 then Just hex else Nothing
+            _ -> Nothing
+  where
+    findAfter :: String -> String -> Maybe String
+    findAfter needle hay =
+        case
+            [ drop (length needle) t
+            | t <- tails hay
+            , needle `isPrefixOf` t
+            ] of
+            (r : _) -> Just r
+            [] -> Nothing
+
+{- | True when the refusal is budget exhaustion rather than a semantic
+predicate failure. Kept to the OBSERVED node wording
+(@overspending the budget@); unknown budget wordings fail closed
+elsewhere (no named semantic match), never silently accepted.
+-}
+isBudgetFailure :: String -> Bool
+isBudgetFailure s = "overspending the budget" `isInfixOf` s
 

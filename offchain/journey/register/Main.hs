@@ -99,6 +99,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Coerce (coerce)
+import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
@@ -111,6 +112,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
@@ -119,7 +121,7 @@ import System.Process (readProcess)
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.Address (Addr (..), serialiseAddr)
+import Cardano.Ledger.Address (Addr (..), Withdrawals (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
@@ -155,7 +157,7 @@ import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Binary.Version (Version)
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (Script, extractHash, hashScript)
+import Cardano.Ledger.Core (Script, extractHash, hashScript, withdrawalsTxBodyL)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash, unKeyHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..))
@@ -196,18 +198,26 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
+    deriveConsumerBinding,
+    ConsumerBinding (..),
     extractCageDatum,
+    failedWitnessHash,
     findStateUtxo,
+    isBudgetFailure,
+    hookAccountAddress,
     mkCageScript,
     mkInlineDatum,
     mkRequestScript,
+    pinScriptHash,
     requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
     spendingIndex,
+    toPlcData,
     txInToRef,
  )
 import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
@@ -288,6 +298,10 @@ advSeed = "s77-adversarial-controller000000"
 nextSeed = "s77-next-controller0000000000000"
 next2Seed = "s77-next2-controller000000000000"
 tamperSeed = "s77-tamper-key000000000000000000"
+hookSeed :: ByteString
+hookSeed = "s77-hook-henry-controller00000000"
+hookRevealSeed :: ByteString
+hookRevealSeed = "s77-hook-henry-reveal000000000000"
 
 -- ---------------------------------------------------------
 -- Name spellings: the registry keys (NOTE-004)
@@ -421,6 +435,18 @@ runMode mode namingPath mpfsPath = do
         Nothing ->
             failWith
                 "request.request compiled code not found in the MPFS blueprint"
+    consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "consumer.consumer compiled code not found in the MPFS \
+                \blueprint (every Modify withdraws the pinned consumer)"
+    stakingBytes <- case extractCompiledCode "staking.staking" mbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "staking.staking compiled code not found in the MPFS \
+                \blueprint (the swapped-hook control withdraws from it)"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -455,6 +481,7 @@ runMode mode namingPath mpfsPath = do
         checkPinnedNamingApplication appHex
         checkPinnedRepresentative repUnappliedHex
         checkPinnedMpfsState stateUnappliedHex
+        checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
             ( "naming application 0x"
@@ -522,7 +549,34 @@ runMode mode namingPath mpfsPath = do
         (candidate, worktreeDirty) <- candidateFromRepo
         writeEvidenceMeta evDir candidate worktreeDirty namingPath mpfsPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <-
-            bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) evDir evNext
+            bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+        -- Consumer + staking stake registrations (NOTE-020 items 2-4),
+        -- BEFORE faucet: both must consume pristine-genesis UTxOs, never
+        -- pool fragments (pools go stale once spent; spending one breaks
+        -- later submits with already-included inputs). Funded by genesis
+        -- (always funded), witnessed by it; registration authorizes
+        -- nothing. The staking credential serves the swapped-hook control
+        -- (its withdraw arm always succeeds, so the ledger passes it and
+        -- only the cage's exact-credential check can refuse).
+        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+        let signedReg = addKeyWitness genesisSignKey unsignedReg
+        regResult <- submitRetainAt evDir evNext submit "consumer-registration" signedReg
+        case regResult of
+            Submitted _ -> pure ()
+            Rejected reason ->
+                failWith ("consumer-registration: rejected: " <> show reason)
+        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+        let stakingScript = scriptFromBytes "staking" stakingBytes
+        unsignedStakingReg <- registerScriptImpl prov genesisAddr (hashScript stakingScript)
+        let signedStakingReg = addKeyWitness genesisSignKey unsignedStakingReg
+        stakingRegResult <- submitRetainAt evDir evNext submit "staking-registration" signedStakingReg
+        case stakingRegResult of
+            Submitted _ -> pure ()
+            Rejected reason ->
+                failWith ("staking-registration: rejected: " <> show reason)
+        _ <- waitConfirmation (txIdHex signedStakingReg <> " (staking-registration)")
+        emit "consumer" "staking stake credential registered for the swapped-hook control"
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
@@ -549,6 +603,7 @@ runMode mode namingPath mpfsPath = do
                     , envRefUtxos = scriptRefs
                     , envStateHash = appliedStateHash
                     , envStateHex = appliedStateHex
+                    , envStakingScript = scriptFromBytes "staking" stakingBytes
                     , envAppScript = appScript
                     , envAppHash = appHash
                     , envAppHex = appHex
@@ -614,6 +669,7 @@ data Env = Env
     , envRefUtxos :: [(TxIn, TxOut ConwayEra)]
     , envStateHash :: ScriptHash
     , envStateHex :: String
+    , envStakingScript :: Script ConwayEra
     , envAppScript :: Script ConwayEra
     , envAppHash :: ScriptHash
     , envAppHex :: String
@@ -706,6 +762,13 @@ runRows env record = do
     -- Supported actions: plain fold and retract on the same cage.
     runSupportFold env record
     runSupportRetract env record supportReq
+    -- Hook exhibit (NOTE-020 item 4 + NOTE-021 consumer v2): cage-side
+    -- invocation mutants plus a consumer-invalid batch, each refused on
+    -- its own reason with the chain root unmoved.
+    rowHookOmitted env record
+    rowHookSwapped env record
+    rowHookPin env record
+    rowHookCrosswired env record
     -- Final sweep: chain root plus one Active record per folded name.
     finalSweep env alice bob foldTxAlice
     emit
@@ -800,15 +863,21 @@ bootCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     FilePath ->
     IORef Int ->
     IO (CageConfig, TokenId)
-bootCage prov submit tm stateBytes requestBytes repPolicy evDir evNext = do
+bootCage prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
         (txIn, _) : _ -> pure (txInToRef txIn)
-    let cfg =
+    let ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            , cbHash = consumerHash
+            } = deriveConsumerBinding consumerBytes
+        cfg =
             CageConfig
                 { cageScriptBytes = stateBytes
                 , requestScriptBytes = requestBytes
@@ -818,9 +887,18 @@ bootCage prov submit tm stateBytes requestBytes repPolicy evDir evNext = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
-                , cfgConsumerPin = SBS.pack (replicate 28 0)
+                , cfgConsumerPin = consumerPin
+                , cfgConsumerScript = consumerScriptBytes
                 , network = Testnet
                 }
+    emit
+        "consumer"
+        ( "pinned exhibit consumer 0x"
+            <> hex (scriptHashBytes consumerHash)
+            <> " (unparameterized: authenticates batches from transaction \
+               \evidence alone; stake credential registered below before \
+               \the first Modify)"
+        )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
     result <- submitRetainAt evDir evNext submit "cage-boot" signedBoot
@@ -1438,11 +1516,29 @@ requireRefusal ::
     IO ()
 requireRefusal env record rowName operation stateIn rootBefore signed reason = do
     let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
+    -- Budget exhaustion is not a semantic refusal (NOTE-023 item 1):
+    -- fail the row loudly instead of misattributing it.
+    when (isBudgetFailure reasonText) $
+        failWith (rowName <> ": budget exhaustion, not a semantic refusal")
     unless ("PlutusFailure" `isInfixOf` reasonText) $
         failWith (rowName <> ": refused WITHOUT phase-2 validator evidence")
+    -- Named failed-witness field (NOTE-023 item 2): the expected hash
+    -- must equal the node's attributed subject — never a substring
+    -- anywhere in the context (the state hash routinely appears in
+    -- transaction context of consumer failures and vice versa).
     scriptHex <- refusalScriptHex env operation
-    unless (scriptHex `isInfixOf` reasonText) $
-        failWith (rowName <> ": refusal does not name " <> scriptHex)
+    case failedWitnessHash reasonText of
+        Just actual ->
+            unless (actual == scriptHex) $
+                failWith
+                    ( rowName
+                        <> ": refusal attributed to 0x"
+                        <> actual
+                        <> ", not 0x"
+                        <> scriptHex
+                    )
+        Nothing ->
+            failWith (rowName <> ": no named failed-witness field in refusal reason")
     rootAfter <- chainRootHex env
     unless (rootAfter == rootBefore) $
         failWith (rowName <> ": refused operation moved the chain root")
@@ -1468,13 +1564,15 @@ requireRefusal env record rowName operation stateIn rootBefore signed reason = d
 refusalScriptHex :: Env -> String -> IO String
 refusalScriptHex env operation =
     pure
-        ( hex
-            ( scriptHashBytes
-                ( if operation == "sweep"
-                    then hashScript (mkRequestScript (envCfg env) (envTok env))
-                    else envStateHash env
+        ( if operation == "sweep" then
+            hex
+                ( scriptHashBytes
+                    (hashScript (mkRequestScript (envCfg env) (envTok env)))
                 )
-            )
+          else if operation == "consumer" then
+            hex (SBS.fromShort (cfgConsumerPin (envCfg env)))
+          else
+            hex (scriptHashBytes (envStateHash env))
         )
 
 
@@ -1836,6 +1934,266 @@ runSupportRetract env record (reqIn, reqOut) = do
                     ]
         Rejected reason ->
             failWith ("support retract refused: " <> show reason)
+
+-- ---------------------------------------------------------
+-- Hook exhibit rows (NOTE-020 item 4 + NOTE-021 consumer v2)
+-- ---------------------------------------------------------
+
+-- | Strip the hook withdrawal, its redeemer AND its witness script from
+-- an honest fold, recomputing script integrity (the fee stays overpaid:
+-- valid). A witness without a purpose is itself a ledger refusal
+-- (`ExtraneousScriptWitnesses`, no script executes), so the script goes
+-- too: what remains refuses purely for the missing pinned credential.
+stripHookWithdrawal :: Env -> ConwayTx -> ConwayTx
+stripHookWithdrawal env tx =
+    let stripped =
+            tx & bodyTxL . withdrawalsTxBodyL .~ Withdrawals Map.empty
+               & witsTxL . rdmrsTxWitsL .~ remainingRdmrs
+               & witsTxL . scriptTxWitsL .~ remainingScripts
+        remainingRdmrs = case tx ^. witsTxL . rdmrsTxWitsL of
+            Redeemers m ->
+                Redeemers (Map.delete (ConwayRewarding (AsIx 0)) m)
+        remainingScripts = case tx ^. witsTxL . scriptTxWitsL of
+            scripts -> Map.delete consumerHash scripts
+        consumerHash =
+            pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
+     in stripped
+            & bodyTxL . scriptIntegrityHashTxBodyL
+                .~ computeScriptIntegrity
+                    (envPp env)
+                    (stripped ^. witsTxL . rdmrsTxWitsL)
+
+-- | Point the hook withdrawal at the STAKING script credential and swap
+-- the witness the same way, keeping the redeemer and integrity
+-- untouched. The staking withdraw arm always succeeds, so the ledger
+-- passes the withdrawal and only the cage's exact-credential check can
+-- refuse. (A key credential cannot serve here: Conway refuses
+-- withdrawals from unregistered non-delegated keys pre-script —
+-- observed as `WithdrawalsNotInRewardsCERTS`, evidence retained.)
+swapHookCredential :: Env -> ConwayTx -> ConwayTx
+swapHookCredential env tx =
+    let stakingHash = hashScript (envStakingScript env)
+        swapped =
+            tx & bodyTxL . withdrawalsTxBodyL
+                .~ Withdrawals
+                    ( Map.singleton
+                        ( hookAccountAddress
+                            Testnet
+                            (scriptHashBytes stakingHash)
+                        )
+                        (Coin 0)
+                    )
+               & witsTxL . scriptTxWitsL .~ remainingScripts
+        remainingScripts = case tx ^. witsTxL . scriptTxWitsL of
+            scripts ->
+                Map.insert
+                    stakingHash
+                    (envStakingScript env)
+                    (Map.delete consumerHash scripts)
+        consumerHash =
+            pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
+     in swapped
+
+-- | Rewrite the state output's consumer pin (28 0xdd bytes): every
+-- other check passes, pin preservation refuses. Integrity covers
+-- redeemers only, so no recompute is needed for a datum edit.
+alterStatePin :: ConwayTx -> ConwayTx
+alterStatePin tx =
+    let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
+        outs' = map rewriteState outs
+        rewriteState out = case extractCageDatum out of
+            Just (StateDatum st) ->
+                out & datumTxOutL
+                    .~ mkInlineDatum
+                        ( toPlcData
+                            ( StateDatum
+                                ( st
+                                    { stateConsumerPin =
+                                        BuiltinByteString
+                                            (BS.replicate 28 0xdd)
+                                    }
+                                )
+                            )
+                        )
+            _ -> out
+     in tx & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outs'
+
+-- | Build an honest pure-MPFS fold, mutate the UNSIGNED transaction,
+-- sign with the folder key, submit, and require refusal attributed to
+-- the exact script. Used for omitted-hook, swapped-hook and pin
+-- mutants (the honest shape underneath isolates the mutant delta).
+runHookMutantRow ::
+    Env ->
+    (Value -> IO ()) ->
+    String ->
+    String ->
+    ByteString ->
+    (Env -> ConwayTx -> ConwayTx) ->
+    IO ()
+runHookMutantRow env record rowName operation spelling mutant = do
+    (reqIn, reqOut) <- submitMPFSRequest env spelling "hook-value"
+    (stateIn, _stateOut) <- queryStateUtxo env
+    feeUtxo <- queryFeeUtxo env
+    rootBefore <- chainRootHex env
+    (unsigned, _newRoot) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = envFolderAddr env
+                , cfaStateUtxo = (stateIn, _stateOut)
+                , cfaReqUtxos = [(reqIn, reqOut)]
+                , cfaFeeUtxo = feeUtxo
+                , cfaPp = envPp env
+                , cfaSpends = []
+                , cfaMints = []
+                , cfaOutputs = []
+                , cfaSigners = []
+                , cfaRefUtxos = envRefUtxos env
+                , cfaSkipEval = False
+                , cfaAttachScripts = []
+                , cfaAdjustRoot = id
+                }
+    let mutated = mutant env unsigned
+        signed = addKeyWitness (mkSignKey folderSeed) mutated
+    retainListings env (rowName <> "-pre")
+    result <- submitRetain env rowName signed
+    case result of
+        Rejected reason ->
+            requireRefusal env record rowName operation stateIn rootBefore signed reason
+        Submitted _ ->
+            failWith (rowName <> ": accepted (must refuse)")
+
+-- | Cross-wired fold (NOTE-013 corrected control 4 on ledger): the
+-- MPFS side consumes B's paid request while the naming side folds A's
+-- claim, mints A's representative and records A. Every layer passes
+-- on its own evidence — cage proofs over B, naming fold over A's
+-- recomputed name, rep mint matching the fold redeemer — and ONLY the
+-- consumer refuses (the minted name was never requested). Coherently
+-- posted against the correctly pinned consumer and a valid bootstrap;
+-- local evaluation is skipped so the LEDGER attributes the refusal.
+runHookCrosswiredRow :: Env -> (Value -> IO ()) -> IO ()
+runHookCrosswiredRow env record = do
+    ksA <-
+        setupKey
+            env
+            "henry"
+            "henry"
+            (mustCodecOf hookSeed)
+            (enterpriseAddr (keyHashFromSignKey (mkSignKey hookSeed)))
+            (addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey hookSeed))))
+            hookSeed
+            hookRevealSeed
+    (_claimTx, claimIn, claimOut) <- setupNamingClaim env ksA
+    snapClaim <- mustSnap env claimIn
+    (reqInB, reqOutB) <- submitMPFSRequest env "hook-crosswire" "hook-B-value"
+    (stateIn, stateOut) <- queryStateUtxo env
+    feeUtxo <- queryFeeUtxo env
+    rootBefore <- chainRootHex env
+    let repName = keyRepName ksA
+        approval = insertApprovalName (keyControlBytes ksA) (keyCommitment ksA)
+        recordTokens =
+            MultiAsset $
+                Map.singleton
+                    (envRepPolicy env)
+                    (Map.singleton (AssetName (SBS.toShort repName)) 1)
+        recordOut =
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                (snapCoin snapClaim)
+                recordTokens
+                (keyDatum ksA)
+    (unsigned, _newRoot) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = envFolderAddr env
+                , cfaStateUtxo = (stateIn, stateOut)
+                , cfaReqUtxos = [(reqInB, reqOutB)]
+                , cfaFeeUtxo = feeUtxo
+                , cfaPp = envPp env
+                , cfaSpends =
+                    [ ConnectedSpend
+                        { csUtxo = (claimIn, claimOut)
+                        , csRedeemer =
+                            RawRedeemer (foldRedeemer [repName])
+                        , csScript = envAppScript env
+                        }
+                    ]
+                , cfaMints =
+                    [ ConnectedMint
+                        { cmPolicy = envAppPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort approval))
+                                (-1)
+                        , cmRedeemer =
+                            RawRedeemer
+                                ( insertApprovalRedeemer
+                                    (keyControllerHash ksA)
+                                    (keyControlBytes ksA)
+                                    (keyCommitment ksA)
+                                )
+                        , cmScript = envAppScript env
+                        }
+                    , ConnectedMint
+                        { cmPolicy = envRepPolicy env
+                        , cmAssets =
+                            Map.singleton
+                                (AssetName (SBS.toShort repName))
+                                1
+                        , cmRedeemer =
+                            RawRedeemer mintRepresentativeRedeemer
+                        , cmScript = envRepScript env
+                        }
+                    ]
+                , cfaOutputs = [recordOut]
+                , cfaSigners = []
+                , cfaRefUtxos = envRefUtxos env
+                , cfaSkipEval = True
+                , cfaAttachScripts = []
+                , cfaAdjustRoot = id
+                }
+    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
+    retainListings env "hook-crosswired-pre"
+    result <- submitRetain env "hook-crosswired" signed
+    case result of
+        Rejected reason ->
+            requireRefusal env record "hook-crosswired" "consumer" stateIn rootBefore signed reason
+        Submitted _ ->
+            failWith "hook-crosswired: accepted (must refuse)"
+
+-- | Omitted hook (NOTE-013 control 1 on ledger): honest fold minus
+-- the withdrawal. The cage refuses for the missing pinned credential.
+rowHookOmitted :: Env -> (Value -> IO ()) -> IO ()
+rowHookOmitted env record =
+    runHookMutantRow env record "hook-omitted" "hook" "hook-omitted" stripHookWithdrawal
+
+-- | Swapped hook (NOTE-013 control 2 on ledger): the withdrawal points
+-- at the staking script (whose withdraw arm always succeeds) instead
+-- of the pinned consumer. The ledger passes it; the cage refuses for
+-- the wrong credential.
+rowHookSwapped :: Env -> (Value -> IO ()) -> IO ()
+rowHookSwapped env record =
+    runHookMutantRow env record "hook-swapped" "hook" "hook-swapped" swapHookCredential
+
+-- | Pin mutant on ledger: honest fold with the state output's pin
+-- rewritten. Pin preservation refuses; every other check passes.
+rowHookPin :: Env -> (Value -> IO ()) -> IO ()
+rowHookPin env record =
+    runHookMutantRow env record "hook-pin" "hook" "hook-pin" (const alterStatePin)
+
+-- | Cross-wired consumer-invalid batch (NOTE-013 corrected control 4):
+-- B's paid request consumed for A's claim. See `runHookCrosswiredRow`.
+rowHookCrosswired :: Env -> (Value -> IO ()) -> IO ()
+rowHookCrosswired env record =
+    runHookCrosswiredRow env record
 
 -- | Retry PastHorizon failures only; every other failure propagates.
 -- The slot forecast horizon covers a bounded window; a bound computed
@@ -3570,6 +3928,23 @@ checkPinnedMpfsState unappliedHex = do
     unless (all (== T.pack unappliedHex) pins) $
         failWith
             ( "identity: the MPFS manifest pins unapplied state hash(es) "
+                <> show pins
+                <> " but this run's blueprint code hashes to 0x"
+                <> unappliedHex
+            )
+
+checkPinnedConsumer :: String -> IO ()
+checkPinnedConsumer unappliedHex = do
+    path <-
+        fromMaybe "../onchain/script-identity.json"
+            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+    manifest <- readIdentityManifest path
+    let pins = pinsUnder manifest "consumer.consumer"
+    unless (length pins >= 1) $
+        failWith "identity: no consumer.consumer pin in the MPFS manifest"
+    unless (all (== T.pack unappliedHex) pins) $
+        failWith
+            ( "identity: the MPFS manifest pins unapplied consumer hash(es) "
                 <> show pins
                 <> " but this run's blueprint code hashes to 0x"
                 <> unappliedHex

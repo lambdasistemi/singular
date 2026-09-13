@@ -38,6 +38,9 @@ module Cardano.MPFS.Cage.Types (
     -- * State helpers
     stateRepPolicyBytes,
     stateConsumerPinBytes,
+
+    -- * Pinned-hook consumer redeemer (NOTE-021)
+    ConsumerRedeemer (..),
 ) where
 
 import Data.ByteString (ByteString)
@@ -493,6 +496,19 @@ instance UnsafeFromData OnChainTokenState where
             error
                 "unsafeFromBuiltinData:\
                 \ OnChainTokenState"
+
+{- | Pinned-hook consumer redeemer (NOTE-021): a nullary hook. The
+consumer authenticates the batch from the transaction's own evidence
+(spent state, request datums, naming claims, mint field) — the redeemer
+carries nothing because nothing caller-supplied is trusted. Encodes as
+@Constr 0 []@.
+-}
+data ConsumerRedeemer
+    = Hook
+    deriving stock (Show, Eq)
+
+instance ToData ConsumerRedeemer where
+    toBuiltinData Hook = mkD $ Constr 0 []
 
 instance ToData CageDatum where
     toBuiltinData (RequestDatum r) =

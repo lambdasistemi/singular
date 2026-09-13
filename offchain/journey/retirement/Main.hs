@@ -163,12 +163,14 @@ import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     syncFoldedRequests,
  )
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    deriveConsumerBinding,
     extractCageDatum,
     findStateUtxo,
     mkCageScript,
@@ -181,6 +183,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     txInToRef,
  )
 import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     OnChainRoot (..),
@@ -337,6 +340,12 @@ runMode mode blueprintPath mpfsPath = do
     requestBytes <- case extractCompiledCode "request.request" mbp of
         Just bytes -> pure bytes
         Nothing -> failWith "request.request compiled code not found in the MPFS blueprint"
+    consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "consumer.consumer compiled code not found in the MPFS \
+                \blueprint (every Modify withdraws the pinned consumer)"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -357,6 +366,7 @@ runMode mode blueprintPath mpfsPath = do
             custodyAddr = Addr Testnet (ScriptHashObj custodyHash) StakeRefNull
         checkPinnedApplication appHex
         checkPinnedCustody custodyHex
+        checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
             ( "application validator hash 0x"
@@ -426,7 +436,7 @@ runMode mode blueprintPath mpfsPath = do
                 <> " (the applied mint identity this run mints representatives under)"
             )
         tm <- mkPureTrieManager
-        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash))
+        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes
         -- Registry-bound names (NOTE-007): derived post-boot once the cage
         -- token exists; every display, redeemer and minted value below uses
         -- these bindings (never the control-only shape).
@@ -436,6 +446,21 @@ runMode mode blueprintPath mpfsPath = do
                     repAppliedPolicy
                     (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
         createTrie tm tok
+        -- Consumer stake registration (NOTE-020 item 2), BEFORE split:
+        -- the pinned consumer's credential must be registered before the
+        -- first Modify withdraws it, and registration must consume a
+        -- pristine-genesis UTxO — never a pool fragment (poolRef entries
+        -- go stale once spent; spending one breaks publish with
+        -- already-included inputs). Funded by genesis, witnessed by it.
+        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+        let signedReg = addKeyWitness genesisSignKey unsignedReg
+        regResult <- submitTx submit signedReg
+        case regResult of
+            Submitted _ -> pure ()
+            Rejected reason ->
+                failWith ("consumer-registration: rejected: " <> show reason)
+        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
@@ -502,6 +527,33 @@ runMode mode blueprintPath mpfsPath = do
                 <> " and quorum threshold 2 over two distinct members; \
                    \custody is the script 0x"
                 <> custodyHex
+            )
+        -- Public creation material (NOTE-023 remaining path): the
+        -- immutable key every Retire must carry. A third party retrieves
+        -- (record, creation tx, creation hash, representative) from this
+        -- log alone, recomputes the registry-bound name, and checks each
+        -- retirement's key_hash equals the published creation hash.
+        emit
+            "creation-material"
+            ( "accept1="
+                <> showIn recAccept1
+                <> " created-by="
+                <> txA1
+                <> " creation-control-hash=0x"
+                <> hex oldHash
+                <> " representative=0x"
+                <> hex repBytes
+            )
+        emit
+            "creation-material"
+            ( "accept2="
+                <> showIn recAccept2
+                <> " created-by="
+                <> txA2
+                <> " creation-control-hash=0x"
+                <> hex oldHash
+                <> " representative=0x"
+                <> hex repBytes
             )
         case mode of
             MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates
@@ -594,7 +646,10 @@ rowLT01 env snap = do
         "row"
         ( "LT01-controller-retirement-accepts: accepted tx="
             <> txIdHex signed
-            <> " (the controller alone retires the name; the representative \
+            <> " key-hash=0x"
+            <> hex (envOldHash env)
+            <> " (equals the published accept1 creation hash; the \
+               \controller alone retires the name; the representative \
                \is at custody and the record is gone)"
         )
     pure signed
@@ -626,9 +681,12 @@ rowLT02 env snap = do
         "row"
         ( "LT02-quorum-retirement-accepts: accepted tx="
             <> txIdHex signed
-            <> " (the fixed registration quorum alone retires the name, with \
-               \no controller signature; the representative is at custody and \
-               \the record is gone)"
+            <> " key-hash=0x"
+            <> hex (envOldHash env)
+            <> " (equals the published accept2 creation hash — the key is \
+               \immutable across routes; the fixed registration quorum \
+               \alone retires the name, with no controller signature; the \
+               \representative is at custody and the record is gone)"
         )
     pure signed
 
@@ -1104,13 +1162,19 @@ bootRetirementCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO (CageConfig, TokenId)
-bootRetirementCage prov submit tm stateBytes requestBytes repPolicy = do
+bootRetirementCage prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
         (txIn, _) : _ -> pure (txInToRef txIn)
-    let cfg =
+    let ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            , cbHash = consumerHash
+            } = deriveConsumerBinding consumerBytes
+        cfg =
             CageConfig
                 { cageScriptBytes = stateBytes
                 , requestScriptBytes = requestBytes
@@ -1120,9 +1184,18 @@ bootRetirementCage prov submit tm stateBytes requestBytes repPolicy = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
-                , cfgConsumerPin = SBS.pack (replicate 28 0)
+                , cfgConsumerPin = consumerPin
+                , cfgConsumerScript = consumerScriptBytes
                 , network = Testnet
                 }
+    emit
+        "consumer"
+        ( "pinned exhibit consumer 0x"
+            <> hex (scriptHashBytes consumerHash)
+            <> " (unparameterized: authenticates batches from transaction \
+               \evidence alone; stake credential registered below before \
+               \the first Modify)"
+        )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
     result <- submitTx submit signedBoot
@@ -1774,6 +1847,29 @@ checkPinnedCustody custodyHex = do
                 <> show pins
                 <> " but this run's blueprint hashes to 0x"
                 <> custodyHex
+            )
+
+checkPinnedConsumer :: String -> IO ()
+checkPinnedConsumer unappliedHex = do
+    path <-
+        fromMaybe "../onchain/script-identity.json"
+            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+    bytes <- BS.readFile path
+    manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
+    let pins =
+            [ mpHash p
+            | p <- manifestValidators manifest
+            , "consumer.consumer" `T.isPrefixOf` mpTitle p
+            ]
+    unless (length pins >= 1) $
+        failWith
+            "identity: no consumer.consumer pin in the MPFS manifest"
+    unless (all (== T.pack unappliedHex) pins) $
+        failWith
+            ( "identity: the manifest pins unapplied consumer hash(es) "
+                <> show pins
+                <> " but this run's blueprint code hashes to 0x"
+                <> unappliedHex
             )
 
 -- ---------------------------------------------------------

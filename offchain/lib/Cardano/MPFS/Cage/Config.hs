@@ -68,10 +68,14 @@ data CageConfig = CageConfig
     -- validator reads it there). Preserved immutable across every `Modify`.
     , cfgConsumerPin :: !ShortByteString
     -- ^ Pinned consumer script hash (28 raw bytes). Sixth `State` field
-    -- (NOTE-013/NOTE-019): the consumer selected at bootstrap. No bound
-    -- consumer exists yet, so every journey passes 28 zero bytes (an
-    -- unbound pin — `Modify`s refuse without a bound consumer,
-    -- fail-closed); epic 18 binds its adapter here.
+    -- (NOTE-013/NOTE-019): the unparameterized exhibit consumer
+    -- (NOTE-021 — no operator key, no appointed processor). Same value
+    -- for every cage sharing the consumer blueprint. Preserved immutable
+    -- across every `Modify`.
+    , cfgConsumerScript :: !ShortByteString
+    -- ^ Applied consumer script bytes (the witness every consuming
+    -- `Modify` attaches for its hook withdrawal). Builders refuse to
+    -- build consuming batches when empty (loud, fail-closed).
     , network :: !Network
     -- ^ Target network (Mainnet or Testnet)
     }

@@ -158,6 +158,7 @@ import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
 import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
@@ -173,12 +174,14 @@ import Cardano.MPFS.Cage.Types (
     OnChainTokenState (..),
  )
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    deriveConsumerBinding,
     extractCageDatum,
     findStateUtxo,
     mkCageScript,
@@ -334,6 +337,12 @@ runMode mode blueprintPath mpfsPath = do
     requestBytes <- case extractCompiledCode "request.request" mbp of
         Just bytes -> pure bytes
         Nothing -> failWith "request.request compiled code not found in the MPFS blueprint"
+    consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "consumer.consumer compiled code not found in the MPFS \
+                \blueprint (every Modify withdraws the pinned consumer)"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -360,6 +369,7 @@ runMode mode blueprintPath mpfsPath = do
                 scriptFromBytes "representative" repAppliedBytes
         checkPinnedApplication appHex
         checkPinnedRepresentative repUnappliedHex
+        checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
             ( "application validator hash 0x"
@@ -418,8 +428,23 @@ runMode mode blueprintPath mpfsPath = do
             datumRefusals = mkDatum refusalsCodec refusalsHash storedC
             datumForged = mkDatum forgedCodec forgedHash forgedC
         tm <- mkPureTrieManager
-        (cfg, tok) <- bootRecoveryCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash))
+        (cfg, tok) <- bootRecoveryCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes
         createTrie tm tok
+        -- Consumer stake registration (NOTE-020 item 2), BEFORE split:
+        -- the pinned consumer's credential must be registered before the
+        -- first Modify withdraws it, and registration must consume a
+        -- pristine-genesis UTxO — never a pool fragment (poolRef entries
+        -- go stale once spent; spending one breaks publish with
+        -- already-included inputs). Funded by genesis, witnessed by it.
+        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+        let signedReg = addKeyWitness genesisSignKey unsignedReg
+        regResult <- submitTx submit signedReg
+        case regResult of
+            Submitted _ -> pure ()
+            Rejected reason ->
+                failWith ("consumer-registration: rejected: " <> show reason)
+        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
@@ -1205,13 +1230,19 @@ bootRecoveryCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO (CageConfig, TokenId)
-bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy = do
+bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
         (txIn, _) : _ -> pure (txInToRef txIn)
-    let cfg =
+    let ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            , cbHash = consumerHash
+            } = deriveConsumerBinding consumerBytes
+        cfg =
             CageConfig
                 { cageScriptBytes = stateBytes
                 , requestScriptBytes = requestBytes
@@ -1221,9 +1252,18 @@ bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy = do
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy = repPolicy
-                , cfgConsumerPin = SBS.pack (replicate 28 0)
+                , cfgConsumerPin = consumerPin
+                , cfgConsumerScript = consumerScriptBytes
                 , network = Testnet
                 }
+    emit
+        "consumer"
+        ( "pinned exhibit consumer 0x"
+            <> hex (scriptHashBytes consumerHash)
+            <> " (unparameterized: authenticates batches from transaction \
+               \evidence alone; stake credential registered below before \
+               \the first Modify)"
+        )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
     result <- submitTx submit signedBoot
@@ -1897,6 +1937,29 @@ checkPinnedRepresentative unappliedHex = do
     unless (all (== T.pack unappliedHex) pins) $
         failWith
             ( "identity: the manifest pins unapplied representative hash(es) "
+                <> show pins
+                <> " but this run's blueprint code hashes to 0x"
+                <> unappliedHex
+            )
+
+checkPinnedConsumer :: String -> IO ()
+checkPinnedConsumer unappliedHex = do
+    path <-
+        fromMaybe "../onchain/script-identity.json"
+            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+    bytes <- BS.readFile path
+    manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
+    let pins =
+            [ mpHash p
+            | p <- manifestValidators manifest
+            , "consumer.consumer" `T.isPrefixOf` mpTitle p
+            ]
+    unless (length pins >= 1) $
+        failWith
+            "identity: no consumer.consumer pin in the MPFS manifest"
+    unless (all (== T.pack unappliedHex) pins) $
+        failWith
+            ( "identity: the manifest pins unapplied consumer hash(es) "
                 <> show pins
                 <> " but this run's blueprint code hashes to 0x"
                 <> unappliedHex

@@ -65,10 +65,12 @@ import Cardano.MPFS.Cage.Provider (
 import Cardano.MPFS.Cage.TxBuilder.Internal
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     OnChainRequest (..),
     OnChainTokenState (..),
     RequestAction (..),
     UpdateRedeemer (..),
+    stateConsumerPinBytes,
  )
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
@@ -321,9 +323,27 @@ buildRejectProgram
                     else Tx.Iterate f
         -- Rejected rows refund exactly `input − tip` floored at min-UTxO
         -- (NOTE-014 item A2) via the single shared helper — no fee share.
-        mapM_
-            (\(_, reqOut) -> Tx.output (computeRefund pp (network cfg) tipAmount reqOut))
-            reqUtxos
+        let refundOuts =
+                map
+                    ( \(_, reqOut) ->
+                        computeRefund pp (network cfg) tipAmount reqOut
+                    )
+                    reqUtxos
+        mapM_ Tx.output refundOuts
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network cfg)
+                (stateConsumerPinBytes oldState)
+            )
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript cfg)
         Tx.attachScript script
         Tx.attachScript requestScript
         Tx.collateral (fst feeUtxo)

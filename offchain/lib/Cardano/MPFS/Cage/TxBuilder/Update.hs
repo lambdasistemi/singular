@@ -73,6 +73,7 @@ import Cardano.MPFS.Cage.Trie (
 import Cardano.MPFS.Cage.TxBuilder.Internal
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -80,6 +81,7 @@ import Cardano.MPFS.Cage.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
+    stateConsumerPinBytes,
  )
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
@@ -339,6 +341,20 @@ buildProgram
              in if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network _cfg)
+                (stateConsumerPinBytes _oldState)
+            )
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript _cfg)
         Tx.attachScript script
         Tx.attachScript requestScript
         Tx.collateral (fst feeUtxo)
