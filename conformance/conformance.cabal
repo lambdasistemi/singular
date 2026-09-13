@@ -42,6 +42,9 @@ data-files:
   test/fixtures/derivation-valid/receipt-CA04.json
   test/fixtures/derivation-venue/receipt-CA04.json
   test/fixtures/derivation-incomplete/receipt-CA04.json
+  test/fixtures/derivation-mislabelled/receipt-CA04.json
+  test/fixtures/derivation-missingsource/receipt-CA04.json
+  test/fixtures/derivation-bareprefix/receipt-CA04.json
   test/fixtures/derivation-legacyvenue/receipt-CA04.json
 
 common warnings

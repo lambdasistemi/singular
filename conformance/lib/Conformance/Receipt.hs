@@ -53,6 +53,7 @@ import Data.Aeson (
     withText,
     (.:),
     (.:?),
+    (.!=),
     (.=),
  )
 import Data.ByteString.Lazy qualified as BSL
@@ -302,6 +303,10 @@ data DerivationEvidence = DerivationEvidence
     -- ^ comparison side: the observed chain address for match and
     -- refused outcomes; the UNAPPLIED address for distinct outcomes
     -- (request arity 2) — labelled by the outcome, never conflated.
+    , deReferenceSource :: !Text
+    -- ^ provenance of the reference side: chain-observed with the
+    -- UTxO outref (match/refused outcomes) or pinned-unapplied
+    -- (distinct outcomes). Loader-enforced per outcome.
     , deOutcome :: !DerivationOutcome
     , deVenue :: !Text
     -- ^ always derivationVenue (loader-enforced)
@@ -315,6 +320,7 @@ instance FromJSON DerivationEvidence where
             <*> o .: "arity"
             <*> o .: "computed"
             <*> o .: "reference"
+            <*> o .:? "referenceSource" .!= ""
             <*> o .: "outcome"
             <*> o .: "venue"
 
@@ -325,6 +331,7 @@ instance ToJSON DerivationEvidence where
             , "arity" .= deArity d
             , "computed" .= deComputed d
             , "reference" .= deReference d
+            , "referenceSource" .= deReferenceSource d
             , "outcome" .= deOutcome d
             , "venue" .= deVenue d
             ]
@@ -457,6 +464,23 @@ comparison with True must make an observed-negative fail.
 derivationMatches :: (Eq a) => a -> a -> (a, Bool)
 derivationMatches actual expected = (actual, actual == expected)
 
+{- | Reference provenance labelling (NOTE-086): match and refused
+outcomes must cite chain observation (with outref); distinct
+outcomes must cite pinned-unapplied blueprint identity.
+-}
+mislabelled :: DerivationEvidence -> Bool
+mislabelled d = case deOutcome d of
+    DerivMatch -> not (chainObservedWithOutref (deReferenceSource d))
+    DerivRefused -> not (chainObservedWithOutref (deReferenceSource d))
+    DerivDistinct -> deReferenceSource d /= "pinned-unapplied"
+
+-- | chain-observed with a nonempty actual outref suffix (NOTE-089:
+-- bare chain-observed with no identity proves no observation).
+chainObservedWithOutref :: Text -> Bool
+chainObservedWithOutref t = case T.stripPrefix "chain-observed " t of
+    Just rest -> not (T.null (T.strip rest))
+    Nothing -> False
+
 {- | CA04 completeness: exactly the state match, the request
 distinct and the corrupted refusal — a missing negative is an
 incomplete receipt, never a pass.
@@ -535,6 +559,13 @@ loadReceipts dir = do
                     ( path
                         <> ": derivation venue must be "
                         <> T.unpack derivationVenue
+                    )
+            | any (T.null . deReferenceSource) ds ->
+                Left (path <> ": derivation evidence names no reference provenance")
+            | any mislabelled ds ->
+                Left
+                    ( path
+                        <> ": derivation reference provenance mislabelled (match/refused want chain-observed plus outref, distinct wants pinned-unapplied)"
                     )
             | otherwise -> Right r
     checkPartial path r = case (receiptVerdict r, receiptPartial r) of

@@ -1669,8 +1669,9 @@ runCA04 env w = do
     -- path (cageAddrFromCfg, the function boot uses), never a
     -- test-only recomputation. Request stays arity 2 (live
     -- distinctness below).
-    (_, stateOut) <- canonicalStateUtxo env w
+    (stateInCA, stateOut) <- canonicalStateUtxo env w
     let chainAddr = stateOut ^. addrTxOutL
+        chainOutref = T.pack (show stateInCA)
         cfg = caCfg w
         -- One checker, both sides (NOTE-067): the same acceptance
         -- decision on the ordinary config and the exact-extra-
@@ -1767,6 +1768,7 @@ runCA04 env w = do
                 , deArity = 0
                 , deComputed = T.pack (show normalAddr)
                 , deReference = T.pack (show chainAddr)
+                , deReferenceSource = "chain-observed " <> chainOutref
                 , deOutcome = DerivMatch
                 , deVenue = derivationVenue
                 }
@@ -1775,6 +1777,7 @@ runCA04 env w = do
                 , deArity = 2
                 , deComputed = T.pack (show deployedReqAddr)
                 , deReference = T.pack (show unappliedReqAddr)
+                , deReferenceSource = "pinned-unapplied"
                 , deOutcome = DerivDistinct
                 , deVenue = derivationVenue
                 }
@@ -1783,6 +1786,7 @@ runCA04 env w = do
                 , deArity = 0
                 , deComputed = T.pack (show badAddr)
                 , deReference = T.pack (show chainAddr)
+                , deReferenceSource = "chain-observed " <> chainOutref
                 , deOutcome = DerivRefused
                 , deVenue = derivationVenue
                 }

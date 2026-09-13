@@ -289,6 +289,33 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("incomplete" `isInfixOf`)
             Right _ -> fail "an incomplete derivation receipt loaded"
 
+    it "rejects a mislabelled reference provenance" $ do
+        dir <- getDataFileName "test/fixtures/derivation-mislabelled"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("mislabelled" `isInfixOf`)
+            Right _ -> fail "a mislabelled provenance receipt loaded"
+
+    it "rejects a missing reference provenance as unknown" $ do
+        dir <- getDataFileName "test/fixtures/derivation-missingsource"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("no reference provenance" `isInfixOf`)
+            Right _ -> fail "a missing-provenance receipt loaded"
+
+    it "rejects a bare chain-observed prefix with no outref" $ do
+        dir <- getDataFileName "test/fixtures/derivation-bareprefix"
+        result <- loadReceipts dir
+        result `shouldSatisfy` isLeft
+        case result of
+            Left err ->
+                err `shouldSatisfy` ("mislabelled" `isInfixOf`)
+            Right _ -> fail "a bare-prefix provenance receipt loaded"
+
     it "rejects a CA04 receipt with legacy node-submit venue" $ do
         dir <- getDataFileName "test/fixtures/derivation-legacyvenue"
         result <- loadReceipts dir
