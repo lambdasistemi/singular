@@ -1,23 +1,33 @@
 # What this release is — and what it is not
 
-This is the **epic 16 on-chain release** of Singular, published by the
-repository's release pipeline from a version tag. It is
-**epic-scoped**: it carries the on-chain work of epic 16 (the imported
-MPFS cage partition and Singular's own naming partition, their compiled
-scripts and pinned identities, the runnable journey and row runners,
-and the contract fixtures). It is **not** the milestone artifact and
+This is the **epic-17 on-chain delivery** of Singular, published by the
+repository's release pipeline from a version tag. It carries the
+connected registry lifecycle through permanent retirement: claiming
+with real representatives, recovery that preserves them, retirement
+by controller or quorum into completion-only custody, permissionless
+completion that burns the representative while folding the
+retirement's own registry update, and the occupied-key refusal that
+is Over — on top of the epic-16 cage/naming foundation and all
+retained earlier rows. It is **not** the milestone artifact and
 **not** the product artifact; nobody should mistake it for either.
 
 ## What it does not cover
 
-- **Recovery and retirement belong to epic 17.** Nothing in this
-  release claims, demonstrates or pins any recovery or retirement
-  behaviour. Those lifecycle stages are future work with their own
-  evidence, and this release must not be read as covering them.
-- **The row evidence is finite fixture execution.** Every `LI`, `LM`,
-  `WR` and `LC` row reproduced from this archive is a fixed fixture
-  from the accepted contract, executed once on a devnet. That is
+- **Row evidence is finite.** Every claim, recovery, retirement,
+  completion, occupied-key and mismatch row reproduced from this
+  archive, plus the retained `LI`, `LM`, `WR` and `LC` rows, is a
+  fixed fixture from the accepted contract, executed once on a
+  devnet. That is
   evidence about those fixtures, and about nothing beyond them: it is not a statement about arbitrary transactions, not a universal decoder theorem, and not a general correctness proof of the validators.
+- **Coverage debt is preserved, not discharged.** The live
+  obligation population stands at 196 against the certified 196
+  baseline (192 preserved only as the historical predecessor;
+  mapping 196, implementation layer 196, findings 0, unclassified
+  83, stale 0); the baseline ceremony belongs to the release owner,
+  and this release neither rewrites it nor claims its verdict.
+- **E18 conformance is a separate track.** Cross-contract review
+  happens against the withheld ABI tuple through the owner, not
+  from this artifact.
 - **The consumer-conformance obligation is not discharged here.** This
   release *consumes* the accepted epic-15 contract (v0.2.0, asset
   sha256 `acbabdf54a271251bd73bf9d84ab2c901107045a7dd77d28a391f22cdd53b0e5`)

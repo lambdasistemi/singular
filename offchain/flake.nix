@@ -226,6 +226,21 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The public retirement reader (independent verification from
+        # retained evidence only): needs neither the locked cardano-node
+        # (it never touches a node) nor any baked-in blueprint — the
+        # evidence directory, run log and naming manifest all come from
+        # the caller at run time, so plain wrapping suffices.
+        retirement-verify = pkgs.runCommand "retirement-verify" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.retirement-verify.meta or { }) // {
+            mainProgram = "retirement-verify";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.retirement-verify} $out/bin/retirement-verify
+        '';
+
         # -------------------------------------------------------
         # Test vectors (from local Haskell package)
         # -------------------------------------------------------
@@ -289,6 +304,10 @@
           repair-rows = {
             type = "app";
             program = pkgs.lib.getExe repair-rows;
+          };
+          retirement-verify = {
+            type = "app";
+            program = pkgs.lib.getExe retirement-verify;
           };
           register-rows = {
             type = "app";

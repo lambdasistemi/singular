@@ -130,7 +130,7 @@ def cases : List Case := [
   { id := "S19-action-burn-witness", status := "abstract-disposal", before := pending,     action := .fold [item] plus [{ asset := approval.asset, quantity := -1 }] wn, accept := false, expectedReason := "application-mint-witness" },
   { id := "S19b-action-burn-executes", status := "abstract-disposal", before := pending,     action := .fold [item] plus [{ asset := approval.asset, quantity := -1 }] { wn with applicationMint := true }, accept := true },
   { id := "S20-existing-action-movement", status := "abstract-token-location", before := pending,     action := .moveAction approval.asset 0 {}, accept := true },
-  { id := "S21-zero-net-delete-insert", status := "proposed-reused-identity-profile", before := simultaneous,     action := .fold [terminalItem, { item with request := 4, outputId := 5 }] [] [] { nativeSpend := true }, accept := true },
+  { id := "S21-zero-net-delete-insert", status := "proposed-reused-identity-profile", before := simultaneous,     action := .fold [terminalItem, { item with request := 4, outputId := 5 }] [] [] { nativeSpend := true, consumerWithdraw := true }, accept := true },
   { id := "S21b-zero-net-no-spending-witness", before := simultaneous,     action := .fold [terminalItem, { item with request := 4, outputId := 5 }] [] [] {},     accept := false, expectedReason := "native-witness" },
   { id := "N01-register-address-A", status := "proposed-naming-profile", before := pending, action := .fold [item] plus [] wn, accept := true },
   { id := "N02-occupied-name", before := after live (.createInsert { req with id := 6 } approval wm),     action := .fold [{ item with request := 6, outputId := 7 }] plus [] wn, accept := false, expectedReason := "occupied-key" },

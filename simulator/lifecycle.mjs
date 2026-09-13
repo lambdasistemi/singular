@@ -164,7 +164,7 @@ function transition(state, action) {
     if (!equal(data.request, retirementRequest(state, record, application, data.requestId))) fail('retirement-request');
     const result = step(state.registry, {release: {source: data.source, request: data.request,
       evidence: {source: data.source, request: data.request, accepted: true, conforms: true},
-      witness: {applicationMint: false, applicationSpend: true, nativeSpend: false, representativeMint: false}}});
+      witness: {applicationMint: false, applicationSpend: true, nativeSpend: false, representativeMint: false, consumerWithdraw: false}}});
     if (!result.accepted) fail(result.reason);
     return {state: {...state, registry: result.value.state, records: state.records.filter(other => other.key !== data.key)}, logical: result.value.logical};
   }
@@ -178,7 +178,7 @@ function transition(state, action) {
       asset: cancellationAsset(state, data.requestId, data.refundAddress),
       refund: cancellationRefund(data.refundAddress),
       witness: {applicationMint: false, applicationSpend: false, nativeSpend: true,
-        representativeMint: false}}});
+        representativeMint: false, consumerWithdraw: false}}});
     if (!result.accepted) fail(result.reason);
     return {state: {...state, registry: result.value.state,
       claims: state.claims.filter(claim => claim.requestId !== data.requestId)},
@@ -191,7 +191,7 @@ function transition(state, action) {
       policy: state.registry.config.representativePolicy, assetScope: request.proposal.scope[0]};
     const result = step(state.registry, {fold: {items: [{request: data.requestId, outputId: 0, output: null}],
       mint: [{asset: representative, quantity: -1}], actionNet: [],
-      witness: {applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true}}});
+      witness: {applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true, consumerWithdraw: true}}});
     if (!result.accepted) fail(result.reason);
     return {state: {...state, registry: result.value.state}, logical: result.value.logical};
   }
@@ -317,7 +317,7 @@ function checkWireRow(row) {
         name: {withdraw: {registry: queued.value.state.registry.config.registry,
           request: queued.requestId, refund}}}, accepted: true, conforms: true},
       witness: {applicationMint: true, applicationSpend: false, nativeSpend: false,
-        representativeMint: false},
+        representativeMint: false, consumerWithdraw: false},
     }});
     if (!approval.accepted) return false;
     const comparison = lifecycleStep({...queued.value.state, registry: approval.value.state},

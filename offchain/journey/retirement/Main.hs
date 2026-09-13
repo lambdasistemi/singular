@@ -139,6 +139,7 @@ import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash)
+import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
@@ -693,21 +694,64 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     -- then retire with the CREATION hash (immutable across rotation).
     snapR1 <- mustSnap env recR1
     snapR1r <- rowRecoverRecord env snapR1 "RR1"
-    signedRR1 <- rowRetireRecoveredController env snapR1r
+    signedRR1 <- rowRetireRecoveredController env snapR1r "RR1" "rt-rr1"
     snapR2 <- mustSnap env recR2
     snapR2r <- rowRecoverRecord env snapR2 "RR2"
     _ <- rowRetireRecoveredQuorum env snapR2r
     -- Mismatched pair (NOTE-029 N2): LT01 custody with the RR1
     -- request must refuse (wrong pairing, each piece genuine).
     rowN2Mismatch env signedLT01 signedRR1
-    -- Permanent retirement (NOTE-027/028): the genuinely claimed over
-    -- record retires (queueing its pending Over-update request),
+    -- Permanent retirement (NOTE-027/028/042): the genuinely claimed
+    -- over record recovers first (same name, rotated control), then
+    -- retires through the recovered controller (creation hash),
     -- refuses replay and withdrawal, completes permissionlessly into
-    -- Over, and refuses reuse — all from the same reached state.
+    -- Over, and refuses reuse — claim, recovery and completion on ONE
+    -- name, each link asserted from chain bytes below.
     snapOver <- mustSnap env recOver
-    signedOverRetire <- rowOVRetire env snapOver
+    snapOverR <- rowRecoverRecord env snapOver "OV"
+    signedOverRetire <- rowRetireRecoveredController env snapOverR "OV-retire" "rt-over"
+    let (_destAddr, destHash) = recoveryDest
+        retireInputs = signedOverRetire ^. bodyTxL . inputsTxBodyL
+        retireSigners = signedOverRetire ^. bodyTxL . reqSignerHashesTxBodyL
+        destKey = addrWitnessKeyHash destHash
+    -- Linkage (NOTE-042): the accepted retire spent exactly the
+    -- observed recovered successor under exactly the recovered
+    -- controller (fail loudly otherwise).
+    unless (checkRecoveryLinkage (snapIn snapOverR) retireSigners (snapIn snapOverR) destKey) $
+        failWith "OV: recovery linkage failed on the accepted retire"
+    unless (Set.member (snapIn snapOverR) retireInputs) $
+        failWith "OV: retire did not spend the observed recovered successor"
+    emit
+        "row"
+        ( "OV-recovery-linkage: retire "
+            <> txIdHex signedOverRetire
+            <> " spends recovered successor "
+            <> showIn (snapIn snapOverR)
+            <> " under recovered controller 0x"
+            <> hex destHash
+            <> " (rotation observed on chain, consumed by name)"
+        )
+    -- Skip-proof (NOTE-042 fault control): the SAME linkage
+    -- predicate evaluated on the unrotated shape (original input,
+    -- old signer) diverges — skipping recovery cannot pass
+    -- unnoticed. Pure bytes, no submission.
+    let skipHolds =
+            checkRecoveryLinkage
+                (snapIn snapOver)
+                (Set.singleton (addrWitnessKeyHash (envOldHash env)))
+                (snapIn snapOverR)
+                destKey
+    unless (not skipHolds) $
+        failWith "OV skip-proof broken: unrotated shape satisfies linkage?!"
+    emit
+        "row"
+        ( "OV-skip-proof: unrotated shape diverges (input "
+            <> showIn (snapIn snapOver)
+            <> " vs successor, old signer vs recovered) — skipping recovery \
+               \fails the linkage above, loudly"
+        )
     rowOVReplay env recOver signedOverRetire
-    rowLO01 env signedOverRetire snapOver
+    rowLO01 env signedOverRetire snapOverR
     custodyOver <- overCustodyOut env signedOverRetire "OV-retire"
     reqOver <- overRequestOut env signedOverRetire "OV-retire"
     let completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
@@ -715,7 +759,7 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     rowOVWithdrawRefused env custodyOver completerAddr
     rowOVBurnOnlyRefused env custodyOver
     signedComplete <- rowOVComplete env custodyOver reqOver completerFund
-    rowLO02 env signedComplete snapOver
+    rowLO02 env signedComplete snapOverR
     rowLX01 env
     -- Final no-trace sweep.
     finalNoTrace env recRefusals
@@ -890,33 +934,36 @@ rowRecoverRecord env snap label = do
 -- | Retire a RECOVERED record via the controller route: the NEW
 -- controller (destSeed) signs, but the redeemer carries the CREATION
 -- hash (envOldHash) — the immutable key, no longer the current
--- control. Reuses the custody/gone assertions.
-rowRetireRecoveredController :: Env -> Snap -> IO ConwayTx
-rowRetireRecoveredController env snap = do
+-- control. Reuses the custody/gone assertions. Parameterized by row
+-- label and spelling (RR1 and the OV journey share it).
+rowRetireRecoveredController :: Env -> Snap -> String -> ByteString -> IO ConwayTx
+rowRetireRecoveredController env snap label spelling = do
     let (_destAddr, destHash) = recoveryDest
-    tx <- retireTx env snap (envCustodyAddr env) [destHash] "rt-rr1"
+    tx <- retireTx env snap (envCustodyAddr env) [destHash] spelling
     let signed = addKeyWitness (mkSignKey destSeed) (addKeyWitness genesisSignKey tx)
     unless
         (Set.singleton (addrWitnessKeyHash destHash) == (signed ^. bodyTxL . reqSignerHashesTxBodyL))
-        $ failWith "RR1: required signers must be exactly the recovered controller key"
+        $ failWith (label <> ": required signers must be exactly the recovered controller key (old controller absent)")
     when
         ( any
             (`Set.member` (signed ^. bodyTxL . reqSignerHashesTxBodyL))
-            [addrWitnessKeyHash (envQuorum1Hash env), addrWitnessKeyHash (envQuorum2Hash env)]
+            [addrWitnessKeyHash (envOldHash env), addrWitnessKeyHash (envQuorum1Hash env), addrWitnessKeyHash (envQuorum2Hash env)]
         )
-        $ failWith "RR1: no quorum member may be among the required signers"
-    submitAccepted env "RR1" signed
-    _ <- waitConfirmation (txIdHex signed <> " (RR1)")
-    assertCustody env "RR1" signed
-    assertGone env snap "RR1"
+        $ failWith (label <> ": neither the old controller nor quorum may be among the required signers")
+    submitAccepted env label signed
+    _ <- waitConfirmation (txIdHex signed <> " (" <> label <> ")")
+    assertCustody env label signed
+    assertGone env snap label
     emit
         "row"
-        ( "RR1-recovery-then-controller-retire-accepts: accepted tx="
+        ( label
+            <> "-recovery-then-controller-retire-accepts: accepted tx="
             <> txIdHex signed
             <> " key-hash=0x"
             <> hex (envOldHash env)
             <> " (the CREATION hash, not the current rotated control; the \
-               \recovered controller alone retires; representative at custody)"
+               \recovered controller alone retires, old controller absent; \
+               \representative at custody)"
         )
     pure signed
 
@@ -1170,29 +1217,13 @@ mirrorValue env key =
 repPolicyHex :: Env -> String
 repPolicyHex env = hex (scriptHashBytes rh) where PolicyID rh = envRepPolicy env
 
-rowOVRetire :: Env -> Snap -> IO ConwayTx
-rowOVRetire env snap = do
-    tx <- retireTx env snap (envCustodyAddr env) [envOldHash env] "rt-over"
-    let signed = addKeyWitness (mkSignKey oldSeed) (addKeyWitness genesisSignKey tx)
-    unless
-        (Set.singleton (addrWitnessKeyHash (envOldHash env)) == (signed ^. bodyTxL . reqSignerHashesTxBodyL))
-        $ failWith "OV-retire: required signers must be exactly the controller payment key"
-    submitAccepted env "OV-retire" signed
-    _ <- waitConfirmation (txIdHex signed <> " (OV-retire)")
-    assertCustody env "OV-retire" signed
-    assertGone env snap "OV-retire"
-    emit
-        "row"
-        ( "OV-retire-controller-retirement-accepts: accepted tx="
-            <> txIdHex signed
-            <> " key-hash=0x"
-            <> hex (envOldHash env)
-            <> " (the genuinely claimed over record retires by the \
-               \controller alone; representative at custody, record gone; \
-               \the same transaction queues this key's pending Over-update \
-               \request)"
-        )
-    pure signed
+-- | Recovery linkage verdict over bytes (NOTE-042 fault control):
+-- the spent input must be the observed recovered successor and the
+-- signers exactly the recovered controller. The accepted retire must
+-- satisfy it; the unrotated shape must diverge (see OV-skip-proof).
+checkRecoveryLinkage :: TxIn -> Set.Set (KeyHash Guard) -> TxIn -> KeyHash Guard -> Bool
+checkRecoveryLinkage spentInput signers successor destKey =
+    spentInput == successor && signers == Set.singleton destKey
 
 rowOVReplay :: Env -> TxIn -> ConwayTx -> IO ()
 rowOVReplay env _consumedIn signedOver = do

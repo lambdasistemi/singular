@@ -106,7 +106,7 @@ const cancellationAsset = {policy: queued.state.registry.config.applicationPolic
 const approvedCancellationRegistry = ok(step(queued.state.registry, {mintWithdraw: {
   approval: {asset: cancellationAsset, accepted: true, conforms: true},
   witness: {applicationMint: true, applicationSpend: false, nativeSpend: false,
-    representativeMint: false}}})).state;
+    representativeMint: false, consumerWithdraw: false}}})).state;
 const cancellationPending = {...queued.state, registry: approvedCancellationRegistry};
 const cancel = {cancelClaim: {requestId: queuedVerdict.requestId, refundAddress: 60}};
 const cancelled = ok(lifecycleStep(cancellationPending, cancel)).state;
