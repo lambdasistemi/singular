@@ -7,7 +7,12 @@ Module      : Cardano.MPFS.Cage.E2E.CageSpec
 Description : E2E tests for the full cage protocol
 License     : Apache-2.0
 -}
-module Cardano.MPFS.Cage.E2E.CageSpec (spec) where
+module Cardano.MPFS.Cage.E2E.CageSpec (
+    spec,
+    withBootedCage,
+    submitInsertRequest,
+    submitWithGenesis,
+) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)

@@ -5,7 +5,8 @@ build-type:         Simple
 
 executable spike
     main-is:          Main.hs
-    hs-source-dirs:   app
+    other-modules:    Cleanup
+    hs-source-dirs:   spike-app
     default-language: GHC2021
     default-extensions: LambdaCase
     ghc-options:      -Wall
@@ -17,3 +18,14 @@ executable spike
                     , tasty-hunit
                     , tasty-bdd
                     , text
+
+test-suite cleanup-control
+    type:             exitcode-stdio-1.0
+    main-is:          CleanupTest.hs
+    other-modules:    Cleanup
+    hs-source-dirs:   spike-app
+    default-language: GHC2021
+    ghc-options:      -Wall
+    build-depends:    base
+                    , tasty
+                    , tasty-hunit

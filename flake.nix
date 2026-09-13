@@ -15,6 +15,7 @@
         mermaidJs = dev-assets-mkdocs.packages.${system}.mermaid-js;
       };
       model = system: import ./nix/model.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
+      coverage = system: import ./nix/coverage.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
       simulator = system: import ./nix/simulator.nix { pkgs = import nixpkgs { inherit system; }; src = self; };
       browser = system: import ./nix/browser.nix {
         pkgs = import nixpkgs { inherit system; };
@@ -32,8 +33,8 @@
         );
     in {
       packages = each (system: packages system // { build-gate = buildGate system; });
-      checks = each (system: { docs = (project system).check; release = (project system).releaseCheck; model = (model system).check; simulator = (simulator system).check; browser = (browser system).check; });
-      apps = each (system: ((project system).apps // (model system).apps // (simulator system).apps // (browser system).apps));
+      checks = each (system: { docs = (project system).check; release = (project system).releaseCheck; model = (model system).check; simulator = (simulator system).check; browser = (browser system).check; coverage = (coverage system).check; });
+      apps = each (system: ((project system).apps // (model system).apps // (simulator system).apps // (browser system).apps // (coverage system).apps));
       devShells = each (system: { default = (project system).shell.overrideAttrs (old: (browser system).environment // { nativeBuildInputs = (old.nativeBuildInputs or []) ++ (with import nixpkgs { inherit system; }; [ lean4 nodejs ]); }); });
     };
 }

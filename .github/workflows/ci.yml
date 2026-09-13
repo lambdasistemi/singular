@@ -87,6 +87,30 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix run --quiet .#browser-check
+  coverage:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Theorem coverage strict completion (reporting)
+    runs-on: nixos
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Strict completion verdict with an explicit nonzero baseline: passes
+      # while the record honestly reports INCOMPLETE, fails closed on any
+      # input error, and fails loudly the day debt reaches zero without the
+      # expectation being updated. Reporting only — never added to the pages
+      # job's needs, so a red completion state can never block docs deploys.
+      - run: nix run --quiet .#coverage-check
   rendered-docs:
     if: github.event.action != 'closed'
     needs: build-gate

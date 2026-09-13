@@ -1,0 +1,21 @@
+command: spike control-finalizer reaped (injected observer scripts pre [424242], post []; synthetic exercise of the checker path, not a real-ledger orphan proof)
+commit: 3980e000531c351fd3d125ab1d3040ff5c136dea
+tree: DIRTY (correction uncommitted at capture; verify Main.hs hash against the commit below)
+exit: 0
+source-binding:
+  Main.hs sha256: 92b41457da69f369d1b65f2385c7026c1aab6241b0b2749ce1403179f1e6a39d
+git rev-parse HEAD: 3980e000531c351fd3d125ab1d3040ff5c136dea
+git status --porcelain evaluation:  M conformance/coverage/evaluation/spike-app/Main.hs;
+note: run output empty: the passing control is silent; the proof records pre non-empty and post empty
+
+--- run output (complete) ---
+
+--- release proof (exact file, single block) ---
+mode: control-finalizer-reaped
+markerNodesObservedAtEntry: ["424242"]
+  (diagnostic only; the oracle uses post-reap remaining)
+markerDirExists: False
+  (doesDirectoryExist after removal; False means the tree is gone)
+markerNodesReaped: []
+markerNodesRemaining: []
+baselineNodeCount: 6

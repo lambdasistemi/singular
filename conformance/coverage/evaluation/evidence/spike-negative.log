@@ -1,0 +1,26 @@
+command: spike negative -j1 (same environment)
+commit: 3980e000531c351fd3d125ab1d3040ff5c136dea
+tree: DIRTY (correction uncommitted at capture; verify Main.hs hash against the commit below)
+exit: 1
+source-binding:
+  Main.hs sha256: 92b41457da69f369d1b65f2385c7026c1aab6241b0b2749ce1403179f1e6a39d
+git rev-parse HEAD: 3980e000531c351fd3d125ab1d3040ff5c136dea
+git status --porcelain evaluation:  M conformance/coverage/evaluation/spike-app/Main.hs;
+note: story fails on the deliberate lie; release bracket still runs and records
+
+--- run output (complete) ---
+tasty-bdd evaluation: CG05 occupied-key refusal
+  real boundary: occupied insert refused, script-attributed, control discriminates: FAIL
+    Exception: user error (deliberate lie: the refusal must not have happened, but the story ran: True)
+
+1 out of 1 tests failed (67.51s)
+
+--- release proof (exact file, single block) ---
+mode: negative
+markerNodesObservedAtEntry: []
+  (diagnostic only; the oracle uses post-reap remaining)
+markerDirExists: False
+  (doesDirectoryExist after removal; False means the tree is gone)
+markerNodesReaped: []
+markerNodesRemaining: []
+baselineNodeCount: 6
