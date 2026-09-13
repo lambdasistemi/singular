@@ -345,16 +345,21 @@ jobs:
         working-directory: conformance
         run: |
           nix run --quiet .#conformance -- list --receipts "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/inventory-render.log
-          awk -F'\t' '
-            $1 == "CS03" { c3++; s3 = $4 }
-            $1 == "CS05" { c5++; s5 = $4 }
-            END {
-              if (c3 != 1) { print "FAIL: CS03 rows: " c3+0; exit 1 }
-              if (c5 != 1) { print "FAIL: CS05 rows: " c5+0; exit 1 }
-              if (s3 != "partial") { print "FAIL: CS03 state: " s3; exit 1 }
-              if (s5 != "partial") { print "FAIL: CS05 state: " s5; exit 1 }
-            }
-          ' /tmp/inventory-render.log
+          c3=0 c5=0
+          while IFS= read -r row || [[ -n "$row" ]]; do
+            id=${row%%$'\t'*}
+            [[ "$id" == CS03 || "$id" == CS05 ]] || continue
+            # Preserve empty TSV fields; whitespace IFS would collapse them.
+            for column in 1 2 3; do
+              [[ "$row" == *$'\t'* ]] || { echo "FAIL: $id missing state column after field $column"; exit 1; }
+              row=${row#*$'\t'}
+            done
+            state=${row%%$'\t'*}
+            [[ "$state" == partial ]] || { echo "FAIL: $id state: $state"; exit 1; }
+            if [[ "$id" == CS03 ]]; then c3=$((c3 + 1)); else c5=$((c5 + 1)); fi
+          done < /tmp/inventory-render.log
+          [[ "$c3" == 1 ]] || { echo "FAIL: CS03 rows: $c3"; exit 1; }
+          [[ "$c5" == 1 ]] || { echo "FAIL: CS05 rows: $c5"; exit 1; }
           echo 'INVENTORY = partial rows render partial (column 4, unique), loader accepted the accounting.'
       - name: Preserve candidate-bound conformance receipts
         if: always() && env.CONFORMANCE_RECEIPTS != ''
