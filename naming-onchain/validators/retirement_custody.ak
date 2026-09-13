@@ -5,8 +5,8 @@ use cardano/address
 use cardano/assets.{PolicyId, Value, flatten, quantity_of, tokens}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Spend, Transaction}
 use naming.{
-  MUpdate, modify_action_count, mpfs_state_hash, mpfs_state_root, mrequest,
-  over_marker_for,
+  MUpdate, modify_action_count, mpfs_state_hash, mpfs_state_policy, mpfs_state_root,
+  mrequest, over_marker_for,
 }
 
 /// The retirement custody script (issue #66): completion-only custody
@@ -90,26 +90,34 @@ fn is_script_input(input: Input) -> Bool {
 }
 
 /// The co-created input is the exact pending retirement request for
-/// the held asset (NOTE-031): it decodes as a request datum targeting
-/// this registry's cage token, updating some key from the held asset
-/// to its Over marker. Crash refuses (single path).
+/// the held asset (NOTE-031/032): it decodes as a request datum
+/// targeting this registry's cage token, updating some key from the
+/// held asset to its Over marker — where the held asset is identified
+/// by its COMPLETE (policy, name, quantity) identity bound to the
+/// spent state's configured representative policy (a same-name token
+/// under a foreign policy refuses here, even Burns-correct). Crash
+/// refuses (single path).
 fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
   expect InlineDatum(reqDatum) = requestIn.output.datum
   let req = mrequest(reqDatum)
   expect [cageToken] = keys(tokens(stateIn.output.value, mpfs_state_hash))
   expect req.requestToken.assetName == cageToken
   expect MUpdate(old, new) = req.requestValue
-  expect new == over_marker_for(burned_of(claim, old))
+  expect InlineDatum(stateDatum) = stateIn.output.datum
+  let expectedPolicy = mpfs_state_policy(stateDatum)
+  expect new == over_marker_for(burned_of(claim, old, expectedPolicy))
   True
 }
 
-/// The held asset matching the request's old value, held once
-/// (NOTE-031: the Update moves exactly this asset to its marker).
-fn burned_of(claim: Input, old: ByteArray) -> ByteArray {
+/// The held asset matching the request's old value, held once under
+/// the registry's configured representative policy (NOTE-032: policy
+/// is load-bearing — name alone admits foreign-policy lookalikes
+/// whose burn the mint authorizer never sees).
+fn burned_of(claim: Input, old: ByteArray, expectedPolicy: PolicyId) -> ByteArray {
   expect Some(heldEntry) =
     find(held_assets(claim.output.value), fn(entry) {
-      let (_, name, _) = entry
-      name == old
+      let (policy, name, _) = entry
+      policy == expectedPolicy && name == old
     })
   let (_, burned, qty) = heldEntry
   expect qty == 1

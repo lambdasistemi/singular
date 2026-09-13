@@ -142,11 +142,11 @@ fn custody_completion_tx(inputs, outputs, mint, redeemers) {
 }
 
 fn held_value() {
-  add(record_value, app_policy, fixtures.representative_name, 1)
+  add(record_value, rep_policy, fixtures.representative_name, 1)
 }
 
 fn burn_held() {
-  add(zero, app_policy, fixtures.representative_name, -1)
+  add(zero, rep_policy, fixtures.representative_name, -1)
 }
 
 /// Completion burns the held representative exactly once, with no
@@ -395,6 +395,32 @@ test custody_wrong_new_value_refuses() fail {
       ],
       [state_output_new()],
       burn_held(),
+      modify_singleton(),
+    ),
+  )
+}
+
+/// Negation (NOTE-032): a same-name token under a FOREIGN policy,
+/// held once and burned exactly with everything else genuine
+/// (state, co-created exact request, singleton Modify, changed
+/// root), refuses — specifically at the policy binding. The
+/// configured representative policy mints zero and need not execute;
+/// the consumer (positive mints only) cannot see this negative-mint
+/// path, so custody is the single executing check on the burn's
+/// policy.
+test custody_foreign_policy_lookalike_refuses() fail {
+  let foreign_held =
+    add(zero, #"666f726569676e2d706f6c696379", representative_name, 1)
+  let foreign_burn =
+    add(zero, #"666f726569676e2d706f6c696379", representative_name, -1)
+  retirement_custody.retirement_custody.spend(
+    None,
+    #"00",
+    self_ref,
+    custody_completion_tx(
+      [custody_input(foreign_held), state_input(), request_input()],
+      [state_output_new()],
+      foreign_burn,
       modify_singleton(),
     ),
   )

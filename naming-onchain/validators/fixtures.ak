@@ -80,7 +80,7 @@ pub const representative_name = #"5265700102030405060708090a0b0c0d"
 /// `application.retirement_custody_hash` — the address a `Retire` may
 /// place the representative at.
 pub const custody_hash =
-  #"4f586dcc5ddcebe58e9aff11ae8a3778891ffcaf3716232829bc0432"
+  #"c2337e05bb6a705adeb8bb8fb20155309a85d7c4cda174f9e8afa2d6"
 
 pub const custody_address = address.from_script(custody_hash)
 
