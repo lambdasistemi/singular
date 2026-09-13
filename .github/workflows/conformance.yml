@@ -47,15 +47,12 @@ jobs:
       - name: Every workflow file parses as YAML
         run: |
           for f in .github/workflows/*.yml; do nix run --quiet nixpkgs#yq-go -- eval '.' "$f" > /dev/null; done
-      # actionlint over this workflow. The self-hosted `nixos` label
-      # is repo-wide (ci.yml, mpfs.yml carry it with no actionlint
-      # config): the step proves actionlint ran by requiring its known
-      # finding, then fails on anything else.
+      # Declare the repository's self-hosted runner label, then
+      # require actionlint itself to succeed, including shellcheck.
       - name: actionlint carries no new findings
         run: |
-          nix run --quiet nixpkgs#actionlint -- .github/workflows/conformance.yml 2>&1 | tee /tmp/actionlint.txt
-          grep -q 'label "nixos" is unknown' /tmp/actionlint.txt || { echo "actionlint did not run as expected"; exit 1; }
-          grep -E '\.yml:[0-9]+' /tmp/actionlint.txt | grep -v 'label "nixos" is unknown' && exit 1 || true
+          printf 'self-hosted-runner:\n  labels: [nixos]\n' > "$RUNNER_TEMP/conformance-actionlint.yaml"
+          nix run --quiet nixpkgs#actionlint -- -config-file "$RUNNER_TEMP/conformance-actionlint.yaml" .github/workflows/conformance.yml
       # The owned docs page keeps its speech companion: present and
       # covering its headings, bound to its hash. The repository's
       # own docs CI (just ci) remains the backstop for doc-only
@@ -196,6 +193,8 @@ jobs:
           hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$mpfs")"
           for row in CG11 CG12; do
             f="./conformance-receipts/receipt-$row.json"
+            # jq expands its own --arg variables inside this program.
+            # shellcheck disable=SC2016
             nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
               .outcome == "refused" and .venue == "node-submit"
               and (.rejected | test("^[0-9a-f]{64}$"))
@@ -212,6 +211,8 @@ jobs:
           #    phase/hash/limit, both txids, counterpart, identity.
           c="./conformance-receipts/control-CG19-rejected-floor.json"
           test -f "$c" || { echo 'FAIL: missing CG19-rejected-floor control receipt'; exit 1; }
+          # jq expands its own --arg/--slurpfile variables.
+          # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" --arg hook "$hook_hash" --slurpfile row ./conformance-receipts/receipt-CG19.json '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
