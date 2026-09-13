@@ -77,6 +77,27 @@ let
     text = ''
       export DOCS_VERSION=${version}
       export RELEASE_NOTES=${src}/onchain-release/RELEASE.md
+      # Coverage release boundary (issue #80 slice t80c): enforced exactly
+      # when the candidate opts in by carrying
+      # conformance/coverage/release-required. Candidate-owned
+      # configuration, not an environment variable: omitting or unsetting
+      # nothing can disable it, and pre-integration trees (without the
+      # file) warn and proceed under operator governance. Uses the
+      # checkout's own flake so the gate version always matches the tree.
+      # Candidate identity and cleanliness are enforced BEFORE consulting
+      # the marker: a deleted marker is a dirty tree, and a dirty tree
+      # never proceeds — otherwise deleting the working-tree file would
+      # silently switch the guard off.
+      [[ "$(git -C "$PWD" rev-parse HEAD 2>/dev/null)" == "''${TAG_COMMIT:?publish-docs needs TAG_COMMIT}" ]] \
+        || { echo "FAIL: checkout $PWD is not the tag commit $TAG_COMMIT" >&2; exit 1; }
+      [[ -z "$(git -C "$PWD" status --porcelain 2>/dev/null)" ]] \
+        || { echo "FAIL: dirty or unreadable working tree at $PWD" >&2; exit 1; }
+      if [ -f "$PWD/conformance/coverage/release-required" ]; then
+        nix run --quiet "$PWD#coverage-gate" -- --root "$PWD" release \
+          --candidate "$TAG_COMMIT"
+      else
+        echo "warning: publish-docs without the coverage release boundary (no conformance/coverage/release-required in $PWD)" >&2
+      fi
       # Assemble the on-chain archive (blueprint builds included) and verify
       # the exact bytes to be published before anything is uploaded.
       release_dir="$(mktemp -d)"

@@ -2,7 +2,7 @@
 
 {- |
 Module      : Conformance.Run
-Description : CG02-CG05 and CA01-CA05 devnet sessions: rows, controls, measurements
+Description : CA01-CA05, CG02-CG05 and the ten generic rows (issue #70) devnet sessions
 License     : Apache-2.0
 
 One @run@ boots a cage on an isolated devnet and executes the
@@ -29,6 +29,28 @@ CA05 forges an output at the canonical address carrying no registry
 token: creating an output does not execute the receiving script, and
 the run must show no script executed — not merely that nothing bad
 happened.
+
+The issue #70 rows (CG07, CG09, CG10, CG11, CG12, CG13, CG14, CG15,
+CG17, CG19) run as their own CG session in canonical order, each
+against its own freshly booted cage so a row's odd state (a
+transferred owner, a parked request) cannot poison its neighbours.
+CG07, CG09, CG10, CG15 and CG17 are refusal rows: the refusing
+transaction is hand-built, phase-1 valid, and the node's phase-2
+refusal is attributed to the script that produced it (the request
+script for CG07's retract and CG17's sweep, the state script
+otherwise). CG11, CG12, CG13 and CG19 are the expected consumer
+gaps (the 2026-09-03 cardano-keri audit; upstream
+cardano-mpfs-onchain #100 and #101): the run submits what the
+consumer's theorems require the partition to refuse and records the
+chain's acceptance with the transaction that proves it — a gap is
+observed, never relabelled as a pass or a refusal, and a refusal
+where the audit expected acceptance would be reported equally. CG14
+and CG15 execute the @stake_script@ hook for the first time on a
+ledger: a cage booted with the blueprint's staking validator pinned
+in its datum, the credential registered, a fold carrying the
+matching withdraw-zero (accepted), and the same fold without it
+(refused); the hook's other leg — the owner signature it must
+accompany — is executed as CG14's control.
 
 Row shapes (key @cg-row-key@, values @cg-v1@/@cg-v2@/@cg-v3@):
 
@@ -61,6 +83,7 @@ module Conformance.Run (runForkProbe, runRows) where
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
 import Control.Exception (
+    ErrorCall (..),
     SomeException,
     displayException,
     throwIO,
@@ -79,7 +102,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (intercalate, isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust)
@@ -105,24 +128,40 @@ import System.Posix.Process (getProcessID)
 import System.Process (readProcess, readProcessWithExitCode)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.Address (
+    AccountAddress (..),
+    AccountId (..),
+    Addr (..),
+    Withdrawals (..),
+ )
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 
 import Cardano.Ledger.Api.PParams (
+    ppKeyDepositL,
     ppMaxTxExUnitsL,
     ppMaxTxSizeL,
  )
-import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, mkBasicTx, mkBasicTxBody, witsTxL)
+import Cardano.Ledger.Api.Tx (
+    bodyTxL,
+    estimateMinFeeTx,
+    mkBasicTx,
+    mkBasicTxBody,
+    txIdTx,
+    witsTxL,
+ )
 import Cardano.Ledger.Api.Tx.Body (
     ValidityInterval (..),
+    certsTxBodyL,
     collateralInputsTxBodyL,
     feeTxBodyL,
     inputsTxBodyL,
     mintTxBodyL,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
     vldtTxBodyL,
+    withdrawalsTxBodyL,
  )
 import Cardano.Ledger.Api.Scripts.Data (
     Data (..),
@@ -141,11 +180,25 @@ import Cardano.Ledger.Api.Tx.Wits (
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (
+    Network (..),
+    SlotNo (..),
+    StrictMaybe (..),
+    TxIx (..),
+ )
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (eraProtVerHigh, extractHash, hashScript)
+import Cardano.Ledger.Conway.TxCert (ConwayDelegCert (..), ConwayTxCert (..))
+import Cardano.Ledger.Core (
+    KeyHash,
+    Script,
+    eraProtVerHigh,
+    extractHash,
+    hashScript,
+ )
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Hashes (ScriptHash)
+import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -160,6 +213,7 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
+import Cardano.MPFS.Cage.TxBuilder.Reject (rejectRequestsImpl)
 import Cardano.MPFS.Cage.Config (CageConfig (..))
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
@@ -168,7 +222,6 @@ import Cardano.MPFS.Cage.Ledger (
     ExUnits (..),
     PolicyID (..),
     Root (..),
-    SlotNo (..),
     TokenId (..),
     TxOut,
  )
@@ -179,21 +232,25 @@ import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     addrFromKeyHashBytes,
+    addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    currentPosixMs,
     extractCageDatum,
     extractOwnerBytes,
     findRequestUtxos,
     findStateUtxo,
     mkCageScript,
     mkInlineDatum,
+    mkRequestDatum,
     mkRequestScript,
     onChainTokenId,
     requestAddrFromCfg,
     scriptHashBytes,
+    scriptFromBytes,
     spendingIndex,
     toLedgerData,
     toPlcData,
@@ -201,13 +258,12 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     txInToRef,
  )
 import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Reject (rejectRequestsImpl)
+import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
 import Cardano.MPFS.Cage.TxBuilder.Request (
     requestDeleteImpl,
     requestInsertImpl,
     requestUpdateImpl,
  )
-import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
 import Cardano.MPFS.Cage.TxBuilder.Sweep (sweepUtxoImpl)
 import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
 import Cardano.Tx.Balance (
@@ -225,12 +281,18 @@ import Cardano.MPFS.Cage.Types (
     RequestAction (Update),
     UpdateRedeemer (..),
  )
+import Cardano.MPFS.Cage.Types qualified as CageTypes
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
+    enterpriseAddr,
     genesisAddr,
     genesisDir,
     genesisSignKey,
+    keyHashFromSignKey,
+    mkSignKey,
+    Ed25519DSIGN,
+    SignKeyDSIGN,
  )
 import Cardano.Node.Client.N2C.Connection (
     newLSQChannel,
@@ -273,42 +335,54 @@ import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
     RefusalInfo (..),
+    Verdict (..),
     writeReceiptFile,
  )
-import Conformance.Refusal (matchRefusal, refusalScriptHashes, trimRefusal, wrongReasonMarker)
+import Conformance.Refusal (
+    RefusalRole (..),
+    attributeRefusalReceipt,
+    matchRefusal,
+    refusalScriptHashes,
+    trimRefusal,
+    wrongReasonMarker,
+ )
 
 -- ---------------------------------------------------------
 -- Row vocabulary and control modes
 -- ---------------------------------------------------------
 
-canonicalRows :: [String]
-canonicalRows =
-    [ "CA01"
-    , "CA02"
-    , "CA03"
-    , "CA04"
-    , "CA05"
-    , "CG02"
-    , "CG03"
-    , "CG04"
-    , "CG05"
-    , "CS01"
-    , "CS02"
-    , "CS03"
-    , "CS04"
-    , "CS05"
-    , "CS06"
-    , "CS08"
-    ]
-
 -- | Row families by explicit membership. Every partition below filters by
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
+
+-- The issue #70 rows, listed by membership — never by exclusion or
+-- position: a partition defined by what it is not silently absorbs
+-- whatever the next slice adds.
+issue70Rows =
+    [ "CG07"
+    , "CG09"
+    , "CG10"
+    , "CG11"
+    , "CG12"
+    , "CG13"
+    , "CG14"
+    , "CG15"
+    , "CG17"
+    , "CG19"
+    , "CG20"
+    ]
+
+-- The issue #70 rows that close a CL01 receipt when the full session
+-- ran: every accepting fold in the session.
+issue70AcceptingRows = ["CG11", "CG12", "CG13", "CG14", "CG19"]
+
+canonicalRows :: [String]
+canonicalRows = caRows <> cgRows <> csRows <> issue70Rows
 
 data Control
     = Normal
@@ -378,7 +452,11 @@ data Env = Env
     , envDirty :: Bool
     , envNode :: String
     , envBlueprint :: String
+    , envBlueprintPath :: FilePath
     , envReceiptsDir :: FilePath
+    , envCodes :: (SBS.ShortByteString, SBS.ShortByteString)
+    -- ^ (unapplied state bytes, unapplied request bytes) from the
+    -- session's blueprint: the row cages boot from these.
     , envKeys :: IORef (Bool, ByteString)
     -- ^ (present, current value) for cgKey
     , envValidUnits :: IORef (Integer, Integer)
@@ -390,6 +468,50 @@ data Env = Env
     boots' results, the canonical snapshot. Nothing in a CG session
     (the row validator keeps the two sessions apart).
     -}
+    , envWorlds :: IORef (Map.Map String RowCage)
+    {- ^ the issue #70 rows' cages, booted on first use per row group
+    so one row's odd state cannot poison another's
+    -}
+    , envStake :: IORef (Maybe StakeKit)
+    {- ^ the stake_script hook's world (CG14/CG15): the blueprint's
+    staking validator, its registered credential, the cage booted
+    with the hook set
+    -}
+    , envKey2 :: IORef (Maybe (SignKeyDSIGN Ed25519DSIGN, Addr))
+    {- ^ a second funded wallet (CG17's non-owner signer, CG19's
+    second request owner), split off the genesis wallet on first use
+    -}
+    , envHeld :: IORef [String]
+    {- ^ rows recorded as @held-q002@ this session: Singular's Lean
+    and the consumer's theorem disagree and the chain sided with
+    Singular's Lean. The session ends non-zero while this is
+    non-empty — a hold must never read as a pass.
+    -}
+    , envFailed :: IORef [String]
+    {- ^ rows recorded as @diverges-from-lean@ this session: the
+    chain refused what Singular's Lean requires accepted. The
+    session ends non-zero while this is non-empty.
+    -}
+    }
+
+{- | One row group's cage: the config it was booted from, its token,
+and the last valid fold's measured units (hand-built refusals
+declare twice those).
+-}
+data RowCage = RowCage
+    { rcCfg :: CageConfig
+    , rcTid :: IORef (Maybe TokenId)
+    , rcUnits :: IORef (Integer, Integer)
+    }
+
+{- | The stake_script hook's kit: the blueprint's staking validator
+bytes and hash (cross-checked against the pinned manifest), and the
+cage booted with the hook set in its datum.
+-}
+data StakeKit = StakeKit
+    { skBytes :: SBS.ShortByteString
+    , skHash :: ScriptHash
+    , skCage :: RowCage
     }
 
 {- | The CA session's world (issue #69). The canonical seed's outRef
@@ -439,7 +561,7 @@ runRows rawRows receiptsDir = do
     control <- readControl
     emit "control" (show control)
     let caRequested = any (`elem` caRows) rows
-        cgRequested = any (`elem` cgRows) rows
+        cgRequested = any (`elem` (cgRows <> issue70Rows)) rows
     -- Armed controls must never pass vacuously: each mode belongs to
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
@@ -468,10 +590,10 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet = [r | r <- devnetRows, r `elem` cgRows]
+        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -491,8 +613,8 @@ runRows rawRows receiptsDir = do
                     runSession
                         caDevnet
                         control
-                        stateBytes
-                        requestBytes
+                        (stateBytes, requestBytes)
+                        blueprintPath
                         nodeVer
                         base
                         dirty
@@ -506,8 +628,8 @@ runRows rawRows receiptsDir = do
                     runSession
                         cgDevnet
                         control
-                        stateBytes
-                        requestBytes
+                        (stateBytes, requestBytes)
+                        blueprintPath
                         nodeVer
                         base
                         dirty
@@ -540,19 +662,20 @@ runLocalRow blueprintPath receiptsDir base dirty row = case row of
 validateRows :: [String] -> IO [String]
 validateRows [] =
     failWith
-        "run needs at least one row: run CA01 CA02 CA03 CA04 CA05 \
-         \or CG02 CG03 CG04 CG05"
+        "run needs at least one row: run CA01..CA05, CG02..CG05, CS \
+         \families, or the issue #70 rows CG07 CG09 CG10 CG11 CG12 \
+             \CG13 CG14 CG15 CG17 CG19 CG20"
 validateRows raw = do
     let bad = [r | r <- raw, r `notElem` canonicalRows]
     unless (null bad) $
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
         hasCa = any (`elem` caRows) requested
-        hasCg = any (`elem` cgRows) requested
+        hasCg = any (`elem` (cgRows <> issue70Rows)) requested
     when (hasCa && hasCg) $
         failWith
             ( "CA and CG rows run as separate sessions, one devnet \
-              \each: run CA01..CA05, then CG02..CG05"
+              \each: run CA01..CA05, then the CG rows"
             )
     pure requested
 
@@ -670,8 +793,8 @@ bracketTmpDir action = do
 runSession ::
     [String] ->
     Control ->
-    SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    (SBS.ShortByteString, SBS.ShortByteString) ->
+    FilePath ->
     String ->
     String ->
     Bool ->
@@ -681,8 +804,8 @@ runSession ::
 runSession
     rows
     control
-    stateBytes
-    requestBytes
+    codes@(stateBytes, requestBytes)
+    blueprintPath
     nodeVer
     base
     dirty
@@ -709,8 +832,14 @@ runSession
         mirror <- newMirror
         _ <- Cage.queryProtocolParams prov
         let caMode = any (`elem` caRows) rows
+            legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
         validUnits <- newIORef (0, 0)
+        worlds <- newIORef Map.empty
+        stakeRef <- newIORef Nothing
+        key2Ref <- newIORef Nothing
+        heldRef <- newIORef []
+        failedRef <- newIORef []
         (env, marker, bootLine) <-
             if caMode
                 then do
@@ -754,9 +883,16 @@ runSession
                             , envNode = nodeVer
                             , envBlueprint = blueprintId cfg requestBytes
                             , envReceiptsDir = receiptsDir
+                            , envCodes = codes
+                            , envBlueprintPath = blueprintPath
                             , envKeys = keys
                             , envValidUnits = validUnits
                             , envCa = Just world
+                            , envWorlds = worlds
+                            , envStake = stakeRef
+                            , envKey2 = key2Ref
+                            , envHeld = heldRef
+                            , envFailed = failedRef
                             }
                         , hex (scriptHashBytes (cfgScriptHash cfg))
                         , ( "CA session: canonical seed published at outRef "
@@ -765,46 +901,129 @@ runSession
                                    \name as SHA-256 of this outRef"
                           )
                         )
-                else do
-                    (seedTxIn, _) <- largestWalletUtxo prov
-                    let cfg = cageCfg stateBytes requestBytes (txInToRef seedTxIn)
-                        marker' = case control of
-                            WrongReason -> wrongReasonMarker
-                            _ -> hex (scriptHashBytes (cfgScriptHash cfg))
-                    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-                    signedBoot <- submitWithGenesis submit unsignedBoot
-                    tid <- extractTokenId cfg signedBoot
-                    createTrie tm tid
-                    pure
-                        ( Env
-                            { envCfg = cfg
-                            , envProv = prov
-                            , envSubmit = submit
-                            , envTm = tm
-                            , envTid = tid
-                            , envMirror = mirror
-                            , envControl = control
-                            , envBase = base
-                            , envDirty = dirty
-                            , envNode = nodeVer
-                            , envBlueprint = blueprintId cfg requestBytes
-                            , envReceiptsDir = receiptsDir
-                            , envKeys = keys
-                            , envValidUnits = validUnits
-                            , envCa = Nothing
-                            }
-                        , marker'
-                        , "cage booted bootTx=" <> txIdHex signedBoot
-                        )
+                else
+                    -- The CG02-CG05 session cage boots only when one
+                    -- of those rows is requested; the issue #70 rows
+                    -- boot their own cages per row group instead.
+                    if not legacyCg
+                        then do
+                            -- No CG02-CG05 row is requested, so those
+                            -- row bodies never run; the config below
+                            -- is an unbooted placeholder (the seed
+                            -- query only names a real UTxO) kept for
+                            -- the record's shape.
+                            (seedTxIn, _) <- largestWalletUtxo prov
+                            let placeholderCfg =
+                                    cageCfg stateBytes requestBytes (txInToRef seedTxIn)
+                            pure
+                                ( Env
+                                    { envCfg = placeholderCfg
+                                    , envProv = prov
+                                    , envSubmit = submit
+                                    , envTm = tm
+                                    , envTid = TokenId (AssetName (SBS.toShort ""))
+                                    , envMirror = mirror
+                                    , envControl = control
+                                    , envBase = base
+                                    , envDirty = dirty
+                                    , envNode = nodeVer
+                                    , envBlueprint = blueprintId placeholderCfg requestBytes
+                                    , envBlueprintPath = blueprintPath
+                                    , envReceiptsDir = receiptsDir
+                                    , envCodes = codes
+                                    , envKeys = keys
+                                    , envValidUnits = validUnits
+                                    , envCa = Nothing
+                                    , envWorlds = worlds
+                                    , envStake = stakeRef
+                                    , envKey2 = key2Ref
+                                    , envHeld = heldRef
+                                    , envFailed = failedRef
+                                    }
+                                , hex (scriptHashBytes (cfgScriptHash placeholderCfg))
+                                , "no session cage: the issue #70 rows boot \
+                                   \their own"
+                                )
+                        else do
+                            (seedTxIn, _) <- largestWalletUtxo prov
+                            let cfg = cageCfg stateBytes requestBytes (txInToRef seedTxIn)
+                                marker' = case control of
+                                    WrongReason -> wrongReasonMarker
+                                    _ -> hex (scriptHashBytes (cfgScriptHash cfg))
+                            unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+                            signedBoot <- submitWithGenesis submit unsignedBoot
+                            tid <- extractTokenId cfg signedBoot
+                            createTrie tm tid
+                            pure
+                                ( Env
+                                    { envCfg = cfg
+                                    , envProv = prov
+                                    , envSubmit = submit
+                                    , envTm = tm
+                                    , envTid = tid
+                                    , envMirror = mirror
+                                    , envControl = control
+                                    , envBase = base
+                                    , envDirty = dirty
+                                    , envNode = nodeVer
+                                    , envBlueprint = blueprintId cfg requestBytes
+                                    , envBlueprintPath = blueprintPath
+                                    , envReceiptsDir = receiptsDir
+                                    , envCodes = codes
+                                    , envKeys = keys
+                                    , envValidUnits = validUnits
+                                    , envCa = Nothing
+                                    , envWorlds = worlds
+                                    , envStake = stakeRef
+                                    , envKey2 = key2Ref
+                                    , envHeld = heldRef
+                                    , envFailed = failedRef
+                                    }
+                                , marker'
+                                , "cage booted bootTx=" <> txIdHex signedBoot
+                                )
         emit "boot" bootLine
         mapM_ (runRow env marker) rows
         cancel nodeThread
         if caMode
             then writeCaCL01 env rows
-            else writeCL01Receipt env rows
+            else
+                if all (`elem` issue70Rows) rows
+                    then writeCL01Issue70 env rows
+                    else writeCL01Receipt env rows
         emit
             "complete"
             (show (length rows) <> "/" <> show (length rows) <> " rows ok")
+        -- A held or failing row must never read as a pass: the
+        -- session ends non-zero naming every such row.
+        held <- readIORef (envHeld env)
+        failed <- readIORef (envFailed env)
+        case (held, failed) of
+            ([], []) -> pure ()
+            _ ->
+                throwIO
+                    ( ErrorCall
+                        ( "ROWS THE RUN CANNOT REPORT AS PASSING"
+                            <> "\n- Held (Q-002, story 2: Singular's Lean and \
+                               \the consumer's theorem disagree and the \
+                                   \chain sided with Singular's Lean; \
+                                       \receipts carry verdict held-q002): "
+                                <> ( if null held
+                                        then "none"
+                                        else unwords (reverse held)
+                                   )
+                            <> "\n- Failing against this candidate \
+                               \(verdict diverges-from-lean — the chain \
+                                   \refused what the Lean requires \
+                                       \accepted): "
+                                <> ( if null failed
+                                        then "none"
+                                        else unwords (reverse failed)
+                                   )
+                            <> "\nThese rows are the milestone owner's to \
+                               \carry to the user."
+                        )
+                    )
 
 blueprintId :: CageConfig -> SBS.ShortByteString -> String
 blueprintId cfg requestBytes =
@@ -829,7 +1048,7 @@ writeCL01Receipt env rows = do
                     env
                     "CL01"
                     Accepted
-                    (map T.unpack (concatMap receiptTransactions rs))
+                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
                     Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
@@ -873,7 +1092,7 @@ writeCaCL01 env rows
                     env
                     "CL01"
                     Accepted
-                    (map T.unpack (concatMap receiptTransactions rs))
+                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
                     Nothing
                     Nothing
                     (Just (maximum (map getMem rs)))
@@ -941,6 +1160,17 @@ runRow env marker row = case row of
     "CG03" -> runCG03 env
     "CG04" -> runCG04 env
     "CG05" -> runCG05 env marker
+    "CG07" -> runCG07 env
+    "CG09" -> runCG09 env
+    "CG10" -> runCG10 env
+    "CG11" -> runCG11 env
+    "CG12" -> runCG12 env
+    "CG13" -> runCG13 env
+    "CG14" -> runCG14 env
+    "CG15" -> runCG15 env
+    "CG17" -> runCG17 env
+    "CG19" -> runCG19 env
+    "CG20" -> runCG20 env
     _ -> failWith ("run cannot execute row: " <> row)
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
@@ -1018,7 +1248,7 @@ runCA01 env w = do
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     (mem, cpu) <- measureUnits env unsignedBoot
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
-    result <- submitTx (envSubmit env) signedBoot
+    result <- submitTxResilient (envSubmit env) signedBoot
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
@@ -1083,7 +1313,7 @@ runCA01 env w = do
         env
         "CA01"
         Accepted
-        [txIdHex signedBoot]
+        AgreesWithModel        [txIdHex signedBoot]
         Nothing
         Nothing
         (Just mem)
@@ -1126,7 +1356,7 @@ runCA02 env w = do
     unsignedRival <- bootTokenImpl cfgR prov genesisAddr
     (mem, cpu) <- measureUnits env unsignedRival
     let signedRival = addKeyWitness genesisSignKey unsignedRival
-    result <- submitTx (envSubmit env) signedRival
+    result <- submitTxResilient (envSubmit env) signedRival
     case result of
         Rejected reason ->
             failWith
@@ -1211,7 +1441,7 @@ runCA02 env w = do
         env
         "CA02"
         Accepted
-        [txIdHex signedRival]
+        AgreesWithModel        [txIdHex signedRival]
         Nothing
         Nothing
         (Just mem)
@@ -1287,7 +1517,7 @@ runCA03 env w = do
                 env
                 "CA03"
                 Accepted
-                [txid]
+                AgreesWithModel                [txid]
                 Nothing
                 Nothing
                 (Just mem)
@@ -1398,7 +1628,7 @@ runCA04 env w = do
                 env
                 "CA04"
                 Accepted
-                [txid]
+                AgreesWithModel                [txid]
                 Nothing
                 Nothing
                 (Just mem)
@@ -1471,7 +1701,7 @@ runCA05 env w = do
         )
         (Map.null evalMap)
     let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTx (envSubmit env) signed
+    result <- submitTxResilient (envSubmit env) signed
     case result of
         Rejected reason ->
             failWith
@@ -1523,7 +1753,7 @@ runCA05 env w = do
         env
         "CA05"
         Accepted
-        [txIdHex signed]
+        AgreesWithModel        [txIdHex signed]
         Nothing
         Nothing
         (Just 0)
@@ -1691,7 +1921,7 @@ runCG02 env = do
         env
         "CG02"
         Accepted
-        [txIdHex foldTx]
+        AgreesWithModel        [txIdHex foldTx]
         Nothing
         Nothing
         (Just mem)
@@ -1724,7 +1954,7 @@ runCG03 env = do
         env
         "CG03"
         Accepted
-        [txIdHex foldTx]
+        AgreesWithModel        [txIdHex foldTx]
         Nothing
         Nothing
         (Just mem)
@@ -1756,7 +1986,7 @@ runCG04 env = do
         env
         "CG04"
         Accepted
-        [txIdHex foldTx]
+        AgreesWithModel        [txIdHex foldTx]
         Nothing
         Nothing
         (Just mem)
@@ -1811,11 +2041,13 @@ runCG05 env marker = do
                 "unexpected: the poisoned fold evaluated; submitting anyway"
     handTx <- buildRefusedFold env
     let signed = addKeyWitness genesisSignKey handTx
-    result <- submitTx (envSubmit env) signed
+    result <- submitTxResilient (envSubmit env) signed
     case result of
         Rejected reason ->
             attributeSubmitRefusal
                 env
+                "CG05"
+                AgreesWithModel
                 marker
                 (T.unpack (TE.decodeUtf8Lenient reason))
                 (txIdHex signed)
@@ -1829,43 +2061,110 @@ runCG05 env marker = do
                 )
     controlFreshCage env
 
-attributeSubmitRefusal :: Env -> String -> String -> String -> IO ()
-attributeSubmitRefusal env marker text rejectedTxid =
-    case matchRefusal marker text of
-        Right () -> do
-            let trimmed = trimRefusal text
-            unless (marker `isInfixOf` trimmed) $
-                failWith
-                    ( "trimmer dropped the attribution; full reason: "
-                        <> take 20000 text
-                    )
-            writeRowReceipt
-                env
-                "CG05"
-                Refused
-                []
-                ( Just
-                    ( RefusalInfo
-                        { refusalScript = "state"
-                        , refusalReason = T.pack trimmed
-                        }
-                    )
-                )
-                (Just rejectedTxid)
-                Nothing
-                Nothing
-                Nothing
-                "node-submit"
+attributeSubmitRefusal :: Env -> String -> Verdict -> String -> String -> String -> IO ()
+attributeSubmitRefusal env row verdict marker text rejectedTxid = do
+    -- NOTE-003 discipline: the node may report several failing
+    -- scripts in an order that is not stable, so the matcher asserts
+    -- the expected script is AMONG them (the reason text is matched
+    -- raw, never a single first hash). The write policy lives in the
+    -- library (A-002): a refusal ROW's receipt IS the row outcome.
+    let script = if row `elem` ["CG07", "CG17"] then "request" else "state"
+    r <-
+        attributeRefusalReceipt
+            RefusalRow
+            (envReceiptsDir env)
+            row
+            verdict
+            script
+            marker
+            text
+            rejectedTxid
+            (envBase env)
+            (envDirty env)
+            (envNode env)
+            (envBlueprint env)
+    case r of
+        Right () ->
             emit
                 "row"
-                ( "CG05: REFUSED at submit, attributed to state "
-                    <> "(phase-2, marker 0x"
+                ( row
+                    <> ": REFUSED at submit, attributed to "
+                    <> script
+                    <> " (phase-2, marker 0x"
                     <> shortMarker marker
                     <> ")"
                 )
         Left mismatch ->
             failWith
-                ( "CG05: refusal did not attribute ("
+                ( row
+                    <> ": refusal did not attribute ("
+                    <> show mismatch
+                    <> "): "
+                    <> text
+                )
+
+{- | A refused CONTROL: submitted and attributed like a refusal row,
+but its outcome is run-log evidence under its own identity and never
+writes the row's receipt (A-002 — CG11/CG12/CG19's held receipts were
+being replaced by their controls' refusals). It cannot silently pass:
+an accepted control fails the run as a FINDING, and a refusal that
+does not attribute fails the run naming the mismatch.
+-}
+submitExpectRefusedControl :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
+submitExpectRefusedControl env row verdict marker tx = do
+    let signed = addKeyWitness genesisSignKey tx
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Rejected reason ->
+            attributeControlRefusal
+                env
+                row
+                verdict
+                marker
+                (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex signed)
+        Submitted txid ->
+            failWith
+                ( row
+                    <> " FINDING: the node ACCEPTED the control transaction "
+                    <> "expected to refuse (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+
+attributeControlRefusal :: Env -> String -> Verdict -> String -> String -> String -> IO ()
+attributeControlRefusal env row verdict marker text rejectedTxid = do
+    let script = if row `elem` ["CG07", "CG17"] then "request" else "state"
+    r <-
+        attributeRefusalReceipt
+            RefusalControl
+            (envReceiptsDir env)
+            row
+            verdict
+            script
+            marker
+            text
+            rejectedTxid
+            (envBase env)
+            (envDirty env)
+            (envNode env)
+            (envBlueprint env)
+    case r of
+        Right () ->
+            emit
+                "control"
+                ( row
+                    <> " control: REFUSED at submit, attributed to "
+                    <> script
+                    <> " (phase-2, marker 0x"
+                    <> shortMarker marker
+                    <> ") — run-log evidence only; the row's receipt is "
+                        <> "not overwritten (A-002)"
+                )
+        Left mismatch ->
+            failWith
+                ( row
+                    <> ": control refusal did not attribute ("
                     <> show mismatch
                     <> "): "
                     <> text
@@ -1908,6 +2207,2110 @@ controlFreshCage env = do
         "control"
         "CG05 control: fresh cage accepted a valid insert — \
         \the refusal discriminates"
+
+-- ---------------------------------------------------------
+-- Issue #70 machinery: cages, the second wallet, the stake kit
+-- ---------------------------------------------------------
+
+{- | The cage for one row group, booted on first use from a fresh
+seed. Rows whose outcome leaves odd state (a transferred owner, a
+parked request) get their own cage so the odd state cannot poison a
+neighbour row. The windows are the boot datum's phase clocks; rows
+retracting or rejecting wait for a phase boundary, so fast windows
+keep the run short without weakening any check.
+-}
+ensureRowCage ::
+    Env ->
+    String ->
+    -- | process window (ms, phase 1)
+    Integer ->
+    -- | retract window (ms, phase 2)
+    Integer ->
+    -- | stake_script hook (bytes + hash) to pin in the boot datum
+    Maybe (SBS.ShortByteString, ScriptHash) ->
+    IO RowCage
+ensureRowCage env name processMs retractMs stake = do
+    worlds <- readIORef (envWorlds env)
+    case Map.lookup name worlds of
+        Just w -> pure w
+        Nothing -> do
+            -- Boot with retry: the node supervisor can be mid-
+            -- reconnect when a row group starts (its connection loss
+            -- is transient); a failed attempt leaves nothing behind —
+            -- each attempt takes a fresh seed.
+            w <- bootCageAttempt (3 :: Int)
+            writeIORef (envWorlds env) (Map.insert name w worlds)
+            pure w
+  where
+    bootCageAttempt n = do
+        r <- try @SomeException bootOnce
+        case r of
+            Right w -> pure w
+            Left e
+                | n > 1 -> do
+                    emit
+                        "boot"
+                        ( "boot attempt failed ("
+                            <> take 200 (displayException e)
+                            <> "); retrying"
+                        )
+                    threadDelay 5_000_000
+                    bootCageAttempt (n - 1)
+                | otherwise -> throwIO e
+    bootOnce :: IO RowCage
+    bootOnce = do
+        let (stateBytes, requestBytes) = envCodes env
+            prov = envProv env
+        (seedTxIn, _) <- largestWalletUtxo prov
+        let cfg =
+                cageCfgWith
+                    stateBytes
+                    requestBytes
+                    (txInToRef seedTxIn)
+                    processMs
+                    retractMs
+                    stake
+        unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+        signedBoot <- submitWithGenesis (envSubmit env) unsignedBoot
+        tid <- extractTokenId cfg signedBoot
+        createTrie (envTm env) tid
+        tidRef <- newIORef (Just tid)
+        unitsRef <- newIORef (0, 0)
+        let w = RowCage cfg tidRef unitsRef
+            stakeTag = case stake of
+                Just (_, h) -> " stakeScript=0x" <> hex (scriptHashBytes h)
+                Nothing -> ""
+        emit
+            "cage"
+            ( name
+                <> " booted bootTx="
+                <> txIdHex signedBoot
+                <> " processMs="
+                <> show processMs
+                <> " retractMs="
+                <> show retractMs
+                <> stakeTag
+            )
+        pure w
+
+cageTid :: RowCage -> IO TokenId
+cageTid rc = do
+    t <- readIORef (rcTid rc)
+    case t of
+        Just tid -> pure tid
+        Nothing -> failWith "row cage is not booted"
+
+{- | The stake_script hook's kit (CG14/CG15): the blueprint's
+staking validator, its hash cross-checked against the pinned
+manifest, the credential registered on the devnet (a withdrawal
+from an unregistered account is a phase-1 error, not a verdict on
+the hook), and the cage booted with the hook in its datum.
+-}
+ensureStakeKit :: Env -> IO StakeKit
+ensureStakeKit env = do
+    kit <- readIORef (envStake env)
+    case kit of
+        Just k -> pure k
+        Nothing -> do
+            ebp <- loadBlueprint (envBlueprintPath env)
+            bp <- case ebp of
+                Left err -> failWith ("blueprint does not parse: " <> err)
+                Right b -> pure b
+            bytes <- case extractCompiledCode "staking.staking" bp of
+                Just b -> pure b
+                Nothing ->
+                    failWith
+                        "the blueprint carries no staking.staking validator"
+            let h = computeScriptHash bytes
+                hHex = hex (scriptHashBytes h)
+            manifest <- readScriptManifest
+            case pinsUnder "staking.staking" manifest of
+                [] ->
+                    failWith
+                        "the script manifest pins no staking.staking entry"
+                pins ->
+                    require
+                        ( "the staking pin disagrees with this run's \
+                           \blueprint: "
+                            <> show pins
+                            <> " vs 0x"
+                            <> hHex
+                        )
+                        (all ((== T.pack hHex) . fst) pins)
+            registerStakeCredential env bytes h
+            cage <-
+                ensureRowCage
+                    env
+                    "cg-stake"
+                    60_000
+                    300_000
+                    (Just (bytes, h))
+            let k = StakeKit bytes h cage
+            writeIORef (envStake env) (Just k)
+            pure k
+
+{- | Register the staking credential: a @RegTxCert@ paying the key
+deposit. Registration carries no script witness — the blueprint's
+staking validator implements only the withdraw handler, so a cert
+purpose would run its fail branch, and the node does not demand a
+witness for a registration. The deposit is paid; nobody withdraws
+it back — a devnet-bound residue, recorded, not hidden.
+-}
+registerStakeCredential ::
+    Env -> SBS.ShortByteString -> ScriptHash -> IO ()
+registerStakeCredential env _bytes h = do
+    let prov = envProv env
+        cred = ScriptHashObj h
+    pp <- Cage.queryProtocolParams prov
+    (funderIn, funderOut) <- largestWalletUtxo prov
+    let Coin avail = funderOut ^. coinTxOutL
+        depositCoin = pp ^. ppKeyDepositL
+        Coin deposit = depositCoin
+        build feeAmt =
+            mkBasicTx
+                ( mkBasicTxBody
+                    & inputsTxBodyL .~ Set.singleton funderIn
+                    & certsTxBodyL
+                        .~ StrictSeq.fromList
+                            [ ConwayTxCertDeleg
+                                ( ConwayRegCert
+                                    cred
+                                    (SJust depositCoin)
+                                )
+                            ]
+                    & feeTxBodyL .~ Coin feeAmt
+                )
+    let Coin estFee = estimateMinFeeTx pp (build 0) 1 0 0
+        fee = estFee + 50_000
+        change = avail - fee - deposit
+        changeOut = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+        Coin minAda = getMinCoinTxOut @ConwayEra pp changeOut
+    require
+        ( "registration: wallet output under min-ADA after fee+deposit: "
+            <> show change
+        )
+        (change >= minAda)
+    let tx =
+            build fee
+                & bodyTxL . outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ mkBasicTxOut
+                            genesisAddr
+                            (MaryValue (Coin change) mempty)
+                        ]
+    signed <- pure (addKeyWitness genesisSignKey tx)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> pure ()
+        Rejected reason ->
+            failWith
+                ( "CG14/CG15 COULD NOT EXECUTE — registration of the \
+                   \staking credential refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    awaitTx
+    emit
+        "stake"
+        ( "staking credential 0x"
+            <> hex (scriptHashBytes h)
+            <> " registered (deposit "
+            <> show deposit
+            <> ") regTx="
+            <> txIdHex signed
+        )
+
+{- | The second wallet: a key derived from a fixed seed (like the
+genesis key), funded by a plain split of the largest genesis UTxO.
+CG17 signs the non-owner sweep with it; CG19's second request is
+owned (and funded) by it.
+-}
+secondWallet :: Env -> IO (SignKeyDSIGN Ed25519DSIGN, Addr)
+secondWallet env = do
+    existing <- readIORef (envKey2 env)
+    case existing of
+        Just w -> pure w
+        Nothing -> do
+            let sk = mkSignKey "conformance-second-key-seed-000001"
+                addr = enterpriseAddr (keyHashFromSignKey sk)
+            fundWallet env addr 12_000_000
+            writeIORef (envKey2 env) (Just (sk, addr))
+            pure (sk, addr)
+
+fundWallet :: Env -> Addr -> Integer -> IO ()
+fundWallet env addr amount = do
+    let prov = envProv env
+    (funderIn, funderOut) <- largestWalletUtxo prov
+    let Coin avail = funderOut ^. coinTxOutL
+        fee = 200_000
+        change = avail - amount - fee
+    require
+        ("wallet funding: funder too small (" <> show avail <> ")")
+        (change > amount)
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton funderIn
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ mkBasicTxOut addr (MaryValue (Coin amount) mempty)
+                        , mkBasicTxOut
+                            genesisAddr
+                            (MaryValue (Coin change) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+    _ <- submitWithGenesis (envSubmit env) (mkBasicTx body)
+    pure ()
+
+{- | A small dedicated collateral pot for one refusing transaction:
+on phase-2 failure the whole collateral is taken, so the collateral
+is a split-off 5 ADA output — never the 30 ADA funder the CG05
+shape once used. The pot is a pure collateral input (never a
+regular input), ada-only and key-witnessed.
+-}
+collateralPot :: Env -> IO TxIn
+collateralPot env = do
+    let prov = envProv env
+    (funderIn, funderOut) <- largestWalletUtxo prov
+    let Coin avail = funderOut ^. coinTxOutL
+        pot = 5_000_000
+        fee = 200_000
+        change = avail - pot - fee
+    require "collateral pot: funder too small" (change > pot)
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton funderIn
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ mkBasicTxOut
+                            genesisAddr
+                            (MaryValue (Coin pot) mempty)
+                        , mkBasicTxOut
+                            genesisAddr
+                            (MaryValue (Coin change) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+    tx <- submitWithGenesis (envSubmit env) (mkBasicTx body)
+    -- the pot is the split's first output (index 0), deterministically
+    pure (TxIn (txIdTx tx) (TxIx 0))
+
+-- | Sleep until the devnet's POSIX-ms clock reaches @targetMs@.
+sleepUntilMs :: Env -> Integer -> IO ()
+sleepUntilMs _env targetMs = do
+    now <- currentPosixMs
+    let remaining = targetMs - now
+    when (remaining > 0) $ do
+        emit "wait" (show remaining <> " ms to the next phase boundary")
+        threadDelay (fromIntegral remaining * 1000)
+
+-- | The state script's refusal marker (applied hash hex).
+stateMarkerOf :: CageConfig -> String
+stateMarkerOf cfg = hex (scriptHashBytes (cfgScriptHash cfg))
+
+-- | The request script's refusal marker for one cage (applied hash hex).
+requestMarkerOf :: CageConfig -> TokenId -> String
+requestMarkerOf cfg tid =
+    hex (scriptHashBytes (hashScript (mkRequestScript cfg tid)))
+
+-- ---------------------------------------------------------
+-- Issue #70 fold assembly: one FoldSpec, every hand-built shape
+-- ---------------------------------------------------------
+
+{- | One hand-built fold transaction, fully specified. The library
+fold cannot emit transactions whose scripts do not evaluate (CG05's
+finding), so every refusal fold — and every fold whose payload
+exercises an unchecked validator path (surplus actions, a changed
+owner, crossed refunds) — is assembled here. Every accepting
+hand-built fold is calibrated against the library fold it parallels
+('calibrateFold'); a refusal fold differs from a calibrated one only
+in the field under test.
+
+Withdrawals carry redeemer @0::Integer@: the blueprint's staking
+validator ignores its redeemer (@withdraw(_redeemer: Data ...) { True }@).
+-}
+data FoldSpec = FoldSpec
+    { fsCfg :: CageConfig
+    , fsTid :: TokenId
+    , fsState :: (TxIn, TxOut ConwayEra)
+    , fsReqs :: [(TxIn, TxOut ConwayEra)]
+    -- ^ the requests this fold consumes, in tx-input order
+    , fsActions :: [RequestAction]
+    -- ^ one per request, same order
+    , fsNewRoot :: Root
+    , fsUnits :: ExUnits
+    , fsFee :: Maybe Integer
+    -- ^ @Nothing@: the caller sizes the fee in a second pass
+    , fsRefunds :: [Integer]
+    -- ^ explicit per-request refunds; @[]@: derive (bond - tip share -
+    -- fee share, first request carries the remainder)
+    , fsStateOverride :: Maybe OnChainTokenState
+    -- ^ datum for the new state output; @Nothing@: preserve the old
+    -- state with 'fsNewRoot'
+    , fsWithdrawal :: Maybe (AccountAddress, Script ConwayEra)
+    , fsSigners :: Maybe [KeyHash Guard]
+    {- ^ required signers; @Nothing@: the state owner (the default);
+    @Just []@: deliberately none — CG14's control carries the
+    withdrawal but no owner declaration, and the script must refuse
+    -}
+    , fsCollateral :: Maybe TxIn
+    {- ^ collateral input; @Nothing@: the fee funder (the CG05
+    shape). Refusing folds pass a dedicated 5 ADA pot instead — the
+    whole collateral is taken on phase-2 failure, and the funder is
+    the wallet's largest output.
+    -}
+    , fsUpper :: Maybe SlotNo
+    -- ^ validity upper bound; @Nothing@: earliest request deadline
+    }
+
+assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
+assembleFoldSpec env fs = do
+    let prov = envProv env
+
+    pp <- Cage.queryProtocolParams prov
+    funder <- largestWalletUtxo prov
+    require "hand-build: funder carries tokens" (adaOnly (snd funder))
+    mapM_ (requireAdaOnly . snd) (fsReqs fs)
+    -- NOTE-002: the request address is shared by every request ever
+    -- parked for this cage, so a fold asserts that every request it
+    -- consumes carries THIS cage's token — the extent is the
+    -- consumed set itself, quantified, not a sample.
+    require
+        "hand-build: a consumed request does not carry this cage's token"
+        (all (\(_, o) -> requestTokenMatches o) (fsReqs fs))
+    oldState <- case extractCageDatum (snd (fsState fs)) of
+        Just (StateDatum s) -> pure s
+        _ -> failWith "hand-build: state output has no StateDatum"
+    -- A near-now upper bound: the tx is submitted immediately after
+    -- assembly, and a slot 30s+ ahead lands past the node's ledger
+    -- translation horizon (epoch-safe-zone) and fails phase 1.
+    nowMs <- currentPosixMs
+    upperSlot <- case fsUpper fs of
+        Just s -> pure s
+        Nothing -> trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
+    let tipAmount = stateMaxFee oldState
+        feeAmt = case fsFee fs of
+            Just f -> f
+            Nothing -> 0
+        nReqs = toInteger (length (fsReqs fs))
+    refunds <- case fsRefunds fs of
+        [] -> deriveRefunds tipAmount feeAmt
+        explicit
+            | toInteger (length explicit) == nReqs -> pure explicit
+            | otherwise ->
+                failWith
+                    ( "hand-build: "
+                        <> show (length explicit)
+                        <> " explicit refunds for "
+                        <> show nReqs
+                        <> " requests"
+                    )
+    -- Every refund output must clear min-ADA on its own: a shortfall
+    -- here is a harness bug, never a row verdict.
+    mapM_
+        (\(c, (_, o)) -> do
+            let out =
+                    mkBasicTxOut
+                        ( addrFromKeyHashBytes
+                            (network (fsCfg fs))
+                            (extractOwnerBytes o)
+                        )
+                        (MaryValue (Coin c) mempty)
+                Coin minAda = getMinCoinTxOut @ConwayEra pp out
+            require
+                ( "hand-build: refund under min-ADA: " <> show c
+                )
+                (c >= minAda))
+        (zip refunds (fsReqs fs))
+    newStateOut <- case fsStateOverride fs of
+        Nothing -> pure (makeStateOut oldState)
+        Just s -> pure (makeStateOutOverride s)
+    changeOut <- makeChange pp funder feeAmt refunds
+    redeemers <- makeRedeemers fs funder
+    scripts <- makeScripts fs
+    let signers = case fsSigners fs of
+            Nothing -> ownerSigners oldState
+            Just ss -> ss
+        inputs =
+            Set.fromList
+                ( fst (fsState fs) : fst funder : map fst (fsReqs fs)
+                )
+        integrity = computeScriptIntegrity pp redeemers
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ inputs
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        (newStateOut : refundOuts refunds <> [changeOut])
+                & feeTxBodyL .~ Coin feeAmt
+                & collateralInputsTxBodyL
+                    .~ Set.singleton (fromMaybe (fst funder) (fsCollateral fs))
+                & reqSignerHashesTxBodyL .~ Set.fromList signers
+                & scriptIntegrityHashTxBodyL .~ integrity
+                & vldtTxBodyL
+                    .~ ValidityInterval SNothing (SJust upperSlot)
+        withWd = case fsWithdrawal fs of
+            Nothing -> body
+            Just (rewardAcct, _) ->
+                body & withdrawalsTxBodyL
+                    .~ Withdrawals (Map.singleton rewardAcct (Coin 0))
+    pure $
+        mkBasicTx withWd
+            & witsTxL . scriptTxWitsL .~ scripts
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+  where
+    units = fsUnits fs
+    deriveRefunds tipAmount _feeAmt
+        | null (fsReqs fs) = pure []
+        | otherwise =
+            pure
+                [ let Coin reqVal = o ^. coinTxOutL
+                   in reqVal - tipAmount
+                | (_, o) <- fsReqs fs
+                ]
+    refundOuts explicit =
+        [ mkBasicTxOut
+            ( addrFromKeyHashBytes
+                (network (fsCfg fs))
+                (extractOwnerBytes o)
+            )
+            (MaryValue (Coin c) mempty)
+        | (c, (_, o)) <- zip explicit (fsReqs fs)
+        ]
+    makeStateOut oldState =
+        let scriptAddr = cageAddrFromCfg (fsCfg fs) (network (fsCfg fs))
+            newDatum =
+                StateDatum
+                    oldState{stateRoot = OnChainRoot (unRoot (fsNewRoot fs))}
+         in mkBasicTxOut
+                scriptAddr
+                (snd (fsState fs) ^. valueTxOutL)
+                & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
+    makeStateOutOverride overridden =
+        let scriptAddr = cageAddrFromCfg (fsCfg fs) (network (fsCfg fs))
+            newDatum =
+                StateDatum
+                    overridden{stateRoot = OnChainRoot (unRoot (fsNewRoot fs))}
+         in mkBasicTxOut
+                scriptAddr
+                (snd (fsState fs) ^. valueTxOutL)
+                & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
+    makeChange pp funder' feeAmt refunds = do
+        let reqCoins = [outCoin o | (_, o) <- fsReqs fs]
+            funderCoin = outCoin (snd funder')
+            change =
+                sum reqCoins + funderCoin - sum refunds - feeAmt
+            out = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+            Coin minAda = getMinCoinTxOut @ConwayEra pp out
+        require
+            ("hand-build: change under min-ADA: " <> show change)
+            (change >= minAda)
+        pure out
+    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> IO (Redeemers ConwayEra)
+    makeRedeemers fs' funder' = do
+        let inputs =
+                Set.fromList
+                    ( fst (fsState fs') : fst funder' : map fst (fsReqs fs')
+                    )
+            statePurpose =
+                ConwaySpending (AsIx (spendingIndex (fst (fsState fs')) inputs))
+            stateRef = txInToRef (fst (fsState fs'))
+            requestPairs =
+                [ ( ConwaySpending (AsIx (spendingIndex reqIn inputs))
+                  , (toLedgerData (Contribute stateRef), units)
+                  )
+                | (reqIn, _) <- fsReqs fs'
+                ]
+            rewardingPairs = case fsWithdrawal fs' of
+                Nothing -> []
+                Just _ ->
+                    [ ( ConwayRewarding (AsIx 0)
+                      , (toLedgerData (0 :: Integer), units)
+                      )
+                    ]
+            pairs =
+                ( statePurpose
+                , (toLedgerData (Modify (fsActions fs')), units)
+                )
+                    : requestPairs
+                    <> rewardingPairs
+        pure (Redeemers (Map.fromList pairs))
+    makeScripts fs' = do
+        let stateScript = mkCageScript (fsCfg fs')
+            reqScript = mkRequestScript (fsCfg fs') (fsTid fs')
+            stakeScript = case fsWithdrawal fs' of
+                Nothing -> []
+                Just (_, s) -> [(hashScript s, s)]
+            -- A request script witness with no request redeemer is an
+            -- ExtraneousScriptWitnesses phase-1 failure (CG11's empty
+            -- fold consumes no requests).
+            requestScripts =
+                [ (hashScript reqScript, reqScript)
+                | not (null (fsReqs fs'))
+                ]
+        pure
+            ( Map.fromList
+                ( (hashScript stateScript, stateScript)
+                    : requestScripts
+                    <> stakeScript
+                )
+            )
+    ownerSigners oldState = case stateOwner oldState of
+        BuiltinByteString bs -> [addrWitnessKeyHash bs]
+    requireAdaOnly out =
+        require "hand-build: request carries tokens" (adaOnly out)
+    adaOnly out = case out ^. valueTxOutL of
+        MaryValue _ (MultiAsset ma) -> Map.null ma
+    requestTokenMatches out = case extractCageDatum out of
+        Just (RequestDatum rq) ->
+            let CageTypes.OnChainTokenId (BuiltinByteString bs) = requestToken rq
+             in AssetName (SBS.toShort bs) == unTokenId (fsTid fs)
+        _ -> False
+
+-- | Assemble with an iterated fee: assemble, let the ledger price
+-- the transaction, and repeat until the declared fee exceeds the
+-- estimate by a fixed margin. The margin discipline is CG05's: too
+-- small fails loudly at submit (phase 1, no script named); too large
+-- fails loudly in assembly (a refund under min-ADA).
+assembleFoldWithFee :: Env -> FoldSpec -> IO ConwayTx
+assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
+  where
+    go n fee = do
+        tx <- assembleFoldSpec env fs{fsFee = Just fee}
+        pp <- Cage.queryProtocolParams (envProv env)
+        let Coin est = estimateMinFeeTx pp tx 1 0 0
+            needed = est + 50_000
+        if fee >= needed || n >= (5 :: Int)
+            then pure tx
+            else go (n + 1) needed
+
+-- | Evaluate a transaction's script purposes on the node.
+-- ---------------------------------------------------------
+-- Issue #70 rows
+-- ---------------------------------------------------------
+
+{- | Submit and require acceptance (key-witnessed by the given
+signer); a refusal is a loud failure naming the reason.
+-}
+-- | Submit with transient-failure resilience: the N2C local-tx
+-- supervisor reopens the bearer after a lost connection mid-submit;
+-- the client contract says callers treat 'ConnectionLost' as
+-- transient and retry. Re-evaluation is deterministic, so the retry
+-- yields the same verdict (a phase-2 failure is not a chain effect:
+-- a locally rejected transaction never entered the ledger, and no
+-- collateral moves).
+submitTxResilient :: Submitter IO -> ConwayTx -> IO SubmitResult
+submitTxResilient submit tx = go (4 :: Int)
+  where
+    go 0 = submitTx submit tx
+    go n = do
+        r <- try @SomeException (submitTx submit tx)
+        case r of
+            Right res -> pure res
+            Left e
+                | "ConnectionLost" `isInfixOf` displayException e -> do
+                    emit "submit" "connection lost mid-submit; retrying"
+                    threadDelay 3_000_000
+                    go (n - 1)
+                | otherwise -> throwIO e
+
+-- | Submit and require acceptance (key-witnessed by the given
+-- signer); a refusal is a loud failure naming the reason.
+--}
+submitExpectAccepted :: Env -> ConwayTx -> IO ConwayTx
+submitExpectAccepted env tx = do
+    result <- submitTxResilient (envSubmit env) tx
+    case result of
+        Submitted _ -> awaitTx >> pure tx
+        Rejected reason ->
+            failWith
+                ( "expected acceptance, the node refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+
+{- | Submit a hand-built refusing transaction and close the row on
+the node's phase-2 attribution. A submission success is a FINDING:
+reported, never relabelled.
+-}
+-- The refusal transaction is signed with the genesis key (the
+-- collateral pot and fee inputs are genesis's); rows needing a
+-- second witness pre-sign before calling.
+submitExpectRefused :: Env -> String -> Verdict -> String -> ConwayTx -> IO ()
+submitExpectRefused env row verdict marker tx = do
+    let signed = addKeyWitness genesisSignKey tx
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Rejected reason ->
+            attributeSubmitRefusal
+                env
+                row
+                verdict
+                marker
+                (T.unpack (TE.decodeUtf8Lenient reason))
+                (txIdHex signed)
+        Submitted txid ->
+            failWith
+                ( row
+                    <> " FINDING: the node ACCEPTED the transaction the "
+                    <> "consumer's requirement refuses (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+
+{- | One request to a row cage: submit an insert request through the
+library builder and return the live request UTxO. The request
+address is shared by every request ever parked for this cage, so
+the match is by the row's own key — never by position or by
+"whatever is pending". The datum's tip must equal the state tip
+('mkAction' checks it) and it is: the boot pinned @defaultTip@ and
+the library request carries the same.
+-}
+rowRequestInsert :: Env -> RowCage -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+rowRequestInsert env cage key val = do
+    cfg <- pure (rcCfg cage)
+    tid <- cageTid cage
+    unsigned <-
+        requestInsertImpl cfg (envProv env) (defaultTip cfg) tid key val genesisAddr
+    _ <- submitWithGenesis (envSubmit env) unsigned
+    reqUtxos <- pendingRequests env cage
+    let mine =
+            [ u
+            | u <- reqUtxos
+            , requestKeyOf (snd u) == Just key
+            ]
+    case mine of
+        [u] -> pure u
+        other ->
+            failWith
+                ( "expected exactly one pending request for the row's key, \
+                   \found "
+                    <> show (length other)
+                )
+  where
+    requestKeyOf out = case extractCageDatum out of
+        Just (RequestDatum rq) -> Just (requestKey rq)
+        _ -> Nothing
+
+-- | The state UTxO of a row cage, read from the chain.
+cageStateUtxo :: Env -> RowCage -> IO (TxIn, TxOut ConwayEra)
+cageStateUtxo env cage = do
+    tid <- cageTid cage
+    let cfg = rcCfg cage
+    utxos <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tid utxos of
+        Just u -> pure u
+        Nothing -> failWith "row cage: no state UTxO"
+
+-- | Speculatively apply one request's insert; proof steps + new root.
+speculativeInsert ::
+    Env -> RowCage -> TokenId -> ByteString -> ByteString -> IO ([ProofStep], Root)
+speculativeInsert env _cage tid key val =
+    withSpeculativeTrie (envTm env) tid $ \trie -> do
+        _ <- CageTrie.insert trie key val
+        steps <- fromMaybe [] <$> CageTrie.getProofSteps trie key
+        r <- CageTrie.getRoot trie
+        pure (steps, r)
+
+{- | Speculatively apply every request's own op (read from its
+datum), keeping proof steps aligned with the request order given.
+-}
+speculativeApplyAll ::
+    Env ->
+    RowCage ->
+    TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ([[ProofStep]], Root)
+speculativeApplyAll env _cage tid reqs =
+    withSpeculativeTrie (envTm env) tid $ \trie -> do
+        ps <- mapM (applyOne trie) reqs
+        r <- CageTrie.getRoot trie
+        pure (ps, r)
+  where
+    applyOne trie (_, out) = do
+        let (key, op) = case extractCageDatum out of
+                Just (RequestDatum rq) ->
+                    (requestKey rq, requestValue rq)
+                _ -> error "speculative: pending UTxO has no request datum"
+        steps <- case op of
+            OpInsert v -> do
+                _ <- CageTrie.insert trie key v
+                fromMaybe [] <$> CageTrie.getProofSteps trie key
+            OpDelete _ -> do
+                m <- CageTrie.getProofSteps trie key
+                _ <- CageTrie.delete trie key
+                pure (fromMaybe [] m)
+            OpUpdate _ v -> do
+                m <- CageTrie.getProofSteps trie key
+                _ <- CageTrie.delete trie key
+                _ <- CageTrie.insert trie key v
+                pure (fromMaybe [] m)
+        pure steps
+
+-- | Commit a landed op to a row cage's trie.
+rowCommit :: Env -> RowCage -> ByteString -> OnChainOperation -> IO ()
+rowCommit env cage key op = do
+    tid <- cageTid cage
+    withTrie (envTm env) tid $ \t -> case op of
+        OpInsert v -> do
+            _ <- CageTrie.insert t key v
+            pure ()
+        OpDelete _ -> do
+            _ <- CageTrie.delete t key
+            pure ()
+        OpUpdate _ n -> do
+            _ <- CageTrie.delete t key
+            _ <- CageTrie.insert t key n
+            pure ()
+
+{- | Submit a padded hand-built request: a plain payment with an
+inline 'RequestDatum' at the request address (creating an output
+executes nothing — CA05's finding), locked at an explicit bond so
+CG19's crossed refunds have unequal bonds to cross. Signed by the
+payer (genesis or the second wallet).
+-}
+paddedRequest ::
+    Env ->
+    RowCage ->
+    Addr ->
+    SignKeyDSIGN Ed25519DSIGN ->
+    ByteString ->
+    ByteString ->
+    Integer ->
+    IO (TxIn, TxOut ConwayEra)
+paddedRequest env cage payerAddr payerSk key val bond = do
+    let cfg = rcCfg cage
+    tid <- cageTid cage
+    pp <- Cage.queryProtocolParams (envProv env)
+    utxos <- Cage.queryUTxOs (envProv env) payerAddr
+    (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "paddedRequest: payer wallet has no UTxOs"
+        (u : _) -> pure u
+    now <- currentPosixMs
+    let Coin feeBal = feeOut ^. coinTxOutL
+        Coin tipVal = defaultTip cfg
+        fee = 300_000
+        change = feeBal - bond - fee
+    require
+        ("paddedRequest: payer wallet too small (" <> show feeBal <> ")")
+        (change > 0)
+    let requestAddr = requestAddrFromCfg cfg tid (network cfg)
+        datum =
+            mkRequestDatum
+                tid
+                payerAddr
+                key
+                (OpInsert val)
+                (tipVal)
+                now
+        reqOut =
+            mkBasicTxOut requestAddr (MaryValue (Coin bond) mempty)
+                & datumTxOutL .~ mkInlineDatum datum
+        Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
+    require
+        ( "paddedRequest: bond under min-ADA: " <> show bond
+        )
+        (bond >= minAda)
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton feeIn
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ reqOut
+                        , mkBasicTxOut payerAddr (MaryValue (Coin change) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+        signed = addKeyWitness payerSk (mkBasicTx body)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> awaitTx
+        Rejected reason ->
+            failWith
+                ( "paddedRequest refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
+
+{- | Request datum's (key, value) and submitted-at, read from a
+live request UTxO.
+-}
+requestDatumOf :: TxOut ConwayEra -> ((ByteString, OnChainOperation), Integer)
+requestDatumOf out = case extractCageDatum out of
+    Just (RequestDatum rq) ->
+        ((requestKey rq, requestValue rq), requestSubmittedAt rq)
+    _ -> error "requestDatumOf: not a request UTxO"
+
+{- | A FoldSpec with this cage's defaults: derive refunds and
+signers, no withdrawal, no state override, deadline validity.
+-}
+rowSpec ::
+    RowCage ->
+    TokenId ->
+    (TxIn, TxOut ConwayEra) ->
+    [(TxIn, TxOut ConwayEra)] ->
+    [RequestAction] ->
+    Root ->
+    ExUnits ->
+    FoldSpec
+rowSpec cage tid state reqs actions root units =
+    FoldSpec
+        { fsCfg = rcCfg cage
+        , fsTid = tid
+        , fsState = state
+        , fsReqs = reqs
+        , fsActions = actions
+        , fsNewRoot = root
+        , fsUnits = units
+        , fsFee = Nothing
+        , fsRefunds = []
+        , fsStateOverride = Nothing
+        , fsWithdrawal = Nothing
+        , fsSigners = Nothing
+        , fsCollateral = Nothing
+        , fsUpper = Nothing
+        }
+
+-- | Twice the measured units: the declared budget of a refusing
+-- fold. A cage with no measured fold yet (its rows refuse before
+-- any valid fold ran) falls back to 1% of the protocol maxima: far
+-- above anything a script consumes before erroring, far below the
+-- per-purpose phase-2 ceiling, and small enough that the node's
+-- rejection payload stays inside the local channel's limits.
+declaredSpec :: Env -> RowCage -> IO ExUnits
+declaredSpec env cage = do
+    (mem, cpu) <- readIORef (rcUnits cage)
+    case (mem, cpu) of
+        (m, c) | m > 0 -> pure (declaredUnits (m, c))
+        _ -> do
+            pp <- Cage.queryProtocolParams (envProv env)
+            let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+                fallback =
+                    ExUnits
+                        (maxMem `div` 100)
+                        (maxSteps `div` 20)
+            emit "units" "no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima"
+            pure fallback
+
+{- | CG07: Retract outside phase 2 (R9_retract_needs_phase2). The
+request owner's retract, validity declared inside phase 1, is
+refused by the request script; the same retract re-declared inside
+phase 2 is accepted (the control that proves the refusal
+discriminates). Both verdicts are the node's on submitted
+transactions.
+-}
+runCG07 :: Env -> IO ()
+runCG07 env = do
+    cage <- ensureRowCage env "cg07" 30_000 60_000 Nothing
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    (reqIn, reqOut) <- rowRequestInsert env cage "cg07-key" "cg07-value"
+    let (_, submittedAt) = requestDatumOf reqOut
+    -- A hand-built phase-2 retract plays the control (the library
+    -- builder converts the phase-2 end 60s ahead, past this devnet's
+    -- conversion horizon). The refused attempt's units come from the
+    -- declared fallback: no valid fold has run in this cage.
+    units <- declaredSpec env cage
+    pot <- collateralPot env
+    (stateIn, _) <- cageStateUtxo env cage
+    pp <- Cage.queryProtocolParams prov
+    nowMs0 <- currentPosixMs
+    upper <- trySlots prov [nowMs0 + 2_000, nowMs0 + 1_500, nowMs0 + 1_000]
+    let stateRef = txInToRef stateIn
+        script = mkRequestScript cfg tid
+        inputs = Set.singleton reqIn
+        ownerKh = addrWitnessKeyHash (extractOwnerBytes reqOut)
+        purpose = ConwaySpending (AsIx (spendingIndex reqIn inputs))
+        rdmrs =
+            Redeemers
+                ( Map.singleton
+                    purpose
+                    (toLedgerData (Retract stateRef), units)
+                )
+        integrity = computeScriptIntegrity pp rdmrs
+    let Coin reqVal = reqOut ^. coinTxOutL
+        draft =
+            mkBasicTx
+                ( mkBasicTxBody
+                    & inputsTxBodyL .~ inputs
+                    & referenceInputsTxBodyL .~ Set.singleton stateIn
+                    & collateralInputsTxBodyL .~ Set.singleton pot
+                    & reqSignerHashesTxBodyL .~ Set.singleton ownerKh
+                    & vldtTxBodyL
+                        .~ ValidityInterval SNothing (SJust upper)
+                    & scriptIntegrityHashTxBodyL .~ integrity
+                )
+                & witsTxL . scriptTxWitsL
+                    .~ Map.singleton (hashScript script) script
+                & witsTxL . rdmrsTxWitsL .~ rdmrs
+        Coin estFee = estimateMinFeeTx pp draft 1 0 0
+        fee = estFee + 50_000
+        refundCoin = reqVal - fee
+        refundOut =
+            mkBasicTxOut
+                (addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut))
+                (MaryValue (Coin refundCoin) mempty)
+        Coin minAda = getMinCoinTxOut @ConwayEra pp refundOut
+    require
+        "CG07 hand retract: refund under min-ADA"
+        (refundCoin >= minAda)
+    let handTx =
+            draft
+                & bodyTxL . feeTxBodyL .~ Coin fee
+                & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut]
+    emit
+        "row"
+        ( "CG07: retract with validity inside phase 1 submitted; the \
+           \request script must refuse (R9_retract_needs_phase2)"
+        )
+    submitExpectRefused env "CG07" AgreesWithModel (requestMarkerOf cfg tid) handTx
+    -- Control: the same request retracted with validity INSIDE phase
+    -- 2, built only once the boundary is near so every slot
+    -- conversion stays inside the interpreter's horizon.
+    sleepUntilMs env (submittedAt + 30_000 + 500)
+    lower <- Cage.posixMsCeilSlot prov (submittedAt + 30_000)
+    nowMs1 <- currentPosixMs
+    upperCtrl <- trySlots prov [nowMs1 + 2_000, nowMs1 + 1_500, nowMs1 + 1_000]
+    let ctrlTx =
+            handTx
+                & bodyTxL . vldtTxBodyL
+                    .~ ValidityInterval (SJust lower) (SJust upperCtrl)
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
+    emit
+        "control"
+        "CG07 control: the same retract, validity in phase 2, is \
+         \accepted — the refusal discriminates"
+
+{- | CG09: @Rejected@ when not rejectable (R9_reject_needs_rejectable).
+Inside the process window the request still contributes (phase 1),
+but the fold's Rejected action fails @is_rejectable@ in the state
+script: a request is only rejectable once its retract window has
+passed. The control folds the same request in phase 3, where the
+library's reject is accepted.
+-}
+runCG09 :: Env -> IO ()
+runCG09 env = do
+    cage <- ensureRowCage env "cg09" 30_000 5_000 Nothing
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    (reqIn, reqOut) <- rowRequestInsert env cage "cg09-key" "cg09-value"
+    let (_, submittedAt) = requestDatumOf reqOut
+    units <- pure (ExUnits 1_400_000 100_000_000)
+    pot <- collateralPot env
+    state <- cageStateUtxo env cage
+    oldState <- extractState (snd state)
+    nowMs <- currentPosixMs
+    upper <- trySlots prov [nowMs + 2_000, nowMs + 1_500, nowMs + 1_000]
+    let spec =
+            (rowSpec
+                cage
+                tid
+                state
+                [(reqIn, reqOut)]
+                [CageTypes.Rejected]
+                (Root (unOnChainRoot (stateRoot oldState)))
+                units)
+                { fsUpper = Just upper
+                , fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env spec
+    emit
+        "row"
+        ( "CG09: Rejected action while the request is still inside its \
+           \process window; the state script must refuse "
+            <> "(R9_reject_needs_rejectable)"
+        )
+    submitExpectRefused env "CG09" AgreesWithModel (stateMarkerOf cfg) hand
+    -- Control: the library reject, built only inside phase 3 so its
+    -- lower-bound slot conversion stays inside the horizon.
+    sleepUntilMs env (submittedAt + 30_000 + 5_000 + 500)
+    libReject <- rejectRequestsImpl cfg prov tid genesisAddr
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey libReject)
+    emit
+        "control"
+        "CG09 control: the same request rejected in phase 3 is \
+         \accepted — the refusal discriminates"
+
+{- | CG10: Stale fold against a superseded root
+(R7_stale_fold_refused). The stale claims are captured against the
+cage's root BEFORE any fold; one request folds normally and the
+root advances; then a fold for the remaining request is assembled
+from the captured claims — a fold that was valid when built,
+against a root the chain has since superseded. The state script's
+proof check refuses it. The control re-folds the same request
+against the live root, the hand shape calibrated against the
+library fold.
+-}
+runCG10 :: Env -> IO ()
+runCG10 env = do
+    cage <- ensureRowCage env "cg-main" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+    tid <- cageTid cage
+    -- The stale claims: k-c's insertion proof against the pre-fold
+    -- (empty) root, captured before any fold advances it.
+    (staleSteps, staleRoot) <-
+        speculativeInsert env cage tid "cg10-key-c" "cg10-value-c"
+    _ <-
+        rowRequestAndFold
+            env
+            cage
+            "CG10"
+            "cg10-key-a"
+            "cg10-value-a"
+            (OpInsert "cg10-value-a")
+    reqC <- rowRequestInsert env cage "cg10-key-c" "cg10-value-c"
+    state <- cageStateUtxo env cage
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let staleSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                [reqC]
+                [Update staleSteps]
+                staleRoot
+                units)
+                { fsCollateral = Just pot
+                }
+    staleTx <- assembleFoldWithFee env staleSpec
+    emit
+        "row"
+        ( "CG10: fold carrying proof steps captured against the \
+           \superseded root submitted; the state script must refuse "
+            <> "(R7_stale_fold_refused)"
+        )
+    submitExpectRefused env "CG10" AgreesWithModel (stateMarkerOf cfg) staleTx
+    -- Control: the same request folded against the live root, the
+    -- hand shape calibrated against the library fold.
+    libFold <- updateTokenImpl cfg (envProv env) (envTm env) tid genesisAddr
+    (freshSteps, freshRoot) <-
+        speculativeInsert env cage tid "cg10-key-c" "cg10-value-c"
+    let freshSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                [reqC]
+                [Update freshSteps]
+                freshRoot
+                units)
+                { fsCollateral = Just pot
+                }
+    handFresh <- assembleFoldWithFee env freshSpec
+    calibrateFold (fst state) handFresh libFold
+    emit "calibration" "CG10 control: hand model matches the library fold"
+    (mem, cpu) <- measureUnits env handFresh
+    signed <-
+        submitExpectAccepted env (addKeyWitness genesisSignKey handFresh)
+    let size = txSizeBytes signed
+    emitMeasure env "CG10-control" mem cpu size
+    rowCommit env cage "cg10-key-c" (OpInsert "cg10-value-c")
+    emit
+        "control"
+        "CG10 control: the same request folded against the live root \
+         \is accepted — the refusal is the staleness, not the shape"
+
+{- | CG11: Empty fold (R8_empty_fold_refused; expected consumer gap,
+cardano-mpfs-onchain#100). A Modify over no requests, no actions,
+unchanged root — the state script has no guard against it and the
+chain accepts. The receipt records the acceptance with the
+transaction that proves it. The control: the same empty action list
+over one pending request must be refused (the request's action
+lookup fails), proving the partition's tolerance is specific to the
+no-matching-request shape, not a rule that honours empty folds.
+-}
+runCG11 :: Env -> IO ()
+runCG11 env = do
+    cage <- ensureRowCage env "cg-main" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+    tid <- cageTid cage
+    state <- cageStateUtxo env cage
+    oldState <- extractState (snd state)
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let emptySpec =
+            (rowSpec
+                cage
+                tid
+                state
+                []
+                []
+                (Root (unOnChainRoot (stateRoot oldState)))
+                units)
+                { fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env emptySpec
+    (mem, cpu) <- measureUnits env hand
+    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
+    let size = txSizeBytes signed
+    emitMeasure env "CG11-empty-fold" mem cpu size
+    writeRowReceipt
+        env
+        "CG11"
+        Accepted
+        HeldQ002
+        [txIdHex signed]
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+    recordHold
+        env
+        "CG11"
+        "Q-002 (story 2)"
+        ( "Singular's Lean PERMITS the empty fold — foldItems \
+           \[] = ok (Model.lean 188-189) — so the acceptance agrees \
+               \with Singular's model"
+        )
+        ( "R8_empty_fold_refused — the empty batch must be refused \
+           \(consumer-side; upstream cardano-mpfs-onchain#100 is the \
+             \partition fix)"
+        )
+    emit
+        "row"
+        ( "CG11: the chain ACCEPTED an empty fold (tx="
+            <> txIdHex signed
+            <> ") — recorded, held pending Q-002, never read as a \
+               \pass"
+        )
+    -- Control: empty actions over one live request. The state UTxO
+    -- moved with the row's fold, so the control reads the fresh one.
+    req <-
+        rowRequestInsert env cage "cg11-parked-key" "cg11-parked-value"
+    pot2 <- collateralPot env
+    state2 <- cageStateUtxo env cage
+    oldState2 <- extractState (snd state2)
+    let ctrlSpec =
+            (rowSpec
+                cage
+                tid
+                state2
+                [req]
+                []
+                (Root (unOnChainRoot (stateRoot oldState2)))
+                (declaredUnits (mem, cpu)))
+                { fsCollateral = Just pot2
+                }
+    ctrlTx <- assembleFoldWithFee env ctrlSpec
+    emit
+        "row"
+        "CG11 control: empty actions over a live request must be refused"
+    submitExpectRefusedControl env "CG11" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    emit
+        "control"
+        "CG11 control: with a request waiting, empty actions are \
+         \refused — the acceptance is specific to the empty fold"
+
+{- | CG12: Surplus actions beyond the matched request inputs (the
+2026-09-03 audit; upstream cardano-mpfs-onchain#100). The state
+script consumes one action per matching request and discards the
+action tail, so a fold carrying one more action than there are
+requests folds normally — even with garbage in the surplus action.
+Recorded with the accepted transaction. The control: one action
+FEWER than there are requests must be refused, pinning the
+asymmetry: the surplus is unchecked, the deficit is fatal.
+-}
+runCG12 :: Env -> IO ()
+runCG12 env = do
+    cage <- ensureRowCage env "cg-main" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+    tid <- cageTid cage
+    req <-
+        rowRequestInsert env cage "cg12-key" "cg12-value"
+    (steps12, root12) <-
+        speculativeInsert env cage tid "cg12-key" "cg12-value"
+    state <- cageStateUtxo env cage
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let surplusSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                [req]
+                [Update steps12, Update []]
+                root12
+                units)
+                { fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env surplusSpec
+    (mem, cpu) <- measureUnits env hand
+    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
+    let size = txSizeBytes signed
+    emitMeasure env "CG12-surplus" mem cpu size
+    rowCommit env cage "cg12-key" (OpInsert "cg12-value")
+    writeRowReceipt
+        env
+        "CG12"
+        Accepted
+        HeldQ002
+        [txIdHex signed]
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+    recordHold
+        env
+        "CG12"
+        "Q-002 (story 2)"
+        ( "Singular's Lean pairs each request with its action 1:1 in \
+           \its FoldItem and has no action tail that could be surplus \
+               \(Model.lean, FoldItem/foldItems) — the model \
+               \constrains nothing here"
+        )
+        ( "one action per request, no surplus — the consumer audit's \
+           \finding (upstream cardano-mpfs-onchain#100 is the \
+             \partition fix)"
+        )
+    emit
+        "row"
+        ( "CG12: the chain ACCEPTED a fold with a surplus action (one \
+           \request, two actions, the second garbage; tx="
+            <> txIdHex signed
+            <> ") — recorded, held pending Q-002, never read as a \
+               \pass"
+        )
+    -- Control: two fresh requests, one action — the deficit.
+    reqB <-
+        rowRequestInsert env cage "cg12-key-b" "cg12-value-b"
+    reqC <-
+        rowRequestInsert env cage "cg12-key-c" "cg12-value-c"
+    state2 <- cageStateUtxo env cage
+    (firstSorted, _) <- case sortOn fst [reqB, reqC] of
+        [a, b] -> pure (a, b)
+        _ -> failWith "CG12 control: expected exactly two requests"
+    (firstSteps, rootFirst) <- case extractCageDatum (snd firstSorted) of
+        Just (RequestDatum rq) -> case requestValue rq of
+            OpInsert v ->
+                speculativeInsert env cage tid (requestKey rq) v
+            _ -> failWith "CG12 control: expected an insert request"
+        _ -> failWith "CG12 control: no request datum"
+    pot2 <- collateralPot env
+    let (firstSorted2, secondSorted2) = case sortOn fst [reqB, reqC] of
+            [a, b] -> (a, b)
+            _ -> error "CG12 control: exactly two requests"
+        deficitSpec =
+            (rowSpec
+                cage
+                tid
+                state2
+                [firstSorted2, secondSorted2]
+                [Update firstSteps]
+                rootFirst
+                (declaredUnits (mem, cpu)))
+                { fsCollateral = Just pot2
+                }
+    ctrlTx <- assembleFoldWithFee env deficitSpec
+    emit
+        "row"
+        "CG12 control: two requests, one action — the deficit must be \
+         \refused"
+    submitExpectRefusedControl env "CG12" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    emit
+        "control"
+        "CG12 control: the deficit is refused while the surplus was \
+         \accepted — the asymmetry is exactly the audit's"
+
+{- | CG13: Owner pinning — a Modify that changes the state owner
+(R5_plugin_pinned; upstream cardano-mpfs-onchain#100). The state
+output's datum pattern does not constrain @owner@ (or
+@stake_script@), so a fold signed by the current owner can hand the
+cage to an arbitrary key. The chain accepts; the receipt records
+it. This partition's own types.ak documents owner transfer as
+intentional — the observation stands against the consumer's
+requirement either way, and the report says both. The control: after the transfer, the ORIGINAL
+owner's fold must be refused — the observed acceptance has teeth,
+the cage really did change hands.
+-}
+runCG13 :: Env -> IO ()
+runCG13 env = do
+    cage <- ensureRowCage env "cg13" 30_000 30_000 Nothing
+    tid <- cageTid cage
+    req <-
+        rowRequestInsert env cage "cg13-key" "cg13-value"
+    (steps13, root13) <-
+        speculativeInsert env cage tid "cg13-key" "cg13-value"
+    state <- cageStateUtxo env cage
+    oldState <- extractState (snd state)
+    let fabOwner = BuiltinByteString (BS.pack (replicate 28 0xab))
+    require
+        "CG13: the fabricated owner collides with the real one"
+        (fabOwner /= stateOwner oldState)
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let transferSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                [req]
+                [Update steps13]
+                root13
+                units)
+                { fsStateOverride = Just oldState{stateOwner = fabOwner}
+                , fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env transferSpec
+    (mem, cpu) <- measureUnits env hand
+    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
+    let size = txSizeBytes signed
+    emitMeasure env "CG13-transfer" mem cpu size
+    rowCommit env cage "cg13-key" (OpInsert "cg13-value")
+    writeRowReceipt
+        env
+        "CG13"
+        Accepted
+        ResolvedByRuling
+        [txIdHex signed]
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+    -- A-001: CG13 is NOT in the held-set. The owner-pinning question
+    -- was settled by the no-owner ruling (NOTE-025: no premise left
+    -- to be pending on), so the row is resolved-by-ruling with its
+    -- observation retained as DEFECT EVIDENCE of the outstanding
+    -- owner gate — never a pass, never an owner-semantics claim, and
+    -- no coverage credit for the reconciliation.
+    emit
+        "row"
+        ( "CG13: the chain ACCEPTED a Modify that changed the state \
+           \owner to 0x"
+            <> hex (BS.pack (replicate 28 0xab))
+            <> " (signed by the previous owner; tx="
+            <> txIdHex signed
+            <> ") — resolved-by-ruling: retained as defect evidence "
+                <> "of the outstanding owner gate (epic 17), never a "
+                <> "pass and never an owner-semantics claim"
+        )
+    -- NOTE-023 operator ruling: the registry has NO owner role
+    -- whatsoever (not latent, not transferable, not gating End or
+    -- migration). The former End-pair control — "previous owner's End
+    -- refused, new owner's End accepted" — tested behaviour that
+    -- should not exist and is RETIRED, not landed. state.ak's End and
+    -- validateMigration still call validateOwnership: those are
+    -- outstanding conformance defects, owned by epic 17's repair. The
+    -- accepted owner change above is defect evidence with its
+    -- transaction id. A-001: CG13 is resolved-by-ruling (the ruling
+    -- left no owner-pinning question pending) and is NOT in the
+    -- session's held-set; CG11, CG12 and CG19 remain held-q002.
+
+{- | CG14: the stake_script hook set, a fold carrying the matching
+withdraw-zero (the partition's shared.ak/types.ak hook; first ever
+ledger execution — epic 16 found two validator defects exactly by
+executing what green Aiken suites had already passed). The library
+fold adds the withdrawal and the staking script witness when the
+config carries the hook; the credential is registered first (a
+withdrawal from an unregistered account is a phase-1 error, not a
+verdict on the hook). The control: the same fold carrying the
+withdrawal but declaring NO owner — the hook must accompany the
+owner signature, never replace it — must be refused.
+-}
+{- | CG14: the stake_script hook set, a fold carrying the matching
+withdraw-zero (the partition's shared.ak/types.ak hook; first ever
+ledger execution — epic 16 found two validator defects exactly by
+executing what green Aiken suites had already passed). The library
+fold adds the withdrawal and the staking script witness when the
+config carries the hook; the credential is registered first (a
+withdrawal from an unregistered account is a phase-1 error, not a
+verdict on the hook). The control: the same fold carrying the
+withdrawal but declaring NO owner — the hook must accompany the
+owner signature, never replace it — must be refused.
+-}
+runCG14 :: Env -> IO ()
+runCG14 env = do
+    kit <- ensureStakeKit env
+    let cage = skCage kit
+        cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    _ <- rowRequestInsert env cage "cg14-key" "cg14-value"
+    unsigned <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    evalMap <- Cage.evaluateTx (envProv env) unsigned
+    mapM_ (\(p, r) -> emit "diag" (show p <> " => " <> either show (\(ExUnits m c) -> show (m, c)) r)) (Map.toList evalMap)
+    (mem, cpu) <- measureUnits env unsigned
+    writeIORef (rcUnits cage) (mem, cpu)
+    signed <- submitExpectAccepted env unsigned
+    let size = txSizeBytes signed
+    emitMeasure env "CG14-hook-fold" mem cpu size
+    writeRowReceipt
+        env
+        "CG14"
+        Accepted
+        AgreesWithModel        [txIdHex signed]
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+    emit
+        "row"
+        ( "CG14: the stake_script hook executed on a ledger for the \
+           \first time — fold accepted with the owner signature and \
+           \a withdraw-zero under staking credential 0x"
+            <> hex (scriptHashBytes (skHash kit))
+            <> " (tx="
+            <> txIdHex signed
+            <> ")"
+        )
+    -- Control: the withdrawal present, the owner declaration absent.
+    reqB <- rowRequestInsert env cage "cg14-key-b" "cg14-value-b"
+    (stepsB, rootB) <-
+        speculativeInsert env cage tid "cg14-key-b" "cg14-value-b"
+    state <- cageStateUtxo env cage
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let rewardAcct = AccountAddress Testnet (AccountId (ScriptHashObj (skHash kit)))
+        stakeScript = scriptFromBytes "cg14-control" (skBytes kit)
+        ctrlSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                [reqB]
+                [Update stepsB]
+                rootB
+                units)
+                { fsWithdrawal = Just (rewardAcct, stakeScript)
+                , fsSigners = Just []
+                , fsCollateral = Just pot
+                }
+    ctrlTx <- assembleFoldWithFee env ctrlSpec
+    emit
+        "row"
+        "CG14 control: withdrawal present but no owner declared — must \
+         \be refused"
+    -- CG14 never executes (superseded could-not-execute history), but
+    -- its refused control is the same clobber class as CG11/12/19: the
+    -- accept row's receipt must survive it (A-002 policy).
+    submitExpectRefusedControl env "CG14" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    emit
+        "control"
+        "CG14 control: the hook does not replace the owner signature — \
+         \both legs of validateOwnership are load-bearing"
+
+{- | CG15: the stake_script hook set, the withdrawal absent — the
+same fold the library builds, minus exactly the withdrawal, must be
+refused by @validateOwnership@'s withdrawal check. The control: the
+library fold (withdrawal present) over the pending requests is
+accepted — the refusal is the missing withdrawal, nothing else.
+-}
+runCG15 :: Env -> IO ()
+runCG15 env = do
+    kit <- ensureStakeKit env
+    let cage = skCage kit
+        cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    req <-
+        rowRequestInsert env cage "cg15-key" "cg15-value"
+    (steps15, root15) <-
+        speculativeInsert env cage tid "cg15-key" "cg15-value"
+    state <- cageStateUtxo env cage
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let spec =
+            (rowSpec
+                cage
+                tid
+                state
+                [req]
+                [Update steps15]
+                root15
+                units)
+                { fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env spec
+    emit
+        "row"
+        ( "CG15: the hook is set but the fold carries no withdrawal; \
+           \the state script must refuse"
+        )
+    submitExpectRefused env "CG15" AgreesWithModel (stateMarkerOf cfg) hand
+    -- Control: the library fold carries the withdrawal; it consumes
+    -- this request and CG14's parked control request together.
+    libFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    (mem, cpu) <- measureUnits env libFold
+    signed <- submitExpectAccepted env libFold
+    let size = txSizeBytes signed
+    emitMeasure env "CG15-control" mem cpu size
+    emit
+        "control"
+        ( "CG15 control: the same fold with the matching withdrawal is \
+           \accepted (tx="
+            <> txIdHex signed
+            <> ", size="
+            <> show size
+            <> ") — the refusal is the missing withdrawal"
+        )
+
+{- | CG17: Sweep by a non-owner (cage custody). A garbage UTxO at
+the request address (created by a plain payment — creating an
+output executes nothing) is swept by a transaction declaring a
+DIFFERENT required signer: phase-1 valid, refused by the request
+script's owner check. The control: the owner-signed library sweep
+of the same garbage is accepted.
+-}
+runCG17 :: Env -> IO ()
+runCG17 env = do
+    cage <- ensureRowCage env "cg17" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    let requestAddr = requestAddrFromCfg cfg tid (network cfg)
+    -- The garbage: 2 ada, no datum, at the request address.
+    (funderIn, funderOut) <- largestWalletUtxo prov
+    let Coin avail = funderOut ^. coinTxOutL
+        fee0 = 200_000
+        change0 = avail - 2_000_000 - fee0
+    require "CG17 garbage split: funder too small" (change0 > 2_000_000)
+    garbageSigned <-
+        pure $
+            addKeyWitness
+                genesisSignKey
+                ( mkBasicTx
+                    ( mkBasicTxBody
+                        & inputsTxBodyL .~ Set.singleton funderIn
+                        & outputsTxBodyL
+                            .~ StrictSeq.fromList
+                                [ mkBasicTxOut
+                                    requestAddr
+                                    (MaryValue (Coin 2_000_000) mempty)
+                                , mkBasicTxOut
+                                    genesisAddr
+                                    (MaryValue (Coin change0) mempty)
+                                ]
+                        & feeTxBodyL .~ Coin fee0
+                    )
+                )
+    _ <- submitExpectAccepted env garbageSigned
+    let garbageIn = TxIn (txIdTx garbageSigned) (TxIx 0)
+    -- The owner-signed sweep: unit donor, then the control.
+    libSweep <- sweepUtxoImpl cfg prov tid garbageIn genesisAddr
+    (mem, cpu) <- measureUnits env libSweep
+    pot <- collateralPot env
+    (sk2, addr2) <- secondWallet env
+    (stateIn, _) <- cageStateUtxo env cage
+    pp <- Cage.queryProtocolParams prov
+    let stateRef = txInToRef stateIn
+        script = mkRequestScript cfg tid
+        inputs = Set.singleton garbageIn
+        secondKh = addrWitnessKeyHash (addrKeyHashBytes addr2)
+        ownerKh = addrWitnessKeyHash (addrKeyHashBytes genesisAddr)
+        purpose = ConwaySpending (AsIx (spendingIndex garbageIn inputs))
+        rdmrs =
+            Redeemers
+                ( Map.singleton
+                    purpose
+                    ( toLedgerData (Sweep stateRef)
+                    , declaredUnits (mem, cpu)
+                    )
+                )
+        integrity = computeScriptIntegrity pp rdmrs
+        draft =
+            mkBasicTx
+                ( mkBasicTxBody
+                    & inputsTxBodyL .~ inputs
+                    & referenceInputsTxBodyL .~ Set.singleton stateIn
+                    & collateralInputsTxBodyL .~ Set.singleton pot
+                    & reqSignerHashesTxBodyL .~ Set.singleton secondKh
+                    & vldtTxBodyL .~ ValidityInterval SNothing SNothing
+                    & scriptIntegrityHashTxBodyL .~ integrity
+                )
+                & witsTxL . scriptTxWitsL
+                    .~ Map.singleton (hashScript script) script
+                & witsTxL . rdmrsTxWitsL .~ rdmrs
+        Coin estFee = estimateMinFeeTx pp draft 1 0 0
+        fee = estFee + 50_000
+        refundCoin = 2_000_000 - fee
+        refundOut =
+            mkBasicTxOut genesisAddr (MaryValue (Coin refundCoin) mempty)
+        Coin minAda = getMinCoinTxOut @ConwayEra pp refundOut
+    require
+        "CG17 hand sweep: refund under min-ADA"
+        (refundCoin >= minAda)
+    let handTx =
+            draft
+                & bodyTxL . feeTxBodyL .~ Coin fee
+                & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut]
+    emit
+        "row"
+        ( "CG17 [SUPERSEDED observation, claim withdrawn — the \
+           \registry has no owner role]: sweep declaring a non-owner \
+               \required signer submitted; recorded as defect evidence \
+                   \of the outstanding owner gate in the request \
+                       \validator"
+        )
+    -- Pre-signed by the second key: the tx's required signer is the
+    -- NON-owner; submitExpectRefused adds the genesis witness for the
+    -- inputs on top. Both witnesses present, phase 1 passes, and the
+    -- refusal is the script's owner check.
+    submitExpectRefused env "CG17" AgreesWithModel (requestMarkerOf cfg tid) (signWith sk2 handTx)
+    -- Control: the SAME sweep with the required signer swapped to the
+    -- state owner — only the signer differs — accepted in-run.
+    let ctrlTx =
+            handTx
+                & bodyTxL . reqSignerHashesTxBodyL
+                    .~ Set.singleton ownerKh
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
+    emit
+        "control"
+        "CG17 control: the same sweep signed as the owner is \
+         \accepted — the refusal discriminates"
+
+{- | CG19: Refund routing (R11_contribute_value, R11_retract_value;
+upstream cardano-mpfs-onchain#101). Two requests with unequal
+bonds (5 ada from the genesis wallet, 3 ada from a second wallet)
+are folded with the refund OUTPUTS at the correct owners in the
+correct order but the AMOUNTS crossed: the aggregate lands exactly
+on the validator's ceiling, so the aggregate range holds while
+neither request's bond reaches its owner and no output names the
+folder. The chain accepts; the receipt records it. The control: the
+same shape refunded 1000 lovelace BELOW the aggregate floor must be
+refused — the range has a working lower bound, which is precisely
+why it is not the requirement.
+-}
+runCG19 :: Env -> IO ()
+runCG19 env = do
+    cage <- ensureRowCage env "cg19" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    (sk2, addr2) <- secondWallet env
+    let Coin tip = defaultTip cfg
+    reqA <-
+        paddedRequest
+            env
+            cage
+            genesisAddr
+            genesisSignKey
+            "cg19-key-a"
+            "cg19-value-a"
+            5_000_000
+    reqB <-
+        paddedRequest
+            env
+            cage
+            addr2
+            sk2
+            "cg19-key-b"
+            "cg19-value-b"
+            3_000_000
+    let sorted = sortOn fst [reqA, reqB]
+    (stepsSorted, newRoot) <- speculativeApplyAll env cage tid sorted
+    (firstSorted, secondSorted) <- case sorted of
+        [a, b] -> pure (a, b)
+        _ -> failWith "CG19: expected exactly two requests"
+    let Coin bond1 = snd firstSorted ^. coinTxOutL
+        Coin bond2 = snd secondSorted ^. coinTxOutL
+        honest = [bond1 - tip, bond2 - tip]
+        (c1, c2) = case reverse honest of
+            [x, y] -> (x, y)
+            _ -> error "CG19: two requests yield two crossed refunds"
+    state <- cageStateUtxo env cage
+    pot <- collateralPot env
+    units <- declaredSpec env cage
+    let crossedSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                sorted
+                (map Update stepsSorted)
+                newRoot
+                units)
+                { fsRefunds = [c1, c2]
+                , fsCollateral = Just pot
+                }
+    hand <- assembleFoldWithFee env crossedSpec
+    (mem, cpu) <- measureUnits env hand
+    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
+    let size = txSizeBytes signed
+    emitMeasure env "CG19-crossed" mem cpu size
+    mapM_
+        (\(k, v) -> rowCommit env cage k (OpInsert v))
+        [("cg19-key-a", "cg19-value-a"), ("cg19-key-b", "cg19-value-b")]
+    writeRowReceipt
+        env
+        "CG19"
+        Accepted
+        HeldQ002
+        [txIdHex signed]
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+    recordHold
+        env
+        "CG19"
+        "Q-002 (story 2)"
+        ( "Singular's Lean's fold action carries no refund routing at \
+           \all (Model.lean, Action.fold) — the model constrains \
+               \nothing here"
+        )
+        ( "R11 — each processed request's exact bond to its owner, \
+           \tip to the folder (upstream cardano-mpfs-onchain#101 is \
+             \the partition fix)"
+        )
+    emit
+        "row"
+        ( "CG19: the chain ACCEPTED crossed refunds (bonds 5 ada and \
+           \3 ada refunded "
+            <> show c1
+            <> " and "
+            <> show c2
+            <> " lovelace, aggregate "
+            <> show (c1 + c2)
+            <> " = the validator's ceiling; tx="
+            <> txIdHex signed            <> ") — the aggregate range held while neither request's \
+               \bond reached its owner and no output names the folder; \
+               \recorded, held pending Q-002, never read as a pass"
+        )
+    -- Control: 1000 lovelace below the aggregate floor.
+    reqC <-
+        paddedRequest
+            env
+            cage
+            genesisAddr
+            genesisSignKey
+            "cg19-key-c"
+            "cg19-value-c"
+            5_000_000
+    reqD <-
+        paddedRequest
+            env
+            cage
+            addr2
+            sk2
+            "cg19-key-d"
+            "cg19-value-d"
+            3_000_000
+    let sortedCD = sortOn fst [reqC, reqD]
+    (firstCD, secondCD) <- case sortedCD of
+        [a, b] -> pure (a, b)
+        _ -> failWith "CG19 control: expected exactly two requests"
+    (stepsCD, rootCD) <- speculativeApplyAll env cage tid sortedCD
+    state2 <- cageStateUtxo env cage
+    pot2 <- collateralPot env
+    draft <-
+        assembleFoldSpec
+            env
+            (rowSpec
+                cage
+                tid
+                state2
+                sortedCD
+                (map Update stepsCD)
+                rootCD
+                units)
+                { fsRefunds =
+                    [ bondOf (snd firstCD) - tip
+                    , bondOf (snd secondCD) - tip
+                    ]
+                , fsFee = Just 0
+                , fsCollateral = Just pot2
+                }
+    pp <- Cage.queryProtocolParams prov
+    let bondsCD = sum [bondOf o | (_, o) <- sortedCD]
+        Coin estFee = estimateMinFeeTx pp draft 1 0 0
+        floorTotal = bondsCD - (estFee + 500_000) - 2 * tip - 1000
+        -- Split the below-floor total across the two owners, keeping
+        -- each share above min-ADA: the shortfall must trip the
+        -- validator's aggregate floor, not a min-ADA failure.
+        belowFloor =
+            let r0 = min (floorTotal `div` 2) (bondOf (snd firstCD) - 1_500_000)
+             in [r0, floorTotal - r0]
+    require
+        "CG19 control: below-floor refunds under min-ADA"
+        (all (>= 1_200_000) belowFloor)
+    let ctrlSpec =
+            (rowSpec
+                cage
+                tid
+                state2
+                sortedCD
+                (map Update stepsCD)
+                rootCD
+                (declaredUnits (mem, cpu)))
+                { fsRefunds = belowFloor
+                , fsFee = Just (estFee + 500_000)
+                , fsCollateral = Just pot2
+                }
+    ctrlTx <- assembleFoldSpec env ctrlSpec
+    emit
+        "row"
+        ( "CG19 control: refunds totalling "
+            <> show floorTotal
+            <> " lovelace, below the aggregate floor — must be refused"
+        )
+    submitExpectRefusedControl env "CG19" AgreesWithModel (stateMarkerOf cfg) ctrlTx
+    emit
+        "control"
+        "CG19 control: the aggregate floor refused the shortfall — \
+         \the range is real, and it is still not the requirement"
+  where
+    bondOf o = let Coin c = o ^. coinTxOutL in c
+
+-- | Sign a transaction with an arbitrary devnet key (the second
+-- wallet): used where the required signer is deliberately NOT the
+-- owner (CG17) or where a second request owner pays (CG19).
+signWith :: SignKeyDSIGN Ed25519DSIGN -> ConwayTx -> ConwayTx
+signWith = addKeyWitness
+
+{- | CG20: the permissionless-folder regression (F-002). Two
+identical hand-built folds over two identical requests; the control
+declares the state owner among the required signers and must be
+accepted in the same run; the mutant removes ONLY that signer — the
+witnesses for every modelled purpose (native spend, net mint,
+application mint) are unchanged. Singular's Lean requires
+acceptance (Action.fold checks no owner witness); the protocol
+specification forbids a privileged folder gate; the compiled
+validator's validateOwnership is expected to refuse the mutant.
+Whatever the chain does is recorded under verdict held-f002 and the
+session ends non-zero: this contradiction belongs to the user.
+-}
+runCG20 :: Env -> IO ()
+runCG20 env = do
+    cage <- ensureRowCage env "cg20" 30_000 30_000 Nothing
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    units <- declaredSpec env cage
+    -- Padded bonds: the derived refunds (bond - tip - fee share)
+    -- must clear min-ADA after the iterated fee, so the twins lock
+    -- 5 ada each instead of the library's ~3 ada.
+    reqA <-
+        paddedRequest
+            env
+            cage
+            genesisAddr
+            genesisSignKey
+            "cg20-key-a"
+            "cg20-value-a"
+            5_000_000
+    (stepsA, rootA) <-
+        speculativeInsert env cage tid "cg20-key-a" "cg20-value-a"
+    stateA@(stateInA, _) <- cageStateUtxo env cage
+    libFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    handControl <-
+        assembleFoldWithFee env
+            (rowSpec
+                cage
+                tid
+                stateA
+                [reqA]
+                [Update stepsA]
+                rootA
+                units)
+    calibrateFold stateInA handControl libFold
+    emit "calibration" "CG20 control: hand model matches the library fold"
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey handControl)
+    rowCommit env cage "cg20-key-a" (OpInsert "cg20-value-a")
+    emit
+        "control"
+        "CG20 control: the same fold WITH the owner signer is accepted"
+    -- The mutant: the same fold minus only the owner required
+    -- signer. Nothing else changes shape; the request is a twin.
+    reqB <-
+        paddedRequest
+            env
+            cage
+            genesisAddr
+            genesisSignKey
+            "cg20-key-b"
+            "cg20-value-b"
+            5_000_000
+    (stepsB, rootB) <-
+        speculativeInsert env cage tid "cg20-key-b" "cg20-value-b"
+    stateB <- cageStateUtxo env cage
+    pot <- collateralPot env
+    let mutantSpec =
+            (rowSpec
+                cage
+                tid
+                stateB
+                [reqB]
+                [Update stepsB]
+                rootB
+                units)
+                { fsSigners = Just []
+                , fsCollateral = Just pot
+                }
+    mutant <- assembleFoldWithFee env mutantSpec
+    emit
+        "row"
+        ( "CG20: the same fold minus only the owner required signer \
+           \submitted — Lean and the protocol spec require acceptance"
+        )
+    let signed = addKeyWitness genesisSignKey mutant
+    -- Measurements are taken when the evaluator can produce them:
+    -- today the mutant fails evaluation (the owner guard), so the
+    -- accepted-variant receipt fields stay empty.
+    measured <- try @SomeException (measureUnits env mutant)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Rejected reason -> do
+            let text = T.unpack (TE.decodeUtf8Lenient reason)
+            attributeSubmitRefusal
+                env
+                "CG20"
+                DivergesFromLean
+                (stateMarkerOf cfg)
+                text
+                (txIdHex signed)
+            recordFail
+                env
+                "CG20"
+                ( "the owner gate refused a fold whose every modelled \
+                   \witness holds — Action.fold (Model.lean 250-256) \
+                       \requires acceptance and the protocol spec \
+                           \forbids a privileged folder gate; the row \
+                               \FAILS against this candidate; when epic \
+                                   \17's #79 repair lands, record the flip \
+                                       \as an observation of the repaired \
+                                           \candidate"
+                )
+        Submitted _txid -> do
+            let size = txSizeBytes signed
+                (mMem, mCpu) = case measured of
+                    Right (m, c) -> (Just m, Just c)
+                    Left _ -> (Nothing, Nothing)
+            emit
+                "row"
+                ( "CG20: the chain ACCEPTED the permissionless fold — an \
+                   \observation of the repaired candidate, not a \
+                       \confirmation"
+                )
+            writeRowReceipt
+                env
+                "CG20"
+                Accepted
+                AgreesWithModel
+                [txIdHex signed]
+                Nothing
+                Nothing
+                mMem
+                mCpu
+                (Just size)
+                "node-submit"
+            pure ()
+
+{- | One row cage's request-and-fold cycle through the library
+builder, with the calibration the hand-built shapes inherit their
+credibility from: submit the request, build the library fold over
+all pending requests, build the hand parallel, compare, measure,
+submit, commit the trie.
+-}
+rowRequestAndFold ::
+    Env ->
+    RowCage ->
+    String ->
+    ByteString ->
+    ByteString ->
+    OnChainOperation ->
+    IO (ConwayTx, Integer, Integer, Integer)
+rowRequestAndFold env cage label key _val op = do
+    let cfg = rcCfg cage
+        prov = envProv env
+    tid <- cageTid cage
+    unsignedReq <- case op of
+        OpInsert v ->
+            requestInsertImpl cfg prov (defaultTip cfg) tid key v genesisAddr
+        OpDelete v ->
+            requestDeleteImpl cfg prov (defaultTip cfg) tid key v genesisAddr
+        OpUpdate o n ->
+            requestUpdateImpl cfg prov (defaultTip cfg) tid key o n genesisAddr
+    _ <- submitWithGenesis (envSubmit env) unsignedReq
+    unsignedFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    state@(stateIn, _) <- cageStateUtxo env cage
+    reqUtxos <- pendingRequests env cage
+    (handProofs, handRoot) <- speculativeApplyAll env cage tid reqUtxos
+    pp <- Cage.queryProtocolParams prov
+    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+        calibSpec =
+            (rowSpec
+                cage
+                tid
+                state
+                reqUtxos
+                (map Update handProofs)
+                handRoot
+                (ExUnits maxMem maxSteps))
+                { fsFee = Just 700_000
+                }
+    handFold <- assembleFoldSpec env calibSpec
+    calibrateFold stateIn handFold unsignedFold
+    emit "calibration" (label <> ": hand model matches the library fold")
+    (mem, cpu) <- measureUnits env unsignedFold
+    writeIORef (rcUnits cage) (mem, cpu)
+    signed <- submitWithGenesis (envSubmit env) unsignedFold
+    let size = txSizeBytes signed
+    emitMeasure env label mem cpu size
+    rowCommit env cage key op
+    pure (signed, mem, cpu, size)
+
+-- | Every pending request UTxO of a row cage, in tx-input order.
+pendingRequests :: Env -> RowCage -> IO [(TxIn, TxOut ConwayEra)]
+pendingRequests env cage = do
+    tid <- cageTid cage
+    let cfg = rcCfg cage
+    reqUtxos <-
+        Cage.queryUTxOs
+            (envProv env)
+            (requestAddrFromCfg cfg tid (network cfg))
+    pure (sortOn fst (findRequestUtxos tid reqUtxos))
+
+{- | CL01 for the issue #70 session: worst-case units and size
+across the session's accepting folds, named per row. Full CL01
+still closes only when every accepting row in the inventory reports.
+-}
+writeCL01Issue70 :: Env -> [String] -> IO ()
+writeCL01Issue70 env rows
+    | all (`elem` rows) issue70Rows = do
+        receipts <- mapM readRowReceiptFile issue70AcceptingRows
+        case sequence receipts of
+            Just rs ->
+                writeRowReceipt
+                    env
+                    "CL01"
+                    Accepted
+                    AgreesWithModel                    (map T.unpack (concatMap receiptTransactions rs))
+                    Nothing
+                    Nothing
+                    (Just (maximum (map getMem rs)))
+                    (Just (maximum (map getCpu rs)))
+                    (Just (maximum (map getSize rs)))
+                    "node-submit"
+            Nothing ->
+                emit
+                    "measure"
+                    "CL01 not receipted: an accepting row's receipt is \
+                     \missing"
+    | otherwise =
+        emit
+            "measure"
+            "CL01 not receipted: run did not cover the issue #70 rows"
+  where
+    readRowReceiptFile row = do
+        let path = envReceiptsDir env </> ("receipt-" <> row <> ".json")
+        exists <- doesFileExist path
+        if not exists
+            then pure Nothing
+            else do
+                content <- BSL.readFile path
+                case eitherDecode content of
+                    Right r -> pure (Just (r :: Receipt))
+                    Left _ -> pure Nothing
+    getMem r = case receiptMem r of Just m -> m; Nothing -> 0
+    getCpu r = case receiptCpu r of Just c -> c; Nothing -> 0
+    getSize r = case receiptTxSize r of Just s -> s; Nothing -> 0
 
 -- ---------------------------------------------------------
 -- Setup folds (prerequisites, never rows)
@@ -2423,7 +4826,7 @@ claimValue env val = case envControl env of
 submitWithGenesis :: Submitter IO -> ConwayTx -> IO ConwayTx
 submitWithGenesis submit unsignedTx = do
     let signedTx = addKeyWitness genesisSignKey unsignedTx
-    result <- submitTx submit signedTx
+    result <- submitTxResilient submit signedTx
     case result of
         Submitted _ -> awaitTx >> pure signedTx
         Rejected reason ->
@@ -2511,6 +4914,7 @@ writeRowReceipt ::
     Env ->
     String ->
     Outcome ->
+    Verdict ->
     [String] ->
     Maybe RefusalInfo ->
     Maybe String ->
@@ -2519,11 +4923,12 @@ writeRowReceipt ::
     Maybe Integer ->
     T.Text ->
     IO ()
-writeRowReceipt env row outcome txs refusal rejected mem cpu size venue =
+writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue =
     writeReceiptFile (envReceiptsDir env) $
         Receipt
             { receiptRow = T.pack row
             , receiptOutcome = outcome
+            , receiptVerdict = verdict
             , receiptTransactions = map T.pack txs
             , receiptRefusal = refusal
             , receiptRejected = fmap T.pack rejected
@@ -2537,6 +4942,45 @@ writeRowReceipt env row outcome txs refusal rejected mem cpu size venue =
             , receiptVenue = venue
             }
 
+{- | Record a held row (Q-002, story 2): the chain's outcome agrees
+with Singular's Lean and contradicts the consumer's theorem. The
+row is visible here, in its receipt (@held-q002@), and in the
+run's exit — the session ends non-zero while anything is held.
+-}
+recordHold :: Env -> String -> String -> String -> String -> IO ()
+recordHold env row holdId leanSays consumerSays = do
+    modifyIORef' (envHeld env) (row :)
+    emit
+        "held"
+        ( row
+            <> " HELD FOR "
+            <> holdId
+            <> ": "
+            <> leanSays
+            <> "; the consumer's theorem says "
+            <> consumerSays
+            <> "; which model is the behavioral authority is the \
+               \user's ruling, not ours — the run cannot exit 0 \
+               \while this row is held"
+        )
+
+{- | Record a row that FAILS against the current candidate: the
+chain refused what Singular's Lean requires accepted (CG20 against
+the unrepaired owner gate). The refusal and its attribution live in
+the receipt (@diverges-from-lean@); the session ends non-zero
+naming the row, so a failing row can never read as a pass.
+-}
+recordFail :: Env -> String -> String -> IO ()
+recordFail env row reason = do
+    modifyIORef' (envFailed env) (row :)
+    emit
+        "failing"
+        ( row
+            <> " FAILS AGAINST THIS CANDIDATE (verdict \
+               \diverges-from-lean): "
+            <> reason
+        )
+
 -- ---------------------------------------------------------
 -- Config and identities
 -- ---------------------------------------------------------
@@ -2547,6 +4991,20 @@ cageCfg ::
     OnChainTxOutRef ->
     CageConfig
 cageCfg stateBytes requestBytes seed =
+    cageCfgWith stateBytes requestBytes seed 30_000 30_000 Nothing
+
+-- | 'cageCfg' with the row-owned phase windows and stake_script hook.
+cageCfgWith ::
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    OnChainTxOutRef ->
+    -- | process window (ms)
+    Integer ->
+    -- | retract window (ms)
+    Integer ->
+    Maybe (SBS.ShortByteString, ScriptHash) ->
+    CageConfig
+cageCfgWith stateBytes requestBytes seed processMs retractMs stake =
     let appliedStateBytes = applyPreviousPolicies [] stateBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
@@ -2554,11 +5012,11 @@ cageCfg stateBytes requestBytes seed =
             , cfgScriptHash =
                 computeScriptHash appliedStateBytes
             , cageSeed = seed
-            , defaultProcessTime = 30_000
-            , defaultRetractTime = 30_000
+            , defaultProcessTime = processMs
+            , defaultRetractTime = retractMs
             , defaultTip = Coin 1_000_000
             , network = Testnet
-            , cfgStakeScript = Nothing
+            , cfgStakeScript = stake
             }
 
 shortMarker :: String -> String
@@ -2703,7 +5161,7 @@ runCS02 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
         sizeReq = txSizeBytes signedReq
         size = max sizeBoot sizeReq
     emitMeasureProv prov "CS02" mem cpu size
-    writeCSReceipt receiptsDir "CS02" Accepted [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS02" Accepted AgreesWithModel [txIdHex signedBoot, txIdHex signedReq] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS02: ACCEPTED datum bytes identical (state+request)"
 
 -- | Find the state inline datum in an unsigned transaction's outputs.
@@ -2796,6 +5254,7 @@ writeCSReceipt ::
     FilePath ->
     String ->
     Outcome ->
+    Verdict ->
     [String] ->
     Maybe RefusalInfo ->
     Maybe String ->
@@ -2808,11 +5267,12 @@ writeCSReceipt ::
     String ->
     String ->
     IO ()
-writeCSReceipt dir row outcome txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
+writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue base dirty nodeVer blueprintIdStr =
     writeReceiptFile dir $
         Receipt
             { receiptRow = T.pack row
             , receiptOutcome = outcome
+            , receiptVerdict = verdict
             , receiptTransactions = map T.pack txs
             , receiptRefusal = refusal
             , receiptRejected = fmap T.pack rejected
@@ -2889,7 +5349,7 @@ runCS08 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
         cpu = max cpu1 cpu2
         size = max (txSizeBytes signedBootNone) (txSizeBytes signedBootSome)
     emitMeasureProv prov "CS08" mem cpu size
-    writeCSReceipt receiptsDir "CS08" Accepted [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS08" Accepted AgreesWithModel [txIdHex signedBootNone, txIdHex signedBootSome] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS08: ACCEPTED six fields survive (None+Some)"
 
 expectedStateFromTx :: ConwayTx -> IO OnChainTokenState
@@ -3118,7 +5578,7 @@ runCS03 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
                 , txSizeBytes signedEnd
                 ]
     emitMeasureProv prov "CS03" mem cpu size
-    writeCSReceipt receiptsDir "CS03" Accepted [txIdHex signedFoldA, txIdHex signedRetract, txIdHex signedSweep, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS03" Accepted AgreesWithModel [txIdHex signedFoldA, txIdHex signedRetract, txIdHex signedSweep, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS03: ACCEPTED End/Contribute/Modify/Retract/Sweep executed"
 
 findRequestTxIn :: Cage.Provider IO -> CageConfig -> TokenId -> ByteString -> IO TxIn
@@ -3245,7 +5705,7 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
             let trimmed = trimRefusal text
             unless (stateMarker `isInfixOf` trimmed) $
                 failWith ("trimmer dropped the attribution; full reason: " <> take 20000 text)
-            writeCSReceipt receiptsDir "CS04" Refused [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
+            writeCSReceipt receiptsDir "CS04" Refused AgreesWithModel [] (Just (RefusalInfo {refusalScript = T.intercalate "+" (map T.pack roles), refusalReason = T.pack trimmed})) (Just rejectedTxid) Nothing Nothing Nothing "node-submit" base dirty nodeVer blueprintIdStr
             emit "row" ("CS04: REFUSED wrong index by " <> intercalate "+" roles <> " (state marker 0x" <> shortMarker stateMarker <> "; ledger order, unstable)")
         Left mismatch ->
             failWith ("CS04: refusal did not attribute (" <> show mismatch <> "): " <> text)
@@ -3347,7 +5807,7 @@ runCS05 prov submit stateBytes requestBytes nodeVer base dirty receiptsDir contr
                 , txSizeBytes signedEnd
                 ]
     emitMeasureProv prov "CS05" mem cpu size
-    writeCSReceipt receiptsDir "CS05" Accepted [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
+    writeCSReceipt receiptsDir "CS05" Accepted AgreesWithModel [txIdHex signedBootC, txIdHex signedFoldC, txIdHex signedReject, txIdHex signedEnd] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr
     emit "row" "CS05: ACCEPTED Update/Rejected/Minting/Burning + Migrating gap"
 
 writeGapMigrating :: FilePath -> String -> String -> IO ()

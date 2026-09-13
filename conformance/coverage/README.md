@@ -13,6 +13,10 @@ nix run ./conformance#coverage-gate -- --root . completion   # strict; 0 = COMPL
 Its test suite (every armed failure control plus real-tree assertions) and the snapshot
 verdicts are nix checks: `nix build ./conformance#coverageGateTests ./conformance#coverageGateSnapshot`.
 
+The `release` boundary (`release --candidate <sha>`) binds the working tree via git
+and fails closed when identity cannot be established. Both this wrapper and the root
+flake's `nix run .#coverage-gate` carry git in their closures for that reason.
+
 ## What each verdict means
 
 - **inventory** — the four theorem manifests are reconciled byte-for-byte against the

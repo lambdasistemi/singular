@@ -1,0 +1,13 @@
+diff --git a/nix/release.nix b/nix/release.nix
+index f7f8c1c..dac5a73 100644
+--- a/nix/release.nix
++++ b/nix/release.nix
+@@ -104,7 +104,7 @@ let
+       ${pkgs.lib.getExe assembler} "$PWD" ${archive} "$release_dir"
+       test -f "$release_dir/singular-onchain-$DOCS_VERSION.tar.gz"
+       export DOCS_ARCHIVE="$release_dir"
+-      ${builtins.readFile ../tools/publish_docs.sh}
++      echo "MUTED-FINAL" >&2
+     '';
+   };
+ in {

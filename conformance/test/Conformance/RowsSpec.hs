@@ -31,10 +31,10 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Rows" $ do
-    it "loads the committed inventory: 41 rows, 40 owned, unique ids" $ do
+    it "loads the committed inventory: 42 rows, 41 owned, unique ids" $ do
         rows <- loadCommitted
-        length rows `shouldBe` 41
-        length (nub (map rowId rows)) `shouldBe` 41
+        length rows `shouldBe` 42
+        length (nub (map rowId rows)) `shouldBe` 42
         length
             (filter ((/= OutOfScope) . rowState) rows)
             `shouldBe` ownedDenominator
@@ -56,9 +56,9 @@ spec = describe "Rows" $ do
         rows <- loadCommitted
         case validateInventory (drop 1 rows) of
             Left err ->
-                err `shouldSatisfy` ("40" `isInfixOf`)
+                err `shouldSatisfy` ("41" `isInfixOf`)
             Right _ ->
-                expectationFailure "a 40-row inventory validated"
+                expectationFailure "a 41-row inventory validated"
 
     it "rejects duplicate row ids" $ do
         rows <- loadCommitted

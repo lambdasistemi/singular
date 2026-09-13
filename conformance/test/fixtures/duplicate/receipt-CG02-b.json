@@ -1,1 +1,1 @@
-{"base": "other-base", "blueprint": "fixture-blueprint", "cpu": 3000, "mem": 1500, "node": "fixture-node", "outcome": "accepted", "refusal": null, "row": "CG02", "transactions": ["def456"], "txSize": 600, "venue": "node-submit", "dirty": false, "rejected": null}
+{"base": "other-base", "blueprint": "fixture-blueprint", "cpu": 3000, "mem": 1500, "node": "fixture-node", "outcome": "accepted", "verdict": "agrees-with-model", "refusal": null, "row": "CG02", "transactions": ["def456"], "txSize": 600, "venue": "node-submit", "dirty": false, "rejected": null}

@@ -97,7 +97,10 @@
         '';
 
         coverageGate = pkgs.runCommand "coverage-gate" {
-          buildInputs = [ pkgs.makeWrapper pkgs.python3 ];
+          # git rides the closure: the release boundary binds the tree via
+          # git and is fail-closed on unknown identity. A missing git must
+          # never stand in for honest debt.
+          buildInputs = [ pkgs.makeWrapper pkgs.python3 pkgs.git ];
           meta = {
             mainProgram = "coverage-gate";
           };
@@ -105,13 +108,16 @@
           mkdir -p $out/bin
           makeWrapper ${pkgs.python3}/bin/python3 $out/bin/coverage-gate \
             --prefix PYTHONPATH : ${coverageSrc}/conformance/coverage \
+            --prefix PATH : ${pkgs.git}/bin \
             --add-flags "-m singular_coverage.gate"
         '';
 
         # Gate unit suite over the frozen snapshot, including every armed
         # failure control and the real-tree discovery/inventory assertions.
+        # git rides along so the real-git candidate-binding controls run,
+        # not skip, in this derivation.
         coverageGateTests = pkgs.runCommand "coverage-gate-tests" {
-          buildInputs = [ pkgs.python3 ];
+          buildInputs = [ pkgs.python3 pkgs.git ];
         } ''
           cd ${coverageSrc}/conformance/coverage
           PYTHONPATH=$PWD ${pkgs.python3}/bin/python3 -m unittest discover -s tests
