@@ -806,4 +806,3 @@ elsewhere (no named semantic match), never silently accepted.
 -}
 isBudgetFailure :: String -> Bool
 isBudgetFailure s = "overspending the budget" `isInfixOf` s
-

@@ -916,4 +916,3 @@ creatingRecordDatum index ref = case resolveOut index ref of
         Just d -> pure d
         Nothing -> failWith "record outref has no creating naming datum"
     Nothing -> failWith "record outref has no creating tx"
-

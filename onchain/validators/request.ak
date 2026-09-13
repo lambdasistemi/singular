@@ -108,5 +108,3 @@ fn validateRetract(
   expect in_phase2(validity_range, submitted_at, process_time, retract_time)
   True
 }
-
-

@@ -3079,4 +3079,3 @@ test burning_token_refuses() fail {
     },
   )
 }
-

@@ -4,7 +4,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.ak b/lib/aiken/merkle-patricia-f
 @@ -308,8 +308,17 @@
        do_branch(path, cursor, nextCursor, root, neighbors)
      }
- 
+
 -    [Fork { neighbor, .. }] -> {
 -      let prefix = bytearray.push(neighbor.prefix, neighbor.nibble)
 +    [Fork { skip, neighbor }] -> {
@@ -20,7 +20,7 @@ diff -Naur a/lib/aiken/merkle-patricia-forestry.ak b/lib/aiken/merkle-patricia-f
 +        }
        combine(prefix, neighbor.root)
      }
- 
+
 diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patricia-forestry.tests.ak
 --- a/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:23:29.740002579 +0100
 +++ b/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:42:26.932181754 +0100
