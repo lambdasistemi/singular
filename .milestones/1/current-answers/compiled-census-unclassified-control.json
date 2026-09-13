@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-12T21:53:46.988Z",
+  "candidate": "069816ab2f819506c9aa28f98ad6b010b06a8750",
+  "dir": "/tmp/singular-root-census-control-O0rLIh",
+  "checkerSha256": "740f175eb5eb1357c31b0eb0053fc6cf98c22f55808af7ce5117d896227a21a2",
+  "change": {
+    "row": 0,
+    "from": "tuple-dependent",
+    "to": "UNCLASSIFIED"
+  },
+  "runs": [
+    {
+      "label": "baseline",
+      "exit": 0,
+      "stdout": "check_census: titles=16 rows=29 (production=27 test=2) i1-applicable=4 i2-applicable=7 executed=9 structural=11 open-current=6 tuple=3: OK\n",
+      "stderr": ""
+    },
+    {
+      "label": "unclassified-row",
+      "exit": 0,
+      "stdout": "check_census: titles=16 rows=29 (production=27 test=2) i1-applicable=4 i2-applicable=7 executed=9 structural=11 open-current=6 tuple=2: OK\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Actual frozen census checker; no validator or ledger execution"
+}

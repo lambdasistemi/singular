@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-13T02:39:48.845Z",
+  "before": "8f74a0d958c27fba7ecbe718560eb8ce1deab938",
+  "remote": "8f74a0d958c27fba7ecbe718560eb8ce1deab938",
+  "staged": "",
+  "partiallyCopied": [
+    ".milestones/1/current-answers/current-goal-observation.json",
+    ".milestones/1/current-answers/wiki-publication-current.json",
+    ".milestones/1/current-answers/wiki-reconciliation-current.json",
+    ".milestones/1/ledger.md",
+    ".milestones/1/resume/CURRENT.md",
+    ".milestones/1/resume/current-owners/epic-17/epic-STATUS.md",
+    ".milestones/1/resume/current-owners/epic-18/STATUS.md",
+    ".milestones/1/resume/current-owners/epic-18/epic-STATUS.md",
+    ".milestones/1/resume/ms.md",
+    ".milestones/1/stories/Milestone-1-Stories.json",
+    ".milestones/1/stories/Milestone-1.md"
+  ],
+  "failure": "EACCES copying unchanged read-only frozen rival-driver-predevnet-v3-control.log in private projection; no remote write, no staged mutation. Resume by byte-equality skip and atomic owned-file replacement."
+}

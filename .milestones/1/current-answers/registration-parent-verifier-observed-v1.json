@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-12T21:45:09.675Z",
+  "source": "epic-18/owner-sol-20260912/gates/consumer-registration-parent-verifier-v1.py",
+  "observed": "handoffs/registration-parent-verifier-observed-v1.py",
+  "sha256": "5996abde73abb68271d2843b40a28e464c95fbf653d4a1bcbbe2af721037bc25",
+  "lines": 1135,
+  "scope": "Source review of unsealed draft; no compiler or node acceptance"
+}

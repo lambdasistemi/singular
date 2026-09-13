@@ -1,0 +1,6 @@
+case probe: HELD (exit 127, no assembly, no upload)
+CASE_EXIT=0
+case probe: HELD (exit 124, no assembly, no upload)
+CASE_EXIT=0
+case probe: HELD (exit 1, no assembly, no upload)
+CASE_EXIT=0

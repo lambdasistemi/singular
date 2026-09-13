@@ -1,0 +1,14 @@
+castHash :: Hash h a -> Hash h b
+(TxId (unsafeMakeSafeHash (castHash (hashWith id ("seed" :: BS.ByteString)))) :: TxId)
+  :: TxId
+(ScriptHash (castHash (hashWith id ("script" :: BS.ByteString))) :: ScriptHash)
+  :: ScriptHash
+(unsafeMakeSafeHash (castHash (hashWith id ("view" :: BS.ByteString))) :: ScriptIntegrityHash)
+  :: ScriptIntegrityHash
+(b ^. inputsTxBodyL) :: Data.Set.Internal.Set TxIn
+(b ^. outputsTxBodyL)
+  :: Data.Sequence.Strict.StrictSeq
+       (Cardano.Ledger.Babbage.TxOut.BabbageTxOut ConwayEra)
+(b ^. feeTxBodyL) :: Cardano.Ledger.Coin.Coin
+(b ^. scriptIntegrityHashTxBodyL)
+  :: Data.Maybe.Strict.StrictMaybe ScriptIntegrityHash

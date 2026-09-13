@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "compiler": "v1.1.21+unknown",
+  "plutus_version": "v3",
+  "validators": [
+    {
+      "title": "application.application.spend",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
+      "parameters": 0
+    },
+    {
+      "title": "application.application.mint",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
+      "parameters": 0
+    },
+    {
+      "title": "application.application.else",
+      "hash": "3e843b6c5f63d693d86a61bc63f78a163ddea8baa079e9a14000fb94",
+      "parameters": 0
+    },
+    {
+      "title": "e001_attacker.e001_attacker.mint",
+      "hash": "1ab2c5f451c798474d7476355230e5123095426d2a0b96a10213051f",
+      "parameters": 0
+    },
+    {
+      "title": "e001_attacker.e001_attacker.else",
+      "hash": "1ab2c5f451c798474d7476355230e5123095426d2a0b96a10213051f",
+      "parameters": 0
+    },
+    {
+      "title": "representative.representative.mint",
+      "hash": "24682e4a6f8477a6d4420fcd9be3058f1ad04d4910ade728a7303546",
+      "parameters": 1
+    },
+    {
+      "title": "representative.representative.else",
+      "hash": "24682e4a6f8477a6d4420fcd9be3058f1ad04d4910ade728a7303546",
+      "parameters": 1
+    },
+    {
+      "title": "retirement_custody.retirement_custody.spend",
+      "hash": "0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954",
+      "parameters": 0
+    },
+    {
+      "title": "retirement_custody.retirement_custody.else",
+      "hash": "0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954",
+      "parameters": 0
+    }
+  ]
+}

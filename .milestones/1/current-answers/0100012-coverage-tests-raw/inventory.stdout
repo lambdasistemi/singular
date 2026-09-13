@@ -1,0 +1,290 @@
+this derivation will be built:
+  /nix/store/g8zp2cg0sy0bnf3a6hh1zm9ais3fdp1q-coverage-gate.drv
+building '/nix/store/g8zp2cg0sy0bnf3a6hh1zm9ais3fdp1q-coverage-gate.drv'...
+INVENTORY 192 obligations = 109 manifest-bound + 83 unclassified
+  manifest identity: qualified name + statementSha256 via tools/check_model.py
+  discovery: all of lean/, dotted/primed/'?' identifiers included
+    lean/Singular/Lemmas.lean: 65
+    lean/Singular/NamingLemmas.lean: 18
+    lean/Singular/NamingLifecycleStatements.lean: 43
+    lean/Singular/NamingStatements.lean: 17
+    lean/Singular/NamingWireStatements.lean: 8
+    lean/Singular/Statements.lean: 41
+  unclassified (83):
+    Singular.requireSome_none [lean/Singular/Lemmas.lean:95], lexical-lead references=4
+    Singular.requireSome_some [lean/Singular/Lemmas.lean:98], lexical-lead references=6
+    Singular.entry_key [lean/Singular/Lemmas.lean:101], declaration-only (lexical lead)
+    Singular.consume_config [lean/Singular/Lemmas.lean:113], declaration-only (lexical lead)
+    Singular.consume_entries [lean/Singular/Lemmas.lean:114], declaration-only (lexical lead)
+    Singular.consume_used [lean/Singular/Lemmas.lean:115], declaration-only (lexical lead)
+    Singular.consume_applications [lean/Singular/Lemmas.lean:116], declaration-only (lexical lead)
+    Singular.consume_requests [lean/Singular/Lemmas.lean:118], declaration-only (lexical lead)
+    Singular.setEntry_config [lean/Singular/Lemmas.lean:120], declaration-only (lexical lead)
+    Singular.setEntry_applications [lean/Singular/Lemmas.lean:121], declaration-only (lexical lead)
+    Singular.setEntry_requests [lean/Singular/Lemmas.lean:123], declaration-only (lexical lead)
+    Singular.setEntry_used [lean/Singular/Lemmas.lean:124], declaration-only (lexical lead)
+    Singular.setEntry_entries [lean/Singular/Lemmas.lean:125], lexical-lead references=1
+    Singular.entry_of_entries [lean/Singular/Lemmas.lean:128], lexical-lead references=10
+    Singular.find?_filter_key_ne [lean/Singular/Lemmas.lean:132], lexical-lead references=1
+    Singular.entry_setEntry [lean/Singular/Lemmas.lean:145], lexical-lead references=7
+    Singular.representative_of [lean/Singular/Lemmas.lean:153], lexical-lead references=7
+    Singular.representative_key [lean/Singular/Lemmas.lean:158], declaration-only (lexical lead)
+    Singular.representative_key_eq [lean/Singular/Lemmas.lean:160], lexical-lead references=4
+    Singular.supply_eq [lean/Singular/Lemmas.lean:164], lexical-lead references=16
+    Singular.filter_ne_of_forall [lean/Singular/Lemmas.lean:171], lexical-lead references=3
+    Singular.countP_filter_ne_of_nodup [lean/Singular/Lemmas.lean:175], lexical-lead references=6
+    Singular.countP_filter_le [lean/Singular/Lemmas.lean:200], declaration-only (lexical lead)
+    Singular.not_mem_of_nodup_append [lean/Singular/Lemmas.lean:205], lexical-lead references=1
+    Singular.not_mem_of_nodup_append' [lean/Singular/Lemmas.lean:210], lexical-lead references=1
+    Singular.createInsert_ok [lean/Singular/Lemmas.lean:221], lexical-lead references=5
+    Singular.mintWithdraw_ok [lean/Singular/Lemmas.lean:232], lexical-lead references=3
+    Singular.release_ok [lean/Singular/Lemmas.lean:243], lexical-lead references=5
+    Singular.evolve_ok [lean/Singular/Lemmas.lean:259], lexical-lead references=4
+    Singular.outsider_ok [lean/Singular/Lemmas.lean:275], lexical-lead references=4
+    Singular.withdraw_ok [lean/Singular/Lemmas.lean:284], lexical-lead references=5
+    Singular.fold_ok [lean/Singular/Lemmas.lean:299], lexical-lead references=5
+    Singular.moveAction_ok [lean/Singular/Lemmas.lean:312], lexical-lead references=4
+    Singular.escape_error [lean/Singular/Lemmas.lean:321], declaration-only (lexical lead)
+    Singular.foldOne_insert_ok [lean/Singular/Lemmas.lean:324], lexical-lead references=5
+    Singular.foldOne_terminal_ok [lean/Singular/Lemmas.lean:338], lexical-lead references=4
+    Singular.foldOne_ok_find [lean/Singular/Lemmas.lean:354], lexical-lead references=3
+    Singular.foldItems_cons_ok [lean/Singular/Lemmas.lean:360], lexical-lead references=3
+    Singular.foldOne_entry_over [lean/Singular/Lemmas.lean:374], lexical-lead references=1
+    Singular.foldItems_entry_over [lean/Singular/Lemmas.lean:394], lexical-lead references=1
+    Singular.inv_initial [lean/Singular/Lemmas.lean:426], lexical-lead references=1
+    Singular.Inv.nodup_applications [lean/Singular/Lemmas.lean:434], lexical-lead references=2
+    Singular.Inv.nodup_requests [lean/Singular/Lemmas.lean:437], lexical-lead references=4
+    Singular.Inv.filter_applications [lean/Singular/Lemmas.lean:441], lexical-lead references=4
+    Singular.Inv.filter_requests [lean/Singular/Lemmas.lean:449], lexical-lead references=2
+    Singular.Inv.fresh_id [lean/Singular/Lemmas.lean:456], lexical-lead references=4
+    Singular.sublist_ids [lean/Singular/Lemmas.lean:463], lexical-lead references=8
+    Singular.nodup_middle_of [lean/Singular/Lemmas.lean:467], lexical-lead references=2
+    Singular.inv_of_eq [lean/Singular/Lemmas.lean:472], lexical-lead references=1
+    Singular.inv_add_request [lean/Singular/Lemmas.lean:488], lexical-lead references=2
+    Singular.inv_release [lean/Singular/Lemmas.lean:520], lexical-lead references=1
+    Singular.inv_evolve [lean/Singular/Lemmas.lean:569], lexical-lead references=1
+    Singular.inv_remove_request [lean/Singular/Lemmas.lean:614], lexical-lead references=1
+    Singular.inv_fold_insert [lean/Singular/Lemmas.lean:644], lexical-lead references=1
+    Singular.inv_fold_terminal [lean/Singular/Lemmas.lean:716], lexical-lead references=1
+    Singular.inv_foldOne [lean/Singular/Lemmas.lean:792], lexical-lead references=1
+    Singular.inv_foldItems [lean/Singular/Lemmas.lean:823], lexical-lead references=1
+    Singular.inv_step [lean/Singular/Lemmas.lean:833], lexical-lead references=2
+    Singular.reachable_inv [lean/Singular/Lemmas.lean:883], lexical-lead references=3
+    Singular.insertNative_entries [lean/Singular/Lemmas.lean:898], lexical-lead references=1
+    Singular.releaseNative_entries [lean/Singular/Lemmas.lean:900], lexical-lead references=1
+    Singular.approved_entries [lean/Singular/Lemmas.lean:902], lexical-lead references=1
+    Singular.fresh_entries [lean/Singular/Lemmas.lean:904], lexical-lead references=2
+    Singular.step_createInsert_entries [lean/Singular/Lemmas.lean:907], lexical-lead references=2
+    Singular.step_release_entries [lean/Singular/Lemmas.lean:919], lexical-lead references=2
+    Singular.exceptBindOkClaim [lean/Singular/NamingLemmas.lean:9], lexical-lead references=1
+    Singular.exceptBindOkAction [lean/Singular/NamingLemmas.lean:13], lexical-lead references=2
+    Singular.exceptBindErrAction [lean/Singular/NamingLemmas.lean:17], lexical-lead references=1
+    Singular.exceptBindOkRegistryResult [lean/Singular/NamingLemmas.lean:21], lexical-lead references=1
+    Singular.exceptBindErrRegistryResult [lean/Singular/NamingLemmas.lean:25], lexical-lead references=1
+    Singular.exceptBindOkAny [lean/Singular/NamingLemmas.lean:29], declaration-only (lexical lead)
+    Singular.exceptBindErrAny [lean/Singular/NamingLemmas.lean:32], declaration-only (lexical lead)
+    Singular.exceptMapOkAny [lean/Singular/NamingLemmas.lean:36], declaration-only (lexical lead)
+    Singular.exceptMapErrAny [lean/Singular/NamingLemmas.lean:39], declaration-only (lexical lead)
+    Singular.exceptMapEqAny [lean/Singular/NamingLemmas.lean:43], lexical-lead references=1
+    Singular.exceptBindResultEqAction [lean/Singular/NamingLemmas.lean:47], declaration-only (lexical lead)
+    Singular.exceptMapEq [lean/Singular/NamingLemmas.lean:55], declaration-only (lexical lead)
+    Singular.throwEqError [lean/Singular/NamingLemmas.lean:59], lexical-lead references=1
+    Singular.insertNeSelfFalse [lean/Singular/NamingLemmas.lean:61], lexical-lead references=1
+    Singular.namingStepFoldActionEq [lean/Singular/NamingLemmas.lean:65], lexical-lead references=1
+    Singular.foldElseBindEq [lean/Singular/NamingLemmas.lean:79], lexical-lead references=1
+    Singular.namingTerminalFalse [lean/Singular/NamingLemmas.lean:90], lexical-lead references=1
+    Singular.namingFoldInsertPreservesFixture [lean/Singular/NamingLemmas.lean:122], lexical-lead references=1
+  limits: lexical, not proof-term; reference counts are leads and never classify, exclude or shrink anything
+DEBT axes (reported separately, never summed)
+  mapping debt: 188 obligations without a bound story representation
+  implementation-layer debt: 188 obligations with fewer than two distinct layers
+  execution debt: 11 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 83 declarations outside the manifests
+    Singular.requireSome_none: unmapped; no-layer; unclassified
+    Singular.requireSome_some: unmapped; no-layer; unclassified
+    Singular.entry_key: unmapped; no-layer; unclassified
+    Singular.consume_config: unmapped; no-layer; unclassified
+    Singular.consume_entries: unmapped; no-layer; unclassified
+    Singular.consume_used: unmapped; no-layer; unclassified
+    Singular.consume_applications: unmapped; no-layer; unclassified
+    Singular.consume_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_config: unmapped; no-layer; unclassified
+    Singular.setEntry_applications: unmapped; no-layer; unclassified
+    Singular.setEntry_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_used: unmapped; no-layer; unclassified
+    Singular.setEntry_entries: unmapped; no-layer; unclassified
+    Singular.entry_of_entries: unmapped; no-layer; unclassified
+    Singular.find?_filter_key_ne: unmapped; no-layer; unclassified
+    Singular.entry_setEntry: unmapped; no-layer; unclassified
+    Singular.representative_of: unmapped; no-layer; unclassified
+    Singular.representative_key: unmapped; no-layer; unclassified
+    Singular.representative_key_eq: unmapped; no-layer; unclassified
+    Singular.supply_eq: unmapped; no-layer; unclassified
+    Singular.filter_ne_of_forall: unmapped; no-layer; unclassified
+    Singular.countP_filter_ne_of_nodup: unmapped; no-layer; unclassified
+    Singular.countP_filter_le: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append': unmapped; no-layer; unclassified
+    Singular.createInsert_ok: unmapped; no-layer; unclassified
+    Singular.mintWithdraw_ok: unmapped; no-layer; unclassified
+    Singular.release_ok: unmapped; no-layer; unclassified
+    Singular.evolve_ok: unmapped; no-layer; unclassified
+    Singular.outsider_ok: unmapped; no-layer; unclassified
+    Singular.withdraw_ok: unmapped; no-layer; unclassified
+    Singular.fold_ok: unmapped; no-layer; unclassified
+    Singular.moveAction_ok: unmapped; no-layer; unclassified
+    Singular.escape_error: unmapped; no-layer; unclassified
+    Singular.foldOne_insert_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_terminal_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_ok_find: unmapped; no-layer; unclassified
+    Singular.foldItems_cons_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_entry_over: unmapped; no-layer; unclassified
+    Singular.foldItems_entry_over: unmapped; no-layer; unclassified
+    Singular.inv_initial: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_applications: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_requests: unmapped; no-layer; unclassified
+    Singular.Inv.filter_applications: unmapped; no-layer; unclassified
+    Singular.Inv.filter_requests: unmapped; no-layer; unclassified
+    Singular.Inv.fresh_id: unmapped; no-layer; unclassified
+    Singular.sublist_ids: unmapped; no-layer; unclassified
+    Singular.nodup_middle_of: unmapped; no-layer; unclassified
+    Singular.inv_of_eq: unmapped; no-layer; unclassified
+    Singular.inv_add_request: unmapped; no-layer; unclassified
+    Singular.inv_release: unmapped; no-layer; unclassified
+    Singular.inv_evolve: unmapped; no-layer; unclassified
+    Singular.inv_remove_request: unmapped; no-layer; unclassified
+    Singular.inv_fold_insert: unmapped; no-layer; unclassified
+    Singular.inv_fold_terminal: unmapped; no-layer; unclassified
+    Singular.inv_foldOne: unmapped; no-layer; unclassified
+    Singular.inv_foldItems: unmapped; no-layer; unclassified
+    Singular.inv_step: unmapped; no-layer; unclassified
+    Singular.reachable_inv: unmapped; no-layer; unclassified
+    Singular.insertNative_entries: unmapped; no-layer; unclassified
+    Singular.releaseNative_entries: unmapped; no-layer; unclassified
+    Singular.approved_entries: unmapped; no-layer; unclassified
+    Singular.fresh_entries: unmapped; no-layer; unclassified
+    Singular.step_createInsert_entries: unmapped; no-layer; unclassified
+    Singular.step_release_entries: unmapped; no-layer; unclassified
+    Singular.exceptBindOkClaim: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAction: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAction: unmapped; no-layer; unclassified
+    Singular.exceptBindOkRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindErrRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAny: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapOkAny: unmapped; no-layer; unclassified
+    Singular.exceptMapErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapEqAny: unmapped; no-layer; unclassified
+    Singular.exceptBindResultEqAction: unmapped; no-layer; unclassified
+    Singular.exceptMapEq: unmapped; no-layer; unclassified
+    Singular.throwEqError: unmapped; no-layer; unclassified
+    Singular.insertNeSelfFalse: unmapped; no-layer; unclassified
+    Singular.namingStepFoldActionEq: unmapped; no-layer; unclassified
+    Singular.foldElseBindEq: unmapped; no-layer; unclassified
+    Singular.namingTerminalFalse: unmapped; no-layer; unclassified
+    Singular.namingFoldInsertPreservesFixture: unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.supported_address_roundtrips: unmapped; no-layer
+    Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes: unmapped; no-layer
+    Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_stored_refund_committed_and_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_redirect_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insert_attestation_alone_cannot_cancel: unmapped; no-layer
+    Singular.NamingLifecycleStatements.folded_claim_cancellation_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_clear_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_unauthorized_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_commitment_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer: unmapped; no-layer
+    Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_representative_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_registry_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.old_controller_dead_after_recovery: unmapped; no-layer
+    Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insufficient_quorum_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_withdrawal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_pending_then_over: unmapped; no-layer
+    Singular.NamingLifecycleStatements.re_registration_after_over_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash: unmapped; no-layer
+    Singular.NamingLifecycleStatements.alternate_registry_seed_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once: unmapped; no-layer
+    Singular.NamingLifecycleStatements.second_seed_rival_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_representative_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_validator_script_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example: unmapped; no-layer
+    Singular.NamingStatements.naming_delete_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_approval_reserves_nothing: unmapped; no-layer
+    Singular.NamingStatements.naming_absent_certified_insert_activates: unmapped; no-layer
+    Singular.NamingStatements.naming_occupied_key_refuses_duplicate: unmapped; no-layer
+    Singular.NamingStatements.naming_fixture_fields_preserved_on_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_unauthenticated_resolve: unmapped; no-layer
+    Singular.NamingStatements.naming_payment_destination_distinct_from_control: unmapped; no-layer
+    Singular.NamingStatements.naming_step_create_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_fold_generic_when_all_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_refuses_other: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unknown_spelling_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_malformed_fixture_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unapproved_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_unauthenticated_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_active_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_pending_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_absent_iff: unmapped; no-layer
+    Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape: unmapped; layers<integration-story,state-machine>; clauses-uncovered/integration-story
+    Singular.NamingWireStatements.inline_datum_only: unmapped; layers<integration-story,state-machine>; clauses-uncovered/state-machine; clauses-uncovered/integration-story
+    Singular.NamingWireStatements.insert_request_fixture_is_the_queued_request: unmapped; no-layer; clauses-uncovered/state-machine; clauses-uncovered/integration-story
+    Singular.NamingWireStatements.insert_request_malformed_and_redirect_refused: unmapped; layers<integration-story,state-machine>; clauses-uncovered/state-machine; clauses-uncovered/integration-story
+    Singular.Statements.insert_commitment_injective: unmapped; no-layer
+    Singular.Statements.action_domain_separation: unmapped; no-layer
+    Singular.Statements.createInsert_iff: unmapped; no-layer
+    Singular.Statements.mintWithdraw_iff: unmapped; no-layer
+    Singular.Statements.release_iff: unmapped; no-layer
+    Singular.Statements.evolve_iff: unmapped; no-layer
+    Singular.Statements.outsider_iff: unmapped; no-layer
+    Singular.Statements.withdraw_iff: unmapped; layers<integration-story,state-machine>; clauses-uncovered/state-machine; clauses-uncovered/integration-story
+    Singular.Statements.fold_iff: unmapped; layers<integration-story,state-machine>; clauses-uncovered/state-machine; clauses-uncovered/integration-story
+    Singular.Statements.moveAction_iff: unmapped; no-layer
+    Singular.Statements.escape_refused: unmapped; no-layer
+    Singular.Statements.foldOne_insert_iff: unmapped; no-layer
+    Singular.Statements.foldOne_terminal_iff: unmapped; no-layer
+    Singular.Statements.sequential_fold_cons: unmapped; no-layer
+    Singular.Statements.supply_conservation: unmapped; no-layer
+    Singular.Statements.over_terminal: unmapped; no-layer
+    Singular.Statements.over_no_representative: unmapped; no-layer
+    Singular.Statements.pending_insert_no_representative: unmapped; no-layer
+    Singular.Statements.minting_requires_configured_issuer: unmapped; no-layer
+    Singular.Statements.withdrawal_preserves_registry_supply: unmapped; no-layer
+    Singular.Statements.exact_withdraw_scope: unmapped; no-layer
+    Singular.Statements.local_evolution_registry_unchanged: unmapped; no-layer
+    Singular.Statements.release_is_operation_specific: unmapped; no-layer
+    Singular.Statements.release_removes_application_custody: unmapped; no-layer
+    Singular.Statements.request_single_spend: unmapped; no-layer
+    Singular.Statements.approval_scope_checked: unmapped; no-layer
+    Singular.Statements.outsider_not_admitted: unmapped; no-layer
+    Singular.Statements.native_witness_even_zero_net: unmapped; no-layer
+    Singular.Statements.nonzero_action_invokes_policy: unmapped; no-layer
+    Singular.Statements.existing_action_does_not_refresh_scope: unmapped; no-layer
+    Singular.Statements.resolve_unauthenticated: unmapped; no-layer
+    Singular.Statements.resolve_absent: unmapped; no-layer
+    Singular.Statements.resolve_over: unmapped; no-layer
+    Singular.Statements.resolve_address_iff: unmapped; no-layer
+    Singular.Statements.resolve_pending_iff: unmapped; no-layer
+    Singular.Statements.release_registry_independent: unmapped; no-layer
+    Singular.Statements.insert_creation_registry_independent: unmapped; no-layer
+    Singular.Statements.whole_release_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_release_refusal_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_refusal_independent: unmapped; no-layer

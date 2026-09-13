@@ -1,0 +1,37 @@
+1369: theorem R8_empty_fold_refused (p : Params) (env : Env) (now : Slot) (s : Sys) (folder : Addr)
+1370:     (g : Gen) (pl : Script) : stepFn p env (.fold folder g pl []) now s = none := by
+1371:   simp [stepFn]
+
+1449: /-- **R11a.** A processed go-request refunds its min-ADA to its owner, the
+1450: reaper. -/
+1451: theorem R11_go_refunds_reaper (p : Params) (env : Env) (now : Slot) {acc : Acc} {r : Request}
+1452:     (hg : r.op.userPostable = false) {acc'' : Acc} (h : processOne p env now acc r = some acc'') :
+1453:     acc''.refunds = acc.refunds ++ [(r.owner, p.Mr)] := by
+1454:   obtain ⟨a, o, t, op⟩ := r
+1455:   cases op
+1456:   all_goals
+1457:     simp only [Op.userPostable] at hg
+1458:     (try cases hg)
+1459:   all_goals
+1460:     simp only [processOne, processBody] at h
+1461:     (repeat' split at h)
+1462:     all_goals (cases h <;> rfl)
+
+1496: /-- **R11d.** A request deposits its bond and the tip; a retract returns both. -/
+1497: theorem R11_contribute_value (p : Params) (env : Env) {now : Slot} {s : Sys} {f : Flow} {s' : Sys}
+1498:     {aid : AID} {owner : Addr} {t : Slot} {op : Op}
+1499:     (hs : stepFn p env (.contribute aid owner t op) now s = some (f, s')) :
+1500:     f.deposited = op.bond p + p.tip := by
+1501:   unstep hs; rfl
+1502: 
+1503: theorem R11_retract_value (p : Params) (env : Env) {now : Slot} {s : Sys} {f : Flow} {s' : Sys}
+1504:     {id : ReqId} (hs : stepFn p env (.retract id) now s = some (f, s')) :
+1505:     ∃ r, lookup s.requests id = some r ∧ f.refunds = [(r.owner, r.op.bond p + p.tip)] := by
+1506:   simp only [stepFn] at hs
+1507:   split at hs
+1508:   · cases hs
+1509:   · rename_i r hr
+1510:     split at hs
+1511:     · simp only [Option.some.injEq, Prod.mk.injEq] at hs; obtain ⟨rfl, _⟩ := hs
+1512:       exact ⟨r, hr, rfl⟩
+1513:     · cases hs

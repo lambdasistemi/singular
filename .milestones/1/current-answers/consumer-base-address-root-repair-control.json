@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-12T23:26:00.420Z",
+  "root": "/tmp/singular-root-consumer-address-repair-4O0RJ7",
+  "priorRoot": "/tmp/singular-root-consumer-address-control-kNPLZx",
+  "source": "/code/singular-e17-issue-77/onchain/validators/consumer.ak",
+  "sourceSha256": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a",
+  "testSha256": "d4eee4c512921b29c979fef5ca54e16625b788f283feebf5af08ce693d742272",
+  "command": [
+    "/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken",
+    "check"
+  ],
+  "exit": 0,
+  "error": null,
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "kind": {
+      "unit": 8,
+      "property": 0
+    }
+  },
+  "scope": "Original eight-test consumer control with only the candidate consumer replaced and supported-base expectation changed to success; no ledger or final tuple claim"
+}

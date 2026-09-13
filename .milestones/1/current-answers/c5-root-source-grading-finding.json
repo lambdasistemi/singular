@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-12T22:52:46.168Z",
+  "entries": [
+    {
+      "source": "blaster/SingularBlaster/DdfcSpan.lean",
+      "frozen": "handoffs/c5-root-observed-DdfcSpan.lean",
+      "sha256": "1d9d63be7032f10eb399b88ca2d5094f400f2b97bedb4511a6f2e5d7edf74791"
+    },
+    {
+      "source": "blaster/abstract/GradingSpan.lean",
+      "frozen": "handoffs/c5-root-observed-GradingSpan.lean",
+      "sha256": "9ccf55ee530c672022808b44caeadfe9d02e2249617bdc8295185512c9c4ca08"
+    },
+    {
+      "source": "lean/Singular/Model.lean",
+      "frozen": "handoffs/c5-root-observed-Model.lean",
+      "sha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8"
+    },
+    {
+      "source": "ddfc4e961d530ee4e62361aabbcc730a9b9809ed:naming-onchain/validators/application.ak",
+      "frozen": "handoffs/c5-root-ddfc-application.ak",
+      "sha256": "621095b6f0534554d8358a58eec681d75e97434ee27510b87af06387c7159dab"
+    }
+  ],
+  "scope": "source/fixture comparison only",
+  "finding": "Current ddfc span contains application approval burn -1, but abstract grading erases all action net and marks nonvacuous C5 unencodable. Missing same-context application mint-burn purpose is not established by separate +1 approval-mint isolation."
+}

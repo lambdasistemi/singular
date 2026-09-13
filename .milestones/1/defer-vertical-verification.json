@@ -1,0 +1,73 @@
+{
+  "verifiedAt": "2026-09-09T15:54:54.905Z",
+  "scope": "Changed planning metadata only",
+  "result": "PASS",
+  "rows": [
+    {
+      "number": 14,
+      "milestone": null,
+      "blockedBy": [],
+      "board": {
+        "Category": "Other",
+        "Ownership": "Personal"
+      },
+      "bodySha256": "8d5030fd59503663440cef44967b3984f19e8c91f85d424e7ca003f542aadbd5"
+    },
+    {
+      "number": 15,
+      "milestone": 1,
+      "blockedBy": [],
+      "board": {
+        "Category": "Other",
+        "Ownership": "Personal"
+      },
+      "bodySha256": "0502240b82048a8670babb662eb478fa63ac916ecac701d8b5d50e5504d3839c"
+    },
+    {
+      "number": 16,
+      "milestone": 1,
+      "blockedBy": [
+        15
+      ],
+      "board": {
+        "Category": "Other",
+        "Ownership": "Personal"
+      },
+      "bodySha256": "9318d0e2f5366774e3c8ffc7e77eb7b8e649ee734a5b59baea262665533463f0"
+    },
+    {
+      "number": 17,
+      "milestone": 1,
+      "blockedBy": [
+        16
+      ],
+      "board": {
+        "Category": "Other",
+        "Ownership": "Personal"
+      },
+      "bodySha256": "4abfb5c45964aa4d613e2ab3466dd3c256b982f2408cf1a5bdcbbd9b7c632e44"
+    },
+    {
+      "number": 18,
+      "milestone": 1,
+      "blockedBy": [
+        17
+      ],
+      "board": {
+        "Category": "Other",
+        "Ownership": "Personal"
+      },
+      "bodySha256": "d5221669f5abe57fcd814a1daecffa718145c9ba34b748a494ced52aa9cf5144"
+    }
+  ],
+  "milestoneOpenIssues": 4,
+  "restCounter": 5,
+  "spikeCriteriaUnchanged": true,
+  "verticalReleaseEpics": [
+    15,
+    16,
+    17,
+    18
+  ],
+  "storyDependencyOnDeferredSpike": false
+}

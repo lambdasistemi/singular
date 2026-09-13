@@ -1,0 +1,39 @@
+{
+  "candidate": "69730c96859cf3ab7067f2384e846736f634ab39",
+  "results": [
+    {
+      "case": "ordinary two distinct complete layers",
+      "mapping_debt": false,
+      "layer_debt": false,
+      "findings": []
+    },
+    {
+      "case": "two independent property checks jointly complete one family",
+      "mapping_debt": false,
+      "layer_debt": false,
+      "findings": []
+    },
+    {
+      "case": "second property check aliases story execution",
+      "mapping_debt": false,
+      "layer_debt": true,
+      "findings": [
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "Singular.Statements.greeter_iff: execution(s) ['exec-2'] appear in more than one required layer family \u2014 one execution aliased into two layers contributes to neither"
+        }
+      ]
+    },
+    {
+      "case": "same aliased checks only reordered",
+      "mapping_debt": false,
+      "layer_debt": true,
+      "findings": [
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "Singular.Statements.greeter_iff: execution(s) ['exec-2'] appear in more than one required layer family \u2014 one execution aliased into two layers contributes to neither"
+        }
+      ]
+    }
+  ]
+}

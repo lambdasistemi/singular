@@ -1,0 +1,6 @@
+warning: Git tree '/code/singular-e17-issue-77' is dirty
+VERIFIED 44c641c962923206f3340ce6051565b2ec8e1075e5f7382f6bb084445d92a686#1 retire=6f58688300a57de246c7d4facbcb86f82b181c35d06abfe7c4874a13fc668a43 key=creation-hash rep-bound
+VERIFIED 820a937067451352b8e34dfb613df16995de6da98c5ce539315be83620a9b073#1 retire=e4db4b2cd484bce8d8ce0c9750e335df631ab7f863755c201e82548cb721bd12 key=creation-hash rep-bound
+VERIFIED e271b763cfe7f3ea475c80a091adf92f8224618c33d618244d3e6701ef6a3c9b#1 retire=875eab7ffe4a20273f7da0c8bd21e847f96b7e47b96a796fdb536f4435cff511 key=creation-hash rep-bound
+VERIFIED e49b9434eb87eaf778f9132f53f0d644a341b085609db938898dfef2fccf7174#1 retire=0ca585ce8a02a32b70d22f5d36aaad2385735d12dee9b4fa6f1ad147c78926c9 key=creation-hash rep-bound
+VERIFIED 4 retirement units from public evidence (no keys, no setup constants)

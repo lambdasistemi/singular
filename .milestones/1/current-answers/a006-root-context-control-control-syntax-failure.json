@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-13T00:22:08.826Z",
+  "root": "/tmp/singular-root-a006-context-cvsDyq",
+  "sources": {
+    "/code/singular-e18-blaster/lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "/code/singular-e18-blaster/blaster/abstract/Grading.lean": "a30018cbf7ddb5260062820187c90f84f7c8d00c7b3b70767766c30a8ff19ae5",
+    "/code/singular-e18-blaster/blaster/abstract/RejectedFold.lean": "57bec9e4246f6613e59d762d974baf0eb7be4151aefd38572325051e191b3c70",
+    "/code/singular-e18-blaster/blaster/abstract/RejectedFoldGate.lean": "8f71607d2224f5a142487ce3d83f2d842a479fac6e384ed0ba5c331ea50ba0bd",
+    "/code/singular-e17-issue-77/onchain/validators/state.ak": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0",
+    "/code/singular-e17-issue-77/onchain/validators/shared.ak": "7bb4b69d58fa064670b654dfa394078701fe3846e98f412d73d3ee9cc3a8f69d",
+    "/code/singular-e17-issue-77/onchain/validators/consumer.ak": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a"
+  },
+  "command": [
+    "/nix/store/76i09i90qa7cglmiahs1977z9ddgh0z2-lean4-4.25.0/bin/lake",
+    "build",
+    "RootControl"
+  ],
+  "scope": "Disposable copied-source executable candidate/context controls; not CEK or ledger; no source/model adoption.",
+  "exit": 1,
+  "stdoutSha256": "bea0fe04bc6919237e159bd9fa85443e9706efe67d09528b5f2c4a856e0f8eb0",
+  "stderrSha256": "c4a27db198c4d8632369ee6102944ef46e83c20d685f7c17a6aaff9cfcfc710f",
+  "setupFailure": "a006-root-context-control-setup-failure.json; incomplete Lake roots, no semantic credit",
+  "sourceOrigin": "Original full source read, SHA matches 00:17 handback; restored only inside disposable root project. First copied live revision was in-flight and failed owner-used-id repair fixtures, no finding credit."
+}

@@ -1,0 +1,21 @@
+{
+  "old": " (PROOF-COMPLETE|BLOCKED Q-|COMPLETE|CONTRACT-CHALLENGE|EXECUTED) ",
+  "fixed": "  (NOTE|BLOCKED|RESUMED|GATE-PASS|GATE-FAIL|PROOF-COMPLETE|COMPLETE|CONTRACT-CHALLENGE)  ",
+  "cases": {
+    "blocked": {
+      "input": "2026-09-12T10:42:00Z  BLOCKED  Q-001-example",
+      "oldExit": 1,
+      "fixedExit": 0
+    },
+    "executed": {
+      "input": "2026-09-12T10:22:59Z  NOTE  EXECUTED: register consolidation BUILT (ownerless x6 + support x3 rows, S3 report names); running full consolidated MainRun",
+      "oldExit": 1,
+      "fixedExit": 0
+    },
+    "complete": {
+      "input": "2026-09-12T10:42:00Z  COMPLETE  capacity-limit handoff=handoffs/example.md",
+      "oldExit": 0,
+      "fixedExit": 0
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "at": "2026-09-13T01:05:24.817Z",
+  "root": "/tmp/singular-root-rival-funding-repair-f1PXB2",
+  "compiler": "/nix/store/dgvrp8z9n4b495z7hv18rzxq2vd06knw-ghc-shell-for-packages-ghc-9.12.3-env/bin/ghc",
+  "checkSha256": "9e288ffa96864cc991d1b1482c6123791dfacb85011a61efd348a15a0914fa02",
+  "baselineLogicSha256": "dfe765559e2c1076a8dc79bfea6d239f4aa3ea35ac519950524b44afe1340b19",
+  "results": [
+    {
+      "variant": "baseline",
+      "buildExit": 0,
+      "runExit": 0,
+      "failedCases": [],
+      "cases": 22,
+      "mutants": 5
+    },
+    {
+      "variant": "seed-inversion",
+      "buildExit": 0,
+      "runExit": 1,
+      "failedCases": [
+        "funding-consumed-b-seed"
+      ],
+      "cases": 22,
+      "mutants": 5
+    }
+  ],
+  "scope": "Independent copied-source recheck of revised checker: exact previous seed-inversion now fails only the intended funding case. Closes NOTE136 count-only defect; Main/runtime binding and full owner v2 gate still required. No node/ledger/product edit."
+}

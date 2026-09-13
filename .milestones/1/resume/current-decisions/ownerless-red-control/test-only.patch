@@ -1,0 +1,70 @@
+--- a/onchain/validators/cage.tests.ak
++++ b/onchain/validators/cage.tests.ak
+@@ -13,7 +13,7 @@
+ use request
+ use state
+ use types.{
+-  CageDatum, Contribute, End, Insert, Migrating, Migration, MintRedeemer,
++  Burning, CageDatum, Contribute, End, Insert, Migrating, Migration, MintRedeemer,
+   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
+   Sweep, UpdateAction, UpdateRedeemer,
+ }
+@@ -2804,3 +2804,58 @@
+     },
+   )
+ }
++
++
++// Root counterexample: preserve all base types, helpers and fixtures.
++test root_ownerless_end_refuses() fail {
++  spend(
++    stateDatum,
++    End,
++    testStateRef,
++    Transaction {
++      ..transaction.placeholder,
++      extra_signatories: ["owner"],
++      inputs: [update],
++      mint: burn_value,
++    },
++  )
++}
++
++test root_ownerless_migration_refuses() fail {
++  mint(
++    Migrating(migrate_redeemer),
++    new_policy,
++    Transaction {
++      ..transaction.placeholder,
++      extra_signatories: ["owner"],
++      inputs: [migrate_predecessor_input],
++      outputs: [migrate_output],
++      mint: migrate_mint,
++    },
++  )
++}
++
++test root_ownerless_sweep_refuses() fail {
++  spend(
++    None,
++    Sweep(testStateRef),
++    sweepRef,
++    Transaction {
++      ..transaction.placeholder,
++      extra_signatories: ["owner"],
++      inputs: [sweepNoDatumInput],
++      reference_inputs: [update],
++    },
++  )
++}
++
++test root_ownerless_burning_refuses() fail {
++  mint(
++    Burning(testToken),
++    "policy_id",
++    Transaction {
++      ..transaction.placeholder,
++      mint: burn_value,
++    },
++  )
++}

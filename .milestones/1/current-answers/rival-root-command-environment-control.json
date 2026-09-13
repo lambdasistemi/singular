@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-13T01:50:36.636Z",
+  "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-command.sh",
+  "sourceSha256": "0dafcc64d25d99386a86dbf37ddcf9c0f3597eb630007f26fc978a0f92cad724",
+  "isolatedControl": "/tmp/singular-root-rival-shell-env-clean-gZNHzx",
+  "runs": {
+    "observed": {
+      "exit": 0,
+      "stdout": "variant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\nvariant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\nvariant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\n",
+      "stderr": ""
+    },
+    "assignment-at-command": {
+      "exit": 0,
+      "stdout": "variant=own-policy naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp\nvariant=copied-policy naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp\nvariant=forged-anchor naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp\n",
+      "stderr": ""
+    }
+  },
+  "priorAttempt": "handoffs/rival-root-command-environment-control-first-extraction.json",
+  "finding": "Per-variant assignments are attached to set +e, not the wrapper invocation. In non-POSIX bash they do not reach the launched command. Separately generated environment.txt does not observe the actual command environment.",
+  "scope": "Exact three command blocks executed only against selected-field stub with scrubbed environment. Repaired-placement positive passes all three exact variants and input variables. No real wrapper, node, socket or ledger execution."
+}

@@ -1,0 +1,35 @@
+{
+  "at": "2026-09-12T20:43:54.455Z",
+  "owners": [
+    {
+      "epic": 17,
+      "pane": "%913",
+      "pid": 568965,
+      "family": "grok",
+      "model": "grok-4.6",
+      "status": "2026-09-12T20:42:27Z  START  family=grok model=grok-4.6 effort=CLI-default pane=%913 PID=568965 brief=/tmp/projects/singular/milestone-1/epic-17/owner-grok-20260912/brief.md roster=%990-muse-ticket-77-commit-owner-2 %995-glm-ticket-81-commit-owner A005=finish-e17-then-checkpoint-park no-successor-epic first=inspect-new-child-STATUS-and-independently-review-fork-candidate-then-continue-six-field-via-990\n",
+      "command": "grok --always-approve -m grok-4.6 --cwd /tmp/projects/singular/milestone-1/epic-17 "
+    },
+    {
+      "epic": 18,
+      "pane": "%914",
+      "pid": 568968,
+      "family": "codex",
+      "model": "gpt-5.6-sol",
+      "effort": "high",
+      "status": "2026-09-12T20:42:37Z  START  POINTER-1789245711-570075 brief=/tmp/projects/singular/milestone-1/epic-18/owner-sol-20260912/brief.md read-in-full; sole inherited epic18 owner family=codex model=gpt-5.6-sol effort=high pane=%914 pid=568968; preserve two-child roster t87b pane=%993 pid=4052478 and t80e pane=%994 pid=4182517; A005 boundary=finish epic18, independently verify acceptance, checkpoint and park, no successor/backlog; first action=read A001-A005 and owner handoff, then owner source-review P2/P3/P4/P8/P9 while validating existing handbacks\n",
+      "command": "/nix/store/nqhk0522q8ncygwwx054iq76ckcjll82-codex-0.153.2/libexec/codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen -m gpt-5.6-sol -c model_reasoning_effort=high -C /tmp/projects/singular/milestone-1/epic-18 "
+    }
+  ],
+  "workersPreserved": [
+    72262,
+    3808876,
+    4052478,
+    4182517
+  ],
+  "oldOwnerTreesRemaining": [],
+  "stopAfter": [
+    17,
+    18
+  ]
+}

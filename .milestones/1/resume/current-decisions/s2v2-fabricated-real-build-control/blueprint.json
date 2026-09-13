@@ -1,0 +1,16 @@
+{
+  "name": "blueprint",
+  "cmd": "nix",
+  "args": [
+    "build",
+    "--quiet",
+    "--no-link",
+    "--print-out-paths",
+    "./naming-onchain#plutus-blueprint"
+  ],
+  "cwd": "/tmp/singular-s2-v2-oOt8k8/source",
+  "begin": "2026-09-12T09:05:02.592Z",
+  "end": "2026-09-12T09:05:04.233Z",
+  "exit": 0,
+  "signal": null
+}

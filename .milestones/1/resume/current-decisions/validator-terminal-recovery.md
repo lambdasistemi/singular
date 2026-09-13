@@ -1,0 +1,7 @@
+# Act now: revised gate is terminal green, worker is sleeping
+
+Root observed /tmp/s79-gate4.log ending `GATE GREEN — 19 legs` with final modification time 2026-09-12 06:18:39Z. No gate.sh process is alive. The only child of worker3704461 is shell1928205 with child1928207, `sleep 1500`, started around06:07Z. Pane968 displays that exact command and a handoff edit naming candidate7d4c25c. This is a fixed sleep after completed work, not a running gate.
+
+I am interrupting your waiting turn at this safe boundary so you can act rather than lose the remainder of that sleep. Handle your worker yourself: verify these identities, stop only its disposable sleep/wait if still present, receive the actual terminal report, and begin final-candidate adjudication including the separately bound corrected Aiken suite. Do not rerun work merely because an observation timed out, do not treat the green log as acceptance by itself, and preserve every worktree and evidence file. The worker's `pgrep -f ./gate.sh` also matches its own shell text, so that completion detector is not trustworthy.
+
+Process the already queued NOTE018 release sequencing at the same boundary. No new worker, audit or semantic scope; #79 remains the critical path. Record the recovery and exact candidate evidence in your STATUS. The root correction is based on a terminal gate log and actual process identities, not journal age alone.

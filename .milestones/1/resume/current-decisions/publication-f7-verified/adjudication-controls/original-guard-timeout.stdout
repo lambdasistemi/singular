@@ -1,0 +1,1 @@
+CASE-FAIL: guard-removed: want exit 1 with assembly PASS without guard (rc=124) — harness blind

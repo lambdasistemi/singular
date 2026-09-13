@@ -1,0 +1,157 @@
+warning: Git tree '/code/singular-e17-issue-77' is dirty
+Build profile: -w ghc-9.12.3 -O1
+In order, the following will be built (use -v for more details):
+ - cardano-mpfs-cage-0.1.0.0 (test:cage-tests) (file test/Main.hs changed)
+Preprocessing test suite 'cage-tests' for cardano-mpfs-cage-0.1.0.0...
+Building test suite 'cage-tests' for cardano-mpfs-cage-0.1.0.0...
+[4 of 5] Compiling Naming.RetireVerifySpec ( test/Naming/RetireVerifySpec.hs, dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/t/cage-tests/build/cage-tests/cage-tests-tmp/Naming/RetireVerifySpec.o )
+[5 of 5] Compiling Main             ( test/Main.hs, dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/t/cage-tests/build/cage-tests/cage-tests-tmp/Main.o ) [Source file changed]
+[6 of 6] Linking dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/t/cage-tests/build/cage-tests/cage-tests [Objects changed]
+Running 1 test suites...
+Test suite cage-tests: RUNNING...
+
+node-failure attribution
+  parses the consumer hash from a budget refusal [✔]
+  parses the state hash from a semantic refusal [✔]
+  does not attribute a consumer failure to state (negative control) [✔]
+  does not attribute a state failure to the consumer (reverse) [✔]
+  matches the state expectation on its own failure [✔]
+  detects budget exhaustion [✔]
+  does not mistake a semantic failure for budget [✔]
+  matches nothing without the named field [✔]
+  parses the eval failure's named script field (NOTE-018) [✔]
+  does not match node-refusal text as an eval field [✔]
+  does not match eval text as a node-refusal field [✔]
+OnChainTokenId
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  uses constructor index 0 [✔]
+    +++ OK, passed 100 tests.
+OnChainTxOutRef
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  uses constructor index 0 [✔]
+    +++ OK, passed 100 tests.
+OnChainRoot
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+OnChainOperation
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  OpInsert uses constructor 0 [✔]
+    +++ OK, passed 100 tests.
+  OpDelete uses constructor 1 [✔]
+    +++ OK, passed 100 tests.
+  OpUpdate uses constructor 2 [✔]
+    +++ OK, passed 100 tests.
+Neighbor
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+ProofStep
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  Branch uses constructor 0 [✔]
+    +++ OK, passed 100 tests.
+  Fork uses constructor 1 [✔]
+    +++ OK, passed 100 tests.
+  Leaf uses constructor 2 [✔]
+    +++ OK, passed 100 tests.
+OnChainRequest
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+OnChainTokenState
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  encodes the ownerless six-field state in Aiken field order [✔]
+CageDatum
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  RequestDatum uses constructor 0 [✔]
+    +++ OK, passed 100 tests.
+  StateDatum uses constructor 1 [✔]
+    +++ OK, passed 100 tests.
+MintRedeemer
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  Minting uses constructor 0 [✔]
+    +++ OK, passed 100 tests.
+  Migrating uses constructor 1 [✔]
+    +++ OK, passed 100 tests.
+  Burning uses constructor 2 [✔]
+    +++ OK, passed 100 tests.
+RequestAction
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  Update uses constructor 0 [✔]
+    +++ OK, passed 100 tests.
+  Rejected uses constructor 1 [✔]
+UpdateRedeemer
+  roundtrips via ToData/FromData [✔]
+    +++ OK, passed 100 tests.
+  End uses constructor 0 [✔]
+  Contribute uses constructor 1 [✔]
+    +++ OK, passed 100 tests.
+  Modify uses constructor 2 [✔]
+    +++ OK, passed 100 tests.
+  Retract uses constructor 3 [✔]
+    +++ OK, passed 100 tests.
+  Sweep uses constructor 4 [✔]
+    +++ OK, passed 100 tests.
+  rejects unused Constr 5 encoding [✔]
+deriveAssetName
+  produces 32-byte output [✔]
+    +++ OK, passed 100 tests.
+  is deterministic [✔]
+    +++ OK, passed 100 tests.
+  different index gives different name [✔]
+    +++ OK, passed 100 tests.
+  different txId gives different name [✔]
+    +++ OK, passed 100 tests.
+Naming.Register (issue #77 derivations)
+  insertApprovalName
+    is 32 bytes for generated control/commitment inputs [✔]
+      +++ OK, passed 100 tests.
+    never decodes as a canonical address [✔]
+      +++ OK, passed 100 tests.
+    binds the control address: a different control gives a different name [✔]
+      +++ OK, passed 100 tests.
+    binds the commitment: a different commitment gives a different name [✔]
+      +++ OK, passed 100 tests.
+  representativeName
+    is 32 bytes: Rep prefix, 28-byte digest, incarnation last [✔]
+      +++ OK, passed 100 tests.
+    binds the key: a different key hash gives a different name [✔]
+      +++ OK, passed 100 tests.
+    binds the registry: a different policy or token gives a different name [✔]
+      +++ OK, passed 100 tests.
+    never decodes as a canonical address [✔]
+      +++ OK, passed 100 tests.
+    fresh inserts scope incarnation 0x00 [✔]
+      +++ OK, passed 100 tests.
+  fixture vectors (observed on devnet, agreed by the Aiken recomputation in the accepting fold)
+    insertApprovalName pins the observed proposal binding [✔]
+    representativeName pins the registry-bound representative [✔]
+retirement binding predicates
+  accepts a valid controller-route bundle [✔]
+  accepts a valid rotated quorum-route bundle [✔]
+  refuses a same-name token under the wrong policy (NOTE-026) [✔]
+  refuses a wrong custody name [✔]
+  refuses a wrong custody quantity [✔]
+  refuses a wrong retire key [✔]
+  refuses a log mismatch on creation hash [✔]
+  refuses a log mismatch on rep [✔]
+  refuses a controller route signed by another key [✔]
+  refuses a controller route whose signer never witnessed [✔]
+  refuses a quorum route signed by the controller [✔]
+  refuses a quorum route with an outsider [✔]
+  refuses a creation mint missing the rep [✔]
+  derives the single positive mint policy [✔]
+  refuses several positive mint policies [✔]
+  refuses no positive mint policy [✔]
+
+Finished in 0.1152 seconds
+76 examples, 0 failures
+Test suite cage-tests: PASS
+Test suite logged to:
+/code/singular-e17-issue-77/offchain/./dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/t/cage-tests/test/cardano-mpfs-cage-0.1.0.0-cage-tests.log
+1 of 1 test suites (1 of 1 test cases) passed.

@@ -1,0 +1,10 @@
+# NOTE-145 — sole released rival command finished; no target case reached
+
+Root verified all three per-variant exits1 and the formerly live command PID1351057 now absent. Frozen full output/exit receipts are indexed by `/tmp/projects/singular/milestone-1/handoffs/rival-root-first-released-ledger-results.json`. Attempts3; target transactions0; accepted witness cases0.
+
+- own-policy and copied-policy both genuinely boot/anchor B, then stop at the singleton-wallet-difference seed assumption in NOTE144.
+- forged-anchor stops while creating its tokenless setup output, at phase1 `PPViewHashesDontMatch`: supplied script-integrity hash, ledger expects `SNothing`. It never reaches the intended target, so this is not an application/forged-anchor refusal control.
+
+Fold this terminal result into your consolidated review and existing bounded offline repair mandate. In addition to NOTE144's exact configured-seed binding and raw evidence retention, repair the **mintless setup transaction's actual body/hash construction** in the isolated driver. Preserve genuine no-script setup semantics: merely creating an output at a script address does not execute that script. Do not mislabel this phase1 hash mismatch as a successful refusal, add unrelated scripts/redeemers to make it look like the target, weaken attribution, or change product/accepted semantics. Verify the repaired construction with an appropriate offline body/hash control and retain its expected negative.
+
+One consolidated same-worker repair packet should cover both observed setup defects and required body/pre-post retention, followed by the changed-source actual executable/Nix closure checks. Preserve all three raw failures, previous attempts and existing counters. No second ledger execution is authorized here; submit the concrete repaired frozen command and evidence through root under NOTE144. E17 and A006 continue; no new seat/reset/product/accepted-model/schema/compositor/migration/commit/push/merge/release or epic acceptance.

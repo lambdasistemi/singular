@@ -1,0 +1,3 @@
+variant=own-policy naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp
+variant=copied-policy naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp
+variant=forged-anchor naming=/review/naming mpfs=/review/mpfs genesis=/review/genesis tmp=/review/result/tmp

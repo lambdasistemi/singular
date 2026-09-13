@@ -1,0 +1,390 @@
+Theorem coverage strict completion (reporting)	Set up job	﻿2026-09-12T10:03:57.1219031Z Current runner version: '2.336.0'
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1227369Z Runner name: 'epyc-5'
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1228200Z Runner group name: 'default'
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1229171Z Machine name: 'development-epyc'
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1231718Z ##[group]GITHUB_TOKEN Permissions
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1234105Z Contents: read
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1234693Z Metadata: read
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1235394Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1238819Z Secret source: Actions
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1239750Z Cache mode: write
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1240493Z Prepare workflow directory
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.1986211Z Prepare all required actions
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.2131770Z Getting action download info
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:57.7262111Z Download action repository 'actions/checkout@v6' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:58.0677458Z Download action repository 'cachix/cachix-action@v17' (SHA:38b082610b782e7e93e209c35fd730d399dee866)
+Theorem coverage strict completion (reporting)	Set up job	2026-09-12T10:03:58.5319275Z Complete job name: Theorem coverage strict completion (reporting)
+Theorem coverage strict completion (reporting)	Isolate Nix cache	﻿2026-09-12T10:03:58.6194557Z ##[group]Run cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage"
+Theorem coverage strict completion (reporting)	Isolate Nix cache	2026-09-12T10:03:58.6198511Z [36;1mcache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage"[0m
+Theorem coverage strict completion (reporting)	Isolate Nix cache	2026-09-12T10:03:58.6201270Z [36;1mmkdir -p "$cache_dir"[0m
+Theorem coverage strict completion (reporting)	Isolate Nix cache	2026-09-12T10:03:58.6203375Z [36;1mprintf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"[0m
+Theorem coverage strict completion (reporting)	Isolate Nix cache	2026-09-12T10:03:58.6215030Z shell: /nix/store/x12lw455sq6qy2wcya85d7rb88ybc3df-bash-interactive-5.3p9/bin/bash -e {0}
+Theorem coverage strict completion (reporting)	Isolate Nix cache	2026-09-12T10:03:58.6217759Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	﻿2026-09-12T10:03:58.6923474Z ##[group]Run actions/checkout@v6
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6924826Z with:
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6925894Z   ref: a85fea546985344633be46d3578237262ad7f08b
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6927400Z   repository: lambdasistemi/singular
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6939639Z   token: ***
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6940663Z   ssh-strict: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6941730Z   ssh-user: git
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6942856Z   persist-credentials: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6944108Z   clean: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6945220Z   sparse-checkout-cone-mode: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6946542Z   fetch-depth: 1
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6947613Z   fetch-tags: false
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6948815Z   show-progress: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6949930Z   lfs: false
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6950949Z   submodules: false
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6952072Z   set-safe-directory: true
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6953357Z   allow-unsafe-pr-checkout: false
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6954661Z env:
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6956234Z   XDG_CACHE_HOME: /srv/ci-work/runner-5/work/_temp/nix-cache-34687362400-1-coverage
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.6958360Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8476552Z Syncing repository: lambdasistemi/singular
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8481695Z ##[group]Getting Git version info
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8484488Z Working directory is '/srv/ci-work/runner-5/work/singular/singular'
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8489642Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git version
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8492619Z git version 2.52.0
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8498124Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8508726Z Temporarily overriding HOME='/srv/ci-work/runner-5/work/_temp/18c11020-e96d-4302-a52c-c3a938805ad3' before making global git config changes
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8513648Z Adding repository directory to the temporary git global config as a safe directory
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8519083Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --global --add safe.directory /srv/ci-work/runner-5/work/singular/singular
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8571790Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --get remote.origin.url
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8618583Z https://github.com/lambdasistemi/singular
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8635121Z ##[group]Removing previously created refs, to avoid conflicts
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8640179Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8675440Z HEAD
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8746574Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.8750199Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule status
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9276036Z ##[group]Cleaning the repository
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9279795Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git clean -ffdx
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9365997Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git reset --hard HEAD
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9442752Z HEAD is now at f7f4eee PREP(coverage): continuous-path boundary control with effective mutants
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9468179Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9471137Z ##[group]Disabling automatic garbage collection
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9474448Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local gc.auto 0
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9570010Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9572085Z ##[group]Setting up auth
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9573671Z Removing SSH command configuration
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9576766Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp core\.sshCommand
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:58.9630419Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0165127Z Removing HTTP extra header
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0169079Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0241342Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0778463Z Removing includeIf entries pointing to credentials config files
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0786216Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.0875555Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1394800Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --file /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1438967Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local includeIf.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git.path /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1489506Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local includeIf.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git/worktrees/*.path /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1544041Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1581510Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1627621Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1629899Z ##[group]Fetching the repository
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.1639010Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin a85fea546985344633be46d3578237262ad7f08b
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6252650Z From https://github.com/lambdasistemi/singular
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6263644Z  * branch            a85fea546985344633be46d3578237262ad7f08b -> FETCH_HEAD
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6290327Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git rev-parse --verify --quiet a85fea546985344633be46d3578237262ad7f08b^{object}
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6328548Z a85fea546985344633be46d3578237262ad7f08b
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6333972Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6335667Z ##[group]Determining the checkout info
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6337572Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6340175Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git sparse-checkout disable
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6398380Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --unset-all extensions.worktreeConfig
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6444522Z ##[group]Checking out the ref
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6450112Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git checkout --progress --force a85fea546985344633be46d3578237262ad7f08b
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6569654Z Warning: you are leaving 1 commit behind, not connected to
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6572073Z any of your branches:
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6573055Z 
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6574615Z   f7f4eee PREP(coverage): continuous-path boundary control with effective mutants
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6576970Z 
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6578279Z If you want to keep it by creating a new branch, this may be a good time
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6580767Z to do so with:
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6581636Z 
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6582376Z  git branch <new-branch-name> f7f4eee
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6583633Z 
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.6988908Z HEAD is now at a85fea5 merge main: pick up the packaged coverage-check app
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.7002804Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.7072164Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git log -1 --format=%H
+Theorem coverage strict completion (reporting)	Run actions/checkout@v6	2026-09-12T10:03:59.7116682Z a85fea546985344633be46d3578237262ad7f08b
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	﻿2026-09-12T10:03:59.7561197Z ##[group]Run cachix/cachix-action@v17
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7563140Z with:
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7564388Z   name: paolino
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7570102Z   authToken: ***
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7571501Z   skipPush: false
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7572848Z   useDaemon: true
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7574325Z   skipAddingSubstituter: false
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7575928Z env:
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7577993Z   XDG_CACHE_HOME: /srv/ci-work/runner-5/work/_temp/nix-cache-34687362400-1-coverage
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.7580741Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.8680020Z ##[group]Cachix: checking version
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.8696155Z [command]/nix/store/8c85nnzmy656jara9bdqgblwb8k02fjw-cachix-1.10.1-bin/bin/cachix --version
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9102513Z cachix 1.10.1
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9191201Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9197098Z [command]/nix/store/8c85nnzmy656jara9bdqgblwb8k02fjw-cachix-1.10.1-bin/bin/cachix authtoken ***
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9653722Z Written to /srv/ci-work/runner-5/work/.config/cachix/cachix.dhall
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9736812Z ##[group]Cachix: using cache paolino
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:03:59.9751673Z [command]/nix/store/8c85nnzmy656jara9bdqgblwb8k02fjw-cachix-1.10.1-bin/bin/cachix use paolino
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:04:00.4119952Z Configured https://paolino.cachix.org binary cache in /srv/ci-work/runner-5/work/.config/nix/nix.conf
+Theorem coverage strict completion (reporting)	Run cachix/cachix-action@v17	2026-09-12T10:04:00.4337547Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	﻿2026-09-12T10:04:00.5522151Z ##[group]Run nix run --quiet .#coverage-check
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5522940Z [36;1mnix run --quiet .#coverage-check[0m
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5526455Z shell: /nix/store/x12lw455sq6qy2wcya85d7rb88ybc3df-bash-interactive-5.3p9/bin/bash -e {0}
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5527348Z env:
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5528104Z   XDG_CACHE_HOME: /srv/ci-work/runner-5/work/_temp/nix-cache-34687362400-1-coverage
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5529496Z   NIX_USER_CONF_FILES: /srv/ci-work/runner-5/work/_temp/cachixMeVdiM/nix.conf:/srv/ci-work/runner-5/work/.config/nix/nix.conf:/etc/xdg/nix/nix.conf
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5530770Z   CACHIX_DAEMON_DIR: /srv/ci-work/runner-5/work/_temp/cachixMeVdiM
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:00.5531509Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7539586Z COMPLETION: INCOMPLETE
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7540306Z   mapping debt rows: 192
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7540633Z   implementation-layer debt rows: 192
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7541092Z   execution debt findings: 0
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7541496Z   unclassified rows: 83
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7541796Z   stale bindings: 0
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7545636Z   strict completion requires every category zero — an incremental PR does not
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7546426Z DEBT axes (reported separately, never summed)
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7547097Z   mapping debt: 192 obligations without a bound story representation
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7548075Z   implementation-layer debt: 192 obligations with fewer than two distinct layers
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7549316Z   execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7549938Z   unclassified: 83 declarations outside the manifests
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7550400Z     Singular.requireSome_none: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7550904Z     Singular.requireSome_some: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7551391Z     Singular.entry_key: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7551876Z     Singular.consume_config: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7552348Z     Singular.consume_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7552820Z     Singular.consume_used: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7553306Z     Singular.consume_applications: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7553804Z     Singular.consume_requests: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7554284Z     Singular.setEntry_config: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7554782Z     Singular.setEntry_applications: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7555313Z     Singular.setEntry_requests: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7555787Z     Singular.setEntry_used: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7556268Z     Singular.setEntry_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7556744Z     Singular.entry_of_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7557254Z     Singular.find?_filter_key_ne: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7557746Z     Singular.entry_setEntry: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7558421Z     Singular.representative_of: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7559161Z     Singular.representative_key: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7559832Z     Singular.representative_key_eq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7560529Z     Singular.supply_eq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7561005Z     Singular.filter_ne_of_forall: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7561541Z     Singular.countP_filter_ne_of_nodup: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7562058Z     Singular.countP_filter_le: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7562549Z     Singular.not_mem_of_nodup_append: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7563077Z     Singular.not_mem_of_nodup_append': unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7563580Z     Singular.createInsert_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7564055Z     Singular.mintWithdraw_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7566156Z     Singular.release_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7566592Z     Singular.evolve_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7567085Z     Singular.outsider_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7567746Z     Singular.withdraw_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7568465Z     Singular.fold_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7568946Z     Singular.moveAction_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7569407Z     Singular.escape_error: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7569892Z     Singular.foldOne_insert_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7570901Z     Singular.foldOne_terminal_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7571527Z     Singular.foldOne_ok_find: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7572005Z     Singular.foldItems_cons_ok: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7572502Z     Singular.foldOne_entry_over: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7573002Z     Singular.foldItems_entry_over: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7573472Z     Singular.inv_initial: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7573946Z     Singular.Inv.nodup_applications: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7574450Z     Singular.Inv.nodup_requests: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7574954Z     Singular.Inv.filter_applications: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7575466Z     Singular.Inv.filter_requests: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7575945Z     Singular.Inv.fresh_id: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7576390Z     Singular.sublist_ids: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7576841Z     Singular.nodup_middle_of: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7577280Z     Singular.inv_of_eq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7577721Z     Singular.inv_add_request: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7578430Z     Singular.inv_release: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7579283Z     Singular.inv_evolve: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7580273Z     Singular.inv_remove_request: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7581550Z     Singular.inv_fold_insert: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7582462Z     Singular.inv_fold_terminal: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7583243Z     Singular.inv_foldOne: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7584008Z     Singular.inv_foldItems: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7585158Z     Singular.inv_step: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7586304Z     Singular.reachable_inv: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7587332Z     Singular.insertNative_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7588350Z     Singular.releaseNative_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7589213Z     Singular.approved_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7590029Z     Singular.fresh_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7591188Z     Singular.step_createInsert_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7592579Z     Singular.step_release_entries: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7593506Z     Singular.exceptBindOkClaim: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7594384Z     Singular.exceptBindOkAction: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7595621Z     Singular.exceptBindErrAction: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7596986Z     Singular.exceptBindOkRegistryResult: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7598192Z     Singular.exceptBindErrRegistryResult: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7599169Z     Singular.exceptBindOkAny: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7600337Z     Singular.exceptBindErrAny: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7601433Z     Singular.exceptMapOkAny: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7602701Z     Singular.exceptMapErrAny: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7603596Z     Singular.exceptMapEqAny: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7604488Z     Singular.exceptBindResultEqAction: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7605366Z     Singular.exceptMapEq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7606138Z     Singular.throwEqError: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7607102Z     Singular.insertNeSelfFalse: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7608972Z     Singular.namingStepFoldActionEq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7610346Z     Singular.foldElseBindEq: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7611696Z     Singular.namingTerminalFalse: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7613299Z     Singular.namingFoldInsertPreservesFixture: unmapped; no-layer; unclassified
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7614786Z     Singular.NamingLifecycleStatements.supported_address_roundtrips: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7616176Z     Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7617749Z     Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7620023Z     Singular.NamingLifecycleStatements.cancellation_stored_refund_committed_and_accepts: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7621473Z     Singular.NamingLifecycleStatements.cancellation_redirect_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7623109Z     Singular.NamingLifecycleStatements.insert_attestation_alone_cannot_cancel: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7624893Z     Singular.NamingLifecycleStatements.folded_claim_cancellation_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7626650Z     Singular.NamingLifecycleStatements.cancellation_replay_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7628406Z     Singular.NamingLifecycleStatements.destination_clear_accepts: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7630243Z     Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7632108Z     Singular.NamingLifecycleStatements.destination_unauthorized_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7633783Z     Singular.NamingLifecycleStatements.destination_commitment_tamper_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7635867Z     Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7637689Z     Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7639617Z     Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7641019Z     Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7642762Z     Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7644480Z     Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7646135Z     Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7648050Z     Singular.NamingLifecycleStatements.recovery_representative_tamper_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7650026Z     Singular.NamingLifecycleStatements.recovery_registry_tamper_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7651945Z     Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7653932Z     Singular.NamingLifecycleStatements.recovery_replay_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7656174Z     Singular.NamingLifecycleStatements.old_controller_dead_after_recovery: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7658555Z     Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7660129Z     Singular.NamingLifecycleStatements.insufficient_quorum_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7661764Z     Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7663870Z     Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7753410Z     Singular.NamingLifecycleStatements.retirement_withdrawal_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7754972Z     Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7756026Z     Singular.NamingLifecycleStatements.retirement_replay_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7757007Z     Singular.NamingLifecycleStatements.retirement_pending_then_over: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7758786Z     Singular.NamingLifecycleStatements.re_registration_after_over_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7759935Z     Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7761076Z     Singular.NamingLifecycleStatements.alternate_registry_seed_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7762066Z     Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7763037Z     Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7764086Z     Singular.NamingLifecycleStatements.second_seed_rival_registry_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7764988Z     Singular.NamingLifecycleStatements.substituted_registry_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7765851Z     Singular.NamingLifecycleStatements.substituted_policy_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7766781Z     Singular.NamingLifecycleStatements.substituted_representative_policy_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7767895Z     Singular.NamingLifecycleStatements.substituted_validator_script_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7769112Z     Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7769845Z     Singular.NamingStatements.naming_delete_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7770457Z     Singular.NamingStatements.naming_approval_reserves_nothing: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7771351Z     Singular.NamingStatements.naming_absent_certified_insert_activates: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7772443Z     Singular.NamingStatements.naming_occupied_key_refuses_duplicate: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7773376Z     Singular.NamingStatements.naming_fixture_fields_preserved_on_insert: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7774082Z     Singular.NamingStatements.naming_unauthenticated_resolve: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7774800Z     Singular.NamingStatements.naming_payment_destination_distinct_from_control: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7775491Z     Singular.NamingStatements.naming_step_create_insert: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7776141Z     Singular.NamingStatements.naming_step_fold_generic_when_all_insert: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7776794Z     Singular.NamingStatements.naming_step_refuses_other: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7777437Z     Singular.NamingStatements.naming_queue_unknown_spelling_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7778218Z     Singular.NamingStatements.naming_queue_malformed_fixture_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7778898Z     Singular.NamingStatements.naming_queue_unapproved_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7779555Z     Singular.NamingStatements.naming_resolve_unauthenticated_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7780196Z     Singular.NamingStatements.naming_resolve_active_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7781039Z     Singular.NamingStatements.naming_resolve_pending_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7781638Z     Singular.NamingStatements.naming_resolve_absent_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7782288Z     Singular.NamingWireStatements.naming_datum_serialises_byte_exact: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7783080Z     Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7784076Z     Singular.NamingWireStatements.inline_datum_only: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7784736Z     Singular.NamingWireStatements.payment_destination_zero_or_one: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7785657Z     Singular.NamingWireStatements.insert_request_fixture_is_the_queued_request: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7786577Z     Singular.NamingWireStatements.insert_request_serialises_byte_exact: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7787680Z     Singular.NamingWireStatements.insert_request_roundtrip_and_declared_shape: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7788564Z     Singular.NamingWireStatements.insert_request_malformed_and_redirect_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7789253Z     Singular.Statements.insert_commitment_injective: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7789801Z     Singular.Statements.action_domain_separation: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7790365Z     Singular.Statements.createInsert_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7790848Z     Singular.Statements.mintWithdraw_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7791531Z     Singular.Statements.release_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7792018Z     Singular.Statements.evolve_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7792475Z     Singular.Statements.outsider_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7792915Z     Singular.Statements.withdraw_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7793389Z     Singular.Statements.fold_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7793848Z     Singular.Statements.moveAction_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7794535Z     Singular.Statements.escape_refused: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7795016Z     Singular.Statements.foldOne_insert_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7795525Z     Singular.Statements.foldOne_terminal_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7796064Z     Singular.Statements.sequential_fold_cons: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7796616Z     Singular.Statements.supply_conservation: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7797279Z     Singular.Statements.over_terminal: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7797770Z     Singular.Statements.over_no_representative: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7798420Z     Singular.Statements.pending_insert_no_representative: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7799080Z     Singular.Statements.minting_requires_configured_issuer: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7799951Z     Singular.Statements.withdrawal_preserves_registry_supply: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7800610Z     Singular.Statements.exact_withdraw_scope: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7801162Z     Singular.Statements.local_evolution_registry_unchanged: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7801794Z     Singular.Statements.release_is_operation_specific: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7802630Z     Singular.Statements.release_removes_application_custody: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7803217Z     Singular.Statements.request_single_spend: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7803731Z     Singular.Statements.approval_scope_checked: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7804257Z     Singular.Statements.outsider_not_admitted: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7804796Z     Singular.Statements.native_witness_even_zero_net: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7805480Z     Singular.Statements.nonzero_action_invokes_policy: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7806385Z     Singular.Statements.existing_action_does_not_refresh_scope: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7807191Z     Singular.Statements.resolve_unauthenticated: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7807691Z     Singular.Statements.resolve_absent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7808227Z     Singular.Statements.resolve_over: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7808875Z     Singular.Statements.resolve_address_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7809642Z     Singular.Statements.resolve_pending_iff: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7810481Z     Singular.Statements.release_registry_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7811164Z     Singular.Statements.insert_creation_registry_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7812117Z     Singular.Statements.whole_release_acceptance_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7813211Z     Singular.Statements.whole_release_refusal_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7814014Z     Singular.Statements.whole_insert_acceptance_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Run nix run --quiet .#coverage-check	2026-09-12T10:04:26.7814623Z     Singular.Statements.whole_insert_refusal_independent: unmapped; no-layer
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	﻿2026-09-12T10:04:26.7939641Z Post job cleanup.
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9015505Z ##[group]Cachix: push
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9073420Z [2026-09-12 10:04:00][Info] Starting Cachix Daemon
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9080711Z [2026-09-12 10:04:00][Info] Configuration:
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9081228Z PID: 3145805
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9081692Z Socket: /srv/ci-work/runner-5/work/_temp/cachixMeVdiM/daemon.sock
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9082253Z Workers: 8
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9082563Z Cache name: paolino
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9082968Z Cache URI: https://paolino.cachix.org
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9083597Z Cache public keys: ["paolino.cachix.org-1:ecmgO3CXdgSWA2cHlm4srknd/cLFMLmK3i3NrzeDFaE="]
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9084305Z Cache is public: True
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:26.9084670Z Compression: ZSTD
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:27.4079757Z [command]/nix/store/8c85nnzmy656jara9bdqgblwb8k02fjw-cachix-1.10.1-bin/bin/cachix daemon stop --socket /srv/ci-work/runner-5/work/_temp/cachixMeVdiM/daemon.sock
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:27.4479806Z [2026-09-12 10:04:27][Info] Shutting down daemon...
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:27.4486016Z [2026-09-12 10:04:27][Info] Daemon shut down. Exiting.
+Theorem coverage strict completion (reporting)	Post Run cachix/cachix-action@v17	2026-09-12T10:04:28.4600504Z ##[endgroup]
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	﻿2026-09-12T10:04:28.4824259Z Post job cleanup.
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6169065Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git version
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6227035Z git version 2.52.0
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6279567Z Temporarily overriding HOME='/srv/ci-work/runner-5/work/_temp/838ad517-5949-45ab-8105-7c39342f96ec' before making global git config changes
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6281814Z Adding repository directory to the temporary git global config as a safe directory
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6287421Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --global --add safe.directory /srv/ci-work/runner-5/work/singular/singular
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6339776Z Removing SSH command configuration
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6347312Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp core\.sshCommand
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6431596Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6836750Z Removing HTTP extra header
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6842562Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.6910051Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7305477Z Removing includeIf entries pointing to credentials config files
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7311800Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7393800Z includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7394856Z includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git/worktrees/*.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7395669Z includeif.gitdir:/github/workspace/.git.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7396350Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7405112Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --get-all includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7439132Z /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7451462Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --unset includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git.path /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7511881Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --get-all includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git/worktrees/*.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7545262Z /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7561530Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --unset includeif.gitdir:/srv/ci-work/runner-5/work/singular/singular/.git/worktrees/*.path /srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7628172Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7660094Z /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7669132Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7726276Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7756988Z /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7766304Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.7825967Z [command]/nix/store/ipwndaag56mm8g8gn8j98z0jvn8x4mk1-git-2.52.0/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Theorem coverage strict completion (reporting)	Post Run actions/checkout@v6	2026-09-12T10:04:28.8279530Z Removing credentials config '/srv/ci-work/runner-5/work/_temp/git-credentials-7ae859bb-230d-4bcc-8d42-11c903c52607.config'
+Theorem coverage strict completion (reporting)	Complete job	﻿2026-09-12T10:04:28.8519531Z Cleaning up orphan processes

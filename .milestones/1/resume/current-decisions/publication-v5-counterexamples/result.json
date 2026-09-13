@@ -1,0 +1,34 @@
+{
+  "scope": "Exact mutation-adjudication suffixes with simulated failed commands ONLY, not whole publisher rerun. Closure lookup commands were real. Retained continuous positive is worker evidence.",
+  "sourceSha256": "1ad47019ee58639029cd4eea47ec3089ad7e5e6770efac74a12dee0218edacf3",
+  "results": [
+    {
+      "name": "final-missing-command",
+      "simulatedPublisherExit": 127,
+      "adjudicationExit": 0,
+      "stdout": "case no-final: HELD (no upload without the final invocation — composition proven)\n"
+    },
+    {
+      "name": "guard-timeout-with-keyword",
+      "simulatedPublisherExit": 124,
+      "adjudicationExit": 0,
+      "stdout": "case guard-removed: HELD (unguarded wrapper attempts assembly on INCOMPLETE)\n"
+    },
+    {
+      "name": "test-closure",
+      "path": "/nix/store/y8ia31jh4jfd9zg0gasmlzs0d0h1p4rm-publish-docs/bin/publish-docs",
+      "exit": 0,
+      "recorder": [
+        "/nix/store/n8gbksbsxk4nj89d5ypqig2bkh7w5vmy-upload-recorder"
+      ],
+      "gh": []
+    },
+    {
+      "name": "production-closure",
+      "path": "/nix/store/61gb0wxcw4nmxmfk5af7zjjgdy51n41s-publish-docs/bin/publish-docs",
+      "exit": 1,
+      "recorder": [],
+      "gh": []
+    }
+  ]
+}

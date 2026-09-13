@@ -1,0 +1,103 @@
+{
+  "subject": "66da177f495aea95f26978e9bb45812b3d89d92f",
+  "synthetic": true,
+  "results": [
+    {
+      "name": "committed-sufficient",
+      "head": "cc57b6fdab17c85d63de323d30ea79455a17d33a",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "cc57b6fdab17c85d63de323d30ea79455a17d33a"
+      ],
+      "exit": 0,
+      "stdout": "COMPLETION: COMPLETE\n  mapping debt rows: 0\n  implementation-layer debt rows: 0\n  execution debt findings: 0\n  unclassified rows: 0\n  stale bindings: 0\nDEBT axes (reported separately, never summed)\n  mapping debt: 0 obligations without a bound story representation\n  implementation-layer debt: 0 obligations with fewer than two distinct layers\n  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)\n  unclassified: 0 declarations outside the manifests\ncandidate: cc57b6fdab17c85d63de323d30ea79455a17d33a (bound: HEAD matches; tree clean; root is top level)\n",
+      "stderr": ""
+    },
+    {
+      "name": "committed-incomplete",
+      "head": "8ad2063ad08f8992fbd26454e950f6f9258b322a",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "8ad2063ad08f8992fbd26454e950f6f9258b322a"
+      ],
+      "exit": 3,
+      "stdout": "",
+      "stderr": "FAIL-CLOSED RecordError: record is missing discoveredPopulation \u2014 the obligation population the record was cut against is what the ratchet protects; a record without it cannot be judged\n"
+    },
+    {
+      "name": "external-override",
+      "head": "8ad2063ad08f8992fbd26454e950f6f9258b322a",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "8ad2063ad08f8992fbd26454e950f6f9258b322a",
+        "--record",
+        "/tmp/singular-release-binding-893ez2us/external.json"
+      ],
+      "exit": 3,
+      "stdout": "",
+      "stderr": "FAIL-CLOSED unbound release input: release resolves its record from the candidate root and does not accept --record\n"
+    },
+    {
+      "name": "symlink-incomplete",
+      "head": "d4f0a28d5a374389e5bf41732151660f92668e66",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "d4f0a28d5a374389e5bf41732151660f92668e66"
+      ],
+      "exit": 3,
+      "stdout": "",
+      "stderr": "FAIL-CLOSED RecordError: record is missing discoveredPopulation \u2014 the obligation population the record was cut against is what the ratchet protects; a record without it cannot be judged\n"
+    },
+    {
+      "name": "symlink-complete",
+      "head": "d4f0a28d5a374389e5bf41732151660f92668e66",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "d4f0a28d5a374389e5bf41732151660f92668e66"
+      ],
+      "exit": 0,
+      "stdout": "COMPLETION: COMPLETE\n  mapping debt rows: 0\n  implementation-layer debt rows: 0\n  execution debt findings: 0\n  unclassified rows: 0\n  stale bindings: 0\nDEBT axes (reported separately, never summed)\n  mapping debt: 0 obligations without a bound story representation\n  implementation-layer debt: 0 obligations with fewer than two distinct layers\n  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)\n  unclassified: 0 declarations outside the manifests\ncandidate: d4f0a28d5a374389e5bf41732151660f92668e66 (bound: HEAD matches; tree clean; root is top level)\n",
+      "stderr": ""
+    }
+  ]
+}

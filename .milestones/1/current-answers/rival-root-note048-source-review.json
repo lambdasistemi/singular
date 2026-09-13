@@ -1,0 +1,32 @@
+{
+  "at": "2026-09-13T02:48:34.540Z",
+  "files": {
+    "main": {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/Main.hs",
+      "frozen": "handoffs/rival-root-note048-review-main.hs",
+      "sha256": "601610bf15f3eda302857af6a73f1497f789dcb2854bf961cf51972fd74da3a9"
+    },
+    "seedControl": {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-seedfee-control.hs",
+      "frozen": "handoffs/rival-root-note048-review-seedControl.hs",
+      "sha256": "5ffacfd01edf8aaabea172bf6cb80245b2e531b7c8c3d5a09b6745a752052396"
+    },
+    "seedResult": {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-seedfee-control-run.out",
+      "frozen": "handoffs/rival-root-note048-review-seedResult.out",
+      "sha256": "999203ad423468b60e40ff7026fc8d373922e44c8f2b3de744d5c7e3912d32ce"
+    },
+    "mintless": {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalMintlessBody.hs",
+      "frozen": "handoffs/rival-root-note048-review-mintless.hs",
+      "sha256": "b1c89e02a05ffee2daaf76dbaf832d7eebf8d8d8867e571553383ae4462f1039"
+    }
+  },
+  "scope": "Static review of specific current offline bindings and retention; no executed counterexample, no complete handback or ledger result claimed",
+  "findings": [
+    "Configured seed occurs among signed inputs and actual mint contains tokB, but those independent predicates do not recompute or bind tokB to that chosen seed; replacing the selected seed with another consumed fee input leaves both predicates satisfiable.",
+    "Named wrong-seed control only compares a locally constructed flag list; it does not execute or reject the actual boot seed/token binding.",
+    "writeEvidenceTxBody serializes bodyTxL only, omitting witnesses/redeemers/script material from the signed transaction. renderUtxos omits output addresses/raw outputs.",
+    "post-utxos snapshots are written immediately after submitTx and before waitConfirmation in the acceptance branch; they do not necessarily retain the later observed target-created successor."
+  ]
+}

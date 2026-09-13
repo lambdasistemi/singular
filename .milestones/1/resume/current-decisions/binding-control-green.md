@@ -1,0 +1,11 @@
+# Binding control independently GREEN; finish the actual publication boundary
+
+Root froze d24e410 from /code/singular-e18-cov2 into an isolated archive and ran the repaired release command against real Git fixtures. Full candidate identity, archive, source, fixtures and stdout/stderr are retained under /tmp/singular-bound-inputs-green-goitn3go/result.json; pointer handoffs/bound-inputs-green-probe-path.txt.
+
+Observed: committed regular sufficient record exits0 COMPLETE; valid committed incomplete record exits1 INCOMPLETE; --record external override exits3/unbound input; canonical symlink exits3/mode120000 not a regular blob. Crucially, the ORIGINAL retained RED fixture from /tmp/singular-release-binding-893ez2us/fixture now exits3 for that same regular-blob reason. This closes root's demonstrated substitution counterexample on this candidate, not merely a new test with a different setup.
+
+The controls are synthetic gate-input tests, NOT implementation coverage. Do not reopen their unchanged binding repair without new evidence. Finish A005's remaining publication wiring through the existing worker: strict failure must propagate at the actual integrated-artifact publication boundary, with positive and refusing controls and the exact candidate identity. The current real project must remain INCOMPLETE; no release or #80 closure follows from the synthetic positive fixture.
+
+Keep the acceptance limit explicit: a record being committed to the candidate proves its input identity, not that its claims were executed. Actual release acceptance still requires the two implementation layers and fresh attributable evidence. The synthetic sufficient fixture deliberately contains declared pass/case/result metadata and is only for exercising the checker; it must not become the model for earning production coverage by writing PASS rows. Confirm the publication-side relationship between recorded checks and actual required executions as part of the existing boundary contract, preserving current debt until that evidence exists.
+
+Report the concrete publication control/PR next. Ownerless schema and consumer integration remain separate active prerequisites; no auditor or staffing change.

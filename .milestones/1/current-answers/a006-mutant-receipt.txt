@@ -1,0 +1,77 @@
+# A-006 mutant receipt — retained single-mutation retention mutant
+
+Seat `%993`, worktree `/code/singular-e18-blaster` @
+`970b15917a76982ad6db2b1c8efaaaa5f5d15969`. NOTE-030 TDD step 3 +
+NOTE-032 four-stage rule + NOTE-033 single-mutation isolation and
+split positive/kill targets + NOTE-034 one-context interface. Prior
+compiler-failure RED disclaimed (setup-class, no kill credit); the
+kill below is the accepted one. A caught `autoImplicit` sorry-fill
+(`ctxMain` omitted from an open list, evaluated-abort) is retained in
+history as a near-miss; all gate files now carry file-scoped
+`set_option autoImplicit false`, verified no-op by green rebuilds.
+
+## Mutation (exact diff vs baseline)
+
+File `blaster/abstract/RejectedFoldMutant.lean` shares all types/rules
+with `RejectedFold` (imported) and differs in TWO labeled spots only:
+(1) rejected arm calls mutant-local `payNoRemove` (copy of `payRefund`
+minus `removeRequest`) and threads the unchanged base state;
+(2) nothing else — shared batch context, range validity, timing from
+`ctx`+record, held/custody association, funding lookup, derived
+tip-floor, refund recipient/floor/output checks, conservation, and all
+batch-entry checks are byte-identical logic. Net effect: rejected items
+pay refunds and report removal WITHOUT removing the request row
+(retention — the R2 confusion direction itself). The mutation cannot
+survive by weakened semantics: every other refusal still fires on the
+mutant exactly as on baseline.
+
+## Stage outputs (raw, true exits)
+
+```
+$ lake build RejectedFoldMutant
+Build completed successfully (4 jobs).
+MODULE-EXIT:0
+```
+
+Module builds clean.
+
+```
+$ lake build RejectedFoldMutantPos
+Build completed successfully (7 jobs).
+POSITIVE-EXIT:0
+```
+
+Positive control passes: the mutant ACCEPTS the legitimate
+all-rejected fixture (`mresAR.isOk` guard green) and reaches result
+comparison.
+
+```
+$ lake build RejectedFoldMutantGate
+info: RejectedFoldMutantGate.lean:25:0: (some [8], some [{ recipient := 77, lovelace := 1999500 }], some [8, 7])
+error: RejectedFoldMutantGate.lean:25:0: ❌️ Docstring on `#guard_msgs` does not match generated message:
+- info: (some [8], some [{ recipient := 77, lovelace := 1999500 }], some [7])
++ info: (some [8], some [{ recipient := 77, lovelace := 1999500 }], some [8, 7])
+error: Lean exited with code 1
+error: build failed
+KILL-EXIT:1
+```
+
+## Reading (why this is the required kill)
+
+- removed `[8]` and refunds `[{77, 1999500}]` MATCH (no mismatch
+  reported for those positions) — the mutant pays + reports exactly
+  like baseline.
+- The ONLY mismatch is post-state ids: `some [8, 7]` vs `some [7]` —
+  the row is retained. The kill is specifically erased
+  request-removal/result-mapping, not exhaustion (refunds were
+  consumed, so `surplus-refund` does not fire), not timing/consumer/
+  custody/funding/range (all pass through identically — the
+  single-mutation isolation), not malformed source.
+- Wrapper `run-candidate.sh --mutant` verifies all stages
+  (module 0, positive 0, kill nonzero with the retained-row
+  `some [8, 7]` marker present, no malformed markers) and exits 0
+  only on this exact shape; malformed module → exit 2, positive
+  failure → exit 2, survival → exit 1, wrong kill site → exit 2.
+
+Baseline GREEN (focused gate exit 0) re-verified after the mutant
+work; register/C5 gates not rerun per fence (unchanged files).

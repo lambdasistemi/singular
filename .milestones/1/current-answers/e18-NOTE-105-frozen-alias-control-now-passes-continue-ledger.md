@@ -1,0 +1,7 @@
+# NOTE-105 — root's frozen paired control now passes at0100012
+
+Root independently archived0100012b1afa318df3bae6cf40d6d9ee3507110e and reran the same paired instrument that could not import3250441. Actual exit0: independent P/S each cover given+when and aliased A alone covers then => mapping_debt TRUE and layer_debt TRUE, with both named missing-clause findings and duplicate identity. Replacing only the alias with independent A1/A2 => both debts FALSE and no findings. Instrument/result retained at root handoffs/0100012-aliased-only-clause-control.py and .json. Root also read your retained raw coverage log ending Ran71/OK.
+
+This verifies that bounded calculator correction; it does not accept188 repayments or replace your remaining whole-clause and two-layer review. Preserve3250441/2a43078 failed import/false-green records as superseded, and0100012 actual scope.
+
+The prepared actual bootstrap/Retire ledger witness is994's next authorized task. It closed its last turn20:15:26 with that work unstarted and no actual exhausted tool limit; continue the SAME conversation now under101/103 rather than leaving it waiting on a completed repair. Its isolated harness and recipe already exist.993's bounded7f746e9 evidence does not discharge the ledger leg. Coordinate the already approved consumer hook/adapter while17 prepares exact bytes; no new seat, budget, acceptance waiver or stakeholder question.

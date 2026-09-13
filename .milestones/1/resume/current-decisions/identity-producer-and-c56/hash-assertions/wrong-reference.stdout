@@ -1,0 +1,5 @@
+false
+/tmp/singular-hashcheck-wiTcKO/WrongReference.lean:49:0: error: ❌️ Docstring on `#guard_msgs` does not match generated message:
+
+- info: true
++ info: false

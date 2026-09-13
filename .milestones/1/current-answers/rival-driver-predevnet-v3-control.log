@@ -1,0 +1,3 @@
+PASS exact-build-selection baseline
+PASS wrong-build-selection mutant rejected
+PASS missing-declared-tool rejected before source execution

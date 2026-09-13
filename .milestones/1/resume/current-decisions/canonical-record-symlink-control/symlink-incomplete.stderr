@@ -1,0 +1,1 @@
+FAIL-CLOSED RecordError: record is missing discoveredPopulation — the obligation population the record was cut against is what the ratchet protects; a record without it cannot be judged

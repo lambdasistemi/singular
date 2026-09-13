@@ -1,0 +1,11 @@
+{
+  "candidate": "3250441c7c157f2cad1203114aa5c58e17332eab",
+  "source": "/tmp/singular-root-3250441-review.RohRVo",
+  "instrument": "handoffs/3250441-aliased-only-clause-control.py",
+  "toolExit": 1,
+  "disposition": "NOT-EVALUATED",
+  "error": "SyntaxError at conformance/coverage/tests/test_ratchet_controls.py:479: duplicated def on one line prevented importing ClauseAccountingControls",
+  "emptyOutput": "handoffs/3250441-aliased-only-clause-control.json",
+  "descendantBlobChecked": "2a43078b5ac00539bff3a12639aa1c5f394ac4df",
+  "scope": "Records the actual tool-observed failure; not an alias calculation result or a reconstructed successful run."
+}

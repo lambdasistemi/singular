@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-12T23:44:56.173Z",
+  "source": "epic-18/t87b-blaster-refinement/handoffs/r2-contract-packet.md",
+  "frozen": "handoffs/r2-root-truncated-rev2.md",
+  "bytes": 10971,
+  "sha256": "5d8f1e5acb6fb031f9f4e94df1395df95a95a8b36462a60a85e84c80e5110cd2",
+  "literalTruncationMarker": true,
+  "tail": " witness\n\nThe absent-999 grading is deleted (code + all ledger prose updated).\nNew battery in `blaster/abstract/GradingSpan.lean` (abstract recipe\nexit 0; Model imported, never reimplemented), reusing `Grading` fix\n...[truncated 8184 chars]",
+  "verdict": "The actual durable packet terminates mid section 3; requested transition/refinement relation and later sections are absent, so no model contract arbitration is possible from this file."
+}

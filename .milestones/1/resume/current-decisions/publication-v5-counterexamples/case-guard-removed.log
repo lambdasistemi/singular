@@ -1,0 +1,3 @@
+warning: publish-docs without the coverage release boundary (no conformance/coverage/release-required in /tmp/pub-harness/incomplete)
+on-chain release assembly: PASS (/tmp/tmp.xWNpj6t7Ii/singular-onchain-0.3.0.tar.gz)
+{"version": "0.3.0", "unreleasedBaseline": false, "archive": "singular-docs-0.3.0.tar.gz", "onchainArchive": "singular-onchain-0.3.0.tar.gz", "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS", "identityFromArtifact": "PASS"}

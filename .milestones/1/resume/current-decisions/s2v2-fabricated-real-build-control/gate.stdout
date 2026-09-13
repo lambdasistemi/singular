@@ -1,0 +1,18 @@
+S2 candidate-bound            PASS  d846bab795828b25f67250bece374aa6415c442f
+S2 receipt-parses             PASS  8 rows
+S2 receipt-binds-candidate    PASS  d846bab795828b25f67250bece374aa6415c442f
+S2 blueprint-builds           PASS  /nix/store/kxnnmydq7ickzqr4fp0iq04ivz5naw1z-singular-naming-plutus-blueprint-0.1.0
+S2 receipt-binds-blueprint    PASS  /nix/store/kxnnmydq7ickzqr4fp0iq04ivz5naw1z-singular-naming-plutus-blueprint-0.1.0
+S2 no-authority-field         PASS  no owner or stake authority field in the state datum
+S2 connected-fold             PASS  state=1111111111111111111111111111111111111111111111111111111111111111#0 req=2222222222222222222222222222222222222222222222222222222222222222#0 tx=5555555555555555555555555555555555555555555555555555555555555555 root 3333333333333333333333333333333333333333333333333333333333333333 -> 4444444444444444444444444444444444444444444444444444444444444444 (after read from 6666666666666666666666666666666666666666666666666666666666666666#0)
+S2 applied-rep-identity       PASS  applied=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa name=wrong-unchecked-name net=+1 (unapplied=6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc)
+S2 occupied-key               PASS  tx=7777777777777777777777777777777777777777777777777777777777777777 op=insert refused by cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+S2 ownerless-end              PASS  tx=7777777777777777777777777777777777777777777777777777777777777777 op=end refused by cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+S2 ownerless-migration        PASS  tx=7777777777777777777777777777777777777777777777777777777777777777 op=migration refused by cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+S2 ownerless-sweep            PASS  tx=7777777777777777777777777777777777777777777777777777777777777777 op=sweep refused by cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+S2 ownerless-burning          PASS  tx=7777777777777777777777777777777777777777777777777777777777777777 op=burning refused by cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+S2 free-key-control           PASS  tx=8888888888888888888888888888888888888888888888888888888888888888 distinct from a row that does not exist
+S2 supported-action-control   PASS  tx=8888888888888888888888888888888888888888888888888888888888888888 distinct from a row that does not exist
+S2 identity-matches-build     PASS  onchain script identity matches a fresh compilation
+
+S2 SUPPLEMENT GREEN (candidate d846bab795828b25f67250bece374aa6415c442f)

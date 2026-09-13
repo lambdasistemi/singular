@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-13T01:05:52.391Z",
+  "source": "/code/singular-e17-issue-77/offchain/journey/retirement/Main.hs",
+  "sha256": "ce37dad20440d37d7aa37f62dca45f0a4bd92fae5ae7d63170ed1e0721e8d8a9",
+  "observed": [
+    "snapSucc <- mustSnap env (TxIn (txIdTx signed) (TxIx 0))",
+    "rotated <- chainDatumOf env snapSucc",
+    "snapTokens snapSucc == snapTokens snap",
+    "snapCoin snapSucc == snapCoin snap",
+    "assertGone env snap (label <> \"-recovery-consumed\")",
+    "pure snapSucc"
+  ],
+  "scope": "Static source repair of NOTE087 confirmed: exact fresh successor readback, preserved tracked tokens/lovelace and spent original input assertion. No runtime, full value-map, independent creation retrieval, permanent Over or final tuple acceptance."
+}

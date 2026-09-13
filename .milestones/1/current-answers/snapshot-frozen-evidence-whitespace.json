@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-13T02:41:45.521Z",
+  "scope": "Only these exact frozen evidence bytes are excepted from git whitespace checks; no content normalization or acceptance waiver",
+  "exceptions": [
+    {
+      "path": ".milestones/1/current-answers/recovered-retirement-root-current-reader.hs",
+      "reason": "Blank EOF preserved in exact frozen reviewed source; byte identity must remain intact",
+      "sha256": "c759e93457cc493bb324c1f907421bf39f3d427ccf787b36139388a3f4f34129"
+    },
+    {
+      "path": ".milestones/1/current-answers/rival-nix-manifest.txt",
+      "reason": "Trailing space in verbatim Nix wrapper exec line; preserve original evidence bytes",
+      "sha256": "2138846a02b9d9b903d440c90332783537ccdb5bd6861797e1fe04a9dd2c470c"
+    },
+    {
+      "path": ".milestones/1/current-answers/rival-root-first-released-copied-policy-stdout.log",
+      "reason": "Trailing whitespace in exact retained real-node stdout; preserve original evidence byte identity",
+      "sha256": "e5088190bf23606340645b08b20efbfe188640c872d4f1a017e60a18490bea95"
+    },
+    {
+      "path": ".milestones/1/current-answers/rival-root-first-released-forged-anchor-stdout.log",
+      "reason": "Trailing whitespace in exact retained real-node stdout; preserve original evidence byte identity",
+      "sha256": "d4fb3eabdacaa27aa4fddf32ed401e089fdacf7155f6a1469fd208df4e2c5638"
+    },
+    {
+      "path": ".milestones/1/current-answers/rival-root-first-released-own-policy-stdout.log",
+      "reason": "Trailing whitespace in exact retained real-node stdout; preserve original evidence byte identity",
+      "sha256": "e7782d03f9d6aceaa51f27c3ab6f37c0dc8914516685ea78699624d12e6a4a53"
+    },
+    {
+      "path": ".milestones/1/current-answers/rival-root-multiinput-boot-ownStdout.log",
+      "reason": "Trailing whitespace in exact retained real-node stdout; preserve original evidence byte identity",
+      "sha256": "e7782d03f9d6aceaa51f27c3ab6f37c0dc8914516685ea78699624d12e6a4a53"
+    }
+  ]
+}

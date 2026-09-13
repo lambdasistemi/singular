@@ -1,0 +1,52 @@
+{
+  "original": {
+    "name": "Singular.requireSome_none",
+    "source": "lean/Singular/Lemmas.lean",
+    "line": 95,
+    "keyword": "theorem",
+    "attributed": true,
+    "signatureSha256": "c5d20c589aae688179ffa598cd19fc9d9e30703cd121bf3268b2d9ab7c1e3087",
+    "signature": "theorem requireSome_none {\u03b1} (reason : String) : requireSome (none : Option \u03b1) reason = .error reason :=",
+    "behaviour": "requireSome on none returns .error reason; the failure case of the Model.requireSome helper.",
+    "clauses": {
+      "statement": "theorem requireSome_none {\u03b1} (reason : String) : requireSome (none : Option \u03b1) reason = .error reason",
+      "binders": "{\u03b1} (reason : String)",
+      "conclusion": "requireSome (none : Option \u03b1) reason = .error reason"
+    },
+    "dependencies": [
+      "Singular.requireSome",
+      "Singular.release_ok",
+      "Singular.evolve_ok",
+      "Singular.withdraw_ok",
+      "Singular.Statements.release_iff"
+    ],
+    "disposition": "definitional-projection",
+    "rationale": "Statement is the definitional unfolding of Model.requireSome on none, proved by rfl and attributed @[simp]. It is rewritten by name in the transition inversions release_ok, evolve_ok, withdraw_ok and both foldOne characterisations (Lemmas.lean simp-only lists), which in turn mirror the public *_iff contracts. Helper status follows from that statement-level unfolding plus those named textual uses, never from its filename.",
+    "questions": []
+  },
+  "mutant": {
+    "name": "Singular.requireSome_none",
+    "source": "lean/Singular/Lemmas.lean",
+    "line": 95,
+    "keyword": "theorem",
+    "attributed": true,
+    "signatureSha256": "c5d20c589aae688179ffa598cd19fc9d9e30703cd121bf3268b2d9ab7c1e3087",
+    "signature": "theorem requireSome_none {\u03b1} (reason : String) : True :=",
+    "behaviour": "requireSome on none returns .error reason; the failure case of the Model.requireSome helper.",
+    "clauses": {
+      "statement": "theorem requireSome_none {\u03b1} (reason : String) : True",
+      "binders": "{\u03b1} (reason : String)",
+      "conclusion": "True"
+    },
+    "dependencies": [
+      "Singular.requireSome",
+      "Singular.release_ok",
+      "Singular.evolve_ok",
+      "Singular.withdraw_ok",
+      "Singular.Statements.release_iff"
+    ],
+    "disposition": "definitional-projection",
+    "rationale": "Statement is the definitional unfolding of Model.requireSome on none, proved by rfl and attributed @[simp]. It is rewritten by name in the transition inversions release_ok, evolve_ok, withdraw_ok and both foldOne characterisations (Lemmas.lean simp-only lists), which in turn mirror the public *_iff contracts. Helper status follows from that statement-level unfolding plus those named textual uses, never from its filename.",
+    "questions": []
+  }
+}

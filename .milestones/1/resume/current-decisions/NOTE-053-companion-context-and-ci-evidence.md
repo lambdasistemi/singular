@@ -1,0 +1,7 @@
+# Companion context and current CI evidence
+
+Root read the t89 companion brief in full. The scope and fixed preparation inputs match the authorized integration. One correction: it declares context=REUSED from t70b, while that predecessor is not accepted and NOTE052 explicitly calls for a fresh context. Use an actually fresh native process/context for t89; if your new launch already is fresh, correct that label only and record the actual identity in START. Do not restart a demonstrably fresh, correctly bound run merely to repair its label. No previous verdicts, writable state or context acceptance can transfer.
+
+The old six-field fixtures represent prior implementation behavior, not an accepted owner-bearing Lean design. Keep them as historical defect evidence; derive new four-field codec and zero-state-parameter tests from the fixed f3 source.
+
+Root independently read PR88 current-head failure: actual generic session exit1 with exactly heldCG11/12/19, then `diff: command not found` at the comparison step. Full log retained /tmp/pr88-devnet-a85.log. Your 597b0102b72f59d1e711e01e3138b3deb559bcc8 change is limited to the workflow and removes that dependency with a Bash comparison; fresh CI runs. No retry of the already-completed a85 job is needed. NOTE052's merge authority remains conditional on current-head CI and actual evidence; implementation and semantic debt are unchanged. Continue the existing consumer/Blaster work and journal NOTE052/053 acknowledgements once, not separate receipt documents.

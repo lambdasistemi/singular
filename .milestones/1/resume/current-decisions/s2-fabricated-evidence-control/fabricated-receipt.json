@@ -1,0 +1,52 @@
+{
+  "rows": [
+    {
+      "row": "fold-active",
+      "stateInput": "invented-state-input",
+      "stateContinuationDatum": "unrelated-datum",
+      "requestInput": "invented-request-input",
+      "rootBefore": "invented-root-A",
+      "rootAfter": "invented-root-B",
+      "representativeAppliedPolicy": "invented-applied-policy",
+      "mint": [
+        {
+          "policy": "invented-applied-policy",
+          "name": "wrong-unchecked-name",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "row": "occupied-key",
+      "submittedTxId": "not-a-transaction-id",
+      "outcome": "refused",
+      "refusedByScript": "not-the-state-script"
+    },
+    {
+      "row": "free-key-control",
+      "outcome": "accepted"
+    },
+    {
+      "row": "supported-action-control",
+      "outcome": "accepted"
+    },
+    {
+      "row": "ownerless-end",
+      "outcome": "refused",
+      "refusedByScript": "invented-script",
+      "submittedTxId": "invented-tx"
+    },
+    {
+      "row": "ownerless-migration",
+      "outcome": "refused",
+      "refusedByScript": "invented-script",
+      "submittedTxId": "invented-tx"
+    },
+    {
+      "row": "ownerless-sweep",
+      "outcome": "refused",
+      "refusedByScript": "invented-script",
+      "submittedTxId": "invented-tx"
+    }
+  ]
+}

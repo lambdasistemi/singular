@@ -1,0 +1,30 @@
+[
+  {
+    "pid": 72262,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/pi --provider zai --model glm-5.3-flash --thinking max --approve",
+    "start": "149321186"
+  },
+  {
+    "pid": 3808876,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/pi --provider opencode-go --model muse-spark-1.3-contributor --thinking xhigh --approve",
+    "start": "147649748"
+  },
+  {
+    "pid": 4052478,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/pi --provider opencode-go --model muse-spark-1.3-contributor --thinking xhigh --approve",
+    "start": "148440131"
+  },
+  {
+    "pid": 4182517,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/pi --provider zai --model glm-5.3-flash --thinking max --approve",
+    "start": "149071436"
+  }
+]

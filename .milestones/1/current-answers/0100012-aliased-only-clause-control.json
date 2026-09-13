@@ -1,0 +1,29 @@
+{
+  "candidate": "0100012b1afa318df3bae6cf40d6d9ee3507110e",
+  "independentClauses": [
+    "given",
+    "when"
+  ],
+  "aliasedOnlyClauses": [
+    "then"
+  ],
+  "positive_mapping_debt": false,
+  "positive_layer_debt": false,
+  "positive_findings": [],
+  "mapping_debt": true,
+  "layer_debt": true,
+  "findings": [
+    {
+      "code": "duplicate-layer-identity",
+      "detail": "Singular.Statements.greeter_iff: execution(s) ['exec-A'] appear in more than one required layer family \u2014 one execution aliased into two layers contributes to neither"
+    },
+    {
+      "code": "clauses-uncovered/state-machine",
+      "detail": "Singular.Statements.greeter_iff: required clauses ['then'] are exercised by no paying state-machine check \u2014 the state-machine layer does not cover the whole claim"
+    },
+    {
+      "code": "clauses-uncovered/integration-story",
+      "detail": "Singular.Statements.greeter_iff: required clauses ['then'] are exercised by no paying integration-story check \u2014 the integration-story layer does not cover the whole claim"
+    }
+  ]
+}

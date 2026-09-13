@@ -1,0 +1,212 @@
+[
+  {
+    "pid": 285790,
+    "ppid": 3448072,
+    "stat": "Ss",
+    "args": "/run/current-system/sw/bin/bash -c source /home/paolino/.claude/shell-snapshots/snapshot-bash-1789125513825-9vm3p7.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /tmp/projects/singular/milestone-1/epic-18 && declare -A warned; while true; do now=$(date +%s); for w in t87b-blaster-refinement t80e-execution-evidence; do f=\"$w/STATUS.md\"; [ -f \"$f\" ] || continue; last=$(tail -1 \"$f\"); case \"$last\" in *\"  BLOCKED  \"*|*\"  COMPLETE  \"*|*\"  RETIRED  \"*|*\"  NOTE  PARKED\"*) th=90 ;; *) th=25 ;; esac; age=$(( (now - $(stat -c %Y \"$f\")) / 60 )); if [ \"$age\" -ge \"$th\" ]; then if [ \"${warned[$w]:-0}\" -eq 0 ]; then echo \"STALE-JOURNAL $w: ${age}m since last event (threshold ${th}m) — classify by pane/process, do not assume stopped\"; warned[$w]=1; fi; else warned[$w]=0; fi; done; sleep 300; done' < /dev/null && pwd -P >| /tmp/claude-d2a3-cwd",
+    "start": "149691171"
+  },
+  {
+    "pid": 566966,
+    "ppid": 285790,
+    "stat": "S",
+    "args": "sleep 300",
+    "start": "150351227"
+  },
+  {
+    "pid": 1991166,
+    "ppid": 3448072,
+    "stat": "Ss",
+    "args": "/run/current-system/sw/bin/bash -c source /home/paolino/.claude/shell-snapshots/snapshot-bash-1789125513825-9vm3p7.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'tail -n 0 -F /tmp/projects/singular/milestone-1/epic-18/t80c-release-gate/STATUS.md | grep -E --line-buffered '\"'\"'  [A-Z][A-Z-]+  '\"'\"'' < /dev/null && pwd -P >| /tmp/claude-8784-cwd",
+    "start": "145175847"
+  },
+  {
+    "pid": 1991168,
+    "ppid": 1991166,
+    "stat": "S",
+    "args": "tail -n 0 -F /tmp/projects/singular/milestone-1/epic-18/t80c-release-gate/STATUS.md",
+    "start": "145175847"
+  },
+  {
+    "pid": 1991169,
+    "ppid": 1991166,
+    "stat": "S",
+    "args": "/run/current-system/sw/bin/bash -c source /home/paolino/.claude/shell-snapshots/snapshot-bash-1789125513825-9vm3p7.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'tail -n 0 -F /tmp/projects/singular/milestone-1/epic-18/t80c-release-gate/STATUS.md | grep -E --line-buffered '\"'\"'  [A-Z][A-Z-]+  '\"'\"'' < /dev/null && pwd -P >| /tmp/claude-8784-cwd",
+    "start": "145175847"
+  },
+  {
+    "pid": 1991170,
+    "ppid": 1991169,
+    "stat": "S",
+    "args": "ugrep -G --ignore-files --hidden -I --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.hg --exclude-dir=.bzr --exclude-dir=.jj --exclude-dir=.sl -E --line-buffered   [A-Z][A-Z-]+",
+    "start": "145175848"
+  },
+  {
+    "pid": 3448070,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/run/current-system/sw/bin/claude --dangerously-skip-permissions --model claude-opus-5 --effort high",
+    "start": "138340865"
+  },
+  {
+    "pid": 3448072,
+    "ppid": 10964,
+    "stat": "Ssl+",
+    "args": "/run/current-system/sw/bin/claude --dangerously-skip-permissions --model claude-opus-5 --effort high",
+    "start": "138340869"
+  },
+  {
+    "pid": 3448291,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "npm exec @playwright/mcp@latest --headless --isolated --executable-path /nix/store/9casbd5rjyh59dkji1xz5k6a15bzs8mv-chromium-144.0.7559.96/bin/chromium",
+    "start": "138340963"
+  },
+  {
+    "pid": 3448292,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "npm exec @upstash/context7-mcp",
+    "start": "138340964"
+  },
+  {
+    "pid": 3448293,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "/nix/store/slhpx9glq7vl99bwi93bgrhn3syv98s1-python3-3.13.11/bin/python3.13 /nix/store/a4ksv505qgfcf154766nv4dzxbhcg24v-mcp-memory-server-0.2.0/bin/.mcp-memory-wrapped",
+    "start": "138340964"
+  },
+  {
+    "pid": 3448370,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "npm exec @playwright/mcp@latest --headless --isolated --executable-path /nix/store/9casbd5rjyh59dkji1xz5k6a15bzs8mv-chromium-144.0.7559.96/bin/chromium",
+    "start": "138340968"
+  },
+  {
+    "pid": 3448371,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "npm exec @upstash/context7-mcp",
+    "start": "138340968"
+  },
+  {
+    "pid": 3448375,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "/nix/store/slhpx9glq7vl99bwi93bgrhn3syv98s1-python3-3.13.11/bin/python3.13 /nix/store/a4ksv505qgfcf154766nv4dzxbhcg24v-mcp-memory-server-0.2.0/bin/.mcp-memory-wrapped",
+    "start": "138340968"
+  },
+  {
+    "pid": 3448563,
+    "ppid": 3448291,
+    "stat": "Sl+",
+    "args": "node /home/paolino/.npm/_npx/9833c18b2d85bc59/node_modules/.bin/playwright-mcp --headless --isolated --executable-path /nix/store/9casbd5rjyh59dkji1xz5k6a15bzs8mv-chromium-144.0.7559.96/bin/chromium",
+    "start": "138341044"
+  },
+  {
+    "pid": 3448583,
+    "ppid": 3448370,
+    "stat": "Sl+",
+    "args": "node /home/paolino/.npm/_npx/9833c18b2d85bc59/node_modules/.bin/playwright-mcp --headless --isolated --executable-path /nix/store/9casbd5rjyh59dkji1xz5k6a15bzs8mv-chromium-144.0.7559.96/bin/chromium",
+    "start": "138341046"
+  },
+  {
+    "pid": 3448608,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node /nix/store/7099ad4f4r1b2d8d6v2xrh898bzkw8mi-mcp-merge-guard-0.4.0/lib/dist/index.js",
+    "start": "138341083"
+  },
+  {
+    "pid": 3448609,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node /nix/store/7099ad4f4r1b2d8d6v2xrh898bzkw8mi-mcp-merge-guard-0.4.0/lib/dist/index.js",
+    "start": "138341086"
+  },
+  {
+    "pid": 3448658,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node /nix/store/1knfzma18k9k0fqqb47kflsq35ksn52g-mcp-worktree-guard-ac4f4f3/lib/dist/src/index.js",
+    "start": "138341104"
+  },
+  {
+    "pid": 3448661,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "/nix/store/9cyx2v23dip6p9q98384k9v06c96qskb-nodejs-24.13.0/bin/node /nix/store/1knfzma18k9k0fqqb47kflsq35ksn52g-mcp-worktree-guard-ac4f4f3/lib/dist/src/index.js",
+    "start": "138341107"
+  },
+  {
+    "pid": 3448753,
+    "ppid": 3448072,
+    "stat": "Sl+",
+    "args": "/nix/store/v90dllnlqmz8gv77wsdn5aak1ic8qm33-uv-0.9.26/bin/uv tool uvx lean-lsp-mcp",
+    "start": "138341165"
+  },
+  {
+    "pid": 3448754,
+    "ppid": 3448292,
+    "stat": "Sl+",
+    "args": "node /home/paolino/.npm/_npx/eea2bd7412d4593b/node_modules/.bin/context7-mcp",
+    "start": "138341166"
+  },
+  {
+    "pid": 3448755,
+    "ppid": 3448070,
+    "stat": "Sl+",
+    "args": "/nix/store/v90dllnlqmz8gv77wsdn5aak1ic8qm33-uv-0.9.26/bin/uv tool uvx lean-lsp-mcp",
+    "start": "138341167"
+  },
+  {
+    "pid": 3448809,
+    "ppid": 3448371,
+    "stat": "Sl+",
+    "args": "node /home/paolino/.npm/_npx/eea2bd7412d4593b/node_modules/.bin/context7-mcp",
+    "start": "138341176"
+  },
+  {
+    "pid": 3448948,
+    "ppid": 3448753,
+    "stat": "Sl+",
+    "args": "/home/paolino/.cache/uv/archive-v0/C7-2jl5fcWQUDy1zNNDsD/bin/python /home/paolino/.cache/uv/archive-v0/C7-2jl5fcWQUDy1zNNDsD/bin/lean-lsp-mcp",
+    "start": "138341200"
+  },
+  {
+    "pid": 3448949,
+    "ppid": 3448755,
+    "stat": "Sl+",
+    "args": "/home/paolino/.cache/uv/archive-v0/C7-2jl5fcWQUDy1zNNDsD/bin/python /home/paolino/.cache/uv/archive-v0/C7-2jl5fcWQUDy1zNNDsD/bin/lean-lsp-mcp",
+    "start": "138341200"
+  },
+  {
+    "pid": 3671152,
+    "ppid": 3448072,
+    "stat": "Ss",
+    "args": "/run/current-system/sw/bin/bash -c source /home/paolino/.claude/shell-snapshots/snapshot-bash-1789125513825-9vm3p7.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /tmp/projects/singular/milestone-1/epic-18 && tail -n 0 -F t87-blaster-driver/STATUS.md 2>/dev/null | grep -E --line-buffered '\"'\"'  (START|NOTE|BLOCKED|RESUMED|GATE-PASS|GATE-FAIL|COMMIT|PUSHED|COMPLETE|SCOPE-FAIL|FAILED-GATE)  '\"'\"'' < /dev/null && pwd -P >| /tmp/claude-a6b5-cwd",
+    "start": "147244775"
+  },
+  {
+    "pid": 3671154,
+    "ppid": 3671152,
+    "stat": "S",
+    "args": "tail -n 0 -F t87-blaster-driver/STATUS.md",
+    "start": "147244775"
+  },
+  {
+    "pid": 3671155,
+    "ppid": 3671152,
+    "stat": "S",
+    "args": "/run/current-system/sw/bin/bash -c source /home/paolino/.claude/shell-snapshots/snapshot-bash-1789125513825-9vm3p7.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'cd /tmp/projects/singular/milestone-1/epic-18 && tail -n 0 -F t87-blaster-driver/STATUS.md 2>/dev/null | grep -E --line-buffered '\"'\"'  (START|NOTE|BLOCKED|RESUMED|GATE-PASS|GATE-FAIL|COMMIT|PUSHED|COMPLETE|SCOPE-FAIL|FAILED-GATE)  '\"'\"'' < /dev/null && pwd -P >| /tmp/claude-a6b5-cwd",
+    "start": "147244775"
+  },
+  {
+    "pid": 3671156,
+    "ppid": 3671155,
+    "stat": "S",
+    "args": "ugrep -G --ignore-files --hidden -I --exclude-dir=.git --exclude-dir=.svn --exclude-dir=.hg --exclude-dir=.bzr --exclude-dir=.jj --exclude-dir=.sl -E --line-buffered   (START|NOTE|BLOCKED|RESUMED|GATE-PASS|GATE-FAIL|COMMIT|PUSHED|COMPLETE|SCOPE-FAIL|FAILED-GATE)",
+    "start": "147244775"
+  }
+]

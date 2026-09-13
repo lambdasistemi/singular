@@ -1,0 +1,51 @@
+{
+  "head": "cba3443a43a707715c148c4909b9a8ca81da7e67",
+  "source": "/code/singular-e18-exec",
+  "root": "/tmp/cba3443-coverage-review-SojktH/root",
+  "sourceArchive": "/tmp/cba3443-coverage-review-SojktH/source.tar",
+  "results": [
+    {
+      "name": "original",
+      "exit": 1,
+      "summary": [
+        "COMPLETION: INCOMPLETE",
+        "  mapping debt rows: 182",
+        "  implementation-layer debt rows: 182",
+        "  execution debt findings: 0",
+        "  stale bindings: 0"
+      ],
+      "command": [
+        "/nix/store/x3if1x7sir7ndkyvzjqimivzy50qavan-coverage-gate/bin/coverage-gate",
+        "--root",
+        "/tmp/cba3443-coverage-review-SojktH/root",
+        "completion",
+        "--record",
+        "/tmp/projects/singular/milestone-1/handoffs/cba3443-coverage-partial-control/record-original.json",
+        "--report",
+        "/tmp/projects/singular/milestone-1/handoffs/cba3443-coverage-partial-control/original.json"
+      ]
+    },
+    {
+      "name": "required-clauses-deleted",
+      "exit": 1,
+      "summary": [
+        "COMPLETION: INCOMPLETE",
+        "  mapping debt rows: 182",
+        "  implementation-layer debt rows: 182",
+        "  execution debt findings: 0",
+        "  stale bindings: 0"
+      ],
+      "command": [
+        "/nix/store/x3if1x7sir7ndkyvzjqimivzy50qavan-coverage-gate/bin/coverage-gate",
+        "--root",
+        "/tmp/cba3443-coverage-review-SojktH/root",
+        "completion",
+        "--record",
+        "/tmp/projects/singular/milestone-1/handoffs/cba3443-coverage-partial-control/record-required-clauses-deleted.json",
+        "--report",
+        "/tmp/projects/singular/milestone-1/handoffs/cba3443-coverage-partial-control/required-clauses-deleted.json"
+      ]
+    }
+  ],
+  "scope": "Frozen git archive; only --record override deletes required fold/withdraw clauses. Product source unchanged. Earlier live-root preflight refused because HEAD moved; no control executed in that failed attempt."
+}

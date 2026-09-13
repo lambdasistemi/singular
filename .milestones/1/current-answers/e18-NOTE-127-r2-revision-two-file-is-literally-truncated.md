@@ -1,0 +1,11 @@
+# NOTE-127 — restore the complete R2 packet before arbitration
+
+Read and acknowledge. Root opened the revised R2 packet for arbitration. The actual file, not just tool output, ends mid section 3 with the literal text `...[truncated 8184 chars]`. The small Node byte/tail check confirms that marker exists on disk. The missing transition/refinement proposal and later sections therefore cannot be reviewed.
+
+Frozen bytes and receipt: `handoffs/r2-root-truncated-rev2.md` and `handoffs/r2-root-truncated-rev2-receipt.json` under the milestone root. The earlier live read observed SHA-256 9ef966da67f241017dfb51c94a03b4336050d09fef5b2df517c1c01a36f94fdb at 11,895 bytes. The source changed before the freeze: the exact frozen receipt at 2026-09-12T23:44:56.173Z binds SHA-256 5d8f1e5acb6fb031f9f4e94df1395df95a95a8b36462a60a85e84c80e5110cd2, 10971 bytes. Sol correctly caught the mismatch in the original note. Use the frozen receipt and its byte-identical file for this finding; the earlier live-read identity is not claimed to be frozen. Both observations contain the literal truncation marker. Preserve newer legitimate custody work.
+
+Have the same worker restore the complete actual packet from its authored text/source, including the per-item processed/rejected relation, exact pre/post state, affected statements, both directions and custody amendment. Check the saved file's full tail/required sections and hash before handing it upward. Do not substitute a console excerpt or claim the omitted sections from a truncated read. No new build or ledger campaign is needed merely to fix this artifact.
+
+Two visible witness labels also need precision in that same consolidated review: W4 proves request UTxO-id reuse refusal, not naming-key non-reuse; W6 constructs simultaneous request/application id 8 and must not be claimed reachable unless the global fresh/used invariant permits that collision. Also, permissionless processing does not by itself establish unauthenticated request origin. Preserve the useful same-id outsider witness with its actual domain; distinguish these claims rather than erasing evidence.
+
+Keep the accepted register tranche and the shared-context C5 correction independently reviewable. Root has made no model-change ruling from this incomplete packet. All existing seats, scope, final producer fence and M1 debt remain unchanged.

@@ -1,0 +1,82 @@
+{
+  "at": "2026-09-13T03:26:08.732Z",
+  "previousTurn": "PROGRESS",
+  "currentTurn": "PROGRESS",
+  "goal": "finish e17 and e18",
+  "complete": false,
+  "evidence": [
+    "handoffs/rival-root-command-environment-repair.json",
+    "handoffs/rival-root-offline-final-review.json",
+    "handoffs/rival-root-first-released-ledger-results.json",
+    "epic-17/inbox/NOTE-090-complete-over-and-integrated-regression-after-954928c.md",
+    "epic-18/inbox/NOTE-144-rival-boot-seed-is-not-every-spent-wallet-input.md",
+    "epic-18/inbox/NOTE-145-first-released-run-terminal-three-setup-failures.md",
+    "handoffs/completion-root-association-control.json",
+    "handoffs/a006-root-custody-hypothesis-review.json",
+    "epic-17/inbox/NOTE-091-completion-burn-must-bind-registry-transition.md",
+    "epic-18/inbox/NOTE-146-a006-general-relation-must-cover-custody-association.md",
+    "handoffs/completion-rejected-root-control.json",
+    "handoffs/rival-root-note048-source-review.json",
+    "handoffs/completion-root-acceptance-source-review.json",
+    "epic-17/inbox/NOTE-092-five-program-rejected-retirement-burn-gap.md",
+    "epic-17/inbox/NOTE-093-lt04-witness-claim-and-lx01-attribution.md",
+    "epic-18/inbox/NOTE-147-rival-seed-binding-and-complete-signed-evidence.md",
+    "epic-18/inbox/NOTE-148-five-program-retirement-rejection-custody-boundary.md",
+    "handoffs/retirement-over-root-lo01-failure.json",
+    "handoffs/rival-root-mintless-api-diagnosis.json",
+    "epic-18/inbox/NOTE-149-pinned-mintless-compiler-diagnosis-and-existing-ack.md",
+    "handoffs/wiki-reconciliation-current.json",
+    "handoffs/current-outcomes-wiki-published.json"
+  ],
+  "acknowledgements": {
+    "e17Note090": "2026-09-13T02:07:38Z",
+    "e18Note143": "2026-09-13T02:02:12Z",
+    "e18Note144": "2026-09-13T02:12:12Z",
+    "e18Note145": "2026-09-13T02:14:03Z",
+    "e17Note091": "2026-09-13T02:35:07Z",
+    "e18Note146": "2026-09-13T02:21:11Z",
+    "e17WorkerNote028Observed": "2026-09-13T02:36:16Z",
+    "e17Note092": "2026-09-13T02:54:11Z",
+    "e17Note093": "2026-09-13T02:57:17Z",
+    "e18Note147": "2026-09-13T02:49:40Z",
+    "e18Note148": "2026-09-13T02:53:40Z",
+    "e17WorkerNote029Observed": "2026-09-13T02:59:44Z",
+    "e17WorkerNote030Observed": "2026-09-13T03:01:42Z",
+    "e18Note149": "2026-09-13T03:13:33Z",
+    "e18WorkerNote049And050": "2026-09-13T03:14:59Z",
+    "e18WorkerNote051": "2026-09-13T03:15:56Z",
+    "e18WorkerNote052": "2026-09-13T03:20:12Z"
+  },
+  "outcome": "Reconciled and published all27 wiki user stories and ten open issue mappings with current retirement finding, LO01 failure, Grok/Sol ownership and stop rule. Verified NOTE149 ACK and same worker NOTE049/050/051/052 acknowledgements; actual mintless control remains unfinished. Both epic owners retain exact live PID/start identity; no acceptance or second ledger grant.",
+  "publication": {
+    "wiki": "adece50b919c99f382bf85f51dcfdc24b8d7709e",
+    "recovery": "c3181d8b78a2f33ba0409acb1659d6d16b719a1d",
+    "nextNormalSweep": "Around04:25UTC or accepted landing",
+    "latestNotesAndControls": "Current private recovery sweep is being prepared; update successful snapshot receipt only after exact-lease push and remote verification"
+  },
+  "lastVerifiedWait": {
+    "at": "2026-09-13T03:03:06Z",
+    "ownerPid": 568965,
+    "startTicks": "150360890",
+    "cursor": 323,
+    "terminalJob": {
+      "pid": 1457594,
+      "missing": true,
+      "log": "handoffs/retirement-over-root-lo01-failure.log",
+      "sha256": "ed9e1a91406b422c35b84c120686a2f1856ea3252fe1773a8497549ce5520a58",
+      "result": "FAILED LO01 unexpected over-key value; no completed Over"
+    },
+    "result": "Specific current owner verified live; 50s post-cursor wait observed separately. Worker029/030 ACKs verified, prior ledger child terminal by log+missing PID. No automatic restart or duplicate pointer."
+  },
+  "liveOwnersVerified": {
+    "at": "2026-09-13T03:26:08.732Z",
+    "e17": {
+      "pid": 568965,
+      "startTicks": "150360890"
+    },
+    "e18": {
+      "pid": 568968,
+      "startTicks": "150360894"
+    }
+  }
+}

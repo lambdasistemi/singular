@@ -1,0 +1,37 @@
+{
+  "source": "f3a68b1bcd63119f8db79548a7d15926bf408856",
+  "tree": "3cac539b1db35cabfbe176775c8476cd2f753bc7",
+  "status": "",
+  "command": [
+    "nix",
+    "develop",
+    "--command",
+    "script",
+    "-qec",
+    "aiken check",
+    "/dev/null"
+  ],
+  "cwd": "/tmp/singular-ownerless-f3-check-VadFSy/subject/onchain",
+  "exit": 0,
+  "signal": null,
+  "durationMs": 19727,
+  "stdoutSha256": "0129d9916281adc5fbc8b40f9df6a61cd0e35ba6f4f40dc4c3519366a3130511",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "summary": [
+    "    │ PASS [mem:   9.09 K, cpu:   5.89 M] assetName_deterministic\r",
+    "    │ PASS [mem:   9.69 K, cpu:   6.06 M] assetName_different_txid\r",
+    "    │ PASS [mem:   9.69 K, cpu:   6.06 M] assetName_different_index\r",
+    "    │ PASS [after 100 tests] prop_assetName_deterministic\r",
+    "    │ PASS [mem:  49.23 K, cpu:  14.93 M] tokenFromValue_single_nft\r",
+    "    │ PASS [mem:  20.48 K, cpu:   5.95 M] tokenFromValue_ada_only\r",
+    "    │ PASS [mem:  53.02 K, cpu:  14.77 M] tokenFromValue_multi_policy\r",
+    "    │ PASS [mem:  82.37 K, cpu:  23.76 M] tokenFromValue_multi_asset\r",
+    "    │ PASS [mem:  51.25 K, cpu:  15.57 M] tokenFromValue_roundtrip\r",
+    "    │ PASS [mem:  26.20 K, cpu:   8.22 M] quantity_present\r",
+    "    │ PASS [mem:  20.04 K, cpu:   6.06 M] quantity_wrong_policy\r",
+    "    │ PASS [mem:  25.57 K, cpu:   7.86 M] quantity_wrong_asset\r",
+    "    │ PASS [mem:  27.66 K, cpu:   8.71 M] quantity_valueFromToken\r",
+    "    ┕━━━━━━━ with --seed=1228139348 → 13 tests | 13 passed | 0 failed\r",
+    "      Summary 1411 checks, 0 errors, 3 warnings\r"
+  ]
+}

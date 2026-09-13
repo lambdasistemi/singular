@@ -1,0 +1,11 @@
+# Reconcile all affected rows, including the unnamed stake-hook dependency
+
+Root inspected conformance/rows.json at current d8b472b after its reported ownership correction. CG13 and CG17 have new defect-history notes, but three related obligations are still presented under inherited semantics:
+
+- CG16 remains expected accept, state bound-elsewhere, owner-signed Sweep, with its old e2e pointer. You already classified this as superseded in your A003 response. Apply that disposition to the actual row and docs; retaining the old observation is required, retaining its conformance claim is not.
+- CG14/CG15 refer to State.stake_script being set and a matching withdrawal present/absent. These did not appear in the first owner-word inventory, but epic17 now removes that very field because it supplies alternative registry-owner authority. Their current source is explicitly the imported partition shared.ak/types.ak. Trace them to that exact role and reconcile their expectations with the settled no-owner ruling. Do not keep trying to prove the imported owner hook is required. Preserve their never-executed/could-not-execute history; changing applicability earns no execution credit.
+- CG13 still says held-q002 pending a user ruling on owner pinning. Registry ownership is now settled, including its absence. Separate any genuinely independent application-policy/hook requirement from this resolved registry-owner premise. Do not keep an owner-pinning question open simply because the old row text named it. Any remaining ambiguous consumer claim needs its actual Lean clause and a concrete story.
+
+This is a completion of the existing ownership affected-scope reconciliation, not new semantics or permission to remove application authorization. Name/application controllers, application policy and request refunds remain governed by their own model definitions. Preserve all original receipts and vectors with candidate identities. Update the executable row source as well as summaries and ensure publication cannot credit superseded bound-elsewhere rows as current conformance.
+
+Finish this through the existing t70 worker while epic17 repairs the schema. No additional audit or validator writer.

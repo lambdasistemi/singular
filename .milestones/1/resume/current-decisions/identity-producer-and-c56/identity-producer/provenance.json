@@ -1,0 +1,50 @@
+{
+  "sourceCommit": "5bd7c79dd64fd9c7ec872f1c20ab2f5e075366ad",
+  "sources": [
+    {
+      "source": "offchain/lib/Cardano/MPFS/Cage/Blueprint.hs",
+      "sha256": "7033fdc2e9b54eb5b3c82535995b8d83bdcd5bef813713e50b81ea46566efe90"
+    },
+    {
+      "source": "offchain/lib/Cardano/MPFS/Cage/Types.hs",
+      "sha256": "e4ec3490f07e253cdcd09176d91cad4b0df2e527f4c00bea972f959c4eb32d52"
+    },
+    {
+      "source": "offchain/lib/Cardano/MPFS/Cage/TxBuilder/Internal.hs",
+      "sha256": "1b4bb4f8044d3d46b93ab756ec19eea0432ae9cda2d06d5c0fd3b711c6728b20"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "applied.flat",
+      "sha256": "3fe96deba80f8a4e54d162998619e41111bf7b24f11a18673f9251c3b0456f86"
+    },
+    {
+      "name": "applied.flat.hex",
+      "sha256": "bbecadad042f390126051aec007d009672bb66df54e4d0ff4c737ff65c9b649c"
+    },
+    {
+      "name": "applied.script-hash.hex",
+      "sha256": "85ff7fe27a75abb7d63021da8efd4f95453401798b40980ce098fbf816efaa80"
+    },
+    {
+      "name": "applied.serialised.cbor",
+      "sha256": "4b43ec578998214761359ec9c095b94ec5ea6ca5c2ce0d7ca24cfead1e4a5c60"
+    },
+    {
+      "name": "applied.single-cbor.hex",
+      "sha256": "3ac3ed3dfd00d9c022d608804609b8caba571fccc24d779ff796bc7a5ee1fa2d"
+    },
+    {
+      "name": "unapplied.script-hash.hex",
+      "sha256": "e37428a44c1eb9b96ecfeb775cf4b1bef924af8d6e239b286c9aedd27c49a104"
+    },
+    {
+      "name": "unapplied.serialised.cbor",
+      "sha256": "ad8fb00ac0e96af16d9020018b1cc87ce47c22ec776c0085dba53e51c4f3d6db"
+    }
+  ],
+  "trackedSourceDiffEmpty": true,
+  "ghc": "/nix/store/dgvrp8z9n4b495z7hv18rzxq2vd06knw-ghc-shell-for-packages-ghc-9.12.3-env/bin/ghc",
+  "binarySha256": "4f2c5e3ffbabdf2e87326a4acb409672cf37cc3077c81b921a751b0bc42fd46f"
+}

@@ -1,0 +1,4 @@
+/tmp/singular-root-rival-shell-env-NqiImO/Control.sh: line 22: /review/result/environment.txt: No such file or directory
+mkdir: cannot create directory '/copied-policy': Permission denied
+/tmp/singular-root-rival-shell-env-NqiImO/Control.sh: line 44: /copied-policy/environment.txt: No such file or directory
+mkdir: cannot create directory '/forged-anchor': Permission denied

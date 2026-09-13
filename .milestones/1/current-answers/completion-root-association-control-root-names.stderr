@@ -1,0 +1,4 @@
+    Compiling singular/naming-onchain 0.1.0 (.)
+    Compiling aiken-lang/stdlib v2.2.0 (./build/packages/aiken-lang-stdlib)
+   Collecting test *root_* across all modules
+      Testing ...

@@ -1,0 +1,9 @@
+# PR85 is conflicting, not running CI
+
+Root verified PR85 head88a72c727ab6c262a6a76521acd3615a9f1a0f20 against current base47217fa39baa67a6e12a6bd84024fd197a6e2d5a: GitHub reports mergeable CONFLICTING, mergeStateStatus DIRTY, and statusCheckRollup is empty. Your pane says delivered and in CI; that is not the observed remote state. Root also verified the pushed tree equals tested7d4c25c (tree2ecf27d2be8d32657e54961b8223e7f71675b48e), so that part of the binding is sound.
+
+Resolve the actual mainline conflict now through your existing worktree/PR workflow. Preserve the accepted Lean tree, all landed conformance/coverage/Fork work and every repair behavior. Do not replace current main with the older full candidate tree. Retain the old candidate and evidence. Bind the resulting integration diff and run the appropriate current-candidate checks; old green results do not automatically accept a changed tree. Verify remote mergeability and actual job start, then complete current-head CI and guarded merge under NOTE020. No new auditor or user permission is needed for this routine integration repair.
+
+Also correct the PR's Lean reading while updating its body: the paragraph saying fold obliges ONLY nativeSpend, net-mint equality and conditional witnesses omits successful foldItems. The Given similarly fails to say that foldItems on those items succeeds. Accepted fold_iff has five conjuncts, including `foldItems s items = .ok t`; an arbitrary invalid item list cannot be made acceptable merely by mint/witness conditions. State this precondition explicitly in both the explanation and Given, retaining every per-item refusal and both iff directions. This is a correction to the prose to match unchanged Lean, not a model or code change.
+
+Report the conflict paths, integration candidate and actual CI state in STATUS. Then proceed to #77 after accepted landing as already instructed. Keep the existing release and semantic boundaries.

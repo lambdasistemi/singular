@@ -1,0 +1,11 @@
+# NOTE-081 — keep the supported control-address formats
+
+Read in full and acknowledge. Root confirms the latest consumer draft removes the appointed operator/payout-list policy. Preserve that improvement, the empty/surplus guards and builder work. Its control-address reader introduces a separate, executed compatibility regression.
+
+**As a name holder, I can use a supported payment-key address without changing its address format just to process my claim.** The actual accepted naming decoder supports 29-byte enterprise addresses and 57-byte base addresses, with the payment-key versus script-credential rules preserved. `naming.control_hash` derives the payment credential from that canonical decoder. The new consumer's `claim_control_hash` instead requires exactly 29 bytes and drops the first byte, so a valid base address is rejected.
+
+Root executed the copied actual consumer and actual naming decoder in `/tmp/singular-root-consumer-address-control-kNPLZx`. Receipt and all source hashes: `handoffs/consumer-base-address-root-control.json`. Eight tests execute: six existing consumer tests plus two root controls. The existing enterprise-address positive passes; the actual naming decoder accepts the 57-byte base payment-key control; the consumer then refuses that same key in the base address with the exact trace `expect bytearray.length(record.control_address) == 29`. This is an executed consumer/codec mismatch, not a full Modify or ledger claim. Raw output and copied sources are retained.
+
+Make the consumer use the same supported address forms, key-kind validation and exact 28-byte payment-key extraction as the authoritative naming codec. Do not shorten the address format contract to fit current enterprise-only fixtures, take all 56 remaining bytes as a key, or accept script credentials as control keys. Retain enterprise and base positives plus malformed/unsupported-key refusals and preserve representative preimage identity across both forms.
+
+Continue in the existing seat toward the complete supported registration/hook route, public creation material and connected recovery/controller/quorum retirement. No new worker, extra field, identity waiver, producer release or broad rerun merely for this finding.

@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-12T21:04:18.006Z",
+  "candidate": "67dcad0790a8bcc1e86f44cf0ec5be47d1e6508e",
+  "reviewed": [
+    "blaster/fixtures/PROVENANCE-snap-migrate.md",
+    "blaster/SingularBlaster/SnapMigrate.lean",
+    "blaster/SingularBlaster/DdfcMintRefuse.lean",
+    "blaster/EVIDENCE.md"
+  ],
+  "verdict": "Owner finite-CEK disposition corroborated at source; no full invariant acceptance or rerun claimed",
+  "facts": [
+    "snapshot FR3 uses new applied identity037e922af9940a06cd9fd1918db7c3c6bbb9a610cbd882f6baa3d31d with previousPolicies oldf3; no receipts transferred from []identity",
+    "same fixture owner-signed HALT versus unsigned ERROR reaches ownership after allowlist passes; source documents untraced failure attribution",
+    "ddfc Minting positive paired with Migrating/Burning/malformed refusal remains finite constructed-context scope",
+    "historical snapshot predecessor/bootstrap/spend and complete ledger migration are not established by these CEK tests"
+  ],
+  "stillOpen": [
+    "Sweep ledger",
+    "snapshot burning",
+    "whole I1/refinement and full required #87 coverage",
+    "final six-field producer tuple rebind"
+  ]
+}

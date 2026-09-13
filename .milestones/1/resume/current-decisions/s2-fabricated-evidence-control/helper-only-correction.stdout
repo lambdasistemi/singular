@@ -1,0 +1,14 @@
+S2 receipt-wellformed         PASS  7 rows
+S2 connected-fold             PASS  state=invented-state-input request=invented-request-input root invented-root-A -> invented-root-B
+S2 no-registry-owner          PASS  signers=[] witnesses=[]
+S2 owner-field-removed        PASS  no owner field in the state datum type
+S2 applied-rep-identity       PASS  applied=invented-applied-policy (unapplied=unapplied-placeholder) qty=1
+S2 occupied-key-executed      PASS  tx=not-a-transaction-id refused by not-the-state-script
+S2 free-key-control           PASS  a distinct name registered
+S2 ownerless-end              PASS  tx=invented-tx refused by invented-script
+S2 ownerless-migration        PASS  tx=invented-tx refused by invented-script
+S2 ownerless-sweep            PASS  tx=invented-tx refused by invented-script
+S2 supported-action-control   PASS  the registry still works
+S2 no-back-door               PASS  no owner-authorized path outside shared.ak
+
+S2 SUPPLEMENT GREEN

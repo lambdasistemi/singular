@@ -1,0 +1,25 @@
+⚠ [51/270] Replayed PlutusCore.UPLC.CostModels
+warning: PlutusCore/UPLC/CostModels.lean:101:4: declaration uses 'sorry'
+warning: PlutusCore/UPLC/CostModels.lean:101:4: declaration uses 'sorry'
+warning: PlutusCore/UPLC/CostModels.lean:101:4: declaration uses 'sorry'
+warning: PlutusCore/UPLC/CostModels.lean:101:4: declaration uses 'sorry'
+⚠ [52/270] Replayed PlutusCore.UPLC.CekMachine
+warning: PlutusCore/UPLC/CekMachine.lean:211:4: declaration uses 'sorry'
+ℹ [267/270] Built SingularBlaster.Scripts (7.8s)
+info: SingularBlaster/Scripts.lean:30:0: Successfully decoded single CBOR hex 'generated/state_state_mint.hex'
+info: SingularBlaster/Scripts.lean:31:0: Successfully decoded single CBOR hex 'generated/state_state_spend.hex'
+info: SingularBlaster/Scripts.lean:32:0: Successfully decoded single CBOR hex 'generated/state_state_else.hex'
+info: SingularBlaster/Scripts.lean:34:0: Successfully decoded single CBOR hex 'generated/request_request_spend.hex'
+info: SingularBlaster/Scripts.lean:35:0: Successfully decoded single CBOR hex 'generated/request_request_else.hex'
+info: SingularBlaster/Scripts.lean:37:0: Successfully decoded single CBOR hex 'generated/staking_staking_withdraw.hex'
+info: SingularBlaster/Scripts.lean:38:0: Successfully decoded single CBOR hex 'generated/staking_staking_else.hex'
+info: SingularBlaster/Scripts.lean:40:0: Successfully decoded single CBOR hex 'generated/application_application_spend.hex'
+info: SingularBlaster/Scripts.lean:41:0: Successfully decoded single CBOR hex 'generated/application_application_mint.hex'
+info: SingularBlaster/Scripts.lean:42:0: Successfully decoded single CBOR hex 'generated/application_application_else.hex'
+info: SingularBlaster/Scripts.lean:44:0: Successfully decoded single CBOR hex 'generated/representative_representative_mint.hex'
+info: SingularBlaster/Scripts.lean:45:0: Successfully decoded single CBOR hex 'generated/representative_representative_else.hex'
+info: SingularBlaster/Scripts.lean:47:0: Successfully decoded single CBOR hex 'generated/retirement_custody_retirement_custody_spend.hex'
+info: SingularBlaster/Scripts.lean:48:0: Successfully decoded single CBOR hex 'generated/retirement_custody_retirement_custody_else.hex'
+✔ [268/270] Built SingularBlaster.Properties (1.2s)
+✔ [269/270] Built SingularBlaster (1.0s)
+Build completed successfully (270 jobs).

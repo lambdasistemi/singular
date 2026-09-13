@@ -1,0 +1,67 @@
+2026-09-12T13:09:51Z  START  mode=COMMIT-OWNER pane=%990 family=muse harness=pi model=muse-spark-1.3-contributor effort=xhigh brief-read successor-to=ticket-77/commit-owner
+2026-09-12T13:19:27Z  NOTE  EXECUTED: verified S3_EVIDENCE honored + candidate derived fail-closed in register Main (evidenceDirFromEnv + candidateFromRepo, never unknown); recovery/retirement connected via ConnectedFold with rc-/rt- keys in 46d2e25; starting rename + witness preservation
+2026-09-12T13:20:06Z  COMMIT  sha=0891eb1 subject=fix-rename-tampered-row-to-misnamed witness=handoffs/e001-witness/
+2026-09-12T13:20:06Z  NOTE  EXECUTED: rename committed 0891eb1 (diff-check PASS, 2 lines); E-001 witness preserved (accepted ae4fb32d bytes+outcome, intact rep, mutant blueprint, run log); S3_EVIDENCE + candidate fail-closed verified; recovery/retirement connected via ConnectedFold verified in 46d2e25; policy-binding architecture needs parent decision — filing BLOCKED
+2026-09-12T13:20:35Z  BLOCKED  Q-001-policy-binding-architecture
+2026-09-12T13:22:01Z  RESUMED  Q-001-policy-binding-architecture authorized-A-state-anchored
+2026-09-12T13:26:46Z  NOTE  EXECUTED: onchain State gains representative_policy (types+state+request), 21 test sites + preservation test added, aiken check GREEN (all suites failed=0 incl new test); onchain manifest regen: state e51b->2bf61b, request 44420f->c3eec410; starting naming application state-anchored policy checks
+2026-09-12T13:46:30Z  NOTE  EXECUTED: Aiken GREEN 96/96 (naming, incl 2 foreign-policy fail-tests + attacker fixture) + onchain GREEN (incl preservation test); blueprints regen (app a49c->703c8a, state e51b->2bf61b, attacker pinned); Haskell 5-field codecs + cfgRepPolicy + boot helper wired (8 cages), exes BUILD GREEN; starting retirement state anchoring + E-001 row + verifier
+2026-09-12T14:26:44Z  COMMIT  sha=617e434 subject=fix-bind-representative-policy-E-001 files=29 evidence=handoffs/issue-77-repair.md
+2026-09-12T14:26:44Z  NOTE  EXECUTED: E-001 state-anchored repair committed 617e434 (Aiken 96/96 + onchain green, exes + cabal-all green, register/recovery/retirement devnet green with foreign refused, docs-check green, Aiken census flips + devnet ledger exemplar, manifests regen); S3 interface + connected rework verified; witness preserved; limits in handoffs/issue-77-repair.md
+2026-09-12T14:26:44Z  PROOF-COMPLETE  gate=S3-ready sha=617e434 base=46d2e25 red=witness-ae4fb32d green=register/recovery/retirement-devnet receipt=handoffs/issue-77-repair.md handoff=handoffs/issue-77-repair.md
+2026-09-12T17:51:58Z  NOTE  NOTE-001 read
+2026-09-12T18:04:22Z  NOTE  EXECUTED: item1 new verifier obligation refusal.representative-policy ESTABLISHED 18/18 on honest evidence + REFUTED (accepted 8417b4) on mutant evidence (listings added to E-001 row so aborted runs resolve); item2 producer identity landed (tool Blueprint.hs:applyBytesParam + applied bytes/hash retained, app 52dbf5 rep 53828b verified); starting item3 release assembly
+2026-09-12T18:08:43Z  COMMIT  sha=fe89e68 subject=repair-batch-3-items base=617e434 files=5 evidence=handoffs/producer-identity.md
+2026-09-12T18:08:43Z  NOTE  EXECUTED: NOTE-001 batch x3 committed fe89e68 — (1) verifier refusal.representative-policy ESTABLISHED 18/18 honest + REFUTED accepted-8417b4 mutant (eve listings added); (2) producer identity handoff + applied bytes/hash retained (app 52dbf5 rep 53828b); (3) release control RED + assembly enumerated + check single-pass (selftest PASS, corruptions reject, 22.5x, full pipeline 12s, 153 members 0 ignored, check JSON PASS)
+2026-09-12T18:08:43Z  PROOF-COMPLETE  gate=S3-ready sha=fe89e68 base=617e434 red=mutant-accepted-8417b4 green=18-18-verifier+register-recovery-retirement-devnet+release-pipeline receipt=handoffs/issue-77-repair.md+handoffs/producer-identity.md handoff=handoffs/issue-77-repair.md
+2026-09-12T18:24:48Z  NOTE  NOTE-002 read
+2026-09-12T18:27:13Z  COMMIT  sha=ddfc4e9 subject=assembler-git-closure base=fe89e68 files=1 evidence=release-shim-probe.log
+2026-09-12T18:27:13Z  NOTE  EXECUTED: NOTE-002 x3 committed ddfc4e9 — (1) pkgs.git in assembler closure, shim-first-PATH full pipeline green with zero ambient ls-files hits (sanity logged); (2) handoff header to fe89e68/ddfc4e9 with honest limits x3 + separable denominators; (3) counts labelled per method; retirement no-op path untouched per ahead-note (pre-empty-refusal model stands)
+2026-09-12T18:27:13Z  PROOF-COMPLETE  gate=S3-ready sha=ddfc4e9 base=fe89e68 red=old-wrapper-clean-PATH-FileNotFoundError-git green=shim-probe-pipeline+closure-carries-git receipt=handoffs/issue-77-repair.md handoff=handoffs/issue-77-repair.md
+2026-09-12T18:56:50Z  NOTE  NOTE-003 read
+2026-09-12T19:03:46Z  NOTE  NOTE-004 read
+2026-09-12T19:06:47Z  NOTE  EXECUTED: NOTE-003/NOTE-004 — phase-1 Lean GREEN uncommitted (empty-fold guard after native-spend, 2 theorems + rfl example, fold_iff/fold_ok items-nonempty appended-last with 1 projection shift, lake 41 jobs, no sorry; on-chain empty guard HELD per NOTE-004); phase-2 HELD zero code (reference-which-cage gap + spent-path gap owned by parent/epic18); phase-3 boundary table landed (confirms parent reading: register-lock/Mr/tips NONE with file:line, rejected-per-owner enforceable without invented economics); handoffs n003-checkpoint.md has mechanical remainder (validator+builder+tests+devnet+commit)
+2026-09-12T19:08:47Z  NOTE  NOTE-005 read
+2026-09-12T19:22:16Z  NOTE  NOTE-007 read
+2026-09-12T19:26:30Z  NOTE  EXECUTED: NOTE-007 — reverted NOTE-005 2-param/SDK work file-for-file (rep 1 param, helper gone); Aiken registry-bound rep names GREEN 98/98 uncommitted (Rep||b224(policy||token||control)||0x00, shared finder, fold+retire association, mirrors rebound, 2 new fail-tests; datum/custody/staking untouched); boundary-table wording + fee-map + reference/SDK/devnet remainder in n003-checkpoint.md delta
+2026-09-12T19:29:46Z  NOTE  NOTE-008 read
+2026-09-12T19:30:23Z  NOTE  NOTE-008 read
+2026-09-12T19:31:05Z  NOTE  EXECUTED: NOTE-008 — read epic-18 proposal (findings kept, generic carrier refused per C1: unauthenticated declarations forgeable, forged-obligation control owed); byte-contract handoff started (spec-exact preimage policy||token||control, file:function paths both sides, vectors/checks/identities marked pending SDK+devnet; typo fixed); no code changes this turn (plain-concat stands as spec-exact with CBOR fallback noted as bounded residual risk)
+2026-09-12T19:42:55Z  NOTE  NOTE-009 read
+2026-09-12T19:44:41Z  NOTE  NOTE-010 read
+2026-09-12T19:45:37Z  NOTE  EXECUTED: NOTE-010 — carrier NOT frozen (no commit); brought back key-material proposal (creation-time control hash 28B + Retire.key_hash field, model lines cited, byte consequences, alternatives rejected, decision needed) in handoffs/key-material-proposal.md; Aiken retire association as-coded would reject the required recovery-then-retire journey (stated, not shipped as correct)
+2026-09-12T19:50:26Z  NOTE  NOTE-011 read
+2026-09-12T20:04:53Z  NOTE  EXECUTED: NOTE-011 ABI green 102/0 via sandbox (Retire [representatives,key_hash], retire recompute over supplied creation hash + length check, rep Burn arm updated, dead value_carries_name deleted, 2 new wrong-key/length fail-tests passing); root-caused the silent-crash saga to head-pipe SIGPIPE truncation + my own overbroad edit (real arity error surfaced by nix log); corrected handoff (no unproven toolchain claims; sandbox method going forward); SDK/runners/vectors/reference/fee/devnet remainder open per checkpoint
+2026-09-12T20:09:02Z  NOTE  NOTE-012 read
+2026-09-12T20:13:13Z  NOTE  NOTE-013 read
+2026-09-12T20:25:46Z  NOTE  EXECUTED: SDK mirror green end-to-end (Register.hs 4-arg bound names + width guards; RegisterSpec rebound with machine-generated pin 526570eb57… (hand transcription caused 3 phantom rounds — resolved by generating from spec literals); keyRepName stored field; recovery/retirement boundRepName helpers; verifier expectedRepName from spent-state NFT + idStateHash; full cabal build all + cage-tests green)
+2026-09-12T20:46:53Z  NOTE  NOTE-014 read
+2026-09-12T20:54:12Z  NOTE  EXECUTED: reference-path Aiken work green 105/0 (spent-first/reference-fallback shared predicate, 3 ref tests incl forged+foreign-datum, unused length import removed); resolved cache-confusion (evaluation fresh per drv hash, 12.8s real build + legit cache hits; receipts command_sha256 is command text, not derivation); retire runner manual+reference rework compiles; fee-map/rival/combined/vectors/hook/devnet remainder per checkpoint
+2026-09-12T20:58:55Z  NOTE  NOTE-015 read
+2026-09-12T21:05:11Z  NOTE  EXECUTED: fee-map validator written+compiling with behavior-verified reds (90/3 pattern: old-formula tests refuse, processed-missing vacuously passes); reference path green 105/0; rival domain + fee-map + hook-exhibit design settled from NOTES-012/013/015 (no KERI into naming, no declared totals, no script-cred); full analysis + per-test/per-builder/per-run remainder above
+2026-09-12T21:05:11Z  COMPLETE  capacity-limit handoff=handoffs/n003-checkpoint.md remainder=fee-tests-rewrite+builders+manifests+devnet-marathon+vectors+commit reason=turn-length-after-maximal-execution-with-8-10-devnet-runs-remaining
+2026-09-12T21:08:25Z  NOTE  NOTE-016 read
+2026-09-12T21:23:46Z  NOTE  NOTE-017 read
+2026-09-12T21:52:00Z  NOTE  NOTE-019 read
+2026-09-12T22:05:00Z  NOTE  EXECUTED: recovery-rebind GREEN (exit 0, app a44f/rep e2f4b0/state 2045, LR rows + no-trace evidence preserved); retirement-rebind RED at LT01 (app validator `headList []` — root-caused to stale 1-field `Constr 3` Retire redeemer in journey/retirement retireTx vs authorized 2-field shape; fixed in-tree as redeemerRetire/2, no rerun per NOTE-019); NOTE-019 sequencing adopted (hook now, no more identity campaigns)
+2026-09-12T23:15:00Z  NOTE  EXECUTED: sixth-field hook in-tree (types/state/validModify/mint-width + 4 Aiken controls + naming mirror + SDK field/config/vectors + Lean model/witness/binding) — lake/aiken-99/aiken-106/cabal/cage-tests-49 all green, control-5 mutant flips exactly the 2 hook tests with sha256-verified restore, six-field identities measured+manifested, committed as ff0cbd3 (39 files, one candidate on ddfc4e9)
+2026-09-12T23:15:00Z  COMPLETE  capacity-limit handoff=handoffs/hook-pin.md+handoffs/n003-checkpoint.md remainder=exhibit-phase(controls-3/4-need-epic18-consumer, builder-withdrawal-wiring, stake-registration-route, exhibit-devnet-runs incl-retirement-rerun-for-LT01-fix) reason=hook-source-complete-and-committed-exhibit-blocked-on-bound-consumer-and-journey-ban
+2026-09-12T23:25:00Z  NOTE  NOTE-020 read
+2026-09-12T23:28:00Z  NOTE  NOTE-018 read
+2026-09-12T23:55:00Z  NOTE  NOTE-021 read
+2026-09-13T00:15:00Z  NOTE  NOTE-022 read
+2026-09-13T00:40:00Z  NOTE  NOTE-023 read
+2026-09-13T01:05:00Z  NOTE  NOTE-024 read
+2026-09-13T01:30:00Z  NOTE  NOTE-025 read
+2026-09-13T01:55:00Z  NOTE  NOTE-026 read
+2026-09-13T04:30:00Z  NOTE  EXECUTED: NOTE-024+NOTE-026 — recovery-then-retire rows (RR1 controller/RR2 quorum via Constr-4 recover + fresh-snap NOTE-025 binding) + public full-asset reader (exe:retirement-verify + pure Naming.Verify: custody triple proved vs creation-derived rep, applied policy from exactly-one positive creation mint, redeemers bound at ConwaySpending(AsIx n) to exact record inputs, witness bytes required, creation mint carries rep at +1, outcome.json trust deleted; 16 unit tests incl wrong-policy/same-name) + retention rule for every validator-executing tx; post-merge re-exhibit all green (e2e 5/5, register/recovery/retirement/journey, cage-tests 76/0, naming aiken green); reader VERIFIED 4/4 (reader-run3.log); committed as 954928c (also completes e9d08c5 merge aftermath: naming.ak rebind, script-identity regen, Fork81Spec NOTE-018 binds)
+2026-09-13T04:30:00Z  COMPLETE  mechanical-remainder handoff=handoffs/note-024-026-public-reader.md remainder=over/completion/burn/reuse-rows(#74-lane)+aiken-lone_fork_insert-unit-pre-existing-on-clean-e9d08c5(#81-lane-clean-tree-repro-aiken-merge-clean.log)+final-tuple-publish(owner-decision) reason=note-024-items-1-3-5-and-note-026-all-ledger-verified-item-4-and-aiken-unit-outside-lane-ownership
+2026-09-13T05:00:00Z  NOTE  NOTE-027 read
+2026-09-13T06:00:00Z  NOTE  NOTE-028 read
+2026-09-13T07:00:00Z  NOTE  NOTE-029 read
+2026-09-13T08:00:00Z  NOTE  NOTE-030 read
+2026-09-13T09:00:00Z  NOTE  NOTE-031 read
+2026-09-13T10:00:00Z  NOTE  EXECUTED: NOTE-027 through NOTE-031 — connected Over journey (OV retire/replay/LO01/withdraw/N1/complete/LO02/LX01-control/N2) with bound permissionless completion (retire-queued Update request, custody correspondence: burn-exact + singleton state + co-created exact request with token/value relation + singleton Modify + changed root; P-bound Over marker; reader honesty fixes + VERIFIED-COMPLETE; strict eval attribution; Q-002 filed); full exhibit green on final code (retirement OV journey, reader 5+COMPLETE, register/recovery/journey/e2e, cage-tests 93/0, naming aiken 122), committed as 27e5f9a
+2026-09-13T10:00:00Z  COMPLETE  mechanical-remainder handoff=handoffs/note-027-031-over-journey.md remainder=lx01-control-threading-into-control-modes+q-002-ruling-pending+final-tuple-publish(owner)+81-lone_fork-unit(other-lane) reason=over-journey-with-bound-completion-ledger-verified-end-to-end-bounds-named-not-waived
+2026-09-13T11:00:00Z  NOTE  NOTE-032 read
+2026-09-13T11:00:00Z  NOTE  RESUMED Q-002

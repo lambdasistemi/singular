@@ -1,0 +1,4 @@
+PASS unique-seed-identity
+PASS spent-inputs-unavailable
+PASS valid-inputs-selectable
+PASS wrong-seed-binding-fails

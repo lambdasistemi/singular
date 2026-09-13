@@ -1,0 +1,221 @@
+{
+  "at": "2026-09-13T03:38:48.776Z",
+  "root": "/tmp/singular-root-a006-corr-KeijoX",
+  "modelAuthority": "13231f58833b8feb57f4b0f9b1117bfcfba0c07d",
+  "files": [
+    {
+      "source": "/code/singular-e18-blaster/lean/Singular/Model.lean",
+      "file": "Singular/Model.lean",
+      "frozen": "handoffs/a006-root-corr-Singular-Model.lean",
+      "sha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/Grading.lean",
+      "file": "Grading.lean",
+      "frozen": "handoffs/a006-root-corr-Grading.lean",
+      "sha256": "a30018cbf7ddb5260062820187c90f84f7c8d00c7b3b70767766c30a8ff19ae5"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/RejectedFold.lean",
+      "file": "RejectedFold.lean",
+      "frozen": "handoffs/a006-root-corr-RejectedFold.lean",
+      "sha256": "b8a1ffef16e50990b7bc57d35197c879ce6a251b90e211a227f91f25380992da"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/RejectedFoldGate.lean",
+      "file": "RejectedFoldGate.lean",
+      "frozen": "handoffs/a006-root-corr-RejectedFoldGate.lean",
+      "sha256": "f06ea7fc1157b0987a3b2f6abc160607a2b412ea8604d565d0c5a2b08cb13323"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/Corr.lean",
+      "file": "Corr.lean",
+      "frozen": "handoffs/a006-root-corr-Corr.lean",
+      "sha256": "e677e457fd3392a5d9b81bfb8703069e1411a5ac62899d9d1a5bc7e5bb5daf7f"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/AdmitTrace.lean",
+      "file": "AdmitTrace.lean",
+      "frozen": "handoffs/a006-root-corr-AdmitTrace.lean",
+      "sha256": "f2375de08ae1b30b7ad312461ef6833edf0329ea4c6c65231e5a1c2c481bc0ac"
+    },
+    {
+      "source": "/code/singular-e18-blaster/lean/Singular/Lemmas.lean",
+      "file": "Singular/Lemmas.lean",
+      "frozen": "handoffs/a006-root-corr-Singular-Lemmas.lean",
+      "sha256": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3"
+    },
+    {
+      "source": "/tmp/singular-root-a006-corr-KeijoX/RootCorr.lean",
+      "file": "RootCorr.lean",
+      "frozen": "handoffs/a006-root-corr-RootCorr.lean",
+      "sha256": "48aee6561cb1bb28990bd6db5a16103ab3a181de1c943b4721aad279a8ddf418"
+    },
+    {
+      "source": "/tmp/singular-root-a006-corr-KeijoX/RootWitness.lean",
+      "file": "RootWitness.lean",
+      "frozen": "handoffs/a006-root-corr-RootWitness.lean",
+      "sha256": "cd8a7e8c39210ed708635e3957e35d143cd1f9407f3fa40b81967394e8b1e9e0"
+    },
+    {
+      "source": "/tmp/singular-root-a006-corr-KeijoX/lakefile.lean",
+      "file": "lakefile.lean",
+      "frozen": "handoffs/a006-root-corr-lakefile.lean",
+      "sha256": "a38e1b0a66b26384bcddd2d0ca3bc95f2a0ed1afd3de20ad62ad189427c62d7d"
+    },
+    {
+      "source": "/tmp/singular-root-a006-corr-KeijoX/lean-toolchain",
+      "file": "lean-toolchain",
+      "frozen": "handoffs/a006-root-corr-lean-toolchain",
+      "sha256": "dbbf063fc415c8e718172605f23a8f86679a3c320eff6d3890cc009534452925"
+    }
+  ],
+  "declarations": [
+    "dirB_go",
+    "dirB_top",
+    "dirA_go",
+    "dirA_top",
+    "batch_absence_preserved_allrej",
+    "batch_removed_absent_allrej",
+    "mutant_retained_row_rejected",
+    "custodyAssocP",
+    "custodyUnspentP",
+    "usedMemP",
+    "custodyAssocBool",
+    "custodyUnspentBool",
+    "usedMemBool"
+  ],
+  "scope": "Copied pinned-source candidate-internal general proof and axiom verification only; no actual-program or authentic admission acceptance",
+  "compiler": "/nix/store/76i09i90qa7cglmiahs1977z9ddgh0z2-lean4-4.25.0/bin/lake",
+  "commands": [
+    {
+      "cwd": "/tmp/singular-root-a006-corr-KeijoX",
+      "command": "lake build RootCorr",
+      "exit": 1,
+      "classification": "first disposable lakefile omitted dependency roots; preserved setup failure/no credit",
+      "stdout": "handoffs/a006-root-corr-build.stdout",
+      "stderr": "handoffs/a006-root-corr-build.stderr"
+    },
+    {
+      "cwd": "/tmp/singular-root-a006-corr-KeijoX",
+      "command": "lake build RootCorr",
+      "exit": 0,
+      "jobs": 9,
+      "classification": "corrected copied package verifies candidate-internal general statements and thirteen standard-axiom footprints",
+      "stdout": "handoffs/a006-root-corr-corrected-build.stdout",
+      "stderr": "handoffs/a006-root-corr-corrected-build.stderr"
+    },
+    {
+      "cwd": "/tmp/singular-root-a006-corr-KeijoX",
+      "command": "lake build RootWitness",
+      "exit": 0,
+      "jobs": 9,
+      "classification": "exact three fixture impossibility proofs and separate funded/unselected-orphan executable control plus no-FullCorr proof",
+      "stdout": "handoffs/a006-root-corr-witness-build.stdout",
+      "stderr": "handoffs/a006-root-corr-witness-build.stderr"
+    }
+  ],
+  "axioms": [
+    {
+      "declaration": "Corr.dirB_go",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "declaration": "Corr.dirB_top",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "declaration": "Corr.dirA_go",
+      "axioms": [
+        "propext"
+      ]
+    },
+    {
+      "declaration": "Corr.dirA_top",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.batch_absence_preserved_allrej",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.batch_removed_absent_allrej",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.mutant_retained_row_rejected",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.custodyAssocP",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.custodyUnspentP",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.usedMemP",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.custodyAssocBool",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.custodyUnspentBool",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    },
+    {
+      "declaration": "Corr.usedMemBool",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "findings": {
+    "scopedProved": "Both directions over arbitrary lists with full CandState/logical/removed/refund result, standard axioms only; candidate-internal and unadopted",
+    "notReachable": [
+      "RejectedFoldGate.sZNBase",
+      "RejectedFoldGate.sCBase",
+      "AdmitTrace.sRel"
+    ],
+    "impossibilityReason": "Each exact state has supply42=1 with no Active entry; accepted reachable_inv proves every Reachable state WellFormed",
+    "unselectedOrphan": "Actual candidate with valid selected rejected8 and extra unspent custody99: funding99 present accepts, funding99 absent returns exact custody-unassociated; current FullCorr rejects orphan for association premise",
+    "remaining": "Exact admitted histories and metadata binding, full actual-program/CEK/KERI correspondence, Aiken interval domain and separate completion remain open; existing AdmitTrace only tests four action kinds from arbitrary seeded prestates"
+  }
+}

@@ -1,0 +1,13 @@
+# Keep the cleanup assertion bound to the final observation
+
+Root inspected the current Main.hs diff at 07:20Z after the worker reported four predicate cases green. The new releaseSession captures `observed <- markerNodePids` BEFORE reaping, then computes `still` AFTER reaping, but calls `cleanupFailure dirExists observed`. The comment says this was intentional so the synthetic control can fail.
+
+This changes the promised behavior to fit the control. The requirement is that release fails if owned resources REMAIN after teardown. A process that was present and successfully reaped is success. Conversely, a process present only in the final observation must fail; this patch ignores it. Unit tests of cleanupFailure alone cannot catch the wrong argument at its actual call site.
+
+Correct the bounded patch through the existing worker: use the post-teardown `still` in the call; remove the justification for asserting the pre-reap list. Keep any pre-reap observation only as clearly labeled diagnostics. Do not change the cleanup oracle to make a test fail.
+
+Before acceptance, retain a discriminating integration-level or wired finalizer control: actual finalizer call receives differing pre/post observations, and its exit reflects POST. Prove pre nonempty/post empty passes and pre empty/post nonempty fails at this call site. An explicitly labeled injected observer is acceptable for this bounded checker-path claim; it is not a real-ledger orphan proof. The predicate unit tests remain useful but are not a substitute for verifying that releaseSession supplies the correct observation. The existing node detection/reaping control and positive/failing-story teardown captures keep their distinct claims.
+
+No new framework, auditor, launch, or broader process-manager work. Preserve the current diff and test output as RED provenance, apply the exact correction, then finish PR84 and the preserved strict-release gate. Acknowledge this note before accepting the cleanup candidate.
+
+Root also read your NOTE008 in full while delivering this note. Its option to keep ONLY the pre-reap assertion if a healthy run usually has an empty pre-list does not satisfy the final-state requirement. That empirical result cannot prove there are no post-teardown leftovers, and it is not authority to choose a replacement property. The post-state assertion is mandatory. A separately justified runner-leak assertion could be additional, but it is not necessary for this bounded repair and must not replace or delay the required final-state check. This note resolves that interpretation; no human choice is needed for the already specified cleanup property.

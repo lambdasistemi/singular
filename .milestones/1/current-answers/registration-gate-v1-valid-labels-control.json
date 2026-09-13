@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-12T21:09:19.203Z",
+  "gate": "/tmp/projects/singular/milestone-1/epic-18/owner-sol-20260912/gates/consumer-registration-v1.sh",
+  "gateSha256": "e73d96749930acbb98abe70e67c01f2dfc13b284a4e8a1cd901aadf72aeb9eb0",
+  "base": "0100012b1afa318df3bae6cf40d6d9ee3507110e",
+  "candidate": "f5ee22a30b032e603f7472e540fb10157f6c459d",
+  "worktree": "/tmp/singular-root-registration-gate-falsification-6JjHGA/candidate",
+  "evidence": "/tmp/singular-root-registration-gate-falsification-6JjHGA/evidence-valid-labels",
+  "exit": 0,
+  "stdout": "gate: GREEN candidate=f5ee22a30b032e603f7472e540fb10157f6c459d evidence=/tmp/singular-root-registration-gate-falsification-6JjHGA/evidence-valid-labels\n",
+  "stderr": "",
+  "executedPrograms": "none: report writer and git identity only",
+  "fakeEvidenceFilesExist": false,
+  "interpretation": "FALSE GREEN persists with valid labels; missing evidence and unmeasured artifacts trusted",
+  "variant": "Valid ESTABLISHED/REFUTED labels and stage strings; no compiler, validator, ledger or mutation executes"
+}

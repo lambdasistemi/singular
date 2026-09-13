@@ -1,0 +1,72 @@
+[
+  {
+    "number": 87,
+    "state": "OPEN",
+    "title": "Block M1 on Blaster validation of compiled Aiken invariants",
+    "updatedAt": "2026-09-12T09:12:43Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/87"
+  },
+  {
+    "number": 81,
+    "state": "OPEN",
+    "title": "Cover the Fork proof variant, or settle the encoding correspondence it exposed",
+    "updatedAt": "2026-09-12T17:54:13Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/81"
+  },
+  {
+    "number": 80,
+    "state": "OPEN",
+    "title": "Enforce Lean invariant coverage with property, integration and state-machine tests",
+    "updatedAt": "2026-09-12T09:00:19Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/80"
+  },
+  {
+    "number": 78,
+    "state": "OPEN",
+    "title": "External-node mode, joiner wallet and the onboarding runbook",
+    "updatedAt": "2026-09-12T05:38:03Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/78"
+  },
+  {
+    "number": 77,
+    "state": "OPEN",
+    "title": "Mint the real representative and fold a name into Active on a real ledger",
+    "updatedAt": "2026-09-12T05:37:20Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/77"
+  },
+  {
+    "number": 74,
+    "state": "OPEN",
+    "title": "Complete retirement permissionlessly: Over, withdrawal refusal and reuse refusal",
+    "updatedAt": "2026-09-12T05:37:18Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/74"
+  },
+  {
+    "number": 71,
+    "state": "OPEN",
+    "title": "Close the inventory: the consumer's fail-closed resolution and the measured limits",
+    "updatedAt": "2026-09-12T05:38:02Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/71"
+  },
+  {
+    "number": 68,
+    "state": "OPEN",
+    "title": "Execute the Haskell serialization and transaction-construction boundary",
+    "updatedAt": "2026-09-12T05:37:58Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/68"
+  },
+  {
+    "number": 18,
+    "state": "OPEN",
+    "title": "Release and independently verify on-chain consumer conformance",
+    "updatedAt": "2026-09-12T09:00:17Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/18"
+  },
+  {
+    "number": 17,
+    "state": "OPEN",
+    "title": "Implement control recovery and permanent naming retirement",
+    "updatedAt": "2026-09-11T11:29:24Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/17"
+  }
+]

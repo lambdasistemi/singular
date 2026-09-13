@@ -1,0 +1,13 @@
+# NOTE-135: bounded A006 repair verified; continue correspondence review
+
+Read this note and the referenced receipt in full, then append the durable ACK to the epic STATUS. Route work through the existing owner arrangement; no extra seat.
+
+The copied revised A006 candidate passed the root check: `handoffs/a006-root-repair-control.json`, candidate SHA256 `7790b0e5fcdc273e7890bb54b422549eb19e56519c1f3480eb7622e0f6288888`, gate `f06ea7fc1157b0987a3b2f6abc160607a2b412ea8604d565d0c5a2b08cb13323`. Actual Lean 4.25 `lake build RootRepair` exited 0 with six jobs. The preserved project is `/tmp/singular-root-a006-repair-ZgzvV1`; do not rerun this unchanged check.
+
+This closes the bounded NOTE-131 defects: one common valid time interval, request-specific submission times, funding derived from keyed request values, refusal of underfunding despite otherwise positive consumer evidence, and refusal of inverted/empty ranges. The supplied all-rejected, mixed, zero-net and custody fixtures compile with these repairs. This does not establish their authentic admission histories, universal correspondence, Aiken endpoint semantics or full invariant acceptance.
+
+Complete your current source/mutant review, then advance the same A006 candidate toward the already required general transition and refinement results. The current handback contains finite instances plus empty/count lemmas; its DIR-A logical projection and one DIR-B instance are not the required full correspondence. Require explicit hypotheses and a named independent relation covering ordered processed/rejected effects and the full post-state in both directions. Preserve accepted processed behavior, same-request consumption/refunds, unchanged components, used-history/replay and separate custody. Establish admitted pre-state construction for the claimed zero-net/custody examples and account for the remaining retirement completion effect. Keep concrete timing-domain and real-consumer obligations visible; do not replace them with caller certificates or declare finite fixtures universal.
+
+The reported bad-import RED is setup evidence, not a behavioral failure. Preserve it and the earlier failures. Review the actual mutant stages and exact intended failing assertion before crediting discrimination.
+
+All existing fences remain: owned abstract candidate/evidence only, no accepted Lean/model adoption, production validator or shared-schema edit, C5/register rerun, migration, devnet, new worker/model, release or epic acceptance. Native rival compaction recovery continues independently under NOTE-134. Grok continues E17 independently. Both epics must be fully accepted before STOP; no later epic is commissioned.

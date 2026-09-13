@@ -1,0 +1,446 @@
+Script started on 2026-09-12 20:42:56+01:00 [COMMAND="/nix/store/jx0pfhyv18yi55ffqc24jpbqr1wm8qxq-aiken-1.1.21/bin/aiken check" <not executed on terminal>]
+[35m[1m    Compiling[0m[39m [1mhal/mpf[0m 0.0.0 ([94m.[39m)
+[35m[1m    Compiling[0m[39m [1maiken-lang/stdlib[0m v2.2.0 ([94m./build/packages/aiken-lang-stdlib[39m)
+[35m[1m    Compiling[0m[39m [1maiken-lang/fuzz[0m v2.1.1 ([94m./build/packages/aiken-lang-fuzz[39m)
+[35m[1m    Compiling[0m[39m [1maiken-lang/merkle-patricia-forestry[0m v2.0.0 ([94m./build/packages/aiken-lang-merkle-patricia-forestry[39m)
+[35m[1m   Collecting[0m[39m all tests scenarios across all modules
+[35m[1m      Testing[0m[39m [1m...[0m
+[35m[1m  Simplifying[0m[39m [1mcounterexample from 10 choices[0m
+[35m[1m  Simplifying[0m[39m [1mcounterexample from 10 choices[0m
+[35m[1m  Simplifying[0m[39m [1mcounterexample from 2 choices[0m
+[35m[1m   Simplified[0m[39m [1mcounterexample in 8ms after 14 steps[0m
+[35m[1m   Simplified[0m[39m [1mcounterexample in 89ms after 164 steps[0m
+[35m[1m   Simplified[0m[39m [1mcounterexample in 87ms after 166 steps[0m
+
+    [90m┍━[39m [34m[1mcage.props[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase1_phase2_exclusive[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase1_phase3_exclusive[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase2_phase3_exclusive[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase1_honest_not_rejectable[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase2_honest_not_rejectable[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_phase_coverage_point[39m
+    [90m┕[39m[90m━[39m[90m━[39m with [1m--seed[0m=[1m3642019652[0m → [1m6 tests[0m | [1m[92m6 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mcage.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m527.75 K[39m, cpu: [36m171.63 M[39m] [94mcanCage[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m139.80 K[39m, cpu: [36m 45.47 M[39m] [94mcanMint[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 21.68 K[39m, cpu: [36m  8.71 M[39m] [94mmint_missing_input[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m is_some(find_input(inputs, seed))
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  64.3 K[39m, cpu: [36m 25.47 M[39m] [94mmint_quantity_two[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, mint, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 85.28 K[39m, cpu: [36m 29.78 M[39m] [94mmint_extra_state_policy_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, mint, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 64.45 K[39m, cpu: [36m 24.41 M[39m] [94mmint_to_wallet[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m address.Script(targetScriptHash) = output.address.payment_credential
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 64.58 K[39m, cpu: [36m 24.79 M[39m] [94mmint_to_wrong_script[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m targetScriptHash == policyId
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m106.51 K[39m, cpu: [36m 37.31 M[39m] [94mmint_nonempty_root[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m tokenRoot == root(empty)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 85.03 K[39m, cpu: [36m 29.55 M[39m] [94mmint_request_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m StateDatum(State { root: tokenRoot, .. }) = tokenState
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 64.84 K[39m, cpu: [36m 25.71 M[39m] [94mmint_no_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m InlineDatum(tokenState) = output.datum
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m127.64 K[39m, cpu: [36m 43.53 M[39m] [94mmint_output_must_hold_token[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, output.value, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m171.64 K[39m, cpu: [36m 54.95 M[39m] [94mretract_happy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 42.84 K[39m, cpu: [36m 15.35 M[39m] [94mretract_wrong_signer[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, requestOwner)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m148.13 K[39m, cpu: [36m 48.84 M[39m] [94mretract_in_phase1[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m in_phase2(validity_range, submitted_at, process_time, retract_time)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m168.97 K[39m, cpu: [36m 54.58 M[39m] [94mretract_in_phase3[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m in_phase2(validity_range, submitted_at, process_time, retract_time)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 42.09 K[39m, cpu: [36m 12.78 M[39m] [94mcontribute_wrong_token[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m requestToken == cageToken
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 42.70 K[39m, cpu: [36m 17.40 M[39m] [94mcontribute_missing_ref[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(input) =
+    [90m│[39m     find(tx.inputs, fn(input) { input.output_reference == ref })
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 42.41 K[39m, cpu: [36m 15.29 M[39m] [94mcontribute_reference_only_state_rejected[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(input) =
+    [90m│[39m     find(tx.inputs, fn(input) { input.output_reference == ref })
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.05 K[39m, cpu: [36m 25.78 M[39m] [94mcontribute_rejects_foreign_policy_state_same_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m carriesStateToken(statePolicyId, cageToken, stateInput)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.74 K[39m, cpu: [36m 28.59 M[39m] [94mcontribute_in_phase2[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m stateSpentWithModify(stateRef, tx)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m194.62 K[39m, cpu: [36m 63.60 M[39m] [94mcontribute_in_phase3[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m105.51 K[39m, cpu: [36m 35.52 M[39m] [94mcontribute_with_state_end_rejected[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m stateSpentWithModify(stateRef, tx)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m356.12 K[39m, cpu: [36m113.64 M[39m] [94mmodify_without_owner_succeeds[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m377.04 K[39m, cpu: [36m120.28 M[39m] [94mmodify_with_stake_script_withdrawal[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m377.57 K[39m, cpu: [36m120.44 M[39m] [94mmodify_ignores_stake_script_hook[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m171.70 K[39m, cpu: [36m 54.10 M[39m] [94mend_with_stake_script[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m127.31 K[39m, cpu: [36m 40.83 M[39m] [94mend_with_stake_script_no_withdrawal[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m pairs.has_key(withdrawals, Script(script))
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m296.23 K[39m, cpu: [36m 96.65 M[39m] [94mmodify_wrong_address[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m
+    [90m│[39m     output.address.payment_credential == input.output.address.payment_credential
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m356.12 K[39m, cpu: [36m113.64 M[39m] [94mmodify_owner_transfer[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m257.53 K[39m, cpu: [36m 81.05 M[39m] [94mmodify_no_requests[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m318.37 K[39m, cpu: [36m101.04 M[39m] [94mmodify_skip_other_token[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m232.86 K[39m, cpu: [36m 74.98 M[39m] [94mmodify_too_few_proofs[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m356.12 K[39m, cpu: [36m113.64 M[39m] [94mmodify_extra_proofs[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m275.43 K[39m, cpu: [36m 90.32 M[39m] [94mmodify_wrong_root[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m | mpf.root(expectedNewRoot) == newRoot ? False
+    [90m│[39m [1m[31mx <expected>[39m[0m (mpf.root(expectedNewRoot) == newRoot)?
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m254.31 K[39m, cpu: [36m 82.63 M[39m] [94mmodify_in_phase2[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m in_phase1(validity_range, submitted_at, process_time)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m253.39 K[39m, cpu: [36m 79.67 M[39m] [94mmodify_output_must_hold_token[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, output.value, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m155.98 K[39m, cpu: [36m 48.22 M[39m] [94mend_happy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m106.16 K[39m, cpu: [36m 35.29 M[39m] [94mend_missing_signature[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, owner)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m147.80 K[39m, cpu: [36m 46.44 M[39m] [94mend_wrong_token_in_mint[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, mint, tokenId, -1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.66 K[39m, cpu: [36m 25.91 M[39m] [94mmodify_rejects_foreign_policy_same_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.31 K[39m, cpu: [36m 25.32 M[39m] [94mend_rejects_foreign_policy_same_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 41.68 K[39m, cpu: [36m 10.84 M[39m] [94mretract_on_state_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(RequestDatum(request)) = maybeDatum
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 21.61 K[39m, cpu: [36m  7.23 M[39m] [94mcontribute_on_state_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(RequestDatum(request)) = maybeDatum
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 21.29 K[39m, cpu: [36m  6.72 M[39m] [94mmodify_on_request_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(StateDatum(state)) = maybeDatum
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 21.29 K[39m, cpu: [36m  6.72 M[39m] [94mend_on_request_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(StateDatum(state)) = maybeDatum
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 20.65 K[39m, cpu: [36m  5.02 M[39m] [94mspend_no_datum[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(RequestDatum(request)) = maybeDatum
+    [90m│[39m [32m[1mPASS[0m[39m [after   1 test] [94mprop_retract_requires_owner[39m
+    [90m│[39m [1m[32m★ counterexample[39m[0m
+    [90m│[39m [32m│[39m #"00000000000000000000000000000000000000000000000000000000"
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, requestOwner)
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_modify_no_owner_required[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_mint_roundtrip[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m262.39 K[39m, cpu: [36m 82.37 M[39m] [94mcanMigrate[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 42.67 K[39m, cpu: [36m 13.32 M[39m] [94mmigrate_no_burn[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(oldPolicy, mint, tokenId, -1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m190.29 K[39m, cpu: [36m 59.22 M[39m] [94mmigrate_to_wallet[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m address.Script(targetScriptHash) = output.address.payment_credential
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.06 K[39m, cpu: [36m 23.25 M[39m] [94mmigrate_wrong_old_policy[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(oldPolicy, mint, tokenId, -1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m126.93 K[39m, cpu: [36m 38.90 M[39m] [94mmigrate_extra_state_policy_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, mint, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m232.15 K[39m, cpu: [36m 70.32 M[39m] [94mmigrate_output_must_hold_token[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, output.value, tokenId, 1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 63.76 K[39m, cpu: [36m 18.54 M[39m] [94mmigrate_old_policy_not_allowlisted[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(previousPolicies, oldPolicy)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 84.71 K[39m, cpu: [36m 26.95 M[39m] [94mmigrate_no_predecessor_input[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m Some(predIn) =
+    [90m│[39m     find(inputs, fn(i) { exactQuantity(oldPolicy, i.output.value, tokenId, 1) })
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m168.94 K[39m, cpu: [36m 52.51 M[39m] [94mmigrate_missing_owner_signature[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, owner)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m254.12 K[39m, cpu: [36m 82.45 M[39m] [94mmigrate_changes_owner[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m outState == predState
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m254.41 K[39m, cpu: [36m 83.16 M[39m] [94mmigrate_changes_tip[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m outState == predState
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 63.95 K[39m, cpu: [36m 18.73 M[39m] [94mmigrate_forged_token_cannot_sweep[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(previousPolicies, oldPolicy)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m412.81 K[39m, cpu: [36m131.57 M[39m] [94mmodify_with_refund[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m379.51 K[39m, cpu: [36m120.80 M[39m] [94mmodify_missing_refund[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m [output, ..remaining] = outputs
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m401.75 K[39m, cpu: [36m130.85 M[39m] [94mmodify_insufficient_refund[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m totalRefunded >= owed
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m380.44 K[39m, cpu: [36m123.08 M[39m] [94mmodify_wrong_refund_address[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m vkh == owner
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m446.76 K[39m, cpu: [36m140.91 M[39m] [94mmodify_zero_fee[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m233.27 K[39m, cpu: [36m 75.82 M[39m] [94mmodify_fee_mismatch[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m tip == stateTip
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m193.22 K[39m, cpu: [36m 58.19 M[39m] [94mend_with_extra_mint_policy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m189.93 K[39m, cpu: [36m 58.44 M[39m] [94mend_with_extra_state_policy_asset[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m exactQuantity(policyId, mint, tokenId, -1)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m395.11 K[39m, cpu: [36m126.11 M[39m] [94mreject_happy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m275.55 K[39m, cpu: [36m 89.88 M[39m] [94mreject_in_phase1[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m
+    [90m│[39m                     is_rejectable(
+    [90m│[39m                       validity_range,
+    [90m│[39m                       submitted_at,
+    [90m│[39m                       process_time,
+    [90m│[39m                       retract_time,
+    [90m│[39m                     )
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m275.55 K[39m, cpu: [36m 89.88 M[39m] [94mreject_in_phase2[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m
+    [90m│[39m                     is_rejectable(
+    [90m│[39m                       validity_range,
+    [90m│[39m                       submitted_at,
+    [90m│[39m                       process_time,
+    [90m│[39m                       retract_time,
+    [90m│[39m                     )
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m416.23 K[39m, cpu: [36m132.81 M[39m] [94mreject_future_submitted_at[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m106.29 K[39m, cpu: [36m 35.71 M[39m] [94mend_wrong_signer[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, owner)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m275.77 K[39m, cpu: [36m 89.93 M[39m] [94mreject_root_changes[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m | mpf.root(expectedNewRoot) == newRoot ? False
+    [90m│[39m [1m[31mx <expected>[39m[0m (mpf.root(expectedNewRoot) == newRoot)?
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m401.25 K[39m, cpu: [36m128.14 M[39m] [94mreject_wrong_refund[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m totalRefunded >= owed
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m395.11 K[39m, cpu: [36m126.11 M[39m] [94mreject_refund_owed_above_min_utxo_passes[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m425.23 K[39m, cpu: [36m135.50 M[39m] [94mreject_refund_min_utxo_topup_passes[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m422.86 K[39m, cpu: [36m136.18 M[39m] [94mreject_refund_under_owed_fails[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m totalRefunded >= owed
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m338.36 K[39m, cpu: [36m108.80 M[39m] [94mreject_refund_topup_cannot_drain_state[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m
+    [90m│[39m     assets.lovelace_of(output.value) >= assets.lovelace_of(input.output.value)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m153.46 K[39m, cpu: [36m 48.56 M[39m] [94msweep_no_datum[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m160.54 K[39m, cpu: [36m 52.41 M[39m] [94msweep_wrong_token_request[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m155.82 K[39m, cpu: [36m 49.46 M[39m] [94msweep_fake_state_no_nft[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m379.31 K[39m, cpu: [36m122.35 M[39m] [94msweep_alongside_modify[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m126.80 K[39m, cpu: [36m 41.69 M[39m] [94msweep_wrong_signer[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m has(extra_signatories, owner)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 63.16 K[39m, cpu: [36m 19.55 M[39m] [94msweep_fake_state_ref[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m carriesStateToken(statePolicyId, cageToken, stateInput)
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 85.35 K[39m, cpu: [36m 29.59 M[39m] [94mstate_sweep_rejected[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m168.42 K[39m, cpu: [36m 55.69 M[39m] [94msweep_legitimate_request[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m !protected
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m174.94 K[39m, cpu: [36m 56.60 M[39m] [94msweep_mismatched_tip_request[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m178.37 K[39m, cpu: [36m 58.07 M[39m] [94msweep_underfunded_matching_request[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m250.15 K[39m, cpu: [36m 78.90 M[39m] [94mmodify_zero_requests_happy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m190.32 K[39m, cpu: [36m 59.68 M[39m] [94mmodify_zero_requests_root_changes[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m | mpf.root(expectedNewRoot) == newRoot ? False
+    [90m│[39m [1m[31mx <expected>[39m[0m (mpf.root(expectedNewRoot) == newRoot)?
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  9.69 K[39m, cpu: [36m  6.11 M[39m] [94mtwo_seeds_distinct_tokens[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 22.18 K[39m, cpu: [36m  9.66 M[39m] [94mwrong_request_parameter_rejects_this_cage_token[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m requestToken == cageToken
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m with [1m--seed[0m=[1m3642019652[0m → [1m94 tests[0m | [1m[92m94 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mcage_vectors[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 23.01 K[39m, cpu: [36m  5.66 M[39m] [94mvec_insert_into_empty_trie[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m104.14 K[39m, cpu: [36m 31.10 M[39m] [94mvec_insert_creating_fork[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m103.74 K[39m, cpu: [36m 30.83 M[39m] [94mvec_insert_with_shared_prefix[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 53.38 K[39m, cpu: [36m 14.88 M[39m] [94mvec_inclusion_proof_for_middle_key[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  4.99 K[39m, cpu: [36m  3.09 M[39m] [94mvec_asset_name_from_txoutref_index_0[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  4.99 K[39m, cpu: [36m  3.09 M[39m] [94mvec_asset_name_from_txoutref_index_1[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  4.99 K[39m, cpu: [36m  3.09 M[39m] [94mvec_asset_name_from_zero_txid_index_255[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m [1m7 tests[0m | [1m[92m7 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mlib.props[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_valueFromToken_roundtrip[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_tokenFromValue_ada_only[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_quantity_present[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after   1 test] [94mprop_quantity_wrong_policy[39m
+    [90m│[39m [1m[32m★ counterexample[39m[0m
+    [90m│[39m [32m│[39m (
+    [90m│[39m [32m│[39m   (
+    [90m│[39m [32m│[39m     #"00000000000000000000000000000000000000000000000000000000",
+    [90m│[39m [32m│[39m     #"8080778c30c20fa2ebc0ed18d2cbca1f30b027625c7d9d97f5d58972",
+    [90m│[39m [32m│[39m   ),
+    [90m│[39m [32m│[39m   (
+    [90m│[39m [32m│[39m     #"0000000000000000000000000000000000000000000000000000000000000000",
+    [90m│[39m [32m│[39m     1,
+    [90m│[39m [32m│[39m   ),
+    [90m│[39m [32m│[39m )
+    [90m│[39m [32m[1mPASS[0m[39m [after   1 test] [94mprop_quantity_wrong_asset[39m
+    [90m│[39m [1m[32m★ counterexample[39m[0m
+    [90m│[39m [32m│[39m (
+    [90m│[39m [32m│[39m   (
+    [90m│[39m [32m│[39m     #"00000000000000000000000000000000000000000000000000000000",
+    [90m│[39m [32m│[39m     #"0000000000000000000000000000000000000000000000000000000000000000",
+    [90m│[39m [32m│[39m   ),
+    [90m│[39m [32m│[39m   (
+    [90m│[39m [32m│[39m     #"8080778c30c20fa2ebc0ed18d2cbca1f30b027625c7d9d97f5d589721c91aeb6",
+    [90m│[39m [32m│[39m     1,
+    [90m│[39m [32m│[39m   ),
+    [90m│[39m [32m│[39m )
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_quantity_valueFromToken[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m with [1m--seed[0m=[1m3642019652[0m → [1m6 tests[0m | [1m[92m6 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mlib.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  9.09 K[39m, cpu: [36m  5.89 M[39m] [94massetName_deterministic[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  9.69 K[39m, cpu: [36m  6.06 M[39m] [94massetName_different_txid[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  9.69 K[39m, cpu: [36m  6.06 M[39m] [94massetName_different_index[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_assetName_deterministic[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 49.23 K[39m, cpu: [36m 14.93 M[39m] [94mtokenFromValue_single_nft[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 20.48 K[39m, cpu: [36m  5.95 M[39m] [94mtokenFromValue_ada_only[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 53.02 K[39m, cpu: [36m 14.77 M[39m] [94mtokenFromValue_multi_policy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 82.37 K[39m, cpu: [36m 23.76 M[39m] [94mtokenFromValue_multi_asset[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 51.25 K[39m, cpu: [36m 15.57 M[39m] [94mtokenFromValue_roundtrip[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 26.20 K[39m, cpu: [36m  8.22 M[39m] [94mquantity_present[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 20.04 K[39m, cpu: [36m  6.06 M[39m] [94mquantity_wrong_policy[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 25.57 K[39m, cpu: [36m  7.86 M[39m] [94mquantity_wrong_asset[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 27.66 K[39m, cpu: [36m  8.71 M[39m] [94mquantity_valueFromToken[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m with [1m--seed[0m=[1m3642019652[0m → [1m13 tests[0m | [1m[92m13 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mzz_e.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [31m[1mFAIL[0m[39m [mem: [36m 20.95 K[39m, cpu: [36m  6.31 M[39m] [94me2_insert_accepts_builder_witness_and_yields_builder_post_root[39m
+    [90m│[39m [31m[1m× program failed[0m[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m excluding(key, proof) == self.root
+    [90m│[39m [31m[1mFAIL[0m[39m [mem: [36m 20.71 K[39m, cpu: [36m  7.17 M[39m] [94me2_including_reproduces_builder_post_root[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m branch != neighbor.nibble
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 85.85 K[39m, cpu: [36m 25.56 M[39m] [94me2_control_leaf_witness_verifies[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m [1m3 tests[0m | [1m[92m1 passed[39m[0m | [1m[91m2 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1mzz_vector.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [31m[1mFAIL[0m[39m [mem: [36m 20.95 K[39m, cpu: [36m  6.31 M[39m] [94mlone_fork_insert_accepts_real_absence_witness[39m
+    [90m│[39m [31m[1m× program failed[0m[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m excluding(key, proof) == self.root
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 72.10 K[39m, cpu: [36m 21.10 M[39m] [94mlone_fork_including_reproduces_builder_post_root[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 72.80 K[39m, cpu: [36m 21.29 M[39m] [94mlone_fork_control_has_fails_against_pre_root[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m [1m3 tests[0m | [1m[92m2 passed[39m[0m | [1m[91m1 failed[39m[0m
+
+
+
+  [33m⚠[0m [33maiken.toml demands compiler version v1.1.16, but you are using v1.1.21.[39m
+[36m  help: [0mYou may want to switch to [35mv1.1.16[39m
+
+
+  [33m⚠[0m [33mI discovered an unused imported value: [39mNeighbor[39m[39m
+   ╭─[[36;1;4m./validators/cage_vectors.ak:6:57[0m]
+ [2m5[0m │ 
+ [2m6[0m │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   · [35;1m                                                        ────┬───[0m
+   ·                                                             [35;1m╰── [35;1munused import[0m[0m
+ [2m7[0m │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+[36m  help: [0mNo big deal, but you might want to remove it to get rid of that
+        warning.
+
+
+  [33m⚠[0m [33mI discovered an unused imported value: [39mFork[39m[39m
+   ╭─[[36;1;4m./validators/cage_vectors.ak:6:45[0m]
+ [2m5[0m │ 
+ [2m6[0m │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   · [35;1m                                            ──┬─[0m
+   ·                                               [35;1m╰── [35;1munused import[0m[0m
+ [2m7[0m │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+[36m  help: [0mNo big deal, but you might want to remove it to get rid of that
+        warning.
+
+      [1m[35mSummary[39m[0m 1419 [1m[32mchecks, [39m[0m3 [1m[31merrors[39m[0m, 3 [1m[33mwarnings[39m[0m
+
+Script done on 2026-09-12 20:43:18+01:00 [COMMAND_EXIT_CODE="1"]

@@ -1,0 +1,3 @@
+S3 verifier-exit FAIL verifier exited 17 — a nonzero verifier cannot establish anything (see /tmp/singular-s3-exit-green-YvknuC/verifier.stderr)
+
+S3 RED (fail-closed)

@@ -1,0 +1,78 @@
+{
+  "at": "2026-09-13T00:22:31.487Z",
+  "source": "epic-17/ticket-77/commit-owner-2/evidence/register-exhibit/tx-046-hook-crosswired.outcome.json",
+  "sourceSha256": "7d3d5ac97a03a19b4330a17176901323690355fa4efc24baddc61bfb0b06456e",
+  "namedFailedSubject": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+  "budgetExhausted": false,
+  "explicitEvaluationError": true,
+  "listingsByteEqual": true,
+  "reportCrosswired": {
+    "mint": [
+      {
+        "policy": "c7688ad8724157c4b3bed67317b14e5ddd7dbd66a331afc03a3ce8a6",
+        "quantity": 1
+      },
+      {
+        "policy": "dfd33801d43beda5335e60628a40b6d231f8619112fe6caa10e3131e",
+        "quantity": -1
+      }
+    ],
+    "operation": "consumer",
+    "outcome": "refused",
+    "refusedByScript": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+    "requiredSigners": [],
+    "rootAfter": "ea93622911d00a440147657f3d677a63ee76172efd265be2b80259555b2bd2f7",
+    "rootBefore": "ea93622911d00a440147657f3d677a63ee76172efd265be2b80259555b2bd2f7",
+    "row": "hook-crosswired",
+    "stateInput": "098744a9a175307b7e8a3ea976a5accf87fc34a79fe09f8f29c5e0db815628ba#0",
+    "submittedTxId": "328701f28efc6bbcc6ca131740217e0ccb9499d2c4592c8374029ef7b73e0561",
+    "vkeyWitnesses": [
+      "d3ff4d9bd79a6dca3b3891308f3a0a6a287571cdfbbd0a18d5c75023"
+    ]
+  },
+  "reportKeys": [
+    "candidate",
+    "mpfsBlueprint",
+    "namingBlueprint",
+    "rows"
+  ],
+  "positiveClaims": [
+    {
+      "applicationPolicy": "dfd33801d43beda5335e60628a40b6d231f8619112fe6caa10e3131e",
+      "mint": [
+        {
+          "policy": "c7688ad8724157c4b3bed67317b14e5ddd7dbd66a331afc03a3ce8a6",
+          "quantity": 1
+        },
+        {
+          "policy": "dfd33801d43beda5335e60628a40b6d231f8619112fe6caa10e3131e",
+          "quantity": -1
+        }
+      ],
+      "outcome": "accepted",
+      "representativeAppliedPolicy": "c7688ad8724157c4b3bed67317b14e5ddd7dbd66a331afc03a3ce8a6",
+      "representativeAssetName": "5265700e8977bc3308939acbe3bea304eb6075cef9204ba5ce93188aa67f8f00",
+      "requestInput": [
+        "49522b77d99ddd922a418511dc1f88abdc7d94047c58bfd7d8fab5be6883bd06#0"
+      ],
+      "requiredSigners": [],
+      "rootAfter": "0ad9a0facba3ad8054203a80c38ebd4eadfbe09fd6a5a5dd104e62c107114f53",
+      "rootAfterObservedFrom": "c0ce346ded6eadb689834480be4548ee30520c484f004a0f3424d0f55dec0f42#0",
+      "rootBefore": "0000000000000000000000000000000000000000000000000000000000000000",
+      "rootBeforeObservedFrom": "ce21c6b28279d8c4dca1dbcca9affbbe5c8af663d7d9571414038fc2777ff6f2#0",
+      "row": "fold-active",
+      "stateContinuationDatum": {
+        "processTime": 120000,
+        "retractTime": 30000,
+        "root": "0ad9a0facba3ad8054203a80c38ebd4eadfbe09fd6a5a5dd104e62c107114f53",
+        "tip": 1000000
+      },
+      "stateInput": "ce21c6b28279d8c4dca1dbcca9affbbe5c8af663d7d9571414038fc2777ff6f2#0",
+      "submittedTxId": "c0ce346ded6eadb689834480be4548ee30520c484f004a0f3424d0f55dec0f42",
+      "vkeyWitnesses": [
+        "d3ff4d9bd79a6dca3b3891308f3a0a6a287571cdfbbd0a18d5c75023"
+      ]
+    }
+  ],
+  "scope": "Raw corrected crosswired refusal and same-run positive claims observed; not final tuple, complete exhibit acceptance or independent unit-test execution."
+}

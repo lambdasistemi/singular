@@ -1,0 +1,10 @@
+{
+  "root": "/tmp/singular-s2-v2-oOt8k8",
+  "source": "/tmp/singular-s2-v2-oOt8k8/source",
+  "base": "56e0fcdbd09cb3326a63e490f6c7ed2511cdc9ef",
+  "candidate": "d846bab795828b25f67250bece374aa6415c442f",
+  "gateSha256": "3aa5dee41f916dc2bd51d5b6e2102966c6857941403a918cdd944c52b9b4be81",
+  "snapshotPatchSha256": "60d9155288dccadb468cf4d508dc4c171f80b2967df443e33167850b78f9dd15",
+  "synthetic": true,
+  "note": "Clean isolated snapshot of the observed worker source. No worker files changed. Receipt fabricated; no node or transaction submitted. Gate unchanged; real Nix builds."
+}

@@ -1,0 +1,50 @@
+=== NOTE-041 Nix artifact manifest (all built OFFLINE, no node/socket)
+source-tree: /tmp/t80e-rival-witness (no git HEAD: plain copy of accept tree ddfc4e9 + rival driver work)
+flake.lock-sha256: 0cf7990fe569b3aed5f0aa3e2d5b44a14329cdaed54528ed823a8da307fa8e5b
+offchain-flake.nix-sha256: 3feb836848bd6136b4ec3701c02cf86712aa67e8787072f3f8dc3951cc15551b
+
+--- naming-onchain#plutus-blueprint (NAMING_BLUEPRINT)
+out: /nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0
+/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0
+
+--- onchain#plutus-blueprint (MPFS_BLUEPRINT)
+out: /nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0
+/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0
+
+--- offchain#retirement-rows (wrapped Nix application)
+wrapper-out: /nix/store/6dg0qw4ckf4rqypp0svvwr7lxlvj7zdf-retirement-rows
+wrapper-script: /nix/store/6dg0qw4ckf4rqypp0svvwr7lxlvj7zdf-retirement-rows/bin/retirement-rows
+c594918a91a414366deee19cf33e40bb5624cefbcbaa5fc2a6112ff2c5ea2b72  /nix/store/6dg0qw4ckf4rqypp0svvwr7lxlvj7zdf-retirement-rows/bin/retirement-rows
+wrapper content:
+#! /nix/store/v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9/bin/bash -e
+PATH=${PATH:+':'$PATH':'}
+PATH=${PATH/':''/nix/store/rvwxynyvrvisdzn5qzb880xahs45jh1h-cardano-node-exe-cardano-node-10.7.0/bin'':'/':'}
+PATH='/nix/store/rvwxynyvrvisdzn5qzb880xahs45jh1h-cardano-node-exe-cardano-node-10.7.0/bin'$PATH
+PATH=${PATH#':'}
+PATH=${PATH%':'}
+export PATH
+exec "/nix/store/ijqlwm0v9sc2z0kwdwvr15hw88dyfkis-cardano-mpfs-cage-exe-retirement-rows-0.1.0.0/bin/retirement-rows"  "$@" 
+naming-blueprint-file-sha256: 87080bed3a39aa145b6415306859ae7fce55284bf1b3bf0cb273f33bab6842c2  (/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0)
+mpfs-blueprint-file-sha256:   f17bf35a72ec0ad906068c978d4f1ef2502c3f10a4742af561bec27b89219765  (/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0)
+wrapper-script-sha256:        c594918a91a414366deee19cf33e40bb5624cefbcbaa5fc2a6112ff2c5ea2b72  (/nix/store/6dg0qw4ckf4rqypp0svvwr7lxlvj7zdf-retirement-rows/bin/retirement-rows)
+wrapped-cabal-exe-sha256:     325f712520d79f3defb17ba535a78204053e877018df072f863234da2544f97a  (/nix/store/ijqlwm0v9sc2z0kwdwvr15hw88dyfkis-cardano-mpfs-cage-exe-retirement-rows-0.1.0.0/bin/retirement-rows)
+grep: warning: stray \ before "
+grep: warning: stray \ before "
+  wrapper execs the cabal exe: exec "/nix/store/ijqlwm0v9sc2z0kwdwvr15hw88dyfkis-cardano-mpfs-cage-exe-retirement-rows-0.1.0.0/bin/retirement-rows"
+  wrapper prefixes PATH with pinned cardano-node 10.7.0: /nix/store/rvwxynyvrvisdzn5qzb880xahs45jh1h-cardano-node-exe-cardano-node-10.7.0/bin
+check-binary-O0-sha256:       0fa779a620d5e14677032d3c52eb1b38aab6deec1a19ffc962133f4931c71d41  (/tmp/t80e-rival-witness/offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/x/rival-driver-predevnet-check/noopt/build/rival-driver-predevnet-check/rival-driver-predevnet-check)
+
+--- SOURCE-CLOSURE PROOF: modules the Nix build compiled from the current tree
+cabal stanza present: 1
+nix-build-exit: 0 (retirement-rows rebuilt from current sources; a missing module would have failed other-modules resolution)
+--- source closure used by the Nix exe drv:
+src: /nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source
+journey/retirement contents:
+Main.hs
+RivalDriverLogic.hs
+RivalDriverPredevnetCheck.hs
+source hashes INSIDE the closure:
+5969dabf18248c56c1672e2a033e54bc199fa721e61da663aef723754188d21b  /nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source/journey/retirement/Main.hs
+db95a2320a6ba779e24e3f78e04c970f36b76771c9ec13e3e233695d333e144b  /nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source/journey/retirement/RivalDriverLogic.hs
+9e288ffa96864cc991d1b1482c6123791dfacb85011a61efd348a15a0914fa02  /nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source/journey/retirement/RivalDriverPredevnetCheck.hs
+bd85f5c7459937c1248132783cf8a91b39859376e48487180aa15fb5144d954c  /nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source/cardano-mpfs-cage.cabal

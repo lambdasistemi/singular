@@ -1,0 +1,63 @@
+{
+  "at": "2026-09-13T01:46:57.174Z",
+  "review": "Read retained run outputs and current source; no new node run or independent full reader execution by root",
+  "files": {
+    "driver": {
+      "source": "/code/singular-e17-issue-77/offchain/journey/retirement/Main.hs",
+      "frozen": "handoffs/recovered-retirement-root-current-driver.hs",
+      "sha256": "1c0c5c710f106a52f347896d87a7805e32ce321968621692b1a45e6079adfee2"
+    },
+    "reader": {
+      "source": "/code/singular-e17-issue-77/offchain/journey/retire-verify/Main.hs",
+      "frozen": "handoffs/recovered-retirement-root-current-reader.hs",
+      "sha256": "c759e93457cc493bb324c1f907421bf39f3d427ccf787b36139388a3f4f34129"
+    },
+    "predicate": {
+      "source": "/code/singular-e17-issue-77/offchain/naming/src/Naming/Verify.hs",
+      "frozen": "handoffs/recovered-retirement-root-current-predicate.hs",
+      "sha256": "2976b126b83b3e6c400c0ead6e91da79b7ab29d1ed307ef9e87542684f8bfb5a"
+    },
+    "controls": {
+      "source": "/code/singular-e17-issue-77/offchain/test/Naming/RetireVerifySpec.hs",
+      "frozen": "handoffs/recovered-retirement-root-current-controls.hs",
+      "sha256": "c2900c8481773f6e77014627260231f1e5092b766f6f7b76a04eae27110a8b6c"
+    },
+    "ledger": {
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/retirement-exhibit.log",
+      "frozen": "handoffs/recovered-retirement-root-current-ledger.log",
+      "sha256": "3da14ba281d0df93613587576997ff96fabd52122690d5c9b0c62f1b5b556f27"
+    },
+    "readerResult": {
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/reader-run3.log",
+      "frozen": "handoffs/recovered-retirement-root-current-readerResult.log",
+      "sha256": "a641d99f4b7453a4fdfbbe1152224b0418160f55bbd06903c93a48f47934d0b3"
+    },
+    "controlResult": {
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/cabal-test-verify3.log",
+      "frozen": "handoffs/recovered-retirement-root-current-controlResult.log",
+      "sha256": "58d5482f8da9641d178f0672afa0541cc5ba844aee28e007a882579888eee07a"
+    }
+  },
+  "recoveredController": {
+    "recover": "571c6072a209fcfed51819962920a0df82a34d412af16c2a92f63852436fccd6",
+    "retire": "875eab7ffe4a20273f7da0c8bd21e847f96b7e47b96a796fdb536f4435cff511"
+  },
+  "recoveredQuorum": {
+    "recover": "36be004814833c11a5086ba48baf7070c0127106e6b46826bc25697396858727",
+    "retire": "0ca585ce8a02a32b70d22f5d36aaad2385735d12dee9b4fa6f1ad147c78926c9"
+  },
+  "observations": [
+    "Retained successful ledger demonstration connects claim to recovery and both retirement routes, with successor readback and old record consumed.",
+    "Reader exit0 output identifies four retirement units from retained public CBOR and log mappings, no signing secrets or setup constants.",
+    "Current reader derives representative policy from creation mint and binds custody policy/name/quantity; source includes same-name wrong-policy control.",
+    "Retire redeemer is resolved through spending purpose to the exact input; actual vkey witness hashes are checked against required route signers."
+  ],
+  "limits": [
+    "Source/run readback is bounded review, not a new independent reader execution or forged-CBOR-bundle control.",
+    "Reader trusts retained accepted-tx log for acceptance; it is not independent node inclusion verification.",
+    "Recovery redeemer scan remains untagged and follows the single fixture rotation; no general multi-rotation claim.",
+    "Source comparator covers all fixture quorum members; no arbitrary-threshold route claim.",
+    "Permanent Over, completion/burn/reuse/withdrawal, final coherent bytes and complete accepted lifecycle remain open."
+  ],
+  "complete": false
+}

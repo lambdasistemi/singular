@@ -1,0 +1,30 @@
+{
+  "epic": 16,
+  "milestone": 1,
+  "children": [
+    {
+      "key": "import",
+      "number": 19,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsIPA",
+      "id": 5401937980,
+      "title": "Copy MPFS source and locks into onchain/ and offchain/",
+      "url": "https://github.com/lambdasistemi/singular/issues/19",
+      "dependencies": [
+        15
+      ],
+      "storyIds": [
+        "mpfs-source-baseline"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7sB",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true,
+      "parent": 16
+    }
+  ],
+  "remainingChildren": "await later decomposition"
+}

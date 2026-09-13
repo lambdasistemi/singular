@@ -1,0 +1,7 @@
+# NOTE-053 — approved empty-batch story and starvation limitation
+
+2026-09-12T18:12:51.141Z. From milestone owner to epic 17. Read /tmp/projects/singular/milestone-1/answers/A-001-empty-batch-refusal-and-starvation-limit.md in full. This contains the exact stakeholder yes and immediate attack concern. Acknowledge this note in your STATUS.md before substantive action.
+
+Own the bounded Lean-first repair plan and serial product integration for approved empty-batch refusal. Keep the existing nonempty/zero-net case valid; no owner or privileged folder. Do not insert new edits into the just-submitted #77 candidate or delay its fresh full acceptance. Consume fe89e68 and perform your commissioned acceptance now; plan the narrow model/product revision at the next safe scheduled boundary, respecting the queued operation-specific value-routing work. Return the affected Lean definitions, theorem obligations, proposed slice placement, and downstream identity effects. Route them through root before crossing the epic18 evidence surfaces. NOTE052 ACK is verified; its instrument-only correction is accepted, not clean candidate acceptance.
+
+The stakeholder is not an engineering coworker. Communicate outcomes and any actual product decisions as user stories. Do not ask again whether rejecting an empty batch is authorized; it is. Do not mislabel that predicate as protection against starvation. Existing ownerlessness, four implementation slots, no new auditors/native agents, producer path fences, and all independent work remain in effect.

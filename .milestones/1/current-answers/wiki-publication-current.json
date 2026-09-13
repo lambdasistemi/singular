@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-13T05:32:34.000Z",
+  "commit": "47359d2689c9d54a7cd0c70254950fd2d12df9fa",
+  "sha256": "86c545a848561ba9f03e17c3b811a75a62d821ed66800de1239cb1b6fe6eaaa3",
+  "pageSha256": "9f0a0b58597a5e628cfd6f28c563d7131be4eccc8c31afa2e86f8ff831522f4b",
+  "pushConfirmed": true,
+  "rendererCheck": "27 stories, 6 groups",
+  "openIssuesMapped": [
+    87,
+    81,
+    80,
+    78,
+    77,
+    74,
+    71,
+    68,
+    18,
+    17
+  ],
+  "reconciledAt": "2026-09-13T05:30:00.000Z",
+  "ticketState": "36 total; 26 closed; 10 open",
+  "storyState": "6 delivered; 2 landed; 7 review; 6 in-progress; 2 blocked; 4 standing",
+  "trigger": "Stakeholder challenged the all-in-progress projection; ticket and user-story states were separated and current E17/E18 evidence was published"
+}

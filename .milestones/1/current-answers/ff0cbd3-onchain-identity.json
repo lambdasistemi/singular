@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "upstream": {
+    "source_revision": "34a5bfbb8cca2cb1911b7060d0e61db28ba21e83"
+  },
+  "compiler": "v1.1.21+unknown",
+  "validators": [
+    {
+      "title": "request.request.spend",
+      "hash": "cad994cdb0f1b7d7c032e004f15ab322a3e6f2ce1670ff005a3ee662",
+      "parameters": 2
+    },
+    {
+      "title": "request.request.else",
+      "hash": "cad994cdb0f1b7d7c032e004f15ab322a3e6f2ce1670ff005a3ee662",
+      "parameters": 2
+    },
+    {
+      "title": "staking.staking.withdraw",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
+      "parameters": 0
+    },
+    {
+      "title": "staking.staking.else",
+      "hash": "4ab26c95029067185f709d140300cccb15b0b20bbd62a7e9aa2e2e10",
+      "parameters": 0
+    },
+    {
+      "title": "state.state.mint",
+      "hash": "d38c7cdec07366effad7ead46687f7d3da00fb63396fab3f9ce635c6",
+      "parameters": 0
+    },
+    {
+      "title": "state.state.spend",
+      "hash": "d38c7cdec07366effad7ead46687f7d3da00fb63396fab3f9ce635c6",
+      "parameters": 0
+    },
+    {
+      "title": "state.state.else",
+      "hash": "d38c7cdec07366effad7ead46687f7d3da00fb63396fab3f9ce635c6",
+      "parameters": 0
+    }
+  ]
+}

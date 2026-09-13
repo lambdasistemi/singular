@@ -1,0 +1,18 @@
+{
+  "candidate": "69730c96859cf3ab7067f2384e846736f634ab39",
+  "independentClauses": [
+    "given",
+    "when"
+  ],
+  "aliasedOnlyClauses": [
+    "then"
+  ],
+  "mapping_debt": false,
+  "layer_debt": true,
+  "findings": [
+    {
+      "code": "duplicate-layer-identity",
+      "detail": "Singular.Statements.greeter_iff: execution(s) ['exec-A'] appear in more than one required layer family \u2014 one execution aliased into two layers contributes to neither"
+    }
+  ]
+}

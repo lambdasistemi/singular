@@ -1,0 +1,30 @@
+<interactive>:1:1: warning: [GHC-68441] [-Wdeprecations]
+    In the use of ‘hash’ (imported from Cardano.Crypto.Hash.Class):
+    Deprecated: "Use hashWith or hashWithSerialiser"
+
+<interactive>:1:2: error: [GHC-18872]
+    • Couldn't match representation of type: SafeHash
+                                               EraIndependentTxBody
+                               with that of: Hash Blake2b_256 ByteString
+        arising from a use of ‘coerce’
+      The data constructor ‘Cardano.Ledger.Hashes.SafeHash’
+        of newtype ‘SafeHash’ is not in scope
+    • In the expression:
+          coerce
+            (hashWith id ("seed" :: ByteString) ::
+               Hash Blake2b_256 ByteString) ::
+            TxId
+
+<interactive>:1:2: error: [GHC-18872]
+    • Couldn't match representation of type: Hash
+                                               Blake2b_256 ByteString
+                               with that of: SafeHash EraIndependentScriptIntegrity
+        arising from a use of ‘coerce’
+      The data constructor ‘Cardano.Crypto.Hash.Class.UnsafeHashRep’
+        of newtype ‘Hash’ is not in scope
+    • In the expression:
+          coerce
+            (hashWith id ("view" :: ByteString) ::
+               Hash Blake2b_256 ByteString) ::
+            ScriptIntegrityHash
+

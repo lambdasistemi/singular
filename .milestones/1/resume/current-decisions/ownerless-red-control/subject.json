@@ -1,0 +1,6 @@
+{
+  "base": "56e0fcdbd09cb3326a63e490f6c7ed2511cdc9ef",
+  "testPatchSha256": "b499e18577d97ab77e4b0f20d4501d6bce34a9d97cb9b174c9a42acfb596d2c5",
+  "root": "/tmp/singular-ownerless-red-m02svz71",
+  "claim": "Only add refusal tests and Burning import; ALL old type definitions, helpers, test fixtures and expected old tests retained. Reproduces behavior under old wire representation, not original uncaptured worker execution."
+}

@@ -1,0 +1,145 @@
+{
+  "at": "2026-09-12T22:49:08.228Z",
+  "root": "/tmp/singular-root-consumer-manifest-control-8tn1W9",
+  "files": [
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.ak",
+      "sha256": "8e3cfcf78c5bc263a45c9fdf9269fcbe7424189944426eec0817c20c2ec3d335"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.tests.ak",
+      "sha256": "d20a80cc4c788a35a22e5eb300efabd856668a82748b00f5912b3bd4ff3e507c"
+    }
+  ],
+  "command": [
+    "/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken",
+    "check"
+  ],
+  "scope": "Copied concrete consumer only; no producer edit or ledger claim",
+  "exit": 0,
+  "signal": null,
+  "error": null,
+  "finishedAt": "2026-09-12T22:49:43.799Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "kind": {
+      "unit": 8,
+      "property": 0
+    }
+  },
+  "modules": [
+    {
+      "name": "consumer.tests",
+      "summary": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "kind": {
+          "unit": 8,
+          "property": 0
+        }
+      },
+      "tests": [
+        {
+          "title": "consume_declared_manifest_accepts",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 237962,
+            "cpu": 77614197
+          }
+        },
+        {
+          "title": "consume_diverted_allocation_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 171099,
+            "cpu": 55399832
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect payment_hash(output) == payout.credential"
+          ]
+        },
+        {
+          "title": "consume_wrong_token_quantity_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 170392,
+            "cpu": 52279006
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect quantity == expected_quantity"
+          ]
+        },
+        {
+          "title": "consume_altered_datum_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 150135,
+            "cpu": 49865231
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect datum_data(output) == payout.datum"
+          ]
+        },
+        {
+          "title": "consume_undeclared_output_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 42774,
+            "cpu": 13759689
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect length(tx.outputs) == length(manifest)"
+          ]
+        },
+        {
+          "title": "consume_missing_signature_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 22760,
+            "cpu": 9629418
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect has(tx.extra_signatories, operator)"
+          ]
+        },
+        {
+          "title": "consume_wrong_signature_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 42890,
+            "cpu": 13253066
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect has(tx.extra_signatories, operator)"
+          ]
+        },
+        {
+          "title": "root_control_coedited_diversion_is_accepted",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 243538,
+            "cpu": 79539673
+          }
+        }
+      ]
+    }
+  ],
+  "interpretation": "Contract failure: the copied consumer accepts a diverted payout when its caller-edited manifest is changed to match; it also explicitly refuses a different processing signer. Eight actual tests execute (7 original plus 1 root control). First filtered attempt executed zero tests and is retained separately, without credit. Consumer-only execution, not a ledger or full Modify claim."
+}

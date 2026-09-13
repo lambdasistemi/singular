@@ -1,0 +1,34 @@
+{
+  "commit": "6a730f128bdd1b06414277149badbb380baa93bb",
+  "sourceSha256": "03f0d2443dcf9256b6243038345388c72e736b935fca947ad64732d0123c88e2",
+  "dependencies": [
+    {
+      "root": "/code/singular-e18-blaster/blaster/.lake/packages/Blaster",
+      "head": "c576289cb55412b359411d6c89568f95af50730c"
+    },
+    {
+      "root": "/code/singular-e18-blaster/blaster/.lake/packages/PlutusCore",
+      "head": "ed3126b6a2f5cc32bd151fdefb26e66dcf514888"
+    },
+    {
+      "root": "/code/singular-e18-blaster/blaster/.lake/packages/CardanoLedgerApi",
+      "head": "577e3eb03b5be09354cfdb1c0d0c12e9e16541a0"
+    }
+  ],
+  "localImports": [
+    {
+      "path": "/code/singular-e18-blaster/blaster/.lake/build/lib/lean/SingularBlaster/Scripts.olean",
+      "sha256": "a92cfa549246f6b8195b8fa81aadc610ee367993fd982168e3919a1c6e05bd05"
+    },
+    {
+      "path": "/code/singular-e18-blaster/blaster/.lake/build/lib/lean/SingularBlaster/EndWitness.olean",
+      "sha256": "dcb81e16573e4b1294b622f7b3b2d3608207938a409663b09968ca06d97c30ef"
+    }
+  ],
+  "command": [
+    "/home/paolino/.elan/toolchains/leanprover--lean4---v4.24.0/bin/lean",
+    "--threads=4",
+    "/tmp/singular-hashcheck-wiTcKO/HashVectors.lean"
+  ],
+  "exit": 0
+}

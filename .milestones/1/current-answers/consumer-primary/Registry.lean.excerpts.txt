@@ -1,0 +1,122 @@
+237: /-- Value movements of one transition. -/
+238: structure Flow where
+239:   /-- Brought by the requester into a new request: bond + tip. -/
+240:   deposited : Value := 0
+241:   /-- Bonds locked into new checkpoints, one per registration or revival. -/
+242:   locked : List (AID × Value) := []
+243:   /-- Paid back to request owners. -/
+244:   refunds : List (Addr × Value) := []
+245:   /-- Paid to the folder: `tip` per request of the batch. -/
+246:   tips : Option (Addr × Value) := none
+247:   /-- A reap: what the reaper keeps of the checkpoint's min-ADA. -/
+248:   premium : Option (Addr × Value) := none
+249:   /-- A reap: what goes into the go-request (`Mr + tip`). -/
+250:   intoRequest : Value := 0
+251:   deriving Repr, DecidableEq
+252: 
+253: /-! ## Phases (the cage's `in_phase1`, `in_phase2`, `is_rejectable`, at a point) -/
+
+286: /-- What a fold threads through its batch. -/
+287: structure Acc where
+288:   leaves : List (AID × Status)
+289:   ckpts : List (AID × Ckpt)
+290:   requests : List (ReqId × Request)
+291:   nextToken : Token
+292:   locked : List (AID × Value)
+293:   refunds : List (Addr × Value)
+294:   deriving Repr, DecidableEq
+295: 
+296: /-- What the plugin does with one request in phase 1: the leaf operation the
+297: request declares, its admission, and its coupling (the mint, the bond, the
+298: refund). This is the registry plugin's body; the cage's own phase check is
+299: `processOne`. -/
+300: def processBody (p : Params) (env : Env) (acc : Acc) (r : Request) : Option Acc :=
+301:     match r.op with
+302:     | .register =>
+303:       if env.inception r.aid = true ∧ lookup acc.leaves r.aid = none then
+304:         some { acc with leaves := (r.aid, .active acc.nextToken) :: acc.leaves,
+305:                         ckpts := (r.aid, ⟨acc.nextToken, 0, .live⟩) :: acc.ckpts,
+306:                         nextToken := acc.nextToken + 1,
+307:                         locked := acc.locked ++ [(r.aid, p.D)] }
+308:       else none
+309:     | .revive =>
+310:       match lookup acc.leaves r.aid with
+311:       | some (.dormant k) =>
+312:         if env.rotationFrom r.aid k = true ∧ lookup acc.ckpts r.aid = none then
+313:           some { acc with leaves := setLeaf acc.leaves r.aid (.active acc.nextToken),
+314:                           ckpts := (r.aid, ⟨acc.nextToken, k + 1, .live⟩) :: acc.ckpts,
+315:                           nextToken := acc.nextToken + 1,
+316:                           locked := acc.locked ++ [(r.aid, p.D)] }
+317:         else none
+318:       | _ => none
+319:     | .goDormant k =>
+320:       match lookup acc.leaves r.aid with
+321:       | some (.active _) =>
+322:         some { acc with leaves := setLeaf acc.leaves r.aid (.dormant k),
+323:                         refunds := acc.refunds ++ [(r.owner, p.Mr)] }
+324:       | _ => none
+325:     | .goConvicted =>
+326:       match lookup acc.leaves r.aid with
+327:       | some (.active _) =>
+328:         some { acc with leaves := setLeaf acc.leaves r.aid .convicted,
+329:                         refunds := acc.refunds ++ [(r.owner, p.Mr)] }
+330:       | _ => none
+331:     | .convict =>
+332:       match lookup acc.leaves r.aid with
+333:       | some (.dormant k) =>
+334:         if env.duplicity r.aid k = true then
+335:           some { acc with leaves := setLeaf acc.leaves r.aid .convicted,
+336:                           refunds := acc.refunds ++ [(r.owner, p.Mr)] }
+337:         else none
+338:       | _ => none
+339: 
+340: /-- Processing one request: the cage's phase check, then the plugin's body. -/
+341: def processOne (p : Params) (env : Env) (now : Slot) (acc : Acc) (r : Request) : Option Acc :=
+342:   if inPhase1 p r now then processBody p env acc r else none
+343: 
+344: /-- Rejecting one request: the cage's rejectability, and the plugin's refusal
+345: on a go-request (its `k` must never be lost). -/
+346: def rejectOne (p : Params) (now : Slot) (acc : Acc) (r : Request) : Option Acc :=
+347:   if rejectable p r now ∧ r.op.userPostable = true then
+348:     some { acc with refunds := acc.refunds ++ [(r.owner, r.op.bond p)] }
+349:   else none
+350: 
+351: def applyBatch (p : Params) (env : Env) (now : Slot) :
+352:     Acc → List (ReqId × FoldAction) → Option Acc
+353:   | acc, [] => some acc
+354:   | acc, (id, fa) :: rest =>
+355:     match lookup acc.requests id with
+356:     | none => none
+357:     | some r =>
+358:       let acc' := { acc with requests := remove acc.requests id }
+359:       match (match fa with
+360:              | .process => processOne p env now acc' r
+361:              | .reject => rejectOne p now acc' r) with
+362:       | none => none
+363:       | some acc'' => applyBatch p env now acc'' rest
+
+385: def stepFn (p : Params) (env : Env) (a : Action) (now : Slot) (s : Sys) : Option (Flow × Sys) :=
+386:   match a with
+387:   | .contribute aid owner t op =>
+388:       if op.userPostable = true then
+389:         some ({ deposited := op.bond p + p.tip },
+390:               { s with requests := (s.nextReq, ⟨aid, owner, t, op⟩) :: s.requests,
+391:                        nextReq := s.nextReq + 1 })
+392:       else none
+393:   | .retract id =>
+394:       match lookup s.requests id with
+395:       | none => none
+396:       | some r =>
+397:         if inPhase2 p r now then
+398:           some ({ refunds := [(r.owner, r.op.bond p + p.tip)] }, { s with requests := remove s.requests id })
+399:         else none
+400:   | .fold folder g pl batch =>
+401:       if g = s.gen ∧ pl = s.plugin ∧ batch ≠ [] then
+402:         match applyBatch p env now ⟨s.leaves, s.ckpts, s.requests, s.nextToken, [], []⟩ batch with
+403:         | none => none
+404:         | some acc =>
+405:           some ({ locked := acc.locked, refunds := acc.refunds,
+406:                   tips := some (folder, batch.length * p.tip) },
+407:                 { s with gen := s.gen + 1, leaves := acc.leaves, ckpts := acc.ckpts,
+408:                          requests := acc.requests, nextToken := acc.nextToken })
+409:       else none

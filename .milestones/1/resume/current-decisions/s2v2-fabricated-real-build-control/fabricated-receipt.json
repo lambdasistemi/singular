@@ -1,0 +1,76 @@
+{
+  "candidate": "d846bab795828b25f67250bece374aa6415c442f",
+  "namingBlueprint": "/nix/store/kxnnmydq7ickzqr4fp0iq04ivz5naw1z-singular-naming-plutus-blueprint-0.1.0",
+  "rows": [
+    {
+      "row": "fold-active",
+      "stateInput": "1111111111111111111111111111111111111111111111111111111111111111#0",
+      "requestInput": "2222222222222222222222222222222222222222222222222222222222222222#0",
+      "stateContinuationDatum": {
+        "unrelated": "not a decoded state"
+      },
+      "rootBefore": "3333333333333333333333333333333333333333333333333333333333333333",
+      "rootAfter": "4444444444444444444444444444444444444444444444444444444444444444",
+      "submittedTxId": "5555555555555555555555555555555555555555555555555555555555555555",
+      "rootBeforeObservedFrom": "1111111111111111111111111111111111111111111111111111111111111111#0",
+      "rootAfterObservedFrom": "6666666666666666666666666666666666666666666666666666666666666666#0",
+      "applicationPolicy": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "representativeAppliedPolicy": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "representativeAssetName": "wrong-unchecked-name",
+      "mint": [
+        {
+          "policy": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "assetName": "different-wrong-name",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "row": "occupied-key",
+      "operation": "insert",
+      "outcome": "refused",
+      "submittedTxId": "7777777777777777777777777777777777777777777777777777777777777777",
+      "refusedByScript": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "row": "ownerless-end",
+      "operation": "end",
+      "outcome": "refused",
+      "submittedTxId": "7777777777777777777777777777777777777777777777777777777777777777",
+      "refusedByScript": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "row": "ownerless-migration",
+      "operation": "migration",
+      "outcome": "refused",
+      "submittedTxId": "7777777777777777777777777777777777777777777777777777777777777777",
+      "refusedByScript": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "row": "ownerless-sweep",
+      "operation": "sweep",
+      "outcome": "refused",
+      "submittedTxId": "7777777777777777777777777777777777777777777777777777777777777777",
+      "refusedByScript": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "row": "ownerless-burning",
+      "operation": "burning",
+      "outcome": "refused",
+      "submittedTxId": "7777777777777777777777777777777777777777777777777777777777777777",
+      "refusedByScript": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "row": "free-key-control",
+      "outcome": "accepted",
+      "submittedTxId": "8888888888888888888888888888888888888888888888888888888888888888",
+      "distinctFrom": "a row that does not exist"
+    },
+    {
+      "row": "supported-action-control",
+      "outcome": "accepted",
+      "submittedTxId": "8888888888888888888888888888888888888888888888888888888888888888",
+      "distinctFrom": "a row that does not exist"
+    }
+  ]
+}

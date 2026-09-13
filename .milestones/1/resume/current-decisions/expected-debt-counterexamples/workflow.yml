@@ -1,0 +1,231 @@
+name: Conformance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - 'lean/**'
+      - 'tools/**'
+      - '.github/workflows/conformance.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'conformance/**'
+      - 'onchain/**'
+      - 'lean/**'
+      - 'tools/**'
+      - '.github/workflows/conformance.yml'
+permissions:
+  contents: read
+concurrency:
+  group: conformance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  lint:
+    name: Workflow parses, lints clean, owned docs page bound
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance-lint"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # A workflow that cannot be parsed cannot fail loudly: every
+      # workflow file must parse before anything else runs. yq-go
+      # comes from nixpkgs so the check needs nothing the runner
+      # lacks.
+      - name: Every workflow file parses as YAML
+        run: |
+          for f in .github/workflows/*.yml; do nix run --quiet nixpkgs#yq-go -- eval '.' "$f" > /dev/null; done
+      # actionlint over this workflow. The self-hosted `nixos` label
+      # is repo-wide (ci.yml, mpfs.yml carry it with no actionlint
+      # config): the step proves actionlint ran by requiring its known
+      # finding, then fails on anything else.
+      - name: actionlint carries no new findings
+        run: |
+          nix run --quiet nixpkgs#actionlint -- .github/workflows/conformance.yml 2>&1 | tee /tmp/actionlint.txt
+          grep -q 'label "nixos" is unknown' /tmp/actionlint.txt || { echo "actionlint did not run as expected"; exit 1; }
+          grep -E '\.yml:[0-9]+' /tmp/actionlint.txt | grep -v 'label "nixos" is unknown' && exit 1 || true
+      # The owned docs page keeps its speech companion: present and
+      # covering its headings, bound to its hash. The repository's
+      # own docs CI (just ci) remains the backstop for doc-only
+      # changes outside this workflow's path filter.
+      - name: Owned docs page passes the presentation gate
+        run: nix develop --quiet --command python3 tools/check_presentation.py --front README.md --register docs/model-ledger.md --register docs/theorems.md --register docs/mutants.md docs/consumer-conformance.md
+  conformance:
+    name: Generic, canonical-identity and serialization rows on a real devnet
+    runs-on: nixos
+    timeout-minutes: 60
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Issue #63: the four generic registry operations the naming
+      # demonstration can never exercise — Update, Delete,
+      # re-Insert after Delete, and the refusal of Insert on an
+      # occupied key — executed against a real devnet, each with its
+      # executing negative control and its measurements against the
+      # devnet's Conway protocol maxima. Issue #70 then extends the
+      # same session with its rows: three attributed refusals
+      # (CG07/CG09/CG10), the permissionless-fold regression CG20
+      # (accepted against the #79-repaired candidate), the superseded
+      # CG17 observation, and the held rows CG11/CG12/CG19. CG14/CG15
+      # are NOT run: superseded inherited-hook expectations with
+      # could-not-execute history — no work waits behind them.
+      #
+      # A session containing held rows ends NON-ZERO by design (a held
+      # row must never read as a pass). Per the A-001 ruling this step
+      # never treats that exit — or any error label — as success: the
+      # expected-debt assertion below reads the session's ACTUAL
+      # results and demands exactly the thirteen rows, exactly the
+      # expected verdict per row (receipts), no divergence, and a
+      # non-zero exit accounted for by exactly the held rows CG11
+      # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
+      # CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101);
+      # strict completion and release stay RED on that debt. Issue #69 then runs the CA
+      # rows as their own session: the consumer's authentication of
+      # the canonical registry identity, with the rival the ledger
+      # cannot refuse executed beside it. The unit suite (inventory
+      # denominator, receipt overlay, refusal matcher, authenticator
+      # decisions) runs first and fails fast; the devnet runs are
+      # the expensive gate. The blueprint is built from the
+      # checked-out commit and passed at run time, so freshness is
+      # carried by the recipe, not the ordering edge. The runner
+      # sets its own unique TMPDIR and never touches the default
+      # path, so concurrent devnet lanes keep their databases.
+      - name: Run the unit suite as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance-tests
+      - name: List the inventory as a packaged app without a dev shell
+        working-directory: conformance
+        run: nix run --quiet .#conformance -- list
+      - name: Run the generic rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          set -e
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          mkdir -p ./conformance-receipts
+          set +e
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 --receipts-dir ./conformance-receipts 2>&1 | tee /tmp/generic-rows.log
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          echo "generic session exit: $run_rc (non-zero expected while rows are held)"
+          # --- expected-debt assertion over ACTUAL session results (A-001)
+          # exactly the thirteen rows plus the session CL01, no extras
+          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 CL01 | sort > /tmp/expected-rows.txt
+          nix run --quiet nixpkgs#jq -- -r '.row' ./conformance-receipts/receipt-*.json | sort > /tmp/receipt-rows.txt
+          diff /tmp/expected-rows.txt /tmp/receipt-rows.txt || { echo 'FAIL: receipt set mismatch (missing or extra row)'; exit 1; }
+          # exactly the expected verdict per row, from the receipts
+          expect_verdict() {
+            case "$1" in
+              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG17|CG20) printf 'agrees-with-model' ;;
+              CG11|CG12|CG19) printf 'held-q002' ;;
+              CG13) printf 'resolved-by-ruling' ;;
+              *) printf 'UNKNOWN-ROW' ;;
+            esac
+          }
+          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20; do
+            f="./conformance-receipts/receipt-$row.json"
+            test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
+            v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
+            want="$(expect_verdict "$row")"
+            [ "$v" = "$want" ] || { echo "FAIL: unexpected verdict for $row: got '$v', expected '$want'"; exit 1; }
+          done
+          # the session must not claim success while rows are held
+          [ "$run_rc" -ne 0 ] || { echo 'FAIL: session exited 0 while held rows are in it — the held-set moved; update this assertion deliberately, never silently'; exit 1; }
+          # the run's own accounting must name exactly the expected held set
+          held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
+          [ "$held" = "CG11 CG12 CG19" ] || { echo "FAIL: held set moved: got '$held', expected 'CG11 CG12 CG19'"; exit 1; }
+          # nothing may fail against this candidate
+          failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
+          [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.'
+          echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
+      # Issue #69: canonical identity authentication. CA02 asserts
+      # the ledger's acceptance of a rival registry from a second
+      # seed — the settled finding, never relabelled as a refusal —
+      # and the consumer's rejection of it on the derived name;
+      # CA03 proves the name check is the discriminator; CA05 shows
+      # no script executed when a forged output is created at the
+      # canonical address.
+      - name: Run the canonical-identity rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir ./conformance-receipts
+      # Issue #68: the serialization boundary — Haskell datum, redeemer
+      # and parameter encodings against the compiled blueprint plus
+      # compiled execution evidence, rather than a codec agreeing with
+      # itself. CS01 and CS06 check the blueprint locally and need no
+      # node; CS02-CS05 and CS08 execute on the devnet with one fresh
+      # cage per row. CS07 carries no receipt and runs nowhere: its
+      # Fork finding is escalated, and an unmarked row stays unmarked.
+      - name: Run the serialization rows as a packaged app without a dev shell
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
+  # Issue #80: the theorem-coverage gate. The ratchet (per-obligation,
+  # no offsetting) and the full-completion gate (strict, all axes zero) are
+  # two distinct results and both run. At the current honest baseline the
+  # completion gate REFUSES: mapping, implementation-layer and unclassified
+  # debt are nonzero, and an incremental PR must not make it pass. The
+  # negated step below asserts exactly that — if the gate ever exits zero
+  # here, the record claims completion and this workflow must be flipped
+  # deliberately, with the owner's acceptance, not silently.
+  coverage-gate:
+    name: Theorem coverage gate — inventory, ratchet and completion as distinct results
+    runs-on: nixos
+    timeout-minutes: 20
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage-gate"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Gate test suite incl. every armed failure control (frozen snapshot)
+        working-directory: conformance
+        run: nix build --quiet --no-link .#coverageGateTests
+      - name: Gate verdicts against the frozen snapshot (inventory, ratchet, honest refusal)
+        working-directory: conformance
+        run: nix build --quiet --no-link .#coverageGateSnapshot
+      - name: Inventory — reconcile manifests and discover the obligation population
+        run: nix run --quiet ./conformance#coverage-gate -- --root . inventory
+      - name: Ratchet — per-obligation regression against the protected base (must pass)
+        run: nix run --quiet ./conformance#coverage-gate -- --root . ratchet
+      - name: Completion — must refuse while debt is nonzero (flipping this is claiming completion)
+        run: |
+          if nix run --quiet ./conformance#coverage-gate -- --root . completion; then
+            echo "COMPLETION claimed complete; if this is real, flip this step deliberately"
+            exit 1
+          else
+            rc=$?
+            test "$rc" -eq 1 || { echo "completion gate failed closed (exit $rc), not INCOMPLETE"; exit 1; }
+            echo "COMPLETION: INCOMPLETE — the honest nonzero baseline, reported as its own result"
+          fi

@@ -1,0 +1,211 @@
+{
+  "at": "2026-09-13T02:53:07.307Z",
+  "root": "/tmp/singular-root-completion-rejected-omSDms",
+  "files": [
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage.ak",
+      "file": "cage.ak",
+      "sha256": "4b09aed086b56a86ab86fdd3356fcb35a3ea51e10e1d68bee11943b38310b0d6"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage.props.ak",
+      "file": "cage.props.ak",
+      "sha256": "f8fe8c55024ada61d29ea4e3e304b2857e45fe39a28bf59a8fc95b7a251e58e8"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage_vectors.ak",
+      "file": "cage_vectors.ak",
+      "sha256": "d783e8b7f34a30079ce61ecee3e1994e1c0889abcff4c6ad6fb8d39401ea8315"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.ak",
+      "file": "consumer.ak",
+      "sha256": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/lib.ak",
+      "file": "lib.ak",
+      "sha256": "66ab4befd64a4d83127807da281814149ad77b0981731a47952b8e5a57ff833f"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/lib.props.ak",
+      "file": "lib.props.ak",
+      "sha256": "d1fbd32905b64da81f7e28f6af2a1e7e3db706bc15892354df3ce6365c16bfbb"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/request.ak",
+      "file": "request.ak",
+      "sha256": "aeacc217ef7424d024f1535cc3b0c6dfc68994efb30f8ebe1aac11b2818505fe"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/shared.ak",
+      "file": "shared.ak",
+      "sha256": "7bb4b69d58fa064670b654dfa394078701fe3846e98f412d73d3ee9cc3a8f69d"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/staking.ak",
+      "file": "staking.ak",
+      "sha256": "789455f231abb22375ba7c3383a5130e37aaf86fed3ac50a8a608ded5244e032"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/state.ak",
+      "file": "state.ak",
+      "sha256": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/types.ak",
+      "file": "types.ak",
+      "sha256": "5349832301ab34873e5cb3734170b44046761e75a131df2e8e47c9a132236d14"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/naming.ak",
+      "file": "naming.ak",
+      "sha256": "079ff140da6a2010104aa664ef30b61d629b7afeb6ed3504427a6df933c102d6"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/application.ak",
+      "file": "application.ak",
+      "sha256": "bb814e5ad8860daf09ef8ad6017425ed1e6bf99fd6d95d4db72cd06779e4e4f4"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/representative.ak",
+      "file": "representative.ak",
+      "sha256": "a8bf6ed17d3b31fc92b267c6508fde72d50d3460a71c1ca5d36735d1d5a9560f"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/retirement_custody.ak",
+      "file": "retirement_custody.ak",
+      "sha256": "ab266593e3b293cdb61c82290296d254a70e2d09a180ab5d8c26643642215524"
+    },
+    {
+      "file": "root_completion_rejected.tests.ak",
+      "sha256": "df43d656e29b646002f3c17071f2204137ddf94b7c668dcaa1e8cec0326f0bea"
+    }
+  ],
+  "command": "aiken check -m rootfive_",
+  "status": "executed: five actual handlers accept expired retirement rejection plus representative burn while registry root stays Active",
+  "scope": "All five actual current Aiken handlers on one identical value-balanced synthetic context. Includes state/request/consumer/representative/custody. No actual ledger inclusion, compiled hash rebind, authentic creation/retirement trace, invariant or epic acceptance.",
+  "exit": 0,
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "kind": {
+      "unit": 5,
+      "property": 0
+    }
+  },
+  "tests": [
+    {
+      "title": "rootfive_rejected_retirement_burns_while_registry_stays_active",
+      "status": "pass"
+    },
+    {
+      "title": "rootfive_no_burn_still_refused_at_custody",
+      "status": "pass",
+      "traces": [
+        "the validator crashed / exited prematurely",
+        "expect held_burned_exactly_once(claim, tx)"
+      ]
+    },
+    {
+      "title": "rootfive_missing_registry_now_refuses",
+      "status": "pass",
+      "traces": [
+        "the validator crashed / exited prematurely",
+        "expect has_spent_registry_state(tx)"
+      ]
+    },
+    {
+      "title": "rootfive_missing_consumer_still_refuses_at_state",
+      "status": "pass",
+      "traces": [
+        "the validator crashed / exited prematurely",
+        "expect\n    list.any(\n          withdrawals,\n          fn(w) {\n            let Pair(credential, _) = w\n            when credential is {\n              address.Script(hash) -> hash == consumer_pin\n              _ -> False\n            }\n          },\n        )"
+      ]
+    },
+    {
+      "title": "rootfive_legitimate_rejection_without_custody_spend_accepts",
+      "status": "pass"
+    }
+  ],
+  "retained": [
+    {
+      "path": "handoffs/completion-rejected-root-five-handler.stdout.json",
+      "sha256": "f44357f7cb61bf1d34d6f66d8e21532e2b91eb9d80230f8d230d3917eea12ab0"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-five-handler.stderr",
+      "sha256": "bea0c7e5e45f89dc89766f30e5edeee24548b6c6a3b616b88afeb525a59d88f5"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-five-handler.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-cage.ak",
+      "sha256": "4b09aed086b56a86ab86fdd3356fcb35a3ea51e10e1d68bee11943b38310b0d6"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-cage.props.ak",
+      "sha256": "f8fe8c55024ada61d29ea4e3e304b2857e45fe39a28bf59a8fc95b7a251e58e8"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-cage_vectors.ak",
+      "sha256": "d783e8b7f34a30079ce61ecee3e1994e1c0889abcff4c6ad6fb8d39401ea8315"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-consumer.ak",
+      "sha256": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-lib.ak",
+      "sha256": "66ab4befd64a4d83127807da281814149ad77b0981731a47952b8e5a57ff833f"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-lib.props.ak",
+      "sha256": "d1fbd32905b64da81f7e28f6af2a1e7e3db706bc15892354df3ce6365c16bfbb"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-request.ak",
+      "sha256": "aeacc217ef7424d024f1535cc3b0c6dfc68994efb30f8ebe1aac11b2818505fe"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-shared.ak",
+      "sha256": "7bb4b69d58fa064670b654dfa394078701fe3846e98f412d73d3ee9cc3a8f69d"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-staking.ak",
+      "sha256": "789455f231abb22375ba7c3383a5130e37aaf86fed3ac50a8a608ded5244e032"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-state.ak",
+      "sha256": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-types.ak",
+      "sha256": "5349832301ab34873e5cb3734170b44046761e75a131df2e8e47c9a132236d14"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-naming.ak",
+      "sha256": "079ff140da6a2010104aa664ef30b61d629b7afeb6ed3504427a6df933c102d6"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-application.ak",
+      "sha256": "bb814e5ad8860daf09ef8ad6017425ed1e6bf99fd6d95d4db72cd06779e4e4f4"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-representative.ak",
+      "sha256": "a8bf6ed17d3b31fc92b267c6508fde72d50d3460a71c1ca5d36735d1d5a9560f"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-retirement_custody.ak",
+      "sha256": "ab266593e3b293cdb61c82290296d254a70e2d09a180ab5d8c26643642215524"
+    },
+    {
+      "path": "handoffs/completion-rejected-root-validators-root_completion_rejected.tests.ak",
+      "sha256": "df43d656e29b646002f3c17071f2204137ddf94b7c668dcaa1e8cec0326f0bea"
+    }
+  ],
+  "interpretation": "Presence of a genuine registry-state spend closes the prior absence case but is not atomic completion: the rejected Update keeps the Active root, returns request funding, and the separately allowed representative burn destroys the custody asset. Legitimate rejection without spending custody still passes and must remain allowed."
+}

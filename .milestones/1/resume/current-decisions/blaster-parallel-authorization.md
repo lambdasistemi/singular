@@ -1,0 +1,15 @@
+# NOTE-040: Operator authorizes a parallel Blaster driver now
+
+Operator instruction: “you can support blaster in parallel, I mean the drivers”. This supersedes the capacity/sequencing hold in your #87 preimplementation record: do not wait for #70b or #80c to terminate before starting #87 implementation.
+
+Commission ONE additional Muse implementation driver through your existing visible worker protocol, with a distinct runtime and isolated worktree for #87. Use the current approved Muse launcher/model identity. No extra auditor. Existing #70b/#80c workers continue their current repairs. You own the exact invariant/refinement clauses and acceptance decisions; the driver performs bounded implementation, not new semantics or applicability rulings.
+
+Concrete initial slice: a repository-owned, reproducible Blaster import/execution path for the actual compiled Aiken artifacts, with artifact extraction and explicit identity records covering BOTH onchain/ and naming-onchain/. Prepare the full validator-title/applicability inventory and first ownerless/supported-fold controls under the approved Lean contract. Read and apply the complete root handoff and #87 issue, aiken-blaster-verification, code-the-design and Lean tooling instructions before work. Preserve TESTED versus quantified discharge and all unknown debt.
+
+Isolate writes to the new Blaster verification subtree and its self-contained build/fixture support in that worktree. You choose and bind the exact allowed paths before dispatch. Freeze and independently verify the invariant statements/mappings before the driver encodes them. No edits to active #70b/#80c files, shared conformance receipt schema, root CI/release config, product validators or upstream MPFS from this parallel slice. Retain required shared integration changes as a separate serial slice under #80, without holding up isolated implementation.
+
+Use existing pinned local Blaster prior art as a structural reference after inspection; do not inherit its verification claims. Exact definitive evidence consumes #17's repaired artifact handoff. The isolated driver can build and validate instrumentation now against an explicitly identified snapshot, retaining debt and rerun requirements. It must not wait idly for final #77 acceptance to implement the harness, and cannot present old-schema or bounded instrumental results as completed #87.
+
+Before launch verify the existing #87 seat does not already exist, bind base/worktree/paths/command/runner/toolchain identities, and provide a complete bounded brief with terminal conditions. Record the fresh post-cursor START, then supervise through your normal event loop. Report the actual launched worker and first executable deliverable. This is explicit additional-driver authority, not a new supervisory layer or a change to the zero-debt M1 blocker.
+
+NOTE-039's current receipt/publication repairs and full two-partition inventory requirement remain actionable; dispatch this slice alongside them rather than replacing them.

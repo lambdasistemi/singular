@@ -1,0 +1,18 @@
+{
+  "scope": "Independent exact committed adjudication-suffix replays of original two counterexamples; separate from full publisher run.",
+  "sourceSha256": "501052144211c2cc735f0d9732934f4c3524f044a876b3bcc856e1df12a0b62c",
+  "results": [
+    {
+      "name": "original-guard-timeout",
+      "commandExit": 124,
+      "adjudicationExit": 1,
+      "stdout": "CASE-FAIL: guard-removed: want exit 1 with assembly PASS without guard (rc=124) — harness blind\n"
+    },
+    {
+      "name": "original-final-missing-command",
+      "commandExit": 127,
+      "adjudicationExit": 1,
+      "stdout": "CASE-FAIL: no-final: ineffective mutant (rc=127) — setup, build or assembly failure cannot count\n"
+    }
+  ]
+}

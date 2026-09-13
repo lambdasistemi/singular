@@ -1,0 +1,92 @@
+{
+  "at": "2026-09-12T21:14:37.385Z",
+  "sourceCandidate": "b14d2c7f88c1d83d89dbd2809748a938e80aff6d",
+  "socket": "/tmp/t87b-devnet/node.sock",
+  "out": "/tmp/singular-root-sweep-census-WGt829",
+  "tip": {
+    "block": 209181,
+    "epoch": 418,
+    "era": "Conway",
+    "hash": "2d38baea8f0a93931955b62864718b1f28690c5ffe3d4b1eb669aad2de51e0b9",
+    "slot": 209181,
+    "slotInEpoch": 181,
+    "slotsToEpochEnd": 319,
+    "syncProgress": "100.00"
+  },
+  "protocolVersion": {
+    "major": 10,
+    "minor": 0
+  },
+  "state": {
+    "5be1380c6b87c75455c45f5b5b00189138110c3831981f28f292681ed350abb5#0": {
+      "address": "addr_test1wr88v90khfx7sr06nwwx4mmgqenyw2aya4lxgrl4t2khcms7zfgjw",
+      "value": {
+        "ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e": {
+          "f25626c8c1733d9b5a6ffddba09c21a6e67ece99e034b7d70c3af8a8622459da": 1
+        },
+        "lovelace": 3000000
+      },
+      "inlineDatum": {
+        "constructor": 1,
+        "fields": [
+          {
+            "constructor": 0,
+            "fields": [
+              {
+                "bytes": "d402dbde3d66082809852ea0962bd37450ad87de36d0d73318e53c3d"
+              },
+              {
+                "constructor": 1,
+                "fields": []
+              },
+              {
+                "bytes": "5774710a4457e50a5a2ff1fe6149398617c895dd3fbd3bd8cac51ecc571f9319"
+              },
+              {
+                "int": 2000000
+              },
+              {
+                "int": 3600000
+              },
+              {
+                "int": 3600000
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "request": {
+    "150c87d577abd800da136c106da9c83ddafc0548d1fe2aa7716aa9ce22cb869b#0": {
+      "address": "addr_test1wqqq4xu5tyav2f28lwe8dndy46uaxupjpp6g665a389jp4sm85squ",
+      "value": {
+        "lovelace": 10000000
+      },
+      "inlineDatum": null
+    }
+  },
+  "specific": {
+    "150c87d577abd800da136c106da9c83ddafc0548d1fe2aa7716aa9ce22cb869b#0": {
+      "address": "addr_test1wqqq4xu5tyav2f28lwe8dndy46uaxupjpp6g665a389jp4sm85squ",
+      "value": {
+        "lovelace": 10000000
+      },
+      "inlineDatum": null
+    },
+    "150c87d577abd800da136c106da9c83ddafc0548d1fe2aa7716aa9ce22cb869b#1": {
+      "address": "addr_test1vr2q9k7784nqs2qfs5h2p93t6d69ptv8mcmdp4enrrjnc0ge0edcp",
+      "value": {
+        "lovelace": 10000000
+      },
+      "inlineDatum": null
+    },
+    "30be5f76a31c1c32f445081c01bb9429e27824b38c00d86560c8b6f6caf46427#1": {
+      "address": "addr_test1vr2q9k7784nqs2qfs5h2p93t6d69ptv8mcmdp4enrrjnc0ge0edcp",
+      "value": {
+        "lovelace": 20000000
+      },
+      "inlineDatum": null
+    }
+  }
+}

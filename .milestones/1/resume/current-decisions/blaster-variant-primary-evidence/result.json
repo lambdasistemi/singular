@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-09-12T09:24:05.367Z",
+  "plutusSource": "e5bec6ae0caa8de4c2d33d518ce2cfd4bdc34cbf",
+  "configurationSource": "5bd7c79dd64fd9c7ec872f1c20ab2f5e075366ad",
+  "configuredProtocol": {
+    "major": 10,
+    "minor": 0
+  },
+  "observedLiveProtocol": null,
+  "selection": "For PlutusV3, pv < vanRossemPV(11) uses C; pv >=11 uses E. Thus configured PV10 maps to C, pending actual session protocol observation before definitive acceptance.",
+  "scope": "Correction of an over-broad skill/brief era table, not a Lean design change or a lower-fidelity fallback.",
+  "sources": [
+    "https://github.com/IntersectMBO/plutus/blob/e5bec6ae0caa8de4c2d33d518ce2cfd4bdc34cbf/plutus-ledger-api/src/PlutusLedgerApi/Common/ProtocolVersions.hs#L127",
+    "https://github.com/IntersectMBO/plutus/blob/e5bec6ae0caa8de4c2d33d518ce2cfd4bdc34cbf/plutus-ledger-api/src/PlutusLedgerApi/V3/EvaluationContext.hs#L45"
+  ],
+  "digests": {
+    "Blaster-Default-Basic.lean": "fe3645f5d916f360ee2bdc1ebefe2efd976ed7f9974ce74322de1ca924b5da3c",
+    "EvaluationContext.hs": "192210b3221e402fd86e5012c05786219ec80ef0bf1b19b07b483a7a6e521236",
+    "ProtocolVersions.hs": "3de1a1533b7c8585587172e36367a3e28fd073b7e60f9e687bfd4d08925567bd",
+    "Setup-38fc1917.hs": "495f0dc1f2cbec7c315c63bfc36815ddf4dc745e79cea20bc3e35834b04187d1",
+    "shelley-genesis.json": "a14d1c1c51542b712a55ef70f0ae84473ad7b4791d2a45c4d518d7c4869196bb"
+  }
+}

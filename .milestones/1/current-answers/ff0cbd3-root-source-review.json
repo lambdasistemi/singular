@@ -1,0 +1,58 @@
+{
+  "at": "2026-09-12T22:26:46.555Z",
+  "commit": "ff0cbd3fd20e694c9f93480576e1f4277b93be75",
+  "files": [
+    {
+      "path": "onchain/validators/state.ak",
+      "sha256": "8e995eb2376cd84c1d9f79c3365a914605e5c526f34f8f480437ab73b079b667"
+    },
+    {
+      "path": "onchain/validators/types.ak",
+      "sha256": "5349832301ab34873e5cb3734170b44046761e75a131df2e8e47c9a132236d14"
+    },
+    {
+      "path": "onchain/validators/cage.tests.ak",
+      "sha256": "98b7bbbc2699e6d4c80f619995abfc76c25b90ba36ff74dcc4a4d3ced829d74f"
+    },
+    {
+      "path": "onchain/script-identity.json",
+      "sha256": "09fc68f5e0ceef4ae5f2048185a15de09ae5abb922b71f4ef384899099671f26"
+    },
+    {
+      "path": "naming-onchain/script-identity.json",
+      "sha256": "32f6ae5e40d6c2f3ed123498af916e5b668c0306bbd814c785710c52401f35fa"
+    },
+    {
+      "path": "lean/Singular/Model.lean",
+      "sha256": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271"
+    },
+    {
+      "path": "lean/Singular/Statements.lean",
+      "sha256": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91"
+    }
+  ],
+  "scope": "Source review of intermediate committed producer; no accepted tuple or new ledger execution",
+  "findings": [
+    {
+      "requirement": "Sixth consumer pin, preservation, width and real withdrawal credential predicate",
+      "source": "onchain/validators/state.ak and types.ak",
+      "disposition": "Present at source; focused owner controls reported, supported ledger route remains owed"
+    },
+    {
+      "requirement": "A001 and root071 empty processing refusal",
+      "source": "validModify consumed=0 branch and prop_modify_no_owner_required",
+      "disposition": "Contradicted: source explicitly accepts zero consumed requests; Lean rejects empty fold"
+    },
+    {
+      "requirement": "Exact request/action pairing",
+      "source": "validModify actionsTail",
+      "disposition": "Incomplete: leftover actions not required empty"
+    },
+    {
+      "requirement": "Supported builders, registration and connected journeys",
+      "source": "worker handoffs/hook-pin.md section5",
+      "disposition": "Incomplete; root079 removes erroneous permanent journey hold and continues same990"
+    }
+  ],
+  "ruling": "epic-17/inbox/NOTE-079-empty-modify-waiver-is-not-authorized-continue-exhibit.md"
+}

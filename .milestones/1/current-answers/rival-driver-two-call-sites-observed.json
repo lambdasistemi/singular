@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-12T21:49:41.333Z",
+  "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/Main.hs",
+  "sha256": "06ad10c8ad02799220081a9e4f9c339b9c27f146463f4c151bffad0eba737745",
+  "directCallSites": [
+    {
+      "line": 571,
+      "text": "runRivalSetup env repAppliedPolicyBytes"
+    },
+    {
+      "line": 1471,
+      "text": "runRivalSetup env repAppliedPolicyBytes"
+    }
+  ]
+}

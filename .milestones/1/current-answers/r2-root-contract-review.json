@@ -1,0 +1,38 @@
+{
+  "at": "2026-09-12T23:26:48.919Z",
+  "entries": [
+    {
+      "source": "epic-18/t87b-blaster-refinement/handoffs/r2-contract-packet.md",
+      "frozen": "handoffs/r2-root-reviewed-packet.md",
+      "sha256": "75fae24fe3650e9becaa7cf2ab81697b5d06c38b4f2aaa14477f180cd82d45f5"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/SingularBlaster/ModifyWitness.lean",
+      "frozen": "handoffs/r2-root-observed-ModifyWitness.lean",
+      "sha256": "d58724289952fa82cb2fecce2e39ed4f30a90f12eb26e6a5e9a32f4f6a0884eb"
+    },
+    {
+      "source": "/code/singular-e18-blaster/blaster/abstract/GradingSpan.lean",
+      "frozen": "handoffs/r2-root-observed-GradingSpan.lean",
+      "sha256": "7d85737f4ee1b8ce71ae28543dc200499be86ef5e73908e8e68088c53e05c602"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/state.ak",
+      "frozen": "handoffs/r2-root-current-draft-state.ak",
+      "sha256": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/request.ak",
+      "frozen": "handoffs/r2-root-current-draft-request.ak",
+      "sha256": "aeacc217ef7424d024f1535cc3b0c6dfc68994efb30f8ebe1aac11b2818505fe"
+    }
+  ],
+  "scope": "Source and packet review only; no new CEK or ledger execution",
+  "findings": [
+    "Historical 5bd7c79 state-only CEK leg is not current six-field consumer-permitted processing",
+    "Current rejected-input floor has no historical aggregate fee deduction",
+    "Absent request 999 is not the present consumed request grading",
+    "KERI evidence-retention and freeze replay specs do not establish actual registered consumer rejection semantics",
+    "Ghost-only stutter and standalone reject arm do not yet account for mixed batch fold, existing request removal, timing, refunds and custody"
+  ]
+}

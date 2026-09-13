@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-13T02:20:00.113Z",
+  "files": {
+    "relation": {
+      "source": "/code/singular-e18-blaster/blaster/abstract/Corr.lean",
+      "frozen": "handoffs/a006-root-custody-hypothesis-relation.lean",
+      "sha256": "647ff31b02412e65239939f1fd36a905a7bcefe6ce8bb1ef9afa1cf916fc06e0"
+    },
+    "candidate": {
+      "source": "/code/singular-e18-blaster/blaster/abstract/RejectedFold.lean",
+      "frozen": "handoffs/a006-root-custody-hypothesis-candidate.lean",
+      "sha256": "b8a1ffef16e50990b7bc57d35197c879ce6a251b90e211a227f91f25380992da"
+    }
+  },
+  "kind": "static premise coverage review; no executed counterexample or theorem build claim",
+  "finding": "candFoldInner checks every custody requestId occurs in funding and returns custody-unassociated otherwise. BatchHyps lacks that association premise; FullCorr only adds the selected ordered batch, exhausted refunds and sumInputs over removed IDs. An unselected orphan custody entry is not constrained by those clauses.",
+  "inference": "The current DIR-B top theorem appears to permit a relation with unrelated orphan custody metadata while runtime rejects before folding. Validate this concrete shape, preserve the runtime guard, and derive/add the missing justified premise rather than weakening the program.",
+  "remaining": "General DIR-A/DIR-B, frame/used/funding obligations, exact admitted mixed/zero-net/custody history and actual-program correspondence remain required; in-flight worker not interrupted"
+}

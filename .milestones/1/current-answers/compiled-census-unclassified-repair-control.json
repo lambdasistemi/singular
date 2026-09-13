@@ -1,0 +1,27 @@
+{
+  "at": "2026-09-12T22:03:59.410Z",
+  "source": "/code/singular-e18-blaster/blaster",
+  "sourceIsUncommitted": false,
+  "sourceHead": "d140180809834d39e4dd41f0362233b4c22cdecf",
+  "dir": "/tmp/singular-root-census-repair-control-BS7u5Q",
+  "checkerSha256": "44cabcb9fa8ba7d3b478a9cce0a07b794667a05619388cdc9d852823976b3f8a",
+  "mutantSha256": "7f0524a11c061aa9e8bd643debfdfb5e78fbec8891ce00045f01b00602aacb1d",
+  "samePriorMutant": true,
+  "runs": [
+    {
+      "label": "baseline",
+      "exit": 0,
+      "stdout": "check_census: titles=16 rows=29 (production=27 test=2) i1-applicable=4 i2-applicable=7 executed=9 structural=11 open-current=6 tuple=3: OK\n",
+      "stderr": ""
+    },
+    {
+      "label": "unclassified-row",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "check_census: ERROR: ('onchain', 'request.request.spend', 'Contribute'): disposition 'UNCLASSIFIED' outside closed schema ['executed', 'open-current', 'structural-only', 'tuple-dependent']\n"
+    }
+  ],
+  "scope": "Exact prior controlled census input against observed repaired checker only; no candidate/compiled-invariant acceptance",
+  "committedCheckerMatches": true,
+  "sourceIdentityCheckedAt": "2026-09-12T22:04:17.508Z"
+}

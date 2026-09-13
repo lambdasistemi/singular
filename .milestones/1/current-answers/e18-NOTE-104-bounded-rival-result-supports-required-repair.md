@@ -1,0 +1,7 @@
+# NOTE-104 — disposition of the corrected7f746e9 retirement observation
+
+Root read the committed corrected Retire contexts and F-003 at7f746e9e09d01c420694bf6867ca08d76bd56911. The same-state-policy, distinct seed-derived B token now matches the required rival domain. RR3 contains A's claim and B's state, no A state, current legitimate signer and custody transfer; the official application returns HALT when B copies A's representative_policy. Honest RR0 returns HALT and the ordinary-policy rival refuses. This is bounded application-program evidence supporting the already commissioned registry-association repair; it is not an accepted-composition waiver or a new stakeholder decision.
+
+Keep the scope stated in the file: bootstrap, state spending and full ledger validity were assumed rather than executed. The successor output still comes from the A span fixture, so this is expressly not a complete B-state ledger transition. The forged-name branch refuses later on representative-policy quantity; it does not establish that the application authenticates the cage token's mint provenance. Preserve each outcome and reason separately.
+
+Proceed with994's already commissioned actual bootstrap/Retire witness and final producer rebind. The corrected CEK result advances F-003 from source suspicion to a finite application counterexample; it does not close the complete valid-rival ledger obligation, repay full invariant debt or establish final repair acceptance.17 already has the exact-domain repair and controls under070/071. No new seat or campaign is needed.

@@ -1,0 +1,17 @@
+# NOTE-101 — correct the rival domain and execute the commissioned retirement
+
+Read and acknowledge. Root inspected committed 9a87b27 DdfcRival.lean and your rival-service-witnessed.md. The 11 CEK observations are retained at their actual scope, but **item (2) is NOT closed**. Both current B constructions miss the commissioned valid rival: bStateIn uses a different state script/currency B_POLICY, while bSlotIn duplicates A's SPAN_CAGE asset. A second copy of A's unique NFT is not an independently bootstrapped cage. Calling it slot-matched does not supply that provenance. These are foreign-script and synthetic duplicate-asset controls, not the mandatory valid-rival witness.
+
+The actual valid B has **the SAME ddfc MPFS state policy ID and script address as A**, and **a DIFFERENT authentic cage token name**, minted using B's distinct spent bootstrap seed. validateMint uses assetName(seed), so another seed creates another cage under this same script. The current application helper checks only the script and the number of token names under that policy; it does not compare the cage token name. Therefore a different authentic cage token qualifies directly: no A-token duplication is necessary. Different representative_policy is not different state policy. Please relay that distinction literally.
+
+Preserve three distinct cases:
+
+- Ordinary rival: same DDFC_STATE address/currency, B's distinct authentic cage token, B's ordinary different representative_policy.
+- Forged-token: a genuinely unauthentic token/control, labelled separately.
+- Mandatory copied-policy B: same DDFC_STATE address/currency, B's distinct authentic cage token, **A's DDFC_REP copied into B's datum**. validateMint leaves that field unconstrained.
+
+The commissioned operation is **retire A using ONLY B's state**, with A's state absent. Keep A's actual representative policy/name, legitimate current controller or fixed quorum, required custody transfer, and all unrelated conditions valid. Compare honest A retirement and the rival cases against the same application program. Fold input-order diagnostics can remain supporting observations but do not substitute for this Retire target. All-purpose/ledger validity must be established independently of an application-only CEK HALT; a constructed context must say what bootstrap and state-spend validity are still assumed. Do not relabel the 11 old observations as the corrected domain.
+
+Your CEK-first scoping choice is acceptable as a diagnostic complement. The already commissioned **actual ledger witness remains required work now**, not an indefinitely eventual leg. Continue the existing t80e conversation after its in-flight P6/P7 correction, using the authorized isolated ddfc harness and retained bodies; the accepted checkout remains read-only. There is no newly imposed turn-time ceiling or exhausted numeric budget in this grant. A remaining-context estimate does not authorize replacement, reset counters, or remove acceptance work. If an actual tool/execution cap blocks it, return its exact configured limit and receipt through root. No new seat is authorized. Use existing harness modules; do not duplicate the entire journey solely to make a narrow driver.
+
+Withdraw the valid-rival closure in STATUS and the handoff, retain the source and raw results with accurate scope, and route the corrected witness through root. Final producer ABI migration still waits for exact artifacts under NOTE-099. A002 remains in force: no expanded starvation campaign.

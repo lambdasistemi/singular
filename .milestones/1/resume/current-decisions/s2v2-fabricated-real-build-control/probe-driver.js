@@ -1,0 +1,19 @@
+const fs=require('fs'),cp=require('child_process'),os=require('os'),path=require('path'),crypto=require('crypto');
+const root=fs.mkdtempSync('/tmp/singular-s2-v2-'),source=path.join(root,'source');fs.mkdirSync(source);
+const original='/code/singular-e17-issue-77';
+const run=(name,cmd,args,cwd)=>{const begin=new Date().toISOString();const r=cp.spawnSync(cmd,args,{cwd,encoding:'utf8',timeout:180000,maxBuffer:64*1024*1024});fs.writeFileSync(path.join(root,name+'.stdout'),r.stdout||'');fs.writeFileSync(path.join(root,name+'.stderr'),r.stderr||'');const result={name,cmd,args,cwd,begin,end:new Date().toISOString(),exit:r.status,signal:r.signal,error:r.error?.message};fs.writeFileSync(path.join(root,name+'.json'),JSON.stringify(result,null,2));return r;};
+const base=cp.execFileSync('git',['-C',original,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+cp.execFileSync('git',['-C',original,'archive','--output',path.join(root,'base.tar'),base]);cp.execFileSync('tar',['-xf',path.join(root,'base.tar'),'-C',source]);
+const delta=cp.execFileSync('git',['-C',original,'diff','--binary','HEAD'],{maxBuffer:64*1024*1024});fs.writeFileSync(path.join(root,'snapshot.patch'),delta);
+cp.execFileSync('git',['-C',source,'init','-q']);cp.execFileSync('git',['-C',source,'apply',path.join(root,'snapshot.patch')]);
+cp.execFileSync('git',['-C',source,'add','-A']);cp.execFileSync('git',['-C',source,'-c','user.name=Root Gate Control','-c','user.email=root-control@localhost','commit','-qm','Frozen candidate snapshot for gate falsification']);
+const candidate=cp.execFileSync('git',['-C',source,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const gate=path.join(root,'S2-v2-frozen.sh');fs.copyFileSync('/tmp/projects/singular/milestone-1/epic-17/gates/supplement-77-S2.sh',gate);
+const subject={root,source,base,candidate,gateSha256:crypto.createHash('sha256').update(fs.readFileSync(gate)).digest('hex'),snapshotPatchSha256:crypto.createHash('sha256').update(delta).digest('hex'),synthetic:true,note:'Clean isolated snapshot of the observed worker source. No worker files changed. Receipt fabricated; no node or transaction submitted. Gate unchanged; real Nix builds.'};fs.writeFileSync(path.join(root,'subject.json'),JSON.stringify(subject,null,2));fs.writeFileSync('/tmp/projects/singular/milestone-1/handoffs/s2-v2-probe-path.txt',root+'\n');console.log(JSON.stringify(subject));
+const built=run('blueprint','nix',['build','--quiet','--no-link','--print-out-paths','./naming-onchain#plutus-blueprint'],source);if(built.status!==0){console.log('BLUEPRINT EXIT '+built.status+' '+root);process.exit(0);}
+const bp=built.stdout.trim();const h=n=>n.repeat(64),policy='a'.repeat(56),ref=h('1')+'#0';
+const rows=[{row:'fold-active',stateInput:ref,requestInput:h('2')+'#0',stateContinuationDatum:{unrelated:'not a decoded state'},rootBefore:h('3'),rootAfter:h('4'),submittedTxId:h('5'),rootBeforeObservedFrom:ref,rootAfterObservedFrom:h('6')+'#0',applicationPolicy:'b'.repeat(56),representativeAppliedPolicy:policy,representativeAssetName:'wrong-unchecked-name',mint:[{policy,assetName:'different-wrong-name',quantity:1}]}];
+for(const [row,operation] of [['occupied-key','insert'],['ownerless-end','end'],['ownerless-migration','migration'],['ownerless-sweep','sweep'],['ownerless-burning','burning']])rows.push({row,operation,outcome:'refused',submittedTxId:h('7'),refusedByScript:'c'.repeat(56)});
+for(const row of ['free-key-control','supported-action-control'])rows.push({row,outcome:'accepted',submittedTxId:h('8'),distinctFrom:'a row that does not exist'});
+const receipt=path.join(root,'fabricated-receipt.json');fs.writeFileSync(receipt,JSON.stringify({candidate,namingBlueprint:bp,rows},null,2));
+const r=run('gate','bash',[gate,source,receipt,candidate],source);console.log('GATE EXIT '+r.status+' '+root+'\n'+r.stdout);

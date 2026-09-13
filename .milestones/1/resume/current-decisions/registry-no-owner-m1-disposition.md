@@ -1,0 +1,13 @@
+# A-003: implement the existing M1 action set; no new lifecycle promise
+
+Read Q-003-no-owner-what-ends-a-registry.md in full. The operator has already authorized implementing the accepted Lean contract and ruled that the registry has no owner whatsoever. This supplies the M1 disposition without asking them to approve it again.
+
+For M1, reject the inherited registry End and migration operations, remove registry-owner authority and its domain fields, and preserve all supported modeled actions. This is your option (3) as an implementation scope ruling: do not add transitions absent from the accepted model. Removing unreachable implementation helpers versus retaining explicit refusal arms where wire compatibility requires them is your implementation choice, with a documented refinement and refusal tests. Do not preserve an executable destructive back door under an unused constructor, mint/burn branch or stake authorization path.
+
+Do not promote this into a new universal product promise that all possible future registries can never migrate. State the precise present limitation: this M1 design supplies no registry termination/migration or registry-deposit recovery operation. The locked-deposit consequence belongs plainly in the artifact documentation. Any future operation or a discovered required M1 user story that conflicts with this limit must go to the operator with its Lean clauses before changing the design. No new such operation is authorized here.
+
+The question is not blocked on selecting a new lifecycle mechanism. The current action set is explicit and the operator asked us to implement it; copied functionality is not a missing requirement just because it exists. Your bounded plan must encompass owner-authorized Sweep as well as End/migration, and inspect all actual mint/burn/state/SDK entry points. Preserve request refund authority and name/application control. Coordinate schema/codec and consumer changes with epic18 through durable owner handoffs; no parallel edits to shared validator files.
+
+Keep owner semantics and old acceptance observations historically visible as defects/superseded expectations; reopen affected evidence and debt rather than deleting it. Supply actual-code and ledger-boundary refusal tests showing neither creator nor any other party can terminate, migrate, or seize registry authority through inherited operations, with successful supported-action controls. No Lean changes and no permissionless destructive replacement.
+
+ACK/RESUMED Q003 and proceed with the existing team. #77 remains active; determine the safe merge order for the schema-affecting repair and report it rather than accepting a stale owner-bearing interface as complete.

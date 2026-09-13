@@ -1,0 +1,26 @@
+{
+  "scope": "Independent execution of repaired CI adjudication suffix, using retained real ledger receipts/log from clean subject1d98d51; provider is newer CI-only repair. No new devnet or whole workflow run. Only jq launcher and private temp paths substituted.",
+  "provider": "f47ec792ebf66edb4c8c17270abbda1e666f6428",
+  "subject": "1d98d51afa168a2bc0fd0e15ab33993a706eee31",
+  "sourceSha256": "50a3aae7d111eb80f2acdc7479117961fdf2cf09c3d33d79df60b029b958e798",
+  "results": [
+    {
+      "name": "genuine-positive",
+      "run_rc": 1,
+      "exit": 0,
+      "stdout": "GREEN = expected-debt assertion held: 13 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.\nA GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.\n"
+    },
+    {
+      "name": "original-exit127-counterexample",
+      "run_rc": 127,
+      "exit": 1,
+      "stdout": "FAIL: session exit 127 is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt\n"
+    },
+    {
+      "name": "original-unknown-CL01-counterexample",
+      "run_rc": 1,
+      "exit": 1,
+      "stdout": "FAIL: unexpected verdict for CL01: got 'could-not-execute', expected 'agrees-with-model'\n"
+    }
+  ]
+}

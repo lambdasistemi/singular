@@ -1,0 +1,148 @@
+{
+  "at": "2026-09-12T23:11:54.146Z",
+  "root": "/tmp/singular-root-consumer-address-control-kNPLZx",
+  "entries": [
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.ak",
+      "sha256": "50d38bd4f16e5dfa702c5e2d3429238331624d7f6dfd69e5ff6472d85880c26b"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.tests.ak",
+      "sha256": "9bbd126719e3e570a706f49affdedb0c26d8546ecbda60d2840b63fc07c04ca6"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/types.ak",
+      "sha256": "5349832301ab34873e5cb3734170b44046761e75a131df2e8e47c9a132236d14"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/lib.ak",
+      "sha256": "66ab4befd64a4d83127807da281814149ad77b0981731a47952b8e5a57ff833f"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/naming.ak",
+      "sha256": "673fd141546281ca32f62e6576d022baac0690cfcd716cfedaf64165392f8cc1"
+    }
+  ],
+  "scope": "Copied consumer plus actual naming decoder; no ledger or full Modify claim",
+  "command": [
+    "/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken",
+    "check"
+  ],
+  "exit": 0,
+  "error": null,
+  "finishedAt": "2026-09-12T23:11:55.566Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "kind": {
+      "unit": 8,
+      "property": 0
+    }
+  },
+  "modules": [
+    {
+      "name": "consumer.tests",
+      "summary": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "kind": {
+          "unit": 8,
+          "property": 0
+        }
+      },
+      "tests": [
+        {
+          "title": "r1_funded_request_accepts",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 521375,
+            "cpu": 163419617
+          }
+        },
+        {
+          "title": "r1_unfunded_request_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 319043,
+            "cpu": 102478824
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect check_requests(tx)"
+          ]
+        },
+        {
+          "title": "r1_foreign_token_skipped",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 494934,
+            "cpu": 154708553
+          }
+        },
+        {
+          "title": "r2_bound_requested_mint_accepts",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 940472,
+            "cpu": 295142294
+          }
+        },
+        {
+          "title": "r2_unrequested_mint_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 805641,
+            "cpu": 254976038
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect has(requested_names(tx, token_name), rep)"
+          ]
+        },
+        {
+          "title": "r2_misbound_mint_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 931836,
+            "cpu": 293306939
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect\n                any(\n                  claim_controls(tx),\n                  fn(control) {\n                    rep\n                      == consumer_representative_name(\n                        control,\n                        policy_bytes,\n                        token_name,\n                      )\n                  },\n                )"
+          ]
+        },
+        {
+          "title": "root_control_base_address_is_supported",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 19837,
+            "cpu": 5599363
+          }
+        },
+        {
+          "title": "root_control_supported_base_address_is_refused_by_consumer",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 911097,
+            "cpu": 287385256
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect bytearray.length(record.control_address) == 29"
+          ]
+        }
+      ]
+    }
+  ],
+  "interpretation": "Supported-address regression: the actual naming decoder accepts the 57-byte base payment-key address and the existing enterprise-address consumer control passes, but the same payment key in the base address is refused by the consumer at its exact 29-byte-only guard. Eight tests execute, six existing plus two root controls. Source/consumer-only scope; no ledger or final-tuple claim."
+}

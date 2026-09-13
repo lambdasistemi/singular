@@ -1,0 +1,46 @@
+[
+  {
+    "label": "literal-mutant-fresh-process",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-review-fOooOT",
+      "check"
+    ],
+    "exit": 1,
+    "stdout": "OPEN (8):\n  Singular.countP_filter_le\n  Singular.escape_error\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\nCLASSIFICATION 192 = 109 + 83; rows=83 open=8 findings=0\nVERDICT: INCOMPLETE (open rows block acceptance of those rows)\n",
+    "stderr": ""
+  },
+  {
+    "label": "baseline-fresh-process",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-review-fOooOT",
+      "check"
+    ],
+    "exit": 1,
+    "stdout": "OPEN (8):\n  Singular.countP_filter_le\n  Singular.escape_error\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\nCLASSIFICATION 192 = 109 + 83; rows=83 open=8 findings=0\nVERDICT: INCOMPLETE (open rows block acceptance of those rows)\n",
+    "stderr": ""
+  },
+  {
+    "label": "signature-mutant-fresh-process",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-review-fOooOT",
+      "--classification",
+      "/tmp/singular-classification-review-fOooOT/forged-classification.json",
+      "check"
+    ],
+    "exit": 1,
+    "stdout": "OPEN (8):\n  Singular.countP_filter_le\n  Singular.escape_error\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\nCLASSIFICATION 192 = 109 + 83; rows=83 open=8 findings=0\nVERDICT: INCOMPLETE (open rows block acceptance of those rows)\n",
+    "stderr": ""
+  }
+]

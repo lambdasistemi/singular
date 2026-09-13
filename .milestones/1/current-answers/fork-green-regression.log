@@ -1,0 +1,98 @@
+got build log for '/nix/store/gj6sjmd3zbws8ij3gahgfcjjqyhzlx16-mpf-lone-fork-regression-0.0.0.drv' from 'daemon'
+Running phase: unpackPhase
+@nix { "action": "setPhase", "phase": "unpackPhase" }
+unpacking source archive /nix/store/dszn888dj1vgzsg21lmayywhkjy82d6j-merkle-patricia-forestry-v2.0.0-lone-fork-exclusion
+source root is merkle-patricia-forestry-v2.0.0-lone-fork-exclusion
+Running phase: patchPhase
+@nix { "action": "setPhase", "phase": "patchPhase" }
+Running phase: updateAutotoolsGnuConfigScriptsPhase
+@nix { "action": "setPhase", "phase": "updateAutotoolsGnuConfigScriptsPhase" }
+Running phase: configurePhase
+@nix { "action": "setPhase", "phase": "configurePhase" }
+no configure script, doing nothing
+Running phase: buildPhase
+@nix { "action": "setPhase", "phase": "buildPhase" }
+[35m[1m    Compiling[0m[39m [1mvendored/mpf-regression[0m 0.0.0 ([94m.[39m)
+[35m[1m    Resolving[0m[39m [1mdependencies[0m
+[35m[1m    Compiling[0m[39m [1maiken-lang/stdlib[0m v2.2.0 ([94m./build/packages/aiken-lang-stdlib[39m)
+[35m[1m    Compiling[0m[39m [1maiken-lang/fuzz[0m v2.1.1 ([94m./build/packages/aiken-lang-fuzz[39m)
+[35m[1m   Collecting[0m[39m all tests scenarios across all modules
+[35m[1m      Testing[0m[39m [1m...[0m
+
+    [90m┍━[39m [34m[1maiken/merkle_patricia_forestry.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m179.53 K[39m, cpu: [36m 51.26 M[39m] [94mverify_bitcoin_block_845999[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m357.81 K[39m, cpu: [36m102.09 M[39m] [94minsert_bitcoin_block_845602[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 97.27 K[39m, cpu: [36m 28.12 M[39m] [94mexample_kumquat[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  3.21 M[39m, cpu: [36m972.11 M[39m] [94mexample_has[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  5.33 M[39m, cpu: [36m  1.59 B[39m] [94mexample_insert[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  5.33 M[39m, cpu: [36m  1.59 B[39m] [94mexample_delete[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m230.36 K[39m, cpu: [36m 69.54 M[39m] [94mexample_update[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m455.72 K[39m, cpu: [36m138.37 M[39m] [94mexample_idempotent_update[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m102.16 K[39m, cpu: [36m 32.73 M[39m] [94mexample_fake_update[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m including(key, old_value, proof) == self.root
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m289.43 K[39m, cpu: [36m 86.00 M[39m] [94mexample_insert_whatever[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m102.61 K[39m, cpu: [36m 32.02 M[39m] [94mexample_already_inserted[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m excluding(key, proof) == self.root
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m163.58 K[39m, cpu: [36m 50.36 M[39m] [94mexample_delete_different_value[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m including(key, value, proof) == self.root
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m102.61 K[39m, cpu: [36m 32.02 M[39m] [94mexample_already_inserted_different_value[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m excluding(key, proof) == self.root
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m164.20 K[39m, cpu: [36m 49.67 M[39m] [94mexample_insert_nearby_with_wrong_proof[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m branch != neighbor.nibble
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 61.90 K[39m, cpu: [36m 17.83 M[39m] [94mexample_insert_higher_with_wrong_proof[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m branch != neighbor.nibble
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 61.72 K[39m, cpu: [36m 17.71 M[39m] [94mexample_delete_nearby_with_wrong_proof[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m branch != neighbor.nibble
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m102.76 K[39m, cpu: [36m 32.41 M[39m] [94mexample_delete_higher_with_wrong_proof[39m
+    [90m│[39m [1m· with traces[0m
+    [90m│[39m | the validator crashed / exited prematurely
+    [90m│[39m [1m[31mx <expected>[39m[0m branch != neighbor.nibble
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mexample_has_mutate_proof_apple[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mexample_insert_mutate_proof_apple[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m   200.0[39m, cpu: [36m  16.1 K[39m] [94mserialise_apricot[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m   200.0[39m, cpu: [36m  16.1 K[39m] [94mserialise_peach[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m   200.0[39m, cpu: [36m  16.1 K[39m] [94mserialise_fig[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m100.81 K[39m, cpu: [36m 29.81 M[39m] [94mreg_lone_fork_insert_accepts_real_absence_witness[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 72.10 K[39m, cpu: [36m 21.10 M[39m] [94mreg_lone_fork_including_reproduces_post_root[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 72.80 K[39m, cpu: [36m 21.29 M[39m] [94mreg_lone_fork_control_has_fails_against_pre_root[39m
+    [90m┕[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m with [1m--seed[0m=[1m1994603133[0m → [1m25 tests[0m | [1m[92m25 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1maiken/merkle_patricia_forestry/helpers.tests[0m[39m [90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m[90m━[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  7.14 K[39m, cpu: [36m  2.17 M[39m] [94mcombine_null_hash[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 43.66 K[39m, cpu: [36m 12.57 M[39m] [94mexamples_suffix[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_suffix_prefix[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m 92.72 K[39m, cpu: [36m 27.46 M[39m] [94mexamples_nibbles[39m
+    [90m│[39m [32m[1mPASS[0m[39m [mem: [36m  9.02 K[39m, cpu: [36m  2.67 M[39m] [94mexamples_nibble[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_nearby_nibble[39m
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_nibble_size[39m
+    [90m┕[39m with [1m--seed[0m=[1m1994603133[0m → [1m7 tests[0m | [1m[92m7 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+    [90m┍━[39m [34m[1maiken/merkle_patricia_forestry/merkling.tests[0m[39m 
+    [90m│[39m [32m[1mPASS[0m[39m [after 100 tests] [94mprop_merkle_4[39m
+    [90m┕[39m with [1m--seed[0m=[1m1994603133[0m → [1m1 tests[0m | [1m[92m1 passed[39m[0m | [1m[91m0 failed[39m[0m
+
+
+      [1m[35mSummary[39m[0m 627 [1m[32mchecks, [39m[0m0 [1m[31merrors[39m[0m, 0 [1m[33mwarnings[39m[0m
+Running phase: installPhase
+@nix { "action": "setPhase", "phase": "installPhase" }
+Running phase: fixupPhase
+@nix { "action": "setPhase", "phase": "fixupPhase" }
+shrinking RPATHs of ELF executables and libraries in /nix/store/5ghmy2gjbqrlffygnvikbm7bs2z3c810-mpf-lone-fork-regression-0.0.0
+checking for references to /build/ in /nix/store/5ghmy2gjbqrlffygnvikbm7bs2z3c810-mpf-lone-fork-regression-0.0.0...
+patching script interpreter paths in /nix/store/5ghmy2gjbqrlffygnvikbm7bs2z3c810-mpf-lone-fork-regression-0.0.0

@@ -1,0 +1,7 @@
+# NOTE-085 — passive corrected crosswire observation
+
+Root read the completed 00:18:01 register exhibit without disturbing the worker. The retained corrected crosswired outcome SHA256 is `7d3d5ac97a03a19b4330a17176901323690355fa4efc24baddc61bfb0b06456e`, tx `328701f28efc6bbcc6ca131740217e0ccb9499d2c4592c8374029ef7b73e0561`. Its actual named failed subject is consumer `e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26`; the error is explicit evaluation failure, with no budget overspend. Pre/post listings are byte-identical. The same report records successful fold-active tx `c0ce346ded6eadb689834480be4548ee30520c484f004a0f3424d0f55dec0f42`.
+
+Receipt `/tmp/projects/singular/milestone-1/handoffs/register-exhibit-root-semantic-repair.json`; exact raw/report/meta frozen in the neighboring `register-exhibit-root-semantic-*` files. This removes the previous budget-exhaustion objection at this observed result. It is not full exhibit, final tuple, connected retirement or epic acceptance. Root read the corrected exact-subject/budget guard and the eight attribution control definitions but has not independently executed those new unit tests.
+
+Continue your same-worker handback review: retained raw exits, actual build/source/budget identity and attribution controls, then the coherent candidate/ABI and existing serial integration/lifecycle order. No new run is requested by this passive observation; preserve the older budget-failure evidence and current successful claims. No final producer migration or release grant.

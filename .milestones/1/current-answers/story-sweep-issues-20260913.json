@@ -1,0 +1,254 @@
+[
+  {
+    "number": 87,
+    "state": "OPEN",
+    "title": "Block M1 on Blaster validation of compiled Aiken invariants",
+    "updatedAt": "2026-09-12T09:12:43Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/87"
+  },
+  {
+    "number": 81,
+    "state": "OPEN",
+    "title": "Cover the Fork proof variant, or settle the encoding correspondence it exposed",
+    "updatedAt": "2026-09-12T17:54:13Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/81"
+  },
+  {
+    "number": 80,
+    "state": "OPEN",
+    "title": "Enforce Lean invariant coverage with property, integration and state-machine tests",
+    "updatedAt": "2026-09-12T09:00:19Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/80"
+  },
+  {
+    "number": 79,
+    "state": "CLOSED",
+    "title": "Repair the imported validators: permissionless folding and insert-only retraction",
+    "updatedAt": "2026-09-12T06:51:37Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/79"
+  },
+  {
+    "number": 78,
+    "state": "OPEN",
+    "title": "External-node mode, joiner wallet and the onboarding runbook",
+    "updatedAt": "2026-09-12T05:38:03Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/78"
+  },
+  {
+    "number": 77,
+    "state": "OPEN",
+    "title": "Mint the real representative and fold a name into Active on a real ledger",
+    "updatedAt": "2026-09-12T05:37:20Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/77"
+  },
+  {
+    "number": 74,
+    "state": "OPEN",
+    "title": "Complete retirement permissionlessly: Over, withdrawal refusal and reuse refusal",
+    "updatedAt": "2026-09-12T05:37:18Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/74"
+  },
+  {
+    "number": 71,
+    "state": "OPEN",
+    "title": "Close the inventory: the consumer's fail-closed resolution and the measured limits",
+    "updatedAt": "2026-09-12T05:38:02Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/71"
+  },
+  {
+    "number": 70,
+    "state": "CLOSED",
+    "title": "Execute the remaining generic rows, including the four expected consumer gaps",
+    "updatedAt": "2026-09-12T10:36:20Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/70"
+  },
+  {
+    "number": 68,
+    "state": "OPEN",
+    "title": "Execute the Haskell serialization and transaction-construction boundary",
+    "updatedAt": "2026-09-12T05:37:58Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/68"
+  },
+  {
+    "number": 57,
+    "state": "CLOSED",
+    "title": "Publish the versioned on-chain release for epic 16",
+    "updatedAt": "2026-09-11T05:21:47Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/57"
+  },
+  {
+    "number": 56,
+    "state": "CLOSED",
+    "title": "Execute the maintenance and cancellation rows on a real ledger",
+    "updatedAt": "2026-09-11T01:28:16Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/56"
+  },
+  {
+    "number": 52,
+    "state": "CLOSED",
+    "title": "Author Singular's naming validators: the representative policy and application validator",
+    "updatedAt": "2026-09-10T22:37:18Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/52"
+  },
+  {
+    "number": 51,
+    "state": "CLOSED",
+    "title": "Move the naming codec inside the offchain flake root so runners stay hermetic",
+    "updatedAt": "2026-09-10T21:16:28Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/51"
+  },
+  {
+    "number": 50,
+    "state": "CLOSED",
+    "title": "Refuse the seven wrong canonical initializations (LI02-LI08)",
+    "updatedAt": "2026-09-11T03:52:01Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/50"
+  },
+  {
+    "number": 49,
+    "state": "CLOSED",
+    "title": "Surface drift between the vendored v0.2.0 vectors and epic 15 live corpus",
+    "updatedAt": "2026-09-11T04:30:25Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/49"
+  },
+  {
+    "number": 47,
+    "state": "CLOSED",
+    "title": "Execute LI01 canonical initialization on a real ledger",
+    "updatedAt": "2026-09-10T20:49:28Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/47"
+  },
+  {
+    "number": 45,
+    "state": "CLOSED",
+    "title": "Implement the naming datum codec against the contract wire vectors, and record the LI correspondence",
+    "updatedAt": "2026-09-10T19:37:49Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/45"
+  },
+  {
+    "number": 43,
+    "state": "CLOSED",
+    "title": "Distinguish and tie together the unapplied and applied script identities",
+    "updatedAt": "2026-09-10T18:50:46Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/43"
+  },
+  {
+    "number": 41,
+    "state": "CLOSED",
+    "title": "Make the journey observe the validators rejecting forged and tampered transactions",
+    "updatedAt": "2026-09-10T18:06:20Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/41"
+  },
+  {
+    "number": 39,
+    "state": "CLOSED",
+    "title": "Make the journey verify absence, liveness and a false claim",
+    "updatedAt": "2026-09-10T16:48:44Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/39"
+  },
+  {
+    "number": 37,
+    "state": "CLOSED",
+    "title": "Give epic 16 a runnable artifact: one command that runs the bounded journey",
+    "updatedAt": "2026-09-10T16:00:41Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/37"
+  },
+  {
+    "number": 34,
+    "state": "CLOSED",
+    "title": "Pin and enforce compiled script identity",
+    "updatedAt": "2026-09-10T15:25:24Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/34"
+  },
+  {
+    "number": 31,
+    "state": "CLOSED",
+    "title": "Adapt the imported MPFS trees to their new locations and reproduce their builds",
+    "updatedAt": "2026-09-10T14:47:02Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/31"
+  },
+  {
+    "number": 25,
+    "state": "CLOSED",
+    "title": "Publish the independently verified M1 simulator and contract release",
+    "updatedAt": "2026-09-10T18:29:35Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/25"
+  },
+  {
+    "number": 24,
+    "state": "CLOSED",
+    "title": "Make concrete registry and cardano-keri contract scenarios executable",
+    "updatedAt": "2026-09-10T18:13:01Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/24"
+  },
+  {
+    "number": 23,
+    "state": "CLOSED",
+    "title": "Simulate owner-or-quorum permanent naming retirement",
+    "updatedAt": "2026-09-10T14:04:43Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/23"
+  },
+  {
+    "number": 22,
+    "state": "CLOSED",
+    "title": "Simulate recovery through the committed next control address",
+    "updatedAt": "2026-09-10T14:04:41Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/22"
+  },
+  {
+    "number": 21,
+    "state": "CLOSED",
+    "title": "Simulate payment-address maintenance and withdrawal of pending claims",
+    "updatedAt": "2026-09-10T18:13:00Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/21"
+  },
+  {
+    "number": 20,
+    "state": "CLOSED",
+    "title": "Make M1 naming claims playable in the docs",
+    "updatedAt": "2026-09-10T11:05:52Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/20"
+  },
+  {
+    "number": 19,
+    "state": "CLOSED",
+    "title": "Copy MPFS source and locks into onchain/ and offchain/",
+    "updatedAt": "2026-09-10T14:48:40Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/19"
+  },
+  {
+    "number": 18,
+    "state": "OPEN",
+    "title": "Release and independently verify on-chain consumer conformance",
+    "updatedAt": "2026-09-12T09:00:17Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/18"
+  },
+  {
+    "number": 17,
+    "state": "OPEN",
+    "title": "Implement control recovery and permanent naming retirement",
+    "updatedAt": "2026-09-11T11:29:24Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/17"
+  },
+  {
+    "number": 16,
+    "state": "CLOSED",
+    "title": "Implement certified claims and application state on the ledger",
+    "updatedAt": "2026-09-11T11:19:35Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/16"
+  },
+  {
+    "number": 15,
+    "state": "CLOSED",
+    "title": "Release the M1 simulator and contracts",
+    "updatedAt": "2026-09-10T18:31:14Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/15"
+  },
+  {
+    "number": 10,
+    "state": "CLOSED",
+    "title": "Prove the 41 admitted Singular model statements",
+    "updatedAt": "2026-09-09T15:31:43Z",
+    "url": "https://github.com/lambdasistemi/singular/issues/10"
+  }
+]

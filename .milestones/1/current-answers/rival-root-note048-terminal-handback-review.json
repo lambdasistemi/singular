@@ -1,0 +1,110 @@
+{
+  "at": "2026-09-13T03:49:35.279Z",
+  "scope": "Terminal offline handback source/closure/control review; no node/socket/wrapper or ledger run",
+  "files": [
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/Main.hs",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/journey/retirement/Main.hs",
+      "frozen": "handoffs/rival-root-note048-handback-Main.hs",
+      "sha256": "1cd4024a3aba082430cadb09e11b5708207883cbb810143de6decdfa4b1a365e"
+    },
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalDriverLogic.hs",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/journey/retirement/RivalDriverLogic.hs",
+      "frozen": "handoffs/rival-root-note048-handback-RivalDriverLogic.hs",
+      "sha256": "db95a2320a6ba779e24e3f78e04c970f36b76771c9ec13e3e233695d333e144b"
+    },
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalBootBinding.hs",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/journey/retirement/RivalBootBinding.hs",
+      "frozen": "handoffs/rival-root-note048-handback-RivalBootBinding.hs",
+      "sha256": "f38865cf7c695f47a4da2c77ccd8305aeeacd5fba2b33a2002181ed4186dabcb"
+    },
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalMintlessBody.hs",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/journey/retirement/RivalMintlessBody.hs",
+      "frozen": "handoffs/rival-root-note048-handback-RivalMintlessBody.hs",
+      "sha256": "b1c89e02a05ffee2daaf76dbaf832d7eebf8d8d8867e571553383ae4462f1039"
+    },
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalDriverPredevnetCheck.hs",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/journey/retirement/RivalDriverPredevnetCheck.hs",
+      "frozen": "handoffs/rival-root-note048-handback-RivalDriverPredevnetCheck.hs",
+      "sha256": "9e288ffa96864cc991d1b1482c6123791dfacb85011a61efd348a15a0914fa02"
+    },
+    {
+      "source": "/tmp/t80e-rival-witness/offchain/cardano-mpfs-cage.cabal",
+      "nixSource": "/nix/store/hig3lhaa91mq51fjdaibvwn59ld8ibgf-6drxwn37lxyb9hg2py7n2kz5rdsf15fj-source/cardano-mpfs-cage.cabal",
+      "frozen": "handoffs/rival-root-note048-handback-cardano-mpfs-cage.cabal",
+      "sha256": "45b78af681a247fa5303696a779e575f8c1a9220c47780f50281ebb342c5919a"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-note048-frozen-handback-index.txt",
+      "frozen": "handoffs/rival-root-note048-handback-rival-note048-frozen-handback-index.txt",
+      "sha256": "0603f873fc8898b7270418c85246be2ce0282fb49cb624a4e087a3d3acd31e20"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-boot-binding-control.hs",
+      "frozen": "handoffs/rival-root-note048-handback-rival-boot-binding-control.hs",
+      "sha256": "b28f60eacb5479449b887772afde4960742552b1094e298b9db034550d149377"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-boot-binding-control-run.out",
+      "frozen": "handoffs/rival-root-note048-handback-rival-boot-binding-control-run.out",
+      "sha256": "2212d94dbc9f7c880cdda3c4837af4f829c467a4146e50b5291cb95e401c9bc1"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-mintless-body-control.hs",
+      "frozen": "handoffs/rival-root-note048-handback-rival-mintless-body-control.hs",
+      "sha256": "c2de55ae76941602babb31a70323c7ff0473c6eec85d2e289ca9c3f53d5ed6d3"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-mintless-control-run-final.body",
+      "frozen": "handoffs/rival-root-note048-handback-rival-mintless-control-run-final.body",
+      "sha256": "8ea79a47ddcb18ee7de1211568889ecc2d35494d116d4aa6bbd4006f32c85a98"
+    },
+    {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-mintless-control-run-final.stderr",
+      "frozen": "handoffs/rival-root-note048-handback-rival-mintless-control-run-final.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "command": {
+    "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-command-v2.sh",
+    "frozen": "handoffs/rival-root-note048-handback-command-v2.sh",
+    "sha256": "c0dc313073f10dacf612630fec81c0c2d0b67fa246be3e32b26fb70f4013bc16",
+    "bashSyntax": "passed",
+    "resultRootAbsent": true
+  },
+  "controls": [
+    {
+      "binary": "epic-18/t80e-execution-evidence/handoffs/rival-boot-binding-control-bin",
+      "sha256": "f5d76c2a72f85d6cf38f178aa1447f3033fefa7666a2a91bd922f92562fd0493",
+      "exit": 0,
+      "passes": [
+        "PASS positive-binding-accepted",
+        "PASS wrong-seed-binding-rejected"
+      ],
+      "scope": "Actual shared verifier on caller-supplied reference list; body input extraction not exercised"
+    },
+    {
+      "binary": "epic-18/t80e-execution-evidence/handoffs/rival-mintless-body-control-bin",
+      "sha256": "a2c026e56b40a54a54b5c0bc7629706a49ddb374a58f6dec7254a816224b07c8",
+      "exit": 0,
+      "passes": [
+        "PASS genuine-body-accepted",
+        "PASS exact-fields-preserved",
+        "PASS injected-hash-rejected",
+        "PASS mismatch-is-the-view-hash"
+      ],
+      "scope": "Shared mintless-body construction with injected-hash discriminator; standalone control only"
+    }
+  ],
+  "findings": [
+    "Full target transaction absent: target path line697 writes body only; full signed writer is called for A/B boot but not target",
+    "renderUtxos omits query address, output address and full serialized TxOut; immutable full evidence requirement remains unmet",
+    "post-utxos snapshots occur before confirmation; later liveNow/succOut/old-anchor observations are not retained fully, only Boolean facts; post-confirmation-record queries custody and is mislabeled as record",
+    "Boot binding control constructs hashed TxIns but supplies raw ASCII refs directly instead of extracting bootTx inputs; real shared verifier unit pair passes but claimed body extraction association is not exercised"
+  ],
+  "disposition": "No second ledger authority. Preserve real verifier/mintless positives and frozen 22/5 denominator; complete existing NOTE049 retention/extraction obligations, rebuild/rebind changed driver and return unexecuted command for root review"
+}

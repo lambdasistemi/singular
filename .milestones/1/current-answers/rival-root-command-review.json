@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-13T01:31:45.817Z",
+  "identities": {
+    "command": {
+      "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-command.sh",
+      "sha256": "8920802181204e1647f81c74428f5a22db85f304eac72be9522b4e04d21aa6b6"
+    },
+    "gate": {
+      "source": "epic-18/t80e-execution-evidence/handoffs/rival-driver-predevnet-v2-run.out",
+      "sha256": "b2941099a4db6609fb3c8b58bdebe77b784d9f107d1c2062c4e306654684c6be"
+    },
+    "main": {
+      "source": "/tmp/t80e-rival-witness/offchain/journey/retirement/Main.hs",
+      "sha256": "23b549a6c1233a3f4953730070f2e0d82ed1f30640ae77306d309c60752adb09"
+    },
+    "flake": {
+      "source": "/tmp/t80e-rival-witness/offchain/flake.nix",
+      "sha256": "3feb836848bd6136b4ec3701c02cf86712aa67e8787072f3f8dc3951cc15551b"
+    }
+  },
+  "finding": "Submitted command uses nix develop/cabal run with RIVAL_RUN_ARGS fallback; it binds neither required NAMING_BLUEPRINT nor MPFS_BLUEPRINT. Main requires both environment variables. Existing official retirement-rows Nix app wraps the executable with locked cardano-node PATH, while the submitted command bypasses that app. v2 only checks executable/syntax/hash of command, so its GREEN does not establish command completeness.",
+  "gateClaim": "22/22 and5/5; bounded offline result, pending NOTE138 source findings and exact future run artifact.",
+  "scope": "Source and recorded-gate review only; command and ledger variants were not executed."
+}

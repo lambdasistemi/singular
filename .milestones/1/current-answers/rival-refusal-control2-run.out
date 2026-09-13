@@ -1,0 +1,4 @@
+PASS semantic-subject-parse
+PASS semantic-expected-subject-accept
+PASS semantic-wrong-application-reject
+PASS budget-fixture-capacity-non-semantic

@@ -1,0 +1,143 @@
+control: Normal
+base: 1d98d51afa168a2bc0fd0e15ab33993a706eee31
+tree: clean
+node: cardano-node 10.7.0 - linux-x86_64 - ghc-9.6
+tmpdir: /tmp/conformance-2995659-1789205724860
+boot: cage booted bootTx=0551fc9a1c18315b042096e05f68ec681e572bf331e09a6108248c86b34f4d6d
+setup: key absent; inserting v1 as setup
+calibration: CG02-setup: hand model matches the library fold
+measure: CG02-setup fold mem=616554/140000000 (0.4403957142857143%, headroom 139383446) cpu=200156393/10000000000 (2.0015639299999997%, headroom 9799843607) size=11451/16384 (69.891357421875%, headroom 4933)
+verify-present: proved present key=cg-row-key value=cg-value-one root=0xfe9ad8f3006654a4d42d8965424cef409ca9a6dc087cc66043e15c11ef5b6ab1
+verify-false-claim: rejected false claim key=cg-row-key claimed value=forged-value: proof implies root 0x169a06e7a87ddafd1528c76b98a295c4979e8fa6a6f5657bc53a250d80d6cfe7 which differs from the chain read root 0xfe9ad8f3006654a4d42d8965424cef409ca9a6dc087cc66043e15c11ef5b6ab1
+calibration: CG02: hand model matches the library fold
+measure: CG02 fold mem=649162/140000000 (0.4636871428571428%, headroom 139350838) cpu=217096102/10000000000 (2.17096102%, headroom 9782903898) size=11451/16384 (69.891357421875%, headroom 4933)
+verify-present: proved present key=cg-row-key value=cg-value-two root=0x379b0eb17b4c8be2368361831b099cc043069d86924cec131fa71b2794baead7
+verify-false-claim: rejected false claim key=cg-row-key claimed value=forged-value: proof implies root 0x169a06e7a87ddafd1528c76b98a295c4979e8fa6a6f5657bc53a250d80d6cfe7 which differs from the chain read root 0x379b0eb17b4c8be2368361831b099cc043069d86924cec131fa71b2794baead7
+row: CG02: ACCEPTED update v1->v2, v2 reads back from chain
+calibration: CG03: hand model matches the library fold
+measure: CG03 fold mem=638564/140000000 (0.45611714285714283%, headroom 139361436) cpu=213717823/10000000000 (2.13717823%, headroom 9786282177) size=11451/16384 (69.891357421875%, headroom 4933)
+verify-absent: proved absent key=cg-row-key root=0x0000000000000000000000000000000000000000000000000000000000000000
+verify-false-claim: rejected false claim key=cg-row-key claimed value=cg-value-two: proof implies root 0x379b0eb17b4c8be2368361831b099cc043069d86924cec131fa71b2794baead7 which differs from the chain read root 0x0000000000000000000000000000000000000000000000000000000000000000
+row: CG03: ACCEPTED delete, key absent on chain
+calibration: CG04: hand model matches the library fold
+measure: CG04 fold mem=616554/140000000 (0.4403957142857143%, headroom 139383446) cpu=200156393/10000000000 (2.0015639299999997%, headroom 9799843607) size=11451/16384 (69.891357421875%, headroom 4933)
+verify-present: proved present key=cg-row-key value=cg-value-three root=0x75d5a5a6f074a832f51dd3652243182c8a767e0f35742e63d8220983b4180958
+verify-false-claim: rejected false claim key=cg-row-key claimed value=forged-value: proof implies root 0x169a06e7a87ddafd1528c76b98a295c4979e8fa6a6f5657bc53a250d80d6cfe7 which differs from the chain read root 0x75d5a5a6f074a832f51dd3652243182c8a767e0f35742e63d8220983b4180958
+row: CG04: ACCEPTED re-Insert, v3 reads back from chain
+row: CG05: occupied insert requested; folding must refuse
+eval-observation: scriptHash=ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e | cek=An error has occurred:\nThe machine terminated because of an error, either from a built-in function or from an explicit use of 'error'.\nCaused by: error
+row: CG05: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d)
+verify-present: proved present key=cg-control-key value=cg-control-value root=0x835a24bc09a2c6c51bce28b9b2787fba343d8ad5598e66c9730b388d142ae165
+verify-false-claim: rejected false claim key=cg-control-key claimed value=forged-value: proof implies root 0x8a982981e9433102a74b33c7a5e824b00e317bf371f15c41f73127bc27ec365c which differs from the chain read root 0x835a24bc09a2c6c51bce28b9b2787fba343d8ad5598e66c9730b388d142ae165
+control: CG05 control: fresh cage accepted a valid insert — the refusal discriminates
+cage: cg07 booted bootTx=0be1464e9116c6c841444e5deb561342bb9683c93260363b78f40281e9342161 processMs=30000 retractMs=60000
+units: no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima
+row: CG07: retract with validity inside phase 1 submitted; the request script must refuse (R9_retract_needs_phase2)
+row: CG07: REFUSED at submit, attributed to request (phase-2, marker 0x146332deef92)
+wait: 20155 ms to the next phase boundary
+control: CG07 control: the same retract, validity in phase 2, is accepted — the refusal discriminates
+cage: cg09 booted bootTx=3e9332c571807af2c4cc76b5a8e4fef4161b894f57f42a9dc9335fa387d669e2 processMs=30000 retractMs=5000
+row: CG09: Rejected action while the request is still inside its process window; the state script must refuse (R9_reject_needs_rejectable)
+row: CG09: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d)
+wait: 25199 ms to the next phase boundary
+control: CG09 control: the same request rejected in phase 3 is accepted — the refusal discriminates
+cage: cg-main booted bootTx=efc602c028d93588dccc5107e50944be2f09279c31aa5fa9a15b8a27890938eb processMs=30000 retractMs=30000
+calibration: CG10: hand model matches the library fold
+measure: CG10 fold mem=636760/140000000 (0.4548285714285714%, headroom 139363240) cpu=213173059/10000000000 (2.13173059%, headroom 9786826941) size=11451/16384 (69.891357421875%, headroom 4933)
+row: CG10: fold carrying proof steps captured against the superseded root submitted; the state script must refuse (R7_stale_fold_refused)
+row: CG10: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d)
+calibration: CG10 control: hand model matches the library fold
+measure: CG10-control fold mem=720086/140000000 (0.5143471428571429%, headroom 139279914) cpu=232537173/10000000000 (2.32537173%, headroom 9767462827) size=11477/16384 (70.050048828125%, headroom 4907)
+control: CG10 control: the same request folded against the live root is accepted — the refusal is the staleness, not the shape
+measure: CG11-empty-fold fold mem=273449/140000000 (0.1953207142857143%, headroom 139726551) cpu=87149465/10000000000 (0.8714946499999999%, headroom 9912850535) size=8388/16384 (51.1962890625%, headroom 7996)
+held: CG11 HELD FOR Q-002 (story 2): Singular's Lean PERMITS the empty fold — foldItems [] = ok (Model.lean 188-189) — so the acceptance agrees with Singular's model; the consumer's theorem says R8_empty_fold_refused — the empty batch must be refused (consumer-side; upstream cardano-mpfs-onchain#100 is the partition fix); which model is the behavioral authority is the user's ruling, not ours — the run cannot exit 0 while this row is held
+row: CG11: the chain ACCEPTED an empty fold (tx=b670c28ebedf0189da413f054b57c0756251589eebaff7678e450a3e28b7a136) — recorded, held pending Q-002, never read as a pass
+row: CG11 control: empty actions over a live request must be refused
+control: CG11 control: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d) — run-log evidence only; the row's receipt is not overwritten (A-002)
+control: CG11 control: with a request waiting, empty actions are refused — the acceptance is specific to the empty fold
+measure: CG12-surplus fold mem=905068/140000000 (0.6464771428571429%, headroom 139094932) cpu=295812293/10000000000 (2.95812293%, headroom 9704187707) size=11555/16384 (70.526123046875%, headroom 4829)
+held: CG12 HELD FOR Q-002 (story 2): Singular's Lean pairs each request with its action 1:1 in its FoldItem and has no action tail that could be surplus (Model.lean, FoldItem/foldItems) — the model constrains nothing here; the consumer's theorem says one action per request, no surplus — the consumer audit's finding (upstream cardano-mpfs-onchain#100 is the partition fix); which model is the behavioral authority is the user's ruling, not ours — the run cannot exit 0 while this row is held
+row: CG12: the chain ACCEPTED a fold with a surplus action (one request, two actions, the second garbage; tx=facebfe6e409ab596556a88333603dbed567daca486738c5857bb24272724132) — recorded, held pending Q-002, never read as a pass
+row: CG12 control: two requests, one action — the deficit must be refused
+control: CG12 control: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d) — run-log evidence only; the row's receipt is not overwritten (A-002)
+control: CG12 control: the deficit is refused while the surplus was accepted — the asymmetry is exactly the audit's
+cage: cg13 booted bootTx=7c7d79ada3fda617f8f3e7fefbf91a6b3c80ad0295426d4a335f4c7c9404c58a processMs=30000 retractMs=30000
+units: no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima
+measure: CG13-transfer fold mem=628372/140000000 (0.4488371428571429%, headroom 139371628) cpu=207905393/10000000000 (2.07905393%, headroom 9792094607) size=11403/16384 (69.598388671875%, headroom 4981)
+row: CG13: the chain ACCEPTED a Modify that changed the state owner to 0xabababababababababababababababababababababababababababab (signed by the previous owner; tx=78e49eead592ee5587ebfa5ef77745abc782d33009edb5c44db450132df8dda9) — resolved-by-ruling: retained as defect evidence of the outstanding owner gate (epic 17), never a pass and never an owner-semantics claim
+cage: cg17 booted bootTx=247504551984e984a4011857fc48672ffc737f7e7be2b4ae7406353db5820e7e processMs=30000 retractMs=30000
+row: CG17 [SUPERSEDED observation, claim withdrawn — the registry has no owner role]: sweep declaring a non-owner required signer submitted; recorded as defect evidence of the outstanding owner gate in the request validator
+row: CG17: REFUSED at submit, attributed to request (phase-2, marker 0x7f32c3e767ad)
+control: CG17 control: the same sweep signed as the owner is accepted — the refusal discriminates
+cage: cg19 booted bootTx=71ef6441a7458868aa07f2f26365dbeb8dc2aa24de67148cfffd3b52d9531aba processMs=30000 retractMs=30000
+units: no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima
+measure: CG19-crossed fold mem=1122369/140000000 (0.8016921428571429%, headroom 138877631) cpu=376904236/10000000000 (3.7690423600000003%, headroom 9623095764) size=11613/16384 (70.880126953125%, headroom 4771)
+held: CG19 HELD FOR Q-002 (story 2): Singular's Lean's fold action carries no refund routing at all (Model.lean, Action.fold) — the model constrains nothing here; the consumer's theorem says R11 — each processed request's exact bond to its owner, tip to the folder (upstream cardano-mpfs-onchain#101 is the partition fix); which model is the behavioral authority is the user's ruling, not ours — the run cannot exit 0 while this row is held
+row: CG19: the chain ACCEPTED crossed refunds (bonds 5 ada and 3 ada refunded 2000000 and 4000000 lovelace, aggregate 6000000 = the validator's ceiling; tx=566ddc8079f0ab3da16fa18a91a2d5baf5f82388497aa8c5cb4b36ae22cccf5d) — the aggregate range held while neither request's bond reached its owner and no output names the folder; recorded, held pending Q-002, never read as a pass
+row: CG19 control: refunds totalling 4473137 lovelace, below the aggregate floor — must be refused
+control: CG19 control: REFUSED at submit, attributed to state (phase-2, marker 0xce7615f6ba4d) — run-log evidence only; the row's receipt is not overwritten (A-002)
+control: CG19 control: the aggregate floor refused the shortfall — the range is real, and it is still not the requirement
+cage: cg20 booted bootTx=5ae287df3a3bcd28cfa30c7bdeb9b5a38d225350bc173b6ec18babfb79325581 processMs=30000 retractMs=30000
+units: no measured fold in this cage; declaring 1% mem / 5% cpu of the maxima
+calibration: CG20 control: hand model matches the library fold
+control: CG20 control: the same fold WITH the owner signer is accepted
+row: CG20: the same fold minus only the owner required signer submitted — Lean and the protocol spec require acceptance
+row: CG20: the chain ACCEPTED the permissionless fold — an observation of the repaired candidate, not a confirmation
+complete: 13/13 rows ok
+=== Node log (last 50) ===
+[2026-09-12 09:41:33.7344Z][development-epyc:StateQueryServer.Receive.Acquire](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.7353Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8008Z][development-epyc:Forge.Loop.StartLeadershipCheck](Info,47) Checking for leadership in slot 3648
+[2026-09-12 09:41:33.8009Z][development-epyc:Forge.Stats.ForgingStats](Info,47) Node cannot forge 0 node is leader 3648 blocks forged 3648 slots missed 0
+[2026-09-12 09:41:33.8012Z][development-epyc:Forge.StateInfo.StateInfo](Info,47) With label "Cardano", KES info startPeriod  0 currPeriod 0 endPeriod 60, 60 KES periods until expiry.
+[2026-09-12 09:41:33.8018Z][development-epyc:Forge.Loop.NodeIsLeader](Info,47) Leading slot 3648
+[2026-09-12 09:41:33.8022Z][development-epyc:Forge.Loop.ForgedBlock](Info,47) Forged block in slot 3648
+[2026-09-12 09:41:33.8041Z][development-epyc:ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate](Info,19) Valid candidate 895d2c06bb65a6b5a9df04dcd26b7f857b66995ba504866a47ec6a093fe58d24 at slot 3648
+[2026-09-12 09:41:33.8048Z][development-epyc:Forge.Loop.AdoptedBlock](Info,47) Adopted block forged in slot 3648: 895d2c06bb65a6b5a9df04dcd26b7f857b66995ba504866a47ec6a093fe58d24
+[2026-09-12 09:41:33.8945Z][development-epyc:StateQueryServer.Receive.Release](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8946Z][development-epyc:StateQueryServer.Receive.Acquire](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8962Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8970Z][development-epyc:StateQueryServer.Receive.Release](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8972Z][development-epyc:StateQueryServer.Receive.Acquire](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8977Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8981Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8986Z][development-epyc:StateQueryServer.Receive.Release](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8989Z][development-epyc:StateQueryServer.Receive.Acquire](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.8994Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:33.9010Z][development-epyc:Forge.Loop.StartLeadershipCheck](Info,47) Checking for leadership in slot 3649
+[2026-09-12 09:41:33.9010Z][development-epyc:Forge.Stats.ForgingStats](Info,47) Node cannot forge 0 node is leader 3649 blocks forged 3649 slots missed 0
+[2026-09-12 09:41:33.9013Z][development-epyc:Forge.StateInfo.StateInfo](Info,47) With label "Cardano", KES info startPeriod  0 currPeriod 0 endPeriod 60, 60 KES periods until expiry.
+[2026-09-12 09:41:33.9019Z][development-epyc:Forge.Loop.NodeIsLeader](Info,47) Leading slot 3649
+[2026-09-12 09:41:33.9023Z][development-epyc:Forge.Loop.ForgedBlock](Info,47) Forged block in slot 3649
+[2026-09-12 09:41:33.9044Z][development-epyc:ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate](Info,19) Valid candidate 24df13f1a7863eadc4855e0900d3d279b6baf9a4898770787ea7547210bc48f3 at slot 3649
+[2026-09-12 09:41:33.9053Z][development-epyc:Forge.Loop.AdoptedBlock](Info,47) Adopted block forged in slot 3649: 24df13f1a7863eadc4855e0900d3d279b6baf9a4898770787ea7547210bc48f3
+[2026-09-12 09:41:34.0013Z][development-epyc:Forge.Loop.StartLeadershipCheck](Info,47) Checking for leadership in slot 3650
+[2026-09-12 09:41:34.0013Z][development-epyc:Forge.Stats.ForgingStats](Info,47) Node cannot forge 0 node is leader 3650 blocks forged 3650 slots missed 0
+[2026-09-12 09:41:34.0017Z][development-epyc:Forge.StateInfo.StateInfo](Info,47) With label "Cardano", KES info startPeriod  0 currPeriod 0 endPeriod 60, 60 KES periods until expiry.
+[2026-09-12 09:41:34.0023Z][development-epyc:Forge.Loop.NodeIsLeader](Info,47) Leading slot 3650
+[2026-09-12 09:41:34.0027Z][development-epyc:Forge.Loop.ForgedBlock](Info,47) Forged block in slot 3650
+[2026-09-12 09:41:34.0046Z][development-epyc:ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate](Info,19) Valid candidate 7cf90b83c2d67077b4571b2c88583fd92553c66d146376f30425d9503f01ce41 at slot 3650
+[2026-09-12 09:41:34.0048Z][development-epyc:ChainDB.AddBlockEvent.AddedToCurrentChain](Notice,19) Chain extended, new tip: 7cf90b83c2d67077b4571b2c88583fd92553c66d146376f30425d9503f01ce41 at slot 3650
+[2026-09-12 09:41:34.0057Z][development-epyc:Forge.Loop.AdoptedBlock](Info,47) Adopted block forged in slot 3650: 7cf90b83c2d67077b4571b2c88583fd92553c66d146376f30425d9503f01ce41
+[2026-09-12 09:41:34.0265Z][development-epyc:StateQueryServer.Receive.Release](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.0322Z][development-epyc:StateQueryServer.Receive.Acquire](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.0329Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.0338Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.1005Z][development-epyc:Forge.Loop.StartLeadershipCheck](Info,47) Checking for leadership in slot 3651
+[2026-09-12 09:41:34.1006Z][development-epyc:Forge.Stats.ForgingStats](Info,47) Node cannot forge 0 node is leader 3651 blocks forged 3651 slots missed 0
+[2026-09-12 09:41:34.1009Z][development-epyc:Forge.StateInfo.StateInfo](Info,47) With label "Cardano", KES info startPeriod  0 currPeriod 0 endPeriod 60, 60 KES periods until expiry.
+[2026-09-12 09:41:34.1015Z][development-epyc:Forge.Loop.NodeIsLeader](Info,47) Leading slot 3651
+[2026-09-12 09:41:34.1019Z][development-epyc:Forge.Loop.ForgedBlock](Info,47) Forged block in slot 3651
+[2026-09-12 09:41:34.1038Z][development-epyc:ChainDB.AddBlockEvent.AddBlockValidation.ValidCandidate](Info,19) Valid candidate b16e62e9f4e85f9b2fca2b6720a53985e1088596cd1c20e7e735a74f733d6c0c at slot 3651
+[2026-09-12 09:41:34.1045Z][development-epyc:Forge.Loop.AdoptedBlock](Info,47) Adopted block forged in slot 3651: b16e62e9f4e85f9b2fca2b6720a53985e1088596cd1c20e7e735a74f733d6c0c
+[2026-09-12 09:41:34.1633Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.1637Z][development-epyc:StateQueryServer.Receive.Query](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.1641Z][development-epyc:StateQueryServer.Receive.Release](Info,74) Peer is: (ConnectionId {localAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock", remoteAddress = LocalAddress "/tmp/conformance-2995659-1789205724860/cardano-e2e/node.sock@1"}). Receive: 
+[2026-09-12 09:41:34.1696Z][development-epyc:TxSubmission.LocalServer.ReceivedTx](Info,76) {"data":{"kind":"ReceivedTx"}}
+[2026-09-12 09:41:34.1727Z][development-epyc:Mempool.AddedTx](Info,76) {"data":{"kind":"TraceMempoolAddedTx","mempoolSize":{"bytes":11445,"numTxs":1},"tx":{"txid":"4142f7d6"}}}
+
+conformance run: FAILED: ROWS THE RUN CANNOT REPORT AS PASSING
+- Held (Q-002, story 2: Singular's Lean and the consumer's theorem disagree and the chain sided with Singular's Lean; receipts carry verdict held-q002): CG11 CG12 CG19
+- Failing against this candidate (verdict diverges-from-lean — the chain refused what the Lean requires accepted): none
+These rows are the milestone owner's to carry to the user.
+exit_status: 1

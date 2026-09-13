@@ -1,0 +1,48 @@
+{
+  "candidate": "fb9724dabac09d60303c66ebdf94daf7b3b9dcfb",
+  "results": [
+    {
+      "case": "ordinary two distinct complete layers",
+      "mapping_debt": false,
+      "layer_debt": false,
+      "findings": []
+    },
+    {
+      "case": "two independent property checks jointly complete one family",
+      "mapping_debt": false,
+      "layer_debt": false,
+      "findings": [
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "c-prop-second-independent claims layer property via execution 'exec-3' but 'exec-1' already achieved it \u2014 distinct layers must be distinct executions, not aliases"
+        }
+      ]
+    },
+    {
+      "case": "second property check aliases story execution",
+      "mapping_debt": false,
+      "layer_debt": false,
+      "findings": [
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "c-prop-second-independent claims layer property via execution 'exec-2' but 'exec-1' already achieved it \u2014 distinct layers must be distinct executions, not aliases"
+        }
+      ]
+    },
+    {
+      "case": "same aliased checks only reordered",
+      "mapping_debt": false,
+      "layer_debt": true,
+      "findings": [
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "c-prop claims layer property via execution 'exec-1' but 'exec-2' already achieved it \u2014 distinct layers must be distinct executions, not aliases"
+        },
+        {
+          "code": "duplicate-layer-identity",
+          "detail": "Singular.Statements.greeter_iff claims ['integration-story', 'property'] but they all resolve to execution(s) ['exec-2'] \u2014 one execution aliased into two layers"
+        }
+      ]
+    }
+  ]
+}

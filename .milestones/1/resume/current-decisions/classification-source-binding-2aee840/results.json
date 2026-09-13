@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "findings": [],
+    "open": [
+      "Singular.countP_filter_le",
+      "Singular.escape_error",
+      "Singular.exceptBindErrAny",
+      "Singular.exceptBindOkAny",
+      "Singular.exceptBindResultEqAction",
+      "Singular.exceptMapEq",
+      "Singular.exceptMapErrAny",
+      "Singular.exceptMapOkAny"
+    ],
+    "complete": false
+  },
+  "coherent_false_signature_original_digest": {
+    "findings": [],
+    "open": [
+      "Singular.countP_filter_le",
+      "Singular.escape_error",
+      "Singular.exceptBindErrAny",
+      "Singular.exceptBindOkAny",
+      "Singular.exceptBindResultEqAction",
+      "Singular.exceptMapEq",
+      "Singular.exceptMapErrAny",
+      "Singular.exceptMapOkAny"
+    ],
+    "complete": false
+  },
+  "changed_literal_unchanged_classification": {
+    "findings": [],
+    "open": [
+      "Singular.countP_filter_le",
+      "Singular.escape_error",
+      "Singular.exceptBindErrAny",
+      "Singular.exceptBindOkAny",
+      "Singular.exceptBindResultEqAction",
+      "Singular.exceptMapEq",
+      "Singular.exceptMapErrAny",
+      "Singular.exceptMapOkAny"
+    ],
+    "complete": false
+  }
+}

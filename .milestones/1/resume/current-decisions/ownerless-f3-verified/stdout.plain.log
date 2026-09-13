@@ -1,0 +1,425 @@
+    Compiling hal/mpf 0.0.0 (.)
+    Resolving hal/mpf
+      Fetched 3 packages in 0.05s from cache
+    Compiling aiken-lang/stdlib v2.2.0 (./build/packages/aiken-lang-stdlib)
+    Compiling aiken-lang/fuzz v2.1.1 (./build/packages/aiken-lang-fuzz)
+    Compiling aiken-lang/merkle-patricia-forestry v2.0.0 (./build/packages/aiken-lang-merkle-patricia-forestry)
+   Collecting all tests scenarios across all modules
+      Testing ...
+  Simplifying counterexample from 12 choices
+  Simplifying counterexample from 12 choices
+  Simplifying counterexample from 2 choices
+   Simplified counterexample in 18ms after 14 steps
+   Simplified counterexample in 123ms after 171 steps
+   Simplified counterexample in 125ms after 173 steps
+
+    ┍━ cage.props ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [after 100 tests] prop_phase1_phase2_exclusive
+    │ PASS [after 100 tests] prop_phase1_phase3_exclusive
+    │ PASS [after 100 tests] prop_phase2_phase3_exclusive
+    │ PASS [after 100 tests] prop_phase1_honest_not_rejectable
+    │ PASS [after 100 tests] prop_phase2_honest_not_rejectable
+    │ PASS [after 100 tests] prop_phase_coverage_point
+    ┕━━ with --seed=1228139348 → 6 tests | 6 passed | 0 failed
+
+
+    ┍━ cage.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem: 504.22 K, cpu: 164.65 M] canCage
+    │ PASS [mem: 124.25 K, cpu:  41.53 M] canMint
+    │ PASS [mem:  21.61 K, cpu:   8.60 M] mint_missing_input
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> is_some(find_input(inputs, seed))
+    │ PASS [mem:  64.23 K, cpu:  25.36 M] mint_quantity_two
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> exactQuantity(policyId, mint, tokenId, 1)
+    │ PASS [mem:  85.22 K, cpu:  29.67 M] mint_extra_state_policy_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> exactQuantity(policyId, mint, tokenId, 1)
+    │ PASS [mem:  64.45 K, cpu:  24.41 M] mint_to_wallet
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> address.Script(targetScriptHash) = output.address.payment_credential
+    │ PASS [mem:  64.58 K, cpu:  24.79 M] mint_to_wrong_script
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> targetScriptHash == policyId
+    │ PASS [mem:  86.06 K, cpu:  32.58 M] mint_nonempty_root
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> tokenRoot == root(empty)
+    │ PASS [mem:  65.03 K, cpu:  26.35 M] mint_request_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │     StateDatum(State {
+    │       root: tokenRoot,
+    │       tip: _tip,
+    │       process_time: _processTime,
+    │       retract_time: _retractTime,
+    │     })
+    │     = tokenState
+    │ PASS [mem:  64.84 K, cpu:  25.71 M] mint_no_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> InlineDatum(tokenState) = output.datum
+    │ PASS [mem: 107.19 K, cpu:  38.80 M] mint_output_must_hold_token
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> exactQuantity(policyId, output.value, tokenId, 1)
+    │ PASS [mem: 158.42 K, cpu:  51.23 M] retract_happy
+    │ PASS [mem:  42.84 K, cpu:  15.35 M] retract_wrong_signer
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> has(extra_signatories, requestOwner)
+    │ PASS [mem: 147.61 K, cpu:  47.15 M] retract_in_phase1
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> in_phase2(validity_range, submitted_at, process_time, retract_time)
+    │ PASS [mem: 148.45 K, cpu:  49.69 M] retract_in_phase3
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> in_phase2(validity_range, submitted_at, process_time, retract_time)
+    │ PASS [mem:  42.09 K, cpu:  12.78 M] contribute_wrong_token
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> requestToken == cageToken
+    │ PASS [mem:  42.70 K, cpu:  17.40 M] contribute_missing_ref
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(input) =
+    │     find(tx.inputs, fn(input) { input.output_reference == ref })
+    │ PASS [mem:  42.41 K, cpu:  15.29 M] contribute_reference_only_state_rejected
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(input) =
+    │     find(tx.inputs, fn(input) { input.output_reference == ref })
+    │ PASS [mem:  64.05 K, cpu:  22.58 M] contribute_rejects_foreign_policy_state_same_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> carriesStateToken(statePolicyId, cageToken, stateInput)
+    │ PASS [mem:  84.74 K, cpu:  28.59 M] contribute_in_phase2
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> stateSpentWithModify(stateRef, tx)
+    │ PASS [mem: 182.61 K, cpu:  60.07 M] contribute_in_phase3
+    │ PASS [mem: 105.51 K, cpu:  35.52 M] contribute_with_state_end_rejected
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> stateSpentWithModify(stateRef, tx)
+    │ PASS [mem: 343.80 K, cpu: 110.06 M] modify_without_owner_succeeds
+    │ PASS [mem: 105.26 K, cpu:  32.92 M] end_stake_withdrawal_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 105.29 K, cpu:  33.01 M] end_owner_signed_no_withdrawal_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 275.72 K, cpu:  91.76 M] modify_wrong_address
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │     output.address.payment_credential == input.output.address.payment_credential
+    │ PASS [mem: 343.80 K, cpu: 110.06 M] modify_owner_transfer
+    │ PASS [mem: 244.15 K, cpu:  77.17 M] modify_no_requests
+    │ PASS [mem: 304.99 K, cpu:  97.16 M] modify_skip_other_token
+    │ PASS [mem: 212.34 K, cpu:  70.09 M] modify_too_few_proofs
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 343.80 K, cpu: 110.06 M] modify_extra_proofs
+    │ PASS [mem: 274.91 K, cpu:  88.63 M] modify_wrong_root
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ | mpf.root(expectedNewRoot) == newRoot ? False
+    │ x <expected> (mpf.root(expectedNewRoot) == newRoot)?
+    │ PASS [mem:  233.8 K, cpu:  77.74 M] modify_in_phase2
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> in_phase1(validity_range, submitted_at, process_time)
+    │ PASS [mem: 232.87 K, cpu:  74.78 M] modify_output_must_hold_token
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> exactQuantity(policyId, output.value, tokenId, 1)
+    │ PASS [mem: 105.29 K, cpu:  33.01 M] end_owner_signed_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 105.29 K, cpu:  33.01 M] end_missing_signature
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 105.71 K, cpu:  33.94 M] end_wrong_token_in_mint
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  84.50 K, cpu:  25.51 M] modify_rejects_foreign_policy_same_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+    │ PASS [mem:  64.15 K, cpu:  21.72 M] end_rejects_foreign_policy_same_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+    │ PASS [mem:  41.68 K, cpu:  10.84 M] retract_on_state_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(RequestDatum(request)) = maybeDatum
+    │ PASS [mem:  21.61 K, cpu:   7.23 M] contribute_on_state_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(RequestDatum(request)) = maybeDatum
+    │ PASS [mem:  21.29 K, cpu:   6.72 M] modify_on_request_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(StateDatum(state)) = maybeDatum
+    │ PASS [mem:  21.29 K, cpu:   6.72 M] end_on_request_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(StateDatum(state)) = maybeDatum
+    │ PASS [mem:  20.65 K, cpu:   5.02 M] spend_no_datum
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(RequestDatum(request)) = maybeDatum
+    │ PASS [after   1 test] prop_retract_requires_owner
+    │ ★ counterexample
+    │ │ #"00000000000000000000000000000000000000000000000000000000"
+    │ · with traces
+    │ x <expected> has(extra_signatories, requestOwner)
+    │ PASS [after 100 tests] prop_modify_no_owner_required
+    │ PASS [after 100 tests] prop_mint_roundtrip
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrating_owner_signed_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_no_burn
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_to_wallet
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_wrong_old_policy
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_extra_state_policy_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_output_must_hold_token
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    328.0, cpu: 684.73 K] migrate_old_policy_not_allowlisted
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_no_predecessor_input
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_missing_owner_signature
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    168.0, cpu: 423.34 K] migrate_changes_tip
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:    328.0, cpu: 684.73 K] migrate_forged_token_cannot_sweep
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 400.49 K, cpu: 128.00 M] modify_with_refund
+    │ PASS [mem: 358.99 K, cpu: 115.91 M] modify_missing_refund
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> [output, ..remaining] = outputs
+    │ PASS [mem: 401.23 K, cpu: 129.16 M] modify_insufficient_refund
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> totalRefunded >= owed
+    │ PASS [mem: 359.93 K, cpu: 118.19 M] modify_wrong_refund_address
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> vkh == owner
+    │ PASS [mem: 433.58 K, cpu: 137.06 M] modify_zero_fee
+    │ PASS [mem: 232.76 K, cpu:  74.13 M] modify_fee_mismatch
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> tip == stateTip
+    │ PASS [mem: 126.87 K, cpu:  39.94 M] end_with_extra_mint_policy
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 147.74 K, cpu:  45.63 M] end_with_extra_state_policy_asset
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  382.8 K, cpu: 122.53 M] reject_happy
+    │ PASS [mem: 275.03 K, cpu:  88.19 M] reject_in_phase1
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │                     is_rejectable(
+    │                       validity_range,
+    │                       submitted_at,
+    │                       process_time,
+    │                       retract_time,
+    │                     )
+    │ PASS [mem: 275.03 K, cpu:  88.19 M] reject_in_phase2
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │                     is_rejectable(
+    │                       validity_range,
+    │                       submitted_at,
+    │                       process_time,
+    │                       retract_time,
+    │                     )
+    │ PASS [mem: 403.91 K, cpu: 129.23 M] reject_future_submitted_at
+    │ PASS [mem: 105.29 K, cpu:  33.01 M] end_wrong_signer
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 275.26 K, cpu:  88.24 M] reject_root_changes
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ | mpf.root(expectedNewRoot) == newRoot ? False
+    │ x <expected> (mpf.root(expectedNewRoot) == newRoot)?
+    │ PASS [mem: 380.73 K, cpu: 123.25 M] reject_wrong_refund
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> totalRefunded >= owed
+    │ PASS [mem:  382.8 K, cpu: 122.53 M] reject_refund_owed_above_min_utxo_passes
+    │ PASS [mem: 412.91 K, cpu: 131.92 M] reject_refund_min_utxo_topup_passes
+    │ PASS [mem: 402.34 K, cpu: 131.28 M] reject_refund_under_owed_fails
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> totalRefunded >= owed
+    │ PASS [mem: 317.84 K, cpu: 103.91 M] reject_refund_topup_cannot_drain_state
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │     assets.lovelace_of(output.value) >= assets.lovelace_of(input.output.value)
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_owner_signed_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_wrong_token_request
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_fake_state_no_nft
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.36 K, cpu:   6.77 M] sweep_alongside_modify
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_wrong_signer
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_fake_state_ref
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  85.25 K, cpu:  29.34 M] state_sweep_rejected
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  21.32 K, cpu:   6.75 M] sweep_legitimate_request
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  42.03 K, cpu:  11.37 M] sweep_mismatched_tip_request
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem:  41.80 K, cpu:  10.87 M] sweep_underfunded_matching_request
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ PASS [mem: 237.84 K, cpu:  75.32 M] modify_zero_requests_happy
+    │ PASS [mem: 169.80 K, cpu:  54.79 M] modify_zero_requests_root_changes
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ | mpf.root(expectedNewRoot) == newRoot ? False
+    │ x <expected> (mpf.root(expectedNewRoot) == newRoot)?
+    │ PASS [mem:   9.69 K, cpu:   6.11 M] two_seeds_distinct_tokens
+    │ PASS [mem:  22.18 K, cpu:   9.66 M] wrong_request_parameter_rejects_this_cage_token
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> requestToken == cageToken
+    │ PASS [mem:    168.0, cpu: 423.34 K] burning_token_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ with --seed=1228139348 → 92 tests | 92 passed | 0 failed
+
+
+    ┍━ cage_vectors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:  23.01 K, cpu:   5.66 M] vec_insert_into_empty_trie
+    │ PASS [mem: 104.14 K, cpu:  31.10 M] vec_insert_creating_fork
+    │ PASS [mem: 103.74 K, cpu:  30.83 M] vec_insert_with_shared_prefix
+    │ PASS [mem:  53.38 K, cpu:  14.88 M] vec_inclusion_proof_for_middle_key
+    │ PASS [mem:   4.99 K, cpu:   3.09 M] vec_asset_name_from_txoutref_index_0
+    │ PASS [mem:   4.99 K, cpu:   3.09 M] vec_asset_name_from_txoutref_index_1
+    │ PASS [mem:   4.99 K, cpu:   3.09 M] vec_asset_name_from_zero_txid_index_255
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7 tests | 7 passed | 0 failed
+
+
+    ┍━ lib.props ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [after 100 tests] prop_valueFromToken_roundtrip
+    │ PASS [after 100 tests] prop_tokenFromValue_ada_only
+    │ PASS [after 100 tests] prop_quantity_present
+    │ PASS [after   1 test] prop_quantity_wrong_policy
+    │ ★ counterexample
+    │ │ (
+    │ │   (
+    │ │     #"00000000000000000000000000000000000000000000000000000000",
+    │ │     #"8080778c30c20fa2ebc0ed18d2cbca1f30b027625c7d9d97f5d58972",
+    │ │   ),
+    │ │   (
+    │ │     #"0000000000000000000000000000000000000000000000000000000000000000",
+    │ │     1,
+    │ │   ),
+    │ │ )
+    │ PASS [after   1 test] prop_quantity_wrong_asset
+    │ ★ counterexample
+    │ │ (
+    │ │   (
+    │ │     #"00000000000000000000000000000000000000000000000000000000",
+    │ │     #"0000000000000000000000000000000000000000000000000000000000000000",
+    │ │   ),
+    │ │   (
+    │ │     #"8080778c30c20fa2ebc0ed18d2cbca1f30b027625c7d9d97f5d589721c91aeb6",
+    │ │     1,
+    │ │   ),
+    │ │ )
+    │ PASS [after 100 tests] prop_quantity_valueFromToken
+    ┕━━━━━━━━━━━━━━━━━━━━ with --seed=1228139348 → 6 tests | 6 passed | 0 failed
+
+
+    ┍━ lib.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:   9.09 K, cpu:   5.89 M] assetName_deterministic
+    │ PASS [mem:   9.69 K, cpu:   6.06 M] assetName_different_txid
+    │ PASS [mem:   9.69 K, cpu:   6.06 M] assetName_different_index
+    │ PASS [after 100 tests] prop_assetName_deterministic
+    │ PASS [mem:  49.23 K, cpu:  14.93 M] tokenFromValue_single_nft
+    │ PASS [mem:  20.48 K, cpu:   5.95 M] tokenFromValue_ada_only
+    │ PASS [mem:  53.02 K, cpu:  14.77 M] tokenFromValue_multi_policy
+    │ PASS [mem:  82.37 K, cpu:  23.76 M] tokenFromValue_multi_asset
+    │ PASS [mem:  51.25 K, cpu:  15.57 M] tokenFromValue_roundtrip
+    │ PASS [mem:  26.20 K, cpu:   8.22 M] quantity_present
+    │ PASS [mem:  20.04 K, cpu:   6.06 M] quantity_wrong_policy
+    │ PASS [mem:  25.57 K, cpu:   7.86 M] quantity_wrong_asset
+    │ PASS [mem:  27.66 K, cpu:   8.71 M] quantity_valueFromToken
+    ┕━━━━━━━ with --seed=1228139348 → 13 tests | 13 passed | 0 failed
+
+
+
+  ⚠ aiken.toml demands compiler version v1.1.16, but you are using v1.1.21.
+  help: You may want to switch to v1.1.16
+
+
+  ⚠ I discovered an unused imported value: Fork
+   ╭─[./validators/cage_vectors.ak:6:45]
+ 5 │ 
+ 6 │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   ·                                             ──┬─
+   ·                                               ╰── unused import
+ 7 │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+  help: No big deal, but you might want to remove it to get rid of that
+        warning.
+
+
+  ⚠ I discovered an unused imported value: Neighbor
+   ╭─[./validators/cage_vectors.ak:6:57]
+ 5 │ 
+ 6 │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   ·                                                         ────┬───
+   ·                                                             ╰── unused import
+ 7 │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+  help: No big deal, but you might want to remove it to get rid of that
+        warning.
+
+      Summary 1411 checks, 0 errors, 3 warnings

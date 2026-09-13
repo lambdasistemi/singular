@@ -1,0 +1,17 @@
+warning: Git tree '/code/singular-e18-cov2' is dirty
+COMPLETION: COMPLETE
+  mapping debt rows: 0
+  implementation-layer debt rows: 0
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+DEBT axes (reported separately, never summed)
+  mapping debt: 0 obligations without a bound story representation
+  implementation-layer debt: 0 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+candidate: eae102b511ad34c3b8f7297e1609d1eab86b7ef4 (bound: HEAD matches; tree clean; root is top level)
+on-chain release assembly: PASS (/tmp/tmp.S4XRAuSuUx/singular-onchain-0.3.0.tar.gz)
+{"version": "0.3.0", "unreleasedBaseline": false, "archive": "singular-docs-0.3.0.tar.gz", "onchainArchive": "singular-onchain-0.3.0.tar.gz", "versionAgreement": "PASS", "artifactAndWorkflowChecks": "PASS", "identityFromArtifact": "PASS"}
+singular-docs-0.3.0.tar.gz: OK
+singular-onchain-0.3.0.tar.gz: OK

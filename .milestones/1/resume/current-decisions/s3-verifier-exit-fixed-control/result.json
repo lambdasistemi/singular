@@ -1,0 +1,8 @@
+{
+  "root": "/tmp/singular-s3-exit-green-YvknuC",
+  "sourceSha256": "9e391fc3af2baa742a9085cd78d7a9d2e838ea1717fa9819fb239454855826bb",
+  "originalControl": "/tmp/singular-s3-verifier-exit-tzGfIf",
+  "exit": 1,
+  "creditedStaleRows": false,
+  "scope": "Same verifier-exit17 + original stale verdicts, exact current adjudication suffix. No full S3 execution or ledger validation."
+}

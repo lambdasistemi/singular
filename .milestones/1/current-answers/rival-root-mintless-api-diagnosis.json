@@ -1,0 +1,48 @@
+{
+  "at": "2026-09-13T03:12:12.313Z",
+  "root": "/tmp/singular-root-mintless-api-9I5vCu",
+  "compiler": "/nix/store/dgvrp8z9n4b495z7hv18rzxq2vd06knw-ghc-shell-for-packages-ghc-9.12.3-env/bin/ghci",
+  "scope": "Pinned GHC9.12.3 public-API/type diagnosis only, not compilation of the worker control or rival acceptance",
+  "exploration": "First typed probe preserves missing/coercion failures; GHCi exit0 alone is not success.",
+  "positive": "Final corrected public API probe printed all expected TxId/ScriptHash/ScriptIntegrityHash and four body-view types with EMPTY stderr.",
+  "files": [
+    {
+      "path": "handoffs/rival-root-mintless-api-correct-public-api.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-correct-public-api.ghci",
+      "sha256": "9a57efe858c01cdfa9231f85cb7e36758deb32ae9c3137b2f56cd3215fe69c84"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-correct-public-api.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-correct-public-api.stdout",
+      "sha256": "4886615d2a1f3209efdcb2da3d09c5f299285fe36d4468d38b3a54954a3dd8ea"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-input.ghci",
+      "sha256": "c6274f0a0af143def73bd606817771c6e61ace70592cdbd98438905e54b1de08"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-stderr",
+      "sha256": "71525ea9f4011ec18ef11bdb6dfdab7e465dadfb55bbd577fdeb1864c8b7736d"
+    },
+    {
+      "path": "handoffs/rival-root-mintless-api-stdout",
+      "sha256": "940cd78727ec07569046a8c5054b5fa1acccc0df5740a8b6b92e9b8b4981e70c"
+    }
+  ],
+  "note049Transport": {
+    "session": "01a09695-c87b-725c-9576-c0d6e9231e3c",
+    "userEventId": "01b320ad",
+    "timestamp": "2026-09-13T02:52:07.667Z",
+    "durableAck": "not observed as of root read03:07; message is already in native user history, do not resend"
+  }
+}

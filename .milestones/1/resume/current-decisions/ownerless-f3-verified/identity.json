@@ -1,0 +1,15 @@
+{
+  "source": "f3a68b1bcd63119f8db79548a7d15926bf408856",
+  "tree": "3cac539b1db35cabfbe176775c8476cd2f753bc7",
+  "status": "",
+  "command": [
+    "nix",
+    "develop",
+    "--command",
+    "script",
+    "-qec",
+    "aiken check",
+    "/dev/null"
+  ],
+  "cwd": "/tmp/singular-ownerless-f3-check-VadFSy/subject/onchain"
+}

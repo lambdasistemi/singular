@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-13T00:31:14.898Z",
+  "source": "/code/singular-e18-blaster/blaster/SingularBlaster/DdfcSpan.lean",
+  "sha256": "858f50093aa6f0f250007ba1107f5c32a05857330f67958c383660df5be238a0",
+  "findings": [
+    {
+      "name": "runSpanStateComposed",
+      "usesExactSpanTxComposed": true
+    },
+    {
+      "name": "runSpanRepComposed",
+      "usesExactSpanTxComposed": true
+    },
+    {
+      "name": "runSpanAppComposed",
+      "usesExactSpanTxComposed": true
+    },
+    {
+      "name": "runSpanAppMintBurn",
+      "usesExactSpanTxComposed": true
+    }
+  ],
+  "scope": "Literal shared-TxInfo source repair verified for all four exercised purposes. Existing reported Lean4.24 builds remain owner evidence; root did not repeat them. C5 policy/name/burn-vs-persist refinement and quantified/final-tuple obligations stay open."
+}

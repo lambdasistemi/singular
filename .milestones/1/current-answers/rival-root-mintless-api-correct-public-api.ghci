@@ -1,0 +1,20 @@
+:set -XOverloadedStrings -XTypeApplications
+import qualified Data.ByteString as BS
+import Cardano.Crypto.Hash.Class
+import Cardano.Ledger.Hashes
+import Cardano.Ledger.TxIn
+import Cardano.Ledger.Alonzo.TxBody
+import Cardano.Ledger.Alonzo.Core
+import Cardano.Ledger.Api.Tx.Body
+import Cardano.Ledger.Conway
+import Lens.Micro
+:t castHash
+:t (TxId (unsafeMakeSafeHash (castHash (hashWith id ("seed" :: BS.ByteString)))) :: TxId)
+:t (ScriptHash (castHash (hashWith id ("script" :: BS.ByteString))) :: ScriptHash)
+:t (unsafeMakeSafeHash (castHash (hashWith id ("view" :: BS.ByteString))) :: ScriptIntegrityHash)
+let b = mkBasicTxBody :: TxBody TopTx ConwayEra
+:t (b ^. inputsTxBodyL)
+:t (b ^. outputsTxBodyL)
+:t (b ^. feeTxBodyL)
+:t (b ^. scriptIntegrityHashTxBodyL)
+:quit

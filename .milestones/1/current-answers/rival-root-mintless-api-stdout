@@ -1,0 +1,18 @@
+hash
+  :: (HashAlgorithm h,
+      cardano-binary-1.9.0.0-4knnCjZ8oUGBNNwgKKDH12:Cardano.Binary.ToCBOR.ToCBOR
+        a) =>
+     a -> Hash h a
+hashWith :: HashAlgorithm h => (a -> ByteString) -> a -> Hash h a
+type role SafeHash phantom
+type SafeHash :: * -> *
+newtype SafeHash i = Cardano.Ledger.Hashes.SafeHash (Hash HASH i)
+  	-- Defined in ‘Cardano.Ledger.Hashes’
+instance SafeToHash (SafeHash i)
+  -- Defined in ‘Cardano.Ledger.Hashes’
+instance Show (SafeHash i) -- Defined in ‘Cardano.Ledger.Hashes’
+instance Eq (SafeHash i) -- Defined in ‘Cardano.Ledger.Hashes’
+instance Ord (SafeHash i) -- Defined in ‘Cardano.Ledger.Hashes’
+unsafeMakeSafeHash :: Hash HASH i -> SafeHash i
+(coerce (hashWith id ("script" :: BS.ByteString) :: Hash Blake2b_224 BS.ByteString) :: ScriptHash)
+  :: ScriptHash

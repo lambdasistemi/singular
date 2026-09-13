@@ -1,0 +1,19 @@
+{
+  "inputHex": "616263",
+  "algorithm": "blake2b",
+  "digestSize": 32,
+  "recordedHex": "bddd813c634239723171ef3fee98567994964e3bbb1cb3e427622c8c06d52319",
+  "referenceHex": "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319",
+  "differentBytes": [
+    14,
+    15,
+    20,
+    21,
+    22,
+    23,
+    24,
+    26,
+    27,
+    28
+  ]
+}

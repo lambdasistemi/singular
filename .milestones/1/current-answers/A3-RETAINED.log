@@ -1,0 +1,16 @@
+# A3 invocation, retained receipt
+date_utc=2026-09-12T18:54:48Z
+cmd=/tmp/projects/singular/milestone-1/epic-17/gates/amendment-77-A3-e001-cause-obligation.sh /tmp/s77-accept3/a2-20260912T183214Z-222102/verdicts.json /tmp/projects/singular/milestone-1/epic-17/ticket-77/commit-owner-2/evidence/verdicts-mutant3.json ddfc4e961d530ee4e62361aabbcc730a9b9809ed /code/singular-e17-accept
+honest_verdicts=/tmp/s77-accept3/a2-20260912T183214Z-222102/verdicts.json sha256=a6de1e563f22dbb758b37b9590461fbc8ec989dc88cd92da9958146df76d703a
+mutant_verdicts=/tmp/projects/singular/milestone-1/epic-17/ticket-77/commit-owner-2/evidence/verdicts-mutant3.json sha256=a18601da34e59abee0613dc93863759fd98384e9d086b7fc141afe34e5d19b8b
+instrument_sha256=15bb4b50b6552c876ee51e761ac2a0c2a69a5c1801269d394134199ee8fd4c30
+worktree_head=ddfc4e961d530ee4e62361aabbcc730a9b9809ed dirty=0
+---
+A3 candidate-bound                    PASS  ddfc4e961d530ee4e62361aabbcc730a9b9809ed, clean
+A3 refusal.representative-policy      PASS  foreign-policy fold refused by the application validator; minted under 1ab2c5f451c798474d7476355230e5123095426d2a0b96a10213051f but the spent state pins 53828b962561757a51caab42a0891a9ebe0c6abb3fdfa87aa993b5b6 for representative 526570c957bd31ca12951d2d8c26549cd049996fbcf20043e93d6f61da177d00
+A3 cause-names-both-policies          PASS  3 distinct policy ids in the verdict detail
+A3 control-can-refuse                 PASS  REFUTED under the removed policy check: foreign-policy fold accepted as 8417b49e2f9a2c37998a09ba2b06bd43630f6580d03c3f52d80f28d08e4858cf: the policy check does not hold
+A3 control-is-the-same-row            PASS  the mutant records the foreign-policy fold ACCEPTED on chain
+
+A3 GREEN — the E-001 refusal CAUSE is established for ddfc4e961d530ee4e62361aabbcc730a9b9809ed and the obligation is shown able to refuse
+A3_EXIT=0

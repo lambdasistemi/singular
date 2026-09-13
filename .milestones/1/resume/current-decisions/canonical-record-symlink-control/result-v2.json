@@ -1,0 +1,85 @@
+{
+  "subject": "66da177f495aea95f26978e9bb45812b3d89d92f",
+  "synthetic": true,
+  "note": "Preserves first probe; fixes incomplete fixture schema to isolate honest debt from invalid record.",
+  "results": [
+    {
+      "name": "v2-committed-incomplete",
+      "head": "7fb72d35057ce661b96e48faadaf940834fc44ba",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "7fb72d35057ce661b96e48faadaf940834fc44ba"
+      ],
+      "exit": 1,
+      "stdout": "COMPLETION: INCOMPLETE\n  mapping debt rows: 5\n  implementation-layer debt rows: 5\n  execution debt findings: 0\n  unclassified rows: 0\n  stale bindings: 0\n  strict completion requires every category zero \u2014 an incremental PR does not\nDEBT axes (reported separately, never summed)\n  mapping debt: 5 obligations without a bound story representation\n  implementation-layer debt: 5 obligations with fewer than two distinct layers\n  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)\n  unclassified: 0 declarations outside the manifests\n    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer\n    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer\n    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer\n    Singular.Statements.greeter_iff: unmapped; no-layer\n    Singular.Statements.size_bound: unmapped; no-layer\ncandidate: 7fb72d35057ce661b96e48faadaf940834fc44ba (bound: HEAD matches; tree clean; root is top level)\n",
+      "stderr": ""
+    },
+    {
+      "name": "v2-external-override",
+      "head": "7fb72d35057ce661b96e48faadaf940834fc44ba",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "7fb72d35057ce661b96e48faadaf940834fc44ba",
+        "--record",
+        "/tmp/singular-release-binding-893ez2us/external.json"
+      ],
+      "exit": 3,
+      "stdout": "",
+      "stderr": "FAIL-CLOSED unbound release input: release resolves its record from the candidate root and does not accept --record\n"
+    },
+    {
+      "name": "v2-symlink-incomplete",
+      "head": "baa5b0d5f1406c0a02b13968b57d4ca46b537386",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "baa5b0d5f1406c0a02b13968b57d4ca46b537386"
+      ],
+      "exit": 1,
+      "stdout": "COMPLETION: INCOMPLETE\n  mapping debt rows: 5\n  implementation-layer debt rows: 5\n  execution debt findings: 0\n  unclassified rows: 0\n  stale bindings: 0\n  strict completion requires every category zero \u2014 an incremental PR does not\nDEBT axes (reported separately, never summed)\n  mapping debt: 5 obligations without a bound story representation\n  implementation-layer debt: 5 obligations with fewer than two distinct layers\n  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)\n  unclassified: 0 declarations outside the manifests\n    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer\n    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer\n    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer\n    Singular.Statements.greeter_iff: unmapped; no-layer\n    Singular.Statements.size_bound: unmapped; no-layer\ncandidate: baa5b0d5f1406c0a02b13968b57d4ca46b537386 (bound: HEAD matches; tree clean; root is top level)\n",
+      "stderr": ""
+    },
+    {
+      "name": "v2-symlink-complete",
+      "head": "baa5b0d5f1406c0a02b13968b57d4ca46b537386",
+      "status": "",
+      "argv": [
+        "/nix/store/pzdalg368npikvpq4ncz2saxnz19v53k-python3-3.13.12/bin/python3",
+        "-B",
+        "-m",
+        "singular_coverage.gate",
+        "--root",
+        "/tmp/singular-release-binding-893ez2us/fixture",
+        "release",
+        "--candidate",
+        "baa5b0d5f1406c0a02b13968b57d4ca46b537386"
+      ],
+      "exit": 0,
+      "stdout": "COMPLETION: COMPLETE\n  mapping debt rows: 0\n  implementation-layer debt rows: 0\n  execution debt findings: 0\n  unclassified rows: 0\n  stale bindings: 0\nDEBT axes (reported separately, never summed)\n  mapping debt: 0 obligations without a bound story representation\n  implementation-layer debt: 0 obligations with fewer than two distinct layers\n  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)\n  unclassified: 0 declarations outside the manifests\ncandidate: baa5b0d5f1406c0a02b13968b57d4ca46b537386 (bound: HEAD matches; tree clean; root is top level)\n",
+      "stderr": ""
+    }
+  ]
+}

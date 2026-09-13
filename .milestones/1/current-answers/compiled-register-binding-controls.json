@@ -1,0 +1,31 @@
+{
+  "at": "2026-09-12T22:06:47.469Z",
+  "commit": "d140180809834d39e4dd41f0362233b4c22cdecf",
+  "dir": "/tmp/singular-root-register-binding-control-1lOjpb",
+  "checkerSha256": "1c868a6f4df47c96d952b30517d1e00f9ad638b604a443705a0f8178479b46e9",
+  "runs": [
+    {
+      "label": "baseline",
+      "exit": 0,
+      "stdout": "check_register: identities=192==192 rows covered-component=1 missing=107 open-unclassified=83 structural-only=0 tuple-dependent=1 non-applicable-proposed=0: OK\n",
+      "stderr": ""
+    },
+    {
+      "label": "wrong-statement-digest",
+      "exit": 0,
+      "stdout": "check_register: identities=192==192 rows covered-component=1 missing=107 open-unclassified=83 structural-only=0 tuple-dependent=1 non-applicable-proposed=0: OK\n",
+      "stderr": ""
+    },
+    {
+      "label": "paired-invented-obligation",
+      "exit": 0,
+      "stdout": "check_register: identities=192==192 rows covered-component=1 missing=107 open-unclassified=83 structural-only=0 tuple-dependent=1 non-applicable-proposed=0: OK\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Actual frozen applicability-register checker; two controlled metadata mutations only, no validator/ledger execution",
+  "invented": {
+    "before": "Singular.requireSome_none@c5d20c589aae688179ffa598cd19fc9d9e30703cd121bf3268b2d9ab7c1e3087",
+    "after": "RootControl.nonexistent_obligation@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

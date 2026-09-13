@@ -1,0 +1,11 @@
+OPEN (8):
+  Singular.countP_filter_le
+  Singular.escape_error
+  Singular.exceptBindErrAny
+  Singular.exceptBindOkAny
+  Singular.exceptBindResultEqAction
+  Singular.exceptMapEq
+  Singular.exceptMapErrAny
+  Singular.exceptMapOkAny
+CLASSIFICATION 192 = 109 + 83; rows=83 open=8 findings=0
+VERDICT: INCOMPLETE (open rows block acceptance of those rows)

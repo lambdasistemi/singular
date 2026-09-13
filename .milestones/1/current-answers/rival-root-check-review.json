@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-13T00:27:03.692Z",
+  "files": {
+    "RivalDriverLogic.hs": {
+      "sha256": "11edbc67bbd386ca19f539f1df35435d604e194d6d139238366cefab10b5ef8c",
+      "bytes": 5499
+    },
+    "RivalDriverPredevnetCheck.hs": {
+      "sha256": "3fa056549b62b9a9c8de2f1a841cc2159c6d77be60e57f699fdb601c06f1d86a",
+      "bytes": 6403
+    }
+  },
+  "scope": "Source review of currently unfinished offline check, no build/ledger/acceptance. Root NOTE132 identifies denominator/JSON/discriminator/mutant defects beyond earlier missing-field handoff."
+}

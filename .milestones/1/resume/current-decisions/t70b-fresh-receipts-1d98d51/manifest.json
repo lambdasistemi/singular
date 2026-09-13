@@ -1,0 +1,76 @@
+{
+  "scope": "Fresh worker-run receipts and raw log inspected by milestone owner, not independent re-execution; old schema, not final M1 evidence.",
+  "base": "1d98d51afa168a2bc0fd0e15ab33993a706eee31",
+  "held": [
+    "CG11",
+    "CG12",
+    "CG19"
+  ],
+  "rowReceiptOutcomes": "accepted retained after attributed refusal controls",
+  "resolvedByRuling": [
+    "CG13"
+  ],
+  "sessionExit": 1,
+  "files": [
+    {
+      "path": "receipts/receipt-CG02.json",
+      "sha256": "f8a7255e0aeae18baf8a48b5b6e470c53d900f070b8021368b0265b09611c1dd"
+    },
+    {
+      "path": "receipts/receipt-CG03.json",
+      "sha256": "7ce92ae719797c5e0162476a390d6b01b7636e9a30ec6b94f55c91ed2de7ff12"
+    },
+    {
+      "path": "receipts/receipt-CG04.json",
+      "sha256": "ecdebd4df125af4951f9c83eeb28d446c2afd498a24dd36409be811fef38a18a"
+    },
+    {
+      "path": "receipts/receipt-CG05.json",
+      "sha256": "79a741c3d5d05e9b653f9e90db1a5efbfdfc65390c3314371609c031ab5a7b8a"
+    },
+    {
+      "path": "receipts/receipt-CG07.json",
+      "sha256": "69251021bde6d07a08bac9c3d9d535c3277c770ace2534b334811224ed819a81"
+    },
+    {
+      "path": "receipts/receipt-CG09.json",
+      "sha256": "5930a203507027e3da52a8926aae55511b98fdbf937ae300d6ad3dbbd8af88e2"
+    },
+    {
+      "path": "receipts/receipt-CG10.json",
+      "sha256": "8c432dd9f9bfccd09be3b6785474a67bb7b145df06764552113489c1e017b6f4"
+    },
+    {
+      "path": "receipts/receipt-CG11.json",
+      "sha256": "8e32f2d46805ae9f890214238f48e31e40d057e9c8e63837357c060c4829f26f"
+    },
+    {
+      "path": "receipts/receipt-CG12.json",
+      "sha256": "f764698a11aa40ee8a0c12b88a4a4c29f47e8317a3f4cad399dabcc6b746d6bc"
+    },
+    {
+      "path": "receipts/receipt-CG13.json",
+      "sha256": "e7428bd5303566fd732fdaeb0a8356d1a093970b1fb46dcb5d1a915781b316b3"
+    },
+    {
+      "path": "receipts/receipt-CG17.json",
+      "sha256": "8e1ab75defe75a43c859b08a44aa40bb1d1118fa03fa6ba22b9e316b9b040c55"
+    },
+    {
+      "path": "receipts/receipt-CG19.json",
+      "sha256": "72db2e53b6768a3362a609d7321842723bf95b2bc4e44e58ebd2dd40618e920f"
+    },
+    {
+      "path": "receipts/receipt-CG20.json",
+      "sha256": "c2c0f4b9e8fc644f539fb9aa624d8ac278bad6037a090e6846206aee166a3569"
+    },
+    {
+      "path": "receipts/receipt-CL01.json",
+      "sha256": "b7f406c5bf31f8fb975cf9118e585ad9262dffbd8407a1bd5051671fc99e654d"
+    },
+    {
+      "path": "run.log",
+      "sha256": "6d3aeae7cf2d1b484a5e899f8d608065f6a8a145753b772920e7233bdafa1931"
+    }
+  ]
+}

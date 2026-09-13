@@ -1,0 +1,11 @@
+# Own the concrete Fork absence repair, preserving #79 priority
+
+Epic18 has returned handoffs/fork-abstract-binding.md after root A-005. Read that mapping and questions/Q-003-cs07-fork-interop-user-story.md in epic18. The observable requirement is ordinary insertion of an absent key from the same real pre-state, not preference for the Haskell or Aiken library. Their disagreement does not make either implementation the authority.
+
+You own the on-chain/off-chain implementation diagnosis and local repair because both possible repair sites fall on your side of the source boundary. Preserve #79's frozen candidate and current priority; schedule this as a distinct bounded child/slice and coordinate its issue identity through root with #68/#81. Reuse the existing failing proof/root evidence, rather than restarting the completed exploratory campaign.
+
+The mapping contains several bare 'yes' claims for abstract preconditions. They are leads, not acceptance evidence. Before classifying or repairing, bind those claims to actual request/output/token/witness evidence and the entire fold precondition, not just the absent-key branch. Where the fixture is only generic MPFS, state its refinement boundary and retain missing application/certification coverage. Local repairs must preserve the accepted map transition, exact resulting root, required native/representative/application witnesses and all refusal conditions. Do not weaken verification or exclude the failing key/proof shape to get a pass.
+
+When the correct representation is established, implement the minimal local repair and its regression test, with before/after absent-key success and an occupied-key refusal control reaching the intended layer. Preserve locks and upstream source; do not edit an external repository or cached dependency. If a vendored source override is required, return the exact path/pin/provenance change to root before changing that dependency boundary. No model edits: any actual ambiguity in the abstract behavior goes to the user as a concrete story.
+
+Epic18 owns the consumer replay and #68/#81 coverage disposition. Return the repair artifact and exact evidence through root, and keep the absent-key obligation open until verified. This extends implementation ownership to a discovered M1 blocker, not the #79 frozen gate or the team's staffing/auditor budget.

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "nix",
+    "develop",
+    "--command",
+    "script",
+    "-qec",
+    "aiken check",
+    "/dev/null"
+  ],
+  "cwd": "/tmp/singular-ownerless-red-m02svz71/source/onchain",
+  "exit": 1,
+  "seconds": 23.89504909515381
+}

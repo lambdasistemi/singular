@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-12T23:29:22.779Z",
+  "verifierSha256": "0b149aae901a69183edcd1fab2b4e66657ffefc48900c8edac5807152fb2ac7d",
+  "controlRoot": "/tmp/e18-v3-valid-preflight-control.7L8e7QtF",
+  "productionOutput": "/nix/store/s736ng48ybf8vrqqgqd10nv68yxm0g2v-mpf-plutus-blueprint-0.0.0",
+  "blueprintSha256": "9801e54cc393a13e84c9febef713fba129aac9ba277bf2a3577463b5ef2de847",
+  "productionRoute": "nix-flake-plutus-blueprint-v1",
+  "controlExit": 1,
+  "interpretation": "The observed bare-build staging omission is corrected in source. The retained production-shaped checker control contains the actual patched dependency and its output file digest matches. This is bounded gate/assembly evidence, not final producer assembly, real registration or full gate acceptance."
+}

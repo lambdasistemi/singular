@@ -1,0 +1,85 @@
+{
+  "seed": 497337228,
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "kind": {
+      "unit": 5,
+      "property": 0
+    }
+  },
+  "modules": [
+    {
+      "name": "root_completion_rejected.tests",
+      "summary": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0,
+        "kind": {
+          "unit": 5,
+          "property": 0
+        }
+      },
+      "tests": [
+        {
+          "title": "rootfive_rejected_retirement_burns_while_registry_stays_active",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 1803124,
+            "cpu": 578824910
+          }
+        },
+        {
+          "title": "rootfive_no_burn_still_refused_at_custody",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 1562002,
+            "cpu": 494394342
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect held_burned_exactly_once(claim, tx)"
+          ]
+        },
+        {
+          "title": "rootfive_missing_registry_now_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 317349,
+            "cpu": 94546617
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect has_spent_registry_state(tx)"
+          ]
+        },
+        {
+          "title": "rootfive_missing_consumer_still_refuses_at_state",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 675909,
+            "cpu": 208373121
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect\n    list.any(\n          withdrawals,\n          fn(w) {\n            let Pair(credential, _) = w\n            when credential is {\n              address.Script(hash) -> hash == consumer_pin\n              _ -> False\n            }\n          },\n        )"
+          ]
+        },
+        {
+          "title": "rootfive_legitimate_rejection_without_custody_spend_accepts",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 1427446,
+            "cpu": 445479724
+          }
+        }
+      ]
+    }
+  ]
+}

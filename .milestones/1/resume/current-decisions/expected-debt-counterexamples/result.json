@@ -1,0 +1,28 @@
+{
+  "scope": "Exact CI expected-debt adjudication suffix ONLY; fabricated fixture; no node, no whole workflow. Substitutions solely jq launcher and private temp paths.",
+  "sourceCommit": "1d98d51afa168a2bc0fd0e15ab33993a706eee31",
+  "sourceSha256": "3153680abeabc64617b070ac7b55ef7121cceaae810f1ef0a1f0bed31542b403",
+  "results": [
+    {
+      "name": "intended",
+      "run_rc": 1,
+      "cleanup": "agrees-with-model",
+      "exit": 0,
+      "stdout": "GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.\nA GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.\n"
+    },
+    {
+      "name": "crash127",
+      "run_rc": 127,
+      "cleanup": "agrees-with-model",
+      "exit": 0,
+      "stdout": "GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.\nA GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.\n"
+    },
+    {
+      "name": "cleanup-failed",
+      "run_rc": 1,
+      "cleanup": "could-not-execute",
+      "exit": 0,
+      "stdout": "GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.\nA GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.\n"
+    }
+  ]
+}

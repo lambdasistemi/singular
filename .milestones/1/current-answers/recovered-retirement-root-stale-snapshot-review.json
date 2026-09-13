@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-13T00:57:07.427Z",
+  "source": "/code/singular-e17-issue-77/offchain/journey/retirement/Main.hs",
+  "sha256": "e32accee5bd48a53d65b279499cfc0e6014d97413cb010f1e8652b7402a41b69",
+  "finding": "rowRecoverRecord decodes the original Snap after submit. chainDatumOf only decodes snapDatum and never queries chain. The asserted rotated control therefore reads the original datum rather than the successor.",
+  "scope": "Static source finding on an in-flight draft; no ledger execution or failure claim. Existing integration work remains intact."
+}

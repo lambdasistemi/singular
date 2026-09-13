@@ -1,0 +1,53 @@
+{
+  "at": "2026-09-13T00:04:30.129Z",
+  "reportedCandidate": "ff0cbd3fd20e694c9f93480576e1f4277b93be75",
+  "worktreeDirty": true,
+  "blueprints": {
+    "mpfs": "/nix/store/rwsrphd33psjpi7x7mvyp2pydcrsibkr-mpf-plutus-blueprint-0.0.0",
+    "naming": "/nix/store/n05c0z7qk9a4s2i9r6i6h9i0wg17rlcb-singular-naming-plutus-blueprint-0.1.0"
+  },
+  "rows": [
+    {
+      "name": "hook-omitted",
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/register-exhibit/tx-039-hook-omitted.outcome.json",
+      "sourceSha256": "d88c72413c8933cd4d069346426703c9edbef63e38f275fda5889b4aa95874d5",
+      "outcome": "refused",
+      "actualFailureSubject": "82e9a9bdd2a65d73f9f3f60e54fd03f57f5b472fa641bf1b1a8c8619",
+      "overspent": false,
+      "stateListingsByteEquivalent": true,
+      "stateExpectedPredicatePasses": true
+    },
+    {
+      "name": "hook-swapped",
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/register-exhibit/tx-041-hook-swapped.outcome.json",
+      "sourceSha256": "a9220761fd03dca469e8f293ac215b7e5c02625c12ff2610ceea57a8470fcfba",
+      "outcome": "refused",
+      "actualFailureSubject": "82e9a9bdd2a65d73f9f3f60e54fd03f57f5b472fa641bf1b1a8c8619",
+      "overspent": false,
+      "stateListingsByteEquivalent": true,
+      "stateExpectedPredicatePasses": true
+    },
+    {
+      "name": "hook-pin",
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/register-exhibit/tx-043-hook-pin.outcome.json",
+      "sourceSha256": "e4f7a25c38d7dbbe1df8e2d9dc47091fe54336bdb06be232e4ec41fa22cadd89",
+      "outcome": "refused",
+      "actualFailureSubject": "82e9a9bdd2a65d73f9f3f60e54fd03f57f5b472fa641bf1b1a8c8619",
+      "overspent": false,
+      "stateListingsByteEquivalent": true,
+      "stateExpectedPredicatePasses": true
+    },
+    {
+      "name": "hook-crosswired",
+      "source": "epic-17/ticket-77/commit-owner-2/evidence/register-exhibit/tx-046-hook-crosswired.outcome.json",
+      "sourceSha256": "dfdd7d19264e5ffc23e76a29960148fa56521a1016f9a1e689463f6d05badda2",
+      "outcome": "refused",
+      "actualFailureSubject": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+      "overspent": true,
+      "stateListingsByteEquivalent": true,
+      "stateExpectedPredicatePasses": true
+    }
+  ],
+  "crosswiredErrorExcerpt": "The plutus evaluation error is: CekError An error has occurred:\\nThe machine terminated part way through evaluation due to overspending the budget.\\nThe budget when the machine terminated was:\\n({cpu: -792049\\n| mem: 2369603})\\nNegative numbers indicate the overspent budget; note that this only indicates the budget that was needed for the next step, not to run the program to completion.\\nThe protocol version is: Version 10\\nScriptInfo: RewardingScript (ScriptCredential e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26)\\nTxInfo:\\n  TxId: 0614f06933abd8f49b5ea0dfc549eb84fca0cc9ac2aaad73f54b8342a6d29941\\n  Inputs: [ 559c8341ff87c21eeecce6",
+  "interpretation": "Three state-hook refusals have actual state failure subjects and unchanged state listings. Crosswired has the actual consumer failure subject, but is budget exhaustion, not established semantic veto. Existing requireRefusal uses PlutusFailure plus hash substring; applying those exact text conditions to the real consumer failure also passes for the state hash found elsewhere in context, proving insufficient attribution discrimination. No new ledger execution or final tuple acceptance."
+}

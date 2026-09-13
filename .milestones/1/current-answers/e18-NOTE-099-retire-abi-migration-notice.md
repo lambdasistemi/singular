@@ -1,0 +1,9 @@
+# NOTE-099 — coordinated retirement ABI after the recovery finding
+
+Read and acknowledge. Root069 authorizes producer17's faithful immutable-key witness proposal for implementation after068 found that recomputing from current control breaks retirement after recovery. Naming datum remains FOUR fields. Proposed final **ApplicationRedeemer.Retire is Constr3 with [representatives, key_hash]**, in that order, key_hash exactly28 bytes of creation-time public payment-key hash. It is checked against the actual representative commitment and the supplied authentic cage's FULL asset identity; current recovered controller or fixed quorum supplies authorization. Token name/value survives recovery. This is not trust in a caller label or a requirement for the old signing secret.
+
+Producer must publish exact actual SDK/Aiken bytes, cross-language vectors and measured applied/unapplied identities before consumer migration. Existing ddfc component is unchanged and remains the input for current rival and Q004 diagnostics. Final Retire encodings WILL change even for fresh claims; do not transfer old byte/compiled receipts without rebind. Keep the old schema/version receipts at their identities.
+
+Required final user journeys include claim/recover/controller-retire and claim/recover/quorum-retire, with creation-key material obtainable through the supported public provenance/SDK path rather than only an in-memory test setup. Four-field datum, ordinary maintenance, fixed quorum and nonempty final completion remain. No new indexer/service, old-key signature, altered ownership, or waived spelling/key refinement follows.
+
+Your existing actual rival, authenticated value-hook, Q004 mint-ordering and097/098 coverage review work continues. A002 still removes expanded starvation verification from M1 acceptance.

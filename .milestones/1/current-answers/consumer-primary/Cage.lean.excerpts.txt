@@ -1,0 +1,26 @@
+129: /-- `validModify` as shipped refunds every request's bond to its owner and
+130: locks nothing. -/
+131: def routeValue (vm : ValueMode) (p : Params) (acc : Acc) (r : Request) (acc'' : Acc) : Acc :=
+132:   match vm with
+133:   | .delegatedRouting => acc''
+134:   | .refundAll => { acc'' with locked := acc.locked, refunds := acc.refunds ++ [(r.owner, r.op.bond p)] }
+
+164: def stepFn (mode : AuthMode) (pl : Plugin) (vm : ValueMode) (tx : TxAuth) (p : Params) (env : Env)
+165:     (a : Action) (now : Slot) (s : Sys) : Option (Flow × Sys) :=
+166:   match a with
+167:   | .fold folder g pl' batch =>
+168:       if authorized mode tx = true ∧ g = s.gen ∧ (mode = .delegated → pl' = s.plugin) ∧ batch ≠ [] then
+169:         match applyBatch pl vm tx.pluginRan p env now ⟨s.leaves, s.ckpts, s.requests, s.nextToken, [], []⟩ batch with
+170:         | none => none
+171:         | some acc =>
+172:           some ({ locked := acc.locked, refunds := acc.refunds,
+173:                   tips := some (folder, batch.length * p.tip) },
+174:                 { s with gen := s.gen + 1, plugin := pl', leaves := acc.leaves, ckpts := acc.ckpts,
+175:                          requests := acc.requests, nextToken := acc.nextToken })
+176:       else none
+177:   | a => CardanoKeri.Registry.stepFn p env a now s
+
+209: /-- **The instantiation.** -/
+210: theorem delegated_is_registry (signed : Bool) (p : Params) (env : Env) (a : Action) (now : Slot) (s : Sys) :
+211:     stepFn .delegated Plugin.registry .delegatedRouting ⟨signed, true⟩ p env a now s =
+212:       CardanoKeri.Registry.stepFn p env a now s := by

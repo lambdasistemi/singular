@@ -1,0 +1,12 @@
+RATCHET: PASS — no per-obligation regression against the protected base
+  additions (informational, never offset regressions): 10
+    + Singular.NamingWireStatements.inline_datum_only@37f674ac8ba8a31ab91f742635706dda503de9f04f7e6def77e4ee761798b8b8
+    + Singular.NamingWireStatements.insert_request_fixture_is_the_queued_request@941c2eef8d592560f5980f27328b5f9de8838bd0672c2a75cf027f4decd19a9a
+    + Singular.NamingWireStatements.insert_request_malformed_and_redirect_refused@402ab40a536fa902b9452d58124b75d4e4f18ceabd5f96edc3f001cd9c9c466c
+    + Singular.NamingWireStatements.insert_request_roundtrip_and_declared_shape@23e8c03f00ba93183cad7a20e93f9f9241abe0bbc24230e6eae6ad995b5a2718
+    + Singular.NamingWireStatements.insert_request_serialises_byte_exact@47d784eb459331b184ddbf7def2d734548049bad209408aad20e83f1c6010466
+    + Singular.NamingWireStatements.naming_datum_serialises_byte_exact@7e458efca4757d2e11d34bec76e87b6a8c6cdc20980e2b7200cb1eed456188f8
+    + Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape@e48c0a065cf1592b9f5cf04ade0f6f569f0f89cf4e046b5dfdb9318c17c0eed4
+    + Singular.NamingWireStatements.payment_destination_zero_or_one@59e5bb84401349cf663987e0dec63eab4008b55c0568011f915f2782eabb85c1
+    + Singular.Statements.fold_iff@0c335c6e6f3902a7b8c295112f74ccd70515cbdca4715846442828e69c3538f6
+    + Singular.Statements.withdraw_iff@0058bce1e42df4d7b1dedd884157087b657b341a16892756fd6fbfcebb49c60d

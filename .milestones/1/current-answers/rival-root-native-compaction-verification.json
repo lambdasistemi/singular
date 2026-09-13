@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-13T00:52:33.478Z",
+  "session": "01a09695-c87b-725c-9576-c0d6e9231e3c",
+  "originalHistoryRetainedAsExactPrefix": true,
+  "preSha256": "b8ce005a5242f3d4c280dd7402a8b8b1d2d26fdddccf742d30e70783d46172a9",
+  "compaction": {
+    "id": "440753a3",
+    "parentId": "c071e56a",
+    "tokensBefore": 848760,
+    "firstKeptEntryId": "657be0be"
+  },
+  "pid": 4182517,
+  "startTicks": "149071436",
+  "model": "glm-5.3-flash",
+  "scope": "Read-only verification of preserved original history prefix and one native compaction in same process; no task acceptance."
+}

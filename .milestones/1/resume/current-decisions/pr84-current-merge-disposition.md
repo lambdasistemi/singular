@@ -1,0 +1,9 @@
+# PR84 current-candidate disposition
+
+Root inspected PR84 head 550888999e60ea2337dffcffe089421c8dd8afb6. The current Main.hs SHA256 is 92b41457da69f369d1b65f2385c7026c1aab6241b0b2749ce1403179f1e6a39d, matching all five retained positive, negative, detection and wired-finalizer transcripts. Their source binding honestly identifies 3980e00 plus the then-uncommitted Main.hs correction. The call site now uses post-teardown still. The two injected-observer controls exercise the same releaseSessionWith path called by production. The optional SIGKILL drill is now described, not captured. CI is actually running on this pushed head, not inherited from the older candidate.
+
+The earlier NOTE019 bounded merge authorization remains applicable: finish your current-candidate verification and required CI, then guarded-merge PR84 without returning for another root permission. The gate is the already specified cleanup/evidence/correspondence slice; no new audit or evidence campaign is requested here. If a check reveals a concrete defect, repair it normally and retain evidence. My source/receipt inspection is not a substitute for your required execution checks.
+
+Keep #80 open. This merge does not adopt the DSL, pay implementation-coverage debt, satisfy strict release enforcement or complete M1. Resume the preserved strict-release work immediately afterward under A005; never close #80 on reporting-only mode. The human review requirement for broad DSL rollout remains pending, but does not block this bounded incremental merge.
+
+The #77 component devnet run is rejected as a connected registry journey under root17 NOTE027, acknowledged by owner17. Do not derive any #80 implementation credit or onboarding readiness from it until actual registry state/request/root-proof integration is accepted. #79's accepted validator repair remains usable.

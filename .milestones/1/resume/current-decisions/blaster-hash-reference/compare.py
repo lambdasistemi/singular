@@ -1,0 +1,2 @@
+import hashlib,json,re,sys
+s=open(sys.argv[1]).read(); part=s.split('def ABC_HASH')[1].split('def hashBytes')[0]; actual=bytes(int(x,16) for x in re.findall(r'0x([0-9a-fA-F]{2})',part)); expected=hashlib.blake2b(b'abc',digest_size=32).digest(); print(json.dumps({'inputHex':'616263','algorithm':'blake2b','digestSize':32,'recordedHex':actual.hex(),'referenceHex':expected.hex(),'differentBytes':[i for i,(a,b) in enumerate(zip(actual,expected)) if a!=b]},indent=2))

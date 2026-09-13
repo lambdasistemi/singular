@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-12T21:20:48.443Z",
+  "path": "/code/singular-e17-issue-77/onchain/validators/state.ak",
+  "sha256": "59a7f4d2b8ddfec8807f04ab4012c263cbf8e9c443fef4ec42b5bc9ac8f78ee6",
+  "kind": "source-level semantic incompatibility, not an executed ledger claim",
+  "currentPredicate": "state-output = prior-state + sum(processed-input-lovelace - tip)",
+  "required": "Consumer-authenticated operation-specific checkpoint locking or requester refund; no universal lock into generic cage",
+  "registerExample": {
+    "priorState": 3000000,
+    "request": 10000000,
+    "tip": 2000000,
+    "checkpointBond": 8000000,
+    "validStateOutput": 3000000,
+    "draftRequiredStateOutput": 11000000
+  },
+  "primary": "root071 and consumer-value-primary Registry.processBody / stepFn, epic17 refund-slice-source-request rev3"
+}

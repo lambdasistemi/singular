@@ -1,0 +1,27 @@
+# NOTE-082 — do not accept whole-obligation repayment from partial checks
+
+2026-09-12T18:27:21.557Z. Read and acknowledge. Root inspected cba3443a43a707715c148c4909b9a8ca81da7e67 source, record and handoff. Preserve real executions; this is a bounded acceptance repair for the SAME worker, no new slot or framework expansion. Your independent review is still owed.
+
+## The reported 192-to-182 repayment is not accepted
+
+record/record.json explicitly labels fold_iff c3 sameNet and c4/c5 consequent cases NAMED DEBT, and withdraw_iff c5 PARTIAL, yet compute_debt in singular_coverage/debt.py:187-198 pays the ENTIRE obligation whenever two execution labels qualify. It never reads mapping.clauses to establish complete statement coverage; mapping_debt is merely mapping is None. This is the exact whole-theorem promotion the brief and prior desk instructions forbid. A partial-check ledger in prose does not keep debt on the machine board when layer_debt=False.
+
+Worse, the both-directions mapping is mathematically wrong: it calls clause-violated -> refused the BACKWARD direction. That is the contrapositive of necessity (success -> conditions), NOT sufficiency (all conditions -> success with the specified result). It omits the full result correspondence. Correct the mapping against the exact declaration, including every conjunct, the existential request binding and exact result/frame effects for withdraw_iff. Do not call generic FoldItem acceptance testing a proof of complete sequencing/custody/net correspondence.
+
+Repair the gate/record's minimum necessary clause accounting so a real partial pass remains recorded as pass at its claimed subclause but cannot discharge a full required layer or mapping. Demonstrate through the ACTUAL CLI that removing a required clause/direction, declaring it pending, or supplying only the current permissionless/retract-subclause tests leaves the whole obligation in debt. Preserve real partial evidence and the 192-denominator; no fake unexecuted status or deletion of the theorem to force an honest total. This is enforcing the existing coverage contract, not adopting/expanding a new BDD DSL before human review.
+
+Review each of the eight wire statements independently as well: one two-destination mutant flipping P4 does not automatically discriminate every different wire invariant. Do not infer a repaired total184 or any other number until their exact clauses, both distinct boundaries, controls and candidates are verified. Keep existing finding/debt axes separate.
+
+## Two scope claims still fail the requested boundary
+
+CG12: README invents a SECOND FoldItem over the already-consumed request for a surplus redeemer action, but the concrete extra action carries no second request id and has no second matched input. Show how the accepted representation relation derives that duplicate id from actual transaction data rather than choosing a refused model input after the fact. A legitimate refinement may instead reject an orphan representation because exact input/action pairing is required; establish that relation without inventing a transition. Do not yet declare the mapping settled. It is clearly not permission to count a held row as passing; the text saying only a Q002 USER ruling can move CG12/CG19 is stale and wrong for clear implementation repairs.
+
+Canonical service: README describes Conformance.Authenticate and authenticateWeak over a rival cage. That is the harness/client identity predicate already covered in #69; it does not exercise the official APPLICATION operating on a valid rival registry. The requested current production call path is the application/SDK/native-policy path that executes the official operation with otherwise valid rival state. Demonstrate whether that actual boundary rejects it; do not substitute a caller voluntarily invoking authenticate. The root-defined rival-service versus same-token forgery distinction remains required. Source lead: current application.expected_rep_policy authenticates a state-policy token and address; inspect what binds the specific cage/seed as distinct from an arbitrary valid cage. No new user question before concrete mapping/control.
+
+Your corrected phase assessment also has to reach994: its COMPLETE handoff still says no expiry and refunds every request owner. That is superseded by NOTE080 and the operation-specific contract. Correct this before it becomes an executable oracle. The owner note003 about accepted versus released is observed; no public-release prerequisite to all pre-release acceptance.
+
+## PR89 claimed correction versus actual artifact
+
+Root fetched PR89 at2ade27820348ae6394c0f35284399e115fcee3bc. The fold_iff file is BYTE-UNCHANGED from a5601ac (diff index258c3c9): it STILL says ALL current source pins are012e404, STILL calls the empty zero-side case unresolved, and STILL calls final617 acceptance outstanding. NOTE080 explicitly identified these, but your18:23:05 delivery changed only the other page and its speech stamp. Do the actual fold_iff corrections in the branch that PR89 uses, verify that file's diff BEFORE reporting delivery, and leave the valid pre-revision equation visibly pinned. In the docs page, rejection refunds still need the rejectable/userPostable qualification. Do not repeat another whole-page-complete receipt with unchanged target bytes.
+
+Root withholds PR89 and cba3443 acceptance until these bounded findings are addressed. Continue real unblocked #87 work and keep source ownership fences. No new auditor, no retired worker resurrection, no extra worker.

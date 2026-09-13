@@ -1,0 +1,1208 @@
+{
+  "schema": "milestone-stories/v1",
+  "title": "On-chain Singular support for cardano-keri",
+  "milestoneUrl": "https://github.com/lambdasistemi/singular/milestone/1",
+  "wikiUrl": "https://github.com/lambdasistemi/singular/wiki/Milestone-1",
+  "updatedAt": "2026-09-13T05:30:00.000Z",
+  "operationalState": "running",
+  "summary": "M1 is running and incomplete. The milestone contains 36 GitHub issues: 26 are closed and 10 remain open (#17, #18, #68, #71, #74, #77, #78, #80, #81 and #87). Epics #15 and #16 are closed; #17 and #18 are the final two M1 epics. Grok owns #17 and GPT Sol owns #18. Work stops after both are accepted, with no further epic commissioned. Story states below describe user outcomes, not the open or closed state of every ticket mapped to them.\n\nUsers can turn real requests into Active names in the draft ledger demonstration. Claim, withdrawal, maintenance, recovery and authorized retirement-into-custody evidence now exists on intermediate candidates and is under review. A connected ledger journey also reaches permanent Over, observes the completed state and refuses reuse. It is not yet safe to accept: an executed five-test control shows the current state, request, consumer and custody handlers accept a lookalike representative under a foreign policy, allowing Over without burning the authentic representative. E17 is repairing the complete policy, name and quantity binding while preserving legitimate rejected, mixed and zero-net processing.\n\nCardano-keri registration still needs execution with its real programs, authentic proof token, correct payments and refusal cases. The first authorized three-variant rival-registry run stopped during setup before any target transaction. Offline repairs now bind the configured seed to the production token derivation and retain full signed transaction and UTxO evidence, but two round-trip controls, the rebuilt wrapper identity and a complete frozen command packet remain unfinished. No registry-substitution result or second ledger run is accepted.\n\nThe rejected-fold candidate now has a general arbitrary-list two-way correspondence proof, reachable histories for mixed, zero-net and funded-custody cases, and an orphan-custody discriminator killed by erasing its association guard. This is candidate-internal formal evidence under review. It does not yet prove either actual implementation layer, adopt a new accepted model, or settle retirement completion against the repaired E17 producer.\n\nThe source inventory checker has passed its bounded review. The 192 baseline obligations still require full invariant and production-built compiled-program acceptance. Final integrated artifacts and new-operator onboarding remain unfinished.\n\nSPO selection is an accepted operating assumption, with existing batch earnings as the incentive. Expanded starvation assessment is outside M1 acceptance. Correct processing, promised payments, refunds and recovery remain required.",
+  "groups": [
+    {
+      "id": "consumer",
+      "title": "Consumer integration stories"
+    },
+    {
+      "id": "simulation",
+      "title": "First release simulation stories"
+    },
+    {
+      "id": "naming",
+      "title": "On-chain naming application stories"
+    },
+    {
+      "id": "assurance",
+      "title": "Assurance and reproducibility stories"
+    },
+    {
+      "id": "decisions",
+      "title": "Delivery scope"
+    },
+    {
+      "id": "deferred",
+      "title": "Deferred work outside this milestone"
+    }
+  ],
+  "stories": [
+    {
+      "id": "scalus-feasibility",
+      "group": "deferred",
+      "title": "Deferred Scalus experiment outside this milestone",
+      "persona": "a Singular on-chain developer",
+      "want": "a bounded Scala/Scalus feasibility experiment",
+      "benefit": "toolchain selection follows measured registry compatibility and turnaround",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#14 Scalus feasibility spike",
+            "url": "https://github.com/lambdasistemi/singular/issues/14"
+          }
+        ],
+        "note": "Open deferred backlog experiment #14, deliberately excluded from this milestone and its critical path. No date or future milestone assigned; bounded Haskell interoperability criteria retained."
+      },
+      "owner": "paolino; deferred, no execution owner commissioned",
+      "state": "blocked",
+      "summary": "Deferred by operator ruling outside this milestone. Blocker: a new explicit decision is required before reconsideration. The experiment remains open and unexecuted; no technical disproof or permanent rejection is claimed.",
+      "acceptance": "FIRST GATE: inspect the actual Haskell cardano-keri consumer contract, then consume a small Scalus-produced script through a Haskell transaction/serialization harness aligned with that consumer. Match datum, redeemer and parameter encodings and demonstrate positive and negative compiled execution. A Scala-only emulator does not pass. Reuse existing Haskell tooling where possible; measure adapter and duplicated encoder/builder/type burden. Do not invent a full final registry ABI for this spike. Isolate a pinned Scala/Scalus module in Singular with Nix reproduction; compile a representative validator/policy path to actual Plutus V3/UPLC; test positive and negative request/NFT coupling with an actual MPF proof compatibility probe. Measure cold and incremental edit-compile-test turnaround, script size and execution budget. Distinguish source execution, compiled UPLC, emulator and real-ledger observations. Use frozen semantics/vectors; report bounded MPF blockers and effort estimates instead of rewriting a library. Return reproducible evidence and proceed/change/stop recommendation, without production adoption or benchmarking superiority claims. Judge end-to-end delivery effort, Haskell integration and future common-code reuse alongside Scala turnaround; stop or recommend Haskell if duplication is substantial or consumer requirements fail.",
+      "next": "Remain deferred outside M1. Reconsider only under a later explicit instruction; do not start it when epics #17 and #18 finish.",
+      "dependencies": [],
+      "evidence": []
+    },
+    {
+      "id": "consumer-contract",
+      "group": "consumer",
+      "title": "Agree the consumer boundary",
+      "persona": "a cardano-keri maintainer",
+      "want": "an exact Singular on-chain interface and required transaction shapes",
+      "benefit": "consumer readiness has an executable shared contract",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#18",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          },
+          {
+            "label": "#24",
+            "url": "https://github.com/lambdasistemi/singular/issues/24"
+          },
+          {
+            "label": "#70",
+            "url": "https://github.com/lambdasistemi/singular/issues/70"
+          },
+          {
+            "label": "#71",
+            "url": "https://github.com/lambdasistemi/singular/issues/71"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #18 owner (GPT Sol), coordinated with epic #17",
+      "state": "in-progress",
+      "summary": "The interface pins the consumer program in registry state and requires it for every nonempty batch, including batches with no net token change. Draft ledger controls show valid claims succeeding and omitted, substituted or changed consumer checks refusing. The corrected incorrect-request control now fails at the actual consumer without budget exhaustion and leaves the registry unchanged. Final shared encodings and script identities remain under integration.",
+      "acceptance": "Bind script/policy identities, datum and redeemer encodings, inputs/outputs, executing witnesses, generic operations actually required by cardano-keri, and rejection cases to a coordinated versioned consumer contract. Missing details remain named decisions. Epic release obligation: a versioned, installable executable contract/model scenario package with the agreed consumer interface, canonical construction and encoding specifications, positive/negative scenarios, proof and gate evidence and replay instructions. An integrator obtains this release, runs its contract/scenario entry point and observes accepted transaction shapes and rejected substitutions against the frozen interface. Each release has its own version identity, retrieval/install/replay path, CI checks, owner acceptance under the current no-auditor instruction and explicit limits. The successor consumes its exact accepted artifact; packaging is not deferred wholesale to final integration.",
+      "next": "Preserve these positive and refusal results through integration, then publish the exact encodings and script identities for verification with the real cardano-keri consumer.",
+      "dependencies": [
+        "sim-retirement"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        }
+      ]
+    },
+    {
+      "id": "registry-bootstrap",
+      "group": "consumer",
+      "title": "Initialize one canonical registry",
+      "persona": "an application operator",
+      "want": "one canonical registry for my application",
+      "benefit": "uniqueness has a concrete ledger boundary",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#24",
+            "url": "https://github.com/lambdasistemi/singular/issues/24"
+          },
+          {
+            "label": "#69",
+            "url": "https://github.com/lambdasistemi/singular/issues/69"
+          },
+          {
+            "label": "#80 registry conformance slice",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          }
+        ],
+        "note": "Preserves the full canonical-registry outcome across the original delivery tickets and the ongoing #80 conformance slice. Closed component tickets do not establish authentic registry association."
+      },
+      "owner": "Epic #18 owner (GPT Sol); Epic #17 owns implementation repair",
+      "state": "in-progress",
+      "summary": "A name must be tied to its authentic registry. A finite application-script check exposed retirement using another registry that copied the expected representative policy. The first authorized three-variant ledger run completed with three setup failures and no target transaction. Offline repairs now use the production seed-to-token derivation, construct a script-free mintless body, and retain complete signed boot/target plus detailed UTxO evidence. Meaningful signed-transaction and TxOut round-trip loss controls, the changed-source Nix rebind, and a fresh frozen command packet remain unfinished. These results still establish neither acceptance nor refusal of registry substitution.",
+      "acceptance": "Executable evidence establishes canonical bootstrap and one initialization, not merely deterministic policy identity; script bindings, authentic root and representative NFT custody are specified and later implemented.",
+      "next": "Finish and review the signed-transaction, TxOut and actual boot-input controls; rebuild and bind the exact offline executable and command. Only then decide whether to release one further rival-registry ledger run, demonstrate the real outcome, and verify the final implementation rejects substitution.",
+      "dependencies": [
+        "sim-retirement"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        }
+      ]
+    },
+    {
+      "id": "consumer-conformance",
+      "group": "consumer",
+      "title": "Use Singular from cardano-keri",
+      "persona": "a cardano-keri maintainer",
+      "want": "implemented on-chain policies and contracts matching the agreed consumer boundary",
+      "benefit": "my application can rely on Singular",
+      "kind": "outcome",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#18",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          },
+          {
+            "label": "#63",
+            "url": "https://github.com/lambdasistemi/singular/issues/63"
+          },
+          {
+            "label": "#68",
+            "url": "https://github.com/lambdasistemi/singular/issues/68"
+          },
+          {
+            "label": "#69",
+            "url": "https://github.com/lambdasistemi/singular/issues/69"
+          },
+          {
+            "label": "#70",
+            "url": "https://github.com/lambdasistemi/singular/issues/70"
+          },
+          {
+            "label": "#71",
+            "url": "https://github.com/lambdasistemi/singular/issues/71"
+          },
+          {
+            "label": "#81",
+            "url": "https://github.com/lambdasistemi/singular/issues/81"
+          },
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #18 owner (GPT Sol)",
+      "state": "in-progress",
+      "summary": "The producer permits the agreed checkpoint funding and refunds, and its draft naming consumer no longer appoints a privileged processor. Real cardano-keri registration remains unfinished: authentic proof-token acquisition and burn must execute with the correct lifecycle and checkpoint programs, payments and refusals. The rejected-fold candidate now has general two-way correspondence plus reachable mixed, zero-net and funded-custody histories and an orphan-custody kill control. That proof is candidate-internal and does not yet cover the two actual implementation layers. E17's current completion also accepts a foreign-policy lookalike representative; retirement correspondence and final producer binding remain open until the complete asset identity is repaired. Checkpoint-removal receipts, dormant revival and conviction remain required.",
+      "acceptance": "Reproducible compiled on-chain evidence exercises the exact agreed consumer transaction shapes and attributable negative controls; an independent review confirms compatibility. A naming demo or model simulation alone is insufficient.",
+      "next": "Finish the offline rival evidence packet and production-proof tranche while E17 repairs authentic retirement. Then execute real registration with the final E17 tuple, verify successful processing and refusals for missing checks, invalid evidence and incorrect payments, and complete the remaining receipt, revival and conviction requirements.",
+      "dependencies": [
+        "consumer-contract",
+        "registry-bootstrap",
+        "permanent-over"
+      ],
+      "evidence": [
+        {
+          "label": "Merged PR #64",
+          "url": "https://github.com/lambdasistemi/singular/pull/64"
+        },
+        {
+          "label": "Merged PR #72",
+          "url": "https://github.com/lambdasistemi/singular/pull/72"
+        },
+        {
+          "label": "Merged PR #75",
+          "url": "https://github.com/lambdasistemi/singular/pull/75"
+        },
+        {
+          "label": "Merged Fork investigation instruments; absence repair remains open",
+          "url": "https://github.com/lambdasistemi/singular/pull/82"
+        },
+        {
+          "label": "Merged PR88: bounded consumer execution/reporting; full conformance still open",
+          "url": "https://github.com/lambdasistemi/singular/pull/88"
+        },
+        {
+          "label": "Merged PR89: corrected correspondence dispositions",
+          "url": "https://github.com/lambdasistemi/singular/pull/89"
+        }
+      ]
+    },
+    {
+      "id": "claim-name",
+      "group": "naming",
+      "title": "Claim an absent name",
+      "persona": "a naming test user",
+      "want": "to claim alice when Insert folds and the name is absent",
+      "benefit": "the registry grants one unique representative",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#77",
+            "url": "https://github.com/lambdasistemi/singular/issues/77"
+          },
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "review",
+      "summary": "Real requests become Active names with their expected representatives in the draft ledger demonstration. Supported base payment-key addresses work in focused consumer checks. The corrected incorrect-request control refuses at the actual consumer while valid claims succeed. The integrated claim, recovery and retirement-into-custody demonstrations are recorded in an intermediate local commit. A separate repair removes stale dependency staging that caused the absent-key proof regression to fail; integration and its required checks remain owed. Final connected claim acceptance remains open.",
+      "acceptance": "Certified permitted construction, exact initial application checkpoint and representative NFT output, permissionless fold and duplicate rejection are exercised on-chain. Certification attests neither identity nor spelling entitlement nor payment destination ownership. Approval reserves no name. Epic release obligation: a versioned on-chain script/policy and contract bundle with test-only transaction construction and replay support for certified claim, permissionless fold, authenticated application state, authorized unfulfilled Insert withdrawal and optional address set/replace/clear. An integrator obtains this release and runs the bounded claim/maintenance journey: claim an absent name, reject a duplicate, observe the exact NFT/checkpoint, maintain its optional destination and exercise the settled withdrawal/refund behavior. Each release has its own version identity, retrieval/install/replay path, CI checks, owner acceptance under the current no-auditor instruction and explicit limits. The successor consumes its exact accepted artifact; packaging is not deferred wholesale to final integration.",
+      "next": "Preserve the demonstrated valid claims and precise refusal evidence, integrate the dependency-staging repair at a coherent boundary, and verify the final connected lifecycle.",
+      "dependencies": [
+        "consumer-contract",
+        "registry-bootstrap",
+        "m1-simulation-release",
+        "mpfs-source-baseline"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "withdraw-insert",
+      "group": "naming",
+      "title": "Withdraw an unfulfilled claim",
+      "persona": "a naming test user",
+      "want": "an authorized withdrawal of an unfulfilled Insert",
+      "benefit": "the settled refund contract is enforced",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "review",
+      "summary": "The cancellation design and model are released, and the #79 validator repair is landed: only an unfulfilled Insert can retract while Update and Delete remain non-withdrawable. Candidate ledger evidence covers the authorized withdrawal/refund route and retirement-withdrawal refusal. Final combined-artifact review remains open.",
+      "acceptance": "Settle refund recipients, values and fees before implementation; observe authorized withdrawal and rejection of unauthorized withdrawal. Completion-only retirement requests remain non-withdrawable.",
+      "next": "Preserve the accepted Insert withdrawal, Update/Delete refusal and refund evidence through the final E17 artifact and its connected lifecycle review.",
+      "dependencies": [
+        "consumer-contract",
+        "m1-simulation-release"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        }
+      ]
+    },
+    {
+      "id": "maintain-address",
+      "group": "naming",
+      "title": "Set replace or clear a payment destination",
+      "persona": "a current controller",
+      "want": "zero or one payment destination in the application checkpoint",
+      "benefit": "payment association stays separate from control",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#77",
+            "url": "https://github.com/lambdasistemi/singular/issues/77"
+          },
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "review",
+      "summary": "The latest integrated draft ledger run confirms maintenance using the recovered controller and refusal of the old controller, alongside recovery and retirement-into-custody results. These are bounded results on an intermediate candidate. Final integrated claim, maintenance and recovery acceptance remains open.",
+      "acceptance": "Set, replace and clear require current-controller authorization; NFT and recovery fields are preserved; registry is not mutated. A test harness authenticates checkpoint/NFT/registry bindings. No resolver service or wallet product is promised.",
+      "next": "Preserve the successful recovered-key maintenance and old-key refusal when replaying the connected journey on the completed registry revision.",
+      "dependencies": [
+        "claim-name"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "recover-control",
+      "group": "naming",
+      "title": "Recover after losing the everyday key",
+      "persona": "a naming test user",
+      "want": "to reveal the next committed control address and authorize with its payment key",
+      "benefit": "I rotate control without the old controller signature",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#62",
+            "url": "https://github.com/lambdasistemi/singular/issues/62"
+          },
+          {
+            "label": "#77",
+            "url": "https://github.com/lambdasistemi/singular/issues/77"
+          },
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "review",
+      "summary": "The latest draft ledger demonstration connects a real claim to recovery without the old controller signing, observes the successor and consumed old record, and then retires through either the recovered controller or the fixed quorum. Earlier bounded controls confirm recovered-key maintenance and refusal of the old key, replay and invalid evidence. Final integrated lifecycle acceptance remains open.",
+      "acceptance": "Settle hash and canonical encoding; reveal committed key-controlled address, verify its payment-key authorization, preserve representative NFT and install a fresh next commitment. Wrong key, replay and unauthorized changes fail. Public master xpub plus index is not adopted.",
+      "next": "Review the complete integrated recovery evidence, preserve both retirement routes and public creation-material retrieval, and complete permanent retirement on the final registry revision.",
+      "dependencies": [
+        "maintain-address"
+      ],
+      "evidence": [
+        {
+          "label": "Merged PR #65",
+          "url": "https://github.com/lambdasistemi/singular/pull/65"
+        }
+      ]
+    },
+    {
+      "id": "retire-name",
+      "group": "naming",
+      "title": "Retire personally or with a fixed quorum",
+      "persona": "a current controller or fixed retirement quorum",
+      "want": "permanent retirement authorized by either route",
+      "benefit": "a name can cease permanently without takeover power",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#66",
+            "url": "https://github.com/lambdasistemi/singular/issues/66"
+          },
+          {
+            "label": "#74",
+            "url": "https://github.com/lambdasistemi/singular/issues/74"
+          },
+          {
+            "label": "#77",
+            "url": "https://github.com/lambdasistemi/singular/issues/77"
+          },
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "review",
+      "summary": "The latest draft ledger demonstration connects claims to recovery and retirement into separate custody through both the recovered controller and fixed quorum. A separate reader checks four retirement units using retained public transaction evidence, deriving the original creation identity and binding the full representative asset and retirement witnesses. Those authorization and pending-custody routes are under review. Permanent completion remains unaccepted because the executing custody path still accepts a same-name token under the wrong policy.",
+      "acceptance": "Current controller OR fixed-at-registration threshold of public keys authorizes irrevocable representative custody in a completion-only Singular request. Subsequent permissionless fold burns the NFT and marks Over. Insufficient quorum and quorum-only redirection fail. No receiving-script execution is presumed when creating an output. Epic release obligation: a versioned extension of the claim/maintenance on-chain bundle and test-only fixtures covering precommitted control rotation, current-controller OR fixed-quorum permanent retirement, pending custody and completed Over. An integrator starts with a claimed name from the previous release, recovers after losing the everyday key, retires through either authorized route, and observes the permanent refusal of resolution/re-registration after Over. Each release has its own version identity, retrieval/install/replay path, CI checks, owner acceptance under the current no-auditor instruction and explicit limits. The successor consumes its exact accepted artifact; packaging is not deferred wholesale to final integration.",
+      "next": "Preserve the recovered-controller and quorum custody routes and public creation evidence while completing the associated unsigned registry transition, representative burn, withdrawal refusal and reuse refusal on the final coherent artifact.",
+      "dependencies": [
+        "recover-control"
+      ],
+      "evidence": [
+        {
+          "label": "Merged PR #73",
+          "url": "https://github.com/lambdasistemi/singular/pull/73"
+        }
+      ]
+    },
+    {
+      "id": "permanent-over",
+      "group": "naming",
+      "title": "Distinguish pending retirement from permanent Over",
+      "persona": "a naming test observer",
+      "want": "authenticated absent active pending and Over states",
+      "benefit": "retired names never resolve or become registrable again",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#18",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          },
+          {
+            "label": "#74",
+            "url": "https://github.com/lambdasistemi/singular/issues/74"
+          },
+          {
+            "label": "#77",
+            "url": "https://github.com/lambdasistemi/singular/issues/77"
+          },
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          },
+          {
+            "label": "#71",
+            "url": "https://github.com/lambdasistemi/singular/issues/71"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #17 owner (Grok) with epic #18 consumer checks",
+      "state": "in-progress",
+      "summary": "The latest connected ledger journey reaches Over, reads the completed state, consumes custody, burns a representative, refuses withdrawal and reuse, and allows a fresh name. This remains unaccepted. A separate executed control of the current actual handlers proves that a foreign-policy token with the authentic representative name can satisfy completion and move the registry to Over while the authentic representative remains live. Legitimate rejected, mixed and zero-net processing must remain possible while the full policy, name and quantity binding is repaired.",
+      "acceptance": "Executable on-chain scenarios reject retirement withdrawal, release, reuse, replay and forbidden redirection; distinguish pending custody from completed Over. Naming excludes Delete without removing generic consumer-required behavior. The protocol verifies authorization, not death or inactivity, and cannot stop payment to a separately saved raw address.",
+      "next": "Bind the custody-held and burned asset's policy, name and quantity to the spent state's configured representative policy. Kill the exact foreign-policy witness, preserve the authentic-policy positive, rerun the affected connected Over journey and retain the pending/completed reads, withdrawal refusal, reuse refusal and fresh-name positive.",
+      "dependencies": [
+        "retire-name"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "generic-proof",
+      "group": "assurance",
+      "title": "Coordinate foundational proof work",
+      "persona": "the operator owning existing Lean work",
+      "want": "existing generic proofs to retain their scope and owner",
+      "benefit": "new naming and consumer proof obligations stay distinct",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#10 existing operator-owned foundation",
+            "url": "https://github.com/lambdasistemi/singular/issues/10"
+          },
+          {
+            "label": "#24",
+            "url": "https://github.com/lambdasistemi/singular/issues/24"
+          }
+        ],
+        "note": "Existing operator-owned #10 remains separate; #24 coordinates concrete scope without taking it over."
+      },
+      "owner": "paolino, existing operator-owned issue10",
+      "state": "delivered",
+      "summary": "The preserved generic foundation has 41 exact proved identities in the published pinned replay, separate from the 17 naming, 43 lifecycle and 8 wire identities.",
+      "acceptance": "Refresh issue10 metadata and coordinate new model/theorem scope explicitly; issue closure and merged statements do not establish accepted proof. No duplicate proof lane is commissioned.",
+      "next": "Preserve these existing proofs without reopening operator-owned #10.",
+      "dependencies": [],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-onchain",
+      "group": "assurance",
+      "title": "Reproduce and independently accept the on-chain artifact",
+      "persona": "an on-chain integrator",
+      "want": "installable scripts policies contract material and test fixtures",
+      "benefit": "I can reproduce the consumer and naming checks",
+      "kind": "outcome",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#18",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          },
+          {
+            "label": "#17",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#68",
+            "url": "https://github.com/lambdasistemi/singular/issues/68"
+          },
+          {
+            "label": "#70",
+            "url": "https://github.com/lambdasistemi/singular/issues/70"
+          },
+          {
+            "label": "#71",
+            "url": "https://github.com/lambdasistemi/singular/issues/71"
+          },
+          {
+            "label": "#78",
+            "url": "https://github.com/lambdasistemi/singular/issues/78"
+          },
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          },
+          {
+            "label": "#81",
+            "url": "https://github.com/lambdasistemi/singular/issues/81"
+          },
+          {
+            "label": "#87",
+            "url": "https://github.com/lambdasistemi/singular/issues/87"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey. The new packaging repair is unticketed within epic17 acceptance; epic17 owns the two assembly/checking files temporarily and integrates the fix."
+      },
+      "owner": "Epic #18 owner (GPT Sol) with epic #17 artifact producer",
+      "state": "in-progress",
+      "summary": "The earlier local package has bounded acceptance for declared source inputs, identical packaged contents despite stray build files, corruption rejection and execution without caller-provided tools. The verification route rebuilds through the actual production dependency assembly, including its pinned local patch. A new staging repair prevents an old unpatched library copy from surviving regeneration; it is committed separately and still needs integration and the required regression checks. The final integrated on-chain release and joiner journey are owed.",
+      "acceptance": "Publish reproducible on-chain artifacts through an explicit usable CI/release path; bind exact candidate, commands and measured resource limits; independent outcome review covers consumer compatibility and naming negative cases. Test-only transaction fixtures are verification support. Browser/model simulation is illustrative only. No release or implementation is claimed by setup. Epic release obligation: the consolidated, installable on-chain release with exact cardano-keri consumer-contract bindings, reproducible conformance fixtures, the bounded naming journey, measured limits and independent outcome-review evidence. A cardano-keri integrator obtains the release and reproduces the exact agreed consumer transaction shapes and rejection cases, plus the complete bounded naming contract demonstration, from its published commands and artifacts. Each release has its own version identity, retrieval/install/replay path, CI checks, owner acceptance under the current no-auditor instruction and explicit limits. The successor consumes its exact accepted artifact; packaging is not deferred wholesale to final integration. M1 acceptance and integrated release additionally require #87 compiled Aiken invariant validation with no unresolved required debt.",
+      "next": "Preserve the accepted packaging and dependency-assembly checks, then verify the final obtainable artifact and joiner journey after consumer and lifecycle integration.",
+      "dependencies": [
+        "consumer-conformance",
+        "permanent-over",
+        "generic-proof",
+        "compiled-invariants"
+      ],
+      "evidence": [
+        {
+          "label": "Published bootstrap v0.3.0",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.3.0"
+        },
+        {
+          "label": "Merged PR #83",
+          "url": "https://github.com/lambdasistemi/singular/pull/83"
+        }
+      ]
+    },
+    {
+      "id": "offchain-decision",
+      "group": "decisions",
+      "title": "Bound transaction and devnet support",
+      "persona": "the product owner",
+      "want": "existing transaction builders and devnet support without an indexer",
+      "benefit": "planning does not silently promise a product SDK or service",
+      "kind": "operation",
+      "tracking": {
+        "kind": "standing",
+        "tickets": [
+          {
+            "label": "#19",
+            "url": "https://github.com/lambdasistemi/singular/issues/19"
+          },
+          {
+            "label": "#31",
+            "url": "https://github.com/lambdasistemi/singular/issues/31"
+          }
+        ],
+        "note": "Settled operator scope, maintained during implementation."
+      },
+      "owner": "Operator through Singular project owner",
+      "state": "standing",
+      "summary": "Settled scope: reuse existing Haskell transaction-building and devnet support only; no indexer or separate service.",
+      "acceptance": "Reuse the Haskell support in cardano-mpfs-onchain. The separate service and indexer are excluded. No production SDK, wallet integration or resolver service is adopted. Copy source and locks first without compilation; later transaction and devnet execution belongs to the relevant ledger slices.",
+      "next": "Enforce this boundary in active import and functional work.",
+      "dependencies": [],
+      "evidence": []
+    },
+    {
+      "id": "possible-factoring",
+      "group": "deferred",
+      "title": "Reuse common MPFS code in a possible later milestone",
+      "persona": "a maintainer",
+      "want": "shared MPFS code that can be maintained in one place",
+      "benefit": "future applications can reuse fixes consistently",
+      "kind": "operation",
+      "tracking": {
+        "kind": "standing",
+        "tickets": [],
+        "note": "Deferred possible future work; no active delivery or pending M1 decision."
+      },
+      "owner": "Operator through Singular project owner",
+      "state": "standing",
+      "summary": "A possible later milestone only, outside M1. No extraction work or next epic is commissioned.",
+      "acceptance": "Any future extraction requires separately approved scope and compatibility evidence. It is not a prerequisite for M1.",
+      "next": "Remain deferred when epics #17 and #18 finish; stop without starting extraction.",
+      "dependencies": [],
+      "evidence": []
+    },
+    {
+      "id": "scope-custody",
+      "group": "assurance",
+      "title": "Maintain honest acceptance boundaries",
+      "persona": "an integrator reviewing progress",
+      "want": "published stories and evidence to remain reconciled",
+      "benefit": "a planning status cannot be mistaken for delivery",
+      "kind": "operation",
+      "tracking": {
+        "kind": "standing",
+        "tickets": [],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Singular milestone owner",
+      "state": "standing",
+      "summary": "Grok owns epic #17 and GPT Sol owns epic #18. Both remain incomplete. The wiki separates delivered simulator outcomes, draft ledger journeys, focused proof checks and unaccepted results. All ten open M1 issues are mapped to user stories. Work stops after both epics are fully accepted; no later epic starts.",
+      "acceptance": "Map every open milestone issue or explain its exclusion; preserve scope rulings and operator-owned work; independently assess the product outcome before closing the milestone.",
+      "next": "Keep the user-story wiki and recovery record reconciled during milestone sweeps, recording verified progress and remaining acceptance. Stop after the two remaining epics are accepted.",
+      "dependencies": [],
+      "evidence": [
+        {
+          "label": "Merged PR #76",
+          "url": "https://github.com/lambdasistemi/singular/pull/76"
+        },
+        {
+          "label": "Merged PR #83",
+          "url": "https://github.com/lambdasistemi/singular/pull/83"
+        }
+      ]
+    },
+    {
+      "id": "mpfs-source-baseline",
+      "group": "assurance",
+      "title": "Obtain the copied source baseline",
+      "persona": "a Singular developer or reviewer",
+      "want": "the existing MPFS validators and Haskell transaction/devnet support in two directories",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#16",
+            "url": "https://github.com/lambdasistemi/singular/issues/16"
+          },
+          {
+            "label": "#19",
+            "url": "https://github.com/lambdasistemi/singular/issues/19"
+          },
+          {
+            "label": "#31",
+            "url": "https://github.com/lambdasistemi/singular/issues/31"
+          },
+          {
+            "label": "#34",
+            "url": "https://github.com/lambdasistemi/singular/issues/34"
+          },
+          {
+            "label": "#37",
+            "url": "https://github.com/lambdasistemi/singular/issues/37"
+          },
+          {
+            "label": "#39",
+            "url": "https://github.com/lambdasistemi/singular/issues/39"
+          },
+          {
+            "label": "#41",
+            "url": "https://github.com/lambdasistemi/singular/issues/41"
+          },
+          {
+            "label": "#43",
+            "url": "https://github.com/lambdasistemi/singular/issues/43"
+          },
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          }
+        ],
+        "note": "Preserves the full user outcome across original delivery tickets and subsequent conformance repairs; a merged component does not establish the connected journey."
+      },
+      "owner": "Epic #16 retired; epic #17 owns local conformance repairs",
+      "state": "landed",
+      "summary": "Copied sources, locks and recorded adaptations shipped in v0.3.0. The copy remains the provenance baseline; explicit local patches repair semantic mismatches without changing Lean or refreshing dependencies.",
+      "acceptance": "Copy one frozen committed source revision from cardano-mpfs-onchain, preserving licenses, existing locks and file provenance. Exclude the separate service and indexer. No compilation, test execution, factoring, path repair or dependency updates. Record inherited relative paths for later adaptation.",
+      "next": "Preserve baseline-plus-patch reconstruction and generated script identity through #79.",
+      "dependencies": [],
+      "evidence": [
+        {
+          "label": "Published bootstrap v0.3.0",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.3.0"
+        }
+      ]
+    },
+    {
+      "id": "sim-claim",
+      "group": "simulation",
+      "title": "Play a naming claim in the docs",
+      "persona": "a Singular developer or reviewer",
+      "want": "to submit and fold a naming claim",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#20",
+            "url": "https://github.com/lambdasistemi/singular/issues/20"
+          },
+          {
+            "label": "PR #27",
+            "url": "https://github.com/lambdasistemi/singular/pull/27"
+          }
+        ],
+        "note": "Delivered and verified in the accepted v0.2.0 design/simulator release."
+      },
+      "owner": "Epic #15 owner; accepted by milestone owner",
+      "state": "delivered",
+      "summary": "Delivered in v0.2.0. The released simulator and artifact-only replay cover this journey and its refusal cases; 44 lifecycle cases execute. This is design evidence, not compiled naming-ledger acceptance.",
+      "acceptance": "Show pending versus registered state, claim uniqueness at fold and duplicate refusal. Enforce naming Delete/reuse refusal in transitions. Distinguish the generic simulator. Publish a candidate-bound docs preview.",
+      "next": "Preserve this journey when successor epics extend the implementation.",
+      "dependencies": [],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        },
+        {
+          "label": "Play the released naming lifecycle",
+          "url": "https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html"
+        }
+      ]
+    },
+    {
+      "id": "sim-maintenance",
+      "group": "simulation",
+      "title": "Play address maintenance and pending withdrawal",
+      "persona": "a Singular developer or reviewer",
+      "want": "to change a payment destination and withdraw an unfulfilled claim",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#21",
+            "url": "https://github.com/lambdasistemi/singular/issues/21"
+          }
+        ],
+        "note": "Delivered and verified in the accepted v0.2.0 design/simulator release."
+      },
+      "owner": "Epic #15 owner; accepted by milestone owner",
+      "state": "delivered",
+      "summary": "Delivered in v0.2.0. The released simulator and artifact-only replay cover this journey and its refusal cases; 44 lifecycle cases execute. This is design evidence, not compiled naming-ledger acceptance.",
+      "acceptance": "Set, replace and clear the optional destination without changing control or registry membership. Model exact authorized withdrawal and settled refund rules; reject unauthorized actions.",
+      "next": "Preserve this journey when successor epics extend the implementation.",
+      "dependencies": [
+        "sim-claim"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        },
+        {
+          "label": "Play the released naming lifecycle",
+          "url": "https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html"
+        }
+      ]
+    },
+    {
+      "id": "sim-recovery",
+      "group": "simulation",
+      "title": "Play recovery with the next key",
+      "persona": "a Singular developer or reviewer",
+      "want": "to recover control using the precommitted next address",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#22",
+            "url": "https://github.com/lambdasistemi/singular/issues/22"
+          }
+        ],
+        "note": "Delivered and verified in the accepted v0.2.0 design/simulator release."
+      },
+      "owner": "Epic #15 owner; accepted by milestone owner",
+      "state": "delivered",
+      "summary": "Delivered in v0.2.0. The released simulator and artifact-only replay cover this journey and its refusal cases; 44 lifecycle cases execute. This is design evidence, not compiled naming-ledger acceptance.",
+      "acceptance": "Require the revealed committed next address and its payment key, preserve the NFT and install a fresh commitment. Reject wrong keys and replay.",
+      "next": "Preserve this journey when successor epics extend the implementation.",
+      "dependencies": [
+        "sim-maintenance"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        },
+        {
+          "label": "Play the released naming lifecycle",
+          "url": "https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html"
+        }
+      ]
+    },
+    {
+      "id": "sim-retirement",
+      "group": "simulation",
+      "title": "Play permanent naming retirement",
+      "persona": "a Singular developer or reviewer",
+      "want": "to retire with the current controller or fixed quorum",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#23",
+            "url": "https://github.com/lambdasistemi/singular/issues/23"
+          }
+        ],
+        "note": "Delivered and verified in the accepted v0.2.0 design/simulator release."
+      },
+      "owner": "Epic #15 owner; accepted by milestone owner",
+      "state": "delivered",
+      "summary": "Delivered in v0.2.0. The released simulator and artifact-only replay cover this journey and its refusal cases; 44 lifecycle cases execute. This is design evidence, not compiled naming-ledger acceptance.",
+      "acceptance": "Show irreversible pending retirement and completed Over. Reject withdrawal, insufficient quorum, quorum redirection and name reuse.",
+      "next": "Preserve this journey when successor epics extend the implementation.",
+      "dependencies": [
+        "sim-recovery"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        },
+        {
+          "label": "Play the released naming lifecycle",
+          "url": "https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html"
+        }
+      ]
+    },
+    {
+      "id": "m1-simulation-release",
+      "group": "simulation",
+      "title": "Obtain the verified simulator and contract release",
+      "persona": "a Singular developer or reviewer",
+      "want": "one retrievable first release containing playable naming and consumer scenarios with frozen model/contracts",
+      "benefit": "the first release has an observable, reproducible result",
+      "kind": "product",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#15",
+            "url": "https://github.com/lambdasistemi/singular/issues/15"
+          },
+          {
+            "label": "#25",
+            "url": "https://github.com/lambdasistemi/singular/issues/25"
+          }
+        ],
+        "note": "Delivered and verified in the accepted v0.2.0 design/simulator release."
+      },
+      "owner": "Epic #15 owner; accepted by milestone owner",
+      "state": "delivered",
+      "summary": "Delivered in v0.2.0. The released simulator and artifact-only replay cover this journey and its refusal cases; 44 lifecycle cases execute. This is design evidence, not compiled naming-ledger acceptance.",
+      "acceptance": "Publish the actual naming-specific simulator in docs, with frozen model/contracts, gate evidence, replay instructions, identities and resolved operator play findings. A browser model is not ledger implementation acceptance.",
+      "next": "Preserve this journey when successor epics extend the implementation.",
+      "dependencies": [
+        "sim-retirement",
+        "consumer-contract",
+        "registry-bootstrap",
+        "generic-proof"
+      ],
+      "evidence": [
+        {
+          "label": "Accepted v0.2.0 release and downloadable replay package",
+          "url": "https://github.com/lambdasistemi/singular/releases/tag/v0.2.0"
+        },
+        {
+          "label": "Play the released naming lifecycle",
+          "url": "https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html"
+        }
+      ]
+    },
+    {
+      "id": "lean-acceptance",
+      "group": "assurance",
+      "title": "Match every Lean theorem to executable acceptance",
+      "persona": "a human reviewer",
+      "want": "to read the same domain claims in Lean and Given/When/Then acceptance",
+      "benefit": "implementation cannot silently substitute a different design",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          },
+          {
+            "label": "#87",
+            "url": "https://github.com/lambdasistemi/singular/issues/87"
+          }
+        ],
+        "note": "Required M1 outcome; remains open until the stated acceptance evidence exists."
+      },
+      "owner": "Epic #18 owner (GPT Sol)",
+      "state": "review",
+      "summary": "A candidate now proves an arbitrary-list two-way FullCorr relation for processed and rejected batches with explicit timing, funding, refund, custody and post-state hypotheses. Reachable histories from the accepted initial state cover mixed, zero-net and funded-custody cases. A separate orphan-custody negative has every other premise, and erasing only its association guard makes it accept. This is strong candidate-internal formal evidence under review; it does not yet prove either actual implementation layer or authorize adoption into the accepted model.",
+      "acceptance": "Every project declaration accounted; exact clauses and vocabulary mapped; two distinct executable implementation layers per invariant; effective controls and fresh non-vacuous evidence; strict completion debt zero. Mandatory #87 compiled-invariant validation is an additional debt category and M1 blocker.",
+      "next": "Consolidate the reviewed formal tranche without changing the accepted model, then bind every applicable statement to both actual implementation layers and the exact production-built programs. Retain the E17 retirement disagreement as open until its authentic-asset repair is verified.",
+      "dependencies": [
+        "generic-proof"
+      ],
+      "evidence": [
+        {
+          "label": "Merged PR #83",
+          "url": "https://github.com/lambdasistemi/singular/pull/83"
+        },
+        {
+          "label": "Merged historical correspondence; predates the approved nonempty revision",
+          "url": "https://github.com/lambdasistemi/singular/blob/c8000231afc32510fe9851c6727f3e0fe8961c96/conformance/coverage/correspondence/fold_iff.md"
+        },
+        {
+          "label": "Accepted Lean declaration underlying the candidate reading",
+          "url": "https://github.com/lambdasistemi/singular/blob/13231f58833b8feb57f4b0f9b1117bfcfba0c07d/lean/Singular/Statements.lean#L66"
+        },
+        {
+          "label": "Merged PR #84: bounded cleanup and correspondence slice",
+          "url": "https://github.com/lambdasistemi/singular/pull/84"
+        },
+        {
+          "label": "Merged PR #86: verified publication-boundary preparation; activation outstanding",
+          "url": "https://github.com/lambdasistemi/singular/pull/86"
+        }
+      ]
+    },
+    {
+      "id": "permissionless-fold-repair",
+      "group": "naming",
+      "title": "Fold valid requests and restrict pending retraction",
+      "persona": "a registry participant",
+      "want": "to fold valid requests without any registry-owner authorization and retract only eligible pending Inserts",
+      "benefit": "the implementation honors the five Lean fold conditions",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#79",
+            "url": "https://github.com/lambdasistemi/singular/issues/79"
+          }
+        ],
+        "note": "#79 closed after the bounded Modify/retraction repair; residual registry ownership is separately outstanding under active epics #17 and #18."
+      },
+      "owner": "Epic #17 owner (Grok)",
+      "state": "landed",
+      "summary": "Landed in PR #85; #79 is closed. The bounded acceptance checks and CI passed, and three mutations of the repaired behavior were rejected. Valid processing no longer needs the registry owner, and only Insert requests can retract. A later real-node control also passed. This landing does not establish that every registry path is ownerless; remaining authority and final integration checks stay required.",
+      "acceptance": "Valid owner-unsigned Modify succeeds; all other modeled conditions remain enforced; Insert retraction succeeds and Update/Delete retraction refuses; provenance and compiled identities match.",
+      "next": "Preserve the accepted fold/retraction checks while removing residual registry-owner authority and updating affected interfaces. Complete connected naming and consumer conformance against the repaired schema.",
+      "dependencies": [
+        "mpfs-source-baseline"
+      ],
+      "evidence": [
+        {
+          "label": "Merged PR #85, validator repair",
+          "url": "https://github.com/lambdasistemi/singular/pull/85"
+        }
+      ]
+    },
+    {
+      "id": "joiner-onboarding",
+      "group": "consumer",
+      "title": "Run the project as a new joiner",
+      "persona": "a new project contributor",
+      "want": "to obtain the release and follow a working node and wallet runbook",
+      "benefit": "joining requires reproducible commands and functioning journeys",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#78",
+            "url": "https://github.com/lambdasistemi/singular/issues/78"
+          }
+        ],
+        "note": "Required M1 outcome; remains open until the stated acceptance evidence exists."
+      },
+      "owner": "Epic #18 owner (GPT Sol)",
+      "state": "blocked",
+      "summary": "Blocker: connected lifecycle and consumer acceptance remain unfinished. External-node mode and onboarding are planned; no preprod deployment is claimed.",
+      "acceptance": "A joiner obtains the exact artifact and follows documented transaction, wallet and node instructions through the real required journey; any public-network use follows explicit operational scope.",
+      "next": "Prepare and verify the runbook after the conformance and lifecycle prerequisites.",
+      "dependencies": [
+        "consumer-conformance",
+        "lean-acceptance"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "compiled-invariants",
+      "group": "assurance",
+      "title": "Validate the released Aiken programs against Lean invariants",
+      "persona": "a Singular integrator",
+      "want": "traceable Blaster validation of each applicable invariant against the exact compiled release programs",
+      "benefit": "implementation or compilation divergence prevents M1 acceptance",
+      "kind": "enabler",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#87",
+            "url": "https://github.com/lambdasistemi/singular/issues/87"
+          },
+          {
+            "label": "#80",
+            "url": "https://github.com/lambdasistemi/singular/issues/80"
+          },
+          {
+            "label": "#18",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          }
+        ],
+        "note": "Operator-added mandatory M1 blocker on 2026-09-12; additional to both existing implementation acceptance layers."
+      },
+      "owner": "Epic #18 owner (GPT Sol); epic #17 supplies repaired artifacts; milestone owner reviews gates",
+      "state": "in-progress",
+      "summary": "The baseline register lists 192 source-derived obligations. Its source and clause checker passed review with three positive controls and seventeen discriminating failures; this accepts the checker only. All four composed script purposes use the same transaction context. The rejected-fold candidate now has a general relation, reachable mixed/zero-net/funded-custody histories, and a discriminating orphan-custody mutant. Actual Aiken correspondence, authentic KERI instantiation, production-built Blaster execution and the remaining obligation denominator are still open. E17's foreign-policy completion witness also keeps authentic custody and completion accounting open.",
+      "acceptance": "Validate actual production-built UPLC with pinned source/compiler/blueprint/parameters and explicit builtin semantics. Preserve Lean quantifiers and clauses with readable story correspondence. Retain reproducible ESTABLISHED/REFUTED/COULD-NOT-EVALUATE outcomes and rebuilt-source discrimination controls. Keep finite TESTED results distinct from quantified claims. Missing, unknown, unsupported, stale, vacuous or failing checks remain debt. Strict M1 completion and integrated publication require zero required compiled-invariant debt alongside all existing acceptance categories.",
+      "next": "Preserve the reviewed general relation and reachable histories, then establish their correspondence to both actual implementation layers. Execute every required invariant against the exact final production artifacts and close the 192-row debt with honest established, refuted or unevaluated dispositions.",
+      "dependencies": [
+        "generic-proof",
+        "mpfs-source-baseline"
+      ],
+      "evidence": [
+        {
+          "label": "Operator-authorized acceptance contract",
+          "url": "https://github.com/lambdasistemi/singular/issues/87"
+        },
+        {
+          "label": "Primary protocol-aware V3 evaluator mapping",
+          "url": "https://github.com/IntersectMBO/plutus/blob/e5bec6ae0caa8de4c2d33d518ce2cfd4bdc34cbf/plutus-ledger-api/src/PlutusLedgerApi/V3/EvaluationContext.hs#L45"
+        },
+        {
+          "label": "Source-only crypto support candidate, compatibility unverified",
+          "url": "https://github.com/input-output-hk/PlutusCoreBlaster/blob/ed3126b6a2f5cc32bd151fdefb26e66dcf514888/PlutusCore/UPLC/BuiltinFunctions/Evaluate.lean"
+        }
+      ]
+    },
+    {
+      "id": "reject-empty-processing",
+      "group": "consumer",
+      "title": "Reject an empty processing attempt",
+      "persona": "an application user",
+      "want": "empty processing attempts rejected",
+      "benefit": "success requires processing at least one request",
+      "kind": "outcome",
+      "tracking": {
+        "kind": "ticketed",
+        "tickets": [
+          {
+            "label": "#17 on-chain implementation",
+            "url": "https://github.com/lambdasistemi/singular/issues/17"
+          },
+          {
+            "label": "#18 consumer conformance",
+            "url": "https://github.com/lambdasistemi/singular/issues/18"
+          }
+        ],
+        "note": "Approved by the stakeholder on 2026-09-12; tracked through the existing epics and CG11."
+      },
+      "owner": "Epic #17 owner (Grok), with epic #18 owner (GPT Sol) verifying conformance",
+      "state": "review",
+      "summary": "The current producer candidate rejects zero consumed requests and leftover declared actions. The formal candidate now provides a general two-way correspondence proof plus reachable mixed, zero-net and funded-custody histories, rather than relying on the earlier hand-seeded fixtures. The exact empty refusal and legitimate nonempty cases remain under review because agreement with both actual implementation layers and final compiled behavior is still open.",
+      "acceptance": "Given a valid registry, when a fold processes no requests, it is refused and the registry remains unchanged. Valid nonempty processing still works, including a legitimate zero token net. Verify the revised Lean statement, both implementation layers, and compiled behavior with discriminating controls.",
+      "next": "Verify empty and unmatched-action refusals alongside legitimate all-rejected, mixed and zero-net cases at both actual implementation layers and on the final production-built programs, preserving the formal candidate's general proof and reachable histories.",
+      "dependencies": [
+        "consumer-contract"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "process-despite-hostile-spo",
+      "group": "consumer",
+      "title": "Earn from processing batches",
+      "persona": "an SPO",
+      "want": "earn from processing useful batches",
+      "benefit": "processing requests has an economic incentive",
+      "kind": "outcome",
+      "tracking": {
+        "kind": "standing",
+        "tickets": [],
+        "note": "Stakeholder accepted the SPO selection assumption. Expanded starvation and takeover verification is outside M1 acceptance."
+      },
+      "owner": "Milestone owner; existing batching and payment requirements in epics #17 and #18",
+      "state": "standing",
+      "summary": "SPOs retain selection and inclusion power. The stakeholder accepts reliance on existing batch earnings as an incentive; fairness and eventual inclusion are not claimed. The expanded starvation assessment is no longer required for M1. Existing timing, payment, refund and recovery correctness still apply.",
+      "acceptance": "Preserve the existing batch payment requirements and the accepted selection assumption. Expanded starvation assessment and universal profitability are not M1 acceptance criteria.",
+      "next": "Focus delivery on correct processing, authentic registry association and promised payments; preserve any diagnostic evidence without expanding the starvation campaign.",
+      "dependencies": [
+        "consumer-contract"
+      ],
+      "evidence": []
+    }
+  ]
+}

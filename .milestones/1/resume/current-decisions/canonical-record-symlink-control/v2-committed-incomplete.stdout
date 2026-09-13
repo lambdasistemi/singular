@@ -1,0 +1,18 @@
+COMPLETION: INCOMPLETE
+  mapping debt rows: 5
+  implementation-layer debt rows: 5
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 5 obligations without a bound story representation
+  implementation-layer debt: 5 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+candidate: 7fb72d35057ce661b96e48faadaf940834fc44ba (bound: HEAD matches; tree clean; root is top level)

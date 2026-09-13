@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-13T02:56:34.371Z",
+  "source": "/code/singular-e17-issue-77/offchain/journey/retirement/Main.hs",
+  "sha256": "61552a0eaf9412ac7401a0c4e128368ee40b547059c1f8c62a1052f549fd356d",
+  "issue": "handoffs/issue-74-current-0255.md",
+  "scope": "Static acceptance readback on an unfinished runner, not a terminal run or acceptance verdict",
+  "findings": [
+    "rowOVComplete sets empty required signers but adds completerKey witness; this does not prove the literal issue phrase no signature of any kind.",
+    "rowLX01 catches SomeException and attributes EvalFailure plus whole-message state hash and ConwaySpending to occupied-key without isolating the failed subject or excluding execution-budget/setup failures."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-13T03:03:06.969Z",
+  "source": "epic-17/ticket-77/commit-owner-2/evidence/retirement-exhibit.log",
+  "frozen": "handoffs/retirement-over-root-lo01-failure.log",
+  "sha256": "ed9e1a91406b422c35b84c120686a2f1856ea3252fe1773a8497549ce5520a58",
+  "bytes": 168614,
+  "priorPid": 1457594,
+  "pidMissing": true,
+  "ownerObservation": "2026-09-13T02:59:44Z: terminal FAILED LO01 unexpected over-key value, retained, no complete marker",
+  "disposition": "No completed Over or final lifecycle acceptance; same worker continues already commissioned corrections"
+}

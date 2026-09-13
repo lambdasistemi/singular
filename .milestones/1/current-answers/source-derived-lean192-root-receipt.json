@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "0100012b1afa318df3bae6cf40d6d9ee3507110e",
+  "sourceTreeClean": true,
+  "sourceOwnedFunction": "conformance/coverage/singular_coverage/inventory.py:build_inventory",
+  "manifestBound": 109,
+  "count": 192,
+  "identitiesEqual": true,
+  "metadataFields": [
+    "name",
+    "source",
+    "line",
+    "statementSha256",
+    "classification"
+  ],
+  "metadataMismatches": [],
+  "scope": "Fresh source-derived baseline integrity only; no applicability or compiled proof accepted"
+}

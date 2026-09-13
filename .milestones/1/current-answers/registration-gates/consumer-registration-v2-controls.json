@@ -1,0 +1,36 @@
+{
+  "schema": "singular-consumer-registration-v2-owner-controls-v1",
+  "gate_sha256": "4fa874f79911ea056dc82dbdb2af5735ac462b0f6aec9b02f47a6b26a75743c8",
+  "source_v1_gate_sha256": "e73d96749930acbb98abe70e67c01f2dfc13b284a4e8a1cd901aadf72aeb9eb0",
+  "root_control_receipts": [
+    {
+      "kind": "report-only",
+      "candidate": "a51cfd4fa53055b66269cd8ced96249f6d440a51",
+      "sha256": "01dde92a4531bf5eca2c751566480c772c0a10695d5f5f69e0b7f786b2dd2009"
+    },
+    {
+      "kind": "valid-labels",
+      "candidate": "f5ee22a30b032e603f7472e540fb10157f6c459d",
+      "sha256": "c6008b632db3b5d694dc299a46fa544997991175ce6c6c08aeb35de28e6ffc66"
+    }
+  ],
+  "v2_executions": [
+    {
+      "kind": "report-only",
+      "candidate": "a51cfd4fa53055b66269cd8ced96249f6d440a51",
+      "exit": 1,
+      "reason": "results.json declares nonexistent evidence: does-not-exist.log",
+      "command_sha256": "b5b58c9053eca29051e66b8796f49e5b677826784245ebde352cdaaa0d39af16",
+      "evidence_sha256": "0c80d810e8952078fb78f6a115e231d5f3e87d6a3f4822bd1691e80dcc695d8e"
+    },
+    {
+      "kind": "valid-labels",
+      "candidate": "f5ee22a30b032e603f7472e540fb10157f6c459d",
+      "exit": 1,
+      "reason": "results.json declares nonexistent evidence: does-not-exist.log",
+      "command_sha256": "9022813abd6f2b0157fb3f8a0a34475fa21a98cc2d341beaba6d4cbb6741a509",
+      "evidence_sha256": "0c80d810e8952078fb78f6a115e231d5f3e87d6a3f4822bd1691e80dcc695d8e"
+    }
+  ],
+  "interpretation": "Both v1 report-writer false greens are rejected after execution. This proves only the v2 raw-evidence preparation boundary; it is not E0/E1/E4 evidence."
+}

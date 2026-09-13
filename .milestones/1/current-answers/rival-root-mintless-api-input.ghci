@@ -1,0 +1,16 @@
+:set -XOverloadedStrings -XTypeApplications
+import qualified Data.ByteString as BS
+import Cardano.Crypto.Hash.Class
+import Cardano.Ledger.Hashes
+import Cardano.Ledger.TxIn
+import Cardano.Ledger.Alonzo.TxBody
+import Cardano.Crypto.Hash.Blake2b
+import Data.Coerce
+:t hash
+:t hashWith
+:info SafeHash
+:t unsafeMakeSafeHash
+:t (coerce (hashWith id ("seed" :: BS.ByteString) :: Hash Blake2b_256 BS.ByteString) :: TxId)
+:t (coerce (hashWith id ("script" :: BS.ByteString) :: Hash Blake2b_224 BS.ByteString) :: ScriptHash)
+:t (coerce (hashWith id ("view" :: BS.ByteString) :: Hash Blake2b_256 BS.ByteString) :: ScriptIntegrityHash)
+:quit

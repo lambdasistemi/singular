@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-13T00:57:55.735Z",
+  "root": "/tmp/singular-root-rival-funding-SC8V30",
+  "compiler": "/nix/store/dgvrp8z9n4b495z7hv18rzxq2vd06knw-ghc-shell-for-packages-ghc-9.12.3-env/bin/ghc",
+  "sourceSha256": "dfe765559e2c1076a8dc79bfea6d239f4aa3ea35ac519950524b44afe1340b19",
+  "checkSha256": "ef03d3295f5b2e9250c494edf238fd194ddf527135f7ea8744508bd26d5d9b78",
+  "mutation": {
+    "from": "fundingEntrySelectable e = feLive e && not (feIsConsumedBSeed e)",
+    "to": "fundingEntrySelectable e = if any feIsConsumedBSeed entries then feIsConsumedBSeed e else feLive e && not (feIsConsumedBSeed e)"
+  },
+  "results": [
+    {
+      "variant": "baseline",
+      "buildExit": 0,
+      "checkExit": 0,
+      "cases": 22,
+      "casesPassed": 22,
+      "mutants": 5,
+      "mutantsRejected": 5,
+      "probeExit": 0,
+      "selection": "([FundingEntry {feInputId = \"pool-live-fee\", feLive = True, feIsConsumedBSeed = False}],[FundingEntry {feInputId = \"pool-b-seed\", feLive = True, feIsConsumedBSeed = True}])"
+    },
+    {
+      "variant": "seed-inversion",
+      "buildExit": 0,
+      "checkExit": 0,
+      "cases": 22,
+      "casesPassed": 22,
+      "mutants": 5,
+      "mutantsRejected": 5,
+      "probeExit": 0,
+      "selection": "([FundingEntry {feInputId = \"pool-b-seed\", feLive = True, feIsConsumedBSeed = True}],[FundingEntry {feInputId = \"pool-live-fee\", feLive = True, feIsConsumedBSeed = False}])"
+    }
+  ],
+  "scope": "Executed copied-source discrimination control only. The seed-inversion implementation keeps consumed B seed and prunes live fee but unchanged candidate checker still reports 22/22 and 5/5 with exit0. No live worker source changed, no node/ledger execution."
+}

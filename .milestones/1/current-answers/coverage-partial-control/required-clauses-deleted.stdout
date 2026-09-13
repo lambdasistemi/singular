@@ -1,0 +1,194 @@
+COMPLETION: INCOMPLETE
+  mapping debt rows: 182
+  implementation-layer debt rows: 182
+  execution debt findings: 0
+  unclassified rows: 83
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 182 obligations without a bound story representation
+  implementation-layer debt: 182 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 83 declarations outside the manifests
+    Singular.requireSome_none: unmapped; no-layer; unclassified
+    Singular.requireSome_some: unmapped; no-layer; unclassified
+    Singular.entry_key: unmapped; no-layer; unclassified
+    Singular.consume_config: unmapped; no-layer; unclassified
+    Singular.consume_entries: unmapped; no-layer; unclassified
+    Singular.consume_used: unmapped; no-layer; unclassified
+    Singular.consume_applications: unmapped; no-layer; unclassified
+    Singular.consume_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_config: unmapped; no-layer; unclassified
+    Singular.setEntry_applications: unmapped; no-layer; unclassified
+    Singular.setEntry_requests: unmapped; no-layer; unclassified
+    Singular.setEntry_used: unmapped; no-layer; unclassified
+    Singular.setEntry_entries: unmapped; no-layer; unclassified
+    Singular.entry_of_entries: unmapped; no-layer; unclassified
+    Singular.find?_filter_key_ne: unmapped; no-layer; unclassified
+    Singular.entry_setEntry: unmapped; no-layer; unclassified
+    Singular.representative_of: unmapped; no-layer; unclassified
+    Singular.representative_key: unmapped; no-layer; unclassified
+    Singular.representative_key_eq: unmapped; no-layer; unclassified
+    Singular.supply_eq: unmapped; no-layer; unclassified
+    Singular.filter_ne_of_forall: unmapped; no-layer; unclassified
+    Singular.countP_filter_ne_of_nodup: unmapped; no-layer; unclassified
+    Singular.countP_filter_le: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append: unmapped; no-layer; unclassified
+    Singular.not_mem_of_nodup_append': unmapped; no-layer; unclassified
+    Singular.createInsert_ok: unmapped; no-layer; unclassified
+    Singular.mintWithdraw_ok: unmapped; no-layer; unclassified
+    Singular.release_ok: unmapped; no-layer; unclassified
+    Singular.evolve_ok: unmapped; no-layer; unclassified
+    Singular.outsider_ok: unmapped; no-layer; unclassified
+    Singular.withdraw_ok: unmapped; no-layer; unclassified
+    Singular.fold_ok: unmapped; no-layer; unclassified
+    Singular.moveAction_ok: unmapped; no-layer; unclassified
+    Singular.escape_error: unmapped; no-layer; unclassified
+    Singular.foldOne_insert_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_terminal_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_ok_find: unmapped; no-layer; unclassified
+    Singular.foldItems_cons_ok: unmapped; no-layer; unclassified
+    Singular.foldOne_entry_over: unmapped; no-layer; unclassified
+    Singular.foldItems_entry_over: unmapped; no-layer; unclassified
+    Singular.inv_initial: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_applications: unmapped; no-layer; unclassified
+    Singular.Inv.nodup_requests: unmapped; no-layer; unclassified
+    Singular.Inv.filter_applications: unmapped; no-layer; unclassified
+    Singular.Inv.filter_requests: unmapped; no-layer; unclassified
+    Singular.Inv.fresh_id: unmapped; no-layer; unclassified
+    Singular.sublist_ids: unmapped; no-layer; unclassified
+    Singular.nodup_middle_of: unmapped; no-layer; unclassified
+    Singular.inv_of_eq: unmapped; no-layer; unclassified
+    Singular.inv_add_request: unmapped; no-layer; unclassified
+    Singular.inv_release: unmapped; no-layer; unclassified
+    Singular.inv_evolve: unmapped; no-layer; unclassified
+    Singular.inv_remove_request: unmapped; no-layer; unclassified
+    Singular.inv_fold_insert: unmapped; no-layer; unclassified
+    Singular.inv_fold_terminal: unmapped; no-layer; unclassified
+    Singular.inv_foldOne: unmapped; no-layer; unclassified
+    Singular.inv_foldItems: unmapped; no-layer; unclassified
+    Singular.inv_step: unmapped; no-layer; unclassified
+    Singular.reachable_inv: unmapped; no-layer; unclassified
+    Singular.insertNative_entries: unmapped; no-layer; unclassified
+    Singular.releaseNative_entries: unmapped; no-layer; unclassified
+    Singular.approved_entries: unmapped; no-layer; unclassified
+    Singular.fresh_entries: unmapped; no-layer; unclassified
+    Singular.step_createInsert_entries: unmapped; no-layer; unclassified
+    Singular.step_release_entries: unmapped; no-layer; unclassified
+    Singular.exceptBindOkClaim: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAction: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAction: unmapped; no-layer; unclassified
+    Singular.exceptBindOkRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindErrRegistryResult: unmapped; no-layer; unclassified
+    Singular.exceptBindOkAny: unmapped; no-layer; unclassified
+    Singular.exceptBindErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapOkAny: unmapped; no-layer; unclassified
+    Singular.exceptMapErrAny: unmapped; no-layer; unclassified
+    Singular.exceptMapEqAny: unmapped; no-layer; unclassified
+    Singular.exceptBindResultEqAction: unmapped; no-layer; unclassified
+    Singular.exceptMapEq: unmapped; no-layer; unclassified
+    Singular.throwEqError: unmapped; no-layer; unclassified
+    Singular.insertNeSelfFalse: unmapped; no-layer; unclassified
+    Singular.namingStepFoldActionEq: unmapped; no-layer; unclassified
+    Singular.foldElseBindEq: unmapped; no-layer; unclassified
+    Singular.namingTerminalFalse: unmapped; no-layer; unclassified
+    Singular.namingFoldInsertPreservesFixture: unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.supported_address_roundtrips: unmapped; no-layer
+    Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes: unmapped; no-layer
+    Singular.NamingLifecycleStatements.hash_contract_publishes_complete_preimage: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_stored_refund_committed_and_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_redirect_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insert_attestation_alone_cannot_cancel: unmapped; no-layer
+    Singular.NamingLifecycleStatements.folded_claim_cancellation_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.cancellation_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_clear_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_change_preserves_registry_control_commitment_quorum: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_unauthorized_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.destination_commitment_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.maintenance_quorum_alteration_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_accepts_without_old_controller: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_installs_controller_and_fresh_commitment: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_recovery_reveal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_requires_revealed_payment_key_signer: unmapped; no-layer
+    Singular.NamingLifecycleStatements.correct_reveal_wrong_payment_key_signer_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_missing_fresh_commitment_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_representative_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_registry_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_quorum_tamper_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.recovery_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.old_controller_dead_after_recovery: unmapped; no-layer
+    Singular.NamingLifecycleStatements.controller_and_quorum_retirement_accept: unmapped; no-layer
+    Singular.NamingLifecycleStatements.insufficient_quorum_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_control_takeover_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.quorum_only_payment_redirection_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_withdrawal_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.wrong_retirement_request_custody_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_replay_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.retirement_pending_then_over: unmapped; no-layer
+    Singular.NamingLifecycleStatements.re_registration_after_over_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.forged_public_digest_cannot_override_trusted_hash: unmapped; no-layer
+    Singular.NamingLifecycleStatements.alternate_registry_seed_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_consumer_initialization_accepts: unmapped; no-layer
+    Singular.NamingLifecycleStatements.canonical_seed_is_consumed_once: unmapped; no-layer
+    Singular.NamingLifecycleStatements.second_seed_rival_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_registry_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_representative_policy_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.substituted_validator_script_refused: unmapped; no-layer
+    Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example: unmapped; no-layer
+    Singular.NamingStatements.naming_delete_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_approval_reserves_nothing: unmapped; no-layer
+    Singular.NamingStatements.naming_absent_certified_insert_activates: unmapped; no-layer
+    Singular.NamingStatements.naming_occupied_key_refuses_duplicate: unmapped; no-layer
+    Singular.NamingStatements.naming_fixture_fields_preserved_on_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_unauthenticated_resolve: unmapped; no-layer
+    Singular.NamingStatements.naming_payment_destination_distinct_from_control: unmapped; no-layer
+    Singular.NamingStatements.naming_step_create_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_fold_generic_when_all_insert: unmapped; no-layer
+    Singular.NamingStatements.naming_step_refuses_other: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unknown_spelling_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_malformed_fixture_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_queue_unapproved_refused: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_unauthenticated_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_active_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_pending_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_resolve_absent_iff: unmapped; no-layer
+    Singular.Statements.insert_commitment_injective: unmapped; no-layer
+    Singular.Statements.action_domain_separation: unmapped; no-layer
+    Singular.Statements.createInsert_iff: unmapped; no-layer
+    Singular.Statements.mintWithdraw_iff: unmapped; no-layer
+    Singular.Statements.release_iff: unmapped; no-layer
+    Singular.Statements.evolve_iff: unmapped; no-layer
+    Singular.Statements.outsider_iff: unmapped; no-layer
+    Singular.Statements.moveAction_iff: unmapped; no-layer
+    Singular.Statements.escape_refused: unmapped; no-layer
+    Singular.Statements.foldOne_insert_iff: unmapped; no-layer
+    Singular.Statements.foldOne_terminal_iff: unmapped; no-layer
+    Singular.Statements.sequential_fold_cons: unmapped; no-layer
+    Singular.Statements.supply_conservation: unmapped; no-layer
+    Singular.Statements.over_terminal: unmapped; no-layer
+    Singular.Statements.over_no_representative: unmapped; no-layer
+    Singular.Statements.pending_insert_no_representative: unmapped; no-layer
+    Singular.Statements.minting_requires_configured_issuer: unmapped; no-layer
+    Singular.Statements.withdrawal_preserves_registry_supply: unmapped; no-layer
+    Singular.Statements.exact_withdraw_scope: unmapped; no-layer
+    Singular.Statements.local_evolution_registry_unchanged: unmapped; no-layer
+    Singular.Statements.release_is_operation_specific: unmapped; no-layer
+    Singular.Statements.release_removes_application_custody: unmapped; no-layer
+    Singular.Statements.request_single_spend: unmapped; no-layer
+    Singular.Statements.approval_scope_checked: unmapped; no-layer
+    Singular.Statements.outsider_not_admitted: unmapped; no-layer
+    Singular.Statements.native_witness_even_zero_net: unmapped; no-layer
+    Singular.Statements.nonzero_action_invokes_policy: unmapped; no-layer
+    Singular.Statements.existing_action_does_not_refresh_scope: unmapped; no-layer
+    Singular.Statements.resolve_unauthenticated: unmapped; no-layer
+    Singular.Statements.resolve_absent: unmapped; no-layer
+    Singular.Statements.resolve_over: unmapped; no-layer
+    Singular.Statements.resolve_address_iff: unmapped; no-layer
+    Singular.Statements.resolve_pending_iff: unmapped; no-layer
+    Singular.Statements.release_registry_independent: unmapped; no-layer
+    Singular.Statements.insert_creation_registry_independent: unmapped; no-layer
+    Singular.Statements.whole_release_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_release_refusal_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_acceptance_independent: unmapped; no-layer
+    Singular.Statements.whole_insert_refusal_independent: unmapped; no-layer

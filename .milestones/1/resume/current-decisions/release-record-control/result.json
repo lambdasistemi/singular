@@ -1,0 +1,38 @@
+{
+  "subject": "26495f810c2d67b75ff71f2ea524bbd9903dce5b",
+  "fixtureHead": "af0cc69f2c31dc1b0126347967691dcefed599c6",
+  "fixtureStatus": "",
+  "synthetic": true,
+  "results": [
+    {
+      "name": "committed-incomplete",
+      "argv": [
+        "--root",
+        "/tmp/singular-release-record-QuFJrn/fixture",
+        "release",
+        "--candidate",
+        "af0cc69f2c31dc1b0126347967691dcefed599c6",
+        "--record",
+        "/tmp/singular-release-record-QuFJrn/fixture/record.json"
+      ],
+      "exit": 1,
+      "firstLine": "COMPLETION: INCOMPLETE",
+      "stderr": ""
+    },
+    {
+      "name": "external-complete",
+      "argv": [
+        "--root",
+        "/tmp/singular-release-record-QuFJrn/fixture",
+        "release",
+        "--candidate",
+        "af0cc69f2c31dc1b0126347967691dcefed599c6",
+        "--record",
+        "/tmp/singular-release-record-QuFJrn/external-record.json"
+      ],
+      "exit": 0,
+      "firstLine": "COMPLETION: COMPLETE",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+# NOTE-148 — preserve the five-program rejection/custody finding in the open boundary
+
+Root executed a new bounded composition control after E17's custody guard began requiring a spent registry state. Read the full sibling root ruling /tmp/projects/singular/milestone-1/epic-17/inbox/NOTE-092-five-program-rejected-retirement-burn-gap.md and receipt /tmp/projects/singular/milestone-1/handoffs/completion-rejected-root-control.json.
+
+Exact Aiken1.1.21 check -m rootfive_ runs5/5 controls. All five current actual state/request/consumer/representative/custody handlers accept one expired retirement Update rejected/refunded with unchanged Active root while the same representative burns out of custody. Controls include legitimate rejection without custody spend passing, no-burn/absent-state custody refusal and missing-consumer state refusal. This is one shared value-balanced synthetic context, not a ledger run, authentic history, compiled hash rebind or adoption evidence.
+
+Grok owns correcting the concrete production association under NOTE092. Keep this in R2/full correspondence and separate retirement completion debt. A006's guard preserving unspent custody cannot be credited as agreement with these current production handlers; their full relationship remains open until the producer repair, authentic admission and both directions are established. Preserve legitimate nonempty rejected/mixed/zero-net cases. No new finite-to-universal inference or extra rule requiring every rejection to complete retirement.
+
+Do not interrupt or rerun unchanged A006 proofs for this report; finish the current general work and include the corrected producer/custody relation at its actual acceptance boundary. Rival NOTE147 continues independently, with no second ledger grant. No new seat/reset, accepted-model/schema adoption, migration, commit/push/merge/release or epic acceptance.

@@ -1,0 +1,185 @@
+got build log for '/nix/store/n3s8jfln22zsaibsnm0m1ngqh136nra6-coverage-gate-tests.drv' from 'daemon'
+COMPLETION: INCOMPLETE
+  mapping debt rows: 8
+  implementation-layer debt rows: 8
+  execution debt findings: 0
+  unclassified rows: 3
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+.COMPLETION: INCOMPLETE
+  mapping debt rows: 8
+  implementation-layer debt rows: 8
+  execution debt findings: 0
+  unclassified rows: 3
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+EXPECTED COMPLETE but the gate computed INCOMPLETE
+.COMPLETION: INCOMPLETE
+  mapping debt rows: 8
+  implementation-layer debt rows: 8
+  execution debt findings: 0
+  unclassified rows: 3
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+.FAIL-CLOSED inventory: lean/theorem-debt.json drifts from the lean/Singular/Statements.lean extraction (statement edited without re-exporting the manifest)
+FAIL-CLOSED inventory: lean/theorem-debt.json drifts from the lean/Singular/Statements.lean extraction (statement edited without re-exporting the manifest)
+FAIL-CLOSED inventory: lean/theorem-debt.json drifts from the lean/Singular/Statements.lean extraction (statement edited without re-exporting the manifest)
+.INVENTORY 8 obligations = 5 manifest-bound + 3 unclassified
+  manifest identity: qualified name + statementSha256 via tools/check_model.py
+  discovery: all of lean/, dotted/primed/'?' identifiers included
+    lean/Singular/Lemmas.lean: 3
+    lean/Singular/NamingLifecycleStatements.lean: 1
+    lean/Singular/NamingStatements.lean: 1
+    lean/Singular/NamingWireStatements.lean: 1
+    lean/Singular/Statements.lean: 2
+  unclassified (3):
+    Singular.attributed_zero [lean/Singular/Lemmas.lean:3], declaration-only (lexical lead)
+    Singular.helper.dotted [lean/Singular/Lemmas.lean:4], declaration-only (lexical lead)
+    Singular.primed_helper' [lean/Singular/Lemmas.lean:5], declaration-only (lexical lead)
+  limits: lexical, not proof-term; reference counts are leads and never classify, exclude or shrink anything
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+.FAIL-CLOSED population: current record population disagrees with discovery: 1 claimed but no longer discovered (e.g. ['Singular.Statements.greeter_iff@0000000000000000000000000000000000000000000000000000000000000000']), 8 discovered but unclaimed (e.g. ['Singular.NamingLifecycleStatements.lifecycle_stub_iff@9a5188ef2cefe670ffcb919bdf3838d876a1b09b638317396f06ae95d9cc0e11', 'Singular.NamingStatements.naming_stub_iff@b5901fa181db6f9fb30b5df3947a2a4412e1e18a1f57aea0eac1c267f45fd5b2']) — re-emit the record population; a shrinking denominator is a finding, never a cleanup
+.RATCHET: PASS — no per-obligation regression against the protected base
+.RATCHET: FAIL — 1 per-obligation regression(s)
+  mapping-removed Singular.Statements.greeter_iff@60939be4b5643b0348f14e7bd077469bcbd7e488342587025d29d9f7cb37b2e8: the base bound a story representation (S-1) and the current record no longer does
+.FAIL-CLOSED rows: mapping S-9 references unrecognized obligation row Singular.Statements.nonexistent_row
+..........................................COMPLETION: COMPLETE
+  mapping debt rows: 0
+  implementation-layer debt rows: 0
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+DEBT axes (reported separately, never summed)
+  mapping debt: 0 obligations without a bound story representation
+  implementation-layer debt: 0 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+candidate: 4b0ac32c47ea5539a6c12a12d09dba4bafea4f38 (bound: HEAD matches; tree clean; root is top level)
+.COMPLETION: INCOMPLETE
+  mapping debt rows: 5
+  implementation-layer debt rows: 5
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 5 obligations without a bound story representation
+  implementation-layer debt: 5 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+candidate: 7178fdbbe1b58ddd9f164e7f68e012fdf0518e96 (bound: HEAD matches; tree clean; root is top level)
+...........COMPLETION: COMPLETE
+  mapping debt rows: 0
+  implementation-layer debt rows: 0
+  execution debt findings: 0
+  unclassified rows: 0
+  stale bindings: 0
+DEBT axes (reported separately, never summed)
+  mapping debt: 0 obligations without a bound story representation
+  implementation-layer debt: 0 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 0 declarations outside the manifests
+candidate: ffffffffffffffffffffffffffffffffffffffff (bound)
+.....COMPLETION: INCOMPLETE
+  mapping debt rows: 8
+  implementation-layer debt rows: 8
+  execution debt findings: 0
+  unclassified rows: 3
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 0 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+candidate: ffffffffffffffffffffffffffffffffffffffff (bound)
+.COMPLETION: INCOMPLETE
+  mapping debt rows: 8
+  implementation-layer debt rows: 8
+  execution debt findings: 2
+  unclassified rows: 3
+  stale bindings: 0
+  strict completion requires every category zero — an incremental PR does not
+DEBT axes (reported separately, never summed)
+  mapping debt: 8 obligations without a bound story representation
+  implementation-layer debt: 8 obligations with fewer than two distinct layers
+  execution debt: 2 findings (stale/skipped/unexecuted/failing/vacuous/invalid-control)
+  unclassified: 3 declarations outside the manifests
+    Singular.attributed_zero: unmapped; no-layer; unexecuted-check; clause-accounting-missing; unclassified
+    Singular.helper.dotted: unmapped; no-layer; unclassified
+    Singular.primed_helper': unmapped; no-layer; unclassified
+    Singular.NamingLifecycleStatements.lifecycle_stub_iff: unmapped; no-layer
+    Singular.NamingStatements.naming_stub_iff: unmapped; no-layer
+    Singular.NamingWireStatements.wire_stub_iff: unmapped; no-layer
+    Singular.Statements.greeter_iff: unmapped; no-layer
+    Singular.Statements.size_bound: unmapped; no-layer
+candidate: ffffffffffffffffffffffffffffffffffffffff (bound)
+...
+----------------------------------------------------------------------
+Ran 71 tests in 3.311s
+
+OK

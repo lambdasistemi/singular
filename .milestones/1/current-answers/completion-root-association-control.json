@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-13T02:33:49.768Z",
+  "project": "/tmp/singular-root-completion-association-3010Dj",
+  "source": "/code/singular-e17-issue-77/naming-onchain",
+  "hashes": {
+    "validators/representative.ak": "d39149dcc8e278fdd83f61e39b42e5d1d301ccfd2070886254a1750b1ae3ecb2",
+    "validators/retirement_custody.ak": "ab03efbfe8b1bbc97cdf77256f4ce174345c02afef42b6c08a6a69b48140c11a",
+    "validators/root_completion.tests.ak": "8b3ff88ff89580454bd5f437bbd1387c5e82ce3f605c69f6350666e379d84d86",
+    "validators/fixtures.ak": "a6677dadc0058774ac4bd22f60845c5378ee5b4f41342c2b0c5c7586ceeb75b7",
+    "validators/application.ak": "24f4e8aa52efb99d553d925c70da7c3c20141f4f8510052ea84be7ee6760f8c8"
+  },
+  "status": "executed: actual representative and custody handlers accept the same burn-only context without registry/request/consumer participation",
+  "scope": "Copied current actual Aiken handlers, shared synthetic context only; no complete ledger transaction or authentic admission claimed",
+  "retained": [
+    {
+      "source": "validators/representative.ak",
+      "path": "handoffs/completion-root-association-validators-representative.ak",
+      "sha256": "d39149dcc8e278fdd83f61e39b42e5d1d301ccfd2070886254a1750b1ae3ecb2"
+    },
+    {
+      "source": "validators/retirement_custody.ak",
+      "path": "handoffs/completion-root-association-validators-retirement_custody.ak",
+      "sha256": "ab03efbfe8b1bbc97cdf77256f4ce174345c02afef42b6c08a6a69b48140c11a"
+    },
+    {
+      "source": "validators/root_completion.tests.ak",
+      "path": "handoffs/completion-root-association-validators-root_completion.tests.ak",
+      "sha256": "8b3ff88ff89580454bd5f437bbd1387c5e82ce3f605c69f6350666e379d84d86"
+    },
+    {
+      "source": "validators/fixtures.ak",
+      "path": "handoffs/completion-root-association-validators-fixtures.ak",
+      "sha256": "a6677dadc0058774ac4bd22f60845c5378ee5b4f41342c2b0c5c7586ceeb75b7"
+    },
+    {
+      "source": "validators/application.ak",
+      "path": "handoffs/completion-root-association-validators-application.ak",
+      "sha256": "24f4e8aa52efb99d553d925c70da7c3c20141f4f8510052ea84be7ee6760f8c8"
+    },
+    {
+      "source": "control.stdout.json",
+      "path": "handoffs/completion-root-association-control.stdout.json",
+      "sha256": "f65b06a4ab3a1b0bfb91969d39b183d7b3c8a3bff5fe6e0cffb9971df33ae6f2"
+    },
+    {
+      "source": "control.stderr",
+      "path": "handoffs/completion-root-association-control.stderr",
+      "sha256": "3a4523e629b46610b7eac690827556325ef5ab7242d5f92c75687e9933e076e2"
+    },
+    {
+      "source": "control.exit",
+      "path": "handoffs/completion-root-association-control.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "source": "control-root-names.stdout.json",
+      "path": "handoffs/completion-root-association-control-root-names.stdout.json",
+      "sha256": "68c5beab9ee232ef73e9adad5dec800df4bdae2a83dc26f0ef0ce156eba694a7"
+    },
+    {
+      "source": "control-root-names.stderr",
+      "path": "handoffs/completion-root-association-control-root-names.stderr",
+      "sha256": "bc4149ceced85b48883eb92cf52f47adeab756762bf501c8384102005a1a0b90"
+    },
+    {
+      "source": "control-root-names.exit",
+      "path": "handoffs/completion-root-association-control-root-names.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    }
+  ],
+  "command": "aiken check -m root_",
+  "exit": 0,
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "kind": {
+      "unit": 3,
+      "property": 0
+    }
+  },
+  "setupAttempt": {
+    "command": "aiken check -m root_completion",
+    "total": 0,
+    "credit": "NONE: selection matched no tests, retained separately"
+  },
+  "controls": [
+    {
+      "title": "root_both_handlers_accept_burn_without_registry_completion",
+      "status": "pass"
+    },
+    {
+      "title": "root_custody_without_burn_still_refuses",
+      "status": "pass"
+    },
+    {
+      "title": "root_burn_without_custody_still_refuses",
+      "status": "pass"
+    }
+  ],
+  "limits": "Current dirty draft bytes copied without modifying worker source. Synthetic actual-handler context only, no real ledger admission, final producer, exploit or epic acceptance. Missing association must be resolved in the intended connected completion."
+}

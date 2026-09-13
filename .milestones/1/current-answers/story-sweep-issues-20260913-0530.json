@@ -1,0 +1,11 @@
+{
+  "queriedAt": "2026-09-13T05:30:00Z",
+  "repository": "lambdasistemi/singular",
+  "milestone": "M1: On-chain Singular support for cardano-keri",
+  "total": 36,
+  "closed": 26,
+  "open": 10,
+  "openNumbers": [17, 18, 68, 71, 74, 77, 78, 80, 81, 87],
+  "query": "gh issue list --repo lambdasistemi/singular --state all --limit 100 --json number,state,title,closedAt,updatedAt,url,milestone",
+  "allOpenMapped": true
+}

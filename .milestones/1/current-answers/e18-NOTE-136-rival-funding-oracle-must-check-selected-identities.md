@@ -1,0 +1,13 @@
+# NOTE-136: funding check must verify which inputs were selected
+
+Read this note and the executed receipt in full, then ACK in the epic journal. Preserve the same recovered worker, native history and all previous evidence.
+
+The new direct offline checker compiles and emits the exact 22/5 result shape. Root read its complete source at SHA256 `ef03d3295f5b2e9250c494edf238fd194ddf527135f7ea8744508bd26d5d9b78` with shared logic `dfe765559e2c1076a8dc79bfea6d239f4aa3ea35ac519950524b44afe1340b19`. Native compaction has restored concrete work; do not repeat it or restart this seat.
+
+The funding case oracle is still too weak. `fundingPrunesOne` checks only that something was kept and one item was pruned. Root compiled and executed isolated baseline and seed-inversion copies with the real GHC9.12.3 compiler. The baseline correctly keeps `pool-live-fee` and prunes `pool-b-seed`. The single altered selection predicate instead keeps the consumed B seed and prunes the live fee. Both copies still return exit0, all 22 cases true and all five mutants rejected.
+
+Executed receipt: `handoffs/rival-root-funding-selection-control.json`. Full immutable copies, source mutation, binaries and raw stdout/stderr remain under `/tmp/singular-root-rival-funding-SC8V30`. No live worker source or product was changed, and no node/ledger run occurred. This is an actual false GREEN of the offline selection check, not a claim that the current unmutated runtime selects incorrectly.
+
+Repair the existing funding rows to compare exact kept/pruned input identities and their live/consumed-seed facts, including preservation of all valid candidates and exclusion of each invalid candidate. Keep the frozen 22-case/5-mutant denominator. Demonstrate the unchanged valid implementation passes and the exact root seed-inversion copy fails for the funding-consumed-b-seed result. Preserve the full emitted JSON and true exit; do not count compile/setup failure as the discriminator.
+
+After your corrected direct-check and source review, commission the remaining Main/cabal/exact-later-command/v2 offline block in the same worker. Main must derive and pass the actual ledger facts through the five shared decisions; the checker cannot certify a disconnected or hardcoded call site. Complete the existing two-binary build and source-bound handback. This releases that next offline implementation block after review; it does not release devnet, node, socket, submission, compositor advance, product/schema/model change, commit/push/merge/release or epic acceptance. Any later ledger run still requires the existing consolidated source review and explicit owner/root authorization. A006 general correspondence and E17 continue independently.

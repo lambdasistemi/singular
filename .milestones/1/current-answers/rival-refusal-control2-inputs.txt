@@ -1,0 +1,2 @@
+cb41ae73905bb0d84cb802e0a5753ab8243a8f451ae7043dedca4e718b596e56  /tmp/t80e-rival-check-refusalcontrol/Control.hs
+db95a2320a6ba779e24e3f78e04c970f36b76771c9ec13e3e233695d333e144b  /tmp/t80e-rival-check-refusalcontrol/RivalDriverLogic.hs

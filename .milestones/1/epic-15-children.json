@@ -1,0 +1,139 @@
+{
+  "epic": 15,
+  "milestone": 1,
+  "children": [
+    {
+      "key": "claim",
+      "number": 20,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsKXw",
+      "id": 5401938527,
+      "title": "Make M1 naming claims playable in the docs",
+      "url": "https://github.com/lambdasistemi/singular/issues/20",
+      "dependencies": [],
+      "storyIds": [
+        "sim-claim"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7sh",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    },
+    {
+      "key": "maintenance",
+      "number": 21,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsNvQ",
+      "id": 5401939389,
+      "title": "Simulate payment-address maintenance and withdrawal of pending claims",
+      "url": "https://github.com/lambdasistemi/singular/issues/21",
+      "dependencies": [
+        20
+      ],
+      "storyIds": [
+        "sim-maintenance"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7tR",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    },
+    {
+      "key": "recovery",
+      "number": 22,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsQeQ",
+      "id": 5401940089,
+      "title": "Simulate recovery through the committed next control address",
+      "url": "https://github.com/lambdasistemi/singular/issues/22",
+      "dependencies": [
+        21
+      ],
+      "storyIds": [
+        "sim-recovery"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7t-",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    },
+    {
+      "key": "retirement",
+      "number": 23,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsUcQ",
+      "id": 5401941105,
+      "title": "Simulate owner-or-quorum permanent naming retirement",
+      "url": "https://github.com/lambdasistemi/singular/issues/23",
+      "dependencies": [
+        22
+      ],
+      "storyIds": [
+        "sim-retirement"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7ui",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    },
+    {
+      "key": "consumer",
+      "number": 24,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsXWA",
+      "id": 5401941848,
+      "title": "Make concrete registry and cardano-keri contract scenarios executable",
+      "url": "https://github.com/lambdasistemi/singular/issues/24",
+      "dependencies": [
+        23
+      ],
+      "storyIds": [
+        "consumer-contract",
+        "registry-bootstrap",
+        "generic-proof"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7vJ",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    },
+    {
+      "key": "release",
+      "number": 25,
+      "nodeId": "I_kwDOUTb3cc8AAAABQfsaUg",
+      "id": 5401942610,
+      "title": "Publish the independently verified M1 simulator and contract release",
+      "url": "https://github.com/lambdasistemi/singular/issues/25",
+      "dependencies": [
+        24
+      ],
+      "storyIds": [
+        "m1-simulation-release"
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi7v3",
+      "boardFields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "parentLinked": true,
+      "dependenciesLinked": true
+    }
+  ],
+  "epicTitle": "Release the M1 simulator and contracts"
+}

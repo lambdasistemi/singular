@@ -1,0 +1,88 @@
+{
+  "at": "2026-09-13T02:12:58.110Z",
+  "command": "1ce45ec8c3a6c16051929750e497bba35ada89f81c87f0ebb09e2d9885177842",
+  "priorLivePid": 1351057,
+  "nowMissing": true,
+  "rows": [
+    {
+      "variant": "own-policy",
+      "exit": 1,
+      "targetBuilt": false,
+      "bBooted": true,
+      "classification": "SETUP-FAILURE",
+      "reason": "retirement-rows: FAILED: retirement-rows: rival boot: unexpected multiple genesis seeds consumed\n",
+      "files": {
+        "stdout.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/own-policy/stdout.log",
+          "frozen": "handoffs/rival-root-first-released-own-policy-stdout.log",
+          "sha256": "e7782d03f9d6aceaa51f27c3ab6f37c0dc8914516685ea78699624d12e6a4a53"
+        },
+        "stderr.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/own-policy/stderr.log",
+          "frozen": "handoffs/rival-root-first-released-own-policy-stderr.log",
+          "sha256": "da2fbb67cad76087db92b390df49fe11fb72a11a1be75137948aa45b69eaf673"
+        },
+        "exit": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/own-policy/exit",
+          "frozen": "handoffs/rival-root-first-released-own-policy-exit",
+          "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        }
+      }
+    },
+    {
+      "variant": "copied-policy",
+      "exit": 1,
+      "targetBuilt": false,
+      "bBooted": true,
+      "classification": "SETUP-FAILURE",
+      "reason": "retirement-rows: FAILED: retirement-rows: rival boot: unexpected multiple genesis seeds consumed\n",
+      "files": {
+        "stdout.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/copied-policy/stdout.log",
+          "frozen": "handoffs/rival-root-first-released-copied-policy-stdout.log",
+          "sha256": "e5088190bf23606340645b08b20efbfe188640c872d4f1a017e60a18490bea95"
+        },
+        "stderr.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/copied-policy/stderr.log",
+          "frozen": "handoffs/rival-root-first-released-copied-policy-stderr.log",
+          "sha256": "da2fbb67cad76087db92b390df49fe11fb72a11a1be75137948aa45b69eaf673"
+        },
+        "exit": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/copied-policy/exit",
+          "frozen": "handoffs/rival-root-first-released-copied-policy-exit",
+          "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        }
+      }
+    },
+    {
+      "variant": "forged-anchor",
+      "exit": 1,
+      "targetBuilt": false,
+      "bBooted": false,
+      "classification": "SETUP-FAILURE",
+      "reason": "retirement-rows: FAILED: retirement-rows: tx rejected: \"HardForkApplyTxErrFromEra S (S (S (S (S (S (Z (WrapApplyTxErr {unwrapApplyTxErr = ConwayApplyTxError (ConwayUtxowFailure (PPViewHashesDontMatch Mismatch (RelEQ) {supplied: SJust (SafeHash \\\"87367ccdf97b8ae5495501462ffa817f3e33e84e690e148a00fca4503ca56523\\\"), expected: SNothing}) :| [])})))))))\"\n",
+      "files": {
+        "stdout.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/forged-anchor/stdout.log",
+          "frozen": "handoffs/rival-root-first-released-forged-anchor-stdout.log",
+          "sha256": "d4fb3eabdacaa27aa4fddf32ed401e089fdacf7155f6a1469fd208df4e2c5638"
+        },
+        "stderr.log": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/forged-anchor/stderr.log",
+          "frozen": "handoffs/rival-root-first-released-forged-anchor-stderr.log",
+          "sha256": "e93603ac058f8ba9a1f19dcb40db1ac61601aa71796e972eed0af3f2687474d0"
+        },
+        "exit": {
+          "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-results/forged-anchor/exit",
+          "frozen": "handoffs/rival-root-first-released-forged-anchor-exit",
+          "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        }
+      }
+    }
+  ],
+  "attempts": 3,
+  "targetTransactions": 0,
+  "acceptedWitnessCases": 0,
+  "outcome": "Both authentic-B cases stop at singleton wallet-difference seed assumption; forged-anchor construction is rejected in phase1 at PPViewHashesDontMatch (supplied hash, expected SNothing). No variant reaches the registry-substitution target.",
+  "next": "Complete bounded offline seed binding, mintless setup and raw evidence repair in the same worker; no automatic ledger replay."
+}

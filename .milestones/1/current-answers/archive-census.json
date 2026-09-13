@@ -1,0 +1,26 @@
+{
+  "listingSha256": "5add9001b8f03e77eaa4ce98b0089ca13bf3c85d15bb7cd175e6639a7bf8e422",
+  "archiveEntries": 3378,
+  "regularNameEntries": 2441,
+  "buildPathEntries": 2331,
+  "buildEntriesInGit": 0,
+  "buildGroups": {
+    "naming-onchain/build": 40,
+    "offchain/dist-newstyle": 2222,
+    "onchain/build": 69
+  },
+  "examples": [
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/AssetName.dyn_hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/AssetName.dyn_o",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/AssetName.hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/AssetName.o",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Blueprint.dyn_hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Blueprint.dyn_o",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Blueprint.hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Blueprint.o",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Config.dyn_hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Config.dyn_o",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Config.hi",
+    "offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/build/Cardano/MPFS/Cage/Config.o"
+  ]
+}

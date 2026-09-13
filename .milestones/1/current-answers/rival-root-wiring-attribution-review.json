@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-13T01:22:25.174Z",
+  "root": "/tmp/singular-root-rival-attribution-1Usi8C",
+  "compiler": "/nix/store/dgvrp8z9n4b495z7hv18rzxq2vd06knw-ghc-shell-for-packages-ghc-9.12.3-env/bin/ghc",
+  "mainSha256": "6f57c91a8a75f3d011f44ec76e0d78cee1d89e5192fa9f7efa0b9ad5dfa83445",
+  "rawFailure": "handoffs/register-exhibit-root-semantic-crosswired-outcome.json",
+  "rawSha256": "7d3d5ac97a03a19b4330a17176901323690355fa4efc24baddc61bfb0b06456e",
+  "actualNamedSubject": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+  "wrongExpectedApplication": "dfd33801d43beda5335e60628a40b6d231f8619112fe6caa10e3131e",
+  "buildExit": 0,
+  "controlExit": 0,
+  "result": "(True,True)",
+  "scope": "Executed copied whole-message substring predicate against retained actual consumer failure: accepts actual consumer and wrong application hash. This is predicate discrimination evidence, not a new rival ledger run. Live draft also computes A exclusion from application/representative policies instead of A state-NFT identity."
+}

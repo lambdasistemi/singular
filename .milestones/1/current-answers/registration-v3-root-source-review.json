@@ -1,0 +1,45 @@
+{
+  "at": "2026-09-12T22:40:34.355Z",
+  "observed": [
+    {
+      "source": "epic-18/owner-sol-20260912/gates/consumer-registration-v3.sh",
+      "frozen": "handoffs/registration-v3-root-observed-consumer-registration-v3.sh",
+      "sha256": "eb008076ee64162a1411d89e3e15f0ee739bcb13aa3021758d8b7e0fb180b6de"
+    },
+    {
+      "source": "epic-18/owner-sol-20260912/gates/consumer-registration-v3.contract.md",
+      "frozen": "handoffs/registration-v3-root-observed-consumer-registration-v3.contract.md",
+      "sha256": "7a64520ad99fbf8038dde48712cbe70ed0bd573288e0506f94a42c7fcd0b4c26"
+    },
+    {
+      "source": "epic-18/owner-sol-20260912/gates/consumer-registration-v3.manifest.md",
+      "frozen": "handoffs/registration-v3-root-observed-consumer-registration-v3.manifest.md",
+      "sha256": "6b21f749e76997e08c5973b3373ec480f4cbc994e23ef9a056280e76eb983f16"
+    },
+    {
+      "source": "epic-18/owner-sol-20260912/gates/consumer-registration-parent-verifier-v1.py",
+      "frozen": "handoffs/registration-v3-root-observed-consumer-registration-parent-verifier-v1.py",
+      "sha256": "2aa90ce1e9ee0e59c991f6d9a9b09aa189e0066a982d8d2844ee17f233118ab6"
+    },
+    {
+      "source": "cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2:onchain/validators/checkpoint_observer.ak",
+      "frozen": "handoffs/registration-v3-primary-checkpoint_observer.ak",
+      "sha256": "afd57fc88345a7545e3cf3b88d109c4dc90e89da0d51e91f4954fa4dfd7e8f7d"
+    },
+    {
+      "source": "cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2:onchain/lib/cardano_keri/checkpoint/observer.ak",
+      "frozen": "handoffs/registration-v3-primary-observer.ak",
+      "sha256": "950cf88b9d604d1670d772e7d4e26a7bcefbebf8119d7e111a44ac0a7cb58700"
+    },
+    {
+      "source": "cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2:onchain/validators/hash_proof.ak",
+      "frozen": "handoffs/registration-v3-primary-hash_proof.ak",
+      "sha256": "341357305b57cae1b85ab321d881605530bd95c290b1bb7c9f722506e0759bb4"
+    }
+  ],
+  "findings": [
+    "Actual lifecycle Register requires authentic hash-proof input and burn; hash-proof policy absent from fixed artifact inventory.",
+    "Artifact-level source commits are individually checked but not joined to the declared bound consumer source."
+  ],
+  "verdict": "PRE-SEAL review only; no candidate or ledger execution"
+}

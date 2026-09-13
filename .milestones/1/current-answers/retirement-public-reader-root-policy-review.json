@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-13T01:14:58.097Z",
+  "source": "/code/singular-e17-issue-77/offchain/journey/retire-verify/Main.hs",
+  "sha256": "6e123df62706e3cafc0eb081bd3f61811543992cabe835889fb4484f1a67b1c0",
+  "finding": "custodyRep erases the policy id from every asset and returns only name at quantity1; verifyUnit recomputes and compares only name. This does not verify the full retirement representative asset identity.",
+  "relatedScope": "Reader currently inspects required signer hashes and untagged redeemer data; any broader actual-witness or purpose-specific claim needs those bytes/pointers bound. A live draft, not a compiled or executed acceptance finding.",
+  "scope": "Static source review; no product edit, no ledger run and no forged-bundle execution claimed."
+}

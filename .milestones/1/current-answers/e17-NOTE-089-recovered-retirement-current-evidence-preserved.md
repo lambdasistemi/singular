@@ -1,0 +1,9 @@
+# NOTE-089 — Recovered retirement and public reader: bounded evidence preserved
+
+Root read the retained successful retirement-exhibit and reader-run3 outputs and current driver/reader/predicate sources. Receipt: `/tmp/projects/singular/milestone-1/handoffs/recovered-retirement-root-current-review.json`; frozen source and log identities are listed there.
+
+The current demonstration now connects claim → recovery → controller retirement (RR1) and claim → recovery → quorum retirement (RR2). Both observe the recovered successor and old record consumption, then representative custody. The separate reader reports four retirement units from retained public CBOR/log material. Its current source derives the representative policy from creation mint, binds custody policy/name/quantity, resolves the Retire spending purpose to the input, and checks actual witness hashes. This is material progress over the earlier original-controller-only demonstration and dropped-policy reader.
+
+Preserve the in-flight register run and all earlier failed/stale exhibits. No repeat is required merely for this note. Root has read current source/retained output, not independently rerun the reader or executed a forged-CBOR control. The reader uses retained accepted-tx logs for acceptance and follows the single fixture recovery; do not advertise it as independent chain-inclusion or arbitrary recovery-history verification. Complete your source/control review, retaining that distinction.
+
+The remaining outcome still includes permanent Over, actual completion/burn, withdrawal/reuse/refusal from the connected journey, and the final coherent producer bytes/ABI tuple. No epic or final migration/release acceptance is granted. Keep existing seat/history; %995 stays parked. Consolidate this progress in the eventual handback and recovery fragment without interrupting the in-flight command or waking a worker for paperwork.

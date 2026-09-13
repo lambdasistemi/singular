@@ -1,0 +1,133 @@
+{
+  "at": "2026-09-13T05:30:00.000Z",
+  "inventory": "handoffs/story-sweep-issues-20260913-0530.json",
+  "openIssuesMapped": [
+    {
+      "number": 87,
+      "stories": [
+        "reproducible-onchain",
+        "lean-acceptance",
+        "compiled-invariants"
+      ]
+    },
+    {
+      "number": 81,
+      "stories": [
+        "consumer-conformance",
+        "reproducible-onchain"
+      ]
+    },
+    {
+      "number": 80,
+      "stories": [
+        "registry-bootstrap",
+        "consumer-conformance",
+        "maintain-address",
+        "recover-control",
+        "reproducible-onchain",
+        "lean-acceptance",
+        "compiled-invariants"
+      ]
+    },
+    {
+      "number": 78,
+      "stories": [
+        "reproducible-onchain",
+        "joiner-onboarding"
+      ]
+    },
+    {
+      "number": 77,
+      "stories": [
+        "claim-name",
+        "maintain-address",
+        "recover-control",
+        "retire-name",
+        "permanent-over"
+      ]
+    },
+    {
+      "number": 74,
+      "stories": [
+        "retire-name",
+        "permanent-over"
+      ]
+    },
+    {
+      "number": 71,
+      "stories": [
+        "consumer-contract",
+        "consumer-conformance",
+        "permanent-over",
+        "reproducible-onchain"
+      ]
+    },
+    {
+      "number": 68,
+      "stories": [
+        "consumer-conformance",
+        "reproducible-onchain"
+      ]
+    },
+    {
+      "number": 18,
+      "stories": [
+        "consumer-contract",
+        "consumer-conformance",
+        "permanent-over",
+        "reproducible-onchain",
+        "compiled-invariants",
+        "reject-empty-processing"
+      ]
+    },
+    {
+      "number": 17,
+      "stories": [
+        "claim-name",
+        "withdraw-insert",
+        "maintain-address",
+        "recover-control",
+        "retire-name",
+        "permanent-over",
+        "reproducible-onchain",
+        "reject-empty-processing"
+      ]
+    }
+  ],
+  "closedEpics": [
+    16,
+    15
+  ],
+  "evidence": [
+    "handoffs/e17-root-foreign-policy-control.json",
+    "epic-17/ticket-77/commit-owner-2/handoffs/note-027-031-over-journey.md",
+    "epic-18/t87b-blaster-refinement/handoffs/note038-admission-orphan-result.md",
+    "epic-18/t80e-execution-evidence/STATUS.md",
+    "handoffs/rival-root-first-released-ledger-results.json",
+    "epic-17/STATUS.md",
+    "epic-18/STATUS.md"
+  ],
+  "unchangedBoundaries": [
+    "Both E17/E18 incomplete",
+    "Grok E17 and GPT Sol E18",
+    "Stop after both fully accepted",
+    "192 baseline obligations",
+    "No future epic"
+  ],
+  "storyCount": 27,
+  "groups": 6,
+  "ticketState": {
+    "total": 36,
+    "closed": 26,
+    "open": 10
+  },
+  "storyState": {
+    "delivered": 6,
+    "landed": 2,
+    "review": 7,
+    "in-progress": 6,
+    "blocked": 2,
+    "standing": 4
+  },
+  "trigger": "Stakeholder challenged the all-in-progress projection; reconciled ticket status separately from user-story evidence after connected Over, foreign-policy falsification, general proof and offline rival-evidence transitions"
+}

@@ -1,0 +1,53 @@
+diff --git a/conformance/coverage/singular_coverage/debt.py b/conformance/coverage/singular_coverage/debt.py
+index 9505acf..12e1f31 100644
+--- a/conformance/coverage/singular_coverage/debt.py
++++ b/conformance/coverage/singular_coverage/debt.py
+@@ -168,6 +168,7 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
+         # the union is taken within each family, never across families.
+         covered_by_layer: dict[str, set[str]] = {}
+         execs_by_layer: dict[str, set[str]] = {}
++        candidates: list[tuple[str, str, tuple[str, ...] | None]] = []
+ 
+         for check in checks:
+             check_findings, pays = _validity_findings(check, root)
+@@ -201,19 +202,18 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
+                     pays = False
+             findings.extend(check_findings)
+             if pays:
+-                if check.coveredClauses:
+-                    covered_by_layer.setdefault(check.layer, set()).update(check.coveredClauses)
+-                layers.add(check.layer)
+-                execs_by_layer.setdefault(check.layer, set()).add(check.executionIdentity)
++                candidates.append((check.layer, check.executionIdentity, check.coveredClauses))
+ 
+         # Cross-family aliasing: the SAME executionIdentity contributing to
+         # two families is one execution wearing two layer names. Aliased
+-        # identities contribute to neither family's achievement — computed
+-        # from identity SETS, so the verdict is permutation invariant.
++        # checks contribute to NEITHER family — not their identity for
++        # distinctness, and not their clause coverage either (a clause that
++        # only an aliased execution covers is uncovered). Computed from
++        # identity SETS, so the verdict is permutation invariant.
+         family_execs: dict[str, set[str]] = {}
+-        for layer, execs in execs_by_layer.items():
++        for layer, execution, _covered in candidates:
+             family = next(g[-1] for g in REQUIRED_LAYERS if layer in g)
+-            family_execs.setdefault(family, set()).update(execs)
++            family_execs.setdefault(family, set()).add(execution)
+         aliased = set.intersection(*family_execs.values()) if len(family_execs) > 1 else set()
+         if aliased:
+             findings.append(
+@@ -224,6 +224,13 @@ def compute_debt(inventory: Inventory, record: Record, root: Path) -> list[Oblig
+                     "layers contributes to neither",
+                 )
+             )
++        for layer, execution, covered in candidates:
++            if execution in aliased:
++                continue
++            if covered:
++                covered_by_layer.setdefault(layer, set()).update(covered)
++            layers.add(layer)
++            execs_by_layer.setdefault(layer, set()).add(execution)
+         satisfied = all(
+             any(layer in layers for layer in group) and not (aliased & set().union(
+                 *(execs_by_layer.get(layer, set()) for layer in group)

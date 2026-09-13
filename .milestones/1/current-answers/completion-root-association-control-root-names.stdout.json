@@ -1,0 +1,63 @@
+{
+  "seed": 3217119460,
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "kind": {
+      "unit": 3,
+      "property": 0
+    }
+  },
+  "modules": [
+    {
+      "name": "root_completion.tests",
+      "summary": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "kind": {
+          "unit": 3,
+          "property": 0
+        }
+      },
+      "tests": [
+        {
+          "title": "root_both_handlers_accept_burn_without_registry_completion",
+          "status": "pass",
+          "on_failure": "fail_immediately",
+          "execution_units": {
+            "mem": 201372,
+            "cpu": 74161500
+          }
+        },
+        {
+          "title": "root_custody_without_burn_still_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 64346,
+            "cpu": 23279987
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect held_burned_exactly_once(claim, tx)"
+          ]
+        },
+        {
+          "title": "root_burn_without_custody_still_refuses",
+          "status": "pass",
+          "on_failure": "succeed_eventually",
+          "execution_units": {
+            "mem": 21834,
+            "cpu": 7881418
+          },
+          "traces": [
+            "the validator crashed / exited prematurely",
+            "expect Some(record_input) =\n    find(tx.inputs, fn(input) {\n      when input.output.address.payment_credential is {\n        address.Script(hash) -> hash == application_policy\n        _ -> False\n      }\n    })"
+          ]
+        }
+      ]
+    }
+  ]
+}

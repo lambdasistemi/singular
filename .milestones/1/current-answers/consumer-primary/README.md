@@ -1,0 +1,11 @@
+# Primary consumer value contract
+
+Read-only extraction by the milestone desk from cardano-keri commit 14a64a4681d3e429fab5877062b5c476c2a4bfe2. Full source files and SHA256 digests retained here; excerpts retain original line numbers. This is a source-bound contract answer, not an executable conformance claim.
+
+Correction owned by the desk: NOTE-046 repeated the oversimplification that EVERY processed request refunds its bond to its owner. That is not the required consumer model. Registry.processBody (lines 300-338) locks p.D into a checkpoint on register/revive, refunds p.Mr to the recorded owner on goDormant/goConvicted/convict; rejectOne refunds the request operation bond. Registry.stepFn fold (400-408) emits those operation-specific flows and n*p.tip to the folder. Cage.delegated_is_registry (210-212) uses delegatedRouting, not refundAll. A blanket exact-refund repair would preserve the wrong value mode and prevent checkpoint funding.
+
+The theorem citations in owner18's bundle are also wrong for fold tips: R11_contribute_value is deposit amount; R11_retract_value is bond+tip on retract. They do not state fold routing. Fold routing is explicitly in Registry.processBody/stepFn and the delegated-is-registry equality. Fees are outside Registry.stepFn; do not invent concrete fee allocation. Preserve existing legitimate fees while producing the operation-to-concrete-value mapping.
+
+Singular's representative-token Delta does not observe fold lovelace. Consumer compatibility is already part of the authorized full M1 outcome, so its omission from the Singular abstraction is not a new question whether M1 owes the consumer its behavior. Establish the concrete refinement and plugin/cage ownership from the fixed contract. Escalate only an actual conflicting accepted transition or missing essential value decision after this mapping. CG11 remains the distinct unresolved empty-fold conflict.
+
+Historical CG19 evidence remains at /tmp/projects/singular/milestone-1/epic-18/handoffs/cg19-evidence-bundle-for-owner17.md. Its original raw body is MISSING. Do not claim a repaired-only rerun reconstructs the original failure: preserve the old receipt/log and retain raw bodies in the next bounded RED/repaired/control sequence at the relevant candidate. Source classification and logs do not discharge conformance.

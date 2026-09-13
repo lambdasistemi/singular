@@ -1,0 +1,21 @@
+S3 verifier-produced-verdicts PASS exit 17
+S3 connected.state-input PASS STALE CONTROL FROM EARLIER RUN
+S3 connected.request-input PASS STALE CONTROL FROM EARLIER RUN
+S3 connected.continuation PASS STALE CONTROL FROM EARLIER RUN
+S3 connected.root-before PASS STALE CONTROL FROM EARLIER RUN
+S3 connected.root-after PASS STALE CONTROL FROM EARLIER RUN
+S3 connected.txid PASS STALE CONTROL FROM EARLIER RUN
+S3 representative.applied PASS STALE CONTROL FROM EARLIER RUN
+S3 representative.asset PASS STALE CONTROL FROM EARLIER RUN
+S3 representative.approval PASS STALE CONTROL FROM EARLIER RUN
+S3 representative.key PASS STALE CONTROL FROM EARLIER RUN
+S3 refusal.insert PASS STALE CONTROL FROM EARLIER RUN
+S3 refusal.end PASS STALE CONTROL FROM EARLIER RUN
+S3 refusal.migration PASS STALE CONTROL FROM EARLIER RUN
+S3 refusal.sweep PASS STALE CONTROL FROM EARLIER RUN
+S3 refusal.burning PASS STALE CONTROL FROM EARLIER RUN
+S3 control.free-key PASS STALE CONTROL FROM EARLIER RUN
+S3 control.supported-action PASS STALE CONTROL FROM EARLIER RUN
+S3 no-authority-field PASS corroboration only — refusal.{end,migration,sweep,burning} above are the evidence
+
+S3 SUPPLEMENT GREEN (candidate control-candidate, executed)

@@ -1,0 +1,46 @@
+[
+  {
+    "label": "baseline",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-c56-qYtatI",
+      "check"
+    ],
+    "exit": 0,
+    "stdout": "base=a95f299 live HEAD=c56c2a5ada22 base-resolves: a95f299\nUNRESOLVED evidence follow-ups (18) — judged, not closed, no credit:\n  Singular.consume_applications\n  Singular.consume_config\n  Singular.consume_entries\n  Singular.consume_requests\n  Singular.consume_used\n  Singular.countP_filter_le\n  Singular.entry_key\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\n  Singular.representative_key\n  Singular.setEntry_applications\n  Singular.setEntry_config\n  Singular.setEntry_requests\n  Singular.setEntry_used\nCLASSIFICATION 192 = 109 + 83; rows=83 open=0 unresolved=18 findings=0\nVERDICT: COMPLETE\n",
+    "stderr": ""
+  },
+  {
+    "label": "forged-signature",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-c56-qYtatI",
+      "--classification",
+      "/tmp/singular-classification-c56-qYtatI/forged.json",
+      "check"
+    ],
+    "exit": 3,
+    "stdout": "signature-unbound Singular.requireSome_none: Singular.requireSome_none records a signature text the live declaration (lean/Singular/Lemmas.lean:95) does not contain — the bound digest cannot vouch for a different statement\nbase=a95f299 live HEAD=c56c2a5ada22 base-resolves: a95f299\nUNRESOLVED evidence follow-ups (18) — judged, not closed, no credit:\n  Singular.consume_applications\n  Singular.consume_config\n  Singular.consume_entries\n  Singular.consume_requests\n  Singular.consume_used\n  Singular.countP_filter_le\n  Singular.entry_key\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\n  Singular.representative_key\n  Singular.setEntry_applications\n  Singular.setEntry_config\n  Singular.setEntry_requests\n  Singular.setEntry_used\nCLASSIFICATION 192 = 109 + 83; rows=83 open=0 unresolved=18 findings=1\nVERDICT: FAIL-CLOSED\n",
+    "stderr": ""
+  },
+  {
+    "label": "source-literal",
+    "command": [
+      "/nix/store/7gl4khq26h625mpqzkiiqsify3hclar1-python3-3.13.9/bin/python3",
+      "-m",
+      "singular_classification",
+      "--root",
+      "/tmp/singular-classification-c56-qYtatI",
+      "check"
+    ],
+    "exit": 3,
+    "stdout": "literal-drift Singular.namingStepFoldActionEq: Singular.namingStepFoldActionEq records literals ['naming-no-delete'] but raw source contains ['naming-xx-delete'] — the literal is the meaning in a refusal lemma, not incidental text\nbase=a95f299 live HEAD=c56c2a5ada22 base-resolves: a95f299\nUNRESOLVED evidence follow-ups (18) — judged, not closed, no credit:\n  Singular.consume_applications\n  Singular.consume_config\n  Singular.consume_entries\n  Singular.consume_requests\n  Singular.consume_used\n  Singular.countP_filter_le\n  Singular.entry_key\n  Singular.exceptBindErrAny\n  Singular.exceptBindOkAny\n  Singular.exceptBindResultEqAction\n  Singular.exceptMapEq\n  Singular.exceptMapErrAny\n  Singular.exceptMapOkAny\n  Singular.representative_key\n  Singular.setEntry_applications\n  Singular.setEntry_config\n  Singular.setEntry_requests\n  Singular.setEntry_used\nCLASSIFICATION 192 = 109 + 83; rows=83 open=0 unresolved=18 findings=1\nVERDICT: FAIL-CLOSED\n",
+    "stderr": ""
+  }
+]

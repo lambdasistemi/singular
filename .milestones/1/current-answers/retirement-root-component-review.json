@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-13T00:31:14.899Z",
+  "log": "epic-17/ticket-77/commit-owner-2/evidence/retirement-exhibit.log",
+  "logSha256": "83351937ed889b2437d38fa261affc53c36869a0ab251af2a85a82a6eb22cef3",
+  "driverSha256": "8c1e0147ffed4bfbe287fa4ac8b13d5cce46e4d711d482276fa8af232fa79867",
+  "controllerTx": "7aa1a305a81ea5d85c04d599a201995307a8df17f25ba318347f51dc6085822a",
+  "quorumTx": "54034800aadc24ad0f02b792355b20242fdddb272dfdd98150bead4da573def0",
+  "observed": "Real connected claim setups and controller/quorum retirement into separate custody reported; replay refuses spent inputs at phase1.",
+  "limit": "Current runner retires records created by the old controller, uses envOldHash and emits it as public material. No recover-then-retire or independent public-material retrieval is executed here. Permanent Over still absent; no final ABI/epic acceptance."
+}

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+echo verifier-crashed >&2
+exit 17

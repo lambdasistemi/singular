@@ -1,0 +1,13 @@
+{
+  "seed": 3306945110,
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "kind": {
+      "unit": 0,
+      "property": 0
+    }
+  },
+  "modules": []
+}

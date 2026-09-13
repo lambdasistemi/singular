@@ -1,0 +1,6 @@
+{
+  "root": "/tmp/singular-publication-v2-ahKiIc",
+  "sourceSha256": "aeb62e31bfc1ca816cc253b90fb7d7b7358f77f9561840f832fcee5116773db7",
+  "exit": 0,
+  "scope": "Unchanged expect_blocked helper only, fed command-not-found, timeout and unexplained failure with empty evidence. No publisher execution claimed."
+}

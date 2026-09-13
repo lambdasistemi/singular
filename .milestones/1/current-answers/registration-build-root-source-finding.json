@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-12T23:09:06.266Z",
+  "entries": [
+    {
+      "source": "f28563786dd4bf37312d6faa62deee3b7a06a9cf:onchain/flake.nix",
+      "frozen": "handoffs/registration-build-root-fork-flake.nix",
+      "sha256": "c421a08e7e5ac495c16740adf1bfd0584ffc4d7d2abc2eabd6c7d2fa56011b45"
+    },
+    {
+      "source": "epic-18/owner-sol-20260912/gates/consumer-registration-parent-verifier-v1.py",
+      "frozen": "handoffs/registration-build-root-observed-verifier.py",
+      "sha256": "2df3c02360b4eb2200ee40c032ab9f58f69979918eef0f2c202c1b9ae6f97ae1"
+    }
+  ],
+  "scope": "source-level producer/consumer build-contract review; no build or ledger verdict",
+  "finding": "Fork candidate production flake stages a pinned patched MPF dependency before aiken build; current parent build_one copies tracked source and invokes bare aiken build without that staging. Final and mutant builds must reproduce actual production assembly."
+}

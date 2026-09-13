@@ -1,0 +1,7 @@
+Script started on 2026-09-13 06:23:50+01:00 [COMMAND="/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken check -m rootforeign_" <not executed on terminal>]
+  × I couldn't find any 'aiken.toml' manifest in ..
+  help: Try running `aiken new <REPOSITORY/PROJECT>` to initialise a project
+        with an example manifest.
+
+
+Script done on 2026-09-13 06:23:50+01:00 [COMMAND_EXIT_CODE="1"]

@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-09-13T05:23:53Z",
+  "candidate": {
+    "worktree": "/code/singular-e17-issue-77",
+    "commit": "27e5f9a34f2a96356ce319885d5d0acc282dba62",
+    "retirementCustodySha256": "8c0583d48793048470749cb3a687e64d5176de088177406fbb6c11a3e28beb17",
+    "stateSha256": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0",
+    "requestSha256": "aeacc217ef7424d024f1535cc3b0c6dfc68994efb30f8ebe1aac11b2818505fe",
+    "consumerSha256": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a"
+  },
+  "control": {
+    "root": "/tmp/singular-root-foreign-policy-2qpcax",
+    "source": "handoffs/e17-root-foreign-policy-control.tests.ak",
+    "sourceSha256": "6b1e2d88d719f577bedf127fec231839e2d18af4c2734a7f6de654d44db1288f",
+    "command": "/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken check -m rootforeign_",
+    "exit": 0,
+    "result": "5 tests, 5 passed, 0 failed",
+    "rawLog": "handoffs/e17-root-foreign-policy-control.log",
+    "rawLogSha256": "d928340c110068ad01c2f72fc1ec3374a771b96e3cc67e98c56df7f971a94033"
+  },
+  "finding": {
+    "status": "CONFIRMED",
+    "witness": "The actual state, request, consumer, and retirement-custody handlers all accept a singleton authentic Active-to-Over update when custody holds and burns a lookalike token under a foreign policy. The configured representative policy mints zero, so its policy validator need not execute and the authentic representative can remain live.",
+    "mechanism": "retirement_custody.request_binds_burn matches only the held asset name against request.old; burned_of discards the held policy. consumer.check_rep_mints inspects only positive mints under state.representative_policy.",
+    "scope": "Actual production handler functions in a value-balanced synthetic transaction context; this is not a ledger submission or an authentic-history devnet run.",
+    "positiveControl": "The same four handlers accept the authentic-policy completion.",
+    "negativeControls": [
+      "A wrong held token name refuses at retirement custody.",
+      "Omitting the burn refuses at retirement custody.",
+      "Omitting the pinned consumer withdrawal refuses at state."
+    ]
+  },
+  "retainedSetupFailure": {
+    "path": "handoffs/e17-root-foreign-policy-setup-failure.log",
+    "sha256": "20be2f15cb9fe11b6547c4c5ee3cf87ab542b56c2454add30277f1439241a9a9",
+    "reason": "The first durable-log invocation ran from the milestone directory and found no aiken.toml; it carries no semantic credit."
+  }
+}

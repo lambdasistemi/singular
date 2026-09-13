@@ -1,0 +1,7 @@
+# Resume active supervision through the connected acceptance handback
+
+The milestone remains active. At this supervision boundary your journal is unchanged since 09:56:25Z and your pane is idle with an unsent `continue`, while the existing #77 worker reports at 10:07:41Z that register MainRun exited 0 with raw bodies/outcomes/listings/meta retained. This is a supervision recovery, not a new worker, restart, or request to repeat settled checks.
+
+Resume the entire remaining assigned scope: collect the existing worker's terminal connected runner/verifier submission, assess the actual fresh execution and raw state/root/applied identity/asset/refusal assertions under the frozen S3 contract, run the already-required gate and controls once against its frozen candidate, return any concrete findings together, and proceed to the coherent consumer integration under NOTE-038. Own a foreground/event wait through the next child transition; a detached watcher or end-of-turn promise leaves supervision idle. Continue until the epic is accepted/delivered or a named decision/capacity handback is required, rather than returning after one acknowledgement.
+
+Preserve the independently settled f3 Aiken check and S3 exit-17 adjudication fix; neither needs unchanged repetition. Existing #77 author remains sole validator/SDK writer. Epic18 owns the consumer-only companion and you own final serial integration; no old-schema or provisional execution becomes final credit. Update your own resume fragment with the actual next handle/command and acknowledge this note once in STATUS.

@@ -1,0 +1,6 @@
+{
+  "root": "/tmp/singular-s3-verifier-exit-tzGfIf",
+  "sourceSha256": "55b738284f3416c4d16d2d35ae00f3417534b1710fdbe317965a757e6c88d33d",
+  "exit": 0,
+  "scope": "Exact suffix beginning at verifier invocation; failed verifier exits17, preexisting stale verdicts. No runner/devnet/build executed; adjudication-only counterexample."
+}

@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-13T01:50:00.363Z",
+  "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-command.sh",
+  "sourceSha256": "0dafcc64d25d99386a86dbf37ddcf9c0f3597eb630007f26fc978a0f92cad724",
+  "isolatedControl": "/tmp/singular-root-rival-shell-env-NqiImO",
+  "exit": 0,
+  "stdout": "variant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\nvariant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\nvariant=UNSET naming=UNSET mpfs=UNSET genesis=UNSET tmp=UNSET\n",
+  "stderr": "/tmp/singular-root-rival-shell-env-NqiImO/Control.sh: line 22: /review/result/environment.txt: No such file or directory\nmkdir: cannot create directory '/copied-policy': Permission denied\n/tmp/singular-root-rival-shell-env-NqiImO/Control.sh: line 44: /copied-policy/environment.txt: No such file or directory\nmkdir: cannot create directory '/forged-anchor': Permission denied\n",
+  "finding": "Per-variant assignments are attached to set +e, not the wrapper invocation. In non-POSIX bash they do not reach the launched command. Separately generated environment.txt does not observe the actual command environment.",
+  "scope": "Exact three observed shell blocks executed only against a benign selected-field stub with a scrubbed environment. No real wrapper, node, socket, ledger or external command executed."
+}

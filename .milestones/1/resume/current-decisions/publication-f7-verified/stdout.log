@@ -1,0 +1,83 @@
+provider: /tmp/singular-publisher-f7-sT1TPa/provider @ f7f4eee83d4199a31a24f31b6b7b8c36fb496a6c
+provider status: 
+test publisher: /nix/store/kahsa949d2n43y3bbmzs0c4c5dpmhcsj-publish-docs/bin/publish-docs
+production publisher: /nix/store/3j0frd0k5vwhli9977zycan908mmpmka-publish-docs/bin/publish-docs
+fullclone fixture: /tmp/singular-publisher-f7-sT1TPa/run/fixtures/fullclone @ 097a6163b81c341b72966a592444826507c4bebc
+missing fixture: /tmp/singular-publisher-f7-sT1TPa/run/fixtures/missing @ 3b14ef48dd3fd961b853ab951d8eb5d3349b07b4
+version tag: v0.3.0
+unmarked fixture: /tmp/singular-publisher-f7-sT1TPa/run/unmarked @ d8d045b9c82e5fbdf2e3f22126bf0721c54e943d
+incomplete fixture: /tmp/singular-publisher-f7-sT1TPa/run/incomplete @ 94b627788a2804be0ace717de59ad003d60ebbdb (provider HEAD plus test marker)
+=== case positive (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/fixtures/fullclone @ 097a6163b81c341b72966a592444826507c4bebc
+tag: v0.3.0 sha: 097a6163b81c341b72966a592444826507c4bebc TAG_COMMIT: 097a6163b81c341b72966a592444826507c4bebc
+publisher exit: 0
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-positive.log):
+--- gh calls (positive):
+case positive: HELD (continuous path, upload recorded with exact identities)
+=== case incomplete (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/incomplete @ 94b627788a2804be0ace717de59ad003d60ebbdb
+tag: v0.3.0 sha: 94b627788a2804be0ace717de59ad003d60ebbdb TAG_COMMIT: 94b627788a2804be0ace717de59ad003d60ebbdb
+publisher exit: 1
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-incomplete.log):
+--- gh calls (incomplete):
+case incomplete: HELD (exit 1, 'INCOMPLETE', no upload)
+=== case missing (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/fixtures/missing @ 3b14ef48dd3fd961b853ab951d8eb5d3349b07b4
+tag: v0.3.0 sha: 3b14ef48dd3fd961b853ab951d8eb5d3349b07b4 TAG_COMMIT: 3b14ef48dd3fd961b853ab951d8eb5d3349b07b4
+publisher exit: 3
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-missing.log):
+--- gh calls (missing):
+case missing: HELD (exit 3, 'not a single committed path', no upload)
+=== case injected-fault (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/fixtures/fullclone @ 097a6163b81c341b72966a592444826507c4bebc
+tag: v0.3.0 sha: 097a6163b81c341b72966a592444826507c4bebc TAG_COMMIT: 0000000000000000000000000000000000000000
+publisher exit: 1
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-injected-fault.log):
+--- gh calls (injected-fault):
+case injected-fault: HELD (exit 1, 'FAIL: checkout .* is not the tag commit', no upload)
+marker-deleted fixture: /tmp/singular-publisher-f7-sT1TPa/run/markdel @ 94b627788a2804be0ace717de59ad003d60ebbdb (dirty tree)
+=== case marker-deleted (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/markdel @ 94b627788a2804be0ace717de59ad003d60ebbdb
+tag: v0.3.0 sha: 94b627788a2804be0ace717de59ad003d60ebbdb TAG_COMMIT: 94b627788a2804be0ace717de59ad003d60ebbdb
+publisher exit: 1
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-marker-deleted.log):
+--- gh calls (marker-deleted):
+case marker-deleted: HELD (exit 1, 'FAIL: dirty or unreadable working tree', no upload)
+=== case nonrepo (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run @ non-git
+tag: v0.3.0 sha: 097a6163b81c341b72966a592444826507c4bebc TAG_COMMIT: 097a6163b81c341b72966a592444826507c4bebc
+publisher exit: 1
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-nonrepo.log):
+--- gh calls (nonrepo):
+case nonrepo: HELD (exit 1, 'FAIL: checkout .* is not the tag commit', no upload)
+=== case guard-absent (via publish-docs-boundary-test)
+pwd: /tmp/singular-publisher-f7-sT1TPa/run/unmarked @ d8d045b9c82e5fbdf2e3f22126bf0721c54e943d
+tag: v0.3.0 sha: d8d045b9c82e5fbdf2e3f22126bf0721c54e943d TAG_COMMIT: d8d045b9c82e5fbdf2e3f22126bf0721c54e943d
+publisher exit: 1
+--- publisher output (/tmp/singular-publisher-f7-sT1TPa/run/case-guard-absent.log):
+--- gh calls (guard-absent):
+case guard-absent: HELD (exit 1, assembly attempted, missing-flake env failure, pre-integration proceed)
+baseline test-publisher closure: /nix/store/kahsa949d2n43y3bbmzs0c4c5dpmhcsj-publish-docs/bin/publish-docs
+mutant copy guard-removed: /tmp/singular-publisher-f7-sT1TPa/run/mut-guard-removed (baseline f7f4eee83d4199a31a24f31b6b7b8c36fb496a6c)
+mutation patch: /tmp/singular-publisher-f7-sT1TPa/provider/conformance/coverage/publication-mutant-guard-removed.diff sha256 bae4334106df4b1be69456e9c2034b3aeae486b05b8a199b01e76179f4cabdb3
+mutant tree fingerprint: ea4e285cfa1018e7f54456cb1311e13168ee59ffa6aff99aa3ef7454c8f82fc5
+mutant-A closure: /nix/store/8slmrdcb3wpw4jjs2nhvz3nq0398fqns-publish-docs/bin/publish-docs
+=== case guard-removed (mutant publisher, incomplete fixture)
+mutant publisher exit: 1
+--- gh calls (guard-removed):
+mutant copy destroyed (patch, fingerprint and logs retained above)
+case guard-removed: HELD (assembly PASSED on INCOMPLETE without guard, no upload — guard is load-bearing)
+mutant copy no-final: /tmp/singular-publisher-f7-sT1TPa/run/mut-no-final (baseline f7f4eee83d4199a31a24f31b6b7b8c36fb496a6c)
+mutation patch: /tmp/singular-publisher-f7-sT1TPa/provider/conformance/coverage/publication-mutant-no-final.diff sha256 a8c2c4afc1153561657d6f490f6113c208ce7435232b3eb1ddc6f333bccd3ad4
+mutant tree fingerprint: 3343e62a6dfd45d4755144b9199108f8aa730c24f8e305aab547cbe796795ccf
+mutant-B closure: /nix/store/dayy93zmb5f8h2k8vxrw0i4y4kjfx82k-publish-docs/bin/publish-docs
+=== case no-final (mutant publisher, sufficient fixture)
+mutant publisher exit: 0
+--- gh calls (no-final, must show no upload):
+mutant copy destroyed (patch, fingerprint and logs retained above)
+case no-final: HELD (exit 0, assembly PASS, mutated path executed, no upload — composition proven)
+resolved recorder: /nix/store/n8gbksbsxk4nj89d5ypqig2bkh7w5vmy-upload-recorder
+closure audit: recorder present, no gh package present
+executable audit: recorder referenced
+--- gh calls (uploads recorded only by the positive case):
+ALL CASES HELD

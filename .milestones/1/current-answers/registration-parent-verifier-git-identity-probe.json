@@ -1,0 +1,17 @@
+{
+  "scope": "Direct source-identity preflight probe of frozen unsealed verifier; no build, validator, or node executed; later artifact values are placeholders never reached",
+  "verifier_sha256": "5996abde73abb68271d2843b40a28e464c95fbf653d4a1bcbbe2af721037bc25",
+  "actual_source": "/code/singular-e17-accept",
+  "actual_git_commit": "ddfc4e961d530ee4e62361aabbcc730a9b9809ed",
+  "actual_git_commit_width": 40,
+  "observations": [
+    {
+      "cek_argument_count": null,
+      "result": "seal.artifacts[0] keys differ: missing=['cek_argument_count'] extra=[]"
+    },
+    {
+      "cek_argument_count": 1,
+      "result": "producer-state.source_commit is not a SHA-256"
+    }
+  ]
+}

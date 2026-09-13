@@ -1,0 +1,15 @@
+{
+  "name": "gate",
+  "cmd": "bash",
+  "args": [
+    "/tmp/singular-s2-v2-oOt8k8/S2-v2-frozen.sh",
+    "/tmp/singular-s2-v2-oOt8k8/source",
+    "/tmp/singular-s2-v2-oOt8k8/fabricated-receipt.json",
+    "d846bab795828b25f67250bece374aa6415c442f"
+  ],
+  "cwd": "/tmp/singular-s2-v2-oOt8k8/source",
+  "begin": "2026-09-12T09:05:04.233Z",
+  "end": "2026-09-12T09:05:10.936Z",
+  "exit": 0,
+  "signal": null
+}

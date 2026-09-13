@@ -1,0 +1,174 @@
+{
+  "at": "2026-09-12T23:36:36.322Z",
+  "root": "/tmp/singular-root-rejected-custody-Jdn75Y",
+  "entries": [
+    {
+      "source": "/code/singular-e17-issue-77/onchain/aiken.toml",
+      "sha256": "68bac882fea8dfefc13e36a70890c6bbd152dd8b86eb5d354d345e40ff0dfa55"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/aiken.lock",
+      "sha256": "191e2eab3d864e27b9d8bd117789aa112649de25b31e09315c81deb05beb3d15"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage.ak",
+      "sha256": "4b09aed086b56a86ab86fdd3356fcb35a3ea51e10e1d68bee11943b38310b0d6"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage.props.ak",
+      "sha256": "f8fe8c55024ada61d29ea4e3e304b2857e45fe39a28bf59a8fc95b7a251e58e8"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/cage_vectors.ak",
+      "sha256": "d783e8b7f34a30079ce61ecee3e1994e1c0889abcff4c6ad6fb8d39401ea8315"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/consumer.ak",
+      "sha256": "3db45e2085f10891d404a9a35fab6bcdfa634f521703151cf4ab8d1d2def263a"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/lib.ak",
+      "sha256": "66ab4befd64a4d83127807da281814149ad77b0981731a47952b8e5a57ff833f"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/lib.props.ak",
+      "sha256": "d1fbd32905b64da81f7e28f6af2a1e7e3db706bc15892354df3ce6365c16bfbb"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/request.ak",
+      "sha256": "aeacc217ef7424d024f1535cc3b0c6dfc68994efb30f8ebe1aac11b2818505fe"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/shared.ak",
+      "sha256": "7bb4b69d58fa064670b654dfa394078701fe3846e98f412d73d3ee9cc3a8f69d"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/staking.ak",
+      "sha256": "789455f231abb22375ba7c3383a5130e37aaf86fed3ac50a8a608ded5244e032"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/state.ak",
+      "sha256": "4c6102319cb2afaa062bc56eb6a00df9db99f4d7a4924850c720fbd4c56669e0"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/onchain/validators/types.ak",
+      "sha256": "5349832301ab34873e5cb3734170b44046761e75a131df2e8e47c9a132236d14"
+    },
+    {
+      "source": "/code/singular-e17-issue-77/naming-onchain/validators/retirement_custody.ak",
+      "sha256": "ab03efbfe8b1bbc97cdf77256f4ce174345c02afef42b6c08a6a69b48140c11a"
+    }
+  ],
+  "stagedDependencies": [
+    {
+      "name": "aiken-lang-fuzz",
+      "nar_hash": "sha256-oMHBJ/rIPov/1vB9u608ofXQighRq7DLar+hGrOYqTw=",
+      "store_path": "/nix/store/r8v5mc1qfhnqw01ylr7zrbk50rxbl9b2-source"
+    },
+    {
+      "name": "aiken-lang-merkle-patricia-forestry",
+      "nar_hash": "sha256-J674+f2cBlvQQ7T9sUHyw6mQ+v7+2bHskHVEJkTjGqw=",
+      "store_path": "/nix/store/dszn888dj1vgzsg21lmayywhkjy82d6j-merkle-patricia-forestry-v2.0.0-lone-fork-exclusion"
+    },
+    {
+      "name": "aiken-lang-stdlib",
+      "nar_hash": "sha256-BDaM+JdswlPasHsI03rLl4OR7u5HsbAd3/VFaoiDTh4=",
+      "store_path": "/nix/store/5jnqnd8zhjszjgdyqys8k0zdql5xqq49-source"
+    }
+  ],
+  "scope": "Three actual current validator handlers on one identical synthetic context per case. Value-balanced ADA and representative custody checks; not ledger inclusion, actual program hash binding or proof of reachable naming history.",
+  "command": [
+    "/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken",
+    "check"
+  ],
+  "exit": 0,
+  "error": null,
+  "summary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "kind": {
+      "unit": 12,
+      "property": 12
+    }
+  },
+  "finishedAt": "2026-09-12T23:40:19.534Z",
+  "aikenAttempt": 3,
+  "firstAttempt": "Dependency setup failure before tests; attempt1-* and setup-copy-failure.json retained",
+  "packagesTomlSha256": "c7c857109593f569a2b937c241a6acda3ff063e85a6920f894191bf7391f5510",
+  "rootTests": {
+    "name": "root_custody.tests",
+    "summary": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "kind": {
+        "unit": 5,
+        "property": 0
+      }
+    },
+    "tests": [
+      {
+        "title": "root_insert_reject_refund_all_three_accept",
+        "status": "pass",
+        "on_failure": "fail_immediately",
+        "execution_units": {
+          "mem": 1219581,
+          "cpu": 385470383
+        }
+      },
+      {
+        "title": "root_terminal_reject_returns_rep_all_three_accept",
+        "status": "pass",
+        "on_failure": "fail_immediately",
+        "execution_units": {
+          "mem": 1456053,
+          "cpu": 453240719
+        }
+      },
+      {
+        "title": "root_terminal_without_consumer_is_refused",
+        "status": "pass",
+        "on_failure": "succeed_eventually",
+        "execution_units": {
+          "mem": 548223,
+          "cpu": 169691653
+        },
+        "traces": [
+          "the validator crashed / exited prematurely",
+          "expect\n    list.any(\n          withdrawals,\n          fn(w) {\n            let Pair(credential, _) = w\n            when credential is {\n              address.Script(hash) -> hash == consumer_pin\n              _ -> False\n            }\n          },\n        )"
+        ]
+      },
+      {
+        "title": "root_named_custody_prevents_redirect_after_three_handlers_accept",
+        "status": "pass",
+        "on_failure": "succeed_eventually",
+        "execution_units": {
+          "mem": 1498709,
+          "cpu": 472624599
+        },
+        "traces": [
+          "the validator crashed / exited prematurely",
+          "expect held_burned_exactly_once(claim, tx)"
+        ]
+      },
+      {
+        "title": "root_custody_exact_burn_accepts_component_only",
+        "status": "pass",
+        "on_failure": "fail_immediately",
+        "execution_units": {
+          "mem": 358735,
+          "cpu": 107092941
+        }
+      }
+    ]
+  },
+  "interpretation": "Generic three-handler rejected Update can return a representative when assumed directly at the request script. Actual naming retirement instead places it in a distinct custody script. The new same-context control requires all three current handlers to accept and then the actual custody handler to refuse zero-burn redirection; a custody-only exact-burn positive controls that refusal. These are synthetic validator-context tests, not ledger inclusion or reachable naming setup, and the burn positive does not execute the representative mint policy.",
+  "applicationSource": {
+    "source": "/code/singular-e17-issue-77/naming-onchain/validators/application.ak",
+    "frozen": "handoffs/rejected-custody-root-application.ak",
+    "sha256": "24f4e8aa52efb99d553d925c70da7c3c20141f4f8510052ea84be7ee6760f8c8",
+    "finding": "retire sends the representative to retirement_custody_hash and forbids the record continuation; it does not put the representative directly at the generic request script"
+  },
+  "conclusion": "No named-retirement escape established. The generic request-only NFT assumption is not the actual naming retirement layout. Actual custody refusal distinguishes the full required purpose set from three-handler acceptance. Preserve separate request/custody mapping and remaining authentic setup, representative burn-policy and ledger evidence."
+}

@@ -1,0 +1,168 @@
+{
+  "scope": "Metadata readback only; no implementation, proof, build or independent product acceptance",
+  "verifiedAt": "2026-09-09T15:34:43.694Z",
+  "command": "node drafts/verify.cjs",
+  "result": "PASS",
+  "milestone": {
+    "number": 1,
+    "state": "open",
+    "title": "M1: On-chain Singular support for cardano-keri",
+    "dueOn": null
+  },
+  "rows": [
+    {
+      "number": 14,
+      "url": "https://github.com/lambdasistemi/singular/issues/14",
+      "checks": "PASS",
+      "blockedBy": [],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi0sg",
+      "fields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "bodySha256": "215488a2ec6a3cf483353cb8ab1e78b83538865f0146affa035d2d9ceed61408"
+    },
+    {
+      "number": 15,
+      "url": "https://github.com/lambdasistemi/singular/issues/15",
+      "checks": "PASS",
+      "blockedBy": [
+        14
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi0tC",
+      "fields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "bodySha256": "a33a4d77035586dc142ba19e6bb5627747e9c869d7f51bd754c0bb3aa5bb8c22"
+    },
+    {
+      "number": 16,
+      "url": "https://github.com/lambdasistemi/singular/issues/16",
+      "checks": "PASS",
+      "blockedBy": [
+        15
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi0tl",
+      "fields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "bodySha256": "dc4e1591066c0608a464bfbe70f15b70f510e75a98ffb8be4b38a0b614509a75"
+    },
+    {
+      "number": 17,
+      "url": "https://github.com/lambdasistemi/singular/issues/17",
+      "checks": "PASS",
+      "blockedBy": [
+        16
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi0t7",
+      "fields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "bodySha256": "a4c513b2e5769ee75eabb86b3453a4bcbcd3e380983218661f4d35525cf5352a"
+    },
+    {
+      "number": 18,
+      "url": "https://github.com/lambdasistemi/singular/issues/18",
+      "checks": "PASS",
+      "blockedBy": [
+        17
+      ],
+      "boardItemId": "PVTI_lAHN3B7OAT-p6s4Oi0u3",
+      "fields": {
+        "Category": "Other",
+        "Ownership": "Personal",
+        "Status": null
+      },
+      "bodySha256": "5bdf009fa1abeb9ebba5a09d708ce893e59aaaa42a0f1cd1801d4d0277e8ecfb"
+    }
+  ],
+  "issue10": {
+    "number": 10,
+    "url": "https://github.com/lambdasistemi/singular/issues/10",
+    "state": "closed",
+    "milestone": {
+      "number": 1,
+      "url": "https://github.com/lambdasistemi/singular/milestone/1",
+      "title": "M1: On-chain Singular support for cardano-keri"
+    },
+    "assignees": [
+      "paolino"
+    ],
+    "preserved": {
+      "body": true,
+      "state": true,
+      "assignees": true
+    },
+    "bodySha256": "dcb01b79a5bb17b1c6c3c099d0975174a16286e661b539674d60476f763f4be6"
+  },
+  "wiki": {
+    "available": false,
+    "repositorySetting": true,
+    "command": "git ls-remote https://github.com/lambdasistemi/singular.wiki.git",
+    "stderr": "remote: Repository not found.\nfatal: repository 'https://github.com/lambdasistemi/singular.wiki.git/' not found\n",
+    "exitCode": 128
+  },
+  "ci": {
+    "main": "58eaabad9d15d4ac223aca912bc5966b16b534c7",
+    "files": [
+      "evidence/ci.yml",
+      "evidence/release.yml"
+    ],
+    "exclusion": "Both push triggers restrict branches to main. release additionally accepts v* tags. Pushing milestones branch does not match. workflow_dispatch remains possible; PRs targeting main are not excluded by source branch. No workflows changed.",
+    "releaseLimitation": "Current release publishes documentation; on-chain artifact packaging remains a delivery obligation."
+  },
+  "evidence": [
+    {
+      "path": "evidence/final-board-graphql.json",
+      "sha256": "8ce3438bca0ef18fe1d504a5a863aca9a45a6397386a308c920251b8f369fb28"
+    },
+    {
+      "path": "evidence/final-graphql.json",
+      "sha256": "e302dfa2afea9efbabcf988026ac70d755fa49ca88be6d838f680e6663a338be"
+    },
+    {
+      "path": "evidence/milestone-final.json",
+      "sha256": "fc28149a6468324c9f7513a006de81f5eae0e6f9b5a1adcb2f2c39f892064660"
+    },
+    {
+      "path": "evidence/issue10-final.json",
+      "sha256": "23f78dc187a7fa6f7626045705626ef432b6c85b6c61b749719bf885cc47780b"
+    },
+    {
+      "path": "evidence/issue10-preassociate.json",
+      "sha256": "f92c3431ffa43b4c7ef9fe7c2ea35998a3e34e033825420a6c3d6da23cb2a608"
+    },
+    {
+      "path": "evidence/main-final.json",
+      "sha256": "48bde4acfbca2302fe2c0415b60d2a4f20afad5273fe31f3c1bfe2d6bcd6ff79"
+    },
+    {
+      "path": "evidence/ci.yml",
+      "sha256": "b49fdfe85bf608dee0027d130c4aa1a3980666ce1969da6f1f1391dae8f885f1"
+    },
+    {
+      "path": "evidence/release.yml",
+      "sha256": "389d6266010078350c9ca1821bea43f17553f8ca71038296e69f049fcfb34d14"
+    },
+    {
+      "path": "evidence/wiki-final.stderr",
+      "sha256": "2f75512397e1dbde1c94bc72bb62bb7f4f39f312b380817c2916ebde7d423db9"
+    },
+    {
+      "path": "evidence/keri.cabal",
+      "sha256": "c72cfee400e307c2ac11ed9c446e5623f2dd57860691b1f4005928405a9c717c"
+    },
+    {
+      "path": "evidence/keri-wire.hs",
+      "sha256": "e0b543e2c16ae23f21dcb3d7600370186224638e05881577ebd3a037d6a2f4f6"
+    }
+  ]
+}

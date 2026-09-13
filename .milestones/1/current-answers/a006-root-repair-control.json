@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-13T00:42:58.241Z",
+  "root": "/tmp/singular-root-a006-repair-ZgzvV1",
+  "sources": {
+    "/code/singular-e18-blaster/lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+    "/code/singular-e18-blaster/blaster/abstract/Grading.lean": "a30018cbf7ddb5260062820187c90f84f7c8d00c7b3b70767766c30a8ff19ae5",
+    "/code/singular-e18-blaster/blaster/abstract/RejectedFold.lean": "7790b0e5fcdc273e7890bb54b422549eb19e56519c1f3480eb7622e0f6288888",
+    "/code/singular-e18-blaster/blaster/abstract/RejectedFoldGate.lean": "f06ea7fc1157b0987a3b2f6abc160607a2b412ea8604d565d0c5a2b08cb13323"
+  },
+  "command": [
+    "/nix/store/76i09i90qa7cglmiahs1977z9ddgh0z2-lean4-4.25.0/bin/lake",
+    "build",
+    "RootRepair"
+  ],
+  "scope": "Copied revised candidate plus supplied battery and five root controls; bounded closure of NOTE131 timing/funding findings only. No Aiken/ledger/full correspondence/adoption claim.",
+  "exit": 0,
+  "stdoutSha256": "8e97e0ecbcf405875e8eb94f89806ab3abcb7d0eb0dd1a6a3554685ca8ba18b2",
+  "stderrSha256": "c63e24a806807e8dafbcc95616b4713311edaca8c2babec4f6bf057a829157e2",
+  "rootControlSha256": "91f23f5526e9d0f16248b8fac6a5bbb972fd9f4ab4ee201803e58cc975667153"
+}

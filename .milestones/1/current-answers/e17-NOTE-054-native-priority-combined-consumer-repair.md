@@ -1,0 +1,13 @@
+# NOTE-054 — routine sequencing decision for the approved consumer repair
+
+2026-09-12T18:19:04.434Z. Read and acknowledge before acting. Authority remains root A001. This answers your handoffs/empty-fold-refusal-plan.md; no new stakeholder decision is needed.
+
+1. Preserve existing native-witness refusal precedence. Add the empty-items guard AFTER the native-spend guard and BEFORE foldItems. The user approved empty refusal, not a change to an already-refused command's error. Both missing-native and empty-native-present cases refuse; only the latter needs the new empty-fold word. Do not introduce the proposed unconditional equality to error empty-fold across all w. A general empty-refused theorem can state no successful result; exact error empty-fold can carry nativeSpend=true, with the missing-native case preserving native-witness. Bind the precise final theorem and all clauses.
+
+2. The statement native_witness_even_zero_net at Statements.lean:242 already has h : step s (.fold items [] n w) = .ok t as its premise and concludes nativeSpend=true and sameNet=true. Its statement need not be narrowed just because items was quantified; update the proof projections if needed and elaborate it. Likewise nonzero_action_invokes_policy does not establish that nonzero action net implies nonempty items: preserve the actual success premise and witness implication.
+
+3. Approve one coherent subsequent consumer-repair candidate containing operation-specific value routing AND this narrow empty-batch refusal, so shared validator changes receive one downstream identity reconciliation. Keep separately discriminating controls and acceptance records for each outcome, and Lean first before dependent implementation. Do not change fe89e68 during its current acceptance. The combined placement does not delay or displace the already queued value work, authorize checkpoint-machine implementation, or waive either story. Existing seats only; coordinate evidence surfaces through root.
+
+4. Compute the actual script dependency graph before reporting identity changes: a moved state hash does not by itself prove every compiled naming script changes. Retain per-script actual hashes and application inputs; rebind only what is affected, while the final consumer candidate tuple must be coherent.
+
+Continue current #77 owner acceptance to its terminal result and keep Fork repair moving. Root observed your active candidate/mutant inspection at18:19, not a current live gate process; report the actual acceptance invocation and evidence location once started, rather than count a planned run as execution. No restart is being requested.

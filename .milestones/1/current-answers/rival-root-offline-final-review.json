@@ -1,0 +1,39 @@
+{
+  "at": "2026-09-13T02:01:47.869Z",
+  "checks": {
+    "driver_source": {
+      "path": "/tmp/t80e-rival-witness/offchain/journey/retirement/Main.hs",
+      "sha256": "5969dabf18248c56c1672e2a033e54bc199fa721e61da663aef723754188d21b"
+    },
+    "logic": {
+      "path": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalDriverLogic.hs",
+      "sha256": "db95a2320a6ba779e24e3f78e04c970f36b76771c9ec13e3e233695d333e144b"
+    },
+    "check_source": {
+      "path": "/tmp/t80e-rival-witness/offchain/journey/retirement/RivalDriverPredevnetCheck.hs",
+      "sha256": "9e288ffa96864cc991d1b1482c6123791dfacb85011a61efd348a15a0914fa02"
+    },
+    "cabal": {
+      "path": "/tmp/t80e-rival-witness/offchain/cardano-mpfs-cage.cabal",
+      "sha256": "bd85f5c7459937c1248132783cf8a91b39859376e48487180aa15fb5144d954c"
+    },
+    "driver_binary": {
+      "path": "/tmp/t80e-rival-witness/offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/x/retirement-rows/noopt/build/retirement-rows/retirement-rows",
+      "sha256": "1bf4b90b9ee8184a4a08e06dafa4be4263fc46b79c50b4f32364aaeddc9954e6"
+    },
+    "check_binary": {
+      "path": "/tmp/t80e-rival-witness/offchain/dist-newstyle/build/x86_64-linux/ghc-9.12.3/cardano-mpfs-cage-0.1.0.0/x/rival-driver-predevnet-check/noopt/build/rival-driver-predevnet-check/rival-driver-predevnet-check",
+      "sha256": "0fa779a620d5e14677032d3c52eb1b38aab6deec1a19ffc962133f4931c71d41"
+    }
+  },
+  "nixSource": "/nix/store/2npzsikc3sfz3bm3q71lc9ji9701jqx3-0icf68c9qz23954kqkbgc1ya5zhpjhz9-source",
+  "closureMatchesAllFour": true,
+  "result": {
+    "cases": 22,
+    "mutants": 5
+  },
+  "priorLedgerCommand": "0dafcc64d25d99386a86dbf37ddcf9c0f3597eb630007f26fc978a0f92cad724",
+  "currentLedgerCommand": "1ce45ec8c3a6c16051929750e497bba35ada89f81c87f0ebb09e2d9885177842",
+  "commandControl": "handoffs/rival-root-command-environment-repair.json",
+  "scope": "Readback of current source/binary hashes, production source closure, retained v3 result and executed corrected shell controls. No unchanged rebuild or real ledger run."
+}

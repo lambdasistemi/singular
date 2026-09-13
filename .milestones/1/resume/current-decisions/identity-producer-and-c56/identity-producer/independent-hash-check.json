@@ -1,0 +1,12 @@
+{
+  "applied": {
+    "ledgerHash": "ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e",
+    "independentV3Hash": "ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e",
+    "bareHash": "2e2434ed75163a15bc8a4af0cb20237ba78e42c3e32c7d49ecbcb681"
+  },
+  "unapplied": {
+    "ledgerHash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
+    "independentV3Hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
+    "bareHash": "936a41f7389e24fccb30593f602cd98120ff268620a6fe89f737d8bb"
+  }
+}

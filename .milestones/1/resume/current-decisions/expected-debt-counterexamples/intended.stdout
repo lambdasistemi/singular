@@ -1,0 +1,2 @@
+GREEN = expected-debt assertion held: 13 rows executed, verdicts as recorded, held debt exactly CG11 CG12 CG19.
+A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5/R8/R11 stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.

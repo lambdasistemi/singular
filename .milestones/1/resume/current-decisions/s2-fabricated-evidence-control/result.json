@@ -1,0 +1,19 @@
+{
+  "sourceSha256": "c4fac5c73e4b578bf884e3c3e446bead55a2da97a020c1bb18472ccb95b0c0b2",
+  "synthetic": true,
+  "note": "Original gate tested unchanged. Second probe changes only jq argument forwarding in an isolated copy, not the owner gate, to expose the independent acceptance weakness. No transactions, candidate implementation, blueprint or ledger evidence exist.",
+  "results": [
+    {
+      "case": "original",
+      "exit": 1,
+      "stdout": "S2 receipt-wellformed         PASS  7 rows\nS2 connected-fold             PASS  state=invented-state-input request=invented-request-input root invented-root-A -> invented-root-B\nS2 no-registry-owner          PASS  signers=[] witnesses=[]\nS2 owner-field-removed        PASS  no owner field in the state datum type\nS2 applied-rep-identity       PASS  applied=invented-applied-policy (unapplied=unapplied-placeholder) qty=1\nS2 occupied-key-executed      PASS  tx=not-a-transaction-id refused by not-the-state-script\nS2 free-key-control           PASS  a distinct name registered\nS2 ownerless-end              FAIL  outcome='' refusedBy='' tx='' \u2014 must be a SUBMITTED, attributed refusal\nS2 ownerless-migration        FAIL  outcome='' refusedBy='' tx='' \u2014 must be a SUBMITTED, attributed refusal\nS2 ownerless-sweep            FAIL  outcome='' refusedBy='' tx='' \u2014 must be a SUBMITTED, attributed refusal\nS2 supported-action-control   PASS  the registry still works\nS2 no-back-door               PASS  no owner-authorized path outside shared.ak\n\nS2 SUPPLEMENT RED \u2014 3 assertion(s) failed\n",
+      "stderr": ""
+    },
+    {
+      "case": "helper-only-correction",
+      "exit": 0,
+      "stdout": "S2 receipt-wellformed         PASS  7 rows\nS2 connected-fold             PASS  state=invented-state-input request=invented-request-input root invented-root-A -> invented-root-B\nS2 no-registry-owner          PASS  signers=[] witnesses=[]\nS2 owner-field-removed        PASS  no owner field in the state datum type\nS2 applied-rep-identity       PASS  applied=invented-applied-policy (unapplied=unapplied-placeholder) qty=1\nS2 occupied-key-executed      PASS  tx=not-a-transaction-id refused by not-the-state-script\nS2 free-key-control           PASS  a distinct name registered\nS2 ownerless-end              PASS  tx=invented-tx refused by invented-script\nS2 ownerless-migration        PASS  tx=invented-tx refused by invented-script\nS2 ownerless-sweep            PASS  tx=invented-tx refused by invented-script\nS2 supported-action-control   PASS  the registry still works\nS2 no-back-door               PASS  no owner-authorized path outside shared.ak\n\nS2 SUPPLEMENT GREEN\n",
+      "stderr": ""
+    }
+  ]
+}

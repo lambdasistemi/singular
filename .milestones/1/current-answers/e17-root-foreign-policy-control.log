@@ -1,0 +1,176 @@
+Script started on 2026-09-13 06:24:01+01:00 [COMMAND="/nix/store/r7lfwjii69rhjj87097494b2ccd5lxd2-aiken-1.1.21/bin/aiken check -m rootforeign_" <not executed on terminal>]
+    Compiling hal/mpf 0.0.0 (.)
+    Compiling aiken-lang/stdlib v2.2.0 (./build/packages/aiken-lang-stdlib)
+    Compiling aiken-lang/fuzz v2.1.1 (./build/packages/aiken-lang-fuzz)
+    Compiling aiken-lang/merkle-patricia-forestry v2.0.0 (./build/packages/aiken-lang-merkle-patricia-forestry)
+   Collecting test *rootforeign_* across all modules
+      Testing ...
+
+    ┍━ root_foreign_policy.tests ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │ PASS [mem:   1.87 M, cpu: 600.67 M] rootforeign_real_policy_positive_all_four_accept
+    │ PASS [mem:   1.87 M, cpu: 600.31 M] rootforeign_foreign_policy_lookalike_all_four_accept
+    │ PASS [mem:   1.85 M, cpu: 594.98 M] rootforeign_wrong_name_still_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> Some(heldEntry) =
+    │     find(held_assets(claim.output.value), fn(entry) {
+    │       let (_, name, _) = entry
+    │       name == old
+    │     })
+    │ PASS [mem:   1.47 M, cpu: 465.66 M] rootforeign_missing_burn_still_refuses
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected> held_burned_exactly_once(claim, tx)
+    │ PASS [mem: 652.00 K, cpu: 203.05 M] rootforeign_missing_hook_still_refuses_at_state
+    │ · with traces
+    │ | the validator crashed / exited prematurely
+    │ x <expected>
+    │     list.any(
+    │           withdrawals,
+    │           fn(w) {
+    │             let Pair(credential, _) = w
+    │             when credential is {
+    │               address.Script(hash) -> hash == consumer_pin
+    │               _ -> False
+    │             }
+    │           },
+    │         )
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5 tests | 5 passed | 0 failed
+
+
+
+  ⚠ aiken.toml demands compiler version v1.1.16, but you are using v1.1.21.
+  help: You may want to switch to v1.1.16
+
+
+  ⚠ I discovered an unused imported value: Fork
+   ╭─[./validators/cage_vectors.ak:6:45]
+ 5 │ 
+ 6 │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   ·                                             ──┬─
+   ·                                               ╰── unused import
+ 7 │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+  help: No big deal, but you might want to remove it to get rid of that
+        warning.
+
+
+  ⚠ I discovered an unused imported value: Neighbor
+   ╭─[./validators/cage_vectors.ak:6:57]
+ 5 │ 
+ 6 │ use aiken/merkle_patricia_forestry.{Branch, Fork, Leaf, Neighbor, Proof}
+   ·                                                         ────┬───
+   ·                                                             ╰── unused import
+ 7 │ use aiken/merkle_patricia_forestry as mpf
+   ╰────
+  help: No big deal, but you might want to remove it to get rid of that
+        warning.
+
+
+  ⚠ I came across an unused variable: representatives
+     ╭─[./validators/application.ak:159:16]
+ 158 │         fold(record, representatives, claim, own_hash, tx)
+ 159 │       Retire { representatives, key_hash } ->
+     ·                ───────┬───────
+     ·                       ╰── unused identifier
+ 160 │         retire(record, claim, key_hash, tx)
+     ╰────
+  help: No big deal, but you might want to remove it or use a discard
+        _representatives to get rid of that warning.
+        
+        You should also know that, unlike in typical imperative languages,
+        unused let-bindings are fully_ignored in Aiken.
+        They will not produce any side-effect (such as error calls). Programs
+        with or without unused variables are semantically equivalent.
+        
+        If you do want to enforce some side-effects, use expect with a discard
+        _representatives instead of let.
+        
+
+
+  ⚠ I came across an unused variable: claim
+     ╭─[./validators/application.ak:649:11]
+ 648 │   let own_credential = address.Script(policy_id)
+ 649 │   expect [claim] =
+     ·           ──┬──
+     ·             ╰── unused identifier
+ 650 │     filter(
+     ╰────
+  help: No big deal, but you might want to remove it or use a discard _claim
+        to get rid of that warning.
+        
+        You should also know that, unlike in typical imperative languages,
+        unused let-bindings are fully_ignored in Aiken.
+        They will not produce any side-effect (such as error calls). Programs
+        with or without unused variables are semantically equivalent.
+        
+        If you do want to enforce some side-effects, use expect with a discard
+        _claim instead of let.
+        
+
+
+  ⚠ I found a when expression with a single clause.
+     ╭─[./validators/consumer.ak:230:11]
+ 229 │         when t is {
+ 230 │           (policy, _, _) -> policy != ""
+     ·           ───────┬──────
+     ·                  ╰── use let
+ 231 │         }
+     ╰────
+  help: Prefer using a let binding like so...
+        
+        ╰─▶ let (policy, _, _) = t
+
+
+  ⚠ I found a when expression with a single clause.
+     ╭─[./validators/consumer.ak:250:9]
+ 249 │       when s is {
+ 250 │         (input, _) -> {
+     ·         ─────┬────
+     ·              ╰── use let
+ 251 │           let token_name = cage_token_name(input)
+     ╰────
+  help: Prefer using a let binding like so...
+        
+        ╰─▶ let (input, _) = s
+
+
+  ⚠ I found a when expression with a single clause.
+     ╭─[./validators/consumer.ak:373:19]
+ 372 │                 when t is {
+ 373 │                   (policy, name, quantity) ->
+     ·                   ────────────┬───────────
+     ·                               ╰── use let
+ 374 │                     if policy == state.representative_policy && quantity > 0 {
+     ╰────
+  help: Prefer using a let binding like so...
+        
+        ╰─▶ let (policy, name, quantity) = t
+
+
+  ⚠ I found a when expression with a single clause.
+     ╭─[./validators/consumer.ak:365:9]
+ 364 │       when s is {
+ 365 │         (input, state) -> {
+     ·         ───────┬──────
+     ·                ╰── use let
+ 366 │           let policy_bytes = state_policy_bytes(input)
+     ╰────
+  help: Prefer using a let binding like so...
+        
+        ╰─▶ let (input, state) = s
+
+
+  ⚠ I discovered an unused imported value: filter_map
+   ╭─[./validators/consumer.ak:1:33]
+ 1 │ use aiken/collection/list.{any, filter_map, has}
+   ·                                 ─────┬────
+   ·                                      ╰── unused import
+ 2 │ use aiken/crypto.{blake2b_224}
+   ╰────
+  help: No big deal, but you might want to remove it to get rid of that
+        warning.
+
+      Summary 5 checks, 0 errors, 10 warnings
+
+Script done on 2026-09-13 06:24:04+01:00 [COMMAND_EXIT_CODE="0"]

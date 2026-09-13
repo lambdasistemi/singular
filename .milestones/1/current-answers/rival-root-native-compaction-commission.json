@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-13T00:38:45.615Z",
+  "observedPid": 4182517,
+  "startTicks": "149071436",
+  "model": "glm-5.3-flash",
+  "provider": "zai",
+  "thinking": "max",
+  "uiContext": "84.9%/1.0M (auto)",
+  "terminalWorkerEvent": "2026-09-13T00:34:00Z COMPLETE capacity-limit mid-block",
+  "docs": {
+    "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/README.md": "f2ffe4e825ea457ecb728cabbb15b545655cda2e3bab9b5b1fc28b950a3abd08",
+    "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/docs/compaction.md": "b6aff7cab195cd781714dae7c9246fbfb14c782f8fff7851253d5903c19996e7",
+    "/nix/store/iwgllsbcsalpqms30i4xn56dcpg99zdl-pi-0.84.4/libexec/pi/docs/session-format.md": "c0f25475ab08fb96e244e6bf433aeaa41b69bfb5a52de5c7b01b81c900a84a54"
+  },
+  "authority": "epic-18/inbox/NOTE-134-recover-existing-rival-context-with-native-compaction.md",
+  "scope": "Same-session native compaction explicitly authorized; no reset/new session/branch/process/model/counter. Owner must verify append-only history and completion before rearm."
+}

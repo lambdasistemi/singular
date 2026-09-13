@@ -1,0 +1,82 @@
+{
+  "at": "2026-09-13T02:00:39.271Z",
+  "source": "/tmp/t80e-rival-witness/handoffs/rival-ledger-command.sh",
+  "sourceSha256": "1ce45ec8c3a6c16051929750e497bba35ada89f81c87f0ebb09e2d9885177842",
+  "control": "/tmp/singular-root-rival-command-repair-VtBUYs",
+  "results": {
+    "positive": {
+      "exit": 0,
+      "stderr": "",
+      "observed": [
+        {
+          "variant": "own-policy",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=own-policy naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/positive-results/own-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "copied-policy",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=copied-policy naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/positive-results/copied-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "forged-anchor",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=forged-anchor naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/positive-results/forged-anchor/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        }
+      ]
+    },
+    "one-site-mutation": {
+      "exit": 0,
+      "stderr": "",
+      "observed": [
+        {
+          "variant": "own-policy",
+          "exit": 0,
+          "matches": false,
+          "stdout": "variant=own-policy naming=/wrong-naming-blueprint mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/one-site-mutation-results/own-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "copied-policy",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=copied-policy naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/one-site-mutation-results/copied-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "forged-anchor",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=forged-anchor naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/one-site-mutation-results/forged-anchor/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        }
+      ]
+    },
+    "aggregate-nonzero": {
+      "exit": 1,
+      "stderr": "rival-ledger-command: at least one variant exited nonzero\n",
+      "observed": [
+        {
+          "variant": "own-policy",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=own-policy naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/aggregate-nonzero-results/own-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "copied-policy",
+          "exit": 7,
+          "matches": true,
+          "stdout": "variant=copied-policy naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/aggregate-nonzero-results/copied-policy/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        },
+        {
+          "variant": "forged-anchor",
+          "exit": 0,
+          "matches": true,
+          "stdout": "variant=forged-anchor naming=/nix/store/phz7qfgh1vrlaxbdyr1qa6r8br8zjd6b-singular-naming-plutus-blueprint-0.1.0 mpfs=/nix/store/m8rvyvjh2fcz5akmnz4vwilk332n5cn1-mpf-plutus-blueprint-0.0.0 identity=/tmp/t80e-rival-witness/naming-onchain/script-identity.json genesis=/tmp/t80e-rival-witness/offchain/e2e-test/genesis tmp=/tmp/singular-root-rival-command-repair-VtBUYs/aggregate-nonzero-results/forged-anchor/tmp retireControl=UNSET recoveryControl=UNSET\n"
+        }
+      ]
+    }
+  },
+  "scope": "Root executed exact corrected shell route with only wrapper/result pins replaced by benign stub/isolated outputs. Real blueprint, manifest, genesis and binary digests verified read-only. No real wrapper or node/socket/ledger executed.",
+  "verdict": "NOTE142 command environment repair and aggregate-exit behavior verified; ledger outcome remains unproved"
+}
