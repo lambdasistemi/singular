@@ -82,7 +82,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
+import Data.Aeson (FromJSON (..), eitherDecode', encode, object, withObject, (.:), (.=))
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -93,13 +93,17 @@ import Data.Text.Encoding qualified as TE
 import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
+import System.FilePath ((</>))
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Binary (serialize')
+import Cardano.Ledger.Binary.Version (Version)
 import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
@@ -436,7 +440,10 @@ runMode mode blueprintPath mpfsPath = do
                 <> " (the applied mint identity this run mints representatives under)"
             )
         tm <- mkPureTrieManager
-        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes
+        evDir <- evidenceDirFromEnv
+        createDirectoryIfMissing True evDir
+        evNext <- newIORef (0 :: Int)
+        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
         -- Registry-bound names (NOTE-007): derived post-boot once the cage
         -- token exists; every display, redeemer and minted value below uses
         -- these bindings (never the control-only shape).
@@ -454,9 +461,12 @@ runMode mode blueprintPath mpfsPath = do
         -- already-included inputs). Funded by genesis, witnessed by it.
         unsignedReg <- registerConsumerImpl cfg prov genesisAddr
         let signedReg = addKeyWitness genesisSignKey unsignedReg
+        regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
         regResult <- submitTx submit signedReg
         case regResult of
-            Submitted _ -> pure ()
+            Submitted _ -> do
+                retainOutcome evDir regTag "accepted" Nothing
+                pure ()
             Rejected reason ->
                 failWith ("consumer-registration: rejected: " <> show reason)
         _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
@@ -465,8 +475,7 @@ runMode mode blueprintPath mpfsPath = do
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
         scriptRefs <- publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript
-        let env =
-                Env
+        let env =                Env
                     { envProv = prov
                     , envSubmit = submit
                     , envPp = pp
@@ -496,6 +505,8 @@ runMode mode blueprintPath mpfsPath = do
                     , envCustodyAddr = custodyAddr
                     , envDatum = mkDatum
                     , envDatumDup = mkDatumDup
+                    , envEvDir = evDir
+                    , envEvNext = evNext
                     }
         emit "setup" "creating the three retirement records (accept1, accept2, refusals)"
         (txA1, recAccept1) <- setupRecoveryRecord env mkDatum "accept1" "rt-accept1"
@@ -506,6 +517,14 @@ runMode mode blueprintPath mpfsPath = do
         _ <- waitConfirmation (txRef <> " (setup: refusals)")
         (txDup, recDuplicates) <- setupRecoveryRecord env mkDatumDup "duplicates" "rt-duplicates"
         _ <- waitConfirmation (txDup <> " (setup: duplicates)")
+        -- Recovery-then-retire records (NOTE-024): same shape as
+        -- accept1/accept2 (control oldAddr, commitment opens to
+        -- destSeed, 2-member quorum) so each can rotate to the
+        -- destination key and then retire with the CREATION hash.
+        (txR1, recR1) <- setupRecoveryRecord env mkDatum "rr1" "rt-rr1"
+        _ <- waitConfirmation (txR1 <> " (setup: rr1)")
+        (txR2, recR2) <- setupRecoveryRecord env mkDatum "rr2" "rt-rr2"
+        _ <- waitConfirmation (txR2 <> " (setup: rr2)")
         emit
             "setup"
             ( "records live at the application validator 0x"
@@ -555,8 +574,32 @@ runMode mode blueprintPath mpfsPath = do
                 <> " representative=0x"
                 <> hex repBytes
             )
+        emit
+            "creation-material"
+            ( "rr1="
+                <> showIn recR1
+                <> " created-by="
+                <> txR1
+                <> " creation-control-hash=0x"
+                <> hex oldHash
+                <> " representative=0x"
+                <> hex repBytes
+                <> " (recovery-then-retire controller route)"
+            )
+        emit
+            "creation-material"
+            ( "rr2="
+                <> showIn recR2
+                <> " created-by="
+                <> txR2
+                <> " creation-control-hash=0x"
+                <> hex oldHash
+                <> " representative=0x"
+                <> hex repBytes
+                <> " (recovery-then-retire quorum route)"
+            )
         case mode of
-            MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates
+            MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2
             ControlValid -> runControlValid env recRefusals
             ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
         cancel nodeThread
@@ -591,14 +634,16 @@ data Env = Env
     , envCustodyAddr :: Addr
     , envDatum :: NamingDatum
     , envDatumDup :: NamingDatum
+    , envEvDir :: FilePath
+    , envEvNext :: IORef Int
     }
 
 -- ---------------------------------------------------------
 -- The seven in-scope rows
 -- ---------------------------------------------------------
 
-runRows :: Env -> TxIn -> TxIn -> TxIn -> TxIn -> IO ()
-runRows env recAccept1 recAccept2 recRefusals recDuplicates = do
+runRows :: Env -> TxIn -> TxIn -> TxIn -> TxIn -> TxIn -> TxIn -> IO ()
+runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 = do
     snapRefusals <- mustSnap env recRefusals
     snapDuplicates <- mustSnap env recDuplicates
     -- The four refusals against the live refusals record.
@@ -616,6 +661,14 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates = do
     -- LT02 accepts, consuming accept2 into custody.
     snapA2 <- mustSnap env recAccept2
     _ <- rowLT02 env snapA2
+    -- Recovery-then-retire (NOTE-024): rotate to the destination key,
+    -- then retire with the CREATION hash (immutable across rotation).
+    snapR1 <- mustSnap env recR1
+    snapR1r <- rowRecoverRecord env snapR1 "RR1"
+    _ <- rowRetireRecoveredController env snapR1r
+    snapR2 <- mustSnap env recR2
+    snapR2r <- rowRecoverRecord env snapR2 "RR2"
+    _ <- rowRetireRecoveredQuorum env snapR2r
     -- Final no-trace sweep.
     finalNoTrace env recRefusals
     emit
@@ -687,6 +740,148 @@ rowLT02 env snap = do
                \immutable across routes; the fixed registration quorum \
                \alone retires the name, with no controller signature; the \
                \representative is at custody and the record is gone)"
+        )
+    pure signed
+
+-- | The recovery destination: destSeed's enterprise address and its
+-- hash (both module-level seeds, no hidden constants per row).
+recoveryDest :: (Addr, ByteString)
+recoveryDest =
+    let addr = enterpriseAddr (keyHashFromSignKey (mkSignKey destSeed))
+     in (addr, addrKeyHashBytes addr)
+
+-- | Recover a record to the destination key: real on-chain rotation
+-- (control oldAddr -> destAddr). Binds the EXACT observed successor
+-- (NOTE-025): the fresh snap of the accepted recovery transaction's
+-- outputs[0] — never the old snapshot, never expected data. Rotation,
+-- payment/quorum preservation, representative carriage and coin
+-- preservation are all asserted on the observed successor; the old
+-- input's consumption is asserted on chain. Returns the successor snap.
+rowRecoverRecord :: Env -> Snap -> String -> IO Snap
+rowRecoverRecord env snap label = do
+    current <- chainDatumOf env snap (label <> "-pre")
+    let (destAddr, destHash) = recoveryDest
+        freshCommitment = BS.replicate 32 0x01
+    when (freshCommitment == nextControlCommitment current) $
+        failWith (label <> ": fresh commitment collides (impossible case)")
+    let successor =
+            current
+                { controlAddress = envDestCodec env
+                , nextControlCommitment = freshCommitment
+                }
+    tx <-
+        recoverTx
+            env
+            snap
+            (serialiseAddr destAddr)
+            [envRepBytes env]
+            (scriptHashBytes (envScriptHash env))
+            successor
+            [destHash]
+    let signed = addKeyWitness (mkSignKey destSeed) (addKeyWitness genesisSignKey tx)
+    unless
+        (Set.singleton (addrWitnessKeyHash destHash) == (signed ^. bodyTxL . reqSignerHashesTxBodyL))
+        $ failWith (label <> ": required signers must be exactly the revealed key")
+    when
+        ( any
+            (`Set.member` (signed ^. bodyTxL . reqSignerHashesTxBodyL))
+            [addrWitnessKeyHash (envOldHash env), addrWitnessKeyHash (envQuorum1Hash env), addrWitnessKeyHash (envQuorum2Hash env)]
+        )
+        $ failWith (label <> ": neither the old controller nor quorum may sign the recovery")
+    submitAccepted env (label <> "-recover") signed
+    _ <- waitConfirmation (txIdHex signed <> " (" <> label <> " recover)")
+    -- The exact observed successor: fresh chain snap of outputs[0].
+    snapSucc <- mustSnap env (TxIn (txIdTx signed) (TxIx 0))
+    rotated <- chainDatumOf env snapSucc (label <> "-rotated")
+    unless (controlAddress rotated == envDestCodec env) $
+        failWith (label <> ": rotated control is not the destination")
+    unless (retirementQuorum rotated == retirementQuorum current) $
+        failWith (label <> ": recovery altered the quorum")
+    unless (paymentDestination rotated == paymentDestination current) $
+        failWith (label <> ": recovery altered the payment destination")
+    unless (snapTokens snapSucc == snapTokens snap) $
+        failWith (label <> ": recovery altered the carried tokens")
+    unless (snapCoin snapSucc == snapCoin snap) $
+        failWith (label <> ": recovery altered the lovelace")
+    -- The old exact input was consumed on chain.
+    assertGone env snap (label <> "-recovery-consumed")
+    emit
+        "row"
+        ( label
+            <> "-recovered: rotated to control 0x"
+            <> hex (serialiseAddr destAddr)
+            <> " in tx="
+            <> txIdHex signed
+            <> " (successor bound from chain, old input consumed)"
+        )
+    pure snapSucc
+
+-- | Retire a RECOVERED record via the controller route: the NEW
+-- controller (destSeed) signs, but the redeemer carries the CREATION
+-- hash (envOldHash) — the immutable key, no longer the current
+-- control. Reuses the custody/gone assertions.
+rowRetireRecoveredController :: Env -> Snap -> IO ConwayTx
+rowRetireRecoveredController env snap = do
+    let (_destAddr, destHash) = recoveryDest
+    tx <- retireTx env snap (envCustodyAddr env) [destHash]
+    let signed = addKeyWitness (mkSignKey destSeed) (addKeyWitness genesisSignKey tx)
+    unless
+        (Set.singleton (addrWitnessKeyHash destHash) == (signed ^. bodyTxL . reqSignerHashesTxBodyL))
+        $ failWith "RR1: required signers must be exactly the recovered controller key"
+    when
+        ( any
+            (`Set.member` (signed ^. bodyTxL . reqSignerHashesTxBodyL))
+            [addrWitnessKeyHash (envQuorum1Hash env), addrWitnessKeyHash (envQuorum2Hash env)]
+        )
+        $ failWith "RR1: no quorum member may be among the required signers"
+    submitAccepted env "RR1" signed
+    _ <- waitConfirmation (txIdHex signed <> " (RR1)")
+    assertCustody env "RR1" signed
+    assertGone env snap "RR1"
+    emit
+        "row"
+        ( "RR1-recovery-then-controller-retire-accepts: accepted tx="
+            <> txIdHex signed
+            <> " key-hash=0x"
+            <> hex (envOldHash env)
+            <> " (the CREATION hash, not the current rotated control; the \
+               \recovered controller alone retires; representative at custody)"
+        )
+    pure signed
+
+-- | Retire a RECOVERED record via the quorum route: quorum signs, the
+-- recovered controller must not, key_hash is still the creation hash.
+rowRetireRecoveredQuorum :: Env -> Snap -> IO ConwayTx
+rowRetireRecoveredQuorum env snap = do
+    tx <- retireTx env snap (envCustodyAddr env) [envQuorum1Hash env, envQuorum2Hash env]
+    let signed =
+            addKeyWitness
+                (mkSignKey quorum1Seed)
+                (addKeyWitness (mkSignKey quorum2Seed) (addKeyWitness genesisSignKey tx))
+    unless
+        ( Set.fromList
+                [addrWitnessKeyHash (envQuorum1Hash env), addrWitnessKeyHash (envQuorum2Hash env)]
+                == (signed ^. bodyTxL . reqSignerHashesTxBodyL)
+        )
+        $ failWith "RR2: required signers must be exactly the two quorum members"
+    when
+        ( Set.member
+            (addrWitnessKeyHash (envOldHash env))
+            (signed ^. bodyTxL . reqSignerHashesTxBodyL)
+        )
+        $ failWith "RR2: the original controller must not be among the required signers"
+    submitAccepted env "RR2" signed
+    _ <- waitConfirmation (txIdHex signed <> " (RR2)")
+    assertCustody env "RR2" signed
+    assertGone env snap "RR2"
+    emit
+        "row"
+        ( "RR2-recovery-then-quorum-retire-accepts: accepted tx="
+            <> txIdHex signed
+            <> " key-hash=0x"
+            <> hex (envOldHash env)
+            <> " (the CREATION hash surviving rotation; quorum alone \
+               \retires with no controller signature; representative at custody)"
         )
     pure signed
 
@@ -804,6 +999,8 @@ rowLT09 env consumedIn signedLT01 = do
                 "LT09: the replay was ACCEPTED — a consumed record authorized \
                 \retirement twice"
         Rejected reason -> do
+            tag <- retainTx env "LT09-replay" signedLT01
+            retainOutcome (envEvDir env) tag "refused" (Just (T.unpack (TE.decodeUtf8Lenient reason)))
             let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
                 allSpent = "All inputs are spent" `isInfixOf` reasonText
             unless allSpent $
@@ -1003,6 +1200,12 @@ expectRefused mode env rowName modelReason guard signed = do
                     <> " — "
                     <> guard
                 )
+            tag <- retainTx env rowName signed
+            retainOutcome
+                (envEvDir env)
+                tag
+                "refused"
+                (Just reasonText)
 
 -- ---------------------------------------------------------
 -- Transaction builders
@@ -1069,6 +1272,59 @@ maintainTx env snap successor signers = do
                 ( Map.singleton
                     (ConwaySpending (AsIx spendIdx))
                     (Data redeemerMaintain, maxUnits)
+                )
+        integrity = computeScriptIntegrity (envPp env) redeemers
+        contOut =
+            scriptOut (envPp env) (envAppAddr env) (snapCoin snap) (envRepTokens env) successor
+        change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ inputs
+                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
+                & outputsTxBodyL .~ StrictSeq.fromList [contOut, change]
+                & feeTxBodyL .~ Coin flatFee
+                & reqSignerHashesTxBodyL
+                    .~ Set.fromList (map addrWitnessKeyHash signers)
+                & scriptIntegrityHashTxBodyL .~ integrity
+    pure $
+        ( mkBasicTx body
+            & witsTxL . scriptTxWitsL
+                .~ Map.singleton (envScriptHash env) (envScript env)
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+        )
+  where
+    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
+
+-- | Spend redeemer @Recover { revealed_control, representatives,
+-- registry }@ (NOTE-024 recovery-then-retire): application Constr 4
+-- carrying the revealed address bytes, the carried representatives
+-- and the registry binding (the app's own hash).
+redeemerRecover :: ByteString -> [ByteString] -> ByteString -> PLC.Data
+redeemerRecover revealed reps registry =
+    PLC.Constr 4 [PLC.B revealed, PLC.List (map PLC.B reps), PLC.B registry]
+
+-- | Recover a record to a revealed control (real on-chain rotation).
+-- Mirrors maintainTx exactly, with the Recover redeemer: the revealed
+-- key signs, the successor carries the revealed control with payment
+-- and quorum preserved, value (representative included) preserved.
+recoverTx ::
+    Env ->
+    Snap ->
+    ByteString ->
+    [ByteString] ->
+    ByteString ->
+    NamingDatum ->
+    [ByteString] ->
+    IO ConwayTx
+recoverTx env snap revealed reps registry successor signers = do
+    (fund, collateral) <- takeFundCollateral env
+    let inputs = Set.fromList [snapIn snap, fst fund]
+        spendIdx = spendingIndex (snapIn snap) inputs
+        redeemers =
+            Redeemers
+                ( Map.singleton
+                    (ConwaySpending (AsIx spendIdx))
+                    (Data (redeemerRecover revealed reps registry), maxUnits)
                 )
         integrity = computeScriptIntegrity (envPp env) redeemers
         contOut =
@@ -1163,8 +1419,10 @@ bootRetirementCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    FilePath ->
+    IORef Int ->
     IO (CageConfig, TokenId)
-bootRetirementCage prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
+bootRetirementCage prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "boot: genesis wallet has no UTxOs"
@@ -1198,9 +1456,12 @@ bootRetirementCage prov submit tm stateBytes requestBytes repPolicy consumerByte
         )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
+    bootTag <- retainTxAt evDir evNext "cage-boot" signedBoot
     result <- submitTx submit signedBoot
     case result of
-        Submitted _ -> pure ()
+        Submitted _ -> do
+            retainOutcome evDir bootTag "accepted" Nothing
+            pure ()
         Rejected reason -> failWith ("boot: rejected: " <> show reason)
     threadDelay 5_000_000
     let MultiAsset ma = signedBoot ^. bodyTxL . mintTxBodyL
@@ -1298,9 +1559,12 @@ submitRetirementRequest env spelling value = do
     unsigned <-
         requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
+    tag <- retainTx env ("mpfs-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed
     case result of
-        Submitted _ -> pure ()
+        Submitted _ -> do
+            retainOutcome (envEvDir env) tag "accepted" Nothing
+            pure ()
         Rejected reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
     _ <- waitConfirmation (txid <> " (MPFS request " <> show spelling <> ")")
@@ -1740,16 +2004,72 @@ mintRepresentativeRedeemer = PLC.Constr 0 []
 -- ---------------------------------------------------------
 
 submitAccepted :: Env -> String -> ConwayTx -> IO ()
-submitAccepted env label signed =
+submitAccepted env label signed = do
+    tag <- retainTx env label signed
     submitTx (envSubmit env) signed >>= \case
-        Submitted _ ->
+        Submitted _ -> do
+            retainOutcome (envEvDir env) tag "accepted" Nothing
             emit "submit" (label <> ": accepted tx=" <> txIdHex signed)
-        Rejected reason ->
+        Rejected reason -> do
+            retainOutcome
+                (envEvDir env)
+                tag
+                "refused"
+                (Just (T.unpack (TE.decodeUtf8Lenient reason)))
             failWith
                 ( label
                     <> ": the node refused an accepting row: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
+
+-- | CBOR version for evidence serialization (matches the register
+-- journey: the txid self-check validates the choice empirically).
+evidenceVersion :: Version
+evidenceVersion = maxBound
+
+serializeTxHex :: ConwayTx -> String
+serializeTxHex tx = hex (serialize' evidenceVersion tx)
+
+-- | Evidence location: gate-owned wins, smoke override second,
+-- isolated TMPDIR last (same contract as the register journey).
+evidenceDirFromEnv :: IO FilePath
+evidenceDirFromEnv = do
+    gateOwned <- lookupEnv "S3_EVIDENCE"
+    smokeOverride <- lookupEnv "S77_EVIDENCE_DIR"
+    case (gateOwned, smokeOverride) of
+        (Just dir, _) -> pure dir
+        (Nothing, Just dir) -> pure dir
+        (Nothing, Nothing) -> do
+            tmpdir <- fromMaybe "/tmp" <$> lookupEnv "TMPDIR"
+            pure (tmpdir ++ "/retirement-evidence")
+
+retainTxAt :: FilePath -> IORef Int -> String -> ConwayTx -> IO String
+retainTxAt evDir evNext label signed = do
+    n <- readIORef evNext
+    writeIORef evNext (n + 1)
+    let num = replicate (3 - length (show n)) '0' <> show n
+        tag = num <> "-" <> label
+    BSL.writeFile
+        (evDir </> ("tx-" <> tag <> ".cborhex"))
+        (BSL.fromStrict (TE.encodeUtf8 (T.pack (serializeTxHex signed))))
+    pure tag
+
+retainTx :: Env -> String -> ConwayTx -> IO String
+retainTx env = retainTxAt (envEvDir env) (envEvNext env)
+
+retainOutcome :: FilePath -> String -> String -> Maybe String -> IO ()
+retainOutcome evDir tag outcome mReason =
+    BSL.writeFile
+        (evDir </> ("tx-" <> tag <> ".outcome.json"))
+        ( encode $
+            object $
+                [ "outcome" .= outcome
+                , "tag" .= tag
+                ]
+                    <> case mReason of
+                        Just reason -> ["reason" .= reason]
+                        Nothing -> []
+        )
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do

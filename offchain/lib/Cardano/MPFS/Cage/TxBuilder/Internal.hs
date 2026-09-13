@@ -79,6 +79,7 @@ module Cardano.MPFS.Cage.TxBuilder.Internal (
 
     -- * Failure attribution (NOTE-023)
     failedWitnessHash,
+    evalScriptHash,
     isBudgetFailure,
 ) where
 
@@ -770,16 +771,33 @@ failedWitnessHash s =
                 let hex = takeWhile isHexDigit after
                  in if length hex == 56 then Just hex else Nothing
             _ -> Nothing
-  where
-    findAfter :: String -> String -> Maybe String
-    findAfter needle hay =
-        case
-            [ drop (length needle) t
-            | t <- tails hay
-            , needle `isPrefixOf` t
-            ] of
-            (r : _) -> Just r
-            [] -> Nothing
+
+{- | Parse a builder-EVALUATION failure's named script field
+(@pwcScriptHash = ScriptHash "HEX"@, first occurrence) and return
+the hash. NOTE-018 bind: fork-occupied assertions match THIS field
+against the derived applied identity — never a hex substring of the
+full @ErrorCall@ show (transaction data, values and parameterized
+script bytes can all contain the state policy). Same 56-hex rule.
+-}
+evalScriptHash :: String -> Maybe String
+evalScriptHash s =
+    case findAfter "pwcScriptHash = ScriptHash" s of
+        Nothing -> Nothing
+        Just rest -> case dropWhile (/= '"') rest of
+            ('"' : after) ->
+                let hex = takeWhile isHexDigit after
+                 in if length hex == 56 then Just hex else Nothing
+            _ -> Nothing
+
+findAfter :: String -> String -> Maybe String
+findAfter needle hay =
+    case
+        [ drop (length needle) t
+        | t <- tails hay
+        , needle `isPrefixOf` t
+        ] of
+        (r : _) -> Just r
+        [] -> Nothing
 
 {- | True when the refusal is budget exhaustion rather than a semantic
 predicate failure. Kept to the OBSERVED node wording

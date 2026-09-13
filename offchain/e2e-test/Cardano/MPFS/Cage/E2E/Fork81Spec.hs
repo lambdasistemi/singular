@@ -26,17 +26,23 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (cageAddrFromCfg)
+import Cardano.MPFS.Cage.Config (CageConfig (..))
+import Cardano.MPFS.Cage.TxBuilder.Internal (
+    cageAddrFromCfg,
+    evalScriptHash,
+    extractCageDatum,
+    scriptHashBytes,
+ )
 import Cardano.MPFS.Cage.Ledger (
     Root (..),
  )
 import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Internal (
-    extractCageDatum,
- )
 import Cardano.MPFS.Cage.TxBuilder.Update (
     updateTokenImpl,
  )
+import Data.ByteString.Base16 qualified as Base16
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
@@ -123,21 +129,27 @@ spec = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
                 Right bp ->
                     case ( extractCompiledCode "state.state" bp
                          , extractCompiledCode "request.request" bp
+                         , extractCompiledCode "consumer.consumer" bp
                          ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            fork81Spec stateBytes requestBytes
+                        (Just stateBytes, Just requestBytes, Just consumerBytes) ->
+                            fork81Spec stateBytes requestBytes consumerBytes
                         _ ->
                             it "no compiled code" $
                                 expectationFailure
-                                    "state or request script not found in blueprint"
+                                    "state, request or consumer script not found in blueprint"
+
+-- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
+hex :: ByteString -> String
+hex = T.unpack . TE.decodeUtf8 . Base16.encode
 
 fork81Spec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     Spec
-fork81Spec stateBytes requestBytes = do
+fork81Spec stateBytes requestBytes consumerBytes = do
     it "accepts the real absence insertion of C and reads it back" $
-        withBootedCage id stateBytes requestBytes $
+        withBootedCage id stateBytes requestBytes consumerBytes $
             \cfg prov submit tm tokenId -> do
                 foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
                 foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"
@@ -181,7 +193,7 @@ fork81Spec stateBytes requestBytes = do
                         renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
     it "refuses a second insert of the now-present key (occupied-key)" $
-        withBootedCage id stateBytes requestBytes $
+        withBootedCage id stateBytes requestBytes consumerBytes $
             \cfg prov submit tm tokenId -> do
                 foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
                 foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"
@@ -199,6 +211,11 @@ fork81Spec stateBytes requestBytes = do
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"
                     Left e -> do
+                        -- NOTE-018 bind 1: the expected applied identity
+                        -- derives from THIS run's actual production-applied
+                        -- cfg bytes (no hardcoded hash, no copied hash).
+                        let expectedStateHex =
+                                hex (scriptHashBytes (cfgScriptHash cfg))
                         -- Retain the full refusal text (NOTE-005): the
                         -- occupied-key negative is a builder-evaluation
                         -- refusal, and this is its actual error body.
@@ -209,20 +226,20 @@ fork81Spec stateBytes requestBytes = do
                         case (fromException e :: Maybe ErrorCall) of
                             Just ec -> do
                                 let msg = show ec
-                                -- Strongest stable discriminants: the
-                                -- refusal is the ledger evaluation of the
-                                -- STATE script spend (ConwaySpending) of
-                                -- THIS packaged patched validator (its
-                                -- script hash), and the body is a CekError.
-                                -- An unrelated ErrorCall mentioning
-                                -- EvalFailure must not go green, and the
-                                -- unpatched staging (different script hash)
-                                -- cannot satisfy the hash conjunct.
+                                -- NOTE-018 binds: stable constructor
+                                -- markers (EvalFailure, ConwaySpending
+                                -- purpose of the state spend, CekError
+                                -- body) plus the failed witness's NAMED
+                                -- script field matched against the DERIVED
+                                -- applied identity from this run's actual
+                                -- cfg bytes — never a hardcoded hash,
+                                -- never a hex substring of the full show
+                                -- (transaction data and parameterized
+                                -- script bytes can contain the policy).
                                 msg `shouldContain` "EvalFailure"
                                 msg `shouldContain` "ConwaySpending"
                                 msg `shouldContain` "CekError"
-                                msg
-                                    `shouldContain` "fa90391a470d726da369275cc1ae1be9c35a6d1f3885107e4227794d"
+                                evalScriptHash msg `shouldBe` Just expectedStateHex
                             Nothing ->
                                 expectationFailure
                                     ( "unexpected exception: " <> show e

@@ -81,6 +81,7 @@ library
     Naming.Datum
     Naming.Register
     Naming.Request
+    Naming.Verify
     Naming.Wire
     Naming.Wire.Vectors
 
@@ -272,6 +273,7 @@ executable retirement-rows
     , bytestring
     , cardano-ledger-api
     , cardano-ledger-alonzo
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -282,6 +284,8 @@ executable retirement-rows
     , cardano-strict-containers
     , containers
     , crypton
+    , directory
+    , filepath
     , memory
     , microlens
     , plutus-core
@@ -405,6 +409,39 @@ executable repair-rows
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+-- Offline independent reader for retirement creation evidence
+-- (NOTE-024 item 3): verifies recovery/controller/quorum retirements
+-- from retained CBOR plus public log lines, with no signing keys and
+-- no runner setup constants. Source lives in journey/retire-verify/.
+executable retirement-verify
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/retire-verify
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-cage
+    , cardano-crypto-class
+    , containers
+    , directory
+    , filepath
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , cardano-tx-tools:tx-build
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
 executable connected-verifier
   import:           warnings
   default-language: GHC2021
@@ -443,6 +480,7 @@ test-suite cage-tests
     Cardano.MPFS.Cage.FailureMatchSpec
     Cardano.MPFS.Cage.TypesSpec
     Naming.RegisterSpec
+    Naming.RetireVerifySpec
   build-depends:
     , base               >=4.14 && <5
     , base16-bytestring
@@ -466,6 +504,7 @@ test-suite e2e-tests
   build-depends:
     , async
     , base
+    , base16-bytestring
     , bytestring
     , cardano-ledger-api
     , cardano-ledger-core
@@ -479,5 +518,6 @@ test-suite e2e-tests
     , microlens
     , mts:mpf-write
     , ouroboros-network
+    , text
 
   ghc-options:      -threaded -with-rtsopts=-N

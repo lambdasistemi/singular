@@ -16,6 +16,7 @@ format preserved; 4KB script bodies elided):
 module Cardano.MPFS.Cage.FailureMatchSpec (spec) where
 
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    evalScriptHash,
     failedWitnessHash,
     isBudgetFailure,
  )
@@ -54,6 +55,20 @@ extraneousWitness =
         <> consumerHash
         <> "\"])))"
 
+-- Compacted excerpt of the fork-81 retained builder-evaluation refusal
+-- (ticket-81 evidence, order and format preserved): the occupied-key
+-- EvalFailure names its purpose, the CekError body, and the failed
+-- witness's script hash field.
+forkEvalHash :: String
+forkEvalHash = "fa90391a470d726da369275cc1ae1be9c35a6d1f3885107e4227794d"
+
+forkEvalRefusal :: String
+forkEvalRefusal =
+    "EvalFailure (ConwaySpending (AsIx {unAsIx = 2})) \"ValidationFailure (CekError "
+        <> "PlutusWithContext {pwcProtocolVersion = Version 10, pwcScriptHash = ScriptHash \""
+        <> forkEvalHash
+        <> "\"}"
+
 spec :: Spec
 spec = describe "node-failure attribution" $ do
     it "parses the consumer hash from a budget refusal" $
@@ -75,3 +90,9 @@ spec = describe "node-failure attribution" $ do
         isBudgetFailure stateSemantic `shouldBe` False
     it "matches nothing without the named field" $
         failedWitnessHash extraneousWitness `shouldBe` Nothing
+    it "parses the eval failure's named script field (NOTE-018)" $
+        evalScriptHash forkEvalRefusal `shouldBe` Just forkEvalHash
+    it "does not match node-refusal text as an eval field" $
+        evalScriptHash consumerBudget `shouldBe` Nothing
+    it "does not match eval text as a node-refusal field" $
+        failedWitnessHash forkEvalRefusal `shouldBe` Nothing
