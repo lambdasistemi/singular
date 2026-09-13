@@ -792,6 +792,28 @@ rowLT02 env snap = do
         )
     pure signed
 
+-- | Control-record retirement (NOTE-033): valid quorum retire as
+-- control-mode setup (accepts, not a guard) — own labels, same
+-- checks as the quorum route.
+rowRetireCtl :: Env -> Snap -> IO ConwayTx
+rowRetireCtl env snap = do
+    tx <- retireTx env snap (envCustodyAddr env) [envQuorum1Hash env, envQuorum2Hash env] "rt-ctl"
+    let signed =
+            addKeyWitness
+                (mkSignKey quorum1Seed)
+                (addKeyWitness (mkSignKey quorum2Seed) (addKeyWitness genesisSignKey tx))
+    submitAccepted env "CTL-retire" signed
+    _ <- waitConfirmation (txIdHex signed <> " (CTL-retire)")
+    assertCustody env "CTL-retire" signed
+    assertGone env snap "CTL-retire"
+    emit
+        "row"
+        ( "CTL-control-retirement-accepts: accepted tx="
+            <> txIdHex signed
+            <> " (control record for the eval-branch controls; quorum route)"
+        )
+    pure signed
+
 -- | The recovery destination: destSeed's enterprise address and its
 -- hash (both module-level seeds, no hidden constants per row).
 recoveryDest :: (Addr, ByteString)
@@ -1272,48 +1294,92 @@ rowOVBurnOnlyRefused env custody = do
 -- wrong (different creator transactions). Must refuse at local
 -- evaluation naming the custody script (co-creation), spending
 -- nothing and losing no collateral.
+-- | Outcome of a control probe (NOTE-033 item 1): control modes
+-- catch their own expected firings and continue to the pre-existing
+-- terminal fail, so MainRun evidence legs never churn for controls.
+-- `ProbeFired` (with the firing quoted) continues; `ProbeBroken`
+-- fails the run loudly.
+data ProbeOutcome = ProbeFired String | ProbeBroken String
+
+-- | Continue on a correctly fired control, fail on anything else.
+requireFired :: String -> ProbeOutcome -> IO ()
+requireFired label = \case
+    ProbeFired detail -> emit "control" (label <> " control fired correctly: " <> detail)
+    ProbeBroken detail -> failWith ("CONTROL broken: " <> label <> ": " <> detail)
+
+-- | Build a mismatched-pair fold (N2 shape): the given custody with
+-- the given foreign request. Shared by the MainRun row and both
+-- control modes; callers pin the outcome (refusal, wrong marker, or
+-- acceptance). Throws local-evaluation failures as exceptions.
+buildMismatchFold ::
+    Env ->
+    (TxIn, TxOut ConwayEra) ->
+    (TxIn, TxOut ConwayEra) ->
+    (TxIn, TxOut ConwayEra) ->
+    Addr ->
+    IO (ConwayTx, Root)
+buildMismatchFold env custody reqUtxo feeUtxo feeAddr = do
+    (stateIn, stateOut) <- queryRetirementState env
+    connectedFoldTx
+        ConnectedFoldArgs
+            { cfaCfg = envCfg env
+            , cfaProvider = envProv env
+            , cfaTrie = envTrie env
+            , cfaToken = envTok env
+            , cfaFeeAddr = feeAddr
+            , cfaStateUtxo = (stateIn, stateOut)
+            , cfaReqUtxos = [reqUtxo]
+            , cfaFeeUtxo = feeUtxo
+            , cfaPp = envPp env
+            , cfaSpends =
+                [ ConnectedSpend
+                    { csUtxo = custody
+                    , csRedeemer = RawRedeemer custodySpendRedeemer
+                    , csScript = envCustodyScript env
+                    }
+                ]
+            , cfaMints =
+                [ ConnectedMint
+                    { cmPolicy = envRepPolicy env
+                    , cmAssets = Map.singleton (AssetName (SBS.toShort (envRepBytes env))) (-1)
+                    , cmRedeemer = RawRedeemer burnRepresentativeRedeemer
+                    , cmScript = envRepScript env
+                    }
+                ]
+            , cfaOutputs = []
+            , cfaSigners = []
+            , cfaRefUtxos = envRefUtxos env
+            , cfaSkipEval = False
+            , cfaAttachScripts = []
+            , cfaAdjustRoot = id
+            }
+
+-- | Queue, claim and build a refold for a spelling (LX01 shape):
+-- returns the build outcome (`Left` = local-evaluation refusal).
+-- Shared by the MainRun row and both control modes. The claim
+-- approval binds control, not spelling, so any spelling's request
+-- refolds through the same claim shape.
+refoldAttempt :: Env -> ByteString -> IO (Either SomeException ConwayTx)
+refoldAttempt env spelling = do
+    (reqIn, reqOut) <- submitRetirementRequest env spelling (envRepBytes env)
+    emit
+        "row"
+        ( "refold-queued: insert request for "
+            <> show spelling
+            <> " accepted "
+            <> showIn reqIn
+            <> " (queueing is not the refusal; the fold is)"
+        )
+    (claimIn, claimLive) <- lx01Claim env
+    try (lx01Fold env (reqIn, reqOut) (claimIn, claimLive)) :: IO (Either SomeException ConwayTx)
+
 rowN2Mismatch :: Env -> ConwayTx -> ConwayTx -> IO ()
 rowN2Mismatch env signedLT01 signedRR1 = do
     custodyLT01 <- overCustodyOut env signedLT01 "N2-lt01-custody"
     reqRR1 <- overRequestOut env signedRR1 "N2-rr1-request"
-    (stateIn, stateOut) <- queryRetirementState env
     feeUtxo <- queryRetirementFee env
     foldResult <-
-        try
-            ( connectedFoldTx
-                ConnectedFoldArgs
-                    { cfaCfg = envCfg env
-                    , cfaProvider = envProv env
-                    , cfaTrie = envTrie env
-                    , cfaToken = envTok env
-                    , cfaFeeAddr = genesisAddr
-                    , cfaStateUtxo = (stateIn, stateOut)
-                    , cfaReqUtxos = [reqRR1]
-                    , cfaFeeUtxo = feeUtxo
-                    , cfaPp = envPp env
-                    , cfaSpends =
-                        [ ConnectedSpend
-                            { csUtxo = custodyLT01
-                            , csRedeemer = RawRedeemer custodySpendRedeemer
-                            , csScript = envCustodyScript env
-                            }
-                        ]
-                    , cfaMints =
-                        [ ConnectedMint
-                            { cmPolicy = envRepPolicy env
-                            , cmAssets = Map.singleton (AssetName (SBS.toShort (envRepBytes env))) (-1)
-                            , cmRedeemer = RawRedeemer burnRepresentativeRedeemer
-                            , cmScript = envRepScript env
-                            }
-                        ]
-                    , cfaOutputs = []
-                    , cfaSigners = []
-                    , cfaRefUtxos = envRefUtxos env
-                    , cfaSkipEval = False
-                    , cfaAttachScripts = []
-                    , cfaAdjustRoot = id
-                    }
-            ) :: IO (Either SomeException (ConwayTx, Root))
+        try (buildMismatchFold env custodyLT01 reqRR1 feeUtxo genesisAddr) :: IO (Either SomeException (ConwayTx, Root))
     case foldResult of
         Left err -> do
             -- Strict attribution (NOTE-030): named custody-script
@@ -1328,6 +1394,103 @@ rowN2Mismatch env signedLT01 signedRR1 = do
                 )
         Right _ ->
             failWith "N2: mismatched-pair fold BUILT — expected local-evaluation refusal (co-creation)"
+
+-- | N2 wrong-reason control (NOTE-033): the mismatched pair must
+-- refuse, and the strict pin must reject the impossible marker.
+rowN2ControlWrongReason :: Env -> ConwayTx -> (TxIn, TxOut ConwayEra) -> IO ProbeOutcome
+rowN2ControlWrongReason env signedCustody decoyReq = do
+    custody <- overCustodyOut env signedCustody "N2-CWR-custody"
+    feeUtxo <- queryRetirementFee env
+    foldResult <- try (buildMismatchFold env custody decoyReq feeUtxo genesisAddr) :: IO (Either SomeException (ConwayTx, Root))
+    case foldResult of
+        Left err -> do
+            pinOutcome <-
+                try (pinEvalRefusal "N2-CWR" (show err) wrongReasonMarker "ConwaySpending") :: IO (Either SomeException ())
+            case pinOutcome of
+                Left pinErr -> pure (ProbeFired (show pinErr))
+                Right _ -> pure (ProbeBroken "impossible marker MATCHED an eval refusal (matcher broken)")
+        Right _ -> pure (ProbeBroken "mismatched-pair fold BUILT (occupied pairing bypassed?)")
+
+-- | N2 valid-mode refusal (NOTE-033): the mismatched pair refuses
+-- under strict pins (recorded, continued to the terminal fail).
+rowN2ValidRefusal :: Env -> ConwayTx -> (TxIn, TxOut ConwayEra) -> IO ProbeOutcome
+rowN2ValidRefusal env signedCustody decoyReq = do
+    custody <- overCustodyOut env signedCustody "N2-CV-custody"
+    feeUtxo <- queryRetirementFee env
+    foldResult <- try (buildMismatchFold env custody decoyReq feeUtxo genesisAddr) :: IO (Either SomeException (ConwayTx, Root))
+    case foldResult of
+        Left err -> do
+            pinEvalRefusal "N2-CV" (show err) (envCustodyHex env) "ConwaySpending"
+            pure (ProbeFired "mismatched pair refused under strict pins")
+        Right _ -> pure (ProbeBroken "mismatched-pair fold BUILT (expected refusal)")
+
+-- | N2 valid-mode acceptance (NOTE-033): the CORRECT pair builds and
+-- submits accepted (genuine completion shape); the mirror syncs the
+-- completed Update (later builds need the current root); caught,
+-- recorded and continued (the run's terminal fail stays
+-- LT03-made-valid).
+rowN2ValidAccept :: Env -> ConwayTx -> (TxIn, TxOut ConwayEra) -> IO ProbeOutcome
+rowN2ValidAccept env signedCustody ownReq = do
+    custody <- overCustodyOut env signedCustody "N2-CV-custody"
+    feeUtxo <- queryRetirementFee env
+    (unsigned, _) <- buildMismatchFold env custody ownReq feeUtxo genesisAddr
+    let signed = addKeyWitness genesisSignKey unsigned
+    tag <- retainTx env "N2-CV-accept" signed
+    result <- submitTx (envSubmit env) signed
+    case result of
+        Submitted _ -> do
+            retainOutcome (envEvDir env) tag "accepted" Nothing
+            _ <- waitConfirmation (txIdHex signed <> " (N2-CV accept)")
+            syncFoldedRequests (envTrie env) (envTok env) [ownReq]
+            pure (ProbeFired "correct pair accepted as constructed")
+        Rejected reason ->
+            pure (ProbeBroken ("correct pair unexpectedly refused: " <> T.unpack (TE.decodeUtf8Lenient reason)))
+
+-- | LX01 wrong-reason control (NOTE-033): the occupied-key refold
+-- must refuse, and the strict pin must reject the impossible marker.
+rowLX01ControlWrongReason :: Env -> ByteString -> IO ProbeOutcome
+rowLX01ControlWrongReason env spelling = do
+    result <- refoldAttempt env spelling
+    case result of
+        Left err -> do
+            pinOutcome <-
+                try (pinEvalRefusal "LX01-CWR" (show err) wrongReasonMarker "ConwaySpending") :: IO (Either SomeException ())
+            case pinOutcome of
+                Left pinErr -> pure (ProbeFired (show pinErr))
+                Right _ -> pure (ProbeBroken "impossible marker MATCHED an eval refusal (matcher broken)")
+        Right _ -> pure (ProbeBroken "occupied-key refold BUILT (absence proof produced for occupied key?)")
+
+-- | LX01 valid-mode refusal (NOTE-033): the occupied-key refold
+-- refuses under strict pins (recorded, continued to terminal).
+rowLX01ValidRefusal :: Env -> ByteString -> IO ProbeOutcome
+rowLX01ValidRefusal env spelling = do
+    result <- refoldAttempt env spelling
+    case result of
+        Left err -> do
+            let stateHex = hex (scriptHashBytes (cfgScriptHash (envCfg env)))
+            pinEvalRefusal "LX01-CV" (show err) stateHex "ConwaySpending"
+            pure (ProbeFired "occupied refold refused under strict pins")
+        Right _ -> pure (ProbeBroken "occupied-key refold BUILT (expected refusal)")
+
+-- | LX01 valid-mode acceptance (NOTE-033): the fresh-key refold
+-- builds and submits accepted; caught, recorded and continued (the
+-- run's terminal fail stays LT03-made-valid).
+rowLX01ValidAccept :: Env -> ByteString -> IO ProbeOutcome
+rowLX01ValidAccept env spelling = do
+    result <- refoldAttempt env spelling
+    case result of
+        Left err -> pure (ProbeBroken ("fresh refold unexpectedly refused: " <> show err))
+        Right built -> do
+            let signed = addKeyWitness genesisSignKey built
+            tag <- retainTx env "LX01-CV-accept" signed
+            outcome <- submitTx (envSubmit env) signed
+            case outcome of
+                Submitted _ -> do
+                    retainOutcome (envEvDir env) tag "accepted" Nothing
+                    _ <- waitConfirmation (txIdHex signed <> " (LX01-CV accept)")
+                    pure (ProbeFired "fresh-key fold accepted as constructed")
+                Rejected reason ->
+                    pure (ProbeBroken ("fresh fold unexpectedly refused: " <> T.unpack (TE.decodeUtf8Lenient reason)))
 
 rowOVComplete :: Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ConwayTx
 rowOVComplete env custody reqUtxo feeUtxo = do
@@ -1758,6 +1921,19 @@ runControlValid env recRefusals = do
     snap <- mustSnap env recRefusals
     -- First a genuine refusal (emits a row, proving the runner ran).
     rowLT08 env snap
+    -- Control record for the eval-branch controls (NOTE-033): its
+    -- own custody, so N2 pairs genuinely without touching MainRun
+    -- records. Retired validly as setup (accepts, not a guard).
+    (txCtl, recCtl) <- setupRecoveryRecord env (envDatum env) "ctl" "rt-ctl"
+    _ <- waitConfirmation (txCtl <> " (setup: ctl)")
+    snapCtl <- mustSnap env recCtl
+    signedCtl <- rowRetireCtl env snapCtl
+    decoyReq <- submitRetirementRequest env "rt-n2-decoy" (envRepBytes env)
+    requireFired "N2-CV-refusal" =<< rowN2ValidRefusal env signedCtl decoyReq
+    ownReq <- overRequestOut env signedCtl "N2-CV-own"
+    requireFired "N2-CV-accept" =<< rowN2ValidAccept env signedCtl ownReq
+    requireFired "LX01-CV-refusal" =<< rowLX01ValidRefusal env "rt-ctl"
+    requireFired "LX01-CV-accept" =<< rowLX01ValidAccept env "rt-ctl-fresh"
     -- Then LT03 made actually valid: the missing quorum member added.
     tx <- retireTx env snap (envCustodyAddr env) [envQuorum1Hash env, envQuorum2Hash env] "rt-refusals"
     let signed =
@@ -1787,7 +1963,13 @@ runControlWrongReason :: Env -> TxIn -> TxIn -> IO ()
 runControlWrongReason env recAccept1 recRefusals = do
     -- LT01 first (accepts, emits a row, proving the runner ran).
     snapA1 <- mustSnap env recAccept1
-    _ <- rowLT01 env snapA1
+    signedA1 <- rowLT01 env snapA1
+    -- Eval-branch controls (NOTE-033): mismatched pair and occupied
+    -- refold through the impossible marker (fired + recorded here;
+    -- spellings are this runner's own setup conventions).
+    decoyReq <- submitRetirementRequest env "rt-n2-decoy" (envRepBytes env)
+    requireFired "N2-CWR" =<< rowN2ControlWrongReason env signedA1 decoyReq
+    requireFired "LX01-CWR" =<< rowLX01ControlWrongReason env "rt-accept1"
     -- Then a refusal matched against an impossible marker.
     snap <- mustSnap env recRefusals
     rowLT03 ControlWrongReason env snap

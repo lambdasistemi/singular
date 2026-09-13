@@ -121,11 +121,23 @@
         # Aiken prelude.
         aikenPrelude = ''
           mkdir -p build/packages
+          rm -rf build/packages/aiken-lang-stdlib build/packages/aiken-lang-fuzz build/packages/aiken-lang-merkle-patricia-forestry
           cp ${packagesToml} build/packages/packages.toml
           cp -r ${stdlib} build/packages/aiken-lang-stdlib
           cp -r ${fuzz} build/packages/aiken-lang-fuzz
           cp -r ${merkle-patricia-forestry-patched} build/packages/aiken-lang-merkle-patricia-forestry
           chmod -R u+w build/packages
+          # Mechanical staged-bytes guard (ticket #81): the vendored mpf
+          # source must carry the lone-fork-exclusion fix. A staging that
+          # resolves the unpatched upstream package from a user cache fails
+          # the build here instead of producing a wrong blueprint or a
+          # misdiagnosed test failure.
+          grep -q "bytearray.concat" \
+            build/packages/aiken-lang-merkle-patricia-forestry/lib/aiken/merkle-patricia-forestry.ak \
+            || {
+              echo "vendored mpf source staged UNPATCHED - refusing to build" >&2
+              exit 1
+            }
         '';
 
         plutus-blueprint = pkgs.stdenv.mkDerivation {
@@ -297,11 +309,21 @@
           shellHook = ''
             if [ -f aiken.toml ]; then
               mkdir -p build/packages
+              rm -rf build/packages/aiken-lang-stdlib build/packages/aiken-lang-fuzz build/packages/aiken-lang-merkle-patricia-forestry
               cp ${packagesToml} build/packages/packages.toml
               cp -r ${stdlib} build/packages/aiken-lang-stdlib
               cp -r ${fuzz} build/packages/aiken-lang-fuzz
               cp -r ${merkle-patricia-forestry-patched} build/packages/aiken-lang-merkle-patricia-forestry
               chmod -R u+w build/packages
+              # Same staged-bytes guard as aikenPrelude: an interactive
+              # aiken run in this shell cannot run against unpatched
+              # vendored bytes without failing loudly on shell entry.
+              grep -q "bytearray.concat" \
+                build/packages/aiken-lang-merkle-patricia-forestry/lib/aiken/merkle-patricia-forestry.ak \
+                || {
+                  echo "vendored mpf source staged UNPATCHED - re-enter the shell" >&2
+                  exit 1
+                }
               echo "vendored aiken deps staged (mpf v2.0.0 + lone-fork-exclusion patch)"
             fi
           '';

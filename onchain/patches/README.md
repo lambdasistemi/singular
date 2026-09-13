@@ -32,3 +32,13 @@ sources in `flake.nix`. A reviewer reads this file first.
   suite has no lone-`Fork` / skip>0 `Fork` vector; this patch adds one.
 - **Licence/origin:** unchanged (upstream MPL-2.0, github
   aiken-lang/merkle-patricia-forestry).
+- **Valid reproduction paths (ticket #81, NOTE-006):** only the Nix
+  derivations — `nix build .#checks.x86_64-linux.aiken-check`,
+  `nix build .#checks.x86_64-linux.mpf-lone-fork-regression`,
+  `nix build .#plutus-blueprint` — stage the patched bytes and carry a
+  mechanical staged-bytes guard (the fixed arm must be present in the staged
+  vendored source, or the build fails). An in-tree `aiken check` that
+  self-resolves dependencies from the user cache stages **unpatched** v2.0.0
+  and is NOT a valid reproduction path; it fails `lone_fork_insert` (proven:
+  ticket-77 `aiken-merge-clean.log`; its `build/packages` copy measured
+  unpatched — defective lone arm present, no `bytearray.concat`).
