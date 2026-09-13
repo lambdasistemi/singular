@@ -18,6 +18,12 @@ structure Config where
   requestAddress : Nat := 90
   representativePolicy : Nat := 8
   reuseIdentity : Bool := true
+  /-- Pinned consumer script (NOTE-013/NOTE-019, sixth `State` field): the
+  consumer script hash selected at bootstrap, preserved across every fold
+  by whole-`Config` equality (`consume_config`, `setEntry_config`, and the
+  `hc : s'.config = s.config` hypotheses below). A nonempty fold must also
+  carry its invocation witness (`Witnesses.consumerWithdraw`). -/
+  consumerPin : Nat := 9
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 structure Representative where
   registry : Nat
@@ -110,6 +116,11 @@ structure Witnesses where
   applicationSpend : Bool := false
   nativeSpend : Bool := false
   representativeMint : Bool := false
+  /-- Pinned-hook invocation (NOTE-013/NOTE-019): the nonempty fold's
+  withdrawal of the exact `Config.consumerPin` script executed. A
+  caller-written flag is not an invocation; this witness stands for the
+  ledger-executed withdrawal. -/
+  consumerWithdraw : Bool := false
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 structure Delta where
   asset : Representative
@@ -249,6 +260,8 @@ def step (s : State) (a : Action) : Except String Result := do
     return { state := consume s id }
   | .fold items mint actionNet w =>
     if !w.nativeSpend then throw "native-witness"
+    if items == [] then throw "empty-fold"
+    if !w.consumerWithdraw then throw "consumer-witness"
     let result ← foldItems s items
     if !sameNet result.logical mint then throw "net-mint-mismatch"
     if nonzero mint && !w.representativeMint then throw "representative-witness"

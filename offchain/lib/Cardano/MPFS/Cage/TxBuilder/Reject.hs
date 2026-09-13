@@ -40,25 +40,14 @@ import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     coinTxOutL,
     datumTxOutL,
-    getMinCoinTxOut,
     mkBasicTxOut,
     valueTxOutL,
- )
-import Cardano.Ledger.BaseTypes (
-    Inject (..),
  )
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Keys (
-    KeyHash,
-    KeyRole (..),
- )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.Config (
     CageConfig (..),
@@ -76,10 +65,12 @@ import Cardano.MPFS.Cage.Provider (
 import Cardano.MPFS.Cage.TxBuilder.Internal
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     OnChainRequest (..),
     OnChainTokenState (..),
     RequestAction (..),
     UpdateRedeemer (..),
+    stateConsumerPinBytes,
  )
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
@@ -101,7 +92,7 @@ rejectRequestsImpl cfg prov tid addr = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryRejectContext cfg prov tid addr
     let (_stateIn, stateOut) = stateUtxo
-    let (oldState, newStateOut, script, ownerKh) =
+    let (oldState, newStateOut, script) =
             prepareRejectState cfg stateOut
         requestScript = mkRequestScript cfg tid
     lowerSlot <-
@@ -118,7 +109,6 @@ rejectRequestsImpl cfg prov tid addr = do
                 newStateOut
                 script
                 requestScript
-                ownerKh
                 lowerSlot
     result <-
         Tx.build
@@ -206,11 +196,7 @@ queryRejectContext cfg prov tid addr = do
 prepareRejectState ::
     CageConfig ->
     TxOut ConwayEra ->
-    ( OnChainTokenState
-    , TxOut ConwayEra
-    , Script ConwayEra
-    , KeyHash Guard
-    )
+    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareRejectState cfg stateOut =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -221,10 +207,6 @@ prepareRejectState cfg stateOut =
                     error
                         "rejectRequests: invalid \
                         \state datum"
-        OnChainTokenState
-            { stateOwner =
-                BuiltinByteString ownerBs
-            } = oldState
         newStateOut =
             mkBasicTxOut
                 scriptAddr
@@ -235,8 +217,7 @@ prepareRejectState cfg stateOut =
                             (StateDatum oldState)
                         )
         script = mkCageScript cfg
-        ownerKh = addrWitnessKeyHash ownerBs
-     in (oldState, newStateOut, script, ownerKh)
+     in (oldState, newStateOut, script)
 
 -- | Compute the validity lower slot.
 computeLowerSlot ::
@@ -307,7 +288,6 @@ buildRejectProgram ::
     TxOut ConwayEra ->
     Script ConwayEra ->
     Script ConwayEra ->
-    KeyHash Guard ->
     SlotNo ->
     Tx.TxBuild NoCtx Void ()
 buildRejectProgram
@@ -320,15 +300,11 @@ buildRejectProgram
     newStateOut
     script
     requestScript
-    ownerKh
     lowerSlot = do
         let stateRef = txInToRef stateIn
             OnChainTokenState
                 { stateMaxFee = tipAmount
                 } = oldState
-            nReqs =
-                fromIntegral (length reqUtxos) ::
-                    Integer
         let actions =
                 replicate (length reqUtxos) Rejected
         _ <- Tx.spendScript stateIn (Modify actions)
@@ -340,44 +316,35 @@ buildRejectProgram
             )
             reqUtxos
         _ <- Tx.output newStateOut
-        Coin fee <- Tx.peek $ \tx ->
+        Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
-        let perReqFee = fee `div` nReqs
-        mapM_
-            ( \(_, reqOut) -> do
-                let Coin reqVal =
-                        reqOut ^. coinTxOutL
-                    rawRefund =
-                        Coin
-                            ( reqVal
-                                - tipAmount
-                                - perReqFee
-                            )
-                    refundAddr =
-                        addrFromKeyHashBytes
-                            (network cfg)
-                            ( extractOwnerBytes
-                                reqOut
-                            )
-                    draft =
-                        mkBasicTxOut
-                            refundAddr
-                            (inject rawRefund)
-                    minCoin =
-                        getMinCoinTxOut pp draft
-                Tx.output $
-                    mkBasicTxOut
-                        refundAddr
-                        ( inject
-                            (max rawRefund minCoin)
-                        )
+        -- Rejected rows refund exactly `input − tip` floored at min-UTxO
+        -- (NOTE-014 item A2) via the single shared helper — no fee share.
+        let refundOuts =
+                map
+                    ( \(_, reqOut) ->
+                        computeRefund pp (network cfg) tipAmount reqOut
+                    )
+                    reqUtxos
+        mapM_ Tx.output refundOuts
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network cfg)
+                (stateConsumerPinBytes oldState)
             )
-            reqUtxos
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript cfg)
         Tx.attachScript script
         Tx.attachScript requestScript
-        Tx.requireSignature ownerKh
         Tx.collateral (fst feeUtxo)
         Tx.validFrom lowerSlot

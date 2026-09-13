@@ -147,11 +147,11 @@ epic's mandate (the v0.2.0 partition is abstract); the row's accepted
 behaviour is unchanged.
 
 **What the four-field datum cannot carry, said precisely.** "At most one
-outstanding representative per record identity across time" is not
+live representative per record identity across time" is not
 expressible in a minting policy alone — a name can be reminted after
 burn, and the datum has no fifth field to carry a counter. The policy
 enforces what a policy can (mints bound to application-spend `Fold`
-redeemers, exact quantities, nothing else under the policy); outstanding
+redeemers, exact quantities, nothing else under the policy); live
 uniqueness must come from the registry state (the MPF maps spellings to
 commitments) at execution time. Likewise, fold-time issuance of the
 withdraw approval into the claim's value, and the insert-request token
@@ -249,7 +249,7 @@ single-defect mutant of the accepted row.
 
 **Limit (t62).** The representative for this slice rides under the
 application policy (minted via the existing `WithdrawApproval` branch
-with a canonical name) as a stand-in preserving the single-token
+with a canonical name) as a stand-in, since removed, preserving the single-token
 shape; the full representative-policy NFT flow stays as bound in #52.
 The registry binding on ledger is the application validator hash
 itself. Retirement has no rows here.
@@ -317,11 +317,79 @@ and no withdrawal, redirection or `Delete` path; spending it
 (`LT04` completion, `LT07` withdrawal refusal) is the next child and
 has no rows here.
 
-**Limit (t66).** The representative for this slice is still the
-application-policy stand-in from #62 (minted via the existing
+**Limit (t66).** The representative for this slice was still the
+application-policy stand-in from #62 (the shape t77 removed; minted via the existing
 `WithdrawApproval` branch with a canonical name), not the real
 representative-policy NFT flow: the `Retire` redeemer names it but the
 validator binds the chain-carried token, and no mint or burn under
 either policy rides the retirement. The real flow — `Fold` minting the
 NFT under the representative policy, retirement preserving it into
 custody, completion burning it there — stays as bound in #52.
+
+## What t77 executed (2026-09-12)
+
+Issue #77 realises the flow t66 left as a limit: the representative is
+now a real NFT minted under the applied representative policy
+(`applyBytesParam` of the unapplied `representative.representative`
+code with the application-policy hash; the mint branch of the policy
+is parameter-free, so approval burns and representative mints ride the
+same connected transaction). The insert approval is a single-use mint
+under the application policy (`InsertApproval { controller, control,
+commitment }`, `insertApprovalName = BLAKE2b-256(domain || 0x00 ||
+control || commitment)`); the `Fold` spend branch consumes the claim
+only when the fold burns that exact approval and mints
+`representativeName = Rep || keyHash || 0x00` for the controller; an
+empty `Fold` list takes the withdraw path and refuses any
+representative movement.
+
+**The registry key is the spelling.** The connected transaction is
+one state `Modify`, one MPFS request `Contribute`, and the naming
+`Fold`: the registry maps the spelling bytes (`alice`, `bob`,
+`rc-*`, `rt-*`) to the representative name, and the naming validator
+binds the in-transaction triangle (request key, claim control,
+approval, representative). No registry-owner role exists anywhere in
+the slice — `End`, migration, and `Sweep` are explicit refusals — so
+the fold needs no owner signature; the controller's witness was
+checked at insert time.
+
+**Every record in every runner is a genuine fold.** `register-rows`
+folds `alice` connected and refuses the duplicate-key adversarial
+fold on chain; `recovery-rows` folds three records (`rc-main`,
+`rc-refusals`, `rc-forged`) and `retirement-rows` folds four
+(`rt-accept1`, `rt-accept2`, `rt-refusals`, `rt-duplicates`) through
+the same connected shape before their `LR`/`LT` rows run. The
+seventeen `connected-verifier` verdicts recompute from raw bodies,
+listings, and outcomes; the `t62`/`t66` rows keep passing because the
+repairs preserved their token shapes, now under the representative
+policy instead of the removed stand-in.
+
+**Limit (t77).** The spelling-to-control binding is observed only
+through co-consumption inside one transaction; nothing on the ledger
+maps a spelling to its controller outside the fold that carries both.
+The model treats that table as external, and this slice does not
+change that.
+
+**E-001 repair (t77 follow-up).** The predecessor proved on chain that a
+foreign-policy representative is accepted (accepted tx `ae4fb32d…`, witness
+retained in the ticket runtime, never deleted): `fold()`/`retire()` mapped
+the abstract `Representative` onto the asset name only, dropping the `policy`
+component that `DecidableEq`, `foldOne .insert` (`representative-identity`,
+`Model.lean:177`), `sameNet` and `LI07-substituted-representative-policy`
+require. The faithful refinement: the MPFS `State` datum carries
+`representative_policy` (appended fifth field, set at bootstrap from the
+honest applied policy, preserved immutable across every `Modify` with a
+refusal test); `fold()` requires the mint and the record to carry the named
+representative exactly once under the spent state's expected policy, and
+`retire()` requires input, burn and custody under it — foreign-policy fakes
+refuse on `representative-policy`. The `connected-verifier` recomputes the
+anchor (`representative.applied` now also requires the spent state to pin the
+derived applied policy). The `register-rows` MainRun executes the attack
+(`fold-foreign-policy-refused`, correct name under the versioned always-true
+`e001_attacker` policy, fresh spelling `eve`) and requires refusal while
+`alice`/`bob` stay accepted; the misnamed row keeps its corrected name
+(`fold-misnamed-representative-refused`). Known residue: the `key3`
+naming-only negatives now refuse on missing state (same application script,
+unattributed at node-text layer) rather than isolating `identity` — the name
+check's devnet isolation is restored by giving those rows a no-op state when
+the census demands it; unit-level discrimination stands (`fold_insert_…`
+and `lt08_foreign_policy_refuses` fail-tests).

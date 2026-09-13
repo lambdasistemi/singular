@@ -68,8 +68,38 @@ theorem fold_iff (s : State) (items : List FoldItem) (mint : List Delta) (net : 
     step s (.fold items mint net w) = .ok t ↔ w.nativeSpend = true ∧
     foldItems s items = .ok t ∧ sameNet t.logical mint = true ∧
     (nonzero mint = true → w.representativeMint = true) ∧
-    (actionNonzero net = true → w.applicationMint = true) := by
+    (actionNonzero net = true → w.applicationMint = true) ∧
+    w.consumerWithdraw = true ∧
+    items ≠ [] := by
   exact fold_ok s items mint net w t
+
+theorem empty_fold_never_ok (s : State) (mint : List Delta) (net : List ActionDelta)
+    (w : Witnesses) (t : Result) :
+    step s (.fold [] mint net w) ≠ .ok t := by
+  intro h
+  rw [fold_ok] at h
+  simp at h
+
+theorem empty_fold_error (s : State) (mint : List Delta) (net : List ActionDelta)
+    (w : Witnesses) (hnative : w.nativeSpend = true) (t : Result) :
+    step s (.fold [] mint net w) = .error "empty-fold" := by
+  unfold step
+  simp [hnative, bind, Except.bind, pure, Except.pure]
+
+-- Control: an empty batch without a native witness still refuses as
+-- `native-witness` (first guard unchanged). Concrete witnesses so the
+-- equation holds definitionally.
+example (s : State) :
+    step s (.fold [] [] [] { applicationMint := false, applicationSpend := false, nativeSpend := false, representativeMint := false }) =
+      .error "native-witness" := rfl
+
+-- Control: a nonempty batch without the consumer invocation witness refuses
+-- as `consumer-witness` (hook mandate NOTE-013/NOTE-019). Native passes and
+-- the batch is nonempty, so the consumer guard is what fires. Concrete
+-- witnesses so the equation holds definitionally.
+example (s : State) :
+    step s (.fold [{ request := 0 }] [] [] { nativeSpend := true, consumerWithdraw := false }) =
+      .error "consumer-witness" := rfl
 
 theorem moveAction_iff (s : State) (a : Asset) (n : Int) (w : Witnesses) (t : Result) :
     step s (.moveAction a n w) = .ok t ↔ recognized s a = true ∧ n = 0 ∧
@@ -249,7 +279,13 @@ theorem nonzero_action_invokes_policy (s : State) (items : List FoldItem) (mint 
     (n : List ActionDelta) (w : Witnesses) (t : Result) (hn : actionNonzero n = true)
     (h : step s (.fold items mint n w) = .ok t) : w.applicationMint = true := by
   rw [fold_ok] at h
-  exact h.2.2.2.2 hn
+  exact h.2.2.2.2.1 hn
+
+theorem nonempty_fold_invokes_consumer (s : State) (items : List FoldItem) (mint : List Delta)
+    (n : List ActionDelta) (w : Witnesses) (t : Result)
+    (h : step s (.fold items mint n w) = .ok t) : w.consumerWithdraw = true := by
+  rw [fold_ok] at h
+  exact h.2.2.2.2.2.1
 
 theorem existing_action_does_not_refresh_scope (s : State) (a : Asset) (w : Witnesses)
     (t : Result) (h : step s (.moveAction a 0 w) = .ok t) : t.state = s := by

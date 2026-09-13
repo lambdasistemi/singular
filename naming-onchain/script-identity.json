@@ -5,37 +5,47 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "58d3d792a9511bdcdfad9359be78e30496a22cfd5618dc4da0035345",
+      "hash": "dce219ae02f1c42fcc359362e92681c9b6bb43332ed2ce378f815d68",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "58d3d792a9511bdcdfad9359be78e30496a22cfd5618dc4da0035345",
+      "hash": "dce219ae02f1c42fcc359362e92681c9b6bb43332ed2ce378f815d68",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "58d3d792a9511bdcdfad9359be78e30496a22cfd5618dc4da0035345",
+      "hash": "dce219ae02f1c42fcc359362e92681c9b6bb43332ed2ce378f815d68",
+      "parameters": 0
+    },
+    {
+      "title": "e001_attacker.e001_attacker.mint",
+      "hash": "1ab2c5f451c798474d7476355230e5123095426d2a0b96a10213051f",
+      "parameters": 0
+    },
+    {
+      "title": "e001_attacker.e001_attacker.else",
+      "hash": "1ab2c5f451c798474d7476355230e5123095426d2a0b96a10213051f",
       "parameters": 0
     },
     {
       "title": "representative.representative.mint",
-      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "hash": "6bf5def58c1863b7a978d65e8cc09fc2363f92b03778b1586f3de7b0",
       "parameters": 1
     },
     {
       "title": "representative.representative.else",
-      "hash": "6f14bdea9ab880c3b6934f43942ace2b971d13a8f4123f090677f1dc",
+      "hash": "6bf5def58c1863b7a978d65e8cc09fc2363f92b03778b1586f3de7b0",
       "parameters": 1
     },
     {
       "title": "retirement_custody.retirement_custody.spend",
-      "hash": "0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954",
+      "hash": "c2337e05bb6a705adeb8bb8fb20155309a85d7c4cda174f9e8afa2d6",
       "parameters": 0
     },
     {
       "title": "retirement_custody.retirement_custody.else",
-      "hash": "0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954",
+      "hash": "c2337e05bb6a705adeb8bb8fb20155309a85d7c4cda174f9e8afa2d6",
       "parameters": 0
     }
   ]

@@ -14,7 +14,9 @@ blueprint JSON itself.
 
 If the blueprint does not declare enough to check a given type, the
 row reports precisely which type and why, rather than weakening to a
-round trip. All thirteen types are declared; there are no gaps.
+round trip. All fourteen types are declared; there are no gaps.
+ConsumerRedeemer is encoder-only (no FromData exists): its schema,
+index and field shape are checked, explicitly not a round trip.
 
 The executing negative control (@CONFORMANCE_CONTROL=wrong-index@)
 demands index 99 for 'End': the real 'End' (index 0) must fail its
@@ -46,7 +48,6 @@ import PlutusTx.IsData.Class (ToData (..))
 import Cardano.MPFS.Cage.Blueprint (
     Blueprint (..),
     Schema (..),
-    applyPreviousPolicies,
     extractCompiledCode,
     loadBlueprint,
     validateData,
@@ -58,6 +59,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
 
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     Migration (..),
     MintRedeemer (..),
     Neighbor (..),
@@ -94,7 +96,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
         Left err -> failWith ("blueprint JSON does not parse: " <> err)
         Right (val :: Aeson.Value) -> pure (extractTitles val)
     let defs = definitions bp
-    checkAll defs titleMap spoil
+    nTypes <- checkAll defs titleMap spoil
     fsize <- getFileSize blueprintPath
     nodeVer <- readNodeVersion
     bpId <- blueprintId bp
@@ -109,6 +111,8 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptTxSize = Just (fromIntegral fsize)
                 , receiptBase = T.pack base
                 , receiptDirty = dirty
+                , receiptPartial = Nothing
+                , receiptDerivation = Nothing
                 , receiptNode = T.pack nodeVer
                 , receiptBlueprint = T.pack bpId
                 , receiptVenue = "blueprint-check"
@@ -116,26 +120,37 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptRejected = Nothing
                 }
     writeReceiptFile receiptsDir receipt
-    emit "row" ("CS01: ACCEPTED 13 types vs blueprint, size=" <> show fsize)
+    emit "row" ("CS01: ACCEPTED " <> show nTypes <> " types vs blueprint, size=" <> show fsize)
 
 -- | Check every type; spoil mode demands a wrong index for End.
-checkAll :: Map.Map Text Schema -> TitleMap -> Bool -> IO ()
+-- Returns the checked type count for the terminal (NOTE-063: the
+-- list drives execution, so the count cannot drift from it).
+checkAll :: Map.Map Text Schema -> TitleMap -> Bool -> IO Int
 checkAll defs titles spoil = do
-    checkTokenId defs
-    checkTxOutRef defs
-    checkRoot defs
-    checkOperation defs
-    checkRequest defs
-    checkState defs
-    checkCageDatum defs
-    checkMintRedeemer defs
-    checkMigration defs
-    checkRequestAction defs
-    checkUpdateRedeemer defs spoil
-    checkProofStep defs
-    checkNeighbor defs
-    checkOptionStake defs
+    let checks :: [(Text, IO ())]
+        checks =
+            [ ("OnChainTokenId", checkTokenId defs)
+            , ("OnChainTxOutRef", checkTxOutRef defs)
+            , ("OnChainRoot", checkRoot defs)
+            , ("OnChainOperation", checkOperation defs)
+            , ("OnChainRequest", checkRequest defs)
+            , ("OnChainTokenState", checkState defs)
+            , ("CageDatum", checkCageDatum defs)
+            , ("MintRedeemer", checkMintRedeemer defs)
+            , ("Migration", checkMigration defs)
+            , ("RequestAction", checkRequestAction defs)
+            , ("UpdateRedeemer", checkUpdateRedeemer defs spoil)
+            , ("ProofStep", checkProofStep defs)
+            , ("Neighbor", checkNeighbor defs)
+            , ("ConsumerRedeemer", checkConsumerRedeemer defs)
+            ]
+    mapM_ snd checks
+    -- NOTE-046: checkOptionStake retired — the candidate blueprint
+    -- carries no Option<...> definition (the stake_script field that
+    -- needed Option<ScriptHash> is gone with the owner role), so
+    -- there is no live schema obligation for it.
     checkFieldTitles titles
+    pure (length checks)
 
 -- ---------------------------------------------------------
 -- Samples
@@ -168,18 +183,22 @@ sampleRequest =
 sampleState :: OnChainTokenState
 sampleState =
     OnChainTokenState
-        { stateOwner = BuiltinByteString (BS.replicate 28 0)
-        , stateStakeScript = Nothing
-        , stateRoot = sampleRoot
+        { stateRoot = sampleRoot
         , stateMaxFee = 1000000
         , stateProcessTime = 30000
         , stateRetractTime = 30000
+        , stateRepPolicy = BuiltinByteString (BS.replicate 28 8)
+        , stateConsumerPin = BuiltinByteString (BS.replicate 28 9)
         }
 
-sampleStateSome :: OnChainTokenState
-sampleStateSome =
+-- | Second round-trip sample varying the representative policy
+-- (NOTE-046: the old stake None/Some variation has no subject —
+-- the state carries no stake script. Single-variable difference
+-- keeps the pair discriminating).
+sampleStateAltPolicy :: OnChainTokenState
+sampleStateAltPolicy =
     sampleState
-        { stateStakeScript = Just (BuiltinByteString (BS.replicate 28 7))
+        { stateRepPolicy = BuiltinByteString (BS.replicate 28 7)
         }
 
 sampleMigration :: Migration
@@ -275,10 +294,10 @@ checkRequest defs = do
 
 checkState :: Map.Map Text Schema -> IO ()
 checkState defs = do
-    requireRoundTripReal sampleState "OnChainTokenState-None"
-    requireRoundTripReal sampleStateSome "OnChainTokenState-Some"
-    requireSchema defs "types/State" (toD sampleState) "OnChainTokenState-None"
-    requireSchema defs "types/State" (toD sampleStateSome) "OnChainTokenState-Some"
+    requireRoundTripReal sampleState "OnChainTokenState-Base"
+    requireRoundTripReal sampleStateAltPolicy "OnChainTokenState-AltRepPolicy"
+    requireSchema defs "types/State" (toD sampleState) "OnChainTokenState-Base"
+    requireSchema defs "types/State" (toD sampleStateAltPolicy) "OnChainTokenState-AltRepPolicy"
     requireIndex (toD sampleState) 0 "OnChainTokenState"
 
 checkCageDatum :: Map.Map Text Schema -> IO ()
@@ -377,14 +396,27 @@ checkNeighbor defs = do
     requireSchema defs "aiken/merkle_patricia_forestry/Neighbor" (toD sampleNeighbor) "Neighbor"
     requireIndex (toD sampleNeighbor) 0 "Neighbor"
 
-checkOptionStake :: Map.Map Text Schema -> IO ()
-checkOptionStake defs = do
-    let someD = Constr 0 [B (BS.replicate 28 7)]
-        noneD = Constr 1 []
-    requireSchema defs "Option<aiken/crypto/ScriptHash>" someD "stake-Some"
-    requireSchema defs "Option<aiken/crypto/ScriptHash>" noneD "stake-None"
-    requireIndex someD 0 "stake-Some"
-    requireIndex noneD 1 "stake-None"
+-- | Hook encoder (NOTE-063): ToData-only coverage. No FromData
+-- instance exists for ConsumerRedeemer and none is fabricated —
+-- this checks the encoder (schema, index, field shape) against the
+-- live blueprint plus malformed refusals, explicitly not a round
+-- trip.
+checkConsumerRedeemer :: Map.Map Text Schema -> IO ()
+checkConsumerRedeemer defs = do
+    let hookD = toD Hook
+    requireSchema defs "consumer/ConsumerRedeemer" hookD "Hook"
+    requireIndex hookD 0 "Hook"
+    let badIx = Constr 1 []
+        badShape = Constr 0 [B (BS.replicate 28 1)]
+    case Map.lookup "consumer/ConsumerRedeemer" defs of
+        Nothing -> failWith "CS01 gap: no consumer/ConsumerRedeemer definition"
+        Just schema -> do
+            if validateData defs schema badIx
+                then failWith "CS01 control failed: Constr 1 validates against ConsumerRedeemer"
+                else emit "control-hook-index" "wrong Hook index correctly rejected"
+            if validateData defs schema badShape
+                then failWith "CS01 control failed: Constr 0 with fields validates against ConsumerRedeemer"
+                else emit "control-hook-shape" "Hook with fields correctly rejected"
 
 -- ---------------------------------------------------------
 -- Round trips through the real instances (mirrored decoding)
@@ -442,20 +474,16 @@ instance RealFromData OnChainRequest where
     realFromData _ = Nothing
 
 instance RealFromData OnChainTokenState where
-    realFromData (Constr 0 [B own, stake, r, I mf, I pt, I rt]) = do
-        st <- case stake of
-            Constr 0 [B h] -> Just (Just (BuiltinByteString h))
-            Constr 1 [] -> Just Nothing
-            _ -> Nothing
+    realFromData (Constr 0 [r, I mf, I pt, I rt, B rp, B cp]) = do
         rt' <- realFromData r :: Maybe OnChainRoot
         Just
             OnChainTokenState
-                { stateOwner = BuiltinByteString own
-                , stateStakeScript = st
-                , stateRoot = rt'
+                { stateRoot = rt'
                 , stateMaxFee = mf
                 , stateProcessTime = pt
                 , stateRetractTime = rt
+                , stateRepPolicy = BuiltinByteString rp
+                , stateConsumerPin = BuiltinByteString cp
                 }
     realFromData _ = Nothing
 
@@ -534,7 +562,7 @@ extractTitles val =
 
 checkFieldTitles :: TitleMap -> IO ()
 checkFieldTitles titles = do
-    expectFields titles "types/State" "State" ["owner", "stake_script", "root", "tip", "process_time", "retract_time"]
+    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "representative_policy", "consumer_pin"]
     expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at"]
     expectFields titles "types/Migration" "Migration" ["oldPolicy", "tokenId"]
     expectFields titles "lib/TokenId" "TokenId" ["assetName"]
@@ -572,8 +600,8 @@ blueprintId :: Blueprint -> IO String
 blueprintId bp =
     case (extractCompiledCode "state.state" bp, extractCompiledCode "request.request" bp) of
         (Just stateBytes, Just requestBytes) -> do
-            let applied = applyPreviousPolicies [] stateBytes
-                stateMarker = hexBytes (scriptHashBytes (computeScriptHash applied))
+            -- Zero-parameter state (NOTE-060): hash the bytes directly.
+            let stateMarker = hexBytes (scriptHashBytes (computeScriptHash stateBytes))
                 reqMarker = hexBytes (scriptHashBytes (computeScriptHash requestBytes))
             pure ("state:" <> stateMarker <> " request:" <> reqMarker)
         _ -> failWith "blueprint has no state.state/request.request code"

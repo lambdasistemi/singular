@@ -142,13 +142,13 @@
       "state": "uncovered"
     },
     {
-      "expected": "observe — defect evidence (owner change accepted); resolved-by-ruling",
+      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-pin transfer asserted authority that does not exist)",
       "group": "CG",
       "id": "CG13",
-      "note": "RESOLVED-BY-RULING (2026-09-12 operator order: the registry has NO owner role whatsoever, settling the owner-pinning question — there is no premise left to be pending on). Observation retained as DEFECT EVIDENCE: the chain accepted a Modify that changed the state owner (txid in receipt). state.ak End/migration validateOwnership calls are outstanding conformance defects owned by epic 17; the former previous-owner-refused control is retired, never landed. If any independent application-policy or hook requirement hides inside this row, it gets its own Lean clause and Given/When/Then — it does not inherit the closed question.",
+      "note": "RESOLVED-BY-RULING (2026-09-12 operator order: the registry has NO owner role whatsoever, settling the owner-pinning question — there is no premise left to be pending on). Observation retained as DEFECT EVIDENCE: the chain accepted a Modify that changed the state owner (txid in receipt). state.ak End/migration validateOwnership calls are outstanding conformance defects owned by epic 17; the former previous-owner-refused control is retired, never landed. If any independent application-policy or hook requirement hides inside this row, it gets its own Lean clause and Given/When/Then — it does not inherit the closed question. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the NOTE-046 six-field integration: valid as history, superseded as expectation — the owner-pinning gate tests authority that does not exist.",
       "requirement": "Owner/hook pinning: a Modify that changes the state owner.",
       "source": "cardano-keri R5_plugin_pinned",
-      "state": "uncovered"
+      "state": "bound-elsewhere"
     },
     {
       "expected": "could-not-execute — superseded imported-partition material",
@@ -197,11 +197,11 @@
       "state": "bound-elsewhere"
     },
     {
-      "expected": "observe and report",
+      "expected": "observe and report — accepted+HeldQ002 (processed crossed allocation unenforced); rejected-action refund-floor control separate",
       "group": "CG",
       "id": "CG19",
-      "note": "Expected gap: upstream cardano-mpfs-onchain#101; the keri audit records sumRefunds checks an aggregate range and no check names the folder.",
-      "requirement": "Refund routing: each processed request's exact bond to its owner, tip to the folder.",
+      "note": "OBSERVED (generic4 bd0b9597): crossed Update allocation accepted — Update contributes no generic Rejected-owner refund obligations (owners list only for Rejected actions); processed allocation is judged by the checkpoint/consumer hook, not routed to owners. HeldQ002 retained; no debt reduction. The rejected-action refund-floor control (CG19-rejected-floor) tests Rejected-owner floors separately; the generic4 processed shortfall that accepted (97c2feae) is retained as REJECTED broken-instrument evidence (it targeted an abolished rule).",
+      "requirement": "Refund routing is action-dependent: processed Update value routes to the checkpoint/consumer hook (not to request owners); Rejected produces refund owners at inputLovelace-stateTip each under a per-owner no-underpayment floor.",
       "source": "cardano-keri R11_contribute_value, R11_retract_value",
       "state": "uncovered"
     },
@@ -222,10 +222,11 @@
       "state": "uncovered"
     },
     {
-      "expected": "accept, one executing witness per constructor",
+      "expected": "partial: accept (Contribute 1, Modify 2, Retract 3 with executing witnesses); End 0 and Sweep 4 unexercised named residuals (no accepting path yet, E18 completes)",
       "group": "CS",
       "id": "CS03",
-      "requirement": "Each UpdateRedeemer constructor (End 0, Contribute 1, Modify 2, Retract 3, Sweep 4) is exercised by a submitted transaction that the validator executed.",
+      "note": "PARTIAL observation per E18 section3/4 (NOTE-052): Contribute/Modify/Retract execute-accepted with submitted transactions (receipt). End 0 and Sweep 4 are UNMET: no accepting path under the ownerless ruling (state.ak End and request.ak Sweep refuse every party; builders removed f3a68b1); recorded as named residuals with reason and limit inside the receipt - a residual records unmet work, never discharge. E18 completes the residuals at rebase.",
+      "requirement": "Each UpdateRedeemer constructor (End 0, Contribute 1, Modify 2, Retract 3, Sweep 4) is exercised by an accepting witness or an action-attributed phase-2 refusal witness with a sound index discriminator.",
       "source": "issue #18 constructor coverage",
       "state": "uncovered"
     },
@@ -238,10 +239,11 @@
       "state": "uncovered"
     },
     {
-      "expected": "accept or explicit gap",
+      "expected": "partial: accept (Update 0, Rejected 1, Minting 0 with executing witnesses); Burning 2 unexercised named residual; Migrating 1 explicit gap",
       "group": "CS",
       "id": "CS05",
-      "requirement": "Each RequestAction (Update 0, Rejected 1) and MintRedeemer (Minting 0, Migrating 1, Burning 2) constructor executed or explicitly recorded unreachable with its reason.",
+      "note": "PARTIAL observation per E18 section3/4 (NOTE-052): Update/Rejected/Minting execute-accepted with submitted transactions (receipt). Burning 2 is UNMET: no accepting path (End removed f3a68b1, ownerless); recorded as a named residual with reason and limit inside the receipt - a residual records unmet work, never discharge. Migrating 1: unconditional refusal under the ownerless ruling (no attributed witness, no discriminator); wire Constr 1 and historical gap retained. E18 completes the residual at rebase.",
+      "requirement": "Each RequestAction (Update 0, Rejected 1) and MintRedeemer (Minting 0, Burning 2) constructor is exercised by an accepting witness or an action-attributed phase-2 refusal witness with a sound index discriminator; Migrating 1 unconditional refusal recorded with wire constructor retained.",
       "source": "issue #18 constructor coverage",
       "state": "uncovered"
     },
@@ -265,7 +267,7 @@
       "expected": "accept",
       "group": "CS",
       "id": "CS08",
-      "requirement": "OnChainTokenState's six fields (owner, stake_script, root, maxFee, processTime, retractTime) survive a chain round trip with stake_script both None and Some.",
+      "requirement": "OnChainTokenState's six fields (root, maxFee, processTime, retractTime, repPolicy, consumerPin) survive a chain round trip with the representative policy varied Base versus AltRepPolicy.",
       "source": "issue #18 state round trip",
       "state": "uncovered"
     },
@@ -343,13 +345,13 @@
       "state": "uncovered"
     },
     {
-      "expected": "accept",
+      "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; the no-owner-signer property is recorded history, not a live gate)",
       "group": "CG",
       "id": "CG20",
-      "note": "Expectation: accept — Singular.Statements.fold_iff (sufficiency direction) requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; no owner signer may be required. Observation history: the row FAILED against the pre-#79 candidate (owner gate refused the no-signer mutant, verdict diverges-from-lean) and ACCEPTED against the repaired candidate by execution (verdict agrees-with-model). The expectation never changed; the candidate did.",
+      "note": "Expectation: accept — Singular.Statements.fold_iff (sufficiency direction) requires acceptance when nativeSpend, foldItems, sameNet and the conditional witness clauses hold; no owner signer may be required. Observation history: the row FAILED against the pre-#79 candidate (owner gate refused the no-signer mutant, verdict diverges-from-lean) and ACCEPTED against the repaired candidate by execution (verdict agrees-with-model). The expectation never changed; the candidate did. SUPERSEDED by the 2026-09-12 no-owner operator ruling and the NOTE-046 six-field integration: the accepted observation stands as history (no owner signer is required); the removed-signer fault gate tests a role that does not exist.",
       "requirement": "Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification (F-002) specified.",
       "source": "Singular.Statements.fold_iff sufficiency direction (Lean); observation history: FAILED against the pre-#79 candidate (owner gate), ACCEPTED against the repaired candidate by execution",
-      "state": "uncovered"
+      "state": "bound-elsewhere"
     }
   ]
 }

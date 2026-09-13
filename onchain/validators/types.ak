@@ -1,4 +1,4 @@
-use aiken/crypto.{ScriptHash, VerificationKeyHash}
+use aiken/crypto.{VerificationKeyHash}
 use aiken/merkle_patricia_forestry.{Proof}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference}
@@ -25,9 +25,11 @@ use lib.{TokenId}
 /// distinguished by their datum type:
 ///
 /// 1. **State UTxOs** (`StateDatum`): Hold the caged NFT and the current
-///    MPF root hash. Only one State UTxO exists per caged token. The owner
-///    field determines who can perform the `End` operation; `Modify`
-///    (folding) is permissionless since issue #79.
+///    MPF root hash. Only one State UTxO exists per caged token. There is
+///    no registry-owner role (operator ruling NOTE-028/A-003): `Modify`
+///    (folding) is permissionless since issue #79, and `End`, migration,
+///    burning and `Sweep` refuse for every party. Request and application
+///    authority and ordinary funding signatures keep their own clauses.
 ///
 /// 2. **Request UTxOs** (`RequestDatum`): Created by users who want to
 ///    contribute data to someone else's caged token. They do NOT hold the
@@ -46,13 +48,16 @@ use lib.{TokenId}
 ///                |
 ///                v
 ///            State UTxO (updated root)
-///                |
-///                v
-///             End (burns the NFT)
 /// ```
 ///
+/// The M1 action set has no termination, migration or deposit-recovery
+/// operation: `End` (burns the NFT), migration, burning and `Sweep`
+/// refuse. This statement is about this design, not about all possible
+/// future registries.
+///
 /// Request UTxOs that are not yet accepted can be reclaimed by their
-/// creator via the `Retract` redeemer.
+/// creator via the `Retract` redeemer (request-owner authority, a
+/// separate domain, untouched).
 ///
 /// ## Test Planning Notes
 ///
@@ -82,31 +87,22 @@ pub type Migration {
 /// Redeemer for the minting policy.
 ///
 /// The minting policy handles three cases:
-/// - `Minting`: Full validation is applied (see `validateMint` in `cage.ak`).
+/// - `Minting`: Full validation is applied (see `validateMint` in `state.ak`).
 ///   The seed `OutputReference` that authorizes the mint and derives the
 ///   asset name is the validator's parameter, not a redeemer field.
-/// - `Migrating`: Mints a token with a carried-over (possibly non-empty) root,
-///   validated by `validateMigration` in `cage.ak`. Requires the old token to
-///   be burned atomically in the same transaction.
-/// - `Burning`: No additional validation beyond what the ledger enforces.
-///   The ledger already ensures the minting policy script runs, so the fact
-///   that we reach the `Burning` branch means the policy was invoked. The
-///   spending validator's `End` redeemer handles ensuring the token is
-///   actually being burned (checks the mint field for quantity -1).
-///
-/// ## Security Note
-/// `Burning` returning `True` unconditionally is safe because:
-/// 1. You can only burn tokens you possess (they must be in a transaction input).
-/// 2. The `End` spending validator ensures the State UTxO owner signed the tx.
-/// 3. The `End` validator checks the mint field contains the token being burned.
+/// - `Migrating`: REFUSED (operator ruling NOTE-028/A-003, issue #77
+///   repair). Migration is a destructive re-policying with no ownerless
+///   justification. Constructor kept for the wire shape.
+/// - `Burning`: REFUSED (same ruling). Burning the caged token destroys
+///   the registry without touching `End` at all. Constructor kept for
+///   the wire shape.
 pub type MintRedeemer {
   /// Mint a new caged token. The seed output reference is consumed by the
   /// transaction and also determines the cage token asset name.
   Minting(OutputReference)
-  /// Migrate a caged token from an old validator to this one
+  /// Migrate a caged token from an old validator to this one. REFUSED.
   Migrating(Migration)
-  /// Burn an existing caged token. The token id is carried so the global state
-  /// policy can reject unrelated asset movements under the same policy id.
+  /// Burn an existing caged token. REFUSED.
   Burning(TokenId)
 }
 
@@ -135,34 +131,26 @@ pub type RequestAction {
 ///
 /// | Redeemer       | Required Datum         | Who Can Execute         | Purpose                                    |
 /// |----------------|------------------------|-------------------------|--------------------------------------------|
-/// | `End`          | `StateDatum`           | State owner             | Burn the caged NFT                         |
+/// | `End`          | `StateDatum`           | REFUSED (no owner role) | Termination is refused for every party     |
 /// | `Contribute`   | `RequestDatum`         | Anyone (permissionless) | Link a request to a State UTxO             |
 /// | `Modify`       | `StateDatum`           | Anyone (permissionless fold) | Process requests (update/reject)           |
 /// | `Retract`      | `RequestDatum`         | Request owner           | Reclaim an unprocessed request             |
-/// | `Sweep`        | any (incl. `None`)     | State owner             | Reclaim non-legitimate UTxOs at the cage   |
+/// | `Sweep`        | any (incl. `None`)     | REFUSED (no owner role) | Seizure is refused for every party         |
 ///
-/// ## Sweep redeemer payload
-///
-/// `Sweep(stateRef)` carries the `OutputReference` of the cage's legitimate
-/// state UTxO so the validator can locate it in O(1) instead of scanning.
-/// The state UTxO can be either a regular input (when bundled with `Modify`
-/// or `End`) or a reference input (when sweeping standalone). The validator
-/// confirms the pointed-to UTxO actually carries this cage's `cageToken`
-/// before reading its datum for the owner-signature check.
+/// Constructors are kept so the redeemer wire shape does not shift;
+/// the `End` and `Sweep` arms refuse (operator ruling NOTE-028/A-003).
 ///
 /// ## Test Hints
-/// - Using `End` on a `RequestDatum` UTxO -> should fail (expects StateDatum)
+/// - Using `End` on any datum -> should fail (refused, owner-signed or not)
 /// - Using `Retract` on a `StateDatum` UTxO -> should fail (expects RequestDatum)
 /// - Using `Modify` without owner signature -> succeeds when the fold is
 ///   otherwise valid (permissionless since issue #79)
 /// - Using `Contribute` with a request targeting a different token -> should fail
 /// - Using `Retract` without request owner signature -> should fail
-/// - Using `Sweep` without state-owner signature -> should fail
-/// - Using `Sweep` with `stateRef` pointing at a UTxO without `cageToken` -> should fail
-/// - Using `Sweep` on the legitimate state UTxO -> should fail (state is not garbage)
-/// - Using `Sweep` on a legitimate request UTxO for this cage -> should fail
+/// - Using `Sweep` on any datum -> should fail (refused, owner-signed or not)
 pub type UpdateRedeemer {
-  /// Destroy the caged token (burns the NFT). Requires State datum.
+  /// Termination (burns the NFT). REFUSED for every party: there is no
+  /// registry-owner role. Constructor kept for the wire shape.
   End
   /// Validate that a Request UTxO targets the correct caged token.
   Contribute(OutputReference)
@@ -174,48 +162,31 @@ pub type UpdateRedeemer {
   Modify(List<RequestAction>)
   /// Allow the request owner to reclaim their Request UTxO.
   Retract(OutputReference)
-  /// Allow the state owner to reclaim non-legitimate UTxOs at the cage's
-  /// address. The `OutputReference` payload is the cage's state UTxO,
-  /// where the validator reads the owner key for signature verification.
+  /// Seizure of UTxOs at the cage's address. REFUSED for every party:
+  /// there is no registry-owner role. Constructor kept for the wire shape.
   Sweep(OutputReference)
 }
 
 /// The state of a caged token, stored as inline datum.
 ///
-/// This represents the current owner and MPF root of the caged token.
+/// This represents the MPF root and oracle economics of the caged token.
 /// A State value lives inside a `StateDatum` wrapper as part of a `CageDatum`.
-///
-/// ## Ownership Model
-/// The `owner` field is a `VerificationKeyHash` naming who can terminate
-/// the cage (`End`) and migrate it; it confers no privilege over `Modify`,
-/// which any party may submit since issue #79. When `stake_script` is set,
-/// `End` (and migration) can instead be authorized by a withdrawal under
-/// that staking script credential.
+/// There is no owner field and no ownership model (operator ruling
+/// NOTE-028/A-003, issue #77 repair).
 ///
 /// ## Root Hash
 /// The `root` field is a raw `ByteArray` (32 bytes for SHA2-256) representing
-/// the MPF root hash. It starts as `root(empty)` when freshly minted, or can
-/// be non-empty when migrated from an old validator. It is updated each time
-/// `Modify` processes requests.
-///
-/// ## Owner Mutability
-/// Note that the `Modify` validator does NOT check that the owner field is
-/// preserved between input and output. This means the owner can transfer
-/// ownership of the cage by changing the `owner` field in the output datum.
-/// This is a feature, not a bug -- it enables ownership transfer.
+/// the MPF root hash. It starts as `root(empty)` when freshly minted.
+/// It is updated each time `Modify` processes requests.
 ///
 /// ## Test Hints
-/// - Verify owner can change during Modify (ownership transfer)
 /// - Verify root must match computed MPF root after folding requests
 /// - Verify initial root is `root(empty)` after minting
 pub type State {
-  /// The verification key hash of the token owner.
-  /// It authorizes `End` and migration (with the `stake_script`
-  /// withdrawal as an alternative when set). `Modify` requires no owner
-  /// or stake authorization since issue #79.
-  owner: VerificationKeyHash,
-  /// Optional staking script credential that can authorize owner operations.
-  stake_script: Option<ScriptHash>,
+  /// Ownerless registry (operator ruling NOTE-028/A-003, issue #77
+  /// repair): there is no registry-owner role — no owner field, no
+  /// stake script, no ownership transfer. `Modify` is permissionless;
+  /// `End`, migration and `Sweep` are explicit refusals.
   /// The current Merkle Patricia Forestry root hash.
   /// This commits to all key-value pairs stored in the MPF.
   root: ByteArray,
@@ -229,6 +200,25 @@ pub type State {
   /// Duration (in milliseconds) of Phase 2 — the requester retract window.
   /// Set at mint time; enforced immutable across Modify/Reject operations.
   retract_time: Int,
+  /// The expected representative minting policy (issue #77, E-001 repair):
+  /// `Singular.representativePolicy` refined on chain. Set at bootstrap from
+  /// the honest applied representative policy; preserved immutable across
+  /// every `Modify` (a fold altering it refuses). The naming application
+  /// validator reads this field from the spent state and requires the moved
+  /// representative's policy to equal it — foreign-policy fakes refuse with
+  /// `representative-policy`. Appended, never reordered: the first four
+  /// fields keep their indices.
+  representative_policy: PolicyId,
+  /// The pinned consumer script hash (NOTE-013/NOTE-019, sixth field):
+  /// `Singular.consumerPin` refined on chain. Selected at bootstrap — any
+  /// 28-byte script hash (permissionless boot chooses its consumer; only
+  /// the width is checked at mint) — preserved immutable across every
+  /// `Modify` (a fold altering it refuses). Every `Modify` that consumes
+  /// at least one request must withdraw this exact script (presence of the
+  /// exact withdrawal credential forces ledger execution of the consumer:
+  /// a caller-declared flag or datum is not an invocation). Appended,
+  /// never reordered: the first five fields keep their indices.
+  consumer_pin: ByteArray,
 }
 
 /// Operations that can be performed on the MPF.
@@ -350,10 +340,11 @@ pub type Request {
 /// The spending validator pattern-matches on the datum to determine
 /// which operations are valid:
 ///
-/// - `RequestDatum` + `Retract` -> owner reclaims request
+/// - `RequestDatum` + `Retract` -> request owner reclaims request
 /// - `RequestDatum` + `Contribute(ref)` -> validate request targets correct token
 /// - `StateDatum` + `Modify(proofs)` -> fold requests into MPF
-/// - `StateDatum` + `End` -> burn the caged NFT
+/// - `StateDatum` + `End` -> REFUSED (no owner role; no termination)
+/// - mint `Migrating` / `Burning`, any `Sweep` -> REFUSED
 ///
 /// Any other combination (e.g., `RequestDatum` + `End`) will fail because
 /// the `expect` pattern match in the validator will not succeed.

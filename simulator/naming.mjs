@@ -149,7 +149,7 @@ export function namingQueueAction(state, key) {
     applicationPolicy: state.registry.config.applicationPolicy, refundAddress: demoRefundAddress,
     initial: output, scope: [namingEntry(state.registry, key).incarnation] };
   const asset = namingInsertAsset(proposal);
-  return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false } } };
+  return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false, consumerWithdraw: false } } };
 }
 
 export function queueClaim(state, input) {
@@ -177,7 +177,7 @@ export function queueClaim(state, input) {
 function namingFoldAction(state, requestId) {
   const r = state.registry.requests.find(q => q.id === requestId);
   if (!r) namingFail('request-unavailable');
-  return { fold: { items: [{ request: requestId, outputId: freshId(state.registry), output: r.proposal.initial }], mint: [{ asset: namingRepresentative(state.registry, r.proposal.key), quantity: 1 }], actionNet: [], witness: { applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true } } };
+  return { fold: { items: [{ request: requestId, outputId: freshId(state.registry), output: r.proposal.initial }], mint: [{ asset: namingRepresentative(state.registry, r.proposal.key), quantity: 1 }], actionNet: [], witness: { applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true, consumerWithdraw: true } } };
 }
 
 export function foldRequest(state, requestId) {

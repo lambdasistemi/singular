@@ -30,7 +30,7 @@ def craftedCreateInsert (state : NamingState) (key policy id : Nat) (accepted : 
 
 def tamperedFold (state : NamingState) (requestId : Nat) : Action :=
   match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some { r.proposal.initial with representative := { r.proposal.initial.representative with registry := 99 } } }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true }
+  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some { r.proposal.initial with representative := { r.proposal.initial.representative with registry := 99 } } }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
   | none => Action.fold [] [] [] { nativeSpend := true }
 
 /-- A crafted naming state whose queued Insert carries a substituted
@@ -42,11 +42,11 @@ def substitutedRepState : NamingState :=
   { claimedOnce with registry := { claimedOnce.registry with requests := request :: claimedOnce.registry.requests, approvals := { asset := insertAsset proposal, accepted := true } :: claimedOnce.registry.approvals } }
 
 def substitutedRepFold : Action :=
-  Action.fold [{ request := 7, outputId := 9, output := some { representative := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue } }] [{ asset := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1 }] [] { nativeSpend := true, representativeMint := true }
+  Action.fold [{ request := 7, outputId := 9, output := some { representative := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue } }] [{ asset := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
 
 def queuedFoldAction (state : NamingState) (requestId : Nat) : Action :=
   match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true }
+  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
   | none => Action.fold [] [] [] { nativeSpend := true }
 
 structure SpellingRow where

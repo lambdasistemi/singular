@@ -252,6 +252,12 @@
     "statementSha256": "fb630b9f9099de678e8f5ecf14633b8c1b504adcb3fd2109fd5f23b234f8495b"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.substituted_consumer_pin_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "0ea98beef9c1eb1ac263a6e98db5fba1e2d50bfc53ecaa1ed40eff4b6a18e42b"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.executing_witness_is_derived_per_example",
     "status": "PROVED",
     "debt": "none",

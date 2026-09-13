@@ -1,0 +1,97 @@
+diff -Naur a/lib/aiken/merkle-patricia-forestry.ak b/lib/aiken/merkle-patricia-forestry.ak
+--- a/lib/aiken/merkle-patricia-forestry.ak	2026-09-12 20:23:29.740002579 +0100
++++ b/lib/aiken/merkle-patricia-forestry.ak	2026-09-12 20:23:36.432417073 +0100
+@@ -308,8 +308,17 @@
+       do_branch(path, cursor, nextCursor, root, neighbors)
+     }
+
+-    [Fork { neighbor, .. }] -> {
+-      let prefix = bytearray.push(neighbor.prefix, neighbor.nibble)
++    [Fork { skip, neighbor }] -> {
++      let neighbor_prefix = bytearray.push(neighbor.prefix, neighbor.nibble)
++      let prefix =
++        if skip == 0 {
++          neighbor_prefix
++        } else {
++          bytearray.concat(
++            nibbles(path, cursor, cursor + skip),
++            neighbor_prefix,
++          )
++        }
+       combine(prefix, neighbor.root)
+     }
+
+diff -Naur a/lib/aiken/merkle-patricia-forestry.tests.ak b/lib/aiken/merkle-patricia-forestry.tests.ak
+--- a/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:23:29.740002579 +0100
++++ b/lib/aiken/merkle-patricia-forestry.tests.ak	2026-09-12 20:42:26.932181754 +0100
+@@ -1086,3 +1086,70 @@
+   mpf.from_root(
+     #"366a84bbb2274658080acb85026bba389054782b4681f4cf9e29141ac98de253",
+   )
++
++// -----------------------------------------------------------------------------
++// ----------------------------------------------------- Singular #81 regression
++// -----------------------------------------------------------------------------
++//
++// v2.0.0's `do_excluding` lone-Fork arm dropped the walked common prefix
++// (it never consulted `path`/`skip`), so exclusion proofs whose sole step
++// is a root-level Fork with skip > 0 were refused, and the reconstructed
++// post-insert root was wrong. This vector uses the real witness bytes the
++// Singular builder produced for key "cs07-fork-C11" over {A, B} (see the
++// Singular ticket-81 handoff fork-precondition-binding.md).
++
++const reg_pre_root =
++  #"fbef6b6d9a253acf2ecf645fd62e663535b828595b8ea38ae2118038d4f9c5a7"
++
++const reg_post_root =
++  #"cd1f3928377ab7e6d67e05a217d73c6e63dc796fcb90b752fb554ac3049defcf"
++
++const reg_neighbor_root =
++  #"651694f560326d4fc773d65daba52940d5ec0c3fb4b0603d4a095bc1b43c0b06"
++
++fn reg_witness() -> Proof {
++  [Fork {
++    skip: 1,
++    neighbor: Neighbor {
++      nibble: 11,
++      prefix: #"0b",
++      root: reg_neighbor_root,
++    },
++  }]
++}
++
++// The full insert check: `expect excluding(key, proof) == self.root` must
++// hold for the real absence witness (this was the on-chain refusal), and
++// `including` must yield the builder's committed post-insert root.
++test reg_lone_fork_insert_accepts_real_absence_witness() {
++  mpf.root(
++    mpf.insert(
++      mpf.from_root(reg_pre_root),
++      #"637330372d666f726b2d433131",
++      #"7663",
++      reg_witness(),
++    ),
++  )
++  == reg_post_root
++}
++
++// Inclusion-side isolation against the committed post-root.
++test reg_lone_fork_including_reproduces_post_root() {
++  mpf.has(
++    mpf.from_root(reg_post_root),
++    #"637330372d666f726b2d433131",
++    #"7663",
++    reg_witness(),
++  )
++}
++
++// Occupied-key direction: the same witness must NOT verify inclusion of
++// the key under the pre-root, which does not contain it.
++test reg_lone_fork_control_has_fails_against_pre_root() {
++  !mpf.has(
++    mpf.from_root(reg_pre_root),
++    #"637330372d666f726b2d433131",
++    #"7663",
++    reg_witness(),
++  )
++}

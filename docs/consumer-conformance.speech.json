@@ -15,13 +15,11 @@
       "pause": 400
     }
   ],
-  "what-this-slice-executes": [
-    {
-      "text": "Devnet sessions run in order on isolated nodes: the generic rows, now including the issue seventy rows, then canonical identity, then the serialization boundary. Two checks compare Haskell values against the compiled blueprint and never start a node, and are never counted as devnet-executed.",
-      "pause": 400
-    }
-  ],
   "the-generic-registry-rows": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
     {
       "text": "One cage, one key, four rows in order. Update folds and the new value reads back from the chain. Delete folds and the key proves absent. Re-insert folds and the third value reads back. Insert on the occupied key is refused by the state script, and a fresh cage accepting a valid insert proves the refusal discriminates.",
       "pause": 400
@@ -33,6 +31,10 @@
   ],
   "the-issue-70-generic-rows": [
     {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
+    {
       "text": "Eleven rows, three dispositions that must never be mistaken for one another. Held: executed, and the consumer requirement is unmet — the empty fold, the surplus action, the crossed refunds. Resolved by ruling: defect evidence of the outstanding owner gate. Superseded: observations kept, claims withdrawn, no execution credit. The run ends non-zero while anything is held — never a pass.",
       "pause": 400
     },
@@ -42,6 +44,10 @@
     }
   ],
   "the-canonical-identity-rows": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
     {
       "text": "A designation split publishes the canonical seed. The first row boots the canonical registry and matches its token name against the SHA two fifty-six of the published seed's reference, recomputed locally. A second row initializes a rival registry from a second seed through the same bootstrap path.",
       "pause": 400
@@ -57,6 +63,10 @@
   ],
   "the-serialization-boundary-rows-devnet-session": [
     {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
+    {
       "text": "One fresh cage per row: submitted datum bytes read back identical, one executing witness per spending redeemer constructor, a wrong constructor index refused by both cage scripts, request and mint constructors covered with the unreachable migration recorded, and the six-field token state round-tripped with the stake credential absent and present.",
       "pause": 400
     },
@@ -67,11 +77,19 @@
   ],
   "the-serialization-checks-that-need-no-node": [
     {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
+    {
       "text": "Thirteen Haskell encodings checked against the blueprint's own declared schemas read at run time, constructor by constructor with field order; parameter counts of one, two and zero with applied hashes derived in Haskell. Zero units honestly, measured sizes stated, and these rows never appear in a devnet-executed count.",
       "pause": 400
     }
   ],
   "cs07-unmarked-and-escalated": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
     {
       "text": "Branch and leaf proofs ride accepted folds, but no accepted fold has ever carried a fork, and two independently ground fork proofs verified by the Haskell stack are refused by the compiled validator with a bare machine error. The row carries no receipt and stays uncovered.",
       "pause": 400
@@ -82,6 +100,10 @@
     }
   ],
   "measurements": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
     {
       "text": "Ship runs on clean trees with cardano-node ten point seven. Maxima are queried from the running node, never hardcoded. Execution units stay under three point eight percent for every row, and the forged payment reports zeros honestly because no script purpose exists to evaluate.",
       "pause": 400
@@ -95,7 +117,25 @@
       "pause": 400
     }
   ],
-  "what-this-slice-does-not-establish": [
+  "_source": {
+    "file": "consumer-conformance.md",
+    "sha256": "072f7b8b8e34d955a5e8a0859446ff500d95f1a90c04e6e49891d41959de0a1f"
+  },
+  "historical-execution-reports": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
+    {
+      "text": "Devnet sessions run in order on isolated nodes: the generic rows, now including the issue seventy rows, then canonical identity, then the serialization boundary. Two checks compare Haskell values against the compiled blueprint and never start a node, and are never counted as devnet-executed.",
+      "pause": 400
+    }
+  ],
+  "historical-limits": [
+    {
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
+      "pause": 400
+    },
     {
       "text": "Four rows rest on predecessor runs and are cited, not re-executed, and a fifth is superseded with its observation preserved and no credit. The consumer-gap rows are executed holds now: the requirement stays unmet, and a held row is never a pass. The serialization schema rows await the ownerless repair before fresh execution, because coverage is not inherited across a wire-format change.",
       "pause": 400
@@ -109,24 +149,38 @@
       "pause": 400
     }
   ],
-  "commands": [
+  "historical-observed-environment": [
     {
-      "text": "List prints the inventory. Each session runs with its own command and a fresh receipts directory; a mixed request is refused. The generic session ends non-zero while a row is held — that exit is the hold's visibility, not a crashed run.",
+      "text": "This section preserves historical observations from the earlier source revisions named in the report. Its old schema, parameter counts, accepting paths and pending repair descriptions are not current candidate evidence. Read the current ownerless integration section for the present contract.",
       "pause": 400
     },
-    {
-      "text": "Ten armed controls — the impossible marker twice, forged claims twice, the fabricated derivation, the naive authenticator, the unapplied address, the wrong index, the wrong parameters, corrupted bytes and the skipped witness — must each fail the run. In continuous integration the expected-debt assertion checks the actual receipts and the exact held set, and a green step grants no conformance credit: strict completion and release stay red on that debt.",
-      "pause": 400
-    }
-  ],
-  "observed-environment": [
     {
       "text": "Observed with cardano-node ten point seven, GHC nine point twelve point three, and the Aiken compiler pinned by the blueprint, with the pinned unapplied hash and the applied hash recorded, and the issue seventy rows bound to the repaired blueprint identity. Any other environment is explicitly not covered.",
       "pause": 400
     }
   ],
-  "_source": {
-    "file": "consumer-conformance.md",
-    "sha256": "b2797156ed8531e02f43e902e89bd9ce7d684eff3b6ec26155e87c2b2f24fceb"
-  }
+  "current-ownerless-integration": [
+    {
+      "text": "The current state has six fields: root, maximum fee, process time, retract time, representative policy and consumer pin. The state has zero parameters; the request keeps two ordered parameters. Address derivation compares the production result with the actual chain address, and an extra application must fail the same comparison. This is an off-chain identity check.",
+      "pause": 400
+    },
+    {
+      "text": "Spending and minting constructor rows remain partial where End, Sweep, Burning and Migrating lack complete witnesses. Each residual stays inside its receipt. Missing accounting is incomplete, and free refusal text earns no constructor credit. The generic observation rows stay held. The diagram connects bound execution receipts to complete evidence, partial constructors or held requirements; both partial and held outcomes retain strict completion debt.",
+      "pause": 400
+    },
+    {
+      "text": "The inventory retains forty-two rows and forty-one owned. The protected population stays one hundred ninety-six, with both implementation layers and all recorded debt. Fork correspondence and Blaster work remain with epic eighteen. The connected naming release does not close those obligations.",
+      "pause": 400
+    }
+  ],
+  "current-replay-commands": [
+    {
+      "text": "Build the current blueprint and use a fresh receipt directory outside the tracked tree for each session. Run ten generic rows, five canonical identity rows, then five serialization devnet rows and two local checks. Superseded rows remain in the inventory but are not runtime commands.",
+      "pause": 400
+    },
+    {
+      "text": "The generic session must end with exactly the three held rows, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
+      "pause": 400
+    }
+  ]
 }

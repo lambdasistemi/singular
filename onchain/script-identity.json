@@ -6,13 +6,23 @@
   "compiler": "v1.1.21+unknown",
   "validators": [
     {
+      "title": "consumer.consumer.withdraw",
+      "hash": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+      "parameters": 0
+    },
+    {
+      "title": "consumer.consumer.else",
+      "hash": "e61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26",
+      "parameters": 0
+    },
+    {
       "title": "request.request.spend",
-      "hash": "8970c2865b1a6218b6baed938e8f5474514ba4db7e531fbc597b912c",
+      "hash": "cad994cdb0f1b7d7c032e004f15ab322a3e6f2ce1670ff005a3ee662",
       "parameters": 2
     },
     {
       "title": "request.request.else",
-      "hash": "8970c2865b1a6218b6baed938e8f5474514ba4db7e531fbc597b912c",
+      "hash": "cad994cdb0f1b7d7c032e004f15ab322a3e6f2ce1670ff005a3ee662",
       "parameters": 2
     },
     {
@@ -27,18 +37,18 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a",
+      "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a",
+      "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "d42860fa972c8a325daae773adc372795c48cf365d0a72b137c749d3",
-      "parameters": 1
+      "hash": "3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a",
+      "parameters": 0
     }
   ]
 }

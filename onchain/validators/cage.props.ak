@@ -11,7 +11,7 @@ use cage.{in_phase1, in_phase2, is_rejectable}
 /// ```
 ///   submitted_at          +process_time    +retract_time
 ///       |--- Phase 1 ---------|--- Phase 2 ---|--- Phase 3 --->
-///       Oracle processes       Requester       Cage owner
+///       Oracle processes       Requester       Any folder
 ///       requests (Modify)      can Retract     can Reject
 /// ```
 ///
@@ -21,7 +21,7 @@ use cage.{in_phase1, in_phase2, is_rejectable}
 /// **Phase 2** (requester retract): Only the requester can act — they may
 ///   Retract their unprocessed request and reclaim their ADA.
 ///
-/// **Phase 3** (rejectable): The retract window has expired. The cage owner
+/// **Phase 3** (rejectable): The retract window has expired. Any folder
 ///   can Reject expired requests. Additionally, any request with a dishonest
 ///   `submitted_at` (in the future) is rejectable in any phase.
 ///
@@ -77,7 +77,7 @@ test prop_phase1_phase2_exclusive(
 /// (Phase 2) between them.
 ///
 /// If this property failed, the oracle could process a request that was
-/// simultaneously rejectable — the cage owner could reject it and pocket
+/// simultaneously rejectable — a folder could reject it and pocket
 /// the fee while the oracle's work was wasted.
 test prop_phase1_phase3_exclusive(
   params via fuzz.tuple(
@@ -110,7 +110,7 @@ test prop_phase1_phase3_exclusive(
 /// A range cannot be both before and after the same boundary.
 ///
 /// If this property failed, a requester could Retract their request while
-/// the cage owner simultaneously Rejects it — a race condition that would
+/// a folder simultaneously Rejects it — a race condition that would
 /// let both parties claim the same ADA.
 test prop_phase2_phase3_exclusive(
   params via fuzz.tuple(
@@ -177,11 +177,11 @@ test prop_phase1_honest_not_rejectable(
 /// An honest request in Phase 2 (retract window) can never be rejected.
 ///
 /// Same honesty assumption as above. If a request is in Phase 2, the
-/// requester has the exclusive right to Retract it. The cage owner cannot
+/// requester has the exclusive right to Retract it. No folder can
 /// Reject it during this window.
 ///
-/// This protects requesters from a race: without this property, the cage
-/// owner could Reject a request during the retract window, stealing the
+/// This protects requesters from a race: without this property, a folder
+/// could Reject a request during the retract window, stealing the
 /// requester's chance to reclaim their full ADA (rejection only refunds
 /// ADA minus fee, while retraction returns everything).
 test prop_phase2_honest_not_rejectable(
@@ -218,7 +218,7 @@ test prop_phase2_honest_not_rejectable(
 ///
 /// Without this property, there could be "dead zones" where a request is
 /// stuck: the oracle can't process it, the requester can't retract it, and
-/// the cage owner can't reject it — locking the ADA forever.
+/// no folder can reject it — locking the ADA forever.
 ///
 /// Uses a point range [t, t+1) rather than an arbitrary range because
 /// coverage for intervals follows from coverage for points (if every point

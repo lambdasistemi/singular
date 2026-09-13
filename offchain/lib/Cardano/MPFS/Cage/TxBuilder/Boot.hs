@@ -56,13 +56,11 @@ import Cardano.Ledger.Mary.Value (
  )
 import Cardano.Ledger.TxIn (TxIn)
 import Data.List (find)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Config (
     CageConfig (..),
+    bootStateFromCfg,
  )
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
@@ -75,7 +73,6 @@ import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
-    OnChainTokenState (..),
     OnChainTxOutRef,
  )
 import Cardano.Tx.Ledger (ConwayTx)
@@ -129,34 +126,11 @@ bootTokenImpl cfg prov addr = do
                 $ Map.singleton
                     assetName
                     1
-    let stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateOwner =
-                        BuiltinByteString
-                            ( addrKeyHashBytes
-                                addr
-                            )
-                    , stateStakeScript =
-                        fmap
-                            ( BuiltinByteString
-                                . scriptHashBytes
-                                . snd
-                            )
-                            (cfgStakeScript cfg)
-                    , stateRoot =
-                        OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c =
-                                defaultTip cfg
-                         in c
-                    , stateProcessTime =
-                        defaultProcessTime
-                            cfg
-                    , stateRetractTime =
-                        defaultRetractTime
-                            cfg
-                    }
+    -- Ownerless registry (ruling NOTE-028/A-003): the state datum carries
+    -- no owner and no stake script. Issue #77 E-001 repair: it carries the
+    -- expected representative policy from the cage configuration (honest
+    -- applied hash for naming cages, zeros for MPFS-only cages).
+    let stateDatum = StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))
         datumData = toPlcData stateDatum
     let scriptAddr =
             cageAddrFromCfg
