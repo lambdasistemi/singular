@@ -98,8 +98,11 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
  )
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    OnChainOperation (..),
     OnChainRequest (..),
+    OnChainRoot (..),
     OnChainTokenId (..),
+    OnChainTokenState (..),
  )
 import Cardano.Tx.Ledger (ConwayTx)
 import Naming.Datum (
@@ -108,7 +111,10 @@ import Naming.Datum (
     decodeNamingDatum,
  )
 import Naming.Verify (
+    CompleteEvidence (..),
     RetireEvidence (..),
+    positiveMintPolicy,
+    verifyCompletion,
     verifyRetireEvidence,
  )
 import Naming.Wire (
@@ -319,7 +325,8 @@ main = do
             , "accepted tx=" `isInfixOf` line
             , txid <- maybeToList (extractAcceptedTx line)
             ]
-    mapM_ (verifyUnit index custodyHash acceptedTxids) creations
+    verified <- mapM (verifyUnit index custodyHash acceptedTxids) creations
+    mapM_ (verifyCompletionTx index custodyHash acceptedTxids) verified
     putStrLn
         ( "VERIFIED "
             <> show (length creations)
@@ -340,7 +347,7 @@ verifyUnit ::
     ByteString ->
     [String] ->
     CreationUnit ->
-    IO ()
+    IO VerifiedRetire
 verifyUnit index custodyHash acceptedTxids unit = do
     let label = cuRecord unit
     (_, creationTx) <- lookupTx index (cuCreationTx unit) "creation"
@@ -379,7 +386,7 @@ verifyUnit index custodyHash acceptedTxids unit = do
                 , reKeyHash = keyHash
                 , reCreationHash = claimControl
                 , reCreationHashLog = cuCreationHash unit
-                , rePolicy = policyBytes
+                , reStatePolicy = policyBytes
                 , reToken = tokenName
                 , reIncarnation = incarnation
                 , reCreationMint = mintTriples creationTx
@@ -406,6 +413,252 @@ verifyUnit index custodyHash acceptedTxids unit = do
             <> retireTxid
             <> " key=creation-hash rep-bound"
         )
+    repPolicy <- case positiveMintPolicy (mintTriples creationTx) of
+        Right p -> pure p
+        Left err -> failWith (label <> ": " <> err)
+    pure
+        VerifiedRetire
+            { vrLabel = label
+            , vrRepPolicy = repPolicy
+            , vrRepName = cuRepLog unit
+            , vrRetireTxid = retireTxid
+            , vrRetireTx = retireTx
+            , vrControl = currentControl
+            , vrQuorum = quorumMembersOfDatum creatingDatum
+            }
+
+-- | One verified retirement, threaded into completion verification.
+data VerifiedRetire = VerifiedRetire
+    { vrLabel :: String
+    , vrRepPolicy :: ByteString
+    , vrRepName :: ByteString
+    , vrRetireTxid :: String
+    , vrRetireTx :: ConwayTx
+    , vrControl :: ByteString
+    , vrQuorum :: [ByteString]
+    }
+
+-- | Verify the permissionless completion closing a verified retire:
+-- the tx spending the retire's custody outref must burn exactly the
+-- verified pair while folding the retire's own request in a genuine
+-- singleton-`Modify` transition, with no required signer and the
+-- fee owner as the sole witness outside every route. No such tx in
+-- evidence states custody intact (never assumed spent).
+verifyCompletionTx ::
+    Map.Map String (FilePath, ConwayTx) ->
+    ByteString ->
+    [String] ->
+    VerifiedRetire ->
+    IO ()
+verifyCompletionTx index custodyHash acceptedTxids vr = do
+    let label = vrLabel vr
+        custodyAddr = Addr Testnet (ScriptHashObj (pinScriptHash custodyHash)) StakeRefNull
+        custodyOuts =
+            [ OutRef (vrRetireTxid vr) i
+            | (i, out) <- zip [0 ..] (txOutputs (vrRetireTx vr))
+            , out ^. addrTxOutL == custodyAddr
+            , carriesPair out (vrRepPolicy vr) (vrRepName vr)
+            ]
+    custodyOut <- case custodyOuts of
+        [o] -> pure o
+        _ ->
+            failWith
+                ( label
+                    <> ": expected exactly one rep-carrying custody output in retire tx, found "
+                    <> show (length custodyOuts)
+                )
+    let spenders =
+            [ (ctid, tx)
+            | (ctid, tx) <- Map.toList (Map.map snd index)
+            , custodyOut `elem` map txInOutRef (txInputs tx)
+            , not (null (txRedeemerDatas tx))
+            ]
+        -- Refused attempts (withdrawal/burn-only probes, retained as
+        -- refused) spend the same custody without consuming it: only
+        -- an accepted spender closes the unit.
+        accepted = filter (\(ctid, _) -> ctid `elem` acceptedTxids) spenders
+    case accepted of
+        [] ->
+            putStrLn ("COMPLETION-ABSENT " <> label <> " (no custody spend in evidence; custody intact)")
+        [(ctid, tx)] -> verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids
+        _ ->
+            failWith (label <> ": custody outref spent by several accepted txs")
+
+-- | The completion body check (single spender resolved above).
+verifyCompletionBody ::
+    Map.Map String (FilePath, ConwayTx) ->
+    String ->
+    String ->
+    ConwayTx ->
+    OutRef ->
+    VerifiedRetire ->
+    [String] ->
+    IO ()
+verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
+    (_, custodyOutTx) <- lookupTx index (outRefTx custodyOut) "custody creator"
+    custodyOuts <- case outRefIx custodyOut < length (txOutputs custodyOutTx) of
+        True -> pure (txOutputs custodyOutTx !! outRefIx custodyOut)
+        False -> failWith (label <> ": custody outref index out of range")
+    (custodyPolicy, custodyName, custodyQty) <- valueTriple label custodyOuts
+    -- State spend: exactly one input resolving to a state datum;
+    -- its redeemer shape gives Modify-ness plus the action count
+    -- (mirroring the scripts, which count rather than interpret).
+    stateIns <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> pure []
+                Just (_, out) -> case extractCageDatum out of
+                    Just (StateDatum st) -> pure [(inRef, st)]
+                    _ -> pure []
+            )
+            (map txInOutRef (txInputs tx))
+    (stateIn, stateSt) <- case stateIns of
+        [(i, s)] -> pure (i, s)
+        _ ->
+            failWith
+                ( label
+                    <> ": expected exactly one state-datum input in completion, found "
+                    <> show (length stateIns)
+                )
+    let statePurpose = [d | (p, d) <- redeemerPurposes tx, resolvesTo tx p stateIn]
+    (isModify, actionCount) <- case statePurpose of
+        [PLC.Constr 2 [PLC.List as]] -> pure (True, length as)
+        [_] -> pure (False, 0)
+        _ ->
+            failWith (label <> ": expected exactly one redeemer at the state spend")
+    rootBefore <- pure (unOnChainRoot (stateRoot stateSt))
+    rootAfter <- case txOutputs tx of
+        (o : _) -> case extractCageDatum o of
+            Just (StateDatum st) -> pure (unOnChainRoot (stateRoot st))
+            _ -> failWith (label <> ": outputs[0] carries no state datum")
+        [] -> failWith (label <> ": completion has no outputs")
+    -- Request fold: exactly one input resolving to a request datum;
+    -- co-creation ties it to the retire (same creator txid).
+    reqIns <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> pure []
+                Just (_, out) -> case extractCageDatum out of
+                    Just (RequestDatum _) -> pure [inRef]
+                    _ -> pure []
+            )
+            (map txInOutRef (txInputs tx))
+    reqIn <- case reqIns of
+        [r] -> pure r
+        _ ->
+            failWith
+                ( label
+                    <> ": expected exactly one request-datum input in completion, found "
+                    <> show (length reqIns)
+                )
+    -- Request value relation (NOTE-031): the folded Update moves
+    -- the burned asset to its Over marker (decoded from the retained
+    -- request datum — the value proof mirror lookup cannot give).
+    (_, reqOut) <- lookupTx index (outRefTx reqIn) "folded request"
+    reqOutTx <- case outRefIx reqIn < length (txOutputs reqOut) of
+        True -> pure (txOutputs reqOut !! outRefIx reqIn)
+        False -> failWith (label <> ": request outref index out of range")
+    (reqOld, reqNew) <- case extractCageDatum reqOutTx of
+        Just (RequestDatum req) -> case requestValue req of
+            OpUpdate old new -> pure (old, new)
+            _ -> failWith (label <> ": folded request is not an Update")
+        _ -> failWith (label <> ": folded request input carries no request datum")
+    -- Fee owner: every payment-key input shares one owner, and the
+    -- witness set is exactly that key (fee ownership mechanics — the
+    -- Q-file on the no-signature criterion states the interpretation).
+    feeOwners <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> failWith (label <> ": completion input does not resolve")
+                Just (_, out) -> case paymentHashOfOut out of
+                    Just h -> pure [h]
+                    Nothing -> pure []
+            )
+            (map txInOutRef (txInputs tx))
+    feeOwner <- case feeOwners of
+        (h : t) | all (== h) t -> pure h
+        _ -> failWith (label <> ": fee inputs share no single owner")
+    let evidence =
+            CompleteEvidence
+                { ceRetireTx = vrRetireTxid vr
+                , ceCompleteTx = ctid
+                , ceCustodyTxid = outRefTx custodyOut
+                , ceRequestTxid = outRefTx reqIn
+                , ceRepPolicy = vrRepPolicy vr
+                , ceRepName = vrRepName vr
+                , ceCustodyPolicy = custodyPolicy
+                , ceCustodyName = custodyName
+                , ceCustodyQty = custodyQty
+                , ceMint = mintTriples tx
+                , ceBurnRedeemerOk =
+                    any
+                        ( \(p, d) -> case p of
+                            ConwayMinting _ -> d == PLC.Constr 1 []
+                            _ -> False
+                        )
+                        (redeemerPurposes tx)
+                , ceIsModify = isModify
+                , ceActionCount = actionCount
+                , ceRootBefore = rootBefore
+                , ceRootAfter = rootAfter
+                , ceReqOld = reqOld
+                , ceReqNew = reqNew
+                , ceReqSigners = txSignatories tx
+                , ceWitnesses = txWitnesses tx
+                , ceFeeOwner = feeOwner
+                , ceRouteKeys = vrControl vr : vrQuorum vr
+                }
+    case verifyCompletion evidence of
+        Left err -> failWith (label <> ": " <> err)
+        Right () -> pure ()
+    unless (ctid `elem` acceptedTxids) $
+        failWith (label <> ": completion tx not recorded as accepted in log")
+    putStrLn
+        ( "VERIFIED-COMPLETE "
+            <> label
+            <> " complete="
+            <> ctid
+            <> " burn=0x"
+            <> hexOf (vrRepName vr)
+            <> " root=0x"
+            <> hexOf rootBefore
+            <> "->0x"
+            <> hexOf rootAfter
+        )
+
+-- | True iff the purpose resolves to the given input through the
+-- builder's sorted-input index rule (mirrors retireKeysFor).
+resolvesTo :: ConwayTx -> ConwayPlutusPurpose AsIx ConwayEra -> OutRef -> Bool
+resolvesTo tx (ConwaySpending (AsIx n)) ref =
+    fromIntegral n < length inputs && txInOutRef (inputs !! fromIntegral n) == ref
+  where
+    inputs = txInputs tx
+resolvesTo _ _ _ = False
+
+-- | True iff an output carries the pair once.
+carriesPair :: TxOut ConwayEra -> ByteString -> ByteString -> Bool
+carriesPair out policy name = (policy, name, 1) `elem` valueTriples out
+
+-- | Every non-ADA asset triple of an output.
+valueTriples :: TxOut ConwayEra -> [(ByteString, ByteString, Integer)]
+valueTriples out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset ma) ->
+        [ (scriptHashBytes psh, SBS.fromShort aname, qty)
+        | (PolicyID psh, names) <- Map.toList ma
+        , (AssetName aname, qty) <- Map.toList names
+        ]
+
+-- | The single-asset triple of an output's non-ADA asset.
+valueTriple :: String -> TxOut ConwayEra -> IO (ByteString, ByteString, Integer)
+valueTriple label out = case valueTriples out of
+    [(p, n, q)] -> pure (p, n, q)
+    xs -> failWith (label <> ": expected exactly one non-ADA asset, found " <> show (length xs))
+
+-- | Payment-key hash of an output's address, if payment-key owned.
+paymentHashOfOut :: TxOut ConwayEra -> Maybe ByteString
+paymentHashOfOut out = case out ^. addrTxOutL of
+    Addr _ (KeyHashObj pkh) _ -> Just (hashToBytes (unKeyHash pkh))
+    _ -> Nothing
 
 -- ---------------------------------------------------------
 -- Byte-level resolvers (every input re-derived, never trusted)
@@ -512,10 +765,15 @@ spendingTxs index ref =
     ]
 
 -- | If a tx recovers the given record, return the continuation
--- record outref (the single naming-datum output).
+-- record outref (the single naming-datum output). The Recover
+-- invocation is purpose-bound exactly like Retire: a strict
+-- Recover-shaped redeemer sitting at the ConwaySpending purpose whose
+-- sorted-input index resolves to the record (NOTE-027 honesty: no
+-- untagged redeemer scan — an unrelated Constr 4 elsewhere in the tx
+-- must not link a rotation that is not there).
 recoverContinuation :: ConwayTx -> OutRef -> Maybe OutRef
-recoverContinuation tx _ref = do
-    _ <- findRecoverRedeemer tx
+recoverContinuation tx ref = do
+    if recoverBoundTo tx ref then pure () else Nothing
     let outs = txOutputs tx
         named =
             [ i
@@ -526,13 +784,22 @@ recoverContinuation tx _ref = do
         [i] -> Just (OutRef (txIdHexOf tx) i)
         _ -> Nothing
 
--- | Strict Recover redeemer marker: Constr 4 [B _, List _, B _].
-findRecoverRedeemer :: ConwayTx -> Maybe ()
-findRecoverRedeemer tx =
-    case filter isRecover (txRedeemerDatas tx) of
-        [_] -> Just ()
-        _ -> Nothing
+-- | Whether exactly one strict Recover marker (Constr 4
+-- [B _, List _, B _]) sits at a ConwaySpending purpose whose
+-- sorted-input index resolves to the outref (mirrors retireKeysFor's
+-- index rule).
+recoverBoundTo :: ConwayTx -> OutRef -> Bool
+recoverBoundTo tx ref =
+    case [() | (purpose, dat) <- redeemerPurposes tx, isBound purpose dat] of
+        [_] -> True
+        _ -> False
   where
+    inputs = txInputs tx
+    isBound (ConwaySpending (AsIx n)) d =
+        fromIntegral n < length inputs
+            && txInOutRef (inputs !! fromIntegral n) == ref
+            && isRecover d
+    isBound _ _ = False
     isRecover (PLC.Constr 4 [PLC.B _, PLC.List _, PLC.B _]) = True
     isRecover _ = False
 

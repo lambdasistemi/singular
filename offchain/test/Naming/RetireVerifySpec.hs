@@ -36,6 +36,10 @@ tokenT = "cage-token-name"
 repA, repB :: ByteString
 repA = representativeName keyA policyS tokenT 0
 repB = representativeName keyB policyS tokenT 0
+-- NOTE-027 honesty: the name formula takes the STATE policy
+-- (policyS, the preimage policy); the MINT policy (policyR) is the
+-- separately-derived positiveMintPolicy value checked against
+-- custody. The two are deliberately different constants here.
 
 quorum12 :: [ByteString]
 quorum12 = [BS.replicate 28 0x11, BS.replicate 28 0x12]
@@ -51,7 +55,7 @@ validLT =
         , reCreationHashLog = keyA
         , reCurrentControl = keyA
         , reQuorum = quorum12
-        , rePolicy = policyS
+        , reStatePolicy = policyS
         , reToken = tokenT
         , reIncarnation = 0
         , reCreationMint = [("app-policy", "approval", -1), (policyR, repA, 1)]

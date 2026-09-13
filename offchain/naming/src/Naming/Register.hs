@@ -17,6 +17,7 @@ module Naming.Register
   , freshIncarnation
   , registryAssetId
   , representativeName
+  , overMarkerFor
   ) where
 
 import Crypto.Hash (Blake2b_224, Blake2b_256, Digest, hash)
@@ -84,3 +85,11 @@ representativeName keyHash policyBytes tokenName incarnation
                 )
             <> BS.singleton incarnation
     | otherwise = error "representativeName: control key hash must be 28 bytes"
+
+-- | The Over marker for a burned representative (NOTE-031): the Update
+-- value a genuine retirement request writes. Mirrors
+-- `naming.over_marker_for` byte-for-byte: constant "over" prefix
+-- (distinct from insert values, which are bare representative names)
+-- committing to the exact held asset.
+overMarkerFor :: ByteString -> ByteString
+overMarkerFor rep = "over" <> rep

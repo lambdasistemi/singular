@@ -1,5 +1,5 @@
 use aiken/collection/list.{all, foldl, has, length}
-use aiken/primitive/bytearray.{at, length as byte_length, slice}
+use aiken/primitive/bytearray.{at, concat, length as byte_length, slice}
 use cardano/address.{Credential, Script, VerificationKey}
 use cardano/assets.{PolicyId}
 
@@ -235,13 +235,130 @@ pub fn mpfs_state_policy(datum: Data) -> PolicyId {
   state.representative_policy
 }
 
-/// Build a mock registry state datum carrying the given representative
-/// policy and consumer pin (test fixtures). Single construction site for
-/// the mirror shape.
+/// Decode a registry state datum to its trie root (NOTE-029): the
+/// completion correspondence compares the spent root against the
+/// continuation root — a genuine transition changes it (Rejected
+/// preserves it). Same-module `expect`, same boundary rule as above.
+pub fn mpfs_state_root(datum: Data) -> ByteArray {
+  expect MpfsStateDatum(state) = datum
+  state.root
+}
+
+/// Mirror of the MPFS request datum (NOTE-031): field order mirrors
+/// onchain request bytes exactly (token, owner, key, value, fee,
+/// submitted-at); variant order mirrors the operation
+/// (`Insert`, `Delete`, `Update`). Cross-check `consumer.ak`
+/// `CRequest`/`COperation` mirrors on drift — same shapes, same
+/// positions. Only `Update` requests complete retirements; the other
+/// arms exist so decoding is total over the wire shape.
+pub type MTokenId {
+  MTokenId { assetName: ByteArray }
+}
+
+pub type MOperation {
+  MInsert(ByteArray)
+  MDelete(ByteArray)
+  MUpdate(ByteArray, ByteArray)
+}
+
+pub type MRequest {
+  MRequest {
+    requestToken: MTokenId,
+    requestOwner: ByteArray,
+    requestKey: ByteArray,
+    requestValue: MOperation,
+    tip: Int,
+    submitted_at: Int,
+  }
+}
+
+pub type MRequestDatum {
+  MRequestDatum(MRequest)
+}
+
+/// Decode a request datum to its typed mirror (NOTE-031). Framework
+/// deserialization only — anything else crashes (custody calls this
+/// where crash refuses). A state datum does not decode here (its
+/// second field is an `Int` tip where a request carries owner bytes)
+/// and vice versa; both directions are pinned by unit tests.
+pub fn mrequest(datum: Data) -> MRequest {
+  expect MRequestDatum(request) = datum
+  request
+}
+
+/// The Over marker for a burned representative (NOTE-031): the Update
+/// value a genuine retirement request writes. Constant "over" prefix
+/// (distinct from insert values, which are bare representative names)
+/// committing to the exact held asset — the completion checks the
+/// folded request moves `burned` to `over_marker_for(burned)`. The
+/// prefix is ASCII "over" (hex 6f766572), distinct from insert values
+/// (bare representative names).
+pub fn over_marker_for(burned: ByteArray) -> ByteArray {
+  concat(#"6f766572", burned)
+}
+
+/// Mirror of the MPFS `UpdateRedeemer` action list (NOTE-029): variant
+/// order and field counts match onchain/validators/types.ak
+/// (`End`, `Contribute`, `Modify`, `Retract`, `Sweep`) and the MPF
+/// proof steps (`Branch`, `Fork`, `Leaf`, `Neighbor`). The
+/// correspondence counts actions and checks singleton-ness; it never
+/// interprets proofs (a singleton action plus a changed root is
+/// exactly one genuine `UpdateAction`).
+pub type MirrorRedeemer {
+  MirrorEnd
+  MirrorContribute(Data)
+  MirrorModify(List<MirrorAction>)
+  MirrorRetract(Data)
+  MirrorSweep(Data)
+}
+
+/// Mirror of `RequestAction` (see above): `UpdateAction` = constr 0,
+/// `Rejected` = constr 1.
+pub type MirrorAction {
+  MAUpdate(List<MirrorStep>)
+  MARejected
+}
+
+/// Mirror of the MPF `ProofStep` (see above).
+pub type MirrorStep {
+  MBranch { skip: Int, neighbors: ByteArray }
+  MFork { skip: Int, neighbor: MirrorNeighbor }
+  MLeaf { skip: Int, key: ByteArray, value: ByteArray }
+}
+
+/// Mirror of the MPF `Neighbor` (see above).
+pub type MirrorNeighbor {
+  MirrorNeighbor { nibble: Int, prefix: ByteArray, root: ByteArray }
+}
+
+/// The action count of a state-spend redeemer, or -1 unless it decodes
+/// as a `Modify` (NOTE-029). Framework deserialization only (`is`
+/// check, same shape as the generic layer's own datum narrowing) —
+/// anything else is -1, never a crash.
+pub fn modify_action_count(redeemer_data: Data) -> Int {
+  if redeemer_data is MirrorModify(actions): MirrorRedeemer {
+    length(actions)
+  } else {
+    -1
+  }
+}
+
+/// Build a mock registry state datum carrying the given root,
+/// representative policy and consumer pin (test fixtures). Single
+/// construction site for the mirror shape (NOTE-029: completion tests
+/// need continuations with a changed root).
 pub fn mpfs_state_datum(rep_policy: PolicyId, consumer_pin: ByteArray) -> Data {
+  mpfs_state_datum_with_root(#"00", rep_policy, consumer_pin)
+}
+
+pub fn mpfs_state_datum_with_root(
+  root: ByteArray,
+  rep_policy: PolicyId,
+  consumer_pin: ByteArray,
+) -> Data {
   let datum: Data =
     MpfsStateDatum(MpfsState {
-      root: #"00",
+      root,
       tip: 0,
       process_time: 0,
       retract_time: 0,

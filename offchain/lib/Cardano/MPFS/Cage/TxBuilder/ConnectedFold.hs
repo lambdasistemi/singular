@@ -28,6 +28,7 @@ module Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     connectedFoldTx,
     syncFoldedRequests,
+    generousUnits,
 ) where
 
 import Control.Exception (SomeException, try)
