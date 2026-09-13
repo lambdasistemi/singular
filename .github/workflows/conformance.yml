@@ -189,35 +189,53 @@ jobs:
           # nothing may fail against this candidate
           failing="$(sed -n 's/^- Failing .*accepted): //p' /tmp/generic-rows.log)"
           [ "$failing" = "none" ] || { echo "FAIL: rows failing against this candidate: $failing"; exit 1; }
-          # 7. held observations: outcome refused (CG11/CG12) or
-          #    accepted (CG19) with structural phase/hash/limit, plus
-          #    each exact accepting-control txid from this run (NOTE-071:
-          #    verdicts alone are not the observation).
+          # 7. Bind observations to full hashes from the compiled
+          #    blueprint. The human log marker is abbreviated and
+          #    cannot serve as a script identity.
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$mpfs")"
+          hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$mpfs")"
           for row in CG11 CG12; do
             f="./conformance-receipts/receipt-$row.json"
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.outcome' "$f")" = "refused" ] || { echo "FAIL: $row outcome is not refused"; exit 1; }
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.phase' "$f")" = "phase-2" ] || { echo "FAIL: $row refusal phase is not phase-2"; exit 1; }
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.hashes | length' "$f")" -ge 1 ] || { echo "FAIL: $row names no extracted hashes"; exit 1; }
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.limit // empty' "$f")" != "" ] || { echo "FAIL: $row states no limit"; exit 1; }
-            marker="$(sed -n "s/.*$row: .* marker 0x\([0-9a-f]*\).*/\1/p" /tmp/generic-rows.log | head -n 1)"
-            [ "$(nix run --quiet nixpkgs#jq -- -r '.refusal.hashes[0]' "$f")" = "$marker" ] || { echo "FAIL: $row receipt hash does not match run marker ($marker)"; exit 1; }
+            nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+              .outcome == "refused" and .venue == "node-submit"
+              and (.rejected | test("^[0-9a-f]{64}$"))
+              and .refusal.phase == "phase-2"
+              and (.refusal.hashes | index($state) != null)
+              and (.refusal.limit | type == "string" and length > 0)
+            ' "$f" > /dev/null || { echo "FAIL: $row structural refusal evidence moved"; exit 1; }
           done
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.outcome' ./conformance-receipts/receipt-CG19.json)" = "accepted" ] || { echo 'FAIL: CG19 outcome is not accepted'; exit 1; }
-          grep -q 'CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64,\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
-          grep -q 'CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64,\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
+          nix run --quiet nixpkgs#jq -- -e '.outcome == "accepted" and .venue == "node-submit" and (.transactions | length > 0 and all(.[]; test("^[0-9a-f]{64}$")))' ./conformance-receipts/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 accepted observation missing'; exit 1; }
+          grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
+          grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
           # 8. standalone rejected-floor control receipt mandatory:
           #    two nonempty obligations, ordered pair, paid-vs-owed,
           #    phase/hash/limit, both txids, counterpart, identity.
           c="./conformance-receipts/control-CG19-rejected-floor.json"
           test -f "$c" || { echo 'FAIL: missing CG19-rejected-floor control receipt'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.control' "$c")" = "CG19-rejected-floor" ] || { echo 'FAIL: control identity moved'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.obligations | length' "$c")" = "2" ] || { echo 'FAIL: control obligations are not a pair'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.outcome' "$c")" = "refused" ] || { echo 'FAIL: control underpaid leg is not refused'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.phase' "$c")" = "phase-2" ] || { echo 'FAIL: control underpaid phase is not phase-2'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.underpaid.hashes | length' "$c")" -ge 1 ] || { echo 'FAIL: control underpaid names no hashes'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.funded.outcome' "$c")" = "accepted" ] || { echo 'FAIL: control funded leg is not accepted'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.funded.txid | length' "$c")" -ge 10 ] || { echo 'FAIL: control funded txid missing'; exit 1; }
-          [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$c")" = "$head_sha" ] || { echo 'FAIL: control receipt not bound to candidate'; exit 1; }
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" --arg hook "$hook_hash" --slurpfile row ./conformance-receipts/receipt-CG19.json '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            .control == "CG19-rejected-floor" and .row == "CG19"
+            and .base == $base and .dirty == false
+            and .blueprint == $row[0].blueprint and .node == $row[0].node
+            and .hook == $hook and .actions == ["Rejected", "Rejected"]
+            and (.obligations | length == 2)
+            and (.obligations | all(.[]; (.owner | text) and (.owed | type == "number" and . > 1000)))
+            and (."ordered-requests" | length == 2)
+            and ([."ordered-requests"[] | {owner, owed}] == .obligations)
+            and (."ordered-requests" | all(.[]; (.outref | text) and (.key | text)))
+            and ([."ordered-requests"[].outref] | unique | length == 2)
+            and ([.bounds.lowerSlot, .bounds.upperUnderpaid, .bounds.upperFunded] | all(.[]; text))
+            and (.pairing | text)
+            and .underpaid.outcome == "refused" and .underpaid.phase == "phase-2"
+            and (.underpaid.hashes | index($state) != null)
+            and (.underpaid.limit | text) and (.underpaid.txid | txid)
+            and .underpaid.paid == [(.obligations[0].owed - 1000), .obligations[1].owed]
+            and .funded.outcome == "accepted" and (.funded.txid | txid)
+            and .funded.txid != .underpaid.txid
+            and .funded.paid == [.obligations[].owed]
+            and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
+          ' "$c" > /dev/null || { echo 'FAIL: CG19-rejected-floor pair evidence moved'; exit 1; }
           echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
