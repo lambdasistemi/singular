@@ -1,11 +1,12 @@
 use application.{Cancel, Fold, Retire}
 use cardano/assets.{add, zero}
 use fixtures.{
-  app_policy, claim_input, record_value, representative_name, rep_policy,
-  source_record, spend_redeemer_data, tx,
+  app_policy, claim_input, controller, custody_address, record_value, representative_name, rep_policy,
+  self_ref, source_record, spend_redeemer_data, state_input, tx,
 }
 use naming.{NamingDatum}
 use representative.{BurnRepresentative, MintRepresentative}
+use cardano/transaction.{Input, NoDatum, Output}
 
 // The application spend whose redeemer authorizes the representative
 // movement: a claim at the application address.
@@ -113,6 +114,7 @@ test retire_burns_named_representative_accepts() {
     rep_policy,
     app_spend_tx(burn_one(), Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
   )
 }
@@ -125,6 +127,7 @@ test retire_without_burn_refuses() fail {
     rep_policy,
     app_spend_tx(zero, Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
   )
 }
@@ -140,6 +143,95 @@ test burn_unbound_name_refuses() fail {
     rep_policy,
     app_spend_tx(extra, Retire {
       representatives: [representative_name],
+      key_hash: controller,
     }),
+  )
+}
+
+/// The custody-held representative: what a genuine `Retire` placed at
+/// the completion-only script (matches `application
+/// .retirement_custody_hash` via `fixtures.custody_address`).
+fn custody_input(value) {
+  Input {
+    output_reference: self_ref,
+    output: Output {
+      address: custody_address,
+      value,
+      datum: NoDatum,
+      reference_script: None,
+    },
+  }
+}
+
+fn custody_held_value() {
+  add(zero, rep_policy, representative_name, 1)
+}
+
+/// Completion burns the custody-held representative exactly once with
+/// no application spend in the transaction (issue #74: permissionless
+/// completion) — riding a genuine registry transition (NOTE-028: the
+/// spent state input).
+test completion_burn_rides_custody_accepts() {
+  representative.representative.mint(
+    app_policy,
+    BurnRepresentative,
+    rep_policy,
+    tx([custody_input(custody_held_value()), state_input()], [], [], burn_one(), []),
+  )
+}
+
+/// Negation (NOTE-028): a custody-carried burn with no registry state
+/// input refuses — the burn must ride a transition, never a standalone
+/// custody spend.
+test completion_burn_without_registry_transition_refuses() fail {
+  representative.representative.mint(
+    app_policy,
+    BurnRepresentative,
+    rep_policy,
+    tx([custody_input(custody_held_value())], [], [], burn_one(), []),
+  )
+}
+
+/// Negation: a burn with neither a naming `Retire` spend nor a custody
+/// carrier refuses.
+test completion_burn_without_carrier_refuses() fail {
+  representative.representative.mint(
+    app_policy,
+    BurnRepresentative,
+    rep_policy,
+    tx([], [], [], burn_one(), []),
+  )
+}
+
+/// Negation: the custody carrier must hold the burned asset — a burn
+/// naming an asset custody does not hold refuses.
+test completion_burn_wrong_custody_asset_refuses() fail {
+  let wrong =
+    add(zero, rep_policy, #"ffff", 1)
+  representative.representative.mint(
+    app_policy,
+    BurnRepresentative,
+    rep_policy,
+    tx([custody_input(wrong)], [], [], burn_one(), []),
+  )
+}
+
+/// Negation: the carrier is exactly one custody input — two custody
+/// inputs carrying the burn refuse.
+test completion_burn_two_custody_inputs_refuses() fail {
+  representative.representative.mint(
+    app_policy,
+    BurnRepresentative,
+    rep_policy,
+    tx(
+      [
+        custody_input(custody_held_value()),
+        custody_input(custody_held_value()),
+      ],
+      [],
+      [],
+      burn_one(),
+      [],
+    ),
   )
 }

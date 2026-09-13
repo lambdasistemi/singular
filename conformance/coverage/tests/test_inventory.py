@@ -17,10 +17,13 @@ from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
+        # Re-frozen on integrating the reviewed naming hook/empty-fold
+        # Lean (four theorems; see test_leanscan re-freeze note):
+        # 113 = 109 + 4, unclassified unchanged.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 109)
+        self.assertEqual(inv.manifest_bound, 113)
         self.assertEqual(inv.unclassified, 83)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 192)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 196)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

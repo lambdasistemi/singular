@@ -377,10 +377,10 @@ const proposal={registry:N,key:N,applicationPolicy:N,refundAddress:N,initial:out
 const asset={policy:N,name:{$union:{insert:{proposal},withdraw:{registry:N,request:N,refund}}}};
 const approval={asset,accepted:B,conforms:B};
 const req={id:N,operation:{$enum:['insert','update','delete']},proposal,token:{$option:asset},held:{$option:rep},destination:N,authenticatedOrigin:B};
-const utxo={id:N,key:N,output:out},w={applicationMint:B,applicationSpend:B,nativeSpend:B,representativeMint:B};
+const utxo={id:N,key:N,output:out},w={applicationMint:B,applicationSpend:B,nativeSpend:B,representativeMint:B,consumerWithdraw:B};
 const item={request:N,outputId:N,output:{$option:out}},delta={asset:rep,quantity:I},actionDelta={asset,quantity:I};
 const entrySchema={key:N,value:{$option:{$enum:['active','over']}},incarnation:N};
-const stateSchema={config:{registry:N,applicationPolicy:N,requestAddress:N,representativePolicy:N,reuseIdentity:B},entries:[entrySchema],applications:[utxo],requests:[req],approvals:[approval],used:[N]};
+const stateSchema={config:{registry:N,applicationPolicy:N,requestAddress:N,representativePolicy:N,consumerPin:N,reuseIdentity:B},entries:[entrySchema],applications:[utxo],requests:[req],approvals:[approval],used:[N]};
 const actionSchema={$union:{createInsert:{request:req,approval,witness:w},mintWithdraw:{approval,witness:w},release:{source:N,request:req,evidence:{source:N,request:req,accepted:B,conforms:B},witness:w},evolve:{source:N,successor:utxo,evidence:{source:N,successor:utxo,accepted:B,conforms:B},witness:w},outsider:{request:req},withdraw:{request:N,asset,refund,witness:w},fold:{items:[item],mint:[delta],actionNet:[actionDelta],witness:w},moveAction:{asset,net:I,witness:w},escape:{request:N}}};
 function validate(x,s,p){
  if(s===N||s===I){if(!Number.isSafeInteger(x)||(s===N&&x<0))fail(`invalid-${s}/${p}`);return;}
@@ -393,7 +393,7 @@ function validate(x,s,p){
  if(!equal(Object.keys(x).sort(),Object.keys(s).sort()))fail(`invalid-shape/${p}`);
  for(const k of Object.keys(s))validate(x[k],s[k],`${p}.${k}`);
 }
-const initial=()=>({config:{registry:1,applicationPolicy:7,requestAddress:90,representativePolicy:8,reuseIdentity:true},entries:[],applications:[],requests:[],approvals:[],used:[]});
+const initial=()=>({config:{registry:1,applicationPolicy:7,requestAddress:90,representativePolicy:8,consumerPin:9,reuseIdentity:true},entries:[],applications:[],requests:[],approvals:[],used:[]});
 const entry=(s,k)=>s.entries.find(e=>e.key===k)??{key:k,value:null,incarnation:0};
 const representative=(s,k)=>({registry:s.config.registry,key:k,policy:s.config.representativePolicy,assetScope:s.config.reuseIdentity?0:entry(s,k).incarnation});
 const fresh=(s,id)=>!s.used.includes(id);
@@ -434,7 +434,7 @@ function transition(s,a,trajectory){const kind=Object.keys(a)[0],d=a[kind],w=d.w
  case 'evolve':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence,n=d.successor;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.successor,n))fail('application-evolution-authorization');if(!equal(n.output.representative,u.output.representative)||n.output.quantity!==1||n.key!==u.key)fail('evolution-representative');if(!fresh(s,n.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,applications:[n,...t.applications],used:[n.id,...t.used]});}
  case 'outsider':if(!fresh(s,r.id))fail('utxo-id-reuse');if(r.held!==null)fail('outsider-cannot-create-representative');return result({...s,requests:[{...r,authenticatedOrigin:false},...s.requests],used:[r.id,...s.used]});
  case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(d.refund.destination!==pending.proposal.refundAddress)fail('withdraw-refund-address');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
- case 'fold':{if(!w.nativeSpend)fail('native-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
+ case 'fold':{if(!w.nativeSpend)fail('native-witness');if(d.items.length===0)fail('empty-fold');if(!w.consumerWithdraw)fail('consumer-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
  case 'moveAction':if(!recognized(s,d.asset))fail('unrecognized-action');if(d.net!==0)fail('movement-net-not-zero');return result(s);
  case 'escape':fail('completion-only-custody');
  }
@@ -447,7 +447,7 @@ function checkCorpus(c,engine=step,resolver=resolve){if(!Array.isArray(c.cases)|
 function view(s,key){validate(s,stateSchema,'state');validate(key,N,'key');return {entry:entry(s,key),representative:representative(s,key),resolution:resolve(s,key,true)};}
 
 // Illustrative defaults only: key 42, application destination 50, address datum A=100/B=200.
-const witnesses=(overrides={})=>({applicationMint:false,applicationSpend:false,nativeSpend:false,representativeMint:false,...overrides});
+const witnesses=(overrides={})=>({applicationMint:false,applicationSpend:false,nativeSpend:false,representativeMint:false,consumerWithdraw:false,...overrides});
 function nextId(s){const n=Math.max(0,...s.used)+1;if(!Number.isSafeInteger(n))throw Error('invalid-nat/nextId');return n;}
 function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,refundAddress=60,accepted=true,conforms=true}={}){
  const output={representative:{...view(s,key).representative,assetScope},quantity:1,destination:50,datum,value:20};
@@ -458,7 +458,7 @@ function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.in
 function makeEvolution(s,source,datum,accepted=true){const old=s.applications.find(u=>u.id===source);if(!old)throw Error('application-unavailable');const successor={...old,id:nextId(s),output:{...old.output,datum}};return {evolve:{source,successor,evidence:{source,successor,accepted,conforms:true},witness:witnesses({applicationSpend:true})}};}
 function makeRelease(s,source,operation='update',accepted=true){const u=s.applications.find(u=>u.id===source);if(!u)throw Error('application-unavailable');const p=makeInsert(s,{key:u.key}).createInsert.request.proposal;const request={id:nextId(s),operation,proposal:p,token:null,held:u.output.representative,destination:s.config.requestAddress,authenticatedOrigin:true};return {release:{source,request,evidence:{source,request,accepted,conforms:true},witness:witnesses({applicationSpend:true})}};}
 function makeWithdrawal(s,id,destination=60,value=20){const refund={destination,value},asset={policy:s.config.applicationPolicy,name:{withdraw:{registry:s.config.registry,request:id,refund}}};return {mint:{mintWithdraw:{approval:{asset,accepted:true,conforms:true},witness:witnesses({applicationMint:true})}},withdraw:{withdraw:{request:id,asset,refund,witness:witnesses({nativeSpend:true})}}};}
-function makeFold(s,ids){let next=nextId(s);const items=ids.map(id=>{const r=s.requests.find(r=>r.id===id);return {request:id,outputId:r?.operation==='insert'?next++:0,output:r?.operation==='insert'?r.proposal.initial:null};});const mint=ids.flatMap(id=>{const r=s.requests.find(r=>r.id===id);return r?[{asset:r.operation==='insert'?r.proposal.initial.representative:r.held,quantity:r.operation==='insert'?1:-1}]:[];});return {fold:{items,mint,actionNet:[],witness:witnesses({nativeSpend:true,representativeMint:true})}};}
+function makeFold(s,ids){let next=nextId(s);const items=ids.map(id=>{const r=s.requests.find(r=>r.id===id);return {request:id,outputId:r?.operation==='insert'?next++:0,output:r?.operation==='insert'?r.proposal.initial:null};});const mint=ids.flatMap(id=>{const r=s.requests.find(r=>r.id===id);return r?[{asset:r.operation==='insert'?r.proposal.initial.representative:r.held,quantity:r.operation==='insert'?1:-1}]:[];});return {fold:{items,mint,actionNet:[],witness:witnesses({nativeSpend:true,representativeMint:true,consumerWithdraw:true})}};}
 const after=(s,a)=>{const r=step(s,a);if(!r.accepted)throw Error(r.reason);return r.value.state;};
 
 const kind=r=>Object.keys(r.action??{})[0];
@@ -633,7 +633,7 @@ function namingQueueAction(state, key) {
     applicationPolicy: state.registry.config.applicationPolicy, refundAddress: demoRefundAddress,
     initial: output, scope: [namingEntry(state.registry, key).incarnation] };
   const asset = namingInsertAsset(proposal);
-  return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false } } };
+  return { createInsert: { request: { id: freshId(state.registry), operation: 'insert', proposal, token: asset, held: null, destination: state.registry.config.requestAddress, authenticatedOrigin: true }, approval: { asset, accepted: true, conforms: true }, witness: { applicationMint: true, applicationSpend: false, nativeSpend: false, representativeMint: false, consumerWithdraw: false } } };
 }
 
 function queueClaim(state, input) {
@@ -661,7 +661,7 @@ function queueClaim(state, input) {
 function namingFoldAction(state, requestId) {
   const r = state.registry.requests.find(q => q.id === requestId);
   if (!r) namingFail('request-unavailable');
-  return { fold: { items: [{ request: requestId, outputId: freshId(state.registry), output: r.proposal.initial }], mint: [{ asset: namingRepresentative(state.registry, r.proposal.key), quantity: 1 }], actionNet: [], witness: { applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true } } };
+  return { fold: { items: [{ request: requestId, outputId: freshId(state.registry), output: r.proposal.initial }], mint: [{ asset: namingRepresentative(state.registry, r.proposal.key), quantity: 1 }], actionNet: [], witness: { applicationMint: false, applicationSpend: false, nativeSpend: true, representativeMint: true, consumerWithdraw: true } } };
 }
 
 function foldRequest(state, requestId) {
@@ -851,6 +851,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -956,7 +957,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -969,6 +971,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -1111,7 +1114,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -1124,6 +1128,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -1218,6 +1223,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -1323,7 +1329,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -1336,6 +1343,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -1536,7 +1544,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -1549,6 +1558,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -1780,7 +1790,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -1793,6 +1804,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -1989,7 +2001,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -2002,6 +2015,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -2206,7 +2220,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -2219,6 +2234,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -2409,7 +2425,8 @@ const STORIES=[
                   "applicationMint": false,
                   "applicationSpend": false,
                   "nativeSpend": true,
-                  "representativeMint": true
+                  "representativeMint": true,
+                  "consumerWithdraw": true
                 }
               }
             },
@@ -2432,6 +2449,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -2537,7 +2555,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -2550,6 +2569,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -2679,7 +2699,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -2692,6 +2713,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -2839,7 +2861,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -2852,6 +2875,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -2929,6 +2953,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -3034,7 +3059,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -3047,6 +3073,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -3189,7 +3216,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -3202,6 +3230,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -3329,7 +3358,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": true,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -3342,6 +3372,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -3466,7 +3497,8 @@ const STORIES=[
                   "applicationMint": false,
                   "applicationSpend": true,
                   "nativeSpend": false,
-                  "representativeMint": false
+                  "representativeMint": false,
+                  "consumerWithdraw": false
                 }
               }
             },
@@ -3489,6 +3521,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -3594,7 +3627,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -3607,6 +3641,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -3749,7 +3784,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -3762,6 +3798,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -3925,7 +3962,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": true,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -3938,6 +3976,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -4055,7 +4094,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -4068,6 +4108,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -4146,6 +4187,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -4251,7 +4293,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -4264,6 +4307,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -4406,7 +4450,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -4419,6 +4464,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -4582,7 +4628,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": true,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -4595,6 +4642,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -4712,7 +4760,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -4725,6 +4774,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -4822,6 +4872,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -4927,7 +4978,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -4940,6 +4992,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -5082,7 +5135,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -5095,6 +5149,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -5258,7 +5313,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": true,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -5271,6 +5327,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -5457,7 +5514,8 @@ const STORIES=[
               "applicationMint": true,
               "applicationSpend": false,
               "nativeSpend": false,
-              "representativeMint": false
+              "representativeMint": false,
+              "consumerWithdraw": false
             }
           }
         },
@@ -5470,6 +5528,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -5682,7 +5741,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -5695,6 +5755,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [
@@ -5848,7 +5909,8 @@ const STORIES=[
                   "applicationMint": false,
                   "applicationSpend": false,
                   "nativeSpend": true,
-                  "representativeMint": true
+                  "representativeMint": true,
+                  "consumerWithdraw": true
                 }
               }
             },
@@ -5871,6 +5933,7 @@ const STORIES=[
         "applicationPolicy": 7,
         "requestAddress": 90,
         "representativePolicy": 8,
+        "consumerPin": 9,
         "reuseIdentity": true
       },
       "entries": [],
@@ -5951,6 +6014,7 @@ const STORIES=[
                 "applicationPolicy": 7,
                 "requestAddress": 90,
                 "representativePolicy": 8,
+                "consumerPin": 9,
                 "reuseIdentity": true
               },
               "entries": [],
@@ -6060,7 +6124,8 @@ const STORIES=[
               "applicationMint": false,
               "applicationSpend": false,
               "nativeSpend": true,
-              "representativeMint": true
+              "representativeMint": true,
+              "consumerWithdraw": true
             }
           }
         },
@@ -6171,6 +6236,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -6181,6 +6247,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6236,6 +6303,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -6403,6 +6471,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -6446,6 +6515,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6592,6 +6662,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -6745,6 +6816,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -6820,6 +6892,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7040,6 +7113,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -7194,6 +7268,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -7286,6 +7361,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7506,6 +7582,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -7603,6 +7680,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -7646,6 +7724,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7763,6 +7842,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -7846,6 +7926,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -7906,6 +7987,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7995,6 +8077,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -8055,6 +8138,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8285,6 +8369,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -8295,6 +8380,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8350,6 +8436,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8459,6 +8546,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -8502,6 +8590,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8643,6 +8732,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8746,6 +8836,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -8806,6 +8897,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8870,6 +8962,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8954,6 +9047,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -8997,6 +9091,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9107,6 +9202,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -9225,6 +9321,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -9268,6 +9365,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9365,6 +9463,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -9483,6 +9582,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -9558,6 +9658,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9740,6 +9841,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -9863,6 +9965,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -9906,6 +10009,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10004,6 +10108,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -10124,6 +10229,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -10200,6 +10306,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10384,6 +10491,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -10427,6 +10535,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10559,6 +10668,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -10725,6 +10835,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -10800,6 +10911,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11025,6 +11137,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -11082,6 +11195,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -11157,6 +11271,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11363,6 +11478,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -11406,6 +11522,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11565,6 +11682,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -11625,6 +11743,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11689,6 +11808,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -11842,6 +11962,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -11852,6 +11973,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11913,6 +12035,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -12028,6 +12151,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -12071,6 +12195,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12212,6 +12337,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -12329,6 +12455,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -12339,6 +12466,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12453,6 +12581,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -12463,6 +12592,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12519,6 +12649,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -12562,6 +12693,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12693,6 +12825,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -12768,6 +12901,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12928,6 +13062,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -12988,6 +13123,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -13119,6 +13255,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -13174,6 +13311,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -13217,6 +13355,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -13320,6 +13459,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -13412,6 +13552,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -13592,6 +13733,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -13652,6 +13794,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -13733,6 +13876,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -13837,6 +13981,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -13897,6 +14042,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14006,6 +14152,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -14066,6 +14213,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14124,6 +14272,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -14221,6 +14370,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14311,6 +14461,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -14354,6 +14505,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14464,6 +14616,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -14513,6 +14666,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -14556,6 +14710,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14666,6 +14821,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -14726,6 +14882,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -14801,6 +14958,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -14983,6 +15141,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -15089,6 +15248,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -15149,6 +15309,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -15214,6 +15375,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -15274,6 +15436,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -15339,6 +15502,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -15414,6 +15578,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -15538,6 +15703,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -15581,6 +15747,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -15722,6 +15889,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -15861,6 +16029,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -15992,6 +16161,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -16158,6 +16328,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -16218,6 +16389,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -16448,6 +16620,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -16458,6 +16631,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -16513,6 +16687,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -16654,6 +16829,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -16697,6 +16873,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -16844,6 +17021,7 @@ const STORIES=[
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -16887,6 +17065,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -17028,6 +17207,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -17086,6 +17266,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -17129,6 +17310,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -17243,6 +17425,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -17347,6 +17530,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -17422,6 +17606,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -17647,6 +17832,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -17704,6 +17890,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -17779,6 +17966,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -17937,6 +18125,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -17980,6 +18169,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -18121,6 +18311,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -18180,6 +18371,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -18272,6 +18464,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -18403,6 +18596,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -18463,6 +18657,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -18544,6 +18739,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -18612,6 +18808,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -18672,6 +18869,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -18700,9 +18898,9 @@ const STORIES=[
       }
     }
   ],
-  "corpusSourceSha256": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
-  "modelSha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-  "payloadSha256": "01c1bc0a28b07eaac84c54c0c8961ed852a1602e85a9db40bea60e0204ce2309",
+  "corpusSourceSha256": "c10d4d2f20540a059c4200097a1398f1c8b7e45444d41588bd77fcd212ee418f",
+  "modelSha256": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
+  "payloadSha256": "b7e601cca4438fb27456a544d2a4374c2cfced94f61c0ecd127813b0a43d01bf",
   "resolutions": [
     {
       "authenticated": true,
@@ -18761,6 +18959,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -18827,6 +19026,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -18925,6 +19125,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -18988,6 +19189,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -19068,6 +19270,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -19152,6 +19355,7 @@ const STORIES=[
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -19177,15 +19381,15 @@ const STORIES=[
   ],
   "schema": "singular-logical-corpus-v1",
   "sourceHashes": {
-    "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+    "lean/Main.lean": "c10d4d2f20540a059c4200097a1398f1c8b7e45444d41588bd77fcd212ee418f",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
-    "lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-    "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
+    "lean/Singular/Lemmas.lean": "16aa9476986b2d31e37e80acac4a12bca9524b4f498b6540ff40d7e2f3256dfa",
+    "lean/Singular/Model.lean": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
+    "lean/Singular/Statements.lean": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91"
   },
-  "statementsSha256": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
-  "theoremManifestSha256": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a"
+  "statementsSha256": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91",
+  "theoremManifestSha256": "53311ce87e8d7303c25bb783e82592bdcd2493a3f90d050e38f03652d3e644a3"
 }
 ;const THEOREMS=[
   {
@@ -19457,7 +19661,7 @@ const STORIES=[
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
     "formal/theorem-debt.json": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a",
-    "corpus.json": "ff576b4b4aaf572879a6a039cce82c0e6194d44c878ae14065cf2d413b66e6d9",
+    "corpus.json": "471a1aa9ab66564c581c0979d5532022e4f895de13754ac46542a567d0bfff5a",
     "formal/Naming.lean": "2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72",
     "formal/NamingStatements.lean": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81"
   },
@@ -19468,7 +19672,7 @@ const STORIES=[
   "namingTheorems": 17
 }
 ;const NAMINGCORPUS={
-  "corpusSourceSha256": "1a7eeab9e62a7c84ec043d574f5c2086946c9a15fa4a43418e07cce3b66c7a42",
+  "corpusSourceSha256": "07c759c2e5866bb8d850efe98e86df7ee46dbb40123b5cfbd1be8a5c7fcbfbe4",
   "folds": [
     {
       "before": {
@@ -19996,6 +20200,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -20686,6 +20891,7 @@ const STORIES=[
               ],
               "config": {
                 "applicationPolicy": 7,
+                "consumerPin": 9,
                 "registry": 1,
                 "representativePolicy": 8,
                 "requestAddress": 90,
@@ -21315,6 +21521,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -21948,6 +22155,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -22581,6 +22789,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -22666,9 +22875,9 @@ const STORIES=[
       }
     }
   ],
-  "modelSha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
+  "modelSha256": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
   "namingStatementsSha256": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
-  "payloadSha256": "3b89e3dbea7bc706a3f5171f47f069534d472a27f068d1d12b2762386cbec072",
+  "payloadSha256": "65d5b19450ec50181fbe46386839da94c2abcf3051603f58183854a8afd152f8",
   "queues": [
     {
       "accepted": true,
@@ -22680,6 +22889,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -23280,6 +23490,7 @@ const STORIES=[
               ],
               "config": {
                 "applicationPolicy": 7,
+                "consumerPin": 9,
                 "registry": 1,
                 "representativePolicy": 8,
                 "requestAddress": 90,
@@ -23671,6 +23882,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -24442,6 +24654,7 @@ const STORIES=[
               ],
               "config": {
                 "applicationPolicy": 7,
+                "consumerPin": 9,
                 "registry": 1,
                 "representativePolicy": 8,
                 "requestAddress": 90,
@@ -24582,6 +24795,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -24878,6 +25092,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -25174,6 +25389,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -26010,6 +26226,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -27215,6 +27432,7 @@ const STORIES=[
               ],
               "config": {
                 "applicationPolicy": 7,
+                "consumerPin": 9,
                 "registry": 1,
                 "representativePolicy": 8,
                 "requestAddress": 90,
@@ -27392,6 +27610,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -27923,6 +28142,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -28087,6 +28307,7 @@ const STORIES=[
                 "witness": {
                   "applicationMint": false,
                   "applicationSpend": false,
+                  "consumerWithdraw": true,
                   "nativeSpend": true,
                   "representativeMint": true
                 }
@@ -28654,6 +28875,7 @@ const STORIES=[
                     ],
                     "config": {
                       "applicationPolicy": 7,
+                      "consumerPin": 9,
                       "registry": 1,
                       "representativePolicy": 8,
                       "requestAddress": 90,
@@ -29283,6 +29505,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -29444,6 +29667,7 @@ const STORIES=[
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -30003,6 +30227,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -30162,6 +30387,7 @@ const STORIES=[
                 "witness": {
                   "applicationMint": false,
                   "applicationSpend": true,
+                  "consumerWithdraw": false,
                   "nativeSpend": false,
                   "representativeMint": false
                 }
@@ -30732,6 +30958,7 @@ const STORIES=[
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -31341,6 +31568,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -31998,6 +32226,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -32678,6 +32907,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -33040,6 +33270,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -33604,6 +33835,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -33966,6 +34198,7 @@ const STORIES=[
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -33986,23 +34219,23 @@ const STORIES=[
   "schema": "singular-naming-corpus-v1",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6c5d1c4a27399e0b4d72799b56f74b814badc18f1df8c79cb3e7ea62d6c01e7f",
-    "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
-    "lean/NamingMain.lean": "1a7eeab9e62a7c84ec043d574f5c2086946c9a15fa4a43418e07cce3b66c7a42",
+    "lean/Main.lean": "c10d4d2f20540a059c4200097a1398f1c8b7e45444d41588bd77fcd212ee418f",
+    "lean/NamingMain.lean": "07c759c2e5866bb8d850efe98e86df7ee46dbb40123b5cfbd1be8a5c7fcbfbe4",
     "lean/Singular.lean": "a66a8d18b7e348766dcf2be92cf5e4651362f7118c537c5978d876832842f941",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
-    "lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-    "lean/Singular/Naming.lean": "ffc6b2c9512f3306c71da56c09d173a06d0f27c8e81689b846d072523ce58069",
+    "lean/Singular/Lemmas.lean": "16aa9476986b2d31e37e80acac4a12bca9524b4f498b6540ff40d7e2f3256dfa",
+    "lean/Singular/Model.lean": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
+    "lean/Singular/Naming.lean": "86460da798e634d7ecc986a20847c40d25e90d8354600737429aa1204c592024",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
-    "lean/Singular/NamingLemmas.lean": "eb28d9759c22ebe5abd6989cdc9a51ab3c620b91268781407f3abab1b7c1eef6",
-    "lean/Singular/NamingLifecycle.lean": "5afd1b517d9e6a93a558a548fa6b9b1bcd3727df4e734943bdddbc21afcacbe2",
+    "lean/Singular/NamingLemmas.lean": "10a6be7042c5f8ed33ae3b276085245cb5a0a95c27a6bcbc7cc460479a0ce0b8",
+    "lean/Singular/NamingLifecycle.lean": "8ba0e632700a840be578233db54f9cfb9596a7dbf5ffebd6eab263f901202ea1",
     "lean/Singular/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
-    "lean/Singular/NamingLifecycleStatements.lean": "9bb4e5718f46591b81a5b65bfa037347e5908f8ec5a6baf437edc67227858d30",
+    "lean/Singular/NamingLifecycleStatements.lean": "bb45f3fc274dc297d35daf91dd40ae0c82ba06d4a2fbb89c2e6ad8502835e8f1",
     "lean/Singular/NamingStatements.lean": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
     "lean/Singular/NamingWire.lean": "4464720b2946183c1a6faf4a2f0a7689ea45dd1d96b9e86aba138e9131edaf8d",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "91d7d421b5ea93944c87068c919a8326dd5d86842651d86272fc8189cce201ce",
-    "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
+    "lean/Singular/Statements.lean": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91"
   },
   "spellings": [
     {
@@ -34097,6 +34330,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": true,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -34650,6 +34884,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -34757,6 +34992,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": true,
             "representativeMint": false
           }
@@ -35310,6 +35546,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -35437,6 +35674,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": true,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -35990,6 +36228,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -36096,6 +36335,7 @@ const STORIES=[
           "witness": {
             "applicationMint": true,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -36649,6 +36889,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -37109,6 +37350,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -37219,6 +37461,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -37540,6 +37783,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -37937,6 +38181,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -38027,6 +38272,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": true,
             "representativeMint": false
           }
@@ -38580,6 +38826,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -38791,6 +39038,7 @@ const STORIES=[
           "witness": {
             "applicationMint": true,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -39112,6 +39360,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -39281,6 +39530,7 @@ const STORIES=[
           "witness": {
             "applicationMint": true,
             "applicationSpend": false,
+            "consumerWithdraw": false,
             "nativeSpend": false,
             "representativeMint": false
           }
@@ -39602,6 +39852,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -39713,6 +39964,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": true,
             "nativeSpend": true,
             "representativeMint": true
           }
@@ -40066,6 +40318,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -40233,6 +40486,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": true,
             "nativeSpend": true,
             "representativeMint": true
           }
@@ -40763,6 +41017,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -41452,6 +41707,7 @@ const STORIES=[
               ],
               "config": {
                 "applicationPolicy": 7,
+                "consumerPin": 9,
                 "registry": 1,
                 "representativePolicy": 8,
                 "requestAddress": 90,
@@ -41568,6 +41824,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": true,
             "nativeSpend": true,
             "representativeMint": true
           }
@@ -42121,6 +42378,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -42240,6 +42498,7 @@ const STORIES=[
           "witness": {
             "applicationMint": false,
             "applicationSpend": false,
+            "consumerWithdraw": true,
             "nativeSpend": true,
             "representativeMint": true
           }
@@ -42770,6 +43029,7 @@ const STORIES=[
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,

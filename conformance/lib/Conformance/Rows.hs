@@ -41,7 +41,7 @@ import Data.List (nub, sort)
 import Data.Text (Text)
 import Data.Text qualified as T
 
-import Conformance.Receipt (Receipt (..))
+import Conformance.Receipt (Receipt (..), Verdict (..))
 
 {- | Total rows in @rows.json@: the 41 owned consumer rows (including
 CG20, the F-002 permissionless-folder regression) plus CK06,
@@ -155,6 +155,7 @@ exists and matches the current base, else the declared plan.
 -}
 data ShownState
     = ShownExecuted
+    | ShownPartial
     | ShownPlanned RowState
     deriving stock (Show, Eq, Ord)
 
@@ -165,6 +166,7 @@ effectiveState base receipts row =
          , receiptRow r == rowId row
          , receiptBase r == base
          ] of
+        (r : _) | receiptVerdict r == Partial -> ShownPartial
         (_ : _) -> ShownExecuted
         [] -> ShownPlanned (rowState row)
 
@@ -186,6 +188,7 @@ renderInventory base receipts rows =
         "id\tgroup\texpected\tstate\trequirement"
     states =
         [ ShownExecuted
+        , ShownPartial
         , ShownPlanned BoundElsewhere
         , ShownPlanned Uncovered
         , ShownPlanned OutOfScope
@@ -231,6 +234,7 @@ renderRow (r, s) =
 
 shownName :: ShownState -> Text
 shownName ShownExecuted = "executed"
+shownName ShownPartial = "partial"
 shownName (ShownPlanned Uncovered) = "uncovered"
 shownName (ShownPlanned BoundElsewhere) = "bound-elsewhere"
 shownName (ShownPlanned OutOfScope) = "out-of-scope"

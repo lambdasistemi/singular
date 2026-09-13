@@ -67,14 +67,19 @@ end Singular
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree at base: 192 = 109 manifest-bound + 83 unclassified."""
+    """The frozen tree at base: 196 = 113 manifest-bound + 83 unclassified.
+
+    Re-frozen on integrating the reviewed naming hook/empty-fold Lean
+    (four theorems: empty_fold_never_ok, empty_fold_error,
+    nonempty_fold_invokes_consumer, substituted_consumer_pin_refused;
+    fold_iff restated with items-nonempty). Prior base 192 = 109 + 83."""
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 192, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 196, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 109)
+        self.assertEqual(len(statements), 113)
 
     def test_owner_reported_tricky_names_are_found_whole(self):
         decls = {d.name for d in scan_tree_strict(REPO_ROOT / "lean")}

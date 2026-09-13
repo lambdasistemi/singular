@@ -11,14 +11,16 @@ node and verifies it, one line per step:
   boot a cage, submit a request, prove the key absent, apply
   the request, prove the key present with the expected value,
   reject a false claim, read the resulting state back, then
-  submit four transactions the on-chain validators must
+  submit three transactions the on-chain validators must
   refuse — a forged state-token identity, a tampered
-  certified output, a dropped proof witness, an ownerless End —
+  certified output and a dropped proof witness —
   and prove the authenticated state took no trace from them.
+  (`End` refuses for every party under the ownerless ruling;
+  that evidence lives in repair-rows.)
 
-The four negative cases are MPFS cage negative cases. They
-exercise the imported validators' identity, certified-output,
-witness and End-ownership guards; no Singular naming behaviour
+The three negative cases are MPFS cage negative cases. They
+exercise the imported validators' identity, certified-output and
+witness guards; no Singular naming behaviour
 exists in this runner.
 
 Verification follows D-013: the library builds proofs
@@ -90,7 +92,6 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     outputsTxBodyL,
-    reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
@@ -105,7 +106,6 @@ import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import PlutusTx.IsData.Class (FromData (..))
 
 import Cardano.MPFS.Cage.Blueprint (
-    applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
@@ -125,12 +125,13 @@ import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.End (endTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
+    ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    deriveConsumerBinding,
     extractCageDatum,
     findStateUtxo,
     mkInlineDatum,
@@ -141,6 +142,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
 import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
 import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
 import Cardano.MPFS.Cage.Types (
@@ -204,7 +206,7 @@ import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
-import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
+import PlutusTx.Builtins.Internal (BuiltinData (..))
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -227,13 +229,14 @@ journey = do
         ( extractCompiledCode "state.state" bp
         , extractCompiledCode "request.request" bp
         , extractCompiledCode "staking.staking" bp
+        , extractCompiledCode "consumer.consumer" bp
         ) of
-        (Just stateBytes, Just requestBytes, Just stakingBytes) ->
-            runJourney si stateBytes requestBytes stakingBytes
+        (Just stateBytes, Just requestBytes, Just stakingBytes, Just consumerBytes) ->
+            runJourney si stateBytes requestBytes stakingBytes consumerBytes
         _ ->
             failWith
-                "state.state, request.request or staking.staking \
-                \compiled code not found in blueprint"
+                "state.state, request.request, staking.staking or \
+                \consumer.consumer compiled code not found in blueprint"
 
 -- ---------------------------------------------------------
 -- Identity: which contracts this run exercises
@@ -338,24 +341,27 @@ stepDerivedIdentity ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     TokenId ->
     ConwayTx ->
     ConwayTx ->
     IO ()
-stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = do
+stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx updateTx = do
     let hashHex = hex . scriptHashBytes
         -- The unapplied layer: the blueprint's raw code hashes.
         unappliedState = hashHex (computeScriptHash rawState)
         unappliedRequest = hashHex (computeScriptHash rawRequest)
         unappliedStaking = hashHex (computeScriptHash rawStaking)
+        unappliedConsumer = hashHex (computeScriptHash rawConsumer)
     -- The pinned layer is the unapplied code this run's
     -- blueprint actually contains.
     checkPinnedUnapplied si "state.state" unappliedState
     checkPinnedUnapplied si "request.request" unappliedRequest
     checkPinnedUnapplied si "staking.staking" unappliedStaking
+    checkPinnedUnapplied si "consumer.consumer" unappliedConsumer
     -- Derivation: apply this instance's parameters to the
     -- unapplied code and hash the result.
-    let stateHash = computeScriptHash (applyPreviousPolicies [] rawState)
+    let stateHash = computeScriptHash (rawState)
         stateHex = hashHex stateHash
         stateParams = "previousPolicies=[]"
         tokenName = let TokenId (AssetName an) = tid in fromShort an
@@ -371,7 +377,17 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> stateHex
                 <> " cageToken=0x"
                 <> hex tokenName
-    -- The run's config follows from the same derivation.
+        consumerHash = computeScriptHash rawConsumer
+        consumerHex = hashHex consumerHash
+    -- The run's config follows from the same derivation (the consumer
+    -- takes no parameters — applied and unapplied coincide).
+    unless (SBS.fromShort (cfgConsumerPin cfg) == scriptHashBytes consumerHash) $
+        failWith $
+            "derived-applied-identity failed for consumer: \
+            \the run's pinned consumer hash is 0x"
+                <> hex (SBS.fromShort (cfgConsumerPin cfg))
+                <> " but this run's blueprint code hashes to 0x"
+                <> consumerHex
     unless (cfgScriptHash cfg == stateHash) $
         failWith $
             "derived-applied-identity failed for state: \
@@ -394,14 +410,16 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> stateParams
                 <> ") but its script witness held "
                 <> show (Set.toList bootWitness)
-    unless (updateWitness == Set.fromList [stateHex, requestHex]) $
+    unless (updateWitness == Set.fromList [stateHex, requestHex, consumerHex]) $
         failWith $
             "derived-applied-identity failed for request: \
             \expected the update transaction to carry exactly \
             \the derived applied hashes 0x"
                 <> stateHex
-                <> " and 0x"
+                <> ", 0x"
                 <> requestHex
+                <> " and consumer 0x"
+                <> consumerHex
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "
@@ -434,6 +452,14 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
             <> unappliedStaking
             <> " takes no parameters (0) — applied and \
                \unapplied coincide, matching the pin"
+        )
+    emit
+        "derived-applied-identity"
+        ( "consumer applied hash 0x"
+            <> consumerHex
+            <> " takes no parameters (0) — applied and \
+               \unapplied coincide, and the update tx carried \
+               \exactly this script as the hook witness"
         )
 
 -- | Require every manifest entry under the validator
@@ -485,8 +511,9 @@ runJourney ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO ()
-runJourney si stateBytes requestBytes stakingBytes = do
+runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -520,8 +547,14 @@ runJourney si stateBytes requestBytes stakingBytes = do
                 failWith
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
-        let cfg = cageCfg stateBytes requestBytes seedRef
+        let cfg = cageCfg stateBytes requestBytes consumerBytes seedRef
         (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
+        -- Consumer stake registration (NOTE-020 item 2): the pinned
+        -- consumer's credential must be registered before the first
+        -- Modify withdraws it. Funded by genesis (the cage funder here).
+        regTx <- registerConsumerImpl cfg prov genesisAddr
+        _ <- submitWithGenesis submit regTx
+        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         reqCount <- stepRequest cfg prov submit tokenId
         stepVerifyAbsent cfg prov mirrorRef tokenId
         appliedTx <- stepApply cfg prov submit tm tokenId reqCount
@@ -531,6 +564,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             stateBytes
             requestBytes
             stakingBytes
+            consumerBytes
             tokenId
             bootTx
             appliedTx
@@ -680,8 +714,6 @@ stepReadBack cfg prov tid bootRoot = do
             <> show (stateProcessTime st)
             <> " retract_window_ms="
             <> show (stateRetractTime st)
-            <> " stake_script="
-            <> maybe "none" (\(BuiltinByteString bs) -> hex bs) (stateStakeScript st)
         )
     pure st
 
@@ -830,19 +862,10 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         stateScriptHash
         submit
         (dropModifyProof pp baseTx)
-    -- Case 4, re-cut under issue #79: the owner-signature refusal the
-    -- old Case 3 asserted on the Modify path, retargeted to `End`.
-    -- `End` keeps `validateOwnership` (untouched by the repair), so an
-    -- ownerless `End` spend must still be refused by
-    -- `state.state.spend`, for that reason. After the repair this is
-    -- the only owner-authorization negative control.
-    unsignedEnd <- endTokenImpl cfg prov tid genesisAddr
-    expectRejected
-        "reject-end-without-owner"
-        "state.state.spend validateOwnership: End without the state owner's signature is refused"
-        stateScriptHash
-        submit
-        (dropRequiredSigners unsignedEnd)
+    -- No Case 4: the old owner-authorization negative control (`End`
+    -- without owner signature) is gone with the owner role itself.
+    -- `End` refuses for every party now; that evidence lives in
+    -- repair-rows (ownerless-end, receipted) instead of here.
     -- Positive control: the rejected transactions left no
     -- trace. The authenticated state is re-read from the
     -- chain and compared against the post-apply state.
@@ -856,7 +879,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         (length reqAfter == 1)
     emit
         "reject-control"
-        ( "authenticated state unchanged after 4 rejected transactions"
+        ( "authenticated state unchanged after 3 rejected transactions"
             <> " root=0x"
             <> hex (unOnChainRoot (stateRoot stateAfter))
             <> " request_utxos="
@@ -987,16 +1010,6 @@ tamperStateOutputRoot expected tampered tx =
                     .~ mkInlineDatum
                         (toPlcData (StateDatum s{stateRoot = tampered}))
         _ -> out
-
-{- | Drop every required signer from the body: the ledger no
-longer demands the owner's vkey witness, but the state
-validator still does. Since the issue-#79 re-cut this helper
-serves the `End` case only: an ownerless `Modify` is now
-rightly accepted.
--}
-dropRequiredSigners :: ConwayTx -> ConwayTx
-dropRequiredSigners tx =
-    tx & bodyTxL . reqSignerHashesTxBodyL .~ Set.empty
 
 {- | Drop the Merkle proof witness from the Modify action, keeping
 the action shape: `UpdateAction` with an empty proof list. The
@@ -1246,10 +1259,15 @@ stepVerifyPresent cfg prov mirrorRef tid = do
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes seed =
-    let appliedStateBytes = applyPreviousPolicies [] stateBytes
+cageCfg stateBytes requestBytes consumerBytes seed =
+    let appliedStateBytes = stateBytes
+        ConsumerBinding
+            { cbPin = consumerPin
+            , cbScriptBytes = consumerScriptBytes
+            } = deriveConsumerBinding consumerBytes
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
@@ -1259,8 +1277,10 @@ cageCfg stateBytes requestBytes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
+            , cfgRepPolicy = SBS.pack (replicate 28 0)
+            , cfgConsumerPin = consumerPin
+            , cfgConsumerScript = consumerScriptBytes
             , network = Testnet
-            , cfgStakeScript = Nothing
             }
 
 {- | Extract the 'TokenId' from a boot transaction's mint

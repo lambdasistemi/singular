@@ -34,6 +34,13 @@ module Cardano.MPFS.Cage.Types (
     -- * Proof steps (Aiken MPF proof encoding)
     ProofStep (..),
     Neighbor (..),
+
+    -- * State helpers
+    stateRepPolicyBytes,
+    stateConsumerPinBytes,
+
+    -- * Pinned-hook consumer redeemer (NOTE-021)
+    ConsumerRedeemer (..),
 ) where
 
 import Data.ByteString (ByteString)
@@ -117,14 +124,12 @@ data OnChainRequest = OnChainRequest
     deriving stock (Show, Eq)
 
 {- | On-chain token state. Matches Aiken
-@types\/State@ (6 fields).
+@types\/State@ (6 fields: ownerless per ruling NOTE-028/A-003, plus
+the expected representative policy per issue #77 E-001 repair and
+the pinned consumer script per NOTE-013/019).
 -}
 data OnChainTokenState = OnChainTokenState
-    { stateOwner :: !BuiltinByteString
-    -- ^ Payment key hash of the token owner (28 bytes)
-    , stateStakeScript :: !(Maybe BuiltinByteString)
-    -- ^ Optional staking script hash authorizing owner actions (28 bytes)
-    , stateRoot :: !OnChainRoot
+    { stateRoot :: !OnChainRoot
     -- ^ Current Merkle root of the token's trie
     , stateMaxFee :: !Integer
     -- ^ Oracle tip (lovelace) charged per request
@@ -132,6 +137,16 @@ data OnChainTokenState = OnChainTokenState
     -- ^ Oracle processing window duration (ms)
     , stateRetractTime :: !Integer
     -- ^ Requester retract window duration (ms)
+    , stateRepPolicy :: !BuiltinByteString
+    -- ^ Expected representative minting policy (28-byte script hash).
+    -- Issue #77 E-001 repair: `Singular.representativePolicy` refined on
+    -- chain. Set at bootstrap, preserved immutable across every `Modify`.
+    , stateConsumerPin :: !BuiltinByteString
+    -- ^ Pinned consumer script hash (28-byte script hash). NOTE-013/
+    -- NOTE-019 sixth field: `Singular.consumerPin` refined on chain.
+    -- Selected at bootstrap (width-checked at mint), preserved immutable
+    -- across every `Modify`; every `Modify` consuming at least one request
+    -- must withdraw exactly this script.
     }
     deriving stock (Show, Eq)
 
@@ -190,10 +205,8 @@ data RequestAction
 {- | Spending redeemer. Matches Aiken
 @types\/UpdateRedeemer@.
 
-@Sweep stateRef@ is gated by the cage owner's
-signature; the @stateRef@ payload points at the
-cage's legitimate state UTxO so the validator can
-locate it directly in @tx.inputs ++ tx.reference_inputs@.
+@Sweep stateRef@ is refused for every party (operator ruling
+NOTE-028/A-003); the constructor stays for the wire shape.
 -}
 data UpdateRedeemer
     = -- | End the token (Constr 0)
@@ -251,6 +264,19 @@ data Neighbor = Neighbor
     }
     deriving stock (Show, Eq)
 
+-- | The expected representative policy as plain bytes (issue #77, E-001):
+-- unwraps the `BuiltinByteString` for hex comparison in verifiers.
+stateRepPolicyBytes :: OnChainTokenState -> ByteString
+stateRepPolicyBytes st = case stateRepPolicy st of
+    BuiltinByteString bs -> bs
+
+-- | The pinned consumer script hash as plain bytes (NOTE-013/NOTE-019):
+-- unwraps the `BuiltinByteString` for the withdrawal credential builders
+-- attach to every consuming `Modify`.
+stateConsumerPinBytes :: OnChainTokenState -> ByteString
+stateConsumerPinBytes st = case stateConsumerPin st of
+    BuiltinByteString bs -> bs
+
 -- ---------------------------------------------------------
 -- Helpers for manual Data construction
 -- ---------------------------------------------------------
@@ -284,25 +310,6 @@ byte-literal.
 bbsFromD :: Data -> Maybe BuiltinByteString
 bbsFromD (B bs) = Just (BuiltinByteString bs)
 bbsFromD _ = Nothing
-
--- | Encode an Aiken @Option<ScriptHash>@ value.
-maybeBbsToD :: Maybe BuiltinByteString -> Data
-maybeBbsToD (Just bbs) = Constr 0 [bbsToD bbs]
-maybeBbsToD Nothing = Constr 1 []
-
--- | Decode an Aiken @Option<ScriptHash>@ value.
-maybeBbsFromD :: Data -> Maybe (Maybe BuiltinByteString)
-maybeBbsFromD (Constr 0 [x]) = Just <$> bbsFromD x
-maybeBbsFromD (Constr 1 []) = Just Nothing
-maybeBbsFromD _ = Nothing
-
--- | Decode an Aiken @Option<ScriptHash>@ or fail.
-unsafeMaybeBbsFromD :: Data -> Maybe BuiltinByteString
-unsafeMaybeBbsFromD (Constr 0 [B bs]) = Just (BuiltinByteString bs)
-unsafeMaybeBbsFromD (Constr 1 []) = Nothing
-unsafeMaybeBbsFromD _ =
-    error
-        "unsafeFromBuiltinData: Option<ScriptHash>"
 
 -- ---------------------------------------------------------
 -- ToData / FromData instances
@@ -448,20 +455,20 @@ instance ToData OnChainTokenState where
         mkD $
             Constr
                 0
-                [ bbsToD stateOwner
-                , maybeBbsToD stateStakeScript
-                , unD (toBuiltinData stateRoot)
+                [ unD (toBuiltinData stateRoot)
                 , I stateMaxFee
                 , I stateProcessTime
                 , I stateRetractTime
+                , bbsToD stateRepPolicy
+                , bbsToD stateConsumerPin
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [own, stake, r, I mf, I pt, I rt] -> do
-            stateOwner <- bbsFromD own
-            stateStakeScript <- maybeBbsFromD stake
+        Constr 0 [r, I mf, I pt, I rt, rp, cp] -> do
             stateRoot <- fromBuiltinData (mkD r)
+            stateRepPolicy <- bbsFromD rp
+            stateConsumerPin <- bbsFromD cp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
@@ -470,22 +477,39 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [B own, stake, r, I mf, I pt, I rt] ->
-            OnChainTokenState
-                { stateOwner =
-                    BuiltinByteString own
-                , stateStakeScript =
-                    unsafeMaybeBbsFromD stake
-                , stateRoot =
-                    unsafeFromBuiltinData (mkD r)
-                , stateMaxFee = mf
-                , stateProcessTime = pt
-                , stateRetractTime = rt
-                }
+        Constr 0 [r, I mf, I pt, I rt, rp, cp] ->
+            case (bbsFromD rp, bbsFromD cp) of
+                (Just repPolicy, Just consumerPin) ->
+                    OnChainTokenState
+                        { stateRoot =
+                            unsafeFromBuiltinData (mkD r)
+                        , stateMaxFee = mf
+                        , stateProcessTime = pt
+                        , stateRetractTime = rt
+                        , stateRepPolicy = repPolicy
+                        , stateConsumerPin = consumerPin
+                        }
+                _ ->
+                    error
+                        "unsafeFromBuiltinData:\
+                        \ OnChainTokenState.pin-or-policy"
         _ ->
             error
                 "unsafeFromBuiltinData:\
                 \ OnChainTokenState"
+
+{- | Pinned-hook consumer redeemer (NOTE-021): a nullary hook. The
+consumer authenticates the batch from the transaction's own evidence
+(spent state, request datums, naming claims, mint field) — the redeemer
+carries nothing because nothing caller-supplied is trusted. Encodes as
+@Constr 0 []@.
+-}
+data ConsumerRedeemer
+    = Hook
+    deriving stock (Show, Eq)
+
+instance ToData ConsumerRedeemer where
+    toBuiltinData Hook = mkD $ Constr 0 []
 
 instance ToData CageDatum where
     toBuiltinData (RequestDatum r) =

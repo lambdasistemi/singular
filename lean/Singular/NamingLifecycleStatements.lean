@@ -260,6 +260,11 @@ theorem substituted_validator_script_refused :
       .error "validator-script" := by
   rfl
 
+theorem substituted_consumer_pin_refused :
+    initializeConsumer namingConsumerBinding substitutedConsumerInitialization =
+      .error "consumer-pin" := by
+  rfl
+
 theorem executing_witness_is_derived_per_example :
     (lifecycleExecutingWitness maintainClear).applicationSpend = true ∧
     (lifecycleExecutingWitness recoverWithNext).requiredSigners = [nextControllerAddress] ∧

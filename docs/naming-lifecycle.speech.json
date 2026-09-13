@@ -11,6 +11,12 @@
       "pause": 400
     }
   ],
+  "fold-a-pending-claim-into-an-active-name": [
+    {
+      "text": "One connected transaction advances the registry, contributes the spelling-keyed request, and folds the claim. The fold burns the single-use insert approval and mints the representative NFT under the applied representative policy. The registry key is the spelling itself. No owner signs the fold and no registry owner exists. Double folds, missing claims, unbound approvals, and misnamed representatives are refused.",
+      "pause": 400
+    }
+  ],
   "recover-with-the-committed-next-controller": [
     {
       "text": "Recovery reveals the complete next controller address, checks its canonical bytes against the domain-separated BLAKE two b two hundred and fifty six commitment, and requires its payment-key signer. The old controller need not sign. The successor keeps the representative, installs the revealed controller, and stores a fresh commitment. Only canonical base and enterprise payment-key addresses are supported.",
@@ -43,6 +49,6 @@
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "c92143164ab198d0cc722a8d373bc5a7cd6f9fb28af5714c975b6d51e98a04d8"
+    "sha256": "bb67953e31363ab84a6301f82c91c8b10fb79ebdc82bfe45a93f2ab97273dd43"
   }
 }

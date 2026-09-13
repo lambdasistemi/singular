@@ -1,6 +1,9 @@
 """Materialize a release tree without symlinks or shared file inodes."""
 import argparse
+import hashlib
+import io
 import os
+import tarfile
 from pathlib import Path
 import stat
 import tempfile
@@ -58,6 +61,27 @@ def stage_release(source: Path, destination: Path) -> None:
     assert_regular_tree(destination)
 
 
+def read_all_forward(bundle: tarfile.TarFile, wanted: set[str]) -> dict[str, bytes]:
+    """Read every wanted regular file in ONE forward pass.
+
+    Archive members are stored sorted (`tar --sort=name` at assembly), so
+    `getmembers()` order is already forward-only: extracting in that order
+    never seeks backward in the gzip stream (the old per-name `extractfile`
+    loop over a 221 MB archive seeks repeatedly and costs ~29 minutes of
+    CPU). Returns name-without-`./`-prefix to bytes for exactly the wanted
+    regular files; callers keep every completeness assertion (missing,
+    extra, drifted and corrupted members all still fail — only the
+    traversal changed)."""
+    found: dict[str, bytes] = {}
+    for member in bundle.getmembers():
+        key = member.name.removeprefix("./")
+        if key in wanted and member.isfile():
+            extracted = bundle.extractfile(member)
+            assert extracted is not None, f"unreadable archive member: {key}"
+            found[key] = extracted.read()
+    return found
+
+
 def selftest() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
@@ -85,6 +109,49 @@ def selftest() -> None:
             assert "cycle" in str(error)
         else:
             raise AssertionError("directory symlink cycle was accepted")
+
+        # Forward-reader fidelity (NOTE-001 item 3): exact bytes back for
+        # every wanted file in one pass; tampered bytes come back tampered
+        # (the reader masks nothing — downstream hash comparisons reject).
+        bundle_path = root / "control.tar.gz"
+        with tarfile.open(bundle_path, "w:gz") as bundle:
+            for name, payload in (
+                ("a.txt", b"alpha\n"),
+                ("sub/b.txt", b"beta\n"),
+                ("sub/c.txt", b"gamma\n"),
+            ):
+                info = tarfile.TarInfo(name)
+                info.size = len(payload)
+                info.mtime = 1
+                bundle.addfile(info, io.BytesIO(payload))
+        with tarfile.open(bundle_path) as bundle:
+            got = read_all_forward(bundle, {"a.txt", "sub/b.txt", "sub/c.txt"})
+        assert got == {
+            "a.txt": b"alpha\n",
+            "sub/b.txt": b"beta\n",
+            "sub/c.txt": b"gamma\n",
+        }, "forward reader returned wrong bytes"
+        with tarfile.open(bundle_path) as bundle:
+            partial = read_all_forward(bundle, {"a.txt", "missing.txt"})
+        assert set(partial) == {"a.txt"}, "forward reader must omit absent members"
+        tampered = root / "tampered.tar.gz"
+        with tarfile.open(bundle_path) as source:
+            with tarfile.open(tampered, "w:gz") as target:
+                for member in source.getmembers():
+                    if member.name == "sub/b.txt":
+                        payload = b"BETA-CORRUPT\n"
+                        member.size = len(payload)
+                        target.addfile(member, io.BytesIO(payload))
+                    else:
+                        extracted = source.extractfile(member)
+                        assert extracted is not None
+                        target.addfile(member, extracted)
+        with tarfile.open(tampered) as bundle:
+            got2 = read_all_forward(bundle, {"a.txt", "sub/b.txt", "sub/c.txt"})
+        assert got2["sub/b.txt"] == b"BETA-CORRUPT\n", "reader hid corruption"
+        assert hashlib.sha256(got2["sub/b.txt"]).hexdigest() != hashlib.sha256(
+            b"beta\n"
+        ).hexdigest(), "corrupted bytes hash identically"
 
 
 def main() -> None:

@@ -96,6 +96,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -106,6 +107,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -161,6 +163,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -328,6 +331,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -371,6 +375,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -517,6 +522,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -670,6 +676,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -745,6 +752,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -965,6 +973,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -1119,6 +1128,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -1211,6 +1221,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -1431,6 +1442,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -1528,6 +1540,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -1571,6 +1584,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -1688,6 +1702,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -1771,6 +1786,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -1831,6 +1847,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -1920,6 +1937,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -1980,6 +1998,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -2210,6 +2229,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -2220,6 +2240,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -2275,6 +2296,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -2384,6 +2406,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -2427,6 +2450,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -2568,6 +2592,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -2671,6 +2696,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -2731,6 +2757,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -2795,6 +2822,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -2879,6 +2907,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -2922,6 +2951,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -3032,6 +3062,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -3150,6 +3181,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -3193,6 +3225,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -3290,6 +3323,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -3408,6 +3442,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -3483,6 +3518,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -3665,6 +3701,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -3788,6 +3825,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -3831,6 +3869,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -3929,6 +3968,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -4049,6 +4089,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -4125,6 +4166,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -4309,6 +4351,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -4352,6 +4395,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -4484,6 +4528,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -4650,6 +4695,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -4725,6 +4771,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -4950,6 +4997,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -5007,6 +5055,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -5082,6 +5131,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -5288,6 +5338,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -5331,6 +5382,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -5490,6 +5542,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -5550,6 +5603,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -5614,6 +5668,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -5767,6 +5822,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -5777,6 +5833,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -5838,6 +5895,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -5953,6 +6011,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -5996,6 +6055,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6137,6 +6197,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -6254,6 +6315,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -6264,6 +6326,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6378,6 +6441,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -6388,6 +6452,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6444,6 +6509,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -6487,6 +6553,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6618,6 +6685,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -6693,6 +6761,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -6853,6 +6922,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -6913,6 +6983,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7044,6 +7115,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -7099,6 +7171,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -7142,6 +7215,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7245,6 +7319,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -7337,6 +7412,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7517,6 +7593,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -7577,6 +7654,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7658,6 +7736,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -7762,6 +7841,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -7822,6 +7902,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -7931,6 +8012,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -7991,6 +8073,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8049,6 +8132,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8146,6 +8230,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8236,6 +8321,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -8279,6 +8365,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8389,6 +8476,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8438,6 +8526,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -8481,6 +8570,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8591,6 +8681,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -8651,6 +8742,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -8726,6 +8818,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -8908,6 +9001,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -9014,6 +9108,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -9074,6 +9169,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9139,6 +9235,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -9199,6 +9296,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9264,6 +9362,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -9339,6 +9438,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9463,6 +9563,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -9506,6 +9607,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9647,6 +9749,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -9786,6 +9889,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -9917,6 +10021,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -10083,6 +10188,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -10143,6 +10249,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10373,6 +10480,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -10383,6 +10491,7 @@
           "approvals": [],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10438,6 +10547,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -10579,6 +10689,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -10622,6 +10733,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10769,6 +10881,7 @@
             "witness": {
               "applicationMint": true,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -10812,6 +10925,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -10953,6 +11067,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -11011,6 +11126,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -11054,6 +11170,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11168,6 +11285,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -11272,6 +11390,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": false
             }
@@ -11347,6 +11466,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11572,6 +11692,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -11629,6 +11750,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -11704,6 +11826,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -11862,6 +11985,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -11905,6 +12029,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12046,6 +12171,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -12105,6 +12231,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": false,
+              "consumerWithdraw": true,
               "nativeSpend": true,
               "representativeMint": true
             }
@@ -12197,6 +12324,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12328,6 +12456,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -12388,6 +12517,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12469,6 +12599,7 @@
             ],
             "config": {
               "applicationPolicy": 7,
+              "consumerPin": 9,
               "registry": 1,
               "representativePolicy": 8,
               "requestAddress": 90,
@@ -12537,6 +12668,7 @@
             "witness": {
               "applicationMint": false,
               "applicationSpend": true,
+              "consumerWithdraw": false,
               "nativeSpend": false,
               "representativeMint": false
             }
@@ -12597,6 +12729,7 @@
           ],
           "config": {
             "applicationPolicy": 7,
+            "consumerPin": 9,
             "registry": 1,
             "representativePolicy": 8,
             "requestAddress": 90,
@@ -12625,9 +12758,9 @@
       }
     }
   ],
-  "corpusSourceSha256": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
-  "modelSha256": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-  "payloadSha256": "01c1bc0a28b07eaac84c54c0c8961ed852a1602e85a9db40bea60e0204ce2309",
+  "corpusSourceSha256": "c10d4d2f20540a059c4200097a1398f1c8b7e45444d41588bd77fcd212ee418f",
+  "modelSha256": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
+  "payloadSha256": "b7e601cca4438fb27456a544d2a4374c2cfced94f61c0ecd127813b0a43d01bf",
   "resolutions": [
     {
       "authenticated": true,
@@ -12686,6 +12819,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -12752,6 +12886,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -12850,6 +12985,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -12913,6 +13049,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -12993,6 +13130,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -13077,6 +13215,7 @@
         ],
         "config": {
           "applicationPolicy": 7,
+          "consumerPin": 9,
           "registry": 1,
           "representativePolicy": 8,
           "requestAddress": 90,
@@ -13102,13 +13241,13 @@
   ],
   "schema": "singular-logical-corpus-v1",
   "sourceHashes": {
-    "lean/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
+    "lean/Main.lean": "c10d4d2f20540a059c4200097a1398f1c8b7e45444d41588bd77fcd212ee418f",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
-    "lean/Singular/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-    "lean/Singular/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb"
+    "lean/Singular/Lemmas.lean": "16aa9476986b2d31e37e80acac4a12bca9524b4f498b6540ff40d7e2f3256dfa",
+    "lean/Singular/Model.lean": "ccb8b3f745f35a8ed49f3b595949e5d7606b0300a65d34dd83ff6d7dd25a6271",
+    "lean/Singular/Statements.lean": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91"
   },
-  "statementsSha256": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
-  "theoremManifestSha256": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a"
+  "statementsSha256": "7538cc56dbce1d30789f0b741c2e37b9d182e8160781a6adc87278c89bf23b91",
+  "theoremManifestSha256": "53311ce87e8d7303c25bb783e82592bdcd2493a3f90d050e38f03652d3e644a3"
 }

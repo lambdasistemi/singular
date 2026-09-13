@@ -301,13 +301,20 @@ theorem fold_ok (s : State) (items : List FoldItem) (mint : List Delta) (net : L
     step s (.fold items mint net w) = .ok t ↔ w.nativeSpend = true ∧
     foldItems s items = .ok t ∧ sameNet t.logical mint = true ∧
     (nonzero mint = true → w.representativeMint = true) ∧
-    (actionNonzero net = true → w.applicationMint = true) := by
+    (actionNonzero net = true → w.applicationMint = true) ∧
+    w.consumerWithdraw = true ∧
+    items ≠ [] := by
   unfold step
-  rcases hfold : foldItems s items with _ | u
-  all_goals simp only [hfold, bind, Except.bind, pure, Except.pure]
-  all_goals repeat' split
-  all_goals (intros; simp_all)
-  all_goals first | exact eq_comm | (intros; simp_all)
+  rcases hempty : items with _ | ⟨i, rest⟩
+  · subst hempty
+    simp only [bind, Except.bind, pure, Except.pure]
+    repeat' split
+    all_goals (intros; simp_all)
+    all_goals first | exact eq_comm | (intros; simp_all)
+  · simp only [hempty, bind, Except.bind, pure, Except.pure]
+    repeat' split
+    all_goals (intros; simp_all)
+    all_goals first | exact eq_comm | (intros; simp_all)
 
 theorem moveAction_ok (s : State) (a : Asset) (n : Int) (w : Witnesses) (t : Result) :
     step s (.moveAction a n w) = .ok t ↔ recognized s a = true ∧ n = 0 ∧

@@ -2,19 +2,19 @@
   "how-retirement-ends-a-name": [
     {
       "pause": 400,
-      "text": "Run the seven retirement rows on a real devnet with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker. Both must fail after executing rows."
+      "text": "Run the retirement rows on a real devnet with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. The diagram shows the lifecycle: an active record retires by controller or quorum into completion-only custody, and anyone completes it permissionlessly, burning the representative while the key stays occupied. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker. Both must fail after executing rows."
     }
   ],
   "limits-and-next-steps": [
     {
       "pause": 400,
-      "text": "The representative here rides under the application policy as a stand-in preserving the single-token shape, and the registry binding is the application hash itself. Custody is created and filled by this runner, but spending it — completion and the withdrawal refusal — arrives as the next step."
+      "text": "The representative is a real NFT minted under the applied policy and burned exactly once at completion. Custody is spent only by permissionless completion; withdrawal without burn, burn without transition, mismatched pairings, and re-registration after Over all refuse, each with its reason named."
     }
   ],
   "what-the-retirement-run-observes": [
     {
-      "text": "Each accepted route proves custody from the chain: the representative is observed at the custody script and the record is observed gone. The refusals are single-defect mutants refused in phase two naming the application validator, including a stored quorum that duplicates one member to bind the distinctness the model demands. The replay is refused by the ledger itself, and the surviving record is unchanged.",
-      "pause": 400
+      "pause": 400,
+      "text": "Each accepted route proves custody from the chain: the representative is observed at the custody script and the record is observed gone. The over name additionally recovers first, retires through its recovered controller, and completes with empty required signers and one fresh fee witness. Refusals name their script and purpose, including a stored quorum that duplicates one member to bind the distinctness the model demands. The replay is refused by the ledger itself."
     }
   ],
   "what-the-run-observes": [
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "recovery-retirement.md",
-    "sha256": "bdd6c08a3f303bc39ef2864056876fbc7321aa20c36f1d7225d6023fd697b05d"
+    "sha256": "029021b75c21c2b8b0fecf80a7e2690cb7330aac9f7824d37f6fc0cdcd246bf2"
   }
 }

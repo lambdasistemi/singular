@@ -29,6 +29,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from stage_release import assert_regular_tree, stage_release
 
 
+def copy_tracked_partitions(root: Path, farm: Path, partitions: tuple[str, ...]) -> None:
+    """Copy exactly the git-tracked source of each partition (issue: ignored
+    local build state — dist-newstyle/, build/ — must never change release
+    membership at the same candidate). `git ls-files` enumerates declared
+    source; built blueprints and vendored fixtures ride explicit copyfile
+    calls below, never a live partition copy. Modes preserved via copy2 so
+    staging materializes identical permissions either way."""
+    listed = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z", *partitions],
+        stdout=subprocess.PIPE,
+        check=True,
+    )
+    shipped = 0
+    for relative in listed.stdout.split(b"\0"):
+        if not relative:
+            continue
+        source = root / relative.decode()
+        target = farm / relative.decode()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        shipped += 1
+    if shipped == 0:
+        raise ValueError("no tracked source enumerated; refusing an empty farm")
+
+
 def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out: Path) -> None:
     version = (root / "version.txt").read_text().strip()
     docs_name = f"singular-docs-{version}.tar.gz"
@@ -41,8 +66,7 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out:
     work = Path(tempfile.mkdtemp(prefix="onchain-release-"))
     farm = work / "farm"
     farm.mkdir()
-    for partition in ("onchain", "naming-onchain", "offchain"):
-        shutil.copytree(root / partition, farm / partition)
+    copy_tracked_partitions(root, farm, ("onchain", "naming-onchain", "offchain"))
     for relative in ("README.md", "RELEASE.md", "verify-identities.sh"):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
     (farm / "fixtures").mkdir()

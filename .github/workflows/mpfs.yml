@@ -337,7 +337,7 @@ jobs:
           NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
   recovery-rows:
     name: The LR recovery rows on a real devnet
-    needs: naming-validators
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -355,10 +355,10 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # Issue #62: the eleven recovery rows (LR01..LR11) executed against
       # a real devnet with Singular's own naming validators. `needs:` is
-      # ordering and fail-fast on the naming validator job: the runner
-      # consumes the naming-onchain blueprint (built here from that flake,
-      # so the consumed artifact is always built from the checked-out
-      # commit) and its pinned script-identity.json. Every refusal must
+      # ordering and fail-fast on both blueprint jobs: the runner consumes
+      # the naming-onchain blueprint and the onchain MPFS blueprint (each
+      # built here from its own flake, so every consumed artifact is built
+      # from the checked-out commit) and its pinned script-identity.json. Every refusal must
       # come back as a phase-2 PlutusFailure naming the application
       # validator; LR01's preservation and transfer, LR04 after a real LR01
       # against the genuine successor, LR05's old-controller refusal and
@@ -371,11 +371,12 @@ jobs:
         working-directory: offchain
         run: |
           mkdir -p /tmp/s62-devnet
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s62-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#recovery-rows
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          TMPDIR=/tmp/s62-devnet MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming" nix run --quiet .#recovery-rows
   retirement-rows:
     name: The LT retirement rows on a real devnet
-    needs: naming-validators
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -391,18 +392,25 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #66: the seven in-scope retirement rows (LT01..LT03, LT05,
-      # LT06, LT08, LT09) executed against a real devnet with Singular's
-      # own naming validators and the new completion-only custody script.
-      # `needs:` is ordering and fail-fast on the naming validator job:
-      # the runner consumes the naming-onchain blueprint (built here from
-      # that flake, so the consumed artifact is always built from the
-      # checked-out commit) and its pinned script-identity.json. Every
-      # refusal must come back as a phase-2 PlutusFailure naming the
-      # application validator (LT09's replay is the honest exception: the
-      # ledger itself refuses the consumed output in phase 1, the LC06
-      # precedent); custody and the record's end are proved from the chain
-      # after LT01 and LT02, and the run fails non-zero on any mismatch.
+      # Issue #66: the retirement rows (LT refusals and accepts,
+      # recovery-then-retire both routes, the connected Over journey
+      # with permissionless completion, occupied-key and mismatch
+      # refusals) executed against a real devnet with Singular's own
+      # naming validators and the
+      # completion-only custody script.
+      # `needs:` is ordering and fail-fast on both blueprint jobs:
+      # the runner consumes the naming-onchain blueprint and the onchain
+      # MPFS blueprint (each built here from its own flake, so every
+      # consumed artifact is built from the checked-out commit) and its
+      # pinned script-identity.json. Submitted refusals come back as a
+      # phase-2 PlutusFailure naming the refusing script (LT09's replay
+      # is the honest exception: the ledger itself refuses the consumed
+      # output in phase 1, the LC06 precedent); builder-evaluation
+      # refusals (occupied-key fold, mismatched pair) fail locally
+      # naming the refusing script at its spending purpose before any
+      # submission; custody and the record's end are proved from the
+      # chain after LT01 and LT02, and the run fails non-zero on any
+      # mismatch.
       # The devnet runs under a private shallow TMPDIR so its node database
       # cannot delete another lane's live database and its socket stays
       # inside the AF_UNIX limit.
@@ -410,8 +418,9 @@ jobs:
         working-directory: offchain
         run: |
           mkdir -p /tmp/s66-devnet
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#retirement-rows
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          TMPDIR=/tmp/s66-devnet MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming" nix run --quiet .#retirement-rows
   li-refusals:
     name: The LI02-LI08 initialization refusals on a real devnet
     needs: [blueprint, naming-validators]

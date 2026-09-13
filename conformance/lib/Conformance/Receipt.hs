@@ -25,7 +25,15 @@ module Conformance.Receipt (
     Outcome (..),
     Verdict (..),
     RefusalInfo (..),
+    ConstructorStanding (..),
+    ConstructorEvidence (..),
+    PartialInfo (..),
+    DerivationOutcome (..),
+    DerivationEvidence (..),
+    derivationMatches,
     Receipt (..),
+    declaredConstructors,
+    derivationVenue,
     maxReceiptBytes,
     checkReceiptSize,
     loadReceipts,
@@ -45,10 +53,11 @@ import Data.Aeson (
     withText,
     (.:),
     (.:?),
+    (.!=),
     (.=),
  )
 import Data.ByteString.Lazy qualified as BSL
-import Data.List (isPrefixOf, isSuffixOf)
+import Data.List (isPrefixOf, isSuffixOf, sort)
 import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -82,6 +91,16 @@ and the node's phase-2 reason verbatim.
 data RefusalInfo = RefusalInfo
     { refusalScript :: !Text
     , refusalReason :: !Text
+    , refusalPhase :: !Text
+    -- ^ observed phase (phase-2 for script-execution failures)
+    , refusalHashes :: ![Text]
+    -- ^ extracted failure script hashes (structured attribution)
+    , refusalBranch :: !(Maybe Text)
+    -- ^ named validator branch, when the compiled trace exposes
+    -- one; Nothing states explicitly that none is available (never
+    -- infer a branch name from the intended property)
+    , refusalLimit :: !(Maybe Text)
+    -- ^ explicit attribution limit when no branch is available
     }
     deriving stock (Show, Eq)
 
@@ -90,12 +109,20 @@ instance FromJSON RefusalInfo where
         RefusalInfo
             <$> o .: "script"
             <*> o .: "reason"
+            <*> o .: "phase"
+            <*> o .: "hashes"
+            <*> o .:? "branch"
+            <*> o .:? "limit"
 
 instance ToJSON RefusalInfo where
     toJSON r =
         object
             [ "script" .= refusalScript r
             , "reason" .= refusalReason r
+            , "phase" .= refusalPhase r
+            , "hashes" .= refusalHashes r
+            , "branch" .= refusalBranch r
+            , "limit" .= refusalLimit r
             ]
 
 -- | How a completed row stands against the behavioral models. The
@@ -121,6 +148,12 @@ data Verdict
       -- never read as a pass and never as conformance credit (A-001:
       -- CG13 is resolved-by-ruling, not a fourth unresolved hold)
       ResolvedByRuling
+    | -- | the row executed its available legs but named constructors
+      -- stay unexercised, enumerated in 'receiptPartial' (E18 §3:
+      -- explicit named residual, never green). A partial row is not
+      -- fulfilled conformance: the session ends partial and the
+      -- inventory overlay renders it partial, never executed.
+      Partial
     deriving stock (Show, Eq, Enum, Bounded)
 
 instance FromJSON Verdict where
@@ -129,6 +162,7 @@ instance FromJSON Verdict where
         "held-q002" -> pure HeldQ002
         "diverges-from-lean" -> pure DivergesFromLean
         "resolved-by-ruling" -> pure ResolvedByRuling
+        "partial" -> pure Partial
         _ -> fail ("unknown receipt verdict: " <> T.unpack t)
 
 instance ToJSON Verdict where
@@ -136,6 +170,178 @@ instance ToJSON Verdict where
     toJSON HeldQ002 = toJSON ("held-q002" :: Text)
     toJSON DivergesFromLean = toJSON ("diverges-from-lean" :: Text)
     toJSON ResolvedByRuling = toJSON ("resolved-by-ruling" :: Text)
+    toJSON Partial = toJSON ("partial" :: Text)
+
+{- | Per-constructor standing inside a partial row's receipt (E18
+§3/§4, NOTE-052): every constructor the row names is accounted —
+exercised accepts with transaction evidence, named residuals with
+reason and limit, pre-existing gaps with their gap evidence. No
+general framework: the declared constructor set per row is fixed
+below and the loader requires it exactly. StandingRefused exists
+for E18's future refusal witnesses; this bounded schema admits
+none — any refused entry fails closed (NOTE-055).
+-}
+data ConstructorStanding
+    = StandingAccepted
+    | StandingRefused
+    | StandingResidual
+    | StandingGap
+    deriving stock (Show, Eq)
+
+instance FromJSON ConstructorStanding where
+    parseJSON = withText "ConstructorStanding" $ \t -> case t of
+        "accepted" -> pure StandingAccepted
+        "refused" -> pure StandingRefused
+        "residual" -> pure StandingResidual
+        "gap" -> pure StandingGap
+        _ -> fail ("unknown constructor standing: " <> T.unpack t)
+
+instance ToJSON ConstructorStanding where
+    toJSON StandingAccepted = toJSON ("accepted" :: Text)
+    toJSON StandingRefused = toJSON ("refused" :: Text)
+    toJSON StandingResidual = toJSON ("residual" :: Text)
+    toJSON StandingGap = toJSON ("gap" :: Text)
+
+data ConstructorEvidence = ConstructorEvidence
+    { ceConstructor :: !Text
+    , ceIndex :: !Integer
+    , ceStanding :: !ConstructorStanding
+    , ceEvidence :: !Text
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON ConstructorEvidence where
+    parseJSON = withObject "ConstructorEvidence" $ \o ->
+        ConstructorEvidence
+            <$> o .: "constructor"
+            <*> o .: "index"
+            <*> o .: "standing"
+            <*> o .: "evidence"
+
+instance ToJSON ConstructorEvidence where
+    toJSON c =
+        object
+            [ "constructor" .= ceConstructor c
+            , "index" .= ceIndex c
+            , "standing" .= ceStanding c
+            , "evidence" .= ceEvidence c
+            ]
+
+data PartialInfo = PartialInfo
+    { partialConstructors :: ![ConstructorEvidence]
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON PartialInfo where
+    parseJSON = withObject "PartialInfo" $ \o ->
+        PartialInfo <$> o .: "constructors"
+
+instance ToJSON PartialInfo where
+    toJSON p =
+        object ["constructors" .= partialConstructors p]
+
+{- | The complete declared constructor set per partial-capable row
+(constructor name, wire index). The loader requires EVERY receipt
+for these rows to carry exactly this accounting: a receipt written
+before the schema has no accounting and resolves unknown or
+incomplete — never covered. Silence must not mean success.
+Per-constructor data determines full/partial truth, not the
+caller's verdict: green requires every entry accepted-or-refused;
+any residual or gap forces partial.
+-}
+declaredConstructors :: Text -> Maybe [(Text, Integer)]
+declaredConstructors "CS03" =
+    Just
+        [ ("Contribute", 1)
+        , ("Modify", 2)
+        , ("Retract", 3)
+        , ("End", 0)
+        , ("Sweep", 4)
+        ]
+declaredConstructors "CS05" =
+    Just
+        [ ("Update", 0)
+        , ("Rejected", 1)
+        , ("Minting", 0)
+        , ("Burning", 2)
+        , ("Migrating", 1)
+        ]
+declaredConstructors _ = Nothing
+
+{- | Off-chain identity-derivation evidence (CA04, E18 venue): the
+deployed address derived through the PRODUCTION path against the
+ACTUAL observed chain address, per validator by declared arity.
+This is explicitly NOT phase-2 ledger evidence — the venue string
+is fixed and loader-enforced so no later reader can mistake it.
+-}
+data DerivationOutcome
+    = DerivMatch
+    | DerivDistinct
+    | DerivRefused
+    deriving stock (Show, Eq, Ord)
+
+instance FromJSON DerivationOutcome where
+    parseJSON = withText "DerivationOutcome" $ \t -> case t of
+        "match" -> pure DerivMatch
+        "distinct" -> pure DerivDistinct
+        "refused" -> pure DerivRefused
+        _ -> fail ("unknown derivation outcome: " <> T.unpack t)
+
+instance ToJSON DerivationOutcome where
+    toJSON DerivMatch = toJSON ("match" :: Text)
+    toJSON DerivDistinct = toJSON ("distinct" :: Text)
+    toJSON DerivRefused = toJSON ("refused" :: Text)
+
+data DerivationEvidence = DerivationEvidence
+    { deValidator :: !Text
+    -- ^ e.g. state.state / request.request
+    , deArity :: !Integer
+    -- ^ declared parameter count (0 / 2)
+    , deComputed :: !Text
+    -- ^ address derived through the production path
+    , deReference :: !Text
+    -- ^ comparison side: the observed chain address for match and
+    -- refused outcomes; the UNAPPLIED address for distinct outcomes
+    -- (request arity 2) — labelled by the outcome, never conflated.
+    , deReferenceSource :: !Text
+    -- ^ provenance of the reference side: chain-observed with the
+    -- UTxO outref (match/refused outcomes) or pinned-unapplied
+    -- (distinct outcomes). Loader-enforced per outcome.
+    , deOutcome :: !DerivationOutcome
+    , deVenue :: !Text
+    -- ^ always derivationVenue (loader-enforced)
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON DerivationEvidence where
+    parseJSON = withObject "DerivationEvidence" $ \o ->
+        DerivationEvidence
+            <$> o .: "validator"
+            <*> o .: "arity"
+            <*> o .: "computed"
+            <*> o .: "reference"
+            <*> o .:? "referenceSource" .!= ""
+            <*> o .: "outcome"
+            <*> o .: "venue"
+
+instance ToJSON DerivationEvidence where
+    toJSON d =
+        object
+            [ "validator" .= deValidator d
+            , "arity" .= deArity d
+            , "computed" .= deComputed d
+            , "reference" .= deReference d
+            , "referenceSource" .= deReferenceSource d
+            , "outcome" .= deOutcome d
+            , "venue" .= deVenue d
+            ]
+
+{- | The fixed venue string for derivation evidence. The loader
+rejects any other venue: an identity check must not be readable
+as ledger evidence.
+-}
+derivationVenue :: Text
+derivationVenue = "off-chain-identity (not phase-2)"
 
 {- | Evidence that a row executed. Accepted rows name the chain's
 transaction ids and carry measurements; refused rows carry the
@@ -163,6 +369,12 @@ data Receipt = Receipt
     , receiptVenue :: !Text
     , receiptRejected :: !(Maybe Text)
     , receiptDirty :: !Bool
+    , receiptPartial :: !(Maybe PartialInfo)
+    -- ^ per-constructor accounting for partial rows (Nothing for
+    -- every complete row; JSON-compatible: absent on old receipts).
+    , receiptDerivation :: !(Maybe [DerivationEvidence])
+    -- ^ off-chain identity-derivation evidence (CA04 only; Nothing
+    -- elsewhere; JSON-compatible).
     }
     deriving stock (Show, Eq)
 
@@ -183,6 +395,8 @@ instance FromJSON Receipt where
             <*> o .: "venue"
             <*> o .:? "rejected"
             <*> o .: "dirty"
+            <*> o .:? "partial"
+            <*> o .:? "derivation"
 
 instance ToJSON Receipt where
     toJSON r =
@@ -201,6 +415,8 @@ instance ToJSON Receipt where
             , "node" .= receiptNode r
             , "blueprint" .= receiptBlueprint r
             , "venue" .= receiptVenue r
+            , "partial" .= receiptPartial r
+            , "derivation" .= receiptDerivation r
             ]
 
 {- | Write one @receipt-<ROW>.json@ under the run's output directory.
@@ -240,10 +456,51 @@ checkReceiptSize r
                 <> " limit"
             )
 
+{- | The derivation decision (NOTE-067): compare the produced
+address against the reference and return both. Pure so the
+wiring is unit-testable and mutation-provable: replacing the
+comparison with True must make an observed-negative fail.
+-}
+derivationMatches :: (Eq a) => a -> a -> (a, Bool)
+derivationMatches actual expected = (actual, actual == expected)
+
+{- | Reference provenance labelling (NOTE-086): match and refused
+outcomes must cite chain observation (with outref); distinct
+outcomes must cite pinned-unapplied blueprint identity.
+-}
+mislabelled :: DerivationEvidence -> Bool
+mislabelled d = case deOutcome d of
+    DerivMatch -> not (chainObservedWithOutref (deReferenceSource d))
+    DerivRefused -> not (chainObservedWithOutref (deReferenceSource d))
+    DerivDistinct -> deReferenceSource d /= "pinned-unapplied"
+
+-- | chain-observed with a nonempty actual outref suffix (NOTE-089:
+-- bare chain-observed with no identity proves no observation).
+chainObservedWithOutref :: Text -> Bool
+chainObservedWithOutref t = case T.stripPrefix "chain-observed " t of
+    Just rest -> not (T.null (T.strip rest))
+    Nothing -> False
+
+{- | CA04 completeness: exactly the state match, the request
+distinct and the corrupted refusal — a missing negative is an
+incomplete receipt, never a pass.
+-}
+completeCA04 :: [DerivationEvidence] -> Bool
+completeCA04 ds =
+    sort [(deValidator d, deOutcome d) | d <- ds]
+        == sort
+            [ ("request.request", DerivDistinct)
+            , ("state.state", DerivMatch)
+            , ("state.state", DerivRefused)
+            ]
+
 {- | Load every @receipt-*.json@ in a directory. A malformed receipt,
 an accepted row with no transactions or measurements, a refused row
-with no attribution, or two receipts for one row is an error naming
-the file: evidence that does not parse is not evidence.
+with no attribution, a partial verdict without its constructor
+accounting, a success verdict carrying partial constructors, or
+two receipts for one row is an error naming the file: evidence
+that does not parse is not evidence, and a guard that cannot fail
+is not a guard.
 -}
 loadReceipts :: FilePath -> IO (Either String [Receipt])
 loadReceipts dir = do
@@ -270,20 +527,139 @@ loadReceipts dir = do
         pure $ case eitherDecode content of
             Left err ->
                 Left (path <> " does not parse: " <> err)
-            Right r -> checkOne path r
+            Right r -> checkOne path r >>= checkPartial path >>= checkDerivation path
+    checkDerivation path r = case receiptDerivation r of
+        Nothing ->
+            if receiptRow r == "CA04"
+                then
+                    Left
+                        ( path
+                            <> ": CA04 receipt names no derivation evidence — unknown or incomplete, never covered"
+                        )
+                else Right r
+        Just ds
+            | receiptRow r /= "CA04" ->
+                Left
+                    ( path
+                        <> ": only CA04 carries derivation evidence"
+                    )
+            | not (completeCA04 ds) ->
+                Left
+                    ( path
+                        <> ": CA04 derivation evidence is incomplete — want state match, request distinct and corrupted refused"
+                    )
+            | null ds ->
+                Left (path <> ": derivation evidence is empty")
+            | any (T.null . deValidator) ds
+            || any (T.null . deComputed) ds
+            || any (T.null . deReference) ds ->
+                Left (path <> ": derivation evidence names empty validator or address")
+            | any ((/= derivationVenue) . deVenue) ds ->
+                Left
+                    ( path
+                        <> ": derivation venue must be "
+                        <> T.unpack derivationVenue
+                    )
+            | any (T.null . deReferenceSource) ds ->
+                Left (path <> ": derivation evidence names no reference provenance")
+            | any mislabelled ds ->
+                Left
+                    ( path
+                        <> ": derivation reference provenance mislabelled (match/refused want chain-observed plus outref, distinct wants pinned-unapplied)"
+                    )
+            | otherwise -> Right r
+    checkPartial path r = case (receiptVerdict r, receiptPartial r) of
+        (_, Nothing) -> case declaredConstructors (receiptRow r) of
+            Nothing -> Right r
+            Just _ ->
+                Left
+                    ( path
+                        <> ": row "
+                        <> T.unpack (receiptRow r)
+                        <> " names no constructor accounting — unknown or incomplete, never covered"
+                    )
+        (Partial, Just pinfo) -> checkPartialConstructors path r pinfo
+        (v, Just _) ->
+            Left
+                ( path
+                    <> ": receipt claims "
+                    <> show v
+                    <> " while carrying partial constructors"
+                )
+    checkPartialConstructors path r pinfo =
+        case declaredConstructors (receiptRow r) of
+            Nothing ->
+                Left
+                    ( path
+                        <> ": partial row "
+                        <> T.unpack (receiptRow r)
+                        <> " declares no constructor set"
+                    )
+            Just declared
+                | sortPairs have /= sortPairs declared ->
+                    Left
+                        ( path
+                            <> ": partial row "
+                            <> T.unpack (receiptRow r)
+                            <> " accounts "
+                            <> show have
+                            <> ", declared "
+                            <> show declared
+                        )
+                | any refusedStanding ces ->
+                    Left
+                        ( path
+                            <> ": partial row "
+                            <> T.unpack (receiptRow r)
+                            <> " carries a refused constructor witness — this bounded schema admits none (NOTE-055 fail-closed; no production row exercises a refusal witness)"
+                        )
+                | null residuals ->
+                    Left
+                        ( path
+                            <> ": partial row "
+                            <> T.unpack (receiptRow r)
+                            <> " verdict partial lists no residual or gap constructor"
+                        )
+                | not (all boundAccepts accepts) ->
+                    Left
+                        ( path
+                            <> ": partial row "
+                            <> T.unpack (receiptRow r)
+                            <> " names accepted-constructor evidence outside its transactions"
+                        )
+                | any (T.null . ceEvidence) ces ->
+                    Left
+                        ( path
+                            <> ": partial row "
+                            <> T.unpack (receiptRow r)
+                            <> " carries empty constructor evidence"
+                        )
+                | otherwise -> Right r
+      where
+        ces = partialConstructors pinfo
+        have = [(ceConstructor c, ceIndex c) | c <- ces]
+        sortPairs = sort
+        residuals =
+            [ c
+            | c <- ces
+            , ceStanding c == StandingResidual || ceStanding c == StandingGap
+            ]
+        refusedStanding c = ceStanding c == StandingRefused
+        accepts = [c | c <- ces, ceStanding c == StandingAccepted]
+        boundAccepts c = ceEvidence c `elem` receiptTransactions r
     checkOne path r = case receiptOutcome r of
         Accepted -> checkAccepted path r
         Refused
             | null (receiptTransactions r)
-            , Just _ <- receiptRefusal r
+            , Just info <- receiptRefusal r
             , receiptVenue r == "node-submit"
             , Just _ <- receiptRejected r ->
-                Right r
+                checkRefused path r info
             | null (receiptTransactions r)
-            , Just _ <- receiptRefusal r
+            , Just info <- receiptRefusal r
             , receiptVenue r == "ledger-eval"
             , Nothing <- receiptRejected r ->
-                Right r
+                checkRefused path r info
             | otherwise ->
                 Left
                     ( path
@@ -292,7 +668,41 @@ loadReceipts dir = do
                         <> " must carry a refusal, no transactions, and "
                         <> "a rejected id exactly for node-submit"
                     )
+    -- Structural refusal fields (NOTE-071): observed phase,
+    -- extracted hashes, and an explicit branch-or-limit. Legacy
+    -- absence cannot claim the new attributed observation.
+    checkRefused path r info = checkPhase
+      where
+        rowName = T.unpack (receiptRow r)
+        checkPhase =
+            if refusalPhase info /= "phase-2"
+                then Left (path <> ": refused row " <> rowName <> " phase is not phase-2")
+                else checkHashes
+        checkHashes =
+            if null (refusalHashes info)
+                then Left (path <> ": refused row " <> rowName <> " names no extracted failure hashes")
+                else
+                    if any T.null (refusalHashes info)
+                        then Left (path <> ": refused row " <> rowName <> " names an empty failure hash")
+                        else checkBranch
+        checkBranch =
+            if refusalBranch info == Nothing && refusalLimit info == Nothing
+                then Left (path <> ": refused row " <> rowName <> " states neither a named branch nor its limit")
+                else
+                    if any emptyJust [refusalBranch info, refusalLimit info]
+                        then Left (path <> ": refused row " <> rowName <> " carries an empty branch or limit")
+                        else Right r
+        emptyJust (Just t) = T.null t
+        emptyJust Nothing = False
     checkAccepted p x
+        | receiptRow x == "CA04", receiptVenue x == derivationVenue =
+            checkCA04Accepted p x
+        | receiptRow x == "CA04" =
+            Left
+                ( p
+                    <> ": CA04 venue must be "
+                    <> T.unpack derivationVenue
+                )
         | receiptVenue x == "node-submit" = checkNodeAccepted p x
         | receiptVenue x == "blueprint-check", receiptRow x == "CS01" =
             checkLocalAccepted p x
@@ -307,6 +717,28 @@ loadReceipts dir = do
                     <> T.unpack (receiptVenue x)
                     <> ", want node-submit or its own local venue"
                 )
+    checkCA04Accepted p x
+        | null (receiptTransactions x) =
+            Left
+                ( p
+                    <> ": CA04 row names no provenance boot transaction"
+                )
+        | any isNothing [receiptMem x, receiptCpu x, receiptTxSize x] =
+            Left
+                ( p
+                    <> ": CA04 row misses measurements"
+                )
+        | isJust (receiptRejected x) =
+            Left
+                ( p
+                    <> ": CA04 row must not name a rejected transaction"
+                )
+        | isJust (receiptRefusal x) =
+            Left
+                ( p
+                    <> ": CA04 row must not carry a refusal"
+                )
+        | otherwise = Right x
     checkNodeAccepted p x
         | null (receiptTransactions x) =
             Left

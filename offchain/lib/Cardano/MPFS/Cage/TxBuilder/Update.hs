@@ -31,11 +31,7 @@ import Data.Time.Clock.POSIX (
 import Data.Void (Void)
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Ledger.Address (
-    AccountAddress (..),
-    AccountId (..),
-    Addr,
- )
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
 import Cardano.Ledger.Api.Tx (
     bodyTxL,
@@ -50,25 +46,12 @@ import Cardano.Ledger.Api.Tx.Out (
     mkBasicTxOut,
     valueTxOutL,
  )
-import Cardano.Ledger.BaseTypes (
-    Inject (..),
- )
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Credential (
-    Credential (ScriptHashObj),
- )
-import Cardano.Ledger.Keys (
-    KeyHash,
-    KeyRole (..),
- )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
- )
 
 import Cardano.MPFS.Cage.Config (
     CageConfig (..),
@@ -90,6 +73,7 @@ import Cardano.MPFS.Cage.Trie (
 import Cardano.MPFS.Cage.TxBuilder.Internal
 import Cardano.MPFS.Cage.Types (
     CageDatum (..),
+    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -97,6 +81,7 @@ import Cardano.MPFS.Cage.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
+    stateConsumerPinBytes,
  )
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
@@ -119,7 +104,7 @@ updateTokenImpl cfg prov tm tid addr = do
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         computeProofs tm tid reqUtxos
-    let (oldState, newStateOut, script, ownerKh) =
+    let (oldState, newStateOut, script) =
             prepareState
                 cfg
                 stateOut
@@ -140,7 +125,6 @@ updateTokenImpl cfg prov tm tid addr = do
                 newStateOut
                 script
                 requestScript
-                ownerKh
                 proofs
                 upperSlot
     result <-
@@ -225,11 +209,7 @@ prepareState ::
     CageConfig ->
     TxOut ConwayEra ->
     Root ->
-    ( OnChainTokenState
-    , TxOut ConwayEra
-    , Script ConwayEra
-    , KeyHash Guard
-    )
+    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareState cfg stateOut newRoot =
     let scriptAddr =
             cageAddrFromCfg cfg (network cfg)
@@ -240,10 +220,6 @@ prepareState cfg stateOut newRoot =
                     error
                         "updateToken: invalid \
                         \state datum"
-        OnChainTokenState
-            { stateOwner =
-                BuiltinByteString ownerBs
-            } = oldState
         newStateDatum =
             StateDatum
                 oldState
@@ -259,8 +235,7 @@ prepareState cfg stateOut newRoot =
                     .~ mkInlineDatum
                         (toPlcData newStateDatum)
         script = mkCageScript cfg
-        ownerKh = addrWitnessKeyHash ownerBs
-     in (oldState, newStateOut, script, ownerKh)
+     in (oldState, newStateOut, script)
 
 -- | Compute the validity upper slot.
 computeUpperSlot ::
@@ -334,31 +309,23 @@ buildProgram ::
     TxOut ConwayEra ->
     Script ConwayEra ->
     Script ConwayEra ->
-    KeyHash Guard ->
     [[ProofStep]] ->
     SlotNo ->
     Tx.TxBuild NoCtx Void ()
 buildProgram
-    cfg
+    _cfg
     _pp
     stateIn
     _stateOut
     reqUtxos
     feeUtxo
-    oldState
+    _oldState
     newStateOut
     script
     requestScript
-    ownerKh
     proofs
     upperSlot = do
         let stateRef = txInToRef stateIn
-            OnChainTokenState
-                { stateMaxFee = tipAmount
-                } = oldState
-            nReqs =
-                fromIntegral (length reqUtxos) ::
-                    Integer
         let actions = map Update proofs
         _ <- Tx.spendScript stateIn (Modify actions)
         mapM_
@@ -369,58 +336,29 @@ buildProgram
             )
             reqUtxos
         _ <- Tx.output newStateOut
-        Coin fee <- Tx.peek $ \tx ->
+        Coin _fee <- Tx.peek $ \tx ->
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
-        let perReqFee = fee `div` nReqs
-            remainder = fee - perReqFee * nReqs
-        mapM_
-            ( \(i, (_, reqOut)) -> do
-                let Coin reqVal =
-                        reqOut ^. coinTxOutL
-                    extra =
-                        if i == (0 :: Int)
-                            then remainder
-                            else 0
-                    rawRefund =
-                        Coin
-                            ( reqVal
-                                - tipAmount
-                                - perReqFee
-                                - extra
-                            )
-                    refundAddr =
-                        addrFromKeyHashBytes
-                            (network cfg)
-                            ( extractOwnerBytes
-                                reqOut
-                            )
-                Tx.output $
-                    mkBasicTxOut
-                        refundAddr
-                        (inject rawRefund)
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network _cfg)
+                (stateConsumerPinBytes _oldState)
             )
-            (zip [0 ..] reqUtxos)
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript _cfg)
         Tx.attachScript script
         Tx.attachScript requestScript
-        Tx.requireSignature ownerKh
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
-        case cfgStakeScript cfg of
-            Nothing -> pure ()
-            Just (stakeBytes, stakeHash) -> do
-                let stakeScript =
-                        scriptFromBytes
-                            "updateToken.stakeScript"
-                            stakeBytes
-                    rewardAcct =
-                        AccountAddress
-                            (network cfg)
-                            (AccountId (ScriptHashObj stakeHash))
-                Tx.withdrawScript rewardAcct (Coin 0) (0 :: Integer)
-                Tx.attachScript stakeScript
 
 -- | Process a single request.
 processRequest ::

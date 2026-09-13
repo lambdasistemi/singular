@@ -1,5 +1,10 @@
 # Consumer conformance (epic 18, issues #63, #69 and #68)
 
+As a Singular integrator, I can replay the current conformance interface,
+distinguish partial evidence from completed coverage, and trace older
+observations to the candidate that produced them. The connected naming
+release journey is documented separately in [recovery and permanent retirement](recovery-retirement.md).
+
 ## The contract and its binding
 
 The rows answer to the consumer contract source-bound to
@@ -38,7 +43,62 @@ coverage plan and the parser rejects the string. A row prints as
 executed only when a run receipt for it exists and matches the
 current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
 
-## What this slice executes
+## Current ownerless integration
+
+The released interface follows the ownerless six-field state contract.
+The historical reports below retain their original transaction identities,
+measurements and limitations; they are not current execution claims.
+Coverage requires fresh receipts bound to the source and blueprint being
+replayed. A build or a green check of expected debt grants no coverage.
+
+| Surface | Current contract and remaining limit |
+|---|---|
+| State codec, CS01/CS02/CS08 | The six fields are root, maxFee, processTime, retractTime, repPolicy and consumerPin. CS08 exercises Base and AltRepPolicy with the real consumer pin. Historical owner/stake_script receipts do not establish this codec. |
+| Blueprint encodings, CS01 | Fourteen live types: thirteen encoder/decoder pairs plus the Hook encoder. Hook has no Haskell FromData instance; no Hook decoder round trip is claimed. |
+| Parameters, CS06 | State, consumer and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The former state allowlist is absent. |
+| Address derivation, CA04 | State uses the production derivation compared with the actual chain address. The same comparison rejects an erroneous extra application with every other input fixed. Its receipt records addresses, arity, decisions and the off-chain identity venue; it is not a phase-2 rejection. Request retains applied-versus-unapplied address discrimination. |
+| Generic observations, CG11/CG12/CG19 | All three require observe-and-report and remain held-q002. Current refusals need structural phase/script attribution and an accepting control; a missing named failure branch remains an explicit limit. An observation does not fulfill the consumer requirement. |
+| Superseded authority rows | CG13 and CG20 join the superseded owner-role claims. Their identities and historical evidence remain in the inventory alongside CG16/CG17. No row is removed or credited by this disposition. |
+| Spending constructors, CS03 | Contribute 1, Modify 2 and Retract 3 have accepting routes. End 0 and Sweep 4 remain explicit residuals inside the partial receipt. Every constructor still owes an accepting witness or an action-attributed refusal with a structured index discriminator. |
+| Request and mint constructors, CS05 | Update 0, Rejected 1 and Minting 0 retain accepting routes. Burning 2 and Migrating 1 remain residuals inside the partial receipt. Migrating currently refuses unconditionally; the missing attributed witness and index discriminator remain owed. The old allowlist explanation is historical. |
+| Fork correspondence, CS07 | E17's product repair and its released journey do not close this conformance row. Issue #81 stays open under E18 for fresh correspondence evidence. |
+
+Partial is a distinct state in receipts and inventory output. A legacy
+CS03/CS05 receipt without constructor accounting is incomplete, never
+covered. Unstructured refusal text cannot earn constructor credit. A
+receipt claiming success with a residual, or omitting a constructor, is
+rejected. The full constructor obligation remains above the partial
+observation.
+
+The generic session registers the actual consumer script reward account
+before any Hook withdrawal. Registration is setup evidence; a ledger
+setup refusal cannot establish a validator property. The same real Hook
+withdrawal and redeemer remain in the fold builders.
+
+```mermaid
+flowchart LR
+    A[Current source and blueprint] -->|execute with controls| B[Bound receipts]
+    B -->|complete witnesses| C[Executed row evidence]
+    B -->|named missing constructors| D[Partial]
+    B -->|unmet consumer requirement| E[Held]
+    D -->|retains debt| F[Strict completion incomplete]
+    E -->|retains debt| F
+```
+
+The protected coverage population stays **196**, with both required
+implementation layers. Strict completion remains incomplete at
+196 mapping issues, 196 layer issues, zero findings, 83 unclassified
+obligations and zero stale mappings. The bounded E17 release does not
+waive this E18 debt or the separate #87 Blaster work.
+
+## Historical execution reports
+
+**Historical scope:** every report from here through “Historical limits”
+describes the earlier source revisions named in its provenance. Present-tense
+wording in those retained reports belongs to those revisions. The current
+contract above supersedes their owner fields, state arity, accepting-path
+expectations and pending-E17 descriptions. Do not use their measurements or
+receipts as evidence for the current candidate.
 
 Devnet sessions run in order, each on an isolated node with its own
 published world: the generic registry rows first — the four issue-#63
@@ -349,7 +409,7 @@ is claimed yet. Refusal reasons keep every failing script hash in ledger
 order — a tampered fold can fail two scripts, and trimming volume
 never trims identities — under the same run-enforced 16KB bound.
 
-## What this slice does not establish
+## Historical limits
 
 - **Bound, not re-executed**: CG01, CG06, CG08 and CG18 rest on
   epic 16's `CageSpec` runs, cited per row. CG16 sits there too
@@ -411,67 +471,62 @@ never trims identities — under the same run-enforced 16KB bound.
   say nothing about batch limits (CL02) or any other environment
   (CL03 records the observed one below).
 
-## Commands
+## Current replay commands
+
+Run from the repository or extracted source root with Nix available.
+Use a fresh directory outside the tracked tree for each family. The
+generic session runs ten rows and may also emit its CL01 measurement
+receipt; the serialization session runs five devnet rows and two local
+checks. Superseded rows remain listed and are not runtime commands.
 
 ```sh
-# the inventory with each row's state
 nix run ./conformance#conformance -- list
-# the generic rows, with measurements, controls and receipts
-# (CG14/CG15 are not run: superseded inherited-hook expectations with
-# could-not-execute history — no work waits behind them)
 mpfs="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG13 CG17 CG19 CG20 --receipts-dir ./conformance-receipts
-# the canonical identity rows, as their own session
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir ./conformance-receipts
-# the serialization rows: local checks need no node, the rest run devnet
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir ./conformance-receipts
-# rows print executed only against matching receipts
-nix run ./conformance#conformance -- list --receipts ./conformance-receipts
+receipts="$(mktemp -d /tmp/singular-conformance.XXXXXX)"
+
+# Expected exit 1: exact held set CG11, CG12, CG19; no failed rows.
+MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$receipts/generic"
+
+# Expected exit 0 after all five identity rows and their controls.
+MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$receipts/identity"
+
+# Expected exit 1: CS03 and CS05 are partial; the other five agree.
+MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir "$receipts/serialization"
+
+nix run ./conformance#conformance -- list --receipts "$receipts/generic"
+nix run ./conformance#conformance -- list --receipts "$receipts/identity"
+nix run ./conformance#conformance -- list --receipts "$receipts/serialization"
 ```
 
-CA, CG and CS rows run as separate sessions, one devnet each (CS01
-and CS06 run local inside the CS invocation); a mixed CA/CG request
-is refused. The generic session ends **non-zero by design** while
-CG11, CG12 or CG19 are held: it prints the held and failing rows
-and refuses to report them as passes — that exit is the hold's
-visibility, not a crashed run. In CI the step asserts the expected
-debt over the session's actual results (exact receipt set, exact
-verdict per row, held set exactly CG11 CG12 CG19, nothing failing
-against the candidate) — and a green step is a green regression
-check, **not** a fulfilled consumer promise: R5_plugin_pinned (plugin
-identity, not a registry owner), R8_empty_fold_refused and the
-operation-specific fold value routing stay unmet,
-and strict completion and release stay RED on that debt. Each family ships from a fresh receipts directory —
-receipts from one invocation would otherwise mark the next run dirty.
-Armed controls (each must exit non-zero; all do):
+These are expected result contracts, not claims that an arbitrary
+nonzero exit is acceptable. Check the terminal row counts, exact receipt
+IDs, source/blueprint binding, per-row verdicts and named residuals. A
+crash, missing receipt or failed control fails the replay. The CI workflow
+checks those details against the actual output; partial and held rows
+remain debt even when that regression check is green.
+
+Armed controls use a separate fresh receipt directory. Their nonzero
+exit must name the intended failed assertion: the wrong refusal reason,
+forged value or datum, weak authenticator, corrupted state derivation
+(legacy flag `unapplied-address`), wrong constructor index, wrong
+parameter count or deliberately missing witness. The normal partial
+exit alone does not prove an armed control fired. See
+`conformance.yml` for the executable session and receipt checks.
+
+The Fork oracle and its probes remain available without a node or
+blueprint; their output is local proof evidence, not CS07 completion:
 
 ```sh
-CONFORMANCE_CONTROL=wrong-reason ... -- run CG02 CG03 CG04 CG05    # CG05 reason mismatch
-CONFORMANCE_CONTROL=false-claim ... -- run CG02 CG03 CG04 CG05     # forged value fails the chain check
-CONFORMANCE_CONTROL=false-claim ... -- run CA01 ... CA05           # fabricated derivation bound to CA01
-CONFORMANCE_CONTROL=naive-authenticator ... -- run CA01 ... CA05   # the weak authenticator must reject the rival; it cannot
-CONFORMANCE_CONTROL=unapplied-address ... -- run CA01 ... CA05   # the unapplied layer's address must pass; it cannot
-CONFORMANCE_CONTROL=wrong-index ... -- run CS01                   # index 99 demanded for End
-CONFORMANCE_CONTROL=wrong-params ... -- run CS06                  # two params demanded for state
-CONFORMANCE_CONTROL=false-datum ... -- run CS02 CS08              # corrupted bytes demanded to match
-CONFORMANCE_CONTROL=missing-witness ... -- run CS03 CS05          # a skipped witness demanded present
-CONFORMANCE_CONTROL=wrong-reason ... -- run CS04                  # impossible marker demanded in the reason
+nix run ./conformance#conformance -- find-fork-keys
+nix run ./conformance#conformance -- check-fork-exclusion
+nix run ./conformance#conformance -- show-all-proofs
 ```
 
-The offline Fork oracle and its probes need no node and no blueprint:
+The runner gives each node a unique temporary directory. Receipts are
+written under the selected output directory and are never inherited as
+current merely because an older run succeeded.
 
-```sh
-nix run ./conformance#conformance -- find-fork-keys     # ground keys plus pure-trie proof shapes
-nix run ./conformance#conformance -- check-fork-exclusion # cage/mirror roots plus mts-core exclusion verdict
-nix run ./conformance#conformance -- show-all-proofs     # present-key proofs over the seven-key set
-```
-
-The runner sets its own unique `TMPDIR` before starting a node and
-never touches the default path, so concurrent devnet lanes on one
-host keep their databases. Receipts live under the run's output
-directory, never in the tracked tree.
-
-## Observed environment
+## Historical observed environment
 
 cardano-node 10.7.0, GHC 9.12.3, Aiken compiler v1.1.21
 (blueprint `hal/mpf 0.0.0`), unapplied state script pinned

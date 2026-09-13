@@ -1,17 +1,73 @@
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{all, filter, find, has}
-use aiken/crypto.{VerificationKeyHash, blake2b_256}
+use aiken/crypto.{VerificationKeyHash, blake2b_224, blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
-use naming.{NamingRecord, RetirementQuorum}
+use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
+
+/// The expected representative policy from the registry state (issue
+/// #77, E-001): genesis sets it, `validModify` preserves it. Read from the
+/// spent state when present, else from the reference (NOTE-014 item A1) —
+/// retires authenticate without spending.
+fn expected_rep_policy(tx: Transaction) -> PolicyId {
+  expect InlineDatum(datum) = find_registry_state(tx).output.datum
+  naming.mpfs_state_policy(datum)
+}
+
+/// The registry state input, NFT-authenticated (issue #77, registry
+/// association, NOTE-007; reference path NOTE-014 item A1): the spent state
+/// if present, else the referenced state. Spent is searched first so
+/// connected folds behave exactly as before; retires read the reference
+/// without spending (no empty `Modify`, no filler request). Both lists use
+/// the identical `is_registry_state` predicate — one authentication shape
+/// for both paths. The ONE place that decides which UTxO is the registry.
+fn find_registry_state(tx: Transaction) -> Input {
+  when find(tx.inputs, is_registry_state) is {
+    Some(spent) -> spent
+    None -> {
+      expect Some(referenced) = find(tx.reference_inputs, is_registry_state)
+      referenced
+    }
+  }
+}
+
+fn is_registry_state(input: Input) -> Bool {
+  when input.output.address.payment_credential is {
+    address.Script(hash) ->
+      hash == mpfs_state_hash && has_single_cage_token(input.output.value)
+    _ -> False
+  }
+}
+
+/// Exactly one cage token under the state policy (NOTE-009 §3): a single
+/// asset NAME is not enough — its quantity must be exactly 1, checked here
+/// where the authentication happens, not incidentally elsewhere. A state
+/// UTxO carrying two tokens (or zero) under this policy is not the registry
+/// and refuses at this boundary.
+fn has_single_cage_token(value: Value) -> Bool {
+  let policy_tokens = tokens(value, mpfs_state_hash)
+  when keys(policy_tokens) is {
+    [name] -> get(policy_tokens, name) == Some(1)
+    _ -> False
+  }
+}
+
+/// The supplied state's own authenticating token name (NOTE-007): the cage
+/// token the NFT check above authenticated. Read from the same input the
+/// policy came from — never from a second lookup that could disagree.
+fn expected_rep_token(tx: Transaction) -> ByteArray {
+  let policy_tokens = tokens(find_registry_state(tx).output.value, mpfs_state_hash)
+  expect [token_name] = keys(policy_tokens)
+  token_name
+}
 
 /// The retirement custody script hash (issue #66): the only address a
 /// `Retire` may place the representative at. Regenerated from the
 /// custody validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"0a92d14aa73db354d7468f0f09352cfedb6169adf32ea74e82666954"
+  #"c2337e05bb6a705adeb8bb8fb20155309a85d7c4cda174f9e8afa2d6"
 
 /// The naming application validator (issue #52; mint burn half added
 /// by #56's ledger run).
@@ -47,8 +103,13 @@ pub type ApplicationRedeemer {
   /// representative names are carried for the representative policy to
   /// bind.
   Fold { representatives: List<ByteArray> }
-  /// Retire a record: the datum must not continue.
-  Retire { representatives: List<ByteArray> }
+  /// Retire a record: the datum must not continue. Carries the creation
+  /// control key hash (28 bytes, NOTE-010/011): the immutable key material
+  /// the representative name commits to. At retire time the record's
+  /// control may have rotated via recovery, so the validator recomputes
+  /// over this supplied value and checks it against the minted token
+  /// commitment — a wrong key, a wrong length, or a rival registry fails.
+  Retire { representatives: List<ByteArray>, key_hash: ByteArray }
   /// Recover control with the committed next key (`LR` rows, issue #62):
   /// reveal the committed next-control address, prove its commitment,
   /// require its payment-key signer, install it as controller with a
@@ -63,10 +124,18 @@ pub type ApplicationRedeemer {
 
 /// Redeemer of the application policy's mint purpose: mint the
 /// withdraw approval whose asset name is the refund destination it
-/// binds. The controller must sign — this is the "separate cancellation
-/// approval" the `LC03` refusal demands.
+/// binds, or (issue #77) the insert approval whose asset name is the
+/// domain-separated hash of the proposal core it binds. The controller
+/// must sign in both arms. Appended, never reordered: `InsertApproval`
+/// is index 1 and `WithdrawApproval` keeps index 0, or the merged
+/// runners' mint encodings break.
 pub type ApplicationMintRedeemer {
   WithdrawApproval { controller: VerificationKeyHash, destination: ByteArray }
+  InsertApproval {
+    controller: VerificationKeyHash,
+    control: ByteArray,
+    commitment: ByteArray,
+  }
 }
 
 validator application {
@@ -85,9 +154,10 @@ validator application {
       Maintain -> maintain(record, claim, tx)
       Cancel { presented_refund } ->
         cancel(record, presented_refund, claim, own_hash, tx)
-      Fold { representatives: _ } -> fold(record, claim, own_hash, tx)
-      Retire { representatives: _ } ->
-        retire(record, claim, own_hash, tx)
+      Fold { representatives } ->
+        fold(record, representatives, claim, own_hash, tx)
+      Retire { representatives, key_hash } ->
+        retire(record, claim, key_hash, tx)
       Recover { revealed_control, representatives, registry } ->
         recover(
           record,
@@ -106,27 +176,39 @@ validator application {
     policy_id: PolicyId,
     tx: Transaction,
   ) {
-    let WithdrawApproval { controller, destination } = redeemer
     let Transaction { extra_signatories, mint, .. } = tx
-    // The approval's asset name IS the refund destination it binds:
-    // cancellation later compares against exactly these bytes.
-    expect naming.canonical_address(destination)
     let policy_tokens = tokens(mint, policy_id)
+    // Exactly one asset moves under our policy per transaction: one
+    // approval minted or burned.
     expect [bound] = keys(policy_tokens)
-    expect bound == destination
-    when get(policy_tokens, bound) is {
-      // Minting a fresh approval: exactly one, on the controller's
-      // signature (`LC03`: insert approval alone is insufficient;
-      // cancellation needs its own).
-      Some(1) -> has(extra_signatories, controller)
-      // The burn the spend purpose itself demands at Fold and Cancel:
-      // exactly -1, and the burned approval must ride exactly one live
-      // input at our own application address — the claim the spend
-      // purpose consumes with it. The cancellation is unsigned (the
-      // approval token is the authorization; the LC rows demand no
-      // signers), so no signature is required here.
-      Some(-1) -> burn_rides_claim(policy_id, bound, tx)
-      _ -> False
+    when redeemer is {
+      WithdrawApproval { controller, destination } -> {
+        // The approval's asset name IS the refund destination it binds:
+        // cancellation later compares against exactly these bytes.
+        expect naming.canonical_address(destination)
+        expect bound == destination
+        approval_roundtrip(
+          policy_id,
+          bound,
+          get(policy_tokens, bound),
+          extra_signatories,
+          controller,
+          tx,
+        )
+      }
+      InsertApproval { controller, control, commitment } -> {
+        // The approval's asset name IS the bound proposal hash: the
+        // insert fold later recomputes it from the frozen datum.
+        expect bound == insert_approval_name(control, commitment)
+        approval_roundtrip(
+          policy_id,
+          bound,
+          get(policy_tokens, bound),
+          extra_signatories,
+          controller,
+          tx,
+        )
+      }
     }
   }
 
@@ -162,8 +244,9 @@ fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
 /// a transaction violating two conditions is refused for the one its row
 /// names. Each negative row is a single-defect mutant of the accepted one.
 ///
-/// Ledger realisation (issue #62): the record carries exactly one
-/// representative token under the application policy; the redeemer claims
+/// Ledger realisation (issues #62, #77): the record carries exactly one
+/// representative token under the representative policy, minted by the
+/// insert fold that created the record; the redeemer claims
 /// it (`representatives`) and the registry binding (`registry`); the
 /// validator refuses when the claim disagrees with what the consumed
 /// record actually carries — its address (`own_hash`) and its token —
@@ -185,9 +268,11 @@ fn recover(
   // from the spent input's address — the claim must name it (`LR10`).
   expect registry == own_hash
   // The claim must name exactly the representative the consumed record
-  // carries under the application policy (`LR09`): a single token, the
-  // single-representative shape.
-  expect [stored_rep] = keys(tokens(claim.output.value, own_hash))
+  // carries (`LR09`): a single non-ADA asset — the representative the
+  // insert fold minted under the representative policy (issue #77; the
+  // application-policy stand-in is gone) — so the
+  // single-representative shape holds whatever policy carries it.
+  let stored_rep = single_asset_name(claim.output.value)
   expect representatives == [stored_rep]
   // The reveal is a canonical payment-key address (`recovery-payment-key`:
   // no row, but the order is load-bearing for attribution).
@@ -285,20 +370,20 @@ fn cancel(
 /// and a cancelled approval cannot authorize a replay (`LC06`).
 fn fold(
   record: NamingRecord,
+  representatives: List<ByteArray>,
   claim: Input,
   own_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { mint, .. } = tx
-  // The withdraw approval rides the claim under our own policy; its
-  // asset name is the stored refund destination. No token, no fold.
-  let claim_tokens = tokens(claim.output.value, own_hash)
-  expect [stored_refund] = keys(claim_tokens)
+  // Exactly one approval rides the claim under our own policy —
+  // withdraw or insert. No token, no fold.
+  let approval = single_asset_name(claim.output.value)
   // The approval is consumed: burned exactly once, and nothing else
   // moves under our policy.
   expect [burned] = keys(tokens(mint, own_hash))
-  expect burned == stored_refund
-  expect quantity_of(mint, own_hash, stored_refund) == -1
+  expect burned == approval
+  expect quantity_of(mint, own_hash, approval) == -1
   expect [continuation] = continuation_outputs(record, claim, tx)
   expect InlineDatum(successor_datum) = continuation.datum
   expect naming.is_same_record(successor_datum, record)
@@ -308,7 +393,54 @@ fn fold(
     continuation.value,
     own_hash,
   )
-  True
+  when representatives is {
+    [] -> {
+      // The withdraw-approval fold (`LC`/`LM` rows): the consumed
+      // approval is the canonical-shaped refund binding, never an
+      // insert hash.
+      expect naming.canonical_address(approval)
+      True
+    }
+    _ -> {
+      // The insert fold (`Singular.foldOne` `.insert`): the consumed
+      // approval binds this exact datum — recomputed, never trusted
+      // from the redeemer.
+      expect approval
+        == insert_approval_name(
+          record.control_address,
+          record.next_control_commitment,
+        )
+      // `representative-identity`: the names are exactly this
+      // record's representative for this registry — control plus the
+      // supplied state's own authenticating token (NOTE-007). A copied
+      // name from another cage carries a different token hash and refuses.
+      expect representatives
+        == [
+          representative_name(
+            naming.control_hash(record),
+            mpfs_state_hash,
+            expected_rep_token(tx),
+          ),
+        ]
+      // `representative-policy` (issue #77, E-001): the moved
+      // representative's policy is the registry's own configuration — the
+      // spent state's expected policy, genesis-set and `Modify`-preserved.
+      // A foreign-policy fake carries the right name under the wrong
+      // policy and refuses here. Certified output, mint and value thirds:
+      // the fold mints exactly once under the expected policy, and the
+      // record carries each named representative exactly once under it.
+      let expected = expected_rep_policy(tx)
+      expect
+        all(representatives, fn(name) {
+          quantity_of(mint, expected, name) == 1
+        })
+      expect
+        all(representatives, fn(name) {
+          quantity_of(continuation.value, expected, name) == 1
+        })
+      True
+    }
+  }
 }
 
 /// A retire consumes the record into completion-only custody (issue
@@ -322,7 +454,7 @@ fn fold(
 fn retire(
   record: NamingRecord,
   claim: Input,
-  own_hash: ByteArray,
+  key_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
@@ -333,17 +465,35 @@ fn retire(
   expect
     controller_authorized(record, extra_signatories)
       || quorum_authorized(record, extra_signatories)
-  // Custody: the record carries a single representative under the
-  // application policy (the t62 stand-in shape); exactly its
-  // representative lands at the custody script address.
-  expect [stored_rep] = keys(tokens(claim.output.value, own_hash))
+  // Custody: the record carries a single representative (issue #77: the
+  // insert fold minted it under the representative policy); exactly
+  // that asset, under the registry's expected policy (issue #77, E-001),
+  // lands at the custody script address. `representative-policy` refuses
+  // foreign-policy fakes. The representative moves, it does not burn here
+  // (completion burns it later) — so no mint rides a retire.
+  let stored_rep = single_asset_name(claim.output.value)
+  let expected = expected_rep_policy(tx)
+  // Registry association (NOTE-007/010/011): the carried name must equal
+  // the recomputation over the SUPPLIED creation key hash and the supplied
+  // state's own authenticating token — never the possibly-rotated current
+  // control. A record from another cage (copied-policy rival included)
+  // carries a different token hash and refuses here, on the token rather
+  // than the field. Wrong key and wrong length refuse for their own reasons.
+  expect bytearray.length(key_hash) == 28
+  expect stored_rep
+    == representative_name(
+      key_hash,
+      mpfs_state_hash,
+      expected_rep_token(tx),
+    )
+  expect quantity_of(claim.output.value, expected, stored_rep) == 1
   expect
     filter(
       outputs,
       fn(output) {
         output.address.payment_credential
           == address.Script(retirement_custody_hash)
-          && quantity_of(output.value, own_hash, stored_rep) == 1
+          && quantity_of(output.value, expected, stored_rep) == 1
       },
     ) != []
   // The record does not continue anywhere in the transaction.
@@ -379,6 +529,111 @@ fn quorum_authorized(
   let signed =
     filter(members, fn(member) { has(extra_signatories, member) })
   threshold > 0 && naming.distinct_count(signed) >= threshold
+}
+
+/// The insert-approval name bound at mint and recomputed at fold:
+/// `BLAKE2b-256("singular/naming/insert-approval/v1" || 0x00 ||
+/// control address || next-control commitment)`. The shape mirrors the
+/// next-control commitment; 32 bytes, so never a canonical address and
+/// never confusable with a withdraw approval.
+fn insert_approval_name(control: ByteArray, commitment: ByteArray) -> ByteArray {
+  blake2b_256(
+    bytearray.concat(
+      bytearray.concat(
+        bytearray.concat(
+          bytearray.from_string(@"singular/naming/insert-approval/v1"),
+          #"00",
+        ),
+        control,
+      ),
+      commitment,
+    ),
+  )
+}
+
+/// The registry asset identity (NOTE-007): the FULL native asset identity
+/// of the cage token — state policy id plus cage token name — as the raw
+/// component bytes in that order (the same bytes the ledger pairs in every
+/// `Value`). Not a textual hex concatenation: fixed 28-byte policy prefix
+/// keeps the parse unambiguous for hashing purposes, mirroring how
+/// `insert_approval_name` domain-separates raw fields. The ONE place the
+/// identity bytes are formed; both name sites call it.
+fn registry_asset_id(state_policy_bytes: ByteArray, token_name: ByteArray) -> ByteArray {
+  expect bytearray.length(state_policy_bytes) == 28
+  bytearray.concat(state_policy_bytes, token_name)
+}
+
+/// The representative asset name for a record (`Singular.representative`
+/// with `registry` made concrete, NOTE-007): `0x526570 ‖
+/// blake2b_224(registry_asset_id ‖ control_hash) ‖ incarnation` — 32 bytes
+/// (3 + 28 + 1), so never a canonical address. The prefix and incarnation
+/// shape is unchanged; the middle 28 bytes bind key AND registry (previously
+/// key alone — the same omission shape as E-001). Two `blake2b_224` calls
+/// per guarded transition (fold, retire); not on-chain program-parameter
+/// application. Exact type, order and bytes: `(control_hash : ByteArray,
+/// state_policy_bytes : ByteArray (28, the state script hash as bytes),
+/// token_name : ByteArray (cage token name))`;
+/// preimage `registry_asset_id(state_policy_bytes, token_name) ‖ control_hash`.
+fn representative_name(
+  control_hash: ByteArray,
+  state_policy_bytes: ByteArray,
+  token_name: ByteArray,
+) -> ByteArray {
+  expect bytearray.length(control_hash) == 28
+  bytearray.concat(
+    bytearray.concat(
+      #"526570",
+      blake2b_224(
+        bytearray.concat(
+          registry_asset_id(state_policy_bytes, token_name),
+          control_hash,
+        ),
+      ),
+    ),
+    #"00",
+  )
+}
+
+/// The single non-ADA asset name a claim or record carries — the
+/// approval on a claim, the representative on a folded record. More
+/// than one, or none, refuses: the single-token shape Lean's `supply`
+/// counts.
+fn single_asset_name(value: Value) -> ByteArray {
+  let named =
+    filter(
+      flatten(value),
+      fn(entry) {
+        let (policy_id, _name, _quantity) = entry
+        policy_id != #""
+      },
+    )
+  expect [only] = named
+  let (_policy, asset_name, _quantity) = only
+  asset_name
+}
+
+/// The shared mint/burn roundtrip both approval arms ride: a fresh
+/// approval mints exactly once on the controller's signature; the burn
+/// the spend purpose itself demands at Fold and Cancel burns exactly
+/// once, riding the claim the spend purpose consumes with it.
+fn approval_roundtrip(
+  policy_id: PolicyId,
+  bound: ByteArray,
+  minted: Option<Int>,
+  extra_signatories: List<VerificationKeyHash>,
+  controller: VerificationKeyHash,
+  tx: Transaction,
+) -> Bool {
+  when minted is {
+    // Minting a fresh approval: exactly one, on the controller's
+    // signature.
+    Some(1) -> has(extra_signatories, controller)
+    // The burn the spend purpose itself demands at Fold and Cancel:
+    // exactly -1, and the burned approval must ride exactly one live
+    // input at the application validator's own address.
+    Some(-1) -> burn_rides_claim(policy_id, bound, tx)
+    _ -> False
+  }
 }
 
 /// The burn half of Fold/Cancel: the approval being burned must ride

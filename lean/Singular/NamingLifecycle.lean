@@ -200,7 +200,7 @@ def finishRetirement (state : NamingState) (requestId : Nat) : Except String Nam
   if request.operation != .update then throw "retirement-update-only"
   let result ← step state.registry (.fold [{ request := requestId }]
     [{ asset := representative state.registry request.proposal.key, quantity := -1 }]
-    [] { nativeSpend := true, representativeMint := true })
+    [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true })
   return { state := { state with registry := result.state }, logical := result.logical }
 
 def refuseRetirementWithdrawal (state : NamingState) (requestId : Nat) : Except String NamingResult := do
@@ -260,6 +260,9 @@ structure ConsumerBinding where
   applicationPolicy : Nat
   representativePolicy : Nat
   validatorScript : Nat
+  /-- Pinned consumer script (NOTE-013/NOTE-019, sixth `State` field):
+  selected at bootstrap, carried by every `Modify`. -/
+  consumerPin : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
 structure InitializationAttempt where
@@ -270,6 +273,7 @@ structure InitializationAttempt where
   applicationPolicy : Nat
   representativePolicy : Nat
   validatorScript : Nat
+  consumerPin : Nat
   deriving Repr, BEq, DecidableEq, ToJson
 
 def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAttempt) : Except String Unit := do
@@ -279,6 +283,7 @@ def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAtte
   if attempt.applicationPolicy != binding.applicationPolicy then throw "application-policy"
   if attempt.representativePolicy != binding.representativePolicy then throw "representative-policy"
   if attempt.validatorScript != binding.validatorScript then throw "validator-script"
+  if attempt.consumerPin != binding.consumerPin then throw "consumer-pin"
 
 /-! Executable one-shot state for the initialization input. `seedConsumed` is
 retained in `InitializationAttempt` as the source-boundary shape predicate,
@@ -304,11 +309,13 @@ def initializationExecutingWitness (binding : ConsumerBinding) (state : Initiali
 
 def namingConsumerBinding : ConsumerBinding :=
   { sourceRevision := cardanoKeriRevision, canonicalSeed := 400, registry := 1,
-    applicationPolicy := 7, representativePolicy := 8, validatorScript := 12 }
+    applicationPolicy := 7, representativePolicy := 8, validatorScript := 12,
+    consumerPin := 9 }
 
 def canonicalInitialization : InitializationAttempt :=
   { sourceRevision := cardanoKeriRevision, seed := 400, seedConsumed := true, registry := 1,
-    applicationPolicy := 7, representativePolicy := 8, validatorScript := 12 }
+    applicationPolicy := 7, representativePolicy := 8, validatorScript := 12,
+    consumerPin := 9 }
 
 def alternateSeedInitialization : InitializationAttempt :=
   { canonicalInitialization with seed := 401 }
@@ -327,6 +334,9 @@ def substitutedRepresentativeInitialization : InitializationAttempt :=
 
 def substitutedValidatorInitialization : InitializationAttempt :=
   { canonicalInitialization with validatorScript := 13 }
+
+def substitutedConsumerInitialization : InitializationAttempt :=
+  { canonicalInitialization with consumerPin := 10 }
 
 def canonicalInitializedState : InitializationState :=
   match initializeConsumerTransition namingConsumerBinding {} canonicalInitialization with

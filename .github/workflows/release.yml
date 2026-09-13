@@ -37,7 +37,7 @@ jobs:
   # from the candidate commit), not that its claims were executed:
   # execution debt (unexecuted, skipped, failing, vacuous, invalid
   # control, stale-candidate evidence) still refuses as INCOMPLETE, and
-  # current debt is preserved (denominator 192, no exclusions, no
+  # current debt is preserved (denominator 196, no exclusions, no
   # reclassification) until fresh attributable evidence exists.
   # Integration: delete the `if: false` line below and add
   # `coverage-release-gate` to the publish job's `needs:`.

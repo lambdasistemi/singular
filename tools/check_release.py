@@ -9,6 +9,9 @@ import tarfile
 import tempfile
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from stage_release import read_all_forward
+
 root, archive = map(Path, sys.argv[1:])
 version = (root / "version.txt").read_text().strip()
 assert re.fullmatch(r"\d+\.\d+\.\d+", version), "invalid documentation version"
@@ -100,9 +103,10 @@ with tarfile.open(archive / filename) as bundle:
         "simulator/lifecycle-corpus.json",
     })
     expected_lines = []
+    payloads = read_all_forward(bundle, expected_paths)
+    assert set(payloads) == expected_paths, "artifact payloads unreadable"
     for path in sorted(expected_paths):
-        payload = bundle.extractfile(members[path]).read()
-        expected_lines.append(f"{hashlib.sha256(payload).hexdigest()}  {path}")
+        expected_lines.append(f"{hashlib.sha256(payloads[path]).hexdigest()}  {path}")
     assert recorded == expected_lines, "artifact identity manifest drift"
     assert all(not m.name.startswith("/") and ".." not in Path(m.name).parts and not m.issym() and not m.islnk() for m in bundle.getmembers())
 
@@ -159,20 +163,34 @@ if onchain_present:
             digest, name = line.split("  ", 1)
             covered[name] = digest
         expected = {
-            name: hashlib.sha256(bundle.extractfile(members[name]).read()).hexdigest()
-            for name in names - {"SHA256SUMS"} if members[name].isfile()
+            name: hashlib.sha256(payload).hexdigest()
+            for name, payload in read_all_forward(
+                bundle, names - {"SHA256SUMS"}
+            ).items()
         }
         assert covered == expected, "on-chain archive internal checksum manifest drift"
         release_text = bundle.extractfile(members["RELEASE.md"]).read().decode()
         for phrase in (
-            "epic-scoped",
-            "epic 17",
+            "epic-17",
             "recovery",
             "retirement",
-            "finite fixture execution",
+            "permanent retirement",
+            "occupied-key",
+            "finite",
             "not a statement about arbitrary transactions",
+            "196",
+            "E18",
         ):
             assert phrase in release_text, f"release text does not state: {phrase}"
+        # Stale scope is a contradiction, not an absence: the old
+        # future-E17 sentences must not appear even alongside current
+        # tokens (NOTE-104 — the negative control injects exactly this
+        # shape and binds its refusal here).
+        for stale in (
+            "as future work",
+            "belong to epic 17",
+        ):
+            assert stale not in release_text, f"release text carries stale scope: {stale}"
         readme_text = bundle.extractfile(members["README.md"]).read().decode()
         for phrase in (
             "verify-identities.sh",
@@ -182,6 +200,9 @@ if onchain_present:
             "#li01",
             "#li-refusals",
             "#naming-rows",
+            "nix run .#recovery-rows",
+            "nix run .#retirement-rows",
+            "nix run .#retirement-verify --",
             "run-suite.sh",
             "SHA256SUMS",
         ):

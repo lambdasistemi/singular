@@ -134,7 +134,7 @@ theorem namingFoldInsertPreservesFixture (state : NamingState) (claim : NamingCl
   rw [hop] at hok
   simp only [insertNeSelfFalse, Bool.or_false, Bool.false_eq_true, if_false] at hok
   rw [foldElseBindEq] at hok
-  cases hs : step state.registry (Action.fold [{ request := claim.requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true }) with
+  cases hs : step state.registry (Action.fold [{ request := claim.requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }) with
   | error =>
     rw [hs] at hok
     rw [exceptBindErrRegistryResult] at hok

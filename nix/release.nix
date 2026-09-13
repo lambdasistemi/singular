@@ -18,7 +18,7 @@ let
     name = "assemble-onchain-release";
     runtimeInputs = [
       pkgs.bash pkgs.coreutils pkgs.findutils pkgs.gnutar pkgs.gzip
-      pkgs.jq pkgs.nix python
+      pkgs.jq pkgs.nix pkgs.git python
     ];
     text = ''
       usage() { echo "usage: assemble-onchain-release <repo-root> <docs-dir> <out-dir>" >&2; exit 2; }

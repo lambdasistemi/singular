@@ -8,10 +8,10 @@ const proposal={registry:N,key:N,applicationPolicy:N,refundAddress:N,initial:out
 const asset={policy:N,name:{$union:{insert:{proposal},withdraw:{registry:N,request:N,refund}}}};
 const approval={asset,accepted:B,conforms:B};
 const req={id:N,operation:{$enum:['insert','update','delete']},proposal,token:{$option:asset},held:{$option:rep},destination:N,authenticatedOrigin:B};
-const utxo={id:N,key:N,output:out},w={applicationMint:B,applicationSpend:B,nativeSpend:B,representativeMint:B};
+const utxo={id:N,key:N,output:out},w={applicationMint:B,applicationSpend:B,nativeSpend:B,representativeMint:B,consumerWithdraw:B};
 const item={request:N,outputId:N,output:{$option:out}},delta={asset:rep,quantity:I},actionDelta={asset,quantity:I};
 const entrySchema={key:N,value:{$option:{$enum:['active','over']}},incarnation:N};
-const stateSchema={config:{registry:N,applicationPolicy:N,requestAddress:N,representativePolicy:N,reuseIdentity:B},entries:[entrySchema],applications:[utxo],requests:[req],approvals:[approval],used:[N]};
+const stateSchema={config:{registry:N,applicationPolicy:N,requestAddress:N,representativePolicy:N,consumerPin:N,reuseIdentity:B},entries:[entrySchema],applications:[utxo],requests:[req],approvals:[approval],used:[N]};
 const actionSchema={$union:{createInsert:{request:req,approval,witness:w},mintWithdraw:{approval,witness:w},release:{source:N,request:req,evidence:{source:N,request:req,accepted:B,conforms:B},witness:w},evolve:{source:N,successor:utxo,evidence:{source:N,successor:utxo,accepted:B,conforms:B},witness:w},outsider:{request:req},withdraw:{request:N,asset,refund,witness:w},fold:{items:[item],mint:[delta],actionNet:[actionDelta],witness:w},moveAction:{asset,net:I,witness:w},escape:{request:N}}};
 function validate(x,s,p){
  if(s===N||s===I){if(!Number.isSafeInteger(x)||(s===N&&x<0))fail(`invalid-${s}/${p}`);return;}
@@ -24,7 +24,7 @@ function validate(x,s,p){
  if(!equal(Object.keys(x).sort(),Object.keys(s).sort()))fail(`invalid-shape/${p}`);
  for(const k of Object.keys(s))validate(x[k],s[k],`${p}.${k}`);
 }
-export const initial=()=>({config:{registry:1,applicationPolicy:7,requestAddress:90,representativePolicy:8,reuseIdentity:true},entries:[],applications:[],requests:[],approvals:[],used:[]});
+export const initial=()=>({config:{registry:1,applicationPolicy:7,requestAddress:90,representativePolicy:8,consumerPin:9,reuseIdentity:true},entries:[],applications:[],requests:[],approvals:[],used:[]});
 const entry=(s,k)=>s.entries.find(e=>e.key===k)??{key:k,value:null,incarnation:0};
 const representative=(s,k)=>({registry:s.config.registry,key:k,policy:s.config.representativePolicy,assetScope:s.config.reuseIdentity?0:entry(s,k).incarnation});
 const fresh=(s,id)=>!s.used.includes(id);
@@ -65,7 +65,7 @@ function transition(s,a,trajectory){const kind=Object.keys(a)[0],d=a[kind],w=d.w
  case 'evolve':{const u=s.applications.find(u=>u.id===d.source);if(!u)fail('application-unavailable');const e=d.evidence,n=d.successor;if(!w.applicationSpend||!e.accepted||e.source!==d.source||!equal(e.successor,n))fail('application-evolution-authorization');if(!equal(n.output.representative,u.output.representative)||n.output.quantity!==1||n.key!==u.key)fail('evolution-representative');if(!fresh(s,n.id))fail('utxo-id-reuse');const t=consume(s,d.source);return result({...t,applications:[n,...t.applications],used:[n.id,...t.used]});}
  case 'outsider':if(!fresh(s,r.id))fail('utxo-id-reuse');if(r.held!==null)fail('outsider-cannot-create-representative');return result({...s,requests:[{...r,authenticatedOrigin:false},...s.requests],used:[r.id,...s.used]});
  case 'withdraw':{const pending=s.requests.find(x=>x.id===r);if(!pending)fail('request-unavailable');if(!w.nativeSpend)fail('native-witness');if(!pending.authenticatedOrigin||!insertNative(s,pending))fail('withdraw-insert-only');if(d.refund.destination!==pending.proposal.refundAddress)fail('withdraw-refund-address');if(!recognized(s,d.asset)||!equal(d.asset.name,{withdraw:{registry:s.config.registry,request:r,refund:d.refund}}))fail('withdraw-binding');return result(consume(s,r));}
- case 'fold':{if(!w.nativeSpend)fail('native-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
+ case 'fold':{if(!w.nativeSpend)fail('native-witness');if(d.items.length===0)fail('empty-fold');if(!w.consumerWithdraw)fail('consumer-witness');const t=foldItems(s,d.items,trajectory);if(!sameNet(t.logical,d.mint))fail('net-mint-mismatch');if(nonzero(d.mint)&&!w.representativeMint)fail('representative-witness');if(nonzero(d.actionNet)&&!w.applicationMint)fail('application-mint-witness');return t;}
  case 'moveAction':if(!recognized(s,d.asset))fail('unrecognized-action');if(d.net!==0)fail('movement-net-not-zero');return result(s);
  case 'escape':fail('completion-only-custody');
  }

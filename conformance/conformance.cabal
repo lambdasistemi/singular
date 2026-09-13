@@ -23,6 +23,8 @@ data-files:
   test/fixtures/bad-refused/receipt-CG05.json
   test/fixtures/bad-venue/receipt-CG05.json
   test/fixtures/bad-no-rejected/receipt-CG05.json
+  test/fixtures/bad-phase/receipt-CG05.json
+  test/fixtures/bad-limit/receipt-CG05.json
   test/fixtures/bad-accepted-rejected/receipt-CG02.json
   test/fixtures/duplicate/receipt-CG02-a.json
   test/fixtures/duplicate/receipt-CG02-b.json
@@ -30,6 +32,20 @@ data-files:
   test/fixtures/good-blueprint-check/receipt-CS01.json
   test/fixtures/good-param-check/receipt-CS06.json
   test/fixtures/bad-blueprint-tx/receipt-CS01.json
+  test/fixtures/partial-valid/receipt-CS03.json
+  test/fixtures/partial-success/receipt-CS03.json
+  test/fixtures/partial-incomplete/receipt-CS03.json
+  test/fixtures/partial-empty/receipt-CS03.json
+  test/fixtures/partial-nodecl/receipt-CS03.json
+  test/fixtures/partial-legacy/receipt-CS03.json
+  test/fixtures/partial-refused/receipt-CS03.json
+  test/fixtures/derivation-valid/receipt-CA04.json
+  test/fixtures/derivation-venue/receipt-CA04.json
+  test/fixtures/derivation-incomplete/receipt-CA04.json
+  test/fixtures/derivation-mislabelled/receipt-CA04.json
+  test/fixtures/derivation-missingsource/receipt-CA04.json
+  test/fixtures/derivation-bareprefix/receipt-CA04.json
+  test/fixtures/derivation-legacyvenue/receipt-CA04.json
 
 common warnings
   ghc-options:

@@ -161,11 +161,10 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
     applyBytesParam,
-    applyPreviousPolicies,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
+import Cardano.MPFS.Cage.Config (CageConfig (..), bootStateFromCfg)
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
@@ -197,7 +196,6 @@ import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
-    OnChainTokenState (..),
     OnChainTxOutRef (..),
  )
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
@@ -367,7 +365,7 @@ runMode mode mpfsPath namingPath = do
         -- hash; the representative script is applied with the
         -- application policy hash.
         let unappliedHex = hex (scriptHashBytes (computeScriptHash stateBytes))
-            appliedBytes = applyPreviousPolicies [] stateBytes
+            appliedBytes = stateBytes
             appliedHash = computeScriptHash appliedBytes
             appliedHex = hex (scriptHashBytes appliedHash)
         checkPinnedUnapplied si "state.state" unappliedHex
@@ -434,8 +432,14 @@ runMode mode mpfsPath namingPath = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
+                    , cfgRepPolicy = SBS.pack (replicate 28 0)
+                    , cfgConsumerPin = SBS.pack (replicate 28 0)
+                    -- NOTE-020: compile-only placeholder (this journey
+                    -- submits no Modify: bootstrap/refusal rows only).
+                    -- Any future Modify path must pin a bound consumer and
+                    -- register it first (see register/recovery/retirement).
+                    , cfgConsumerScript = SBS.empty
                     , network = Testnet
-                    , cfgStakeScript = Nothing
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
             appliedScript = mkCageScript cfg
@@ -1527,17 +1531,7 @@ registryOut env addr policy name =
     let mintMA =
             MultiAsset $
                 Map.singleton policy (Map.singleton (AssetName (SBS.toShort name)) 1)
-        stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateOwner = BuiltinByteString (envCtrlHash env)
-                    , stateStakeScript = Nothing
-                    , stateRoot = OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c = defaultTip (envCfg env) in c
-                    , stateProcessTime = defaultProcessTime (envCfg env)
-                    , stateRetractTime = defaultRetractTime (envCfg env)
-                    }
+        stateDatum = StateDatum (bootStateFromCfg (envCfg env) (OnChainRoot emptyRoot))
      in mkBasicTxOut addr (MaryValue (Coin 2_000_000) mintMA)
             & datumTxOutL .~ mkInlineDatum (toPlcData stateDatum)
 
@@ -1662,17 +1656,7 @@ buildCanonicalTx cfg pp prov seedUtxo funders namingDatum = do
                 Map.singleton
                     (cagePolicyIdFromCfg cfg)
                     (Map.singleton (AssetName (SBS.toShort seedName)) 1)
-        stateDatum =
-            StateDatum
-                OnChainTokenState
-                    { stateOwner = BuiltinByteString (addrKeyHashBytes genesisAddr)
-                    , stateStakeScript = Nothing
-                    , stateRoot = OnChainRoot emptyRoot
-                    , stateMaxFee =
-                        let Coin c = defaultTip cfg in c
-                    , stateProcessTime = defaultProcessTime cfg
-                    , stateRetractTime = defaultRetractTime cfg
-                    }
+        stateDatum = StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))
         stateOut =
             mkBasicTxOut
                 scriptAddr
