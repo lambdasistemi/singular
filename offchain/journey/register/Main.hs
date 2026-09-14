@@ -94,14 +94,13 @@ import Data.Bits (complement)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Coerce (coerce)
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (isInfixOf, sortBy, sortOn)
+import Data.List (isInfixOf, stripPrefix, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
 import MPF.Backend.Pure (MPFInMemoryDB)
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -115,7 +114,7 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import System.Directory (createDirectoryIfMissing)
-import System.Environment (lookupEnv)
+import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.FilePath ((</>))
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
@@ -181,6 +180,7 @@ import Singular.Registry.Ledger (
  )
 import Singular.Registry.Node (
     NodeSession (..),
+    currentTipSlot,
     awaitChain,
     awaitTx,
     confirmationDelay,
@@ -197,10 +197,10 @@ import Singular.Registry.Deployment (
     mirrorPathFor,
     readDeployment,
     saveMirror,
-    taggedKey,
  )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (
     mkPureTrieManager,
     mkPureTrieManagerFrom,
@@ -242,7 +242,7 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
-import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
+import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),
@@ -320,8 +320,16 @@ hookRevealSeed = "s77-hook-henry-reveal000000000000"
 -- Name spellings: the registry keys (NOTE-004)
 -- ---------------------------------------------------------
 
-aliceSpelling, bobSpelling :: ByteString
-aliceSpelling = "alice"
+-- UTF-8 bytes exactly as supplied; no suffix, normalization or newline.
+spellingFromArgs :: [String] -> Either String ByteString
+spellingFromArgs [] = Right "alice"
+spellingFromArgs ("--spelling" : value : _) = Right (TE.encodeUtf8 (T.pack value))
+spellingFromArgs ["--spelling"] = Left "--spelling requires a spelling"
+spellingFromArgs (arg : rest)
+    | Just value <- stripPrefix "--spelling=" arg = Right (TE.encodeUtf8 (T.pack value))
+    | otherwise = spellingFromArgs rest
+
+bobSpelling :: ByteString
 bobSpelling = "bob"
 
 -- ---------------------------------------------------------
@@ -429,6 +437,7 @@ genesisSignKey = funderSignKey
 
 runMode :: Mode -> FilePath -> FilePath -> IO ()
 runMode mode namingPath registryPath = do
+    spelling <- either failWith pure . spellingFromArgs =<< getArgs
     enbp <- loadBlueprint namingPath
     nbp <- either failWith pure enbp
     appBytes <- case extractCompiledCode "application.application" nbp of
@@ -606,6 +615,7 @@ runMode mode namingPath registryPath = do
                     )
                 ensureTrie tm mirrorTries (attToken att)
                 pure (attCfg att, attToken att)
+        forM_ attached $ \_ -> assertMirrorMatchesChain prov cfg tok tm
         -- Consumer + staking stake registrations (NOTE-020 items 2-4),
         -- BEFORE faucet: both must consume pristine-genesis UTxOs, never
         -- pool fragments (pools go stale once spent; spending one breaks
@@ -664,20 +674,9 @@ runMode mode namingPath registryPath = do
                            \none published"
                     )
                 pure (attRefUtxos att)
-        -- A deployment keeps every key an earlier run wrote, and a
-        -- retired key forever. Scoping this run's keys is what makes a
-        -- rerun mean what the runbook says it means.
-        keyTag <- forM attached $ \(_, att) -> do
-            assertMirrorMatchesChain prov cfg tok tm
-            emit
-                "keys"
-                ( "this run's registry keys carry the suffix -"
-                    <> BC.unpack (attRunTag att)
-                )
-            pure (attRunTag att)
         let env =
                 Env
-                    { envKeyTag = keyTag
+                    { envSpelling = spelling
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
@@ -723,7 +722,11 @@ runMode mode namingPath registryPath = do
         receiptRef <- newIORef []
         let record = recordRow receiptRef
         case mode of
-            MainRun -> runRows env record
+            MainRun -> do
+                occupied <- withTrie tm tok $ \trie -> Trie.lookup trie spelling
+                case (attached, occupied) of
+                    (Just _, Just _) -> runAttachedDuplicate env record
+                    _ -> runRows env record
             ControlValid -> runControlValid env
             ControlWrongReason -> runControlWrongReason env
             FaultRepPolicy -> runFaultRepPolicy env
@@ -751,10 +754,7 @@ runMode mode namingPath registryPath = do
                 )
 
 data Env = Env
-    { envKeyTag :: Maybe ByteString
-    -- ^ Suffix every registry key of this run carries, when the
-    -- registry outlives the run (issue #102). 'Nothing' on a devnet
-    -- this run booted for itself, where the keys are its own.
+    { envSpelling :: ByteString
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
@@ -802,6 +802,16 @@ data Env = Env
 -- The main rows
 -- ---------------------------------------------------------
 
+-- A rerun must submit the duplicate against the same spelling. It must
+-- not silently choose another key or rerun unrelated occupied fixtures.
+runAttachedDuplicate :: Env -> (Value -> IO ()) -> IO ()
+runAttachedDuplicate env record = do
+    original <- setupKey env "existing" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    before <- recordsForSpelling env original
+    duplicate <- setupKey env "duplicate" (envSpelling env) (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed next2Seed
+    runAdversarial env record (length before) original duplicate
+    emit "attached" ("spelling " <> show (envSpelling env) <> " is already held: duplicate insert refused; choose an explicit --spelling for a new claim")
+
 runRows :: Env -> (Value -> IO ()) -> IO ()
 runRows env record = do
     root0 <- chainRootHex env
@@ -815,12 +825,12 @@ runRows env record = do
             <> " read from the chain state datum — no name Active"
         )
     -- alice: the connected insert, accepted.
-    alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     foldTxAlice <- connectedAccept env record (envTrie env) alice True "fold-active"
     -- Adversarial alice: same name, another controller — built with the
     -- guard bypassed, submitted, refused by the state validator.
-    advAlice <- setupKey env "alice-dup" aliceSpelling (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed next2Seed
-    runAdversarial env record alice advAlice
+    advAlice <- setupKey env "alice-dup" (envSpelling env) (envAdvCodec env) (envAdvAddr env) (envAdvHash env) advSeed next2Seed
+    runAdversarial env record 1 alice advAlice
     -- bob: the free-key control succeeds in the same run.
     bob <- setupKey env "bob" bobSpelling (envSecondCodec env) (envSecondAddr env) (envSecondHash env) secondSeed nextSeed
     _ <- connectedAccept env record (envTrie env) bob True "free-key-control"
@@ -902,8 +912,7 @@ data KeySetup = KeySetup
     }
 
 setupKey :: Env -> String -> ByteString -> Address -> Addr -> ByteString -> ByteString -> ByteString -> IO KeySetup
-setupKey env label rawSpelling codec addr controllerHash controllerSeed revealSeed = do
-    let spelling = maybe rawSpelling (`taggedKey` rawSpelling) (envKeyTag env)
+setupKey env label spelling codec addr controllerHash controllerSeed revealSeed = do
     let revealAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey revealSeed))
         commitment = nextControlCommitmentOf (serialiseAddr revealAddr)
         datum =
@@ -1439,8 +1448,8 @@ assertQueuedRequest env ks snap = do
 -- bypassed (proofs against a fresh trie that has never seen alice) and
 -- SUBMITTED. The state validator must refuse with the occupied name;
 -- the free name folds in the same run elsewhere.
-runAdversarial :: Env -> (Value -> IO ()) -> KeySetup -> KeySetup -> IO ()
-runAdversarial env record ksAccepted ks = do
+runAdversarial :: Env -> (Value -> IO ()) -> Int -> KeySetup -> KeySetup -> IO ()
+runAdversarial env record expectedRecords ksAccepted ks = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
@@ -1559,9 +1568,9 @@ runAdversarial env record ksAccepted ks = do
             unless (rootAfter == rootBefore) $
                 failWith "occupied-key: the refused fold moved the chain root"
             dups <- recordsForSpelling env ksAccepted
-            unless (length dups == 1) $
+            unless (length dups == expectedRecords) $
                 failWith
-                    ( "occupied-key: expected exactly one Active record for "
+                    ( "occupied-key: live record count changed for "
                         <> show (keySpelling ks)
                         <> " but found "
                         <> show (length dups)
@@ -1587,7 +1596,7 @@ runAdversarial env record ksAccepted ks = do
                     <> txid
                     <> "; root unchanged at "
                     <> rootAfter
-                    <> "; exactly one Active record; request and claim stay \
+                    <> "; live record count unchanged; request and claim stay \
                        \pending"
                 )
             record $
@@ -2076,7 +2085,10 @@ runSupportRetract env record (reqIn, reqOut) = do
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
         _ -> failWith "support retract: request datum does not decode"
     waitForPhase2 env submittedAt
-    built <- try (retryHorizon 3 (retractRequestImpl (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env))) :: IO (Either SomeException ConwayTx)
+    built <- try (retryHorizon 3 $ do
+        tip <- currentTipSlot
+        emit "retract" ("building validity from live tip " <> show tip <> " within the deployed phase-2 window")
+        retractRequestAtTipImpl tip (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env)) :: IO (Either SomeException ConwayTx)
     unsigned <- case built of
         Right tx -> pure tx
         Left err -> failWith ("support retract build failed: " <> displayException err)
@@ -3203,7 +3215,7 @@ runControlValid env = do
 runControlWrongReason :: Env -> IO ()
 runControlWrongReason env = do
     -- An accept first, proving the runner ran.
-    alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     (_txid, _claimIn, _claimOut) <- setupNamingClaim env alice
     emit
         "row"
@@ -3265,7 +3277,7 @@ runControlWrongReason env = do
 -- red log carries the expected applied identity alongside.
 runFaultRepPolicy :: Env -> IO ()
 runFaultRepPolicy env = do
-    alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
     (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
@@ -3391,7 +3403,7 @@ runFaultRepPolicy env = do
 -- no-owner assertion must fail naming the owner.
 runFaultOwnerSigned :: Env -> IO ()
 runFaultOwnerSigned env = do
-    alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
     (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
@@ -3477,7 +3489,7 @@ runFaultOwnerSigned env = do
 -- fail naming the disconnection.
 runFaultSeededActive :: Env -> IO ()
 runFaultSeededActive env = do
-    alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     let decoy = serialiseAddr (envPartyAddr env)
         decoyMA =
             MultiAsset $

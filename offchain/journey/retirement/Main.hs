@@ -77,7 +77,6 @@ import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Base16 qualified as Base16
 import Data.Char (isHexDigit)
 import Data.ByteString.Lazy qualified as BSL
@@ -177,7 +176,6 @@ import Singular.Registry.Deployment (
     mirrorPathFor,
     readDeployment,
     saveMirror,
-    taggedKey,
  )
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -541,17 +539,9 @@ runMode mode blueprintPath registryPath = do
                            \none published"
                     )
                 pure (attRefUtxos att)
-        keyTag <- forM attached $ \(_, att) -> do
-            emit
-                "keys"
-                ( "this run's registry keys carry the suffix -"
-                    <> BC.unpack (attRunTag att)
-                )
-            pure (attRunTag att)
         let env =
                 Env
-                    { envKeyTag = keyTag
-                    , envAttached = attached
+                    { envAttached = attached
                     , envDumpTries = dumpTries
                     , envProv = prov
                     , envSubmit = submit
@@ -699,10 +689,7 @@ runMode mode blueprintPath registryPath = do
             ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
 
 data Env = Env
-    { envKeyTag :: Maybe ByteString
-    -- ^ Suffix every registry key of this run carries, when the
-    -- registry outlives the run (issue #102)
-    , envAttached :: Maybe (FilePath, Attached)
+    { envAttached :: Maybe (FilePath, Attached)
     -- ^ The deployment this run attached to, if any
     , envDumpTries :: IO (Map.Map TokenId MPFInMemoryDB)
     -- ^ Read this run's tries back out, for the run that follows
@@ -2891,8 +2878,7 @@ setupRecoveryRecord ::
     String ->
     ByteString ->
     IO (String, TxIn)
-setupRecoveryRecord env datum label rawSpelling = do
-    let spelling = maybe rawSpelling (`taggedKey` rawSpelling) (envKeyTag env)
+setupRecoveryRecord env datum label spelling = do
     let controlBytes = addressBytes (controlAddress datum)
         commitment = nextControlCommitment datum
         approval = insertApprovalName controlBytes commitment

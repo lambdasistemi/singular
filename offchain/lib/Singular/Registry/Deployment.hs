@@ -76,10 +76,6 @@ module Singular.Registry.Deployment (
     renderOutRef,
     parseOutRef,
     renderAddrBytes,
-
-    -- * Per-run keys
-    runTag,
-    taggedKey,
 ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
@@ -152,11 +148,13 @@ data ReferenceScript = ReferenceScript
     , refOutRef :: Text
     -- ^ @txid#index@ of the output
     , refAddress :: Text
-    -- ^ Address the output sits at, in the bech32 form a person reads.
-    -- Informational: refAddressBytes is what the code queries.
+    {- ^ Address the output sits at, in the bech32 form a person reads.
+    Informational: refAddressBytes is what the code queries.
+    -}
     , refAddressBytes :: Text
-    -- ^ The same address as the hex bytes the ledger serialises, which
-    -- round-trips exactly
+    {- ^ The same address as the hex bytes the ledger serialises, which
+    round-trips exactly
+    -}
     }
     deriving (Eq, Show, Generic)
 
@@ -340,8 +338,9 @@ cageConfigFor dep parts = do
                     , network = Testnet
                     }
 
--- | The registry token a seed determines. Derived, never trusted from
--- the file: the manifest's own claim is checked against it.
+{- | The registry token a seed determines. Derived, never trusted from
+the file: the manifest's own claim is checked against it.
+-}
 tokenFor :: Deployment -> Either String TokenId
 tokenFor dep = do
     seedIn <- parseOutRef (depSeedOutRef dep)
@@ -395,11 +394,11 @@ verifyDeployment prov dep parts = do
                 <> T.unpack (depCageToken dep)
           ]
             <> [ "reference script "
-                <> T.unpack (refRole r)
-                <> " live at "
-                <> T.unpack (refOutRef r)
-                <> " carrying 0x"
-                <> T.unpack (refHash r)
+                    <> T.unpack (refRole r)
+                    <> " live at "
+                    <> T.unpack (refOutRef r)
+                    <> " carrying 0x"
+                    <> T.unpack (refHash r)
                | (r, _) <- refs
                ]
             <> [ "registry state output "
@@ -500,9 +499,6 @@ data Attached = Attached
     -- ^ The published reference outputs, in manifest order
     , attStateUtxo :: (TxIn, TxOut ConwayEra)
     -- ^ The registry's current state output
-    , attRunTag :: ByteString
-    -- ^ Per-run key suffix, so this run does not collide with earlier
-    -- runs against the same persistent registry
     }
 
 {- | Attach a run to a recorded deployment: same checks as
@@ -517,34 +513,14 @@ attach prov dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
     refs <- resolveReferenceScripts prov dep
-    state@(stateIn, _) <- resolveStateUtxo prov cfg tok
+    state <- resolveStateUtxo prov cfg tok
     pure
         Attached
             { attCfg = cfg
             , attToken = tok
             , attRefUtxos = map snd refs
             , attStateUtxo = state
-            , attRunTag = runTag stateIn
             }
-
--- ---------------------------------------------------------
--- Per-run keys
--- ---------------------------------------------------------
-
-{- | A per-run tag derived from an output reference this run consumes.
-
-A persistent registry keeps every key ever written, and a retired key
-keeps it forever. A second run of the same rows against the same
-registry would therefore be refused for a reason that says nothing
-about the code. Scoping each run's keys with a tag makes reruns mean
-what the runbook says they mean.
--}
-runTag :: TxIn -> ByteString
-runTag txIn = BC.pack (take 12 (T.unpack (renderOutRef txIn)))
-
--- | A registry key, scoped to one run when the registry persists.
-taggedKey :: ByteString -> ByteString -> ByteString
-taggedKey tag k = k <> "-" <> tag
 
 -- ---------------------------------------------------------
 -- Small helpers

@@ -12,6 +12,7 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
+cd "$here"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"; [ -n "${devnet_pid:-}" ] && kill "$devnet_pid" 2>/dev/null || true' EXIT
 
@@ -68,8 +69,14 @@ echo "attach-check: before — $before_state registry state output(s), $before_r
 
 for runner in register-rows recovery-rows retirement-rows; do
     echo "attach-check: $runner, attached"
-    nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest"
+    spelling=()
+    [ "$runner" != register-rows ] || spelling=(--spelling audience-name)
+    nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest" "${spelling[@]}"
 done
+
+echo "attach-check: the exact spelling is already held; rerun must submit and observe duplicate refusal"
+nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name | tee "$work/rerun.out"
+grep -F 'spelling "audience-name" is already held: duplicate insert refused' "$work/rerun.out"
 
 after_state="$(count_state_outputs)"
 after_refs="$(count_reference_outputs)"
