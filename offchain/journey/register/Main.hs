@@ -134,6 +134,7 @@ import Cardano.Ledger.Api.Tx.Body (
     referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
+    vldtTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
 import Cardano.Ledger.Api.Tx.Out (
@@ -281,6 +282,7 @@ data Mode
     | FaultRepPolicy
     | FaultOwnerSigned
     | FaultSeededActive
+    | CancellationProbe
     deriving (Eq, Show)
 
 readMode :: IO Mode
@@ -291,6 +293,7 @@ readMode =
         Just "fault-rep-policy" -> pure FaultRepPolicy
         Just "fault-owner-signed" -> pure FaultOwnerSigned
         Just "fault-seeded-active" -> pure FaultSeededActive
+        Just "cancel-probe" -> pure CancellationProbe
         Just other
             | not (null other) ->
                 failWith ("unknown REGISTER_CONTROL value " <> other)
@@ -371,6 +374,7 @@ main = do
     hSetBuffering stderr LineBuffering
     mode <- readMode
     case mode of
+        CancellationProbe -> emit "probe" "create a real pending Insert pair and attempt cancellation through the existing validators"
         MainRun ->
             emit
                 "row"
@@ -741,6 +745,7 @@ runMode mode namingPath registryPath = do
             FaultRepPolicy -> runFaultRepPolicy env
             FaultOwnerSigned -> runFaultOwnerSigned env
             FaultSeededActive -> runFaultSeededActive env
+            CancellationProbe -> runCancellationProbe env
         rows <- readIORef receiptRef
         BSL.writeFile
             (envEvDir env </> "report.json")
@@ -810,6 +815,63 @@ data Env = Env
 -- ---------------------------------------------------------
 -- The main rows
 -- ---------------------------------------------------------
+
+-- | Baseline reproducer: combine the existing native retract boundary with
+-- the naming Cancel spend over an approval minted by setupNamingClaim.
+-- The native datum has no refund field; the chosen intended refund is the
+-- request owner's address. This instrument establishes no refund binding.
+runCancellationProbe :: Env -> IO ()
+runCancellationProbe env = do
+    ks <- setupKey env "cancel" "cancel-probe" (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    (_, claimIn, claimOut) <- setupNamingClaim env ks
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+    submittedAt <- case extractCageDatum reqOut of
+        Just (RequestDatum r) -> pure (requestSubmittedAt r)
+        _ -> failWith "cancel probe: request datum does not decode"
+    waitForPhase2 env submittedAt
+    tip <- currentTipSlot
+    -- Evaluate the existing native builder first: its interval and request
+    -- signer are known-valid independently of the added naming spend.
+    native <- retractRequestAtTipImpl tip (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env)
+    (stateIn, _) <- queryStateUtxo env
+    (fund, collateral) <- takeFundCollateral env
+    let approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
+        burn = MultiAsset (Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) (-1)))
+        allInputs = Set.fromList [claimIn, reqIn, fst fund]
+        TxIn (TxId stateTxId) (TxIx stateIx) = stateIn
+        retractData = PLC.Constr 3 [PLC.Constr 0 [PLC.B (hashToBytes (extractHash stateTxId)), PLC.I (toInteger stateIx)]]
+        redeemers = Redeemers (Map.fromList
+            [ (ConwaySpending (AsIx (spendingIndex claimIn allInputs)), (Data (PLC.Constr 1 [PLC.B (serialiseAddr (envFolderAddr env))]), maxUnits))
+            , (ConwaySpending (AsIx (spendingIndex reqIn allInputs)), (Data retractData, maxUnits))
+            , (ConwayMinting (AsIx 0), (Data (insertApprovalRedeemer (keyControllerHash ks) (keyControlBytes ks) (keyCommitment ks)), maxUnits))
+            ])
+        refund = mkBasicTxOut (envFolderAddr env) (MaryValue (Coin (coinOf claimOut + coinOf reqOut)) mempty)
+        change = changeOut (coinOf (snd fund)) flatFee [ ] (envPartyAddr env)
+        reqScript = mkRequestScript (envCfg env) (envTok env)
+        body = mkBasicTxBody
+            & inputsTxBodyL .~ allInputs
+            & referenceInputsTxBodyL .~ Set.singleton stateIn
+            & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
+            & outputsTxBodyL .~ StrictSeq.fromList [refund, change]
+            & feeTxBodyL .~ Coin flatFee
+            & mintTxBodyL .~ burn
+            & reqSignerHashesTxBodyL .~ (native ^. bodyTxL . reqSignerHashesTxBodyL)
+            & vldtTxBodyL .~ (native ^. bodyTxL . vldtTxBodyL)
+            & scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) redeemers
+        tx = mkBasicTx body
+            & witsTxL . scriptTxWitsL .~ Map.fromList [(envAppHash env, envAppScript env), (hashScript reqScript, reqScript)]
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+        signed = addKeyWitness (mkSignKey folderSeed) (addKeyWitness (mkSignKey partySeed) tx)
+    retainListings env "connected-cancel-pre"
+    snap <- mustSnap env claimIn
+    expectRefused MainRun env "connected-cancel-baseline" "withdraw-refund-address"
+        "real Insert claim plus native request Retract cannot pass naming Cancel" signed
+    noTrace env snap "connected-cancel-baseline"
+    _ <- mustOutAt (envProv env) (requestAddrFromCfg (envCfg env) (envTok env) Testnet) reqIn
+    retainListings env "connected-cancel-post"
+    failWith "CC01 RED: ledger refused naming cancellation of a real pending Insert; claim and request remain live"
+  where
+    coinOf out = let Coin amount = out ^. coinTxOutL in amount
 
 -- A rerun must submit the duplicate against the same spelling. It must
 -- not silently choose another key or rerun unrelated occupied fixtures.
