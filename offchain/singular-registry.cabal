@@ -476,7 +476,7 @@ executable deployment
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-mpfs-cage
+    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-strict-containers

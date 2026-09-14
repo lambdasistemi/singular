@@ -16,7 +16,7 @@ rather than making a second one nobody asked for.
 @deployment verify@ asks a node whether it still agrees with a manifest
 and prints, claim by claim, what it answered.
 
-Both take their node and wallet from @Cardano.MPFS.Cage.Node@ — the
+Both take their node and wallet from @Singular.Registry.Node@ — the
 factory devnet by default, the joiner's node with
 @--node-socket@ \/ @--network-magic@ \/ @--wallet-skey@. Deploying
 against a devnet the process itself spawns is possible but pointless:
@@ -70,15 +70,15 @@ import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..
 import Ouroboros.Network.Magic (NetworkMagic (..))
 import Data.Map.Strict qualified as Map
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Deployment
-import Cardano.MPFS.Cage.Ledger (Coin (..), ConwayEra, PParams, TokenId (..))
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Deployment
+import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TokenId (..))
+import Singular.Registry.Node (
     NodeSession (..),
     awaitTx,
     bech32Address,
@@ -86,9 +86,9 @@ import Cardano.MPFS.Cage.Node (
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
@@ -100,7 +100,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     scriptHashBytes,
     txInToRef,
  )
-import Cardano.MPFS.Cage.TxBuilder.Register (
+import Singular.Registry.TxBuilder.Register (
     registerConsumerImpl,
     registerScriptImpl,
  )
@@ -176,7 +176,7 @@ data Compiled = Compiled
 
 loadCompiled :: IO Compiled
 loadCompiled = do
-    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
+    mpfsPath <- requireEnv "REGISTRY_BLUEPRINT"
     namingPath <- requireEnv "NAMING_BLUEPRINT"
     mbp <- either failWith pure =<< loadBlueprint mpfsPath
     nbp <- either failWith pure =<< loadBlueprint namingPath
@@ -189,13 +189,13 @@ loadCompiled = do
                         <> what
                         <> " blueprint"
                     )
-    stateBytes <- need "MPFS" mbp "state.state"
-    requestBytes <- need "MPFS" mbp "request.request"
-    consumerBytes <- need "MPFS" mbp "consumer.consumer"
+    stateBytes <- need "registry" mbp "state.state"
+    requestBytes <- need "registry" mbp "request.request"
+    consumerBytes <- need "registry" mbp "consumer.consumer"
     appBytes <- need "naming" nbp "application.application"
     repBytes <- need "naming" nbp "representative.representative"
     custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
-    stakingBytes <- need "MPFS" mbp "staking.staking"
+    stakingBytes <- need "registry" mbp "staking.staking"
     let appHash = computeScriptHash appBytes
     pure
         Compiled

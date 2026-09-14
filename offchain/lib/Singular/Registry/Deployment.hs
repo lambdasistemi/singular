@@ -1,5 +1,5 @@
 {- |
-Module      : Cardano.MPFS.Cage.Deployment
+Module      : Singular.Registry.Deployment
 Description : One persistent registry, recorded and re-attached to
 License     : Apache-2.0
 
@@ -45,7 +45,7 @@ so a mirror that drifted (a run that died mid-fold, a copy belonging to
 another deployment) fails by name instead of building proofs against a
 trie the chain does not have.
 -}
-module Cardano.MPFS.Cage.Deployment (
+module Singular.Registry.Deployment (
     -- * The manifest
     Deployment (..),
     ReferenceScript (..),
@@ -119,16 +119,16 @@ import Cardano.Ledger.Hashes (extractHash, unsafeMakeSafeHash)
 
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
-import Cardano.MPFS.Cage.AssetName (deriveAssetName)
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,

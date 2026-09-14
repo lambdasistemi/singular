@@ -15,9 +15,9 @@ here="$(cd "$(dirname "$0")" && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"; [ -n "${devnet_pid:-}" ] && kill "$devnet_pid" 2>/dev/null || true' EXIT
 
-mpfs="$(nix build --quiet --no-link --print-out-paths "$here/../onchain#plutus-blueprint")"
+registry="$(nix build --quiet --no-link --print-out-paths "$here/../onchain#plutus-blueprint")"
 naming="$(nix build --quiet --no-link --print-out-paths "$here/../naming-onchain#plutus-blueprint")"
-export MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming"
+export REGISTRY_BLUEPRINT="$registry" NAMING_BLUEPRINT="$naming"
 
 # Build everything first. A `nix run` that has to build spends minutes
 # before its program prints anything, and the socket wait below would
