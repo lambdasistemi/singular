@@ -90,6 +90,7 @@ import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     ConsumerBinding (..),
+    cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     deriveConsumerBinding,
@@ -103,7 +104,11 @@ import Cardano.MPFS.Cage.TxBuilder.Register (
     registerConsumerImpl,
     registerScriptImpl,
  )
-import Cardano.Node.Client.E2E.Setup (addKeyWitness)
+import Cardano.Node.Client.E2E.Setup (
+    addKeyWitness,
+    genesisSignKey,
+    rawSerialiseSignKeyDSIGN,
+ )
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -122,6 +127,8 @@ run = do
     case [a | a <- args, not ("-" `isPrefixOf` a)] of
         ("deploy" : _) -> doDeploy
         ("verify" : _) -> doVerify
+        ("count" : _) -> doCount
+        ("genesis-skey" : _) -> doGenesisSkey
         _ ->
             failWith
                 "usage: deployment deploy --out MANIFEST [--release TAG] \
@@ -186,7 +193,7 @@ loadCompiled = do
     consumerBytes <- need "MPFS" mbp "consumer.consumer"
     appBytes <- need "naming" nbp "application.application"
     repBytes <- need "naming" nbp "representative.representative"
-    custodyBytes <- need "naming" nbp "custody.custody"
+    custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
     let appHash = computeScriptHash appBytes
     pure
         Compiled
@@ -231,6 +238,76 @@ doVerify = do
         emit
             "complete"
             (show (length claims) <> " claim(s) hold against this node")
+
+-- ---------------------------------------------------------
+-- count
+-- ---------------------------------------------------------
+
+{- | Count what a deployment would otherwise create, so a check can say
+whether a run created any.
+
+@--what state@ counts outputs at the registry address carrying a token
+of the recorded policy: one per registry ever booted under this state
+validator. @--what reference@ counts outputs carrying a reference
+script at the address the deployment published to. A run that attached
+leaves both unchanged; a run that booted and published moves both.
+-}
+doCount :: IO ()
+doCount = do
+    args <- getArgs
+    path <- case deploymentPathFromArgs args of
+        Just p -> pure p
+        Nothing -> failWith "count needs --deployment MANIFEST"
+    what <- case flagValue "--what" args of
+        Just w -> pure w
+        Nothing -> failWith "count needs --what state|reference"
+    dep <- readDeployment path
+    compiled <- loadCompiled
+    cfg <- either failWith pure (cageConfigFor dep (partsOf compiled))
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+        case what of
+            "state" -> do
+                utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+                print (length [() | (_, o) <- utxos, carriesPolicy cfg o])
+            "reference" -> do
+                utxos <- Cage.queryUTxOs prov funderAddr
+                print (length [() | (_, o) <- utxos, hasReferenceScript o])
+            _ -> failWith ("count: --what must be state or reference, not " <> what)
+  where
+    carriesPolicy cfg o =
+        let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
+         in Map.member (cagePolicyIdFromCfg cfg) m
+    hasReferenceScript o = case o ^. referenceScriptTxOutL of
+        SJust _ -> True
+        SNothing -> False
+
+-- ---------------------------------------------------------
+-- genesis-skey
+-- ---------------------------------------------------------
+
+{- | Write the factory devnet's genesis signing key in the file form a
+joiner supplies, so the devnet attach check can reach its own devnet
+through the external path rather than through the devnet path it is
+meant to be testing an alternative to.
+
+Devnet only. The key is a constant of the checked-in genesis, public by
+construction, and worth nothing on any network anyone uses.
+-}
+doGenesisSkey :: IO ()
+doGenesisSkey = do
+    args <- getArgs
+    out <- case flagValue "--out" args of
+        Just p -> pure p
+        Nothing -> failWith "genesis-skey needs --out FILE"
+    writeFile
+        out
+        ( "{\"type\":\"PaymentSigningKeyShelley_ed25519\","
+            <> "\"description\":\"Payment Signing Key\",\"cborHex\":\"5820"
+            <> BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey))
+            <> "\"}"
+        )
+    emit "genesis-skey" ("wrote the devnet genesis key to " <> out)
 
 -- ---------------------------------------------------------
 -- deploy
