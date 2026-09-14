@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/lambdasistemi/singular/compare/v0.4.1...v0.5.0) (2026-09-14)
+
+
+### Features
+
+* external-node mode, joiner wallet and the onboarding runbook ([dd88246](https://github.com/lambdasistemi/singular/commit/dd88246a85fb0fe45e724ab1fce5d4a99f15affc))
+* external-node mode, joiner wallet and the onboarding runbook ([dfd22de](https://github.com/lambdasistemi/singular/commit/dfd22de8e7003b13bc8c72a84dbe0ea20b12bac7)), closes [#78](https://github.com/lambdasistemi/singular/issues/78)
+
+
+### Fixes
+
+* keep the docs link in-tree and drop a dep external mode retired ([e0493ce](https://github.com/lambdasistemi/singular/commit/e0493ce96274f000b06c50496dde308cf34e5590))
+* **release:** carry RELEASE-COMMIT so the on-chain archive replays without a git checkout ([#91](https://github.com/lambdasistemi/singular/issues/91)) ([7bad3dc](https://github.com/lambdasistemi/singular/commit/7bad3dcc545e4a3467d45630fb2053ee3af40c20))
+
 ## [0.4.1](https://github.com/lambdasistemi/singular/compare/v0.4.0...v0.4.1) (2026-09-14)
 
 
