@@ -97,5 +97,6 @@ notes = re.findall(r"<!--\s*\n(.*?)\n-->", deck.read_text(), flags=re.S)
 if not notes:
     raise RuntimeError("the presentation has no speaker notes")
 (slides / "naming-notes.txt").write_text("\n\n---\n\n".join(notes) + "\n")
+shutil.copyfile(root / "presentations/naming-evidence.txt", slides / "naming-evidence.txt")
 # Keep the downloadable source out of MkDocs' Markdown-to-page conversion.
 shutil.copyfile(deck, slides / "naming.md.txt")

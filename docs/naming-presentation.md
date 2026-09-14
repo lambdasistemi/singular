@@ -5,11 +5,11 @@ template: naming-presentation.html
 # A registry explained through naming
 
 As a Cardano developer, see why cardano-keri needs a registry: one live key
-record for payment authorization, a saved state to return from, and a permanent
-record of conviction. Naming is the simpler surrogate application: follow
+record for payment authorization and a permanent record of conviction. Naming is the simpler surrogate application: follow
 Alice as she claims a name, changes her payment address, recovers from key loss
 and retires the name. Twelve visual slides introduce the motivation and spell out each user story; the
-supporting explanations and evidence stay in your speaker notes.
+speaker notes contain short speaking cues. Sources and evidence are available
+separately under Technical references.
 
 ## Watch the presentation
 
@@ -37,8 +37,8 @@ retirement, that name stays occupied within the registry.
 **preprod run pending (#78)**
 
 The demo will follow an actual preprod transaction sequence: claim, fold with
-the representative NFT, recover, retire, and complete to Over. The speaker
-notes retain a transaction-ID placeholder for each step. They will be filled
+the representative NFT, recover, retire, and complete to Over. The technical
+references retain a transaction-ID placeholder for each step. They will be filled
 from the connected run before the demonstration is presented as executed.
 
 [The external-node work](https://github.com/lambdasistemi/singular/issues/78)
@@ -49,8 +49,8 @@ not establish the naming application's preprod run.
 
 The naming slides bind their model and validator references to
 [`d840559a04848675c70eae4febae51c48c619257`](https://github.com/lambdasistemi/singular/commit/d840559a04848675c70eae4febae51c48c619257).
-The notes separate model propositions, validator source and finite ledger
-execution. Existing devnet results remain supporting material in the notes;
+The technical references separate model propositions, validator source and finite ledger
+execution. Existing devnet results remain supporting material there;
 they do not substitute for the preprod demo.
 
 The opening slide separately binds the KERI requirements to
@@ -58,9 +58,9 @@ The opening slide separately binds the KERI requirements to
 These are reasons for the intended integration, not evidence that it is complete.
 The registry establishes uniqueness within its authenticated deployment; it does
 not prevent someone creating another registry. Naming's permanent retirement and
-KERI's conviction and guarded return are distinct consumer rules.
+KERI's conviction are distinct consumer rules.
 
 An authenticated resolver service, wallet integration and mainnet deployment
-remain future work. The speaker notes describe the planned
+remain future work. The technical references describe the planned
 [programmable-value consumer](https://github.com/lambdasistemi/singular/issues/97),
 without claiming completed KERI integration.

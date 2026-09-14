@@ -1,0 +1,197 @@
+Technical references for the presentation
+
+Slide 1
+
+Purpose: motivate two cardano-keri requirements, payment authorization and permanent conviction. Singular stores Active or Over without application payload, and Delete returns a key to absence. Application state lives with the representative, outside the registry.
+
+Singular source: https://github.com/lambdasistemi/singular/blob/2826d81/README.md and https://github.com/lambdasistemi/singular/blob/2826d81/docs/design.md.
+
+KERI requirement sources at revision 8021ff9588bb4609dab215556e96210976d5a327:
+https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e96210976d5a327/docs/user/consumer-checklist.md
+https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e96210976d5a327/docs/design/trust-model.md
+https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e96210976d5a327/lean/CardanoKeri/RegistryGoals.lean
+
+The consumer needs a unique checkpoint to consult, while duplicate registration lets a holder of past keys create a rival record. Registry uniqueness does not guarantee freshness of unsubmitted KERI events. R2_one_ckpt_per_aid and R1_registered_refused state model uniqueness and repeat-registration refusal. R3_convicted_permanent and R3_convicted_never_registered state the consumer model's terminal-conviction policy. These motivate integration; they are not a completed Singular-to-KERI conformance claim. Source inspection only, no new model or ledger execution.
+
+Uniqueness is within an authenticated deployment, not a ban on rival registries or different identities.
+
+====================
+
+Slide 2
+
+The operator's reason for the surrogate: cardano-keri is substantially more complex and belongs in another presentation. Its key-event histories, witness checks and conflict evidence would obscure the narrower registry story here. Naming uses a name, a controller key and payment-destination data to make uniqueness and the lifecycle concrete.
+
+Naming is the surrogate application, not the ultimate product objective or a complete model of KERI. The two consumers have distinct authorization and lifecycle rules: in particular, naming's voluntary permanent retirement must not be equated with KERI's conviction. The actual product direction remains on-chain Singular support for cardano-keri. See the first slide's pinned KERI model and the third slide's planned consumer work. Wallet and resolver integration are not asserted by these diagrams.
+
+====================
+
+Slide 3
+
+Singular is the registry foundation. Successful registration certifies an application output and mints its representative; the consumer keeps its state and authorization rules. The generic registry offers Insert, Update and Delete subject to its consumer. Permanent occupation and retirement-only quorum are naming rules, not mandatory behavior for all consumers. See the pinned Singular README and the existing naming architecture notes.
+
+Other uses are examples of what a consumer could build: prevent duplicate registration of an asset serial number, issue a credential identifier once, or track a device identifier with application-specific control. None of these integrations is claimed delivered. Registry uniqueness does not certify a physical asset, validate a credential issuer, or prove the person or device behind an identifier.
+
+Preprod: the operator reports that the smart contract is deployed. As checked on 14 September 2026, PR #106 still describes real devnet deployment evidence and a future preprod run. No preprod deployment manifest or bootstrap transaction was found in this presentation lane. A public deployment reference has been requested; the audience badge remains reference pending until it can be linked and checked. A contract deployment is distinct from the complete connected naming demo, which also remains pending. [Deployment PR #106](https://github.com/lambdasistemi/singular/pull/106).
+
+Close on the argument: a simple name already needs unique identity, independent state, recovery and a permanent ending. That is enough to give the registry a useful job. The next consumer can build on the same boundary.
+
+Planned direction: [Programmable naming, #97](https://github.com/lambdasistemi/singular/issues/97). Replace the payment destination with a consumer-defined value. Require the consumer's value validator to execute at registration and maintenance through a pinned script withdrawal, following the registry's existing consumer mechanism.
+
+This is future work. The issue leaves the validator's placement open: a record field or an application parameter. Lean must be generalized before dependent implementation is accepted. The second instance does not yet establish KERI conformance.
+
+The preprod demonstration on slide 12 is a delivery requirement in its own right; it must not be deferred to this future abstraction.
+
+====================
+
+Slide 4
+
+Open with the question a payer would ask: which alice counts? Token text alone cannot answer it. A minting policy can enforce uniqueness; Singular offers a reusable registry with its own authenticated namespace. Another registry can still have its own alice.
+
+The argument of this talk: a small naming application already needs this shared identity boundary. It gives us a concrete reason for the registry before introducing the larger KERI consumer.
+
+Read: [Naming walkthrough](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/naming-demo.md). The competing-claim example accepts the first valid fold and refuses the second with occupied-key.
+
+Source and Lean revision for the technical claims throughout these slides: d840559a04848675c70eae4febae51c48c619257. Preprod demonstration identities remain to be filled on slide 12.
+
+====================
+
+Slide 5
+
+Use alice twice: both claims can wait, but after the first valid absent-key fold, the competing insertion is refused. The controller's claim approval does not create a registrar role or reserve the name in advance. Successful folding creates the representative in the application output.
+
+The model also lets the claimant cancel an unfulfilled claim with separate authorization, copying the refund address stored in its Insert commitment. Original Insert approval alone cannot cancel it. This model story does not itself establish the entire connected Insert-to-Withdraw ledger path; the retained LC ledger fixtures are narrower evidence.
+
+Read: [Claim and cancellation lifecycle](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/naming-lifecycle.md); [application.ak, fold](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/application.ak); [representative.ak, MintRepresentative](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/representative.ak).
+
+Optional model walkthrough: [Simulator](https://lambdasistemi.github.io/singular/simulator/), choose m1-naming, queue two claims and fold each. The presentation's ledger demo is the preprod sequence on slide 12.
+
+An MPF trie is an authenticated map: its root commits to the entries, and a proof lets the validator check an entry or its absence. A fold applies pending requests to that map. The application certifies a proposal; the fold checks that its key can actually be inserted.
+
+Requests may wait while the registry changes. Approval does not reserve a spelling. Uniqueness is settled against the root being spent by the successful fold.
+
+There is no privileged folder. Permissionless access still requires a valid transaction and a fee payer; it makes no promise that someone will submit the transaction promptly.
+
+Read: [Requests and folding](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/lifecycle.md) and [Registry/application diagram](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/README.md). These describe the design; they do not supply throughput measurements.
+
+====================
+
+Slide 6
+
+The arrow is the successful registration fold: the registry advances and the representative is minted into the certified application output. While the name is active, that output carries the NFT and the naming datum. During retirement the NFT moves into request custody; completion burns it.
+
+Ordinary payment-destination maintenance spends the application's output and creates its successor without changing the registry root. The controller must sign. Control, next-control commitment and retirement quorum are preserved.
+
+Read: [Architecture](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/README.md); [application.ak, maintain](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/application.ak). In the source, maintain explicitly compares the successor's control_address, next_control_commitment and retirement_quorum with the consumed record.
+
+The diagram uses the model's Active label. The concrete implementation stores the representative value in its authenticated map.
+
+Introduce the four fields only as needed: control address, next-control commitment, retirement quorum and payment destination. The destination is routing data, distinct from the authority that controls the record.
+
+KERI introduces identifiers, key-event logs, witnesses and watchers. Naming lets the audience see the registry/application boundary through familiar actions first. This is a teaching choice, not evidence of completed KERI integration.
+
+Read: [Naming fields and finite-model limits](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/naming-demo.md); [Naming market evaluation](https://gist.github.com/paolino/b99b73135efea14befe687029418f2c1). The comparison recommends keeping naming as a maintained reference application. It does not establish demand for a separate naming business.
+
+The value lies in the combination of rules. Permissionless registration, precommitted recovery and permanent retirement each have precedents; we need not claim invention to demonstrate usefulness.
+
+The wallet icons represent stored routing data, not a delivered wallet or resolver integration. Destination maintenance is separate from the five-step preprod sequence.
+
+====================
+
+Slide 7
+
+Set up the story before showing the loss: the next-control commitment is installed before the current key disappears, including at registration. This is not recovery from an arbitrary new key after the fact. The next payment key must remain available.
+
+The backup key must survive. Recovery checks the revealed canonical Cardano address against the stored, domain-separated commitment. It requires the revealed address's payment-key signer, installs that controller, and stores a fresh next commitment. The old controller need not sign; its former authority no longer permits maintenance after recovery.
+
+The validator checks:
+expect computed == record.next_control_commitment
+expect has(extra_signatories, revealed_hash)
+
+Read: [application.ak, recover](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/application.ak); [Recovery runner and observations](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/recovery-retirement.md). The runner describes both successful handover and refusal of wrong reveals, wrong signers, replay and old-key maintenance.
+
+Proved in the model: recovery_accepts_without_old_controller and old_controller_dead_after_recovery in [NamingLifecycleStatements.lean](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/lean/Singular/NamingLifecycleStatements.lean). These statements prove concrete model cases; they are not a universal correctness proof of the compiled validator or hash implementation.
+
+====================
+
+Slide 8
+
+The backup key must survive. Recovery checks the revealed canonical Cardano address against the stored, domain-separated commitment. It requires the revealed address's payment-key signer, installs that controller, and stores a fresh next commitment. The old controller need not sign; its former authority no longer permits maintenance after recovery.
+
+The validator checks:
+expect computed == record.next_control_commitment
+expect has(extra_signatories, revealed_hash)
+
+Read: [application.ak, recover](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/application.ak); [Recovery runner and observations](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/recovery-retirement.md). The runner describes both successful handover and refusal of wrong reveals, wrong signers, replay and old-key maintenance.
+
+Proved in the model: recovery_accepts_without_old_controller and old_controller_dead_after_recovery in [NamingLifecycleStatements.lean](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/lean/Singular/NamingLifecycleStatements.lean). These statements prove concrete model cases; they are not a universal correctness proof of the compiled validator or hash implementation.
+
+====================
+
+Slide 9
+
+The quorum and threshold are fixed at registration. Retirement counts distinct signed members:
+threshold > 0 && naming.distinct_count(signed) >= threshold
+
+The quorum is trusted with a consequential power: it can retire a name even against the controller's wishes. It cannot use its quorum role to redirect the destination or change the controller. It is not a death oracle, and it does not supply social recovery. A member who independently holds a controller key has that separate authority.
+
+Read: [application.ak, retire / quorum_authorized / maintain](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/application.ak); [Retirement runner](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/recovery-retirement.md). The documented rows distinguish controller-alone from quorum-alone authorization and test insufficient quorum and attempted takeover/redirection.
+
+Model examples: controller_and_quorum_retirement_accept, quorum_only_control_takeover_refused and quorum_only_payment_redirection_refused in [NamingLifecycleStatements.lean](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/lean/Singular/NamingLifecycleStatements.lean). The market review found the separate retirement-only quorum to be the strongest specific distinction; that search is not proof that no equivalent exists.
+
+Three people are a visual example only, not a fixed protocol group size. The configured threshold counts distinct members.
+
+====================
+
+Slide 10
+
+Initiation and completion are separate transactions. Pending retirement holds the representative in custody; it is not yet Over. Completion spends the paired request and authenticated registry state, applies the retirement update, and burns the exact representative. No controller or quorum approval is required for completion; a fee input still needs its owner's witness.
+
+The custody validator checks:
+expect held_burned_exactly_once(claim, tx)
+expect request_binds_burn(claim, stateIn, requestIn)
+
+Read: [retirement_custody.ak](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/retirement_custody.ak); [Completion and refusal evidence](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/onchain-release/README.md).
+
+Model: [over_terminal](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/theorems.md) and [retirement_pending_then_over / re_registration_after_over_refused](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/lean/Singular/NamingLifecycleStatements.lean). The manifest retains a missing general custody-escape theorem; the concrete custody examples do not fill that proof gap.
+
+Naming forbids Delete, although the generic registry has a Delete operation. Permanent occupation applies within this registry. Retirement cannot stop payments sent directly to an already saved raw address.
+
+====================
+
+Slide 11
+
+Initiation and completion are separate transactions. Pending retirement holds the representative in custody; it is not yet Over. Completion spends the paired request and authenticated registry state, applies the retirement update, and burns the exact representative. No controller or quorum approval is required for completion; a fee input still needs its owner's witness.
+
+The custody validator checks:
+expect held_burned_exactly_once(claim, tx)
+expect request_binds_burn(claim, stateIn, requestIn)
+
+Read: [retirement_custody.ak](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/naming-onchain/validators/retirement_custody.ak); [Completion and refusal evidence](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/onchain-release/README.md).
+
+Model: [over_terminal](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/docs/theorems.md) and [retirement_pending_then_over / re_registration_after_over_refused](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/lean/Singular/NamingLifecycleStatements.lean). The manifest retains a missing general custody-escape theorem; the concrete custody examples do not fill that proof gap.
+
+Naming forbids Delete, although the generic registry has a Delete operation. Permanent occupation applies within this registry. Retirement cannot stop payments sent directly to an already saved raw address.
+
+Keep the boundary explicit when speaking: another registry could still have its own alice, and a saved raw payment address still works independently of the retired name.
+
+====================
+
+Slide 12
+
+Use one connected name lifecycle on preprod. Fill each transaction id from the real run; retain the pending label until that run exists.
+
+| Step | Transaction id / link | Observable result |
+| --- | --- | --- |
+| Claim | PENDING | Claim and pending request |
+| Fold | PENDING | Active registry entry; representative in application output |
+| Recover | PENDING | Same representative; new controller and fresh commitment |
+| Retire | PENDING | Representative in completion-only custody; record consumed |
+| Complete to Over | PENDING | Paired update; exact burn; permanently occupied key |
+
+Run identity: name PENDING; registry identity PENDING; representative policy/name PENDING; release/archive identity PENDING; implementation and Lean revisions PENDING. State which retirement route the displayed transaction uses. Keep the alternative route and relevant refusal evidence separately identified.
+
+Delivery dependency: [#78](https://github.com/lambdasistemi/singular/issues/78). At the 14 September 2026 readback, its body covers external-node capability and explicitly excludes deployment and the naming journey. Closing that ticket alone is not evidence of this preprod sequence.
+
+Supporting devnet evidence only: [v0.4.0](https://github.com/lambdasistemi/singular/releases/tag/v0.4.0) ships finite lifecycle rows. [#91](https://github.com/lambdasistemi/singular/issues/91) records three archive runners passing with CANDIDATE_SHA=d840559a04848675c70eae4febae51c48c619257; archive-only replay without that override remains a reported defect. [Archive runbook](https://github.com/lambdasistemi/singular/blob/d840559a04848675c70eae4febae51c48c619257/onchain-release/README.md). No new ledger run was performed to prepare these slides.
+
+Wallet integration, an authenticated resolver service and mainnet deployment remain outside the demonstrated product.

@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "naming-presentation.md",
-    "sha256": "6b4454e2e23468ceffd07968f9cec058f560e8e6390be8933f09eeef1daa4f59"
+    "sha256": "4dc093d827ba404a18e9797449be0fe892c02a6e5f17e9152903ed267f981c73"
   },
   "watch-the-presentation": [
     {
-      "text": "Watch the twelve-slide presentation here, or open the full-screen view. The opening explains why developing cardano-keri revealed the need for uniqueness: a single live key record for authorizing payments, a saved state to return from, and a permanent conviction record. The second slide explains why naming is the simpler surrogate and KERI needs another presentation. The third introduces Singular and possible applications: asset serial numbers, credential identifiers and device identifiers. The subsequent slides spell out user stories. Click inside and use the arrow keys. Presenter mode, Markdown and notes are available separately.",
+      "text": "Watch the twelve-slide presentation here, or open the full-screen view. The opening explains two reasons cardano-keri needs uniqueness: one live key record for authorizing payments and a permanent conviction record. The second explains why naming is the simpler surrogate. The third introduces the registry and possible applications. Presenter notes are short speaking cues. Sources, model details and transaction placeholders are in the separate technical references. Click inside the slides and use the arrow keys or navigation controls.",
       "pause": 500
     }
   ],
@@ -17,13 +17,13 @@
   ],
   "the-preprod-demonstration": [
     {
-      "text": "The preproduction run is pending. The demonstration will follow one real transaction sequence: claim a name, fold with its representative N F T, recover control, retire, and complete to Over. Transaction identifiers in the speaker notes remain pending until that connected run exists. External-node tooling alone does not establish the demonstration.",
+      "text": "The preproduction run is pending. The demonstration will follow one real transaction sequence: claim a name, fold with its representative N F T, recover control, retire, and complete to Over. Transaction identifiers in the technical references remain pending until that connected run exists. External-node tooling alone does not establish the demonstration.",
       "pause": 500
     }
   ],
   "evidence-and-limits": [
     {
-      "text": "Naming claims and KERI requirements have separate exact source revisions. Speaker notes distinguish model propositions, source code and finite ledger execution. The opening describes the intended KERI integration, not a completed one. Uniqueness holds within the authenticated registry deployment. Naming retirement and KERI conviction and return are different consumer rules. The preprod deployment reference is awaiting verification, and the connected naming demo is still pending. Wallet integration, authenticated resolution and the other suggested applications remain future work.",
+      "text": "Naming claims and KERI requirements have separate exact source revisions. Technical references distinguish model propositions, source code and finite ledger execution. The opening describes the intended KERI integration, not a completed one. Uniqueness holds within the authenticated registry deployment. Naming retirement and KERI conviction are different consumer rules. The preprod deployment reference is awaiting verification, and the connected naming demo is still pending. Wallet integration, authenticated resolution and the other suggested applications remain future work.",
       "pause": 500
     }
   ]
