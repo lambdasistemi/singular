@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 
 root = Path(__file__).resolve().parent.parent
 stage = root / ".docs-source"
@@ -86,3 +87,15 @@ assets.mkdir()
 (assets / "read-aloud.js").write_text(reader)
 # Pinned Mermaid: served from the site so no page loads a script from a CDN.
 shutil.copyfile(os.environ["MERMAID_JS"], assets / "mermaid.min.js")
+
+# Build the embedded deck from the same source for local docs, previews and Pages.
+slides = stage / "presentations"
+(slides / "naming").mkdir(parents=True)
+deck = root / "presentations/naming.md"
+subprocess.run(["marp", "--no-config-file", str(deck), "-o", str(slides / "naming/index.html")], check=True)
+notes = re.findall(r"<!--\s*\n(.*?)\n-->", deck.read_text(), flags=re.S)
+if not notes:
+    raise RuntimeError("the presentation has no speaker notes")
+(slides / "naming-notes.txt").write_text("\n\n---\n\n".join(notes) + "\n")
+# Keep the downloadable source out of MkDocs' Markdown-to-page conversion.
+shutil.copyfile(deck, slides / "naming.md.txt")

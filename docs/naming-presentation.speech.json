@@ -1,0 +1,30 @@
+{
+  "_source": {
+    "file": "naming-presentation.md",
+    "sha256": "0bac8043eda8cff92762f2a953a5863f9b215d79a344b34f1851c4c94137d496"
+  },
+  "watch-the-presentation": [
+    {
+      "text": "Watch the ten-slide naming presentation here, or open the full-screen view. Click inside the slides and use the arrow keys or navigation controls. The full-screen view also offers presenter mode. The Markdown and speaker notes are available separately.",
+      "pause": 500
+    }
+  ],
+  "the-boundary-the-naming-app-demonstrates": [
+    {
+      "text": "The diagram separates the Singular registry from the naming application. A successful fold updates the authenticated name map and mints the representative N F T into an application output. The controller maintains the payment destination there. The registry supplies uniqueness within its namespace; the application owns its state and authorization rules. Retirement burns the representative and leaves the name permanently occupied.",
+      "pause": 500
+    }
+  ],
+  "the-preprod-demonstration": [
+    {
+      "text": "The preproduction run is pending. The demonstration will follow one real transaction sequence: claim a name, fold with its representative N F T, recover control, retire, and complete to Over. Transaction identifiers in the speaker notes remain pending until that connected run exists. External-node tooling alone does not establish the demonstration.",
+      "pause": 500
+    }
+  ],
+  "evidence-and-limits": [
+    {
+      "text": "The slides link to an exact model and validator revision. Speaker notes distinguish model propositions, source code and finite ledger execution. Existing development-network results are supporting material only. The demonstration must run on preproduction. Resolver services, wallet integration and mainnet deployment remain future work. Programmable values and a second KERI consumer are planned, not completed integration.",
+      "pause": 500
+    }
+  ]
+}

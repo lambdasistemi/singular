@@ -1,6 +1,6 @@
 { pkgs, src, sharedShell, sharedSource, mermaidJs }:
 let
-  tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just ];
+  tools = sharedShell.nativeBuildInputs ++ sharedShell.buildInputs ++ [ pkgs.python3 pkgs.just pkgs.marp-cli ];
   candidateRef = src.rev or (src.dirtyRev or "");
   # Material fetches Mermaid from unpkg at read time unless `mermaid` is already
   # defined. The shared toolchain pins a copy; serving it from the site keeps
@@ -75,7 +75,7 @@ in {
   };
   shell = pkgs.mkShell {
     inputsFrom = [ sharedShell ];
-    packages = [ pkgs.python3 pkgs.just ];
+    packages = [ pkgs.python3 pkgs.just pkgs.marp-cli ];
     DOCS_SHARED_SOURCE = "${sharedSource}";
     MERMAID_JS = "${mermaidJs}";
   };
