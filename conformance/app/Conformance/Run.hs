@@ -5548,7 +5548,7 @@ requestActionConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
     fromAction _ = []
 
 -- | `ProofStep` indices inside `Update` actions (0 `Branch`, 1 `Fork`,
--- 2 `Leaf`). Probe-only reader for the t81 present-key `Fork` control.
+-- 2 `Leaf`), read from the transaction supplied to the node.
 proofStepConstrs :: ConwayTx -> [Integer]
 proofStepConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
   where
@@ -5560,7 +5560,7 @@ proofStepConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
     fromStep _ = []
 
 -- | Every `Fork` step in the tx carries a well-formed 3-field
--- `Neighbor`. Probe-only companion to `proofStepConstrs`.
+-- `Neighbor`. Companion to `proofStepConstrs`.
 forkNeighborsWellFormed :: ConwayTx -> Bool
 forkNeighborsWellFormed tx = all fromDatum (redeemerPlutusDatas tx)
   where
