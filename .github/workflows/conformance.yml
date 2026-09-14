@@ -21,16 +21,16 @@ permissions:
   contents: read
 concurrency:
   group: conformance-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   lint:
     name: Workflow parses, lints clean, owned docs page bound
     runs-on: nixos
     timeout-minutes: 20
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance-lint"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -64,9 +64,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 60
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-conformance"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -401,9 +401,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 20
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage-gate"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
