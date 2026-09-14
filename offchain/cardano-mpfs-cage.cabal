@@ -36,7 +36,10 @@ library
   hs-source-dirs:   lib naming/src
   build-depends:
     , aeson                  >=2.1  && <2.3
+    , async
     , base                   >=4.14 && <5
+    , base16-bytestring
+    , bech32
     , bytestring             >=0.11 && <0.13
     , cardano-crypto-class
     , cardano-ledger-allegra
@@ -46,6 +49,8 @@ library
     , cardano-strict-containers
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-node-clients
+    , cardano-node-clients:devnet
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers             >=0.6  && <0.8
@@ -55,6 +60,7 @@ library
     , memory
     , microlens
     , mts:mpf-write
+    , ouroboros-network
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -68,6 +74,7 @@ library
     Cardano.MPFS.Cage.Candidate
     Cardano.MPFS.Cage.Config
     Cardano.MPFS.Cage.Ledger
+    Cardano.MPFS.Cage.Node
     Cardano.MPFS.Cage.Proof
     Cardano.MPFS.Cage.Provider
     Cardano.MPFS.Cage.Trie
@@ -122,7 +129,6 @@ executable journey
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -136,7 +142,6 @@ executable journey
     , containers
     , microlens
     , mts:mpf-write
-    , ouroboros-network
     , plutus-tx
     , text
 
@@ -156,7 +161,6 @@ executable li01
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -195,7 +199,6 @@ executable naming-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -233,7 +236,6 @@ executable recovery-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -271,7 +273,6 @@ executable retirement-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -310,7 +311,6 @@ executable register-rows
   main-is:          Main.hs
   build-depends:
     , aeson
-    , async
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -482,6 +482,7 @@ test-suite cage-tests
   other-modules:
     Cardano.MPFS.Cage.CandidateSpec
     Cardano.MPFS.Cage.FailureMatchSpec
+    Cardano.MPFS.Cage.NodeSpec
     Cardano.MPFS.Cage.TypesSpec
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
@@ -508,6 +509,7 @@ test-suite e2e-tests
   other-modules:
     Cardano.MPFS.Cage.E2E.CageSpec
     Cardano.MPFS.Cage.E2E.Fork81Spec
+    Cardano.MPFS.Cage.E2E.NodeSpec
   build-depends:
     , async
     , base
@@ -521,6 +523,7 @@ test-suite e2e-tests
     , cardano-node-clients:devnet
     , cardano-tx-tools:tx-build
     , containers
+    , directory
     , hspec
     , microlens
     , mts:mpf-write

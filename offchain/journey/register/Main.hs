@@ -78,7 +78,6 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -103,7 +102,7 @@ import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -178,6 +177,15 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
+import Cardano.MPFS.Cage.Node (
+    NodeSession (..),
+    awaitChain,
+    awaitTx,
+    confirmationDelay,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
 import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.Trie (Trie (..), TrieManager (..))
 import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
@@ -225,26 +233,15 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
     addKeyWitness,
-    devnetMagic,
     enterpriseAddr,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
     keyHashFromSignKey,
     mkSignKey,
  )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
 import Naming.Register
@@ -401,6 +398,19 @@ main = do
 -- The run
 -- ---------------------------------------------------------
 
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
+
 runMode :: Mode -> FilePath -> FilePath -> IO ()
 runMode mode namingPath mpfsPath = do
     enbp <- loadBlueprint namingPath
@@ -447,16 +457,10 @@ runMode mode namingPath mpfsPath = do
             failWith
                 "staking.staking compiled code not found in the MPFS \
                 \blueprint (the swapped-hook control withdraws from it)"
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <- async $ runNodeClient devnetMagic sock lsqCh ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
-        pp <- Cage.queryProtocolParams prov
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+            submit = nsSubmitter sess
+            pp = nsPParams sess
         let appScript = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -655,7 +659,6 @@ runMode mode namingPath mpfsPath = do
                     ]
             )
         emit "report" ("human-readable report (S3 reads raw evidence, not this): " <> (envEvDir env </> "report.json"))
-        cancel nodeThread
 
 data Env = Env
     { envProv :: Cage.Provider IO
@@ -906,7 +909,7 @@ bootCage prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir ev
         Submitted _ -> pure ()
         Rejected reason ->
             failWith ("boot: rejected: " <> show reason)
-    threadDelay 5_000_000
+    awaitTx signedBoot
     let MultiAsset ma = signedBoot ^. bodyTxL . mintTxBodyL
         assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
     tok <- case assets of
@@ -1826,7 +1829,7 @@ parkGarbageAt env addr = do
         Submitted _ -> pure ()
         Rejected reason -> failWith ("park-garbage: refused: " <> show reason)
     let txid = txIdHex signed
-    threadDelay 5_000_000
+    awaitTx signed
     garbageIn <- mustFindUTxO (envProv env) addr txid "garbage output"
     pure (garbageIn, 2_000_000)
   where
@@ -3412,7 +3415,7 @@ faucetParty prov submit evDir evNext = do
         Rejected reason ->
             failWith
                 ("faucet: refused: " <> T.unpack (TE.decodeUtf8Lenient reason))
-    threadDelay 5_000_000
+    awaitTx faucetTx
     after <- Cage.queryUTxOs prov partyAddr
     afterFolder <- Cage.queryUTxOs prov folderAddr
     let txid = txIdHex faucetTx
@@ -3529,7 +3532,7 @@ publishBatch prov submit pp poolRef addr scripts evDir evNext = do
         Rejected reason ->
             failWith ("publish: refused: " <> show reason)
     let txid = txIdHex tx
-    threadDelay 5_000_000
+    awaitTx tx
     after <- Cage.queryUTxOs prov addr
     let mine =
             sortBy
@@ -3677,18 +3680,20 @@ mustFindUTxO ::
     String ->
     String ->
     IO TxIn
-mustFindUTxO prov addr txid label = do
-    utxos <- Cage.queryUTxOs prov addr
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos txid)
-    case mine of
-        ((i, _) : _) -> pure i
-        [] ->
-            failWith
-                ( label
-                    <> ": no output of tx "
-                    <> txid
-                    <> " is live at the address"
-                )
+mustFindUTxO prov addr txid label =
+    awaitChain
+        ( label
+            <> ": no output of tx "
+            <> txid
+            <> " is live at the address"
+        )
+        $ do
+            utxos <- Cage.queryUTxOs prov addr
+            let mine =
+                    sortBy
+                        (comparing (txInIndex . fst))
+                        (utxosByTxId utxos txid)
+            pure (fst <$> listToMaybe mine)
 
 mustOutAt :: Cage.Provider IO -> Addr -> TxIn -> IO (TxOut ConwayEra)
 mustOutAt prov addr txin = do
@@ -3848,7 +3853,7 @@ expectRefused mode env rowName modelReason guard signed = do
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay 5_000_000
+    threadDelay confirmationDelay
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------
@@ -4087,26 +4092,6 @@ recordRow ref row = modifyIORef' ref (row :)
 -- ---------------------------------------------------------
 -- Shared plumbing
 -- ---------------------------------------------------------
-
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
-verifyConnection :: Async (Either e ()) -> IO ()
-verifyConnection nodeThread =
-    poll nodeThread >>= \case
-        Just (Left err) ->
-            failWith ("node connection failed: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Just _ -> failWith "node connection error"
-        Nothing -> pure ()
 
 nextControlCommitmentOf :: ByteString -> ByteString
 nextControlCommitmentOf addressBytes0 =

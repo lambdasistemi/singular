@@ -90,8 +90,6 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -175,6 +173,13 @@ import Cardano.MPFS.Cage.Ledger (
     PParams,
     TokenId (..),
  )
+import Cardano.MPFS.Cage.Node (
+    NodeSession (..),
+    awaitTx,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
 import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     addrKeyHashBytes,
@@ -200,23 +205,12 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTxOutRef (..),
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
     addKeyWitness,
-    devnetMagic,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
  )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
 import Naming.Wire
@@ -388,6 +382,19 @@ printRow control = do
 -- The run
 -- ---------------------------------------------------------
 
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
+
 runLi01 ::
     Control ->
     ScriptIdentity ->
@@ -395,8 +402,10 @@ runLi01 ::
     SBS.ShortByteString ->
     IO ()
 runLi01 control si stateBytes requestBytes = do
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+            submit = nsSubmitter sess
+            pp = nsPParams sess
         emit
             "identity"
             ( "upstream source revision "
@@ -407,21 +416,6 @@ runLi01 control si stateBytes requestBytes = do
                 <> show (vpParameters (statePin si))
                 <> " parameter(s))"
             )
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    devnetMagic
-                    sock
-                    lsqCh
-                    ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
-        _ <- Cage.queryProtocolParams prov
-        pp <- Cage.queryProtocolParams prov
         -- The canonical seed: designated as the lexically first
         -- UTxO of the devnet genesis wallet. The abstract seed
         -- identity 400 realises as this concrete output reference,
@@ -523,7 +517,7 @@ runLi01 control si stateBytes requestBytes = do
                     ( "tx rejected: "
                         <> show (TE.decodeUtf8Lenient reason)
                     )
-        threadDelay 5_000_000
+        awaitTx signed
         let txid = txIdHex signed
         -- The script witness must be exactly the derived applied
         -- state script: the identity the row binds is what ran.
@@ -581,7 +575,6 @@ runLi01 control si stateBytes requestBytes = do
         stepDatumFromChain control namingDatum scriptUtxos
         -- Marker: the resulting state, read back from the chain.
         stepStateMatchesRow control cfg seedRef seedName scriptUtxos
-        cancel nodeThread
         emit
             "complete"
             ( "LI01-canonical-initialization-accepts executed and \
@@ -1073,32 +1066,6 @@ stepStateMatchesRow control cfg seedRef seedName scriptUtxos = do
 -- ---------------------------------------------------------
 -- Shared plumbing (same code path as the cage journey)
 -- ---------------------------------------------------------
-
--- | Adapt a @cardano-node-clients@ 'N2C.Provider' to a @Cage@
--- 'Cage.Provider'. The record fields are identical.
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
--- | Fail the run unless the node client thread is alive and
--- connected after startup.
-verifyConnection :: (Show e) => Async (Either e ()) -> IO ()
-verifyConnection nodeThread = do
-    status <- poll nodeThread
-    case status of
-        Just (Left err) ->
-            failWith ("node connection failed: " <> show err)
-        Just (Right (Left err)) ->
-            failWith ("node connection error: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Nothing -> pure ()
 
 -- ---------------------------------------------------------
 -- Narration helpers

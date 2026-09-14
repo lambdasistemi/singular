@@ -61,7 +61,6 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -82,7 +81,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.List (intercalate, isInfixOf, sortBy)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import Data.Ord (comparing)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -139,6 +138,15 @@ import Cardano.MPFS.Cage.Ledger (
     ConwayEra,
     PParams,
  )
+import Cardano.MPFS.Cage.Node (
+    NodeSession (..),
+    awaitChain,
+    awaitTx,
+    confirmationDelay,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
 import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.TxBuilder.Internal (
     addrKeyHashBytes,
@@ -150,26 +158,15 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     scriptHashBytes,
     spendingIndex,
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
     addKeyWitness,
-    devnetMagic,
     enterpriseAddr,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
     keyHashFromSignKey,
     mkSignKey,
  )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
 import Naming.Wire
@@ -300,16 +297,10 @@ runMode mode blueprintPath = do
             failWith
                 "application.application compiled code not found in the \
                 \naming blueprint"
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <- async $ runNodeClient devnetMagic sock lsqCh ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
-        pp <- Cage.queryProtocolParams prov
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+            submit = nsSubmitter sess
+            pp = nsPParams sess
         let script = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -416,7 +407,6 @@ runMode mode blueprintPath = do
         case mode of
             Probe -> runProbe env claimLCIn
             _ -> runRows mode env claimLCIn claimLMIn claimFoldIn
-        cancel nodeThread
 
 -- | The environment every row builds against.
 data Env = Env
@@ -494,6 +484,19 @@ runProbe env claimLCIn = do
 -- ---------------------------------------------------------
 -- The ten rows
 -- ---------------------------------------------------------
+
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
 
 runRows :: Mode -> Env -> TxIn -> TxIn -> TxIn -> IO ()
 runRows mode env claimLCIn claimLMIn claimFoldIn = do
@@ -1419,7 +1422,7 @@ splitGenesis prov submit = do
                 ( "split: refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    threadDelay 5_000_000
+    awaitTx splitTx
     after <- Cage.queryUTxOs prov genesisAddr
     let txid = txIdHex splitTx
         mine =
@@ -1496,18 +1499,20 @@ mustFindUTxO ::
     String ->
     String ->
     IO TxIn
-mustFindUTxO prov addr txid label = do
-    utxos <- Cage.queryUTxOs prov addr
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos txid)
-    case mine of
-        ((i, _) : _) -> pure i
-        [] ->
-            failWith
-                ( label
-                    <> ": no output of tx "
-                    <> txid
-                    <> " is live at the application validator"
-                )
+mustFindUTxO prov addr txid label =
+    awaitChain
+        ( label
+            <> ": no output of tx "
+            <> txid
+            <> " is live at the application validator"
+        )
+        $ do
+            utxos <- Cage.queryUTxOs prov addr
+            let mine =
+                    sortBy
+                        (comparing (txInIndex . fst))
+                        (utxosByTxId utxos txid)
+            pure (fst <$> listToMaybe mine)
 
 utxosByTxId ::
     [(TxIn, TxOut ConwayEra)] ->
@@ -1642,12 +1647,12 @@ submitAccepted env label signed =
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay 5_000_000
+    threadDelay confirmationDelay
     emit "confirm" ("confirmed on chain: " <> what)
 
 queryAfterDelay :: Env -> IO [(TxIn, TxOut ConwayEra)]
 queryAfterDelay env = do
-    threadDelay 5_000_000
+    threadDelay confirmationDelay
     Cage.queryUTxOs (envProv env) (envAppAddr env)
 
 -- ---------------------------------------------------------
@@ -1721,26 +1726,6 @@ txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
 showIn :: TxIn -> String
 showIn (TxIn (TxId h) (TxIx i)) =
     hex (hashToBytes (extractHash h)) <> "#" <> show i
-
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
-verifyConnection :: (Show e) => Async (Either e ()) -> IO ()
-verifyConnection nodeThread =
-    poll nodeThread >>= \case
-        Just (Left err) -> failWith ("node connection failed: " <> show err)
-        Just (Right (Left err)) ->
-            failWith ("node connection error: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Nothing -> pure ()
 
 -- | Domain-separated next-control commitment (docs/naming-lifecycle.md).
 nextControlCommitmentOf :: ByteString -> ByteString

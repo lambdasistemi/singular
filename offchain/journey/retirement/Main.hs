@@ -64,7 +64,6 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -87,7 +86,7 @@ import Data.Aeson (FromJSON (..), eitherDecode', encode, object, withObject, (.:
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -158,6 +157,15 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
+import Cardano.MPFS.Cage.Node (
+    NodeSession (..),
+    awaitChain,
+    awaitTx,
+    confirmationDelay,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
 import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.Trie (TrieManager (..))
 import Cardano.MPFS.Cage.Trie qualified as Trie
@@ -202,26 +210,15 @@ import Cardano.MPFS.Cage.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
     addKeyWitness,
-    devnetMagic,
     enterpriseAddr,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
     keyHashFromSignKey,
     mkSignKey,
  )
 import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
 import Naming.Register
@@ -360,16 +357,10 @@ runMode mode blueprintPath mpfsPath = do
             failWith
                 "consumer.consumer compiled code not found in the MPFS \
                 \blueprint (every Modify withdraws the pinned consumer)"
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <- async $ runNodeClient devnetMagic sock lsqCh ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
-        pp <- Cage.queryProtocolParams prov
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+            submit = nsSubmitter sess
+            pp = nsPParams sess
         let script = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -630,7 +621,6 @@ runMode mode blueprintPath mpfsPath = do
             MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver
             ControlValid -> runControlValid env recRefusals
             ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
-        cancel nodeThread
 
 data Env = Env
     { envProv :: Cage.Provider IO
@@ -670,6 +660,19 @@ data Env = Env
 -- ---------------------------------------------------------
 -- The seven in-scope rows
 -- ---------------------------------------------------------
+
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
 
 runRows :: Env -> TxIn -> TxIn -> TxIn -> TxIn -> TxIn -> TxIn -> TxIn -> IO ()
 runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver = do
@@ -1162,7 +1165,7 @@ carriesOverRep env (_, o) = case o ^. valueTxOutL of
 -- custody address — anything else fails the row, never assumed).
 overCustodyOut :: Env -> ConwayTx -> String -> IO (TxIn, TxOut ConwayEra)
 overCustodyOut env signed label = do
-    threadDelay 5_000_000
+    awaitTx signed
     utxos <- Cage.queryUTxOs (envProv env) (envCustodyAddr env)
     case filter (carriesOverRep env) (utxosByTxId utxos (txIdHex signed)) of
         [out] -> pure out
@@ -1874,7 +1877,7 @@ rowLX01 env = do
 -- carries the representative at the custody script address.
 assertCustody :: Env -> String -> ConwayTx -> IO ()
 assertCustody env label signed = do
-    threadDelay 5_000_000
+    awaitTx signed
     utxos <- Cage.queryUTxOs (envProv env) (envCustodyAddr env)
     let mine = utxosByTxId utxos (txIdHex signed)
     when (null mine) $
@@ -2571,7 +2574,7 @@ bootRetirementCage prov submit tm stateBytes requestBytes repPolicy consumerByte
             retainOutcome evDir bootTag "accepted" Nothing
             pure ()
         Rejected reason -> failWith ("boot: rejected: " <> show reason)
-    threadDelay 5_000_000
+    awaitTx signedBoot
     let MultiAsset ma = signedBoot ^. bodyTxL . mintTxBodyL
         assets = Map.toList (ma Map.! cagePolicyIdFromCfg cfg)
     tok <- case assets of
@@ -2650,7 +2653,7 @@ publishBatch prov submit pp poolRef addr scripts = do
         Submitted _ -> pure ()
         Rejected reason -> failWith ("publish: refused: " <> show reason)
     let txid = txIdHex tx
-    threadDelay 5_000_000
+    awaitTx tx
     after <- Cage.queryUTxOs prov addr
     let mine =
             sortBy
@@ -2711,18 +2714,20 @@ mustFindUTxO ::
     String ->
     String ->
     IO TxIn
-mustFindUTxO prov addr txid label = do
-    utxos <- Cage.queryUTxOs prov addr
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos txid)
-    case mine of
-        ((i, _) : _) -> pure i
-        [] ->
-            failWith
-                ( label
-                    <> ": no output of tx "
-                    <> txid
-                    <> " is live at the given address"
-                )
+mustFindUTxO prov addr txid label =
+    awaitChain
+        ( label
+            <> ": no output of tx "
+            <> txid
+            <> " is live at the given address"
+        )
+        $ do
+            utxos <- Cage.queryUTxOs prov addr
+            let mine =
+                    sortBy
+                        (comparing (txInIndex . fst))
+                        (utxosByTxId utxos txid)
+            pure (fst <$> listToMaybe mine)
 
 chainRetirementRoot :: Env -> IO String
 chainRetirementRoot env = do
@@ -2928,7 +2933,7 @@ splitGenesis prov submit nSplits = do
                 ( "split: refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    threadDelay 5_000_000
+    awaitTx splitTx
     after <- Cage.queryUTxOs prov genesisAddr
     let txid = txIdHex splitTx
         mine =
@@ -3183,7 +3188,7 @@ retainOutcome evDir tag outcome mReason =
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay 5_000_000
+    threadDelay confirmationDelay
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------
@@ -3326,26 +3331,6 @@ txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
 showIn :: TxIn -> String
 showIn (TxIn (TxId h) (TxIx i)) =
     hex (hashToBytes (extractHash h)) <> "#" <> show i
-
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
-verifyConnection :: (Show e) => Async (Either e ()) -> IO ()
-verifyConnection nodeThread =
-    poll nodeThread >>= \case
-        Just (Left err) -> failWith ("node connection failed: " <> show err)
-        Just (Right (Left err)) ->
-            failWith ("node connection error: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Nothing -> pure ()
 
 nextControlCommitmentOf :: ByteString -> ByteString
 nextControlCommitmentOf bs =

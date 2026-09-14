@@ -1,7 +1,7 @@
 {
   "who-this-is-for": [
     {
-      "text": "Four readers. An application developer who wants unique keys without running a registrar: one policy ID in, a registry of NFT-backed keys out, with minting, burning and reinsertion handled.",
+      "text": "Five readers. An application developer who wants unique keys without running a registrar: one policy ID in, a registry of NFT-backed keys out, with minting, burning and reinsertion handled.",
       "pause": 400
     },
     {
@@ -19,6 +19,10 @@
     {
       "text": "A resolver, who authenticates the registry entry, finds the NFT and reads the application's own output.",
       "pause": 400
+    },
+    {
+      "text": "And an integrator with their own node, who runs the whole thing on a public test network funded by a wallet whose key never leaves their machine. A separate runbook covers the release download, the node and wallet setup, the funding diagnostic and each journey.",
+      "pause": 400
     }
   ],
   "how-the-parts-fit": [
@@ -32,6 +36,10 @@
     },
     {
       "text": "The table lists the three registry requests: Insert from absent to Active with a mint, Update from Active to Over with a burn that permanently reserves the key, and Delete from Active to absent with a burn that frees it.",
+      "pause": 400
+    },
+    {
+      "text": "The reading order that follows ends with the runbook for running every journey against your own preprod node.",
       "pause": 400
     }
   ],
@@ -47,6 +55,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "83d948967817242dfe88fed7eca47f6dbcc3805dd943333e5f844af9d7562dc0"
+    "sha256": "f4696929582d1792718a737570136d3489d3da67981b2ab0cbe16c1bffb5314c"
   }
 }

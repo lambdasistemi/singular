@@ -54,8 +54,6 @@ hashes and the parameters.
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -119,6 +117,13 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
+import Cardano.MPFS.Cage.Node (
+    NodeSession (..),
+    awaitTx,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
 import Cardano.MPFS.Cage.Provider qualified as Cage
 import Cardano.MPFS.Cage.Trie qualified as CageTrie
 import Cardano.MPFS.Cage.Trie (TrieManager (..))
@@ -153,19 +158,11 @@ import Cardano.MPFS.Cage.Types (
     RequestAction (Update),
     UpdateRedeemer (..),
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
     addKeyWitness,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
  )
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import MPF.Backend.Pure (
     MPFInMemoryDB,
     emptyMPFInMemoryDB,
@@ -201,11 +198,8 @@ import MPF.Proof.Insertion (
     foldMPFProof,
     mkMPFInclusionProof,
  )
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 
 -- ---------------------------------------------------------
@@ -506,6 +500,19 @@ witnessScriptHashes tx =
 -- The journey, on a real devnet
 -- ---------------------------------------------------------
 
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
+
 runJourney ::
     ScriptIdentity ->
     SBS.ShortByteString ->
@@ -514,21 +521,9 @@ runJourney ::
     SBS.ShortByteString ->
     IO ()
 runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
-    gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
-        lsqCh <- newLSQChannel 16
-        ltxsCh <- newLTxSChannel 16
-        nodeThread <-
-            async $
-                runNodeClient
-                    (NetworkMagic 42)
-                    sock
-                    lsqCh
-                    ltxsCh
-        threadDelay 3_000_000
-        verifyConnection nodeThread
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
+    withNode $ \sess -> do
+        let prov = nsProvider sess
+            submit = nsSubmitter sess
         tm <- mkPureTrieManager
         -- The proof mirror: an in-memory trie kept in step with
         -- the operations the journey applies on chain. It builds
@@ -571,7 +566,6 @@ runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
         stepReject cfg prov submit tm tokenId appliedState
-        cancel nodeThread
         emit "complete" "11/11 journey steps ok"
 
 -- | Boot a cage: mint the state token, register its trie,
@@ -1311,35 +1305,8 @@ submitWithGenesis submit unsigned = do
     case result of
         Submitted _ -> pure ()
         Rejected reason -> failWith ("tx rejected: " <> show reason)
-    threadDelay 5_000_000
+    awaitTx signed
     pure signed
-
-{- | Adapt a @cardano-node-clients@ 'N2C.Provider' to a
-@Cage@ 'Cage.Provider'. The record fields are identical.
--}
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
-
--- | Fail the journey unless the node client thread is alive
--- and connected after startup.
-verifyConnection :: (Show e) => Async (Either e ()) -> IO ()
-verifyConnection nodeThread = do
-    status <- poll nodeThread
-    case status of
-        Just (Left err) ->
-            failWith ("node connection failed: " <> show err)
-        Just (Right (Left err)) ->
-            failWith ("node connection error: " <> show err)
-        Just (Right (Right ())) ->
-            failWith "node connection closed unexpectedly"
-        Nothing -> pure ()
 
 -- ---------------------------------------------------------
 -- Narration helpers

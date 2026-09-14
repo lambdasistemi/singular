@@ -210,7 +210,6 @@ import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
-import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.MPFS.Cage.AssetName (deriveAssetName)
 import Cardano.MPFS.Cage.Blueprint (
@@ -290,14 +289,19 @@ import Cardano.MPFS.Cage.Types (
     UpdateRedeemer (..),
     stateConsumerPinBytes,
  )
+import Cardano.MPFS.Cage.Node (
+    checkFunding,
+    defaultFundingFloor,
+    devnetGenesis,
+    funderAddr,
+    funderSignKey,
+    sessionMagic,
+    withNodeSocket,
+ )
 import Cardano.MPFS.Cage.Types qualified as CageTypes
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
     enterpriseAddr,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
     keyHashFromSignKey,
     mkSignKey,
     Ed25519DSIGN,
@@ -621,6 +625,7 @@ runRows rawRows receiptsDir = do
     mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
     unless (null devnetRows) $ do
         (stateBytes, requestBytes, consumerBytes) <- loadCodes blueprintPath
+        devnetGenesis >>= mapM_ checkGenesis
         nodeVer <- readNodeVersion
         emit "node" nodeVer
         require
@@ -628,9 +633,7 @@ runRows rawRows receiptsDir = do
             (forgedValue `notElem` [cgV1, cgV2, cgV3, cgV4, controlVal])
         unless (null caDevnet) $
             bracketTmpDir $ do
-                gDir <- genesisDir
-                checkGenesis gDir
-                withCardanoNode gDir $ \sock _startMs ->
+                withNodeSocket $ \sock ->
                     runSession
                         caDevnet
                         control
@@ -643,9 +646,7 @@ runRows rawRows receiptsDir = do
                         sock
         unless (null cgDevnet) $
             bracketTmpDir $ do
-                gDir <- genesisDir
-                checkGenesis gDir
-                withCardanoNode gDir $ \sock _startMs ->
+                withNodeSocket $ \sock ->
                     runSession
                         cgDevnet
                         control
@@ -658,9 +659,7 @@ runRows rawRows receiptsDir = do
                         sock
         unless (null csDevnet) $
             bracketTmpDir $ do
-                gDir <- genesisDir
-                checkGenesis gDir
-                withCardanoNode gDir $ \sock _startMs ->
+                withNodeSocket $ \sock ->
                     runCSSession
                         csDevnet
                         control
@@ -753,6 +752,19 @@ checkConsumerPin consumerBytes = do
                 )
                 (all ((== T.pack hHex) . fst) pins)
     emit "consumer" ("pinned consumer 0x" <> hHex)
+
+{- | The wallet every actor of this run is funded from. On the factory
+devnet it is the genesis UTxO key, as it always was; in external-node
+mode it is the joiner's own signing key
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+below read unchanged.
+-}
+genesisAddr :: Addr
+genesisAddr = funderAddr
+
+-- | The signing key matching 'genesisAddr'.
+genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
+genesisSignKey = funderSignKey
 
 {- | The genesis dir must carry the devnet files before the node
 spawns; otherwise @prepareTmpDir@ fails mid-copy. Points at
@@ -895,7 +907,7 @@ runSession
         nodeThread <-
             async $
                 runNodeClient
-                    (NetworkMagic 42)
+                    sessionMagic
                     sock
                     lsqCh
                     ltxsCh
@@ -907,6 +919,7 @@ runSession
                 failWith "node connection closed before queries ran"
         let prov = adaptProvider (mkN2CProvider lsqCh)
             submit = mkN2CSubmitter ltxsCh
+        checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
         _ <- Cage.queryProtocolParams prov
@@ -5176,7 +5189,7 @@ runCSSession rows control stateBytes requestBytes consumerBytes nodeVer base dir
     nodeThread <-
         async $
             runNodeClient
-                (NetworkMagic 42)
+                sessionMagic
                 sock
                 lsqCh
                 ltxsCh
@@ -5196,6 +5209,7 @@ runCSSession rows control stateBytes requestBytes consumerBytes nodeVer base dir
                 <> hex
                     (scriptHashBytes (computeScriptHash requestBytes))
     _ <- Cage.queryProtocolParams prov
+    checkFunding prov funderAddr defaultFundingFloor
     registerSessionConsumer prov submit consumerBytes
     mapM_ (runCSRow prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr) rows
     cancel nodeThread
@@ -6046,14 +6060,13 @@ runForkProbe :: IO ()
 runForkProbe = do
     blueprintPath <- requireEnv "MPFS_BLUEPRINT"
     (stateBytes, requestBytes, consumerBytes) <- loadCodes blueprintPath
+    devnetGenesis >>= mapM_ checkGenesis
     nodeVer <- readNodeVersion
     emit "node" nodeVer
     base <- requireBase
     emit "base" base
     bracketTmpDir $ do
-        gDir <- genesisDir
-        checkGenesis gDir
-        withCardanoNode gDir $ \sock _startMs ->
+        withNodeSocket $ \sock ->
             runForkProbeSession stateBytes requestBytes consumerBytes sock
 
 runForkProbeSession :: SBS.ShortByteString -> SBS.ShortByteString -> SBS.ShortByteString -> FilePath -> IO ()
@@ -6063,7 +6076,7 @@ runForkProbeSession stateBytes requestBytes consumerBytes sock = do
     nodeThread <-
         async $
             runNodeClient
-                (NetworkMagic 42)
+                sessionMagic
                 sock
                 lsqCh
                 ltxsCh
@@ -6075,6 +6088,7 @@ runForkProbeSession stateBytes requestBytes consumerBytes sock = do
             failWith "node connection closed before queries ran"
     let prov = adaptProvider (mkN2CProvider lsqCh)
         submit = mkN2CSubmitter ltxsCh
+    checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seed)
