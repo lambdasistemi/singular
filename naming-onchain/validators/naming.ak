@@ -200,7 +200,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"3f62792585903776fc69059588783c7ca67ee9d24886c8722ebf8b2a"
+  #"8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
 
 /// Mirror of the MPFS `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
