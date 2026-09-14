@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "naming-presentation.md",
-    "sha256": "5fbd2cc80250db2cd33cc93c692df9c97330adec27e8d7d9320b302cc2468375"
+    "sha256": "6b4454e2e23468ceffd07968f9cec058f560e8e6390be8933f09eeef1daa4f59"
   },
   "watch-the-presentation": [
     {
-      "text": "Watch the eleven-slide presentation here, or open the full-screen view. It begins with the real direction: the Singular registry supports an intended KERI consumer. Naming is the simpler surrogate application used to demonstrate that foundation. Every slide spells out a user role, a desired action and its purpose. Click inside the slides and use the arrow keys or navigation controls. Presenter mode, downloadable Markdown and speaker notes are available separately.",
+      "text": "Watch the twelve-slide presentation here, or open the full-screen view. The opening explains why developing cardano-keri revealed the need for uniqueness: a single live key record for authorizing payments, a saved state to return from, and a permanent conviction record. The second slide explains why naming is the simpler surrogate and KERI needs another presentation. The third introduces Singular and possible applications: asset serial numbers, credential identifiers and device identifiers. The subsequent slides spell out user stories. Click inside and use the arrow keys. Presenter mode, Markdown and notes are available separately.",
       "pause": 500
     }
   ],
@@ -23,7 +23,7 @@
   ],
   "evidence-and-limits": [
     {
-      "text": "The slides link to an exact model and validator revision. Speaker notes distinguish model propositions, source code and finite ledger execution. Existing development-network results are supporting material only. The demonstration must run on preproduction. Resolver services, wallet integration and mainnet deployment remain future work. Programmable values and a second KERI consumer are planned, not completed integration.",
+      "text": "Naming claims and KERI requirements have separate exact source revisions. Speaker notes distinguish model propositions, source code and finite ledger execution. The opening describes the intended KERI integration, not a completed one. Uniqueness holds within the authenticated registry deployment. Naming retirement and KERI conviction and return are different consumer rules. The preprod deployment reference is awaiting verification, and the connected naming demo is still pending. Wallet integration, authenticated resolution and the other suggested applications remain future work.",
       "pause": 500
     }
   ]
