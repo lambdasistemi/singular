@@ -100,6 +100,5 @@ or deployment is used. CC01..CC08 and observed input/root/refund/mint evidence a
 required; successful builds and component tests alone do not establish them.
 
 Baseline evidence establishes expected Insert-only refusal, not a contradiction
-of the negative theorem. Repaired ledger acceptance is still pending at this
-implementation checkpoint. Final candidate/commands/results belong in the PR
-acceptance record after the completed run.
+of the negative theorem. Candidate/command/results and remaining delivery checks are recorded in PR118.
+The mapping and owner tests do not replace the required review and sequencing.

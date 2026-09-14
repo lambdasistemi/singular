@@ -233,6 +233,7 @@
             trap 'rm -rf "$work"' EXIT
             mkdir -p "$work/e2e-test" "$work/node"
             cp -r ${connectedSource}/offchain/e2e-test/genesis "$work/e2e-test/genesis"
+            chmod -R u+w "$work/e2e-test"
             export TMPDIR="$work/node"
             cd "$work"
             register-rows 2>&1 | tee "$S77_EVIDENCE_DIR/connected.log"
