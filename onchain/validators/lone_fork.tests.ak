@@ -1,7 +1,6 @@
 // Ticket #81 / CS07 regression: lone-Fork exclusion with skip > 0.
 //
-// The vendored aiken-lang/merkle-patricia-forestry v2.0.0 (+ the
-// lone-fork-exclusion patch staged by flake.nix, see patches/README.md)
+// Upstream aiken-lang/merkle-patricia-forestry v2.1.0
 // must accept the real absence witness the builder produces for key
 // "cs07-fork-C11" over {A, B}, and its including() must reconstruct the
 // builder's committed post-insert root.
