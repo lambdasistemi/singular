@@ -232,6 +232,23 @@ validator application {
 
 /// `LM01` accepts; `LM02` (no signature), `LM03` (tampered control or
 /// recovery field) and `LM04` (altered quorum) refuse.
+/// Shared Active-record transitions for the parameterized connected entry.
+pub fn active_transition(
+  record: NamingRecord,
+  redeemer: ApplicationRedeemer,
+  claim: Input,
+  own_hash: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  when redeemer is {
+    Maintain -> maintain(record, claim, tx)
+    Retire { key, .. } -> retire(record, claim, key, tx)
+    Recover { revealed_control, representatives, registry } ->
+      recover(record, revealed_control, representatives, registry, claim, own_hash, tx)
+    _ -> False
+  }
+}
+
 fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
   let Transaction { extra_signatories, .. } = tx
   // The controller's payment key must sign; absence alone refuses.
@@ -556,7 +573,7 @@ fn registry_asset_id(state_policy_bytes: ByteArray, token_name: ByteArray) -> By
 }
 
 /// Spelling bytes are the entire preimage. The applied policy scopes registry.
-fn representative_name(key: ByteArray) -> ByteArray {
+pub fn representative_name(key: ByteArray) -> ByteArray {
   blake2b_256(key)
 }
 

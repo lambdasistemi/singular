@@ -17,13 +17,15 @@ from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Re-frozen on integrating the reviewed naming hook/empty-fold
-        # Lean (four theorems; see test_leanscan re-freeze note):
-        # 113 = 109 + 4, unclassified unchanged.
+        # #117 adds two source-bound composition/custody examples to the
+        # previous 113 manifest identities. Unclassified debt is unchanged.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 113)
+        self.assertEqual(inv.manifest_bound, 115)
         self.assertEqual(inv.unclassified, 83)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 196)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 198)
+        for name in ("connected_withdrawal_composition_example", "pending_claim_maintenance_refused"):
+            obligation = inv.by_name()["Singular.NamingLifecycleStatements." + name]
+            self.assertEqual(obligation.classification, "manifest-bound")
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

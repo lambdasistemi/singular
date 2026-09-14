@@ -54,6 +54,7 @@ library
     , cardano-node-clients:devnet
     , cardano-slotting
     , cardano-tx-tools:tx-build
+    , cborg
     , containers             >=0.6  && <0.8
     , crypton
     , directory
@@ -68,6 +69,7 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
+    , serialise
     , text                   >=2.0  && <2.2
     , time
 
@@ -94,6 +96,7 @@ library
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
     Naming.Datum
+    Naming.Connected
     Naming.Register
     Naming.Request
     Naming.Verify

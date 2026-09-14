@@ -1,0 +1,12 @@
+{
+  "builder-sequence": [
+    {
+      "text": "A client creates and preserves a public registration receipt, then uses that receipt to cancel the live pair. The builder authenticates both inputs, preserves the native retraction signature and time window, and requires separate withdrawal issuance. It returns an evaluated, balanced transaction for the caller to sign. The diagram shows registration yielding a receipt and pending pair, which cancellation consumes into the committed refund and retained certificate.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "a922cebf8974c086fc2d99d3a2f613c6b8de2bf8cda4e492fdaaef498a7c426a"
+  }
+}

@@ -409,3 +409,15 @@ Lean's abstract representative remains `{registry, key, policy, assetScope}` at 
 | `NamingLifecycle.retirementRequest` fixes the proposal registry, and `beginRetirement` requires that exact request | `application.Retire` requires a withdrawal under the representative policy read from the authenticated registry reference; `representative.withdraw` checks that same reference's exact registry asset id against its deployment parameter | Zero withdrawal with a redeemer, after registering the representative script stake credential; missing witness and copied-policy foreign-registry reference refuse |
 
 The application and withdrawal handler share one reference-only selection. Maintenance and recovery do not read referenced registry state: they preserve the spent record's token and authorize against its datum. Completion already spends the registry state and executes the representative mint handler's registry-bound burn, so it needs no additional withdrawal witness. Lean is unchanged.
+
+## Connected certified cancellation (#117)
+
+The parameterized `connected.connected` entry and production `Naming.Connected`
+builders implement atomic registration and cancellation with a distinct accepted
+withdrawal certificate. The exact operator rulings, source-bound two-transition
+model composition, portable receipt bytes, mint/spend encodings, authorization,
+refund/custody/root effects and old-deployment limit are recorded in
+[the #117 mapping](../specs/117-connected-cancellation/decisions.md).
+Run `nix run ./offchain#connected-cancellation` from the repository root for its
+isolated devnet gate. Component checks and compilation do not establish that
+ledger gate; see the candidate-bound PR acceptance evidence.

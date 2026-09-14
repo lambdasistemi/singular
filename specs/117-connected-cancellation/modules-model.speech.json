@@ -1,0 +1,12 @@
+{
+  "responsibilities": [
+    {
+      "text": "A client uses the connected naming library to build transactions. The connected validator authenticates registration, fold and cancellation, and shares accepted Active transitions with the existing application. The isolated runner exercises production builders against the ledger and preserves the accepted representative identity and retirement witness. The diagram separates transaction construction, validation and the packaged acceptance route.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "30c1c127ca4fd8a15330eb0c691bc3da6c15dfcef479e924deb5fce0ea970477"
+  }
+}

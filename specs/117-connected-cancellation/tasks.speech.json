@@ -1,0 +1,12 @@
+{
+  "owner-checklist": [
+    {
+      "text": "The bounded implementation and local acceptance steps are complete. Final delivery still requires green current candidate CI, independent review and desk merge sequencing. Task identifiers are bookkeeping for the owner, not additional product behavior.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "eebfbcbb2f4d2c7f260d43afb0ac546bb44851465b6ad44e115ccd1d593b2ba3"
+  }
+}
