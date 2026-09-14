@@ -219,11 +219,13 @@ export REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../on
 export NAMING_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
 nix run .#register-rows -- --node-socket /path/to/node.socket \
   --network-magic 1 --wallet-skey /path/to/joiner.skey \
-  --deployment /path/to/preprod.json --spelling new-name
+  --deployment /path/to/preprod.json --fold-only --spelling new-name
 ```
 
 The adjacent mirror is loaded through the deployment interface and saved
-after every confirmed batch. This runner demonstrates its own registration
+after every confirmed batch. `--fold-only` registers the supplied name and
+drains through the folder without running the full journey's fixed fixtures.
+Choose a name that is not already registered. This runner demonstrates its own registration
 claims; applications draining other naming claims must supply their matching
 attached actions through `prepareFold`. Run against a shared registry only
 in its coordinated writing window.

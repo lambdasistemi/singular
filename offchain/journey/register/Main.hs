@@ -277,6 +277,7 @@ import Naming.Wire
 
 data Mode
     = MainRun
+    | FoldOnly
     | ControlValid
     | ControlWrongReason
     | FaultRepPolicy
@@ -295,7 +296,9 @@ readMode =
         Just other
             | not (null other) ->
                 failWith ("unknown REGISTER_CONTROL value " <> other)
-        _ -> pure MainRun
+        _ -> do
+            args <- getArgs
+            pure $ if "--fold-only" `elem` args then FoldOnly else MainRun
 
 wrongReasonMarker :: String
 wrongReasonMarker =
@@ -372,6 +375,8 @@ main = do
     hSetBuffering stderr LineBuffering
     mode <- readMode
     case mode of
+        FoldOnly ->
+            emit "folder" "register the supplied spelling through foldAll"
         MainRun ->
             emit
                 "row"
@@ -733,6 +738,10 @@ runMode mode namingPath registryPath = do
         receiptRef <- newIORef []
         let record = recordRow receiptRef
         case mode of
+            FoldOnly -> do
+                key <- setupKey env "folder" spelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+                _ <- connectedAccept env record tm key True "fold-active"
+                emit "complete" "the requested name is Active after a confirmed foldAll batch"
             MainRun -> do
                 occupied <- withTrie tm tok $ \trie -> Trie.lookup trie spelling
                 case (attached, occupied) of
