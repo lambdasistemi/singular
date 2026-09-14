@@ -198,6 +198,8 @@ import Singular.Registry.Deployment (
     loadMirror,
     mirrorPathFor,
     readDeployment,
+    Deployment (..),
+    parseOutRef,
     saveMirror,
  )
 import Singular.Registry.Provider qualified as Cage
@@ -489,10 +491,16 @@ runMode mode namingPath registryPath = do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
-        utxos <- Cage.queryUTxOs prov genesisAddr
-        seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-            [] -> failWith "boot: genesis wallet has no UTxOs"
-            (txIn, _) : _ -> pure (txInToRef txIn)
+        mDeployment <- deploymentPathFromEnvironment
+        seedRef <- case mDeployment of
+            Just path -> do
+                dep <- readDeployment path
+                txInToRef <$> either failWith pure (parseOutRef (depSeedOutRef dep))
+            Nothing -> do
+                utxos <- Cage.queryUTxOs prov genesisAddr
+                case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+                    [] -> failWith "boot: funding wallet has no UTxOs"
+                    (txIn, _) : _ -> pure (txInToRef txIn)
         let appScript = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -581,7 +589,6 @@ runMode mode namingPath registryPath = do
         -- The registry this run works against: the one it boots, or
         -- the one a deployment manifest records (issue #102). Nothing
         -- below distinguishes the two; only how they are acquired does.
-        mDeployment <- deploymentPathFromEnvironment
         let cageParts =
                 let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
                         deriveConsumerBinding consumerBytes
@@ -701,6 +708,7 @@ runMode mode namingPath registryPath = do
         let env =
                 Env
                     { envSpelling = spelling
+                    , envAttached = case attached of Just _ -> True; Nothing -> False
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
@@ -779,6 +787,7 @@ runMode mode namingPath registryPath = do
 
 data Env = Env
     { envSpelling :: ByteString
+    , envAttached :: Bool
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
@@ -907,7 +916,7 @@ runRows env record = do
     rowHookPin env record
     rowHookCrosswired env record
     -- Final sweep: chain root plus one Active record per folded name.
-    rowForeignRegistryRefused env alice
+    unless (envAttached env) $ rowForeignRegistryRefused env alice
     finalSweep env alice bob foldTxAlice
     emit
         "complete"
@@ -952,15 +961,14 @@ setupKey env label spelling codec addr controllerHash controllerSeed revealSeed 
                         }
                 }
         approval = insertApprovalName (serialiseAddr addr) commitment
-        -- Registry-bound representative (NOTE-007): name commits to the
-        -- cage token recorded in the environment (post-boot tok) under the
-        -- state policy, recomputed identically on chain from the supplied
-        -- state. Stored once; `keyRepName` reads it (accessor syntax at use
-        -- sites is unchanged from when it was a function).
+        -- The policy binds the registry; the name hashes only the exact
+        -- spelling. Retain the registry token separately for evidence.
         TokenId (AssetName tokSbs) = envTok env
         registryToken = SBS.fromShort tokSbs
         repName = representativeName spelling
-    when (spelling == "alice") $ putStrLn "printf %s alice | b2sum -l 256"
+    if spelling == "alice"
+        then putStrLn "printf %s alice | b2sum -l 256"
+        else putStrLn ("printf %s '" <> concatMap (\c -> if c == '\'' then "'\\''" else [c]) (T.unpack (TE.decodeUtf8 spelling)) <> "' | b2sum -l 256")
     emit
         "key"
         ( label
@@ -2794,10 +2802,10 @@ rowForeignRegistryRefused env alice = do
         [] -> failWith "registry B: no seed UTxO"
         (txIn, _) : _ -> pure (txInToRef txIn)
     let cfgB = (envCfg env){cageSeed = seedRef}
-        tokenBytes = deriveAssetName seedRef
-        tokB = TokenId (AssetName (SBS.toShort tokenBytes))
+        foreignTokenBytes = deriveAssetName seedRef
+        tokB = TokenId (AssetName (SBS.toShort foreignTokenBytes))
         policyB = computeScriptHash $
-            applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) tokenBytes) $
+            applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) foreignTokenBytes) $
                 applyBytesParam (scriptHashBytes (envAppHash env)) (envRepUnapplied env)
     unless (tokB /= envTok env && policyB /= envRepHash env) $
         failWith "registry B did not produce a distinct token and policy"
@@ -2811,7 +2819,7 @@ rowForeignRegistryRefused env alice = do
         (envPool env) [mkRequestScript cfgB tokB] (envPartyAddr env) (envEvDir env) (envEvNext env)
     let envB = env{envCfg = cfgB, envTok = tokB, envTrie = trieB,
             envRefUtxos = requestRefsB ++ envRefUtxos env}
-        aliceB = alice{keyLabel = "alice-registry-b", keyRegistryToken = tokenBytes}
+        aliceB = alice{keyLabel = "alice-registry-b", keyRegistryToken = foreignTokenBytes}
     rootA <- chainRootHex env
     rootB <- chainRootHex envB
     (signed, snapClaim) <- policyRefusalTx envB aliceB (envRepPolicy env) (envRepScript env) mintRepresentativeRedeemer

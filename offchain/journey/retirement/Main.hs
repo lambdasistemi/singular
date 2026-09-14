@@ -174,6 +174,8 @@ import Singular.Registry.Deployment (
     loadMirror,
     mirrorPathFor,
     readDeployment,
+    Deployment (..),
+    parseOutRef,
     saveMirror,
  )
 import Singular.Registry.Provider qualified as Cage
@@ -374,10 +376,16 @@ runMode mode blueprintPath registryPath = do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
-        utxos <- Cage.queryUTxOs prov genesisAddr
-        seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-            [] -> failWith "boot: genesis wallet has no UTxOs"
-            (txIn, _) : _ -> pure (txInToRef txIn)
+        mDeployment <- deploymentPathFromEnvironment
+        seedRef <- case mDeployment of
+            Just path -> do
+                dep <- readDeployment path
+                txInToRef <$> either failWith pure (parseOutRef (depSeedOutRef dep))
+            Nothing -> do
+                utxos <- Cage.queryUTxOs prov genesisAddr
+                case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+                    [] -> failWith "boot: funding wallet has no UTxOs"
+                    (txIn, _) : _ -> pure (txInToRef txIn)
         let script = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -460,7 +468,6 @@ runMode mode blueprintPath registryPath = do
             )
         -- The registry this run works against: the one it boots, or the
         -- one a deployment manifest records (issue #102).
-        mDeployment <- deploymentPathFromEnvironment
         let cageParts =
                 let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
                         deriveConsumerBinding consumerBytes

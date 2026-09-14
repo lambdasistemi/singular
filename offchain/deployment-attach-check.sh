@@ -67,6 +67,15 @@ count_reference_outputs() { nix run --quiet "$here#deployment" -- count "${exter
 echo "attach-check: deploying once"
 nix run --quiet "$here#deployment" -- deploy "${external[@]}" --out "$manifest" --release devnet-check
 
+# A self-consistent-looking manifest cannot choose a different representative
+# policy: verification derives it from this release and the registry seed.
+jq '.depRepresentativePolicy = ("00" * 28)' "$manifest" > "$work/wrong-policy.json"
+if nix run --quiet "$here#deployment" -- verify "${external[@]}" --deployment "$work/wrong-policy.json" > "$work/wrong-policy.out" 2>&1; then
+    echo "FAIL: verification accepted a substituted representative policy"
+    exit 1
+fi
+grep -F 'registry-bound representative policy differs from the deployment' "$work/wrong-policy.out"
+
 before_state="$(count_state_outputs)"
 before_refs="$(count_reference_outputs)"
 echo "attach-check: before — $before_state registry state output(s), $before_refs reference output(s)"
