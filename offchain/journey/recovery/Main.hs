@@ -450,9 +450,12 @@ runMode mode blueprintPath mpfsPath = do
             dep <- readDeployment path
             att <- attach prov dep cageParts
             pure (path, att)
-        (tm, dumpTries) <- case mDeployment of
-            Nothing -> mkPureTrieManagerFrom Map.empty
-            Just path -> mkPureTrieManagerFrom =<< loadMirror path
+        -- A deployment made a moment ago has an empty registry and no
+        -- mirror file yet, which is the same trie a boot would create.
+        -- Carrying the distinction explicitly is what lets the root
+        -- check below mean something either way.
+        mirrorTries <- maybe (pure Map.empty) loadMirror mDeployment
+        (tm, dumpTries) <- mkPureTrieManagerFrom mirrorTries
         (cfg, tok) <- case attached of
             Nothing -> do
                 booted <-
@@ -463,6 +466,7 @@ runMode mode blueprintPath mpfsPath = do
                 emit
                     "attached"
                     ("registry from " <> path <> ": no registry booted")
+                ensureTrie tm mirrorTries (attToken att)
                 pure (attCfg att, attToken att)
         -- Consumer stake registration (NOTE-020 item 2), BEFORE split:
         -- the pinned consumer's credential must be registered before the
@@ -688,6 +692,22 @@ the chain does not have and the refusal would name a validator rather
 than the mirror. Comparing the two roots first turns that into one
 sentence about the file.
 -}
+{- | The trie an attaching run works from.
+
+A registry that was just deployed holds nothing and has no mirror file
+yet; a registry that has been folded into has both. Creating the empty
+trie only in the first case keeps the root check that follows honest:
+it compares what this run will build proofs from against what the chain
+says, whichever case it was.
+-}
+ensureTrie ::
+    TrieManager IO ->
+    Map.Map TokenId MPFInMemoryDB ->
+    TokenId ->
+    IO ()
+ensureTrie tm mirrorTries tok =
+    unless (Map.member tok mirrorTries) (createTrie tm tok)
+
 assertMirrorMatchesChain ::
     Cage.Provider IO ->
     CageConfig ->

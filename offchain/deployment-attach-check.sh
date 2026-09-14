@@ -26,6 +26,12 @@ echo "attach-check: building the runners and tools"
 nix build --quiet --no-link "$here#devnet" "$here#deployment" \
     "$here#register-rows" "$here#recovery-rows" "$here#retirement-rows"
 
+# The devnet builds its chain under TMPDIR/cardano-e2e. Sharing that
+# with the last run means starting on its database and timing out on a
+# socket that never appears, so each run gets its own — kept short,
+# because a unix socket path has a hard length limit.
+export TMPDIR="$work"
+
 echo "attach-check: starting a devnet the deployment can outlive"
 nix run --quiet "$here#devnet" > "$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!

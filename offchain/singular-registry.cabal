@@ -338,6 +338,7 @@ executable register-rows
     , filepath
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 

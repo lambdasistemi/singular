@@ -471,9 +471,12 @@ runMode mode blueprintPath mpfsPath = do
             dep <- readDeployment path
             att <- attach prov dep cageParts
             pure (path, att)
-        (tm, dumpTries) <- case mDeployment of
-            Nothing -> mkPureTrieManagerFrom Map.empty
-            Just path -> mkPureTrieManagerFrom =<< loadMirror path
+        -- A deployment made a moment ago has an empty registry and no
+        -- mirror file yet, which is the same trie a boot would create.
+        -- Carrying the distinction explicitly is what lets the root
+        -- check below mean something either way.
+        mirrorTries <- maybe (pure Map.empty) loadMirror mDeployment
+        (tm, dumpTries) <- mkPureTrieManagerFrom mirrorTries
         evDir <- evidenceDirFromEnv
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
@@ -484,6 +487,7 @@ runMode mode blueprintPath mpfsPath = do
                 emit
                     "attached"
                     ("registry from " <> path <> ": no registry booted")
+                ensureTrie tm mirrorTries (attToken att)
                 pure (attCfg att, attToken att)
         -- Registry-bound names (NOTE-007): derived post-boot once the cage
         -- token exists; every display, redeemer and minted value below uses
@@ -868,6 +872,22 @@ to a registry that outlives it works from a mirror carried in a file.
 Comparing the two roots first turns a drifted file into one sentence
 about the file, instead of a validator refusal nobody can read.
 -}
+{- | The trie an attaching run works from.
+
+A registry that was just deployed holds nothing and has no mirror file
+yet; a registry that has been folded into has both. Creating the empty
+trie only in the first case keeps the root check that follows honest:
+it compares what this run will build proofs from against what the chain
+says, whichever case it was.
+-}
+ensureTrie ::
+    TrieManager IO ->
+    Map.Map TokenId MPFInMemoryDB ->
+    TokenId ->
+    IO ()
+ensureTrie tm mirrorTries tok =
+    unless (Map.member tok mirrorTries) (createTrie tm tok)
+
 assertMirrorMatchesChain ::
     Cage.Provider IO ->
     CageConfig ->
