@@ -45,9 +45,9 @@ this document.
    proof, folds it to the root it implies, and compares that root
    against the root read back from the chain's state datum. Prints
    `proved absent` with the matched root; any mismatch fails the run.
-5. **apply.** Acts as the oracle: builds the update with
-   `updateTokenImpl` (proof from the trie manager), signs, submits,
-   and observes the request UTxO being consumed.
+5. **apply.** Runs `foldAll`, which builds and evaluates the batch,
+   signs, submits, confirms and updates the proof mirror. The request
+   UTxO must be consumed.
 6. **derived-applied-identity.** Ties the two identity layers
    together. First requires each pinned unapplied hash to equal the
    hash of the blueprint's raw code this run actually loaded. Then
@@ -77,9 +77,9 @@ this document.
 9. **negative section — the validators must refuse.** These are
    **registry** negative cases, exercised against a real devnet in
    the same run; no Singular naming behaviour is involved. A second,
-   unapplied insert request is submitted (`reject-request`), the
-   applied insert is replayed into the trie manager so its proofs
-   stand on the root the chain actually has, and the valid oracle
+   unapplied insert request is submitted (`reject-request`). The
+   mirror already reflects the confirmed fold, so its proofs stand
+   on the root the chain actually has, and the valid oracle
    update is built but never submitted. Four single-defect mutants
    of it are derived and each must be refused by the node for the
    matched reason (a phase-2 `PlutusFailure` naming the expected
@@ -208,3 +208,20 @@ poisoned request. It checks multiple confirmed batches, one skipped poison,
 and the chain root against the mirror after each batch. The ordinary journey
 creates a private devnet registry; attaching the folder to the shared preprod
 deployment requires the deployed manifest and its matching proof mirror.
+
+The naming registration runner also uses `foldAll` for its successful
+folds, supplying the existing naming claim, approval burn and representative
+mint for each selected request. Attach it to the published deployment from
+`offchain/`:
+
+```sh
+nix run .#register-rows -- --node-socket /path/to/node.socket \
+  --network-magic 1 --wallet-skey /path/to/joiner.skey \
+  --deployment /path/to/preprod.json --spelling new-name
+```
+
+The adjacent mirror is loaded through the deployment interface and saved
+after every confirmed batch. This runner demonstrates its own registration
+claims; applications draining other naming claims must supply their matching
+attached actions through `prepareFold`. Run against a shared registry only
+in its coordinated writing window.

@@ -170,6 +170,7 @@ import Singular.Registry.Blueprint (
  )
 import Singular.Registry.Candidate (resolveCandidate, sourceName)
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.FoldAll (FoldAllArgs (..), FoldResult (..), foldAll, renderFoldEvent)
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
@@ -213,7 +214,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
     RawRedeemer (..),
     connectedFoldTx,
-    syncFoldedRequests,
+    prepareRegistryFold,
  )
 import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
@@ -692,6 +693,7 @@ runMode mode namingPath registryPath = do
                     , envPool = poolRef
                     , envCfg = cfg
                     , envTok = tok
+                    , envPersistMirror = forM_ mDeployment $ \path -> saveMirror path =<< dumpTries
                     , envTrie = tm
                     , envTrieFresh = tmFresh
                     , envRefUtxos = scriptRefs
@@ -770,6 +772,7 @@ data Env = Env
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
     , envCfg :: CageConfig
     , envTok :: TokenId
+    , envPersistMirror :: IO ()
     , envTrie :: TrieManager IO
     , envTrieFresh :: TrieManager IO
     , envRefUtxos :: [(TxIn, TxOut ConwayEra)]
@@ -881,8 +884,8 @@ runRows env record = do
     -- an attached run reached the retract 457 s after submitting, with
     -- the window closed since 150 s. Ageing it deliberately, by waiting,
     -- is the same phase-2 evidence without the race.
-    supportReq <- submitSupportRequest env record "support-aging" "support-value"
     runSupportFold env record
+    supportReq <- submitSupportRequest env record "support-aging" "support-value"
     runSupportRetract env record supportReq
     -- Hook exhibit (NOTE-020 item 4 + NOTE-021 consumer v2): cage-side
     -- invocation mutants plus a consumer-invalid batch, each refused on
@@ -1237,10 +1240,43 @@ setupNamingClaim env ks = do
 -- The connected fold: accept path
 -- ---------------------------------------------------------
 
--- | Fold one name through the connected transaction and assert every
--- NOTE-001 observation. Returns the fold txid. The trie manager must be
--- synced with the chain root (@checkSync@); the adversarial path passes
--- a fresh manager with no sync check.
+{- | Run the folder with this journey's existing transaction receipts and
+naming witnesses. Persist the attached deployment's mirror after each
+confirmation, including when a later attempt fails.
+-}
+runFolder ::
+    Env ->
+    TrieManager IO ->
+    String ->
+    TxIn ->
+    ((TxIn, TxOut ConwayEra) -> [(TxIn, TxOut ConwayEra)] -> IO ConnectedFoldArgs) ->
+    IO ConwayTx
+runFolder env tm label request prepare = do
+    result <-
+        foldAll
+            FoldAllArgs
+                { foldConfig = envCfg env
+                , foldProvider = envProv env
+                , foldTrie = tm
+                , foldToken = envTok env
+                , prepareFold = prepare
+                , signFold = addKeyWitness (mkSignKey folderSeed)
+                , foldSubmitter = Submitter $ \signed -> do
+                    assertFoldPermissionless env signed label
+                    retainListings env (label <> "-fold-pre")
+                    submitRetain env (label <> "-fold") signed
+                , reportFold = putStrLn . renderFoldEvent
+                , persistFold = envPersistMirror env
+                }
+    case filter (Set.member request . (\tx -> tx ^. bodyTxL . inputsTxBodyL)) (foldedTransactions result) of
+        [signed] -> pure signed
+        _ -> failWith (label <> ": folder did not confirm the expected request; skips=" <> show (skippedRequests result))
+
+{- | Fold one name through the connected transaction and assert every
+NOTE-001 observation. Returns the fold txid. The trie manager must be
+synced with the chain root (@checkSync@); the adversarial path passes
+a fresh manager with no sync check.
+-}
 connectedAccept ::
     Env ->
     (Value -> IO ()) ->
@@ -1253,9 +1289,7 @@ connectedAccept env record tm ks checkSync rowKind = do
     (_claimTx, claimIn, _claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
-    (stateIn, _stateOut) <- queryStateUtxo env
-    feeUtxo <- queryFeeUtxo env
+    (reqIn, _reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     rootBefore <- chainRootHex env
     when checkSync $ do
         mgr <- managerRootHex env tm
@@ -1283,67 +1317,56 @@ connectedAccept env record tm ks checkSync rowKind = do
                 (snapCoin snapClaim)
                 recordTokens
                 (keyDatum ks)
-    (unsigned, newRoot) <-
-        connectedFoldTx
-            ConnectedFoldArgs
-                { cfaCfg = envCfg env
-                , cfaProvider = envProv env
-                , cfaTrie = tm
-                , cfaToken = envTok env
-                , cfaFeeAddr = envFolderAddr env
-                , cfaStateUtxo = (stateIn, _stateOut)
-                , cfaReqUtxos = [(reqIn, reqOut)]
-                , cfaFeeUtxo = feeUtxo
-                , cfaPp = envPp env
-                , cfaSpends =
-                    [ ConnectedSpend
-                        { csUtxo = (claimIn, _claimOut)
-                        , csRedeemer =
-                            RawRedeemer (foldRedeemer [repName])
-                        , csScript = envAppScript env
-                        }
-                    ]
+    signed <- runFolder env tm (keyLabel ks) reqIn $ \current batch -> do
+        base <- prepareRegistryFold (envCfg env) (envProv env) tm (envTok env) (envFolderAddr env) (envRefUtxos env) current batch
+        let attached xs = if reqIn `elem` map fst batch then xs else []
+        pure
+            base
+                { cfaSpends =
+                    attached
+                        [ ConnectedSpend
+                            { csUtxo = (claimIn, _claimOut)
+                            , csRedeemer =
+                                RawRedeemer (foldRedeemer [repName])
+                            , csScript = envAppScript env
+                            }
+                        ]
                 , cfaMints =
-                    [ ConnectedMint
-                        { cmPolicy = envAppPolicy env
-                        , cmAssets =
-                            Map.singleton
-                                (AssetName (SBS.toShort approval))
-                                (-1)
-                        , cmRedeemer =
-                            RawRedeemer
-                                ( insertApprovalRedeemer
-                                    (keyControllerHash ks)
-                                    (keyControlBytes ks)
-                                    (keyCommitment ks)
-                                )
-                        , cmScript = envAppScript env
-                        }
-                    , ConnectedMint
-                        { cmPolicy = envRepPolicy env
-                        , cmAssets =
-                            Map.singleton
-                                (AssetName (SBS.toShort repName))
-                                1
-                        , cmRedeemer =
-                            RawRedeemer mintRepresentativeRedeemer
-                        , cmScript = envRepScript env
-                        }
-                    ]
-                , cfaOutputs = [recordOut]
+                    attached
+                        [ ConnectedMint
+                            { cmPolicy = envAppPolicy env
+                            , cmAssets =
+                                Map.singleton
+                                    (AssetName (SBS.toShort approval))
+                                    (-1)
+                            , cmRedeemer =
+                                RawRedeemer
+                                    ( insertApprovalRedeemer
+                                        (keyControllerHash ks)
+                                        (keyControlBytes ks)
+                                        (keyCommitment ks)
+                                    )
+                            , cmScript = envAppScript env
+                            }
+                        , ConnectedMint
+                            { cmPolicy = envRepPolicy env
+                            , cmAssets =
+                                Map.singleton
+                                    (AssetName (SBS.toShort repName))
+                                    1
+                            , cmRedeemer =
+                                RawRedeemer mintRepresentativeRedeemer
+                            , cmScript = envRepScript env
+                            }
+                        ]
+                , cfaOutputs = attached [recordOut]
                 , cfaSigners = []
                 , cfaSkipEval = False
                 , cfaAttachScripts = []
                 , cfaRefUtxos = envRefUtxos env
                 , cfaAdjustRoot = id
                 }
-    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
-    -- NOTE-001.2, pre-submit: the fold carries no registry-owner signer.
-    assertFoldPermissionless env signed (keyLabel ks)
-    retainListings env (keyLabel ks <> "-fold-pre")
-    submitAccepted env (keyLabel ks <> "-fold") signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (" <> keyLabel ks <> " fold)")
     -- NOTE-001.3: the mint field carries the APPLIED representative
     -- identity with the expected name at +1.
     assertRepMintedByFold env signed repName txid (keyLabel ks)
@@ -1353,13 +1376,14 @@ connectedAccept env record tm ks checkSync rowKind = do
     -- consumed, Active record produced.
     rootAfter <- chainRootHex env
     retainListings env (keyLabel ks <> "-fold-post")
-    unless (rootAfter == hex (unRoot newRoot)) $
+    mirrorAfter <- managerRootHex env tm
+    unless (rootAfter == mirrorAfter) $
         failWith
             ( keyLabel ks
                 <> ": the chain root "
                 <> rootAfter
                 <> " is not the computed new root "
-                <> hex (unRoot newRoot)
+                <> mirrorAfter
             )
     reqLive <- isLiveAt (envProv env) (requestAddrFromCfg (envCfg env) (envTok env) Testnet) reqIn
     when reqLive $
@@ -1382,7 +1406,6 @@ connectedAccept env record tm ks checkSync rowKind = do
                 <> " under the applied representative policy 0x"
                 <> envRepHex env
             )
-    syncFoldedRequests tm (envTok env) [(reqIn, reqOut)]
     emit
         "row"
         ( keyLabel ks
@@ -1431,11 +1454,12 @@ connectedAccept env record tm ks checkSync rowKind = do
             , "requiredSigners" .= signerHexes signed
             , "vkeyWitnesses" .= witnessHexes signed
             ]
-            <> distinctFromField
+                <> distinctFromField
     pure txid
 
--- | The queued request holds the datum and the exact approval; the
--- registry entry is still absent (no root change yet).
+{- | The queued request holds the datum and the exact approval; the
+registry entry is still absent (no root change yet).
+-}
 assertQueuedRequest :: Env -> KeySetup -> Snap -> IO ()
 assertQueuedRequest env ks snap = do
     decoded <- chainDatumOf snap (keyLabel ks <> "-queued")
@@ -2035,42 +2059,17 @@ submitSupportRequest env record spelling value = do
 -- builder: the registry still works.
 runSupportFold :: Env -> (Value -> IO ()) -> IO ()
 runSupportFold env record = do
-    (reqIn, reqOut) <- submitRegistryRequest env "support" "support-value"
-    (stateIn, stateOut) <- queryStateUtxo env
-    feeUtxo <- queryFeeUtxo env
+    (reqIn, _) <- submitRegistryRequest env "support" "support-value"
     rootBefore <- chainRootHex env
-    (unsigned, newRoot) <-
-        connectedFoldTx
-            ConnectedFoldArgs
-                { cfaCfg = envCfg env
-                , cfaProvider = envProv env
-                , cfaTrie = envTrie env
-                , cfaToken = envTok env
-                , cfaFeeAddr = envFolderAddr env
-                , cfaStateUtxo = (stateIn, stateOut)
-                , cfaReqUtxos = [(reqIn, reqOut)]
-                , cfaFeeUtxo = feeUtxo
-                , cfaPp = envPp env
-                , cfaSpends = []
-                , cfaMints = []
-                , cfaOutputs = []
-                , cfaSigners = []
-                , cfaRefUtxos = envRefUtxos env
-                , cfaSkipEval = False
-                , cfaAttachScripts = []
-                , cfaAdjustRoot = id
-                }
-    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
-    assertFoldPermissionless env signed "support"
-    retainListings env "support-fold-pre"
-    submitAccepted env "support-fold" signed
+    signed <-
+        runFolder env (envTrie env) "support" reqIn $
+            prepareRegistryFold (envCfg env) (envProv env) (envTrie env) (envTok env) (envFolderAddr env) (envRefUtxos env)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (support fold)")
     rootAfter <- chainRootHex env
     retainListings env "support-fold-post"
-    unless (rootAfter == hex (unRoot newRoot)) $
-        failWith "support fold: chain root is not the computed new root"
-    syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
+    mirrorAfter <- managerRootHex env (envTrie env)
+    unless (rootAfter == mirrorAfter) $
+        failWith "support fold: chain root differs from the confirmed mirror"
     emit "row" ("support-fold-accepted: " <> txid)
     record $
         object
