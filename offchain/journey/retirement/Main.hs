@@ -94,7 +94,7 @@ import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Directory (createDirectoryIfMissing)
-import System.Environment (lookupEnv)
+import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.FilePath ((</>))
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
@@ -157,6 +157,7 @@ import Singular.Registry.Ledger (
     Root (..),
     TokenId (..),
  )
+import Singular.Registry.Lifecycle qualified as Lifecycle
 import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
@@ -164,7 +165,7 @@ import Singular.Registry.Node (
     awaitTxId,
     funderAddr,
     funderSignKey,
-    withNode,
+    withNodeForPlannedFunding,
  )
 import Singular.Registry.Deployment (
     Attached (..),
@@ -372,11 +373,15 @@ runMode mode blueprintPath registryPath = do
             failWith
                 "consumer.consumer compiled code not found in the registry \
                 \blueprint (every Modify withdraws the pinned consumer)"
-    withNode $ \sess -> do
+    args <- getArgs
+    withNodeForPlannedFunding $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
+            lifecycle = Lifecycle.lifecycleRequested sess args
+        when ("--funding-only" `elem` args && not lifecycle) $ failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
+        when (lifecycle && mDeployment == Nothing) $ failWith "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
             Just path -> do
                 dep <- readDeployment path
@@ -541,7 +546,7 @@ runMode mode blueprintPath registryPath = do
                 _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
                 emit "representative" "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
-        pool <- splitGenesis prov submit 80
+        pool <- if lifecycle then pure [] else splitGenesis prov submit 80
         poolRef <- newIORef pool
         scriptRefs <- case attached of
             Nothing ->
@@ -561,6 +566,8 @@ runMode mode blueprintPath registryPath = do
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
+                    , envLifecycle = lifecycle
+                    , envFundingOnly = "--funding-only" `elem` args
                     , envPool = poolRef
                     , envScript = script
                     , envScriptHash = appHash
@@ -590,64 +597,173 @@ runMode mode blueprintPath registryPath = do
                     , envEvDir = evDir
                     , envEvNext = evNext
                     }
-        emit "setup" "creating the three retirement records (accept1, accept2, refusals)"
-        (txA1, recAccept1) <- setupRecoveryRecord env mkDatum "accept1" "rt-accept1"
-        _ <- waitConfirmation (txA1 <> " (setup: accept1)")
-        (txA2, recAccept2) <- setupRecoveryRecord env mkDatum "accept2" "rt-accept2"
-        _ <- waitConfirmation (txA2 <> " (setup: accept2)")
-        (txRef, recRefusals) <- setupRecoveryRecord env mkDatum "refusals" "rt-refusals"
-        _ <- waitConfirmation (txRef <> " (setup: refusals)")
-        (txDup, recDuplicates) <- setupRecoveryRecord env mkDatumDup "duplicates" "rt-duplicates"
-        _ <- waitConfirmation (txDup <> " (setup: duplicates)")
-        -- Recovery-then-retire records (NOTE-024): same shape as
-        -- accept1/accept2 (control oldAddr, commitment opens to
-        -- destSeed, 2-member quorum) so each can rotate to the
-        -- destination key and then retire with the original spelling.
-        (txR1, recR1) <- setupRecoveryRecord env mkDatum "rr1" "rt-rr1"
-        _ <- waitConfirmation (txR1 <> " (setup: rr1)")
-        (txR2, recR2) <- setupRecoveryRecord env mkDatum "rr2" "rt-rr2"
-        _ <- waitConfirmation (txR2 <> " (setup: rr2)")
-        -- Permanent-retirement record (NOTE-027): a genuinely claimed
-        -- name on the same shape, retired then completed into Over in
-        -- the rows below (never a seeded Over).
-        (txOver, recOver) <- setupRecoveryRecord env mkDatum "over" "rt-over"
-        _ <- waitConfirmation (txOver <> " (setup: over)")
-        emit
-            "setup"
-            ( "records live at the application validator 0x"
-                <> appHex
-                <> ": accept1="
-                <> showIn recAccept1
-                <> " accept2="
-                <> showIn recAccept2
-                <> " refusals="
-                <> showIn recRefusals
-                <> " duplicates="
-                <> showIn recDuplicates
-                <> "; each carries its spelling hash"
-                <> " under the applied representative policy 0x"
-                <> repAppliedHex
-                <> " with control 0x"
-                <> hex (serialiseAddr oldAddr)
-                <> " and quorum threshold 2 over two distinct members; \
-                   \custody is the script 0x"
-                <> custodyHex
-            )
-        mapM_ (\(label, rec, creation, spelling) ->
-            emit "creation-material"
-                (label <> "=" <> showIn rec <> " created-by=" <> creation
-                    <> " creation-control-hash=0x" <> hex oldHash
-                    <> " representative=0x" <> hex (representativeName spelling)))
-            [ ("accept1", recAccept1, txA1, "rt-accept1")
-            , ("accept2", recAccept2, txA2, "rt-accept2")
-            , ("rr1", recR1, txR1, "rt-rr1")
-            , ("rr2", recR2, txR2, "rt-rr2")
-            , ("over", recOver, txOver, "rt-over")
-            ]
-        case mode of
-            MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver
-            ControlValid -> runControlValid env recRefusals
-            ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
+        if lifecycle
+            then do
+                fundPublicLifecycle env
+                unless (envFundingOnly env) $ runLifecycle env
+            else do
+                emit "setup" "creating the three retirement records (accept1, accept2, refusals)"
+                (txA1, recAccept1) <- setupRecoveryRecord env mkDatum "accept1" "rt-accept1"
+                _ <- waitConfirmation (txA1 <> " (setup: accept1)")
+                (txA2, recAccept2) <- setupRecoveryRecord env mkDatum "accept2" "rt-accept2"
+                _ <- waitConfirmation (txA2 <> " (setup: accept2)")
+                (txRef, recRefusals) <- setupRecoveryRecord env mkDatum "refusals" "rt-refusals"
+                _ <- waitConfirmation (txRef <> " (setup: refusals)")
+                (txDup, recDuplicates) <- setupRecoveryRecord env mkDatumDup "duplicates" "rt-duplicates"
+                _ <- waitConfirmation (txDup <> " (setup: duplicates)")
+                -- Recovery-then-retire records (NOTE-024): same shape as
+                -- accept1/accept2 (control oldAddr, commitment opens to
+                -- destSeed, 2-member quorum) so each can rotate to the
+                -- destination key and then retire with the original spelling.
+                (txR1, recR1) <- setupRecoveryRecord env mkDatum "rr1" "rt-rr1"
+                _ <- waitConfirmation (txR1 <> " (setup: rr1)")
+                (txR2, recR2) <- setupRecoveryRecord env mkDatum "rr2" "rt-rr2"
+                _ <- waitConfirmation (txR2 <> " (setup: rr2)")
+                -- Permanent-retirement record (NOTE-027): a genuinely claimed
+                -- name on the same shape, retired then completed into Over in
+                -- the rows below (never a seeded Over).
+                (txOver, recOver) <- setupRecoveryRecord env mkDatum "over" "rt-over"
+                _ <- waitConfirmation (txOver <> " (setup: over)")
+                emit
+                    "setup"
+                    ( "records live at the application validator 0x"
+                        <> appHex
+                        <> ": accept1="
+                        <> showIn recAccept1
+                        <> " accept2="
+                        <> showIn recAccept2
+                        <> " refusals="
+                        <> showIn recRefusals
+                        <> " duplicates="
+                        <> showIn recDuplicates
+                        <> "; each carries its spelling hash"
+                        <> " under the applied representative policy 0x"
+                        <> repAppliedHex
+                        <> " with control 0x"
+                        <> hex (serialiseAddr oldAddr)
+                        <> " and quorum threshold 2 over two distinct members; \
+                           \custody is the script 0x"
+                        <> custodyHex
+                    )
+                mapM_
+                    ( \(label, rec, creation, spelling) ->
+                        emit
+                            "creation-material"
+                            ( label
+                                <> "="
+                                <> showIn rec
+                                <> " created-by="
+                                <> creation
+                                <> " creation-control-hash=0x"
+                                <> hex oldHash
+                                <> " representative=0x"
+                                <> hex (representativeName spelling)
+                            )
+                    )
+                    [ ("accept1", recAccept1, txA1, "rt-accept1")
+                    , ("accept2", recAccept2, txA2, "rt-accept2")
+                    , ("rr1", recR1, txR1, "rt-rr1")
+                    , ("rr2", recR2, txR2, "rt-rr2")
+                    , ("over", recOver, txOver, "rt-over")
+                    ]
+                case mode of
+                    MainRun -> runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver
+                    ControlValid -> runControlValid env recRefusals
+                    ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
+
+fundPublicLifecycle :: Env -> IO ()
+fundPublicLifecycle env = do
+    occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie "rt-over"
+    when (occupied /= Nothing) $ failWith "public lifecycle: rt-over is already claimed"
+    now <- currentPosixMs
+    let pp = envPp env
+        refs = envRefUtxos env
+        datum = envDatum env
+        approval = insertApprovalName (addressBytes (controlAddress datum)) (nextControlCommitment datum)
+        tokens = Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1)
+        deposit = Lifecycle.minimumCoin pp (scriptOut pp (envAppAddr env) 0 tokens datum)
+        insertDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rt-over" (OpInsert (representativeName "rt-over")) now
+        fund = Lifecycle.fundedOutput pp refs genesisAddr
+        collateral = Lifecycle.collateralOutput pp refs genesisAddr
+        retireDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rt-over" (OpUpdate (representativeName "rt-over") (overMarkerFor (representativeName "rt-over"))) now
+        -- Claim, connected fold, recovery, then retirement.
+        outs = [fund deposit, collateral, fund (Coin 0), fund (Coin 0), collateral, fund retireDeposit, collateral]
+        -- The insert request spends the wallet change, outside the manual pool.
+        completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
+        completion = [Lifecycle.fundedOutput pp refs completerAddr (Coin 0), Lifecycle.collateralOutput pp refs completerAddr]
+        reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs <> Lifecycle.fundingRequirement pp completion
+    wallet <- Cage.queryUTxOs (Lifecycle.fundingProvider [] (envProv env)) genesisAddr
+    let Coin available = mconcat [out ^. coinTxOutL | (_, out) <- wallet, out ^. referenceScriptTxOutL == SNothing]
+        Coin required = Lifecycle.fundingRequirement pp outs <> reserve
+    emit "funding" ("public lifecycle total requirement " <> show required <> " lovelace; spendable " <> show available)
+    unless (available >= required) $ failWith ("public lifecycle needs " <> show required <> " lovelace")
+    emit "funding" ("lifecycle total requirement: " <> show required <> " lovelace")
+    unless (envFundingOnly env) $ do
+        funded <- Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+        writeIORef (envPool env) funded
+
+runLifecycle :: Env -> IO ()
+runLifecycle env = do
+    (_, recOver) <- setupRecoveryRecord env (envDatum env) "over" "rt-over"
+    runOverJourney env recOver
+    forM_ (envAttached env) $ \(path, _) -> saveMirror path =<< envDumpTries env
+    emit "complete" "public lifecycle: connected claim, recovery, retirement and permissionless completion into Over accepted"
+
+runOverJourney :: Env -> TxIn -> IO ()
+runOverJourney env recOver = do
+    snapOver <- mustSnap env recOver
+    snapOverR <- rowRecoverRecord env snapOver "OV"
+    signedOverRetire <- rowRetireRecoveredController env snapOverR "OV-retire" "rt-over"
+    let (_destAddr, destHash) = recoveryDest
+        retireInputs = signedOverRetire ^. bodyTxL . inputsTxBodyL
+        retireSigners = signedOverRetire ^. bodyTxL . reqSignerHashesTxBodyL
+        destKey = addrWitnessKeyHash destHash
+    -- Linkage (NOTE-042): the accepted retire spent exactly the
+    -- observed recovered successor under exactly the recovered
+    -- controller (fail loudly otherwise).
+    unless (checkRecoveryLinkage (snapIn snapOverR) retireSigners (snapIn snapOverR) destKey) $
+        failWith "OV: recovery linkage failed on the accepted retire"
+    unless (Set.member (snapIn snapOverR) retireInputs) $
+        failWith "OV: retire did not spend the observed recovered successor"
+    emit
+        "row"
+        ( "OV-recovery-linkage: retire "
+            <> txIdHex signedOverRetire
+            <> " spends recovered successor "
+            <> showIn (snapIn snapOverR)
+            <> " under recovered controller 0x"
+            <> hex destHash
+            <> " (rotation observed on chain, consumed by name)"
+        )
+    -- Skip-proof (NOTE-042 fault control): the SAME linkage
+    -- predicate evaluated on the unrotated shape (original input,
+    -- old signer) diverges — skipping recovery cannot pass
+    -- unnoticed. Pure bytes, no submission.
+    let skipHolds =
+            checkRecoveryLinkage
+                (snapIn snapOver)
+                (Set.singleton (addrWitnessKeyHash (envOldHash env)))
+                (snapIn snapOverR)
+                destKey
+    unless (not skipHolds) $
+        failWith "OV skip-proof broken: unrotated shape satisfies linkage?!"
+    emit
+        "row"
+        ( "OV-skip-proof: unrotated shape diverges (input "
+            <> showIn (snapIn snapOver)
+            <> " vs successor, old signer vs recovered) — skipping recovery \
+               \fails the linkage above, loudly"
+        )
+    unless (envLifecycle env) $ rowOVReplay env recOver signedOverRetire
+    rowLO01 env signedOverRetire snapOverR
+    custodyOver <- overCustodyOut env signedOverRetire "OV-retire"
+    reqOver <- overRequestOut env signedOverRetire "OV-retire"
+    let completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
+    (completerFund, _completerColl) <- fundCompleter env completerAddr
+    unless (envLifecycle env) $ rowOVWithdrawRefused env custodyOver completerAddr
+    unless (envLifecycle env) $ rowOVBurnOnlyRefused env custodyOver
+    signedComplete <- rowOVComplete env custodyOver reqOver completerFund
+    rowLO02 env signedComplete snapOverR
 
 data Env = Env
     { envAttached :: Maybe (FilePath, Attached)
@@ -657,6 +773,8 @@ data Env = Env
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
+    , envLifecycle :: Bool
+    , envFundingOnly :: Bool
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
     , envScript :: Script ConwayEra
     , envScriptHash :: ScriptHash
@@ -741,59 +859,7 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     -- refuses replay and withdrawal, completes permissionlessly into
     -- Over, and refuses reuse — claim, recovery and completion on ONE
     -- name, each link asserted from chain bytes below.
-    snapOver <- mustSnap env recOver
-    snapOverR <- rowRecoverRecord env snapOver "OV"
-    signedOverRetire <- rowRetireRecoveredController env snapOverR "OV-retire" "rt-over"
-    let (_destAddr, destHash) = recoveryDest
-        retireInputs = signedOverRetire ^. bodyTxL . inputsTxBodyL
-        retireSigners = signedOverRetire ^. bodyTxL . reqSignerHashesTxBodyL
-        destKey = addrWitnessKeyHash destHash
-    -- Linkage (NOTE-042): the accepted retire spent exactly the
-    -- observed recovered successor under exactly the recovered
-    -- controller (fail loudly otherwise).
-    unless (checkRecoveryLinkage (snapIn snapOverR) retireSigners (snapIn snapOverR) destKey) $
-        failWith "OV: recovery linkage failed on the accepted retire"
-    unless (Set.member (snapIn snapOverR) retireInputs) $
-        failWith "OV: retire did not spend the observed recovered successor"
-    emit
-        "row"
-        ( "OV-recovery-linkage: retire "
-            <> txIdHex signedOverRetire
-            <> " spends recovered successor "
-            <> showIn (snapIn snapOverR)
-            <> " under recovered controller 0x"
-            <> hex destHash
-            <> " (rotation observed on chain, consumed by name)"
-        )
-    -- Skip-proof (NOTE-042 fault control): the SAME linkage
-    -- predicate evaluated on the unrotated shape (original input,
-    -- old signer) diverges — skipping recovery cannot pass
-    -- unnoticed. Pure bytes, no submission.
-    let skipHolds =
-            checkRecoveryLinkage
-                (snapIn snapOver)
-                (Set.singleton (addrWitnessKeyHash (envOldHash env)))
-                (snapIn snapOverR)
-                destKey
-    unless (not skipHolds) $
-        failWith "OV skip-proof broken: unrotated shape satisfies linkage?!"
-    emit
-        "row"
-        ( "OV-skip-proof: unrotated shape diverges (input "
-            <> showIn (snapIn snapOver)
-            <> " vs successor, old signer vs recovered) — skipping recovery \
-               \fails the linkage above, loudly"
-        )
-    rowOVReplay env recOver signedOverRetire
-    rowLO01 env signedOverRetire snapOverR
-    custodyOver <- overCustodyOut env signedOverRetire "OV-retire"
-    reqOver <- overRequestOut env signedOverRetire "OV-retire"
-    let completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
-    (completerFund, _completerColl) <- fundCompleter env completerAddr
-    rowOVWithdrawRefused env custodyOver completerAddr
-    rowOVBurnOnlyRefused env custodyOver
-    signedComplete <- rowOVComplete env custodyOver reqOver completerFund
-    rowLO02 env signedComplete snapOverR
+    runOverJourney env recOver
     rowLX01 env
     -- Final no-trace sweep.
     finalNoTrace env recRefusals
@@ -873,12 +939,19 @@ rowRetireWithoutWitness env snap = do
     tx <- retireTx env snap (envCustodyAddr env) [envOldHash env] "rt-accept1"
     let Redeemers allRdmrs = tx ^. witsTxL . rdmrsTxWitsL
         remaining = Redeemers (Map.delete (ConwayRewarding (AsIx 0)) allRdmrs)
-        stripped = tx & bodyTxL . withdrawalsTxBodyL .~ Withdrawals Map.empty
-            & witsTxL . rdmrsTxWitsL .~ remaining
-            & bodyTxL . scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) remaining
+        stripped =
+            tx
+                & bodyTxL . withdrawalsTxBodyL .~ Withdrawals Map.empty
+                & witsTxL . rdmrsTxWitsL .~ remaining
+                & bodyTxL . scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) remaining
         signed = addKeyWitness (mkSignKey oldSeed) (addKeyWitness genesisSignKey stripped)
-    expectRefused MainRun env "retire-without-registry-witness-refused"
-        "retirement-request" "retirement requires the representative withdrawal witness" signed
+    expectRefused
+        MainRun
+        env
+        "retire-without-registry-witness-refused"
+        "retirement-request"
+        "retirement requires the representative withdrawal witness"
+        signed
 
 rowLT01 :: Env -> Snap -> IO ConwayTx
 rowLT01 env snap = do
@@ -1677,6 +1750,7 @@ rowOVComplete env custody reqUtxo feeUtxo = do
     -- authorizer — custody, state and burn need no signature).
     unless (Set.null (unsigned ^. bodyTxL . reqSignerHashesTxBodyL)) $
         failWith "OV-complete: required signers must be empty — completion is permissionless"
+    Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsigned
     let signed = addKeyWitness completerKey unsigned
     assertBurnField env "OV-complete" signed
     submitAccepted env "OV-complete" signed
@@ -1706,9 +1780,10 @@ rowOVComplete env custody reqUtxo feeUtxo = do
         )
     pure signed
 
--- | The completion's mint field burns exactly the run representative
--- once under the applied representative policy (read off the built
--- bytes, pre-submit).
+{- | The completion's mint field burns exactly the run representative
+once under the applied representative policy (read off the built
+bytes, pre-submit).
+-}
 assertBurnField :: Env -> String -> ConwayTx -> IO ()
 assertBurnField env label signed = do
     let expected =
@@ -1838,12 +1913,13 @@ lx01Claim env = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | The re-registration fold for the over key (LX01 core): a connected
--- fold of the queued insert, built from chain state with local
--- evaluation ON. Expected to fail — either at build (EvalFailure
--- naming the state script, e2e-occupied precedent) or at submit —
--- because the key is occupied. Returns the built tx for the submit
--- path; build failure propagates to the row's attribution.
+{- | The re-registration fold for the over key (LX01 core): a connected
+fold of the queued insert, built from chain state with local
+evaluation ON. Expected to fail — either at build (EvalFailure
+naming the state script, e2e-occupied precedent) or at submit —
+because the key is occupied. Returns the built tx for the submit
+path; build failure propagates to the row's attribution.
+-}
 lx01Fold :: Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ConwayTx
 lx01Fold env (reqIn, reqOut) (claimIn, claimLive) = do
     let datum = envDatum env
@@ -2258,40 +2334,43 @@ retireTx env snap destination signers spelling = do
         redeemers =
             Redeemers
                 ( Map.fromList
-                    [ (ConwaySpending (AsIx spendIdx),
-                    -- Generous (NOTE-023 class): the retire carries the
-                    -- record spend over a grown transaction (custody +
-                    -- pending-request outputs with inline datums); honest
-                    -- execution must not be budget-capped. Measured
-                    -- minima live in ConnectedFold.generousUnits.
-                    (Data (redeemerRetire repName spelling), generousUnits))
+                    [
+                        ( ConwaySpending (AsIx spendIdx)
+                        , -- Generous (NOTE-023 class): the retire carries the
+                          -- record spend over a grown transaction (custody +
+                          -- pending-request outputs with inline datums); honest
+                          -- execution must not be budget-capped. Measured
+                          -- minima live in ConnectedFold.generousUnits.
+                          (Data (redeemerRetire repName spelling), generousUnits)
+                        )
                     , (ConwayRewarding (AsIx 0), (Data (PLC.Constr 0 []), generousUnits))
                     ]
                 )
         integrity = computeScriptIntegrity (envPp env) redeemers
         custodyOut' =
             custodyOut (envPp env) destination (snapCoin snap) (snapRepresentativeTokens env snap)
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [custodyOut', requestOut]
+        change = changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [custodyOut', requestOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
                 & referenceInputsTxBodyL .~ Set.fromList ([stateIn] ++ map fst (envRefUtxos env))
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [custodyOut', requestOut, change]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & withdrawalsTxBodyL .~ Withdrawals (Map.singleton (hookAccountAddress Testnet (scriptHashBytes (envRepHash env))) (Coin 0))
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    preparePublicTx env (1 + length signers) $
         ( mkBasicTx body
             & witsTxL . rdmrsTxWitsL .~ redeemers
         )
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | Mint redeemer @BurnRepresentative@ (second constructor of the
--- representative redeemer): burns the custody-held representative.
+{- | Mint redeemer @BurnRepresentative@ (second constructor of the
+representative redeemer): burns the custody-held representative.
+-}
 burnRepresentativeRedeemer :: PLC.Data
 burnRepresentativeRedeemer = PLC.Constr 1 []
 
@@ -2307,40 +2386,50 @@ fundCompleter ::
     Env ->
     Addr ->
     IO ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
-fundCompleter env completerAddr = do
-    (fund, _collateral) <- takeFundCollateral env
-    let Coin inCoin = (snd fund) ^. coinTxOutL
-        outCoin = 20_000_000
-        changeCoin = inCoin - flatFee - 2 * outCoin
-    unless (changeCoin > 1_000_000) $
-        failWith "completer funding: pool UTxO too small"
-    let outs =
-            [ mkBasicTxOut completerAddr (MaryValue (Coin outCoin) mempty)
-            , mkBasicTxOut completerAddr (MaryValue (Coin outCoin) mempty)
-            , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
-            ]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton (fst fund)
-                & outputsTxBodyL .~ StrictSeq.fromList outs
-                & feeTxBodyL .~ Coin flatFee
-        signed = addKeyWitness genesisSignKey (mkBasicTx body)
-    submitAccepted env "over-completer-funding" signed
-    _ <- waitConfirmation (txIdHex signed <> " (over: completer funding)")
-    -- The two completer outputs are indices 0 (fund) and 1
-    -- (collateral); resolve both against the funding txid.
-    utxos <- Cage.queryUTxOs (envProv env) completerAddr
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
-    case mine of
-        [(fundIn, fundOut), (collIn, collOut)] -> pure ((fundIn, fundOut), (collIn, collOut))
-        _ -> failWith "completer funding: expected exactly two completer outputs"
+fundCompleter env completerAddr
+    | envLifecycle env = do
+        let pp = envPp env
+            refs = envRefUtxos env
+            outs = [Lifecycle.fundedOutput pp refs completerAddr (Coin 0), Lifecycle.collateralOutput pp refs completerAddr]
+        funded <- Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+        case funded of
+            [fund, collateral] -> pure (fund, collateral)
+            _ -> failWith "completer funding did not produce its two outputs"
+    | otherwise = do
+        (fund, _collateral) <- takeFundCollateral env
+        let Coin inCoin = (snd fund) ^. coinTxOutL
+            outCoin = 20_000_000
+            changeCoin = inCoin - flatFee - 2 * outCoin
+        unless (changeCoin > 1_000_000) $
+            failWith "completer funding: pool UTxO too small"
+        let outs =
+                [ mkBasicTxOut completerAddr (MaryValue (Coin outCoin) mempty)
+                , mkBasicTxOut completerAddr (MaryValue (Coin outCoin) mempty)
+                , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+                ]
+            body =
+                mkBasicTxBody
+                    & inputsTxBodyL .~ Set.singleton (fst fund)
+                    & outputsTxBodyL .~ StrictSeq.fromList outs
+                    & feeTxBodyL .~ Coin flatFee
+            signed = addKeyWitness genesisSignKey (mkBasicTx body)
+        submitAccepted env "over-completer-funding" signed
+        _ <- waitConfirmation (txIdHex signed <> " (over: completer funding)")
+        -- The two completer outputs are indices 0 (fund) and 1
+        -- (collateral); resolve both against the funding txid.
+        utxos <- Cage.queryUTxOs (envProv env) completerAddr
+        let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
+        case mine of
+            [(fundIn, fundOut), (collIn, collOut)] -> pure ((fundIn, fundOut), (collIn, collOut))
+            _ -> failWith "completer funding: expected exactly two completer outputs"
 
--- | Burn-only completion attempt (NOTE-029 N1): custody spend plus
--- the exact burn, but NO registry state input and NO request fold.
--- Scripts attached directly (no reference games): the refusal must
--- come from the executing scripts (absent-transition refusal), never
--- from missing witnesses. Pool funded, genesis witnessed — a refusal
--- probe, never a completion shape.
+{- | Burn-only completion attempt (NOTE-029 N1): custody spend plus
+the exact burn, but NO registry state input and NO request fold.
+Scripts attached directly (no reference games): the refusal must
+come from the executing scripts (absent-transition refusal), never
+from missing witnesses. Pool funded, genesis witnessed — a refusal
+probe, never a completion shape.
+-}
 burnOnlyTx ::
     Env ->
     (TxIn, TxOut ConwayEra) ->
@@ -2381,12 +2470,13 @@ burnOnlyTx env (custodyIn, custOut) (fundIn, fundOut) (collIn, _) = do
                     [(envCustodyHash env, envCustodyScript env), (repHash, envRepScript env)]
             & witsTxL . rdmrsTxWitsL .~ redeemers
 
--- | Strict local-evaluation refusal attribution (NOTE-030): the
--- message must be a semantic `EvalFailure` (never budget exhaustion
--- or a build/setup failure) naming the expected script hash in a
--- script-hash field, at the expected Plutus purpose. Anything else
--- fails the row quoting the full message — a hash occurring
--- somewhere or a budget/setup failure is never the claimed refusal.
+{- | Strict local-evaluation refusal attribution (NOTE-030): the
+message must be a semantic `EvalFailure` (never budget exhaustion
+or a build/setup failure) naming the expected script hash in a
+script-hash field, at the expected Plutus purpose. Anything else
+fails the row quoting the full message — a hash occurring
+somewhere or a budget/setup failure is never the claimed refusal.
+-}
 pinEvalRefusal :: String -> String -> String -> String -> IO ()
 pinEvalRefusal label msg expectedHash purpose = do
     unless ("EvalFailure" `isInfixOf` msg) $
@@ -2458,8 +2548,7 @@ withdrawTx env (custodyIn, custOut) (fundIn, fundOut) (collIn, _) destAddr = do
         repOut =
             mkBasicTxOut
                 destAddr
-                ( MaryValue (Coin custodyCoin) (MultiAsset (Map.singleton (envRepPolicy env) (Map.singleton (AssetName (SBS.toShort (outputRepresentative env custOut))) 1)))
-                )
+                (MaryValue (Coin custodyCoin) (MultiAsset (Map.singleton (envRepPolicy env) (Map.singleton (AssetName (SBS.toShort (outputRepresentative env custOut))) 1))))
         change = changeOut (fundCoin + custodyCoin) flatFee [repOut]
         body =
             mkBasicTxBody
@@ -2516,10 +2605,11 @@ maintainTx env snap successor signers = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | Spend redeemer @Recover { revealed_control, representatives,
--- registry }@ (NOTE-024 recovery-then-retire): application Constr 4
--- carrying the revealed address bytes, the carried representatives
--- and the registry binding (the app's own hash).
+{- | Spend redeemer @Recover { revealed_control, representatives,
+registry }@ (NOTE-024 recovery-then-retire): application Constr 4
+carrying the revealed address bytes, the carried representatives
+and the registry binding (the app's own hash).
+-}
 redeemerRecover :: ByteString -> [ByteString] -> ByteString -> PLC.Data
 redeemerRecover revealed reps registry =
     PLC.Constr 4 [PLC.B revealed, PLC.List (map PLC.B reps), PLC.B registry]
@@ -2550,17 +2640,17 @@ recoverTx env snap revealed reps registry successor signers = do
         integrity = computeScriptIntegrity (envPp env) redeemers
         contOut =
             scriptOut (envPp env) (envAppAddr env) (snapCoin snap) (snapRepresentativeTokens env snap) successor
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
+        change = changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [contOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [contOut, change]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    preparePublicTx env (1 + length signers) $
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -2586,8 +2676,9 @@ scriptOut pp addr coin tokens datum =
             (MaryValue (Coin finalCoin) (MultiAsset tokens))
             & datumTxOutL .~ mkInlineDatum (namingDataToData datum)
 
--- | A custody output: the representative at the custody script address
--- with no datum. Creating it executes no receiving script.
+{- | A custody output: the representative at the custody script address
+with no datum. Creating it executes no receiving script.
+-}
 custodyOut ::
     PParams ConwayEra ->
     Addr ->
@@ -2758,14 +2849,17 @@ publishBatch prov submit pp poolRef addr scripts = do
         failWith "publish: script outputs not found"
     pure (take (length scripts) mine)
 
--- | Submit one registry insert request (spelling -> representative name),
--- genesis-funded like the rest of this runner.
+{- | Submit one registry insert request (spelling -> representative name),
+genesis-funded like the rest of this runner.
+-}
 submitRetirementRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitRetirementRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
+    pool <- readIORef (envPool env)
+    let prov = if envLifecycle env then Lifecycle.fundingProvider (map fst pool) (envProv env) else envProv env
     unsigned <-
-        requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
+        requestInsertImpl cfg prov (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
     tag <- retainTx env ("blueprint-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed
@@ -2792,9 +2886,15 @@ queryRetirementState env = do
         Nothing -> failWith "state UTxO not found"
 
 queryRetirementFee :: Env -> IO (TxIn, TxOut ConwayEra)
-queryRetirementFee env = do
-    (fund, _collateral) <- takeFundCollateral env
-    pure fund
+queryRetirementFee env
+    | envLifecycle env = do
+        pool <- readIORef (envPool env)
+        case pool of
+            fund : rest -> writeIORef (envPool env) rest >> pure fund
+            [] -> failWith "lifecycle funding exhausted"
+    | otherwise = do
+        (fund, _collateral) <- takeFundCollateral env
+        pure fund
 
 mustOutAt :: Env -> Addr -> TxIn -> IO (TxOut ConwayEra)
 mustOutAt env addr txin = do
@@ -2854,13 +2954,14 @@ setupRecoveryRecord env datum label spelling = do
     -- The insert request (claim) at the application validator.
     (fundA, collateralA) <- takeFundCollateral env
     let claimOut =
-            scriptOut
-                (envPp env)
-                (envAppAddr env)
-                claimCoin
-                approvalTokens
-                datum
-        changeA = changeOut (coinOf fundA) flatFee [claimOut]
+            Lifecycle.sizedOutput (envLifecycle env) (envPp env) $
+                scriptOut
+                    (envPp env)
+                    (envAppAddr env)
+                    claimCoin
+                    approvalTokens
+                    datum
+        changeA = changeOut (coinOf fundA) (lifecycleFee env) [claimOut]
         redeemersA =
             Redeemers $
                 Map.singleton
@@ -2879,7 +2980,7 @@ setupRecoveryRecord env datum label spelling = do
                 & inputsTxBodyL .~ Set.fromList [fst fundA]
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateralA)
                 & outputsTxBodyL .~ StrictSeq.fromList [claimOut, changeA]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & mintTxBodyL .~ MultiAsset approvalTokens
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash (envOldHash env))
@@ -2889,10 +2990,11 @@ setupRecoveryRecord env datum label spelling = do
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton (envScriptHash env) (envScript env)
                 & witsTxL . rdmrsTxWitsL .~ redeemersA
+    evaluatedA <- preparePublicTx env 2 txA
     let signedA =
             addKeyWitness
                 (mkSignKey oldSeed)
-                (addKeyWitness genesisSignKey txA)
+                (addKeyWitness genesisSignKey evaluatedA)
     submitAccepted env ("setup-" <> label <> "-insert") signedA
     _ <- waitConfirmation (txIdHex signedA <> " (setup: " <> label <> " claim)")
     claimIn <-
@@ -2971,10 +3073,12 @@ setupRecoveryRecord env datum label spelling = do
                 , cfaAttachScripts = []
                 , cfaAdjustRoot = id
                 }
+    Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsignedF
     let signedF = addKeyWitness genesisSignKey unsignedF
     submitAccepted env ("setup-" <> label <> "-fold") signedF
     _ <- waitConfirmation (txIdHex signedF <> " (setup: " <> label <> " fold)")
     syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
+    when (envLifecycle env) $ forM_ (envAttached env) $ \(path, _) -> saveMirror path =<< envDumpTries env
     rootAfter <- chainRetirementRoot env
     emit
         "setup-fold"
@@ -3058,6 +3162,14 @@ txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
 
 txInIndex :: TxIn -> Integer
 txInIndex (TxIn _ (TxIx i)) = toInteger i
+
+lifecycleFee :: Env -> Integer
+lifecycleFee env
+    | envLifecycle env = let Coin fee = Lifecycle.protocolFeeReserve (envPp env) (envRefUtxos env) in fee
+    | otherwise = flatFee
+
+preparePublicTx :: Env -> Int -> ConwayTx -> IO ConwayTx
+preparePublicTx env = Lifecycle.prepareLifecycleTx (envLifecycle env) (envProv env) (envPp env) (envRefUtxos env)
 
 takeFundCollateral ::
     Env ->
