@@ -129,6 +129,7 @@ if onchain_present:
         "README.md",
         "RELEASE.md",
         "RELEASE-COMMIT",
+        "NAMING-CLI.md",
         "SHA256SUMS",
         "verify-identities.sh",
         "onchain/plutus.json",
@@ -145,6 +146,9 @@ if onchain_present:
         "naming-onchain/flake.lock",
         "offchain/flake.nix",
         "offchain/flake.lock",
+        "offchain/naming-cli/Main.hs",
+        "offchain/naming-cli/assets/registry.json",
+        "offchain/naming-cli/assets/naming.json",
         "offchain/journey/README.md",
         "offchain/journey/Main.hs",
         "offchain/journey/li01/Main.hs",
@@ -159,6 +163,8 @@ if onchain_present:
         fixtures_copy = bundle.extractfile(members["fixtures/Naming-Wire-Vectors.hs"]).read()
         canonical = bundle.extractfile(members["offchain/naming/src/Naming/Wire/Vectors.hs"]).read()
         assert fixtures_copy == canonical, "vendored fixture copy drifted from the offchain module"
+        for asset, blueprint in (("registry.json", "onchain/plutus.json"), ("naming.json", "naming-onchain/plutus.json")):
+            assert bundle.extractfile(members[f"offchain/naming-cli/assets/{asset}"]).read() == bundle.extractfile(members[blueprint]).read(), "naming CLI blueprint differs from the released validator"
         covered = {}
         for line in bundle.extractfile(members["SHA256SUMS"]).read().decode().splitlines():
             digest, name = line.split("  ", 1)

@@ -73,6 +73,24 @@
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
 
+        singular-naming = pkgs.runCommand "singular-naming" {
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+          meta.mainProgram = "singular-naming";
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.singular-naming} $out/bin/singular-naming \
+            --set-default REGISTRY_BLUEPRINT ${./.}/naming-cli/assets/registry.json \
+            --set-default NAMING_BLUEPRINT ${./.}/naming-cli/assets/naming.json
+        '';
+
+        naming-cli-read-e2e = pkgs.writeShellApplication {
+          name = "naming-cli-read-e2e";
+          runtimeInputs = [ pkgs.nix pkgs.jq pkgs.coreutils pkgs.bash pkgs.procps ];
+          text = ''
+            exec bash ${./naming-cli/read-e2e.sh} "$@"
+          '';
+        };
+
         haskellChecks = import ./nix/checks.nix {
           inherit pkgs components;
           shell = project.project.shell;
@@ -286,6 +304,8 @@
       in
       {
         packages = {
+          naming-cli-options-tests = components.tests.naming-cli-options-tests;
+          inherit singular-naming naming-cli-read-e2e;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`
@@ -310,6 +330,18 @@
         checks = haskellChecks;
 
         apps = haskellApps // {
+          naming-cli-options-tests = {
+            type = "app";
+            program = pkgs.lib.getExe components.tests.naming-cli-options-tests;
+          };
+          singular-naming = {
+            type = "app";
+            program = pkgs.lib.getExe singular-naming;
+          };
+          naming-cli-read-e2e = {
+            type = "app";
+            program = pkgs.lib.getExe naming-cli-read-e2e;
+          };
           journey = {
             type = "app";
             program = pkgs.lib.getExe journey;
