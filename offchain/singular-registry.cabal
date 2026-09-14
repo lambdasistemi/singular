@@ -257,6 +257,7 @@ executable recovery-rows
     , crypton
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 
@@ -297,6 +298,7 @@ executable retirement-rows
     , filepath
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 

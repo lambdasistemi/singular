@@ -72,11 +72,12 @@ import Control.Exception
     , try
     )
 import Control.Applicative ((<|>))
-import Control.Monad (unless, when)
+import Control.Monad (forM, forM_, unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Base16 qualified as Base16
 import Data.Char (isHexDigit)
 import Data.ByteString.Lazy qualified as BSL
@@ -86,6 +87,7 @@ import Data.Aeson (FromJSON (..), eitherDecode', encode, object, withObject, (.:
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
+import MPF.Backend.Pure (MPFInMemoryDB)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Set qualified as Set
@@ -143,13 +145,13 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Singular.Registry.Blueprint (
+import Cardano.MPFS.Cage.Blueprint (
     applyBytesParam,
     extractCompiledCode,
     loadBlueprint,
  )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
+import Cardano.MPFS.Cage.Config (CageConfig (..))
+import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
@@ -157,7 +159,7 @@ import Singular.Registry.Ledger (
     Root (..),
     TokenId (..),
  )
-import Singular.Registry.Node (
+import Cardano.MPFS.Cage.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
@@ -166,12 +168,23 @@ import Singular.Registry.Node (
     funderSignKey,
     withNode,
  )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.Trie qualified as Trie
-import Singular.Registry.Trie.PureManager (mkPureTrieManager)
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.ConnectedFold (
+import Cardano.MPFS.Cage.Deployment (
+    Attached (..),
+    CageParts (..),
+    attach,
+    deploymentPathFromEnvironment,
+    loadMirror,
+    mirrorPathFor,
+    readDeployment,
+    saveMirror,
+    taggedKey,
+ )
+import Cardano.MPFS.Cage.Provider qualified as Cage
+import Cardano.MPFS.Cage.Trie (Trie (..), TrieManager (..))
+import Cardano.MPFS.Cage.Trie qualified as Trie
+import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManagerFrom)
+import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
+import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
     ConnectedSpend (..),
@@ -180,7 +193,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     generousUnits,
     syncFoldedRequests,
  )
-import Singular.Registry.TxBuilder.Internal (
+import Cardano.MPFS.Cage.TxBuilder.Internal (
     ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -202,9 +215,9 @@ import Singular.Registry.TxBuilder.Internal (
     spendingIndex,
     txInToRef,
  )
-import Singular.Registry.TxBuilder.Request (requestInsertImpl, requestLockedAda)
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
-import Singular.Registry.Types (
+import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl, requestLockedAda)
+import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
+import Cardano.MPFS.Cage.Types (
     CageDatum (..),
     OnChainOperation (..),
     OnChainRoot (..),
@@ -305,9 +318,9 @@ main = do
                 "wrong-reason control: refusals matched against a marker \
                 \that cannot occur, so the matcher must fail the run"
     blueprintPath <- requireEnv "NAMING_BLUEPRINT"
-    registryPath <- requireEnv "REGISTRY_BLUEPRINT"
+    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
     outcome <-
-        try (runMode mode blueprintPath registryPath) :: IO (Either SomeException ())
+        try (runMode mode blueprintPath mpfsPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -319,10 +332,10 @@ main = do
 -- ---------------------------------------------------------
 
 runMode :: Mode -> FilePath -> FilePath -> IO ()
-runMode mode blueprintPath registryPath = do
+runMode mode blueprintPath mpfsPath = do
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
-    embp <- loadBlueprint registryPath
+    embp <- loadBlueprint mpfsPath
     mbp <- either failWith pure embp
     appBytes <- case extractCompiledCode "application.application" bp of
         Just bytes -> pure bytes
@@ -347,15 +360,15 @@ runMode mode blueprintPath registryPath = do
                 \the naming blueprint"
     stateBytes <- case extractCompiledCode "state.state" mbp of
         Just bytes -> pure bytes
-        Nothing -> failWith "state.state compiled code not found in the registry blueprint"
+        Nothing -> failWith "state.state compiled code not found in the MPFS blueprint"
     requestBytes <- case extractCompiledCode "request.request" mbp of
         Just bytes -> pure bytes
-        Nothing -> failWith "request.request compiled code not found in the registry blueprint"
+        Nothing -> failWith "request.request compiled code not found in the MPFS blueprint"
     consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "consumer.consumer compiled code not found in the registry \
+                "consumer.consumer compiled code not found in the MPFS \
                 \blueprint (every Modify withdraws the pinned consumer)"
     withNode $ \sess -> do
         let prov = nsProvider sess
@@ -440,11 +453,38 @@ runMode mode blueprintPath registryPath = do
                 <> repAppliedHex
                 <> " (the applied mint identity this run mints representatives under)"
             )
-        tm <- mkPureTrieManager
+        -- The registry this run works against: the one it boots, or the
+        -- one a deployment manifest records (issue #102).
+        mDeployment <- deploymentPathFromEnvironment
+        let cageParts =
+                let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
+                        deriveConsumerBinding consumerBytes
+                 in CageParts
+                        { partsStateBytes = stateBytes
+                        , partsRequestBytes = requestBytes
+                        , partsRepPolicy =
+                            SBS.toShort (scriptHashBytes repAppliedHash)
+                        , partsConsumerPin = pin
+                        , partsConsumerScript = consumerScript
+                        }
+        attached <- forM mDeployment $ \path -> do
+            dep <- readDeployment path
+            att <- attach prov dep cageParts
+            pure (path, att)
+        (tm, dumpTries) <- case mDeployment of
+            Nothing -> mkPureTrieManagerFrom Map.empty
+            Just path -> mkPureTrieManagerFrom =<< loadMirror path
         evDir <- evidenceDirFromEnv
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
-        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+        (cfg, tok) <- case attached of
+            Nothing ->
+                bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+            Just (path, att) -> do
+                emit
+                    "attached"
+                    ("registry from " <> path <> ": no registry booted")
+                pure (attCfg att, attToken att)
         -- Registry-bound names (NOTE-007): derived post-boot once the cage
         -- token exists; every display, redeemer and minted value below uses
         -- these bindings (never the control-only shape).
@@ -453,31 +493,63 @@ runMode mode blueprintPath registryPath = do
                 Map.singleton
                     repAppliedPolicy
                     (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
-        createTrie tm tok
+        forM_ attached $ \_ -> assertMirrorMatchesChain prov cfg tok tm
+        case attached of
+            Just _ -> pure ()
+            Nothing -> createTrie tm tok
         -- Consumer stake registration (NOTE-020 item 2), BEFORE split:
         -- the pinned consumer's credential must be registered before the
         -- first Modify withdraws it, and registration must consume a
         -- pristine-genesis UTxO — never a pool fragment (poolRef entries
         -- go stale once spent; spending one breaks publish with
         -- already-included inputs). Funded by genesis, witnessed by it.
-        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
-        let signedReg = addKeyWitness genesisSignKey unsignedReg
-        regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
-        regResult <- submitTx submit signedReg
-        case regResult of
-            Submitted _ -> do
-                retainOutcome evDir regTag "accepted" Nothing
-                pure ()
-            Rejected reason ->
-                failWith ("consumer-registration: rejected: " <> show reason)
-        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
-        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+        case attached of
+            Just _ ->
+                emit
+                    "attached"
+                    "the stake credentials were registered when the \
+                    \deployment was made; a run that attaches registers \
+                    \nothing"
+            Nothing -> do
+                unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+                let signedReg = addKeyWitness genesisSignKey unsignedReg
+                regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
+                regResult <- submitTx submit signedReg
+                case regResult of
+                    Submitted _ -> do
+                        retainOutcome evDir regTag "accepted" Nothing
+                        pure ()
+                    Rejected reason ->
+                        failWith ("consumer-registration: rejected: " <> show reason)
+                _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
-        scriptRefs <- publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript (scriptFromBytes "naming-custody" custodyBytes)
-        let env =                Env
-                    { envProv = prov
+        scriptRefs <- case attached of
+            Nothing ->
+                publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript (scriptFromBytes "naming-custody" custodyBytes)
+            Just (_, att) -> do
+                emit
+                    "attached"
+                    ( show (length (attRefUtxos att))
+                        <> " reference scripts taken from the deployment; \
+                           \none published"
+                    )
+                pure (attRefUtxos att)
+        keyTag <- forM attached $ \(_, att) -> do
+            emit
+                "keys"
+                ( "this run's registry keys carry the suffix -"
+                    <> BC.unpack (attRunTag att)
+                )
+            pure (attRunTag att)
+        let env =
+                Env
+                    { envKeyTag = keyTag
+                    , envAttached = attached
+                    , envDumpTries = dumpTries
+                    , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
                     , envPool = poolRef
@@ -623,7 +695,14 @@ runMode mode blueprintPath registryPath = do
             ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
 
 data Env = Env
-    { envProv :: Cage.Provider IO
+    { envKeyTag :: Maybe ByteString
+    -- ^ Suffix every registry key of this run carries, when the
+    -- registry outlives the run (issue #102)
+    , envAttached :: Maybe (FilePath, Attached)
+    -- ^ The deployment this run attached to, if any
+    , envDumpTries :: IO (Map.Map TokenId MPFInMemoryDB)
+    -- ^ Read this run's tries back out, for the run that follows
+    , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
@@ -664,7 +743,7 @@ data Env = Env
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Singular.Registry.Node`). The name is kept so the funding sites
+(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr
@@ -766,6 +845,14 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     rowLX01 env
     -- Final no-trace sweep.
     finalNoTrace env recRefusals
+    forM_ (envAttached env) $ \(path, _) -> do
+        saveMirror path =<< envDumpTries env
+        emit
+            "mirror"
+            ( "wrote the registry's trie to "
+                <> mirrorPathFor path
+                <> " for the next run that attaches"
+            )
     emit
         "complete"
         ( "the retirement rows executed on a real devnet; every refusal \
@@ -773,6 +860,43 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
           \from the chain, retirement completed permissionlessly into Over \
           \with the burn observed, the state after the refusals unchanged"
         )
+
+{- | The proof mirror this run loaded must be the trie the chain has.
+
+A fold proves against the whole trie, not the root, so a run attaching
+to a registry that outlives it works from a mirror carried in a file.
+Comparing the two roots first turns a drifted file into one sentence
+about the file, instead of a validator refusal nobody can read.
+-}
+assertMirrorMatchesChain ::
+    Cage.Provider IO ->
+    CageConfig ->
+    TokenId ->
+    TrieManager IO ->
+    IO ()
+assertMirrorMatchesChain prov cfg tok tm = do
+    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    chain <- case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
+        Nothing -> failWith "attach: the registry has no state UTxO"
+        Just (_, out) -> case extractCageDatum out of
+            Just (StateDatum st) ->
+                let OnChainRoot bs = stateRoot st in pure (hex bs)
+            _ -> failWith "attach: the state UTxO carries no state datum"
+    Root mirrorBytes <- withTrie tm tok getRoot
+    let mirror = hex mirrorBytes
+    unless (mirror == chain) $
+        failWith
+            ( "the proof mirror does not match the chain: the mirror's root \
+              \is 0x"
+                <> mirror
+                <> " and the registry's root is 0x"
+                <> chain
+                <> ". The mirror beside the manifest belongs to a different \
+                   \history than the deployment."
+            )
+    emit
+        "mirror"
+        ("the proof mirror agrees with the registry's root 0x" <> chain)
 
 rowLT01 :: Env -> Snap -> IO ConwayTx
 rowLT01 env snap = do
@@ -1842,7 +1966,7 @@ rowLX01 env = do
                 "row"
                 ( "LX01-re-registration-after-over-refused: REFUSED at build (model \
                   \reason occupied-key): the fold's local evaluation fails naming the \
-                  \registry state script 0x"
+                  \MPFS state script 0x"
                     <> stateHex
                     <> " at a ConwaySpending purpose — the absence proof the insert \
                        \requires is unproducible against the chain root holding rt-over: "
@@ -1856,7 +1980,7 @@ rowLX01 env = do
                 "LX01-re-registration-after-over-refused"
                 "occupied-key"
                 stateHex
-                "the registry state script"
+                "the MPFS state script"
                 "absence proof unproducible: the key is occupied"
                 signed
     -- Control: the same registration succeeds for an unretired key in
@@ -2663,7 +2787,7 @@ publishBatch prov submit pp poolRef addr scripts = do
         failWith "publish: script outputs not found"
     pure (take (length scripts) mine)
 
--- | Submit one registry insert request (spelling -> representative name),
+-- | Submit one MPFS insert request (spelling -> representative name),
 -- genesis-funded like the rest of this runner.
 submitRetirementRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitRetirementRequest env spelling value = do
@@ -2672,7 +2796,7 @@ submitRetirementRequest env spelling value = do
     unsigned <-
         requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
-    tag <- retainTx env ("blueprint-request-" <> show spelling) signed
+    tag <- retainTx env ("mpfs-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed
     case result of
         Submitted _ -> do
@@ -2680,9 +2804,9 @@ submitRetirementRequest env spelling value = do
             pure ()
         Rejected reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
+    _ <- waitConfirmation (txid <> " (MPFS request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
-    reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
+    reqIn <- mustFindUTxO (envProv env) reqAddr txid "MPFS request"
     reqOut <- mustOutAt env reqAddr reqIn
     pure (reqIn, reqOut)
 
@@ -2738,7 +2862,7 @@ chainRetirementRoot env = do
              in pure (hex bs)
         _ -> failWith "the state UTxO carries no state datum"
 
--- | Fold one genuine record through the CONNECTED transaction: registry
+-- | Fold one genuine record through the CONNECTED transaction: MPFS
 -- request keyed by the given spelling plus the naming claim, one state
 -- Modify, approval burn and representative mint. Returns the fold txid
 setupRecoveryRecord ::
@@ -2747,7 +2871,8 @@ setupRecoveryRecord ::
     String ->
     ByteString ->
     IO (String, TxIn)
-setupRecoveryRecord env datum label spelling = do
+setupRecoveryRecord env datum label rawSpelling = do
+    let spelling = maybe rawSpelling (`taggedKey` rawSpelling) (envKeyTag env)
     let controlBytes = addressBytes (controlAddress datum)
         commitment = nextControlCommitment datum
         approval = insertApprovalName controlBytes commitment
@@ -2808,7 +2933,7 @@ setupRecoveryRecord env datum label spelling = do
             ("setup: " <> label <> " claim")
     snapClaim <- mustSnap env claimIn
     claimLive <- mustOutAt env (envAppAddr env) claimIn
-    -- The registry request keyed by the spelling.
+    -- The MPFS request keyed by the spelling.
     (reqIn, reqOut) <- submitRetirementRequest env spelling repName
     -- The connected fold: state Modify, request Contribute, claim Fold.
     (stateIn, stateOut) <- queryRetirementState env
@@ -3288,7 +3413,7 @@ checkPinnedConsumer :: String -> IO ()
 checkPinnedConsumer unappliedHex = do
     path <-
         fromMaybe "../onchain/script-identity.json"
-            <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
+            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
     bytes <- BS.readFile path
     manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
     let pins =
@@ -3298,7 +3423,7 @@ checkPinnedConsumer unappliedHex = do
             ]
     unless (length pins >= 1) $
         failWith
-            "identity: no consumer.consumer pin in the registry manifest"
+            "identity: no consumer.consumer pin in the MPFS manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
             ( "identity: the manifest pins unapplied consumer hash(es) "
