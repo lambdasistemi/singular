@@ -21,9 +21,14 @@ module Singular.Registry.TxBuilder.Register (
     registerScriptImpl,
 ) where
 
+import Cardano.Ledger.Api.Tx.Out (coinTxOutL, referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Data.ByteString.Short qualified as SBS
+import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Ord (Down (..))
 import Data.Void (Void)
+import Lens.Micro ((^.))
 
 import Cardano.Ledger.Alonzo.Scripts (AsIx)
 import Cardano.Ledger.Conway.Scripts (
@@ -32,21 +37,22 @@ import Cardano.Ledger.Conway.Scripts (
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 
+import Cardano.Ledger.Address (Addr)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal (
     pinScriptHash,
  )
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
-import Cardano.Ledger.Address (Addr)
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
 
--- | Wrap the Provider's evaluateTx for the DSL (no scripts execute
--- here, but the DSL still calls back through this interface).
+{- | Wrap the Provider's evaluateTx for the DSL (no scripts execute
+here, but the DSL still calls back through this interface).
+-}
 mkEvalTx ::
     Provider IO ->
     ConwayTx ->
@@ -97,7 +103,11 @@ registerScriptImpl ::
 registerScriptImpl prov fundAddr credHash = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov fundAddr
-    fundUtxo <- case utxos of
+    let funding =
+            sortOn
+                (Down . (^. coinTxOutL) . snd)
+                [u | u@(_, out) <- utxos, out ^. referenceScriptTxOutL == SNothing]
+    fundUtxo <- case funding of
         [] ->
             error
                 "registerScript: funder wallet has no UTxOs"
