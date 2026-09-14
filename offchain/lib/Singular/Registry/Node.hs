@@ -50,7 +50,10 @@ module Singular.Registry.Node (
     -- * Session
     NodeSession (..),
     awaitChain,
+    currentTipSlot,
+    scriptStakeRegistered,
     awaitTx,
+    awaitTxId,
     confirmationDelay,
     withNode,
     withNodeMode,
@@ -78,6 +81,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word32)
 import System.Environment (getArgs, getEnvironment)
@@ -89,19 +93,18 @@ import Codec.Binary.Bech32 qualified as Bech32
 import Lens.Micro ((^.))
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
-import Cardano.Ledger.Api.Tx.Out (valueTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
+import Cardano.Ledger.BaseTypes (Network (..), SlotNo, TxIx (..))
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Hashes (ScriptHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
-import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
-import Singular.Registry.Provider qualified as Cage
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
@@ -122,6 +125,8 @@ import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
+import Singular.Registry.Provider qualified as Cage
 
 -- ---------------------------------------------------------
 -- Mode
@@ -289,7 +294,8 @@ signKeyBytes raw
                 "not a text envelope with a cborHex field, not hex, and not \
                 \32 raw bytes"
     unwrap bytes
-        | BS.length bytes == 34, BS.take 2 bytes == BS.pack [0x58, 0x20] =
+        | BS.length bytes == 34
+        , BS.take 2 bytes == BS.pack [0x58, 0x20] =
             Right (BS.drop 2 bytes)
         | BS.length bytes == 32 = Right bytes
         | otherwise =
@@ -349,6 +355,12 @@ data NodeSession = NodeSession
     -- ^ Network the funding address is built for
     , nsPParams :: PParams ConwayEra
     -- ^ Protocol parameters queried from the running node
+    , nsTxInLive :: TxIn -> IO Bool
+    -- ^ Query an output by its exact transaction input reference
+    , nsScriptRegistered :: ScriptHash -> IO Bool
+    -- ^ Whether this script has a registered reward account, including zero balance
+    , nsTipSlot :: IO SlotNo
+    -- ^ Current chain tip queried from this session
     , nsMode :: NodeMode
     -- ^ Mode this session was opened in
     }
@@ -405,6 +417,11 @@ withNodeMode mode k = case mode of
                             , nsMagic = magic
                             , nsNetwork = walletNetwork wallet
                             , nsPParams = pp
+                            , nsTxInLive = \i -> Map.member i <$> N2C.queryUTxOByTxIn (mkN2CProvider lsqCh) (Set.singleton i)
+                            , nsScriptRegistered = \h -> do
+                                let credential = ScriptHashObj h
+                                Map.member credential <$> N2C.queryStakeRewards (mkN2CProvider lsqCh) (Set.singleton credential)
+                            , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot (mkN2CProvider lsqCh)
                             , nsMode = mode
                             }
                 bracket
@@ -421,6 +438,14 @@ session it names the error rather than guessing.
 openSession :: IORef (Maybe NodeSession)
 openSession = unsafePerformIO (newIORef Nothing)
 {-# NOINLINE openSession #-}
+
+-- | Registration is global to a script credential, shared by registries.
+scriptStakeRegistered :: ScriptHash -> IO Bool
+scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (\s -> nsScriptRegistered s h)
+
+-- | Read the live tip for a transaction built in the active session.
+currentTipSlot :: IO SlotNo
+currentTipSlot = readIORef openSession >>= maybe (die "currentTipSlot called outside a node session") nsTipSlot
 
 {- | Wait until a submitted transaction is visible on the chain.
 
@@ -467,6 +492,20 @@ awaitTx tx = do
             else do
                 threadDelay (confirmationPollSeconds * 1_000_000)
                 go prov addr (n - 1)
+
+{- | Confirm a just-submitted transaction by observing output zero.
+Call before a dependent transaction spends that output. This supports
+journey helpers that retain a transaction id but not the complete body.
+-}
+awaitTxId :: String -> IO ()
+awaitTxId txid = do
+    raw <- either (const (die "awaitTxId: transaction id is not hex")) pure (B16.decode (BC.pack txid))
+    h <- maybe (die "awaitTxId: transaction id is not 32 bytes") pure (hashFromBytes raw)
+    sess <- readIORef openSession >>= maybe (die "awaitTxId called outside a node session") pure
+    let wanted = TxIn (TxId (unsafeMakeSafeHash h)) (TxIx 0)
+    awaitChain ("transaction " <> txid <> " output 0") $ do
+        live <- nsTxInLive sess wanted
+        pure (if live then Just () else Nothing)
 
 {- | Retry a chain observation until it yields, then return it; name
 what never appeared when it does not.

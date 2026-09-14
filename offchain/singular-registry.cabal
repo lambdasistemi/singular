@@ -36,6 +36,7 @@ library
   hs-source-dirs:   lib naming/src
   build-depends:
     , aeson                  >=2.1  && <2.3
+    , aeson-pretty
     , async
     , base                   >=4.14 && <5
     , base16-bytestring
@@ -57,6 +58,8 @@ library
     , crypton
     , directory
     , filepath
+    , directory
+    , filepath
     , memory
     , microlens
     , mts:mpf-write
@@ -73,6 +76,7 @@ library
     Singular.Registry.Blueprint
     Singular.Registry.Candidate
     Singular.Registry.Config
+    Singular.Registry.Deployment
     Singular.Registry.FoldAll
     Singular.Registry.Ledger
     Singular.Registry.Node
@@ -254,6 +258,7 @@ executable recovery-rows
     , crypton
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 
@@ -294,6 +299,7 @@ executable retirement-rows
     , filepath
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 
@@ -333,6 +339,7 @@ executable register-rows
     , filepath
     , memory
     , microlens
+    , mts:mpf-write
     , plutus-core
     , text
 
@@ -442,6 +449,43 @@ executable retirement-verify
     , plutus-core
     , plutus-tx
     , cardano-tx-tools:tx-build
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+executable devnet
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   devnet
+  main-is:          Main.hs
+  build-depends:
+    , base                        >=4.14 && <5
+    , cardano-node-clients:devnet
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+executable deployment
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   deployment
+  main-is:          Main.hs
+  build-depends:
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , microlens
+    , ouroboros-network
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
