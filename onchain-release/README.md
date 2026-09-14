@@ -90,8 +90,17 @@ nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
 ## 4. The runnable journeys and row runners
 
 Each runner boots a real devnet node (spawned locally, node-to-client)
-and executes against it. Build the two compiled blueprints from this
-archive's own flakes, then run the runners from `offchain/` (they read
+and executes against it, unless you point it at a node of your own:
+pass `--node-socket PATH --network-magic N --wallet-skey FILE` (or the
+`SINGULAR_NODE_SOCKET`, `SINGULAR_NETWORK_MAGIC` and
+`SINGULAR_WALLET_SKEY` environment variables) and the same runner
+connects to your node and funds itself from your own signing key
+instead. The devnet stays the default; all three settings are required
+together. [Run against your own preprod node](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
+is the end-to-end runbook for that: release download, node and wallet
+setup, the funding diagnostic and each journey.
+
+Build the two compiled blueprints from this archive's own flakes, then run the runners from `offchain/` (they read
 the pinned identity manifests from `../onchain/` and
 `../naming-onchain/` by default). Use a shallow private `TMPDIR` (the
 node socket path length is limited):

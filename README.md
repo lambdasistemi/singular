@@ -16,6 +16,8 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 **A resolver** wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.
 
+**An integrator with their own node** wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. [Run against your own preprod node](docs/consumer-onboarding.md) covers the release download, the node and wallet setup, the funding diagnostic and each journey end to end.
+
 ## How the parts fit
 
 ```mermaid
@@ -62,6 +64,7 @@ Read the design in order:
 6. [Play and reproduce the simulation](docs/simulation.md)
 7. [Prior art and reuse candidates](docs/prior-art.md)
 8. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
+9. [Run against your own preprod node](docs/consumer-onboarding.md)
 
 ## Design status
 
