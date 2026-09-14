@@ -216,6 +216,7 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Naming.Register (registryAssetId)
 import Naming.Datum
 import Naming.Wire
     ( Address (..)
@@ -369,11 +370,29 @@ runMode mode registryPath namingPath = do
             appliedHash = computeScriptHash appliedBytes
             appliedHex = hex (scriptHashBytes appliedHash)
         checkPinnedUnapplied si "state.state" unappliedHex
+        -- World setup: the devnet genesis wallet holds one 30000-ada
+        -- UTxO. A designation split turns it into the world the rows
+        -- need without ever touching a designated seed again: output 0
+        -- is the canonical seed (after the split it is still the
+        -- lexically first UTxO of the genesis wallet — the LI01
+        -- designation rule), output 1 the alternate seed (401), the
+        -- rest fund and collateralise the attempts.
+        utxos0 <- Cage.queryUTxOs prov genesisAddr
+        (genesisIn, genesisOut) <-
+            case sortBy (comparing (outRefSortKey . fst)) utxos0 of
+                [g] -> pure g
+                _ -> failWith "world: expected exactly one genesis UTxO"
+        world <- designateWorld prov submit genesisIn genesisOut
+        _ <- waitConfirmation "world designation split"
+        utxos1 <- Cage.queryUTxOs prov genesisAddr
+        canonicalSeed <- utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
+        altSeed <- utxoByRef utxos1 (worldAltRef world) "alternate seed"
         let appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
             appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
             reprAppliedBytes =
-                applyBytesParam (scriptHashBytes appHash) reprBytes
+                applyBytesParam (registryAssetId (scriptHashBytes appliedHash) (deriveAssetName (worldCanonicalRef world))) $
+                    applyBytesParam (scriptHashBytes appHash) reprBytes
             reprAppliedHash = computeScriptHash reprAppliedBytes
             reprAppliedHex = hex (scriptHashBytes reprAppliedHash)
             reprUnappliedHex = hex (scriptHashBytes (computeScriptHash reprBytes))
@@ -394,25 +413,8 @@ runMode mode registryPath namingPath = do
                 <> reprAppliedHex
                 <> " = unapplied 0x"
                 <> reprUnappliedHex
-                <> " with parameter application-policy hash"
+                <> " with parameters application-policy hash and registry asset id"
             )
-        -- World setup: the devnet genesis wallet holds one 30000-ada
-        -- UTxO. A designation split turns it into the world the rows
-        -- need without ever touching a designated seed again: output 0
-        -- is the canonical seed (after the split it is still the
-        -- lexically first UTxO of the genesis wallet — the LI01
-        -- designation rule), output 1 the alternate seed (401), the
-        -- rest fund and collateralise the attempts.
-        utxos0 <- Cage.queryUTxOs prov genesisAddr
-        (genesisIn, genesisOut) <-
-            case sortBy (comparing (outRefSortKey . fst)) utxos0 of
-                [g] -> pure g
-                _ -> failWith "world: expected exactly one genesis UTxO"
-        world <- designateWorld prov submit genesisIn genesisOut
-        _ <- waitConfirmation "world designation split"
-        utxos1 <- Cage.queryUTxOs prov genesisAddr
-        canonicalSeed <- utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
-        altSeed <- utxoByRef utxos1 (worldAltRef world) "alternate seed"
         emit
             "canonical-seed"
             ( "seed identity 400 = outRef "

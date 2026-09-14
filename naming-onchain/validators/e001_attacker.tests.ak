@@ -11,7 +11,7 @@ test e001_attacker_mints_anything_accepts() {
     "attacker_policy",
     Transaction {
       ..transaction.placeholder,
-      mint: add(zero, "attacker_policy", #"526570", 1),
+      mint: add(zero, "attacker_policy", #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c", 1),
     },
   )
 }
@@ -23,7 +23,7 @@ test e001_attacker_burns_anything_accepts() {
     "attacker_policy",
     Transaction {
       ..transaction.placeholder,
-      mint: add(zero, "attacker_policy", #"526570", -1),
+      mint: add(zero, "attacker_policy", #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c", -1),
     },
   )
 }

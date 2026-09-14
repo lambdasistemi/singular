@@ -53,13 +53,22 @@ validator representative(application_policy: PolicyId, registry: ByteArray) {
           True
         } else {
           expect
-            application.Retire { representatives, key_hash: _ }: ApplicationRedeemer =
+            application.Retire { representatives, key: _ }: ApplicationRedeemer =
             application_spend_redeemer(application_policy, tx)
           expect exact_movement(tx.mint, policy_id, representatives, -1)
           True
         }
       }
     }
+  }
+
+  /// Zero withdrawal executes the same registry binding during retirement,
+  /// when the NFT moves into custody without a mint or burn.
+  withdraw(_redeemer: Data, account: address.Credential, tx: Transaction) {
+    let (referenced, policy) = application.referenced_registry(tx)
+    expect referenced == registry
+    expect account == address.Script(policy)
+    True
   }
 
   else(_) {

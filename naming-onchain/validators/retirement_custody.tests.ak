@@ -40,7 +40,7 @@ fn request_datum() {
     MRequest {
       requestToken: MTokenId { assetName: mock_registry_token },
       requestOwner: controller,
-      requestKey: #"6b6579",
+      requestKey: "alice",
       requestValue:
         MUpdate(
           representative_name,
@@ -281,7 +281,7 @@ fn request_datum_with(value) {
     MRequest {
       requestToken: MTokenId { assetName: mock_registry_token },
       requestOwner: controller,
-      requestKey: #"6b6579",
+      requestKey: "alice",
       requestValue: value,
       tip: 1000000,
       submitted_at: 0,
@@ -313,7 +313,7 @@ test custody_foreign_token_refuses() fail {
       MRequest {
         requestToken: MTokenId { assetName: #"ffff" },
         requestOwner: controller,
-        requestKey: #"6b6579",
+        requestKey: "alice",
         requestValue:
           MUpdate(
             representative_name,
@@ -446,5 +446,22 @@ test custody_double_burn_refuses() fail {
     #"00",
     self_ref,
     custody_tx([custody_input(held_value())], double),
+  )
+}
+
+/// The correct old/new values and burn cannot conceal a different spelling.
+test custody_wrong_spelling_refuses() fail {
+  let datum: Data = MRequestDatum(MRequest {
+    requestToken: MTokenId { assetName: fixtures.mock_registry_token },
+    requestOwner: #"abcd", requestKey: "bob",
+    requestValue: MUpdate(representative_name, over_marker_for(representative_name)),
+    tip: 1000000, submitted_at: 0,
+  })
+  retirement_custody.retirement_custody.spend(
+    None, #"00", self_ref,
+    custody_completion_tx(
+      [custody_input(held_value()), state_input(), request_input_with(datum)],
+      [state_output_new()], burn_held(), modify_singleton(),
+    ),
   )
 }

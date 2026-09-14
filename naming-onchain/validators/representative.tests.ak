@@ -1,3 +1,4 @@
+use cardano/address
 use aiken/primitive/bytearray
 use application.{Cancel, Fold, Retire}
 use cardano/assets.{add, zero}
@@ -120,7 +121,7 @@ test retire_burns_named_representative_accepts() {
     rep_policy,
     app_spend_tx(
       burn_one(),
-      Retire { representatives: [representative_name], key_hash: controller },
+      Retire { representatives: [representative_name], key: "alice" },
     ),
   )
 }
@@ -134,7 +135,7 @@ test retire_without_burn_refuses() fail {
     rep_policy,
     app_spend_tx(
       zero,
-      Retire { representatives: [representative_name], key_hash: controller },
+      Retire { representatives: [representative_name], key: "alice" },
     ),
   )
 }
@@ -150,7 +151,7 @@ test burn_unbound_name_refuses() fail {
     rep_policy,
     app_spend_tx(
       extra,
-      Retire { representatives: [representative_name], key_hash: controller },
+      Retire { representatives: [representative_name], key: "alice" },
     ),
   )
 }
@@ -338,5 +339,19 @@ test mint_canonical_reference_accepts() {
       inputs: [claim_input(NamingDatum(source_record()), record_value)],
       reference_inputs: [state_input()],
     },
+  )
+}
+
+test withdraw_canonical_registry_accepts() {
+  representative.representative.withdraw(
+    app_policy, canonical_registry(), #"", address.Script(rep_policy),
+    fixtures.with_state_reference(tx([], [], [], zero, []), state_input()),
+  )
+}
+
+test withdraw_without_registry_reference_refuses() fail {
+  representative.representative.withdraw(
+    app_policy, canonical_registry(), #"", address.Script(rep_policy),
+    tx([state_input()], [], [], zero, []),
   )
 }

@@ -21,7 +21,7 @@ Ledger realisation (offchain\/naming-correspondence.md, t62 entries):
   * the record is a UTxO at the naming application validator carrying
     the four-field naming datum inline (merged 'Naming.Datum' codec)
     and exactly one representative token under the APPLIED
-    representative policy (@Rep || control key hash || 0x00@, minted +1
+    representative policy (@blake2b_256(spelling)@, minted +1
     by the genuine insert fold that created the record, issue #77). The
     former application-policy stand-in shape is removed: no row mints
     or carries a representative under the application policy any more;
@@ -140,6 +140,7 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
@@ -177,7 +178,7 @@ import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
@@ -188,6 +189,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
  )
 import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.Types (
+    OnChainTxOutRef,
     CageDatum (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -355,6 +357,10 @@ runMode mode blueprintPath registryPath = do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
+        utxos <- Cage.queryUTxOs prov genesisAddr
+        seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+            [] -> failWith "boot: genesis wallet has no UTxOs"
+            (txIn, _) : _ -> pure (txInToRef txIn)
         let script = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -363,7 +369,8 @@ runMode mode blueprintPath registryPath = do
             repUnappliedHex =
                 hex (scriptHashBytes (computeScriptHash repUnappliedBytes))
             repAppliedBytes =
-                applyBytesParam (scriptHashBytes appHash) repUnappliedBytes
+                applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) (deriveAssetName seedRef)) $
+                    applyBytesParam (scriptHashBytes appHash) repUnappliedBytes
             repAppliedHash = computeScriptHash repAppliedBytes
             repAppliedHex = hex (scriptHashBytes repAppliedHash)
             repAppliedPolicy = PolicyID repAppliedHash
@@ -382,7 +389,7 @@ runMode mode blueprintPath registryPath = do
                 <> repAppliedHex
                 <> " = unapplied 0x"
                 <> repUnappliedHex
-                <> " with parameter application-policy hash"
+                <> " with parameters application-policy hash and registry asset id"
             )
         let oldHash = addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey oldSeed)))
             oldAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey oldSeed))
@@ -456,7 +463,7 @@ runMode mode blueprintPath registryPath = do
         (cfg, tok) <- case attached of
             Nothing -> do
                 booted <-
-                    bootRecoveryCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes
+                    bootRecoveryCage seedRef prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes
                 createTrie tm (snd booted)
                 pure booted
             Just (path, att) -> do
@@ -489,6 +496,14 @@ runMode mode blueprintPath registryPath = do
                         failWith ("consumer-registration: rejected: " <> show reason)
                 _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
                 emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+                unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
+                let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
+                repRegResult <- submitTx submit signedRepReg
+                case repRegResult of
+                    Submitted _ -> pure ()
+                    Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
+                _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
+                emit "representative" "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
@@ -554,15 +569,15 @@ runMode mode blueprintPath registryPath = do
                 <> ": main="
                 <> showIn recMain
                 <> " (representative 0x"
-                <> hex (boundRepName cfg tok oldHash)
+                <> hex (representativeName "rc-main")
                 <> ") refusals="
                 <> showIn recRefusals
                 <> " (representative 0x"
-                <> hex (boundRepName cfg tok refusalsHash)
+                <> hex (representativeName "rc-refusals")
                 <> ") forged="
                 <> showIn recForged
                 <> " (representative 0x"
-                <> hex (boundRepName cfg tok forgedHash)
+                <> hex (representativeName "rc-forged")
                 <> ") — each folded from its own insert with its \
                    \representative minted +1 under the applied policy 0x"
                 <> repAppliedHex
@@ -1360,6 +1375,7 @@ snapRepTokens env snap =
         (Map.singleton (AssetName (SBS.toShort (snapRep snap))) 1)
 
 bootRecoveryCage ::
+    OnChainTxOutRef ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
@@ -1368,11 +1384,7 @@ bootRecoveryCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     IO (CageConfig, TokenId)
-bootRecoveryCage prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
-    seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "boot: genesis wallet has no UTxOs"
-        (txIn, _) : _ -> pure (txInToRef txIn)
+bootRecoveryCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes = do
     let ConsumerBinding
             { cbPin = consumerPin
             , cbScriptBytes = consumerScriptBytes
@@ -1548,18 +1560,6 @@ chainRecoveryRoot env = do
 -- request keyed by the given spelling plus the naming claim, one state
 -- Modify, approval burn and representative mint. Returns the fold txid
 -- and the record input.
--- | Registry-bound representative name (NOTE-007): recomputed identically
--- on chain from the supplied state's token. Single source per file so
--- displays and minted values cannot drift apart.
-boundRepName :: CageConfig -> TokenId -> ByteString -> ByteString
-boundRepName cfg tok controlHash =
-    let TokenId (AssetName tokSbs) = tok
-     in representativeName
-            controlHash
-            (scriptHashBytes (cfgScriptHash cfg))
-            (SBS.fromShort tokSbs)
-            freshIncarnation
-
 setupGenuineRecord ::
     Env ->
     ByteString ->
@@ -1572,7 +1572,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     let controlBytes = addressBytes (controlAddress datum)
         commitment = nextControlCommitment datum
         approval = insertApprovalName controlBytes commitment
-        repName = boundRepName (envCfg env) (envTok env) controllerHash
+        repName = representativeName spelling
         approvalTokens =
             Map.singleton
                 (envAppPolicy env)

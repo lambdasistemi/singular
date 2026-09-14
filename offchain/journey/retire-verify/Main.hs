@@ -363,7 +363,11 @@ verifyUnit index custodyHash acceptedTxids unit = do
                     <> ": expected exactly one naming-claim input in creation tx, found "
                     <> show (length claimControls)
                 )
-    reqTokens <- requestTokensOf index creationTx
+    requests <- creationRequestsOf index creationTx
+    spelling <- case requests of
+        [(_, key)] -> pure key
+        _ -> failWith (label <> ": expected one creation request key")
+    let reqTokens = map fst requests
     tokenName <- case reqTokens of
         [] -> failWith (label <> ": no registry request input in creation tx")
         (t : ts) -> do
@@ -374,21 +378,18 @@ verifyUnit index custodyHash acceptedTxids unit = do
     (retireTxid, retireTx, keyHash) <- findRetireTx index finalRec
     policyBytes <- statePolicyOf creationTx
     (custodyPolicy, custodyName, custodyQty) <- custodyTriple retireTx custodyHash
-    incarnation <- case BS.unsnoc custodyName of
-        Just (_, w) -> pure w
-        Nothing -> failWith (label <> ": custody rep name is empty")
     creatingDatum <- creatingRecordDatum index finalRec
     currentControl <- controlHashOfDatum label creatingDatum
     let evidence =
             RetireEvidence
                 { reRecord = label
                 , reRetireTx = retireTxid
-                , reKeyHash = keyHash
+                , reKey = keyHash
+                , reSpelling = spelling
                 , reCreationHash = claimControl
                 , reCreationHashLog = cuCreationHash unit
                 , reStatePolicy = policyBytes
                 , reToken = tokenName
-                , reIncarnation = incarnation
                 , reCreationMint = mintTriples creationTx
                 , reCustodyPolicy = custodyPolicy
                 , reCustodyName = custodyName
@@ -411,7 +412,7 @@ verifyUnit index custodyHash acceptedTxids unit = do
             <> label
             <> " retire="
             <> retireTxid
-            <> " key=creation-hash rep-bound"
+            <> " key=creation-spelling rep-bound"
         )
     repPolicy <- case positiveMintPolicy (mintTriples creationTx) of
         Right p -> pure p
@@ -714,16 +715,16 @@ claimControlsOf index tx =
             (map txInOutRef (txInputs tx))
 
 -- | The registry request token names spent by a tx.
-requestTokensOf ::
-    Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [ByteString]
-requestTokensOf index tx =
+creationRequestsOf ::
+    Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [(ByteString, ByteString)]
+creationRequestsOf index tx =
     fmap concat $
         mapM
             ( \inRef -> case resolveOut index inRef of
                 Nothing -> pure []
                 Just (_, out) -> case extractCageDatum out of
                     Just (RequestDatum req) ->
-                        pure [tokenNameOf (requestToken req)]
+                        pure [(tokenNameOf (requestToken req), requestKey req)]
                     _ -> pure []
             )
             (map txInOutRef (txInputs tx))
@@ -810,7 +811,7 @@ recoverBoundTo tx ref =
 -- exactly one such invocation per tx, exactly one retire tx per
 -- record across the evidence (refused replays share the shape but
 -- carry no acceptance — see the log cross-check in verifyUnit).
--- Returns (txid, tx, key-hash).
+-- Returns (txid, tx, spelling).
 findRetireTx ::
     Map.Map String (FilePath, ConwayTx) -> OutRef -> IO (String, ConwayTx, ByteString)
 findRetireTx index ref = do

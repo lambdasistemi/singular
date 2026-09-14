@@ -74,13 +74,13 @@ pub const redirected_refund =
 pub const redirected_hash =
   #"d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebeced"
 
-pub const representative_name = #"5265700102030405060708090a0b0c0d"
+pub const representative_name = #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c"
 
 /// The retirement custody script hash (issue #66): matches
 /// `application.retirement_custody_hash` — the address a `Retire` may
 /// place the representative at.
 pub const custody_hash =
-  #"c6e795719018a2515efc1b75085cf556d4a867f4dbd706a03bc56d0e"
+  #"89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09"
 
 pub const custody_address = address.from_script(custody_hash)
 

@@ -37,6 +37,28 @@ sequenceDiagram
   Naming-->>Reviewer: active with certified fixture fields
 ```
 
+## Finding alice
+
+Given the registry's representative policy id, alice's NFT is that policy plus `blake2b_256("alice")`. Hash the spelling bytes without a newline; no controller, registry token, prefix or incarnation enters the asset name. `register-rows` prints the same command and checks the actual mint against its result:
+
+```sh
+printf %s alice | b2sum -l 256
+# e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c
+```
+
+To find the live UTxO on preprod, substitute the published representative policy id and query [Koios Asset UTxOs](https://api.koios.rest/#post-/asset_utxos):
+
+```sh
+policy_id='<published representative policy id>'
+asset_name=$(printf %s alice | b2sum -l 256 | cut -d ' ' -f1)
+jq -n --arg p "$policy_id" --arg n "$asset_name" \
+  '{_asset_list:[[$p,$n]],_extended:true}' |
+  curl --fail-with-body -sS https://preprod.koios.rest/api/v1/asset_utxos \
+    -H 'Content-Type: application/json' --data-binary @-
+```
+
+The holding address and inline datum identify the active record or pending retirement custody. An empty result means no live NFT; distinguishing an unregistered name from a completed retirement requires history. No trie or creation-controller lookup is needed to locate a live NFT.
+
 ## What you see when it is refused
 
 Every refusal names its intended condition. A generic exception is a defect.
