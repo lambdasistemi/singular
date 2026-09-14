@@ -1,5 +1,5 @@
 {
-  description = "MPFS on-chain — Aiken validators + Haskell cage package";
+  description = "Registry on-chain — Aiken validators + Haskell cage package";
 
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];

@@ -41,7 +41,7 @@
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: boots state and applies a request update",
+      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: boots state and applies a request update",
       "expected": "accept",
       "group": "CG",
       "id": "CG01",
@@ -82,7 +82,7 @@
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: retracts a phase-2 request",
+      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: retracts a phase-2 request",
       "expected": "accept; root unchanged",
       "group": "CG",
       "id": "CG06",
@@ -99,7 +99,7 @@
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: rejects a phase-3 request",
+      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: rejects a phase-3 request",
       "expected": "accept",
       "group": "CG",
       "id": "CG08",
@@ -169,7 +169,7 @@
       "state": "uncovered"
     },
     {
-      "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: sweeps malformed request-address UTxOs",
+      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: sweeps malformed request-address UTxOs",
       "expected": "superseded — observation preserved, conformance claim withdrawn (registry has no owner role; owner-signed sweep asserted authority that does not exist)",
       "group": "CG",
       "id": "CG16",
@@ -188,7 +188,7 @@
       "note": "Superseded 2026-09-12: Sweep-by-non-owner asserted registry-owner authority, which per the operator ruling does not exist. The observation (hand sweep with a non-owner required signer refused; owner-signed sweep accepted) is preserved as defect evidence of the outstanding owner gate in the request validator — epic 17 owns the repair."
     },
     {
-      "evidence": "offchain/e2e-test/Cardano/MPFS/Cage/E2E/CageSpec.hs: ends a cage by burning the state token",
+      "evidence": "offchain/e2e-test/Singular/Registry/E2E/CageSpec.hs: ends a cage by burning the state token",
       "expected": "accept",
       "group": "CG",
       "id": "CG18",
@@ -209,7 +209,7 @@
       "expected": "accept, byte-exact against the blueprint",
       "group": "CS",
       "id": "CS01",
-      "requirement": "Every ToData/FromData instance in Cardano.MPFS.Cage.Types round-trips, and its constructor index and field order match the compiled blueprint's declared schema, not merely itself.",
+      "requirement": "Every ToData/FromData instance in Singular.Registry.Types round-trips, and its constructor index and field order match the compiled blueprint's declared schema, not merely itself.",
       "source": "issue #18 serialization boundary",
       "state": "uncovered"
     },

@@ -1,4 +1,4 @@
-{- | Generate test vectors for the MPFS cage validator.
+{- | Generate test vectors for the registry validator.
 
 Supports two output formats:
 
@@ -31,9 +31,9 @@ import Aiken.Codegen (
     var,
     (.==),
  )
-import Cardano.MPFS.Cage.AssetName (deriveAssetName)
-import Cardano.MPFS.Cage.Proof (serializeProof, toProofSteps)
-import Cardano.MPFS.Cage.Types
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Proof (serializeProof, toProofSteps)
+import Singular.Registry.Types
 import Control.Lens (simple)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson ((.=))

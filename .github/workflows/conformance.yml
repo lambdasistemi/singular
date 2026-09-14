@@ -122,14 +122,14 @@ jobs:
         working-directory: conformance
         run: |
           set -e
-          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           # The receipts directory is invocation-fresh: stale records
           # must never supplement a partial or failed run.
           CONFORMANCE_RECEIPTS="$(mktemp -d "$RUNNER_TEMP/conformance-receipts.XXXXXX")"
           export CONFORMANCE_RECEIPTS
           printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >> "$GITHUB_ENV"
           set +e
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
@@ -190,8 +190,8 @@ jobs:
           # 7. Bind observations to full hashes from the compiled
           #    blueprint. The human log marker is abbreviated and
           #    cannot serve as a script identity.
-          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$mpfs")"
-          hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$mpfs")"
+          state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           for row in CG11 CG12; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             # jq expands its own --arg variables inside this program.
@@ -250,8 +250,8 @@ jobs:
       - name: Run the canonical-identity rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
-          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$CONFORMANCE_RECEIPTS"
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$CONFORMANCE_RECEIPTS"
           # exact CA04 derivation evidence: state arity-0 match,
           # request arity-2 distinct, corrupted refusal — off-chain
           # venue throughout, boot txid as provenance.
@@ -263,10 +263,10 @@ jobs:
       - name: Prove the CA04 corrupted-derivation check can fail
         working-directory: conformance
         run: |
-          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           armed_receipts="$(mktemp -d "$RUNNER_TEMP/conformance-armed.XXXXXX")"
           set +e
-          CONFORMANCE_CONTROL=unapplied-address MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CA01 CA04 --receipts-dir "$armed_receipts" 2>&1 | tee /tmp/ca04-armed.log
+          CONFORMANCE_CONTROL=unapplied-address REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CA01 CA04 --receipts-dir "$armed_receipts" 2>&1 | tee /tmp/ca04-armed.log
           run_rc=${PIPESTATUS[0]}
           set -e
           [ "$run_rc" -ne 0 ] || { echo 'FAIL: armed CA04 negative unexpectedly passed'; exit 1; }
@@ -293,9 +293,9 @@ jobs:
       - name: Run the serialization rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
-          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           set +e
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "serialization session exit: $run_rc (expected: exactly 1, the known-partial status)"
@@ -371,10 +371,10 @@ jobs:
       - name: CS07 missing-Fork control fails
         working-directory: conformance
         run: |
-          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           control_dir="$RUNNER_TEMP/cs07-control-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           set +e
-          CONFORMANCE_CONTROL=missing-witness MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS07 --receipts-dir "$control_dir" > /tmp/cs07-control.log 2>&1
+          CONFORMANCE_CONTROL=missing-witness REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS07 --receipts-dir "$control_dir" > /tmp/cs07-control.log 2>&1
           control_rc=$?
           set -e
           cat /tmp/cs07-control.log

@@ -86,7 +86,7 @@ proof that the row's checks can fail.
 Hermetic run (D-011), from @offchain/@:
 
 > blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-> MPFS_BLUEPRINT="$blueprint" nix run --quiet --no-write-lock-file .#li01
+> REGISTRY_BLUEPRINT="$blueprint" nix run --quiet --no-write-lock-file .#li01
 -}
 module Main (main) where
 
@@ -159,29 +159,29 @@ import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.AssetName (deriveAssetName)
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..), bootStateFromCfg)
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
     PParams,
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     NodeSession (..),
     awaitTx,
     funderAddr,
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
@@ -199,7 +199,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
@@ -229,7 +229,7 @@ li01 :: IO ()
 li01 = do
     control <- readControl
     printRow control
-    blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     identityPath <- identityPathFromEnv
     si <- readScriptIdentity identityPath
     ebp <- loadBlueprint blueprintPath
@@ -254,7 +254,7 @@ defaultIdentityPath = "../onchain/script-identity.json"
 
 identityPathFromEnv :: IO FilePath
 identityPathFromEnv =
-    lookupEnv "MPFS_SCRIPT_IDENTITY"
+    lookupEnv "REGISTRY_SCRIPT_IDENTITY"
         >>= maybe (pure defaultIdentityPath) pure
 
 data ScriptIdentity = ScriptIdentity
@@ -385,7 +385,7 @@ printRow control = do
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr

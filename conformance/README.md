@@ -16,8 +16,8 @@ row's state (`executed` / `bound-elsewhere` / `uncovered` /
 blueprint comes from the caller at run time:
 
 ```sh
-mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05
+blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05
 ```
 
 The runner sets its own unique `TMPDIR` before starting a node and
@@ -33,7 +33,7 @@ directory (never the tracked tree); `list` prints a row as executed
 only when a receipt for it exists and matches the current base:
 
 ```sh
-MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./out
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 --receipts-dir ./out
 nix run --quiet .#conformance -- list --receipts ./out
 ```
 

@@ -131,14 +131,14 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.Blueprint (extractCompiledCode, loadBlueprint)
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
     PParams,
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
@@ -147,8 +147,8 @@ import Cardano.MPFS.Cage.Node (
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
     computeScriptHash,
@@ -488,7 +488,7 @@ runProbe env claimLCIn = do
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr

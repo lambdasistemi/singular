@@ -79,9 +79,9 @@ Both exit 1 by design.
 
 Hermetic run (D-011), from @offchain/@:
 
-> mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+> blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
 > naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-> MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
+> REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
 -}
 module Main (main) where
 
@@ -158,22 +158,22 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.AssetName (deriveAssetName)
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..), bootStateFromCfg)
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
     PParams,
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
@@ -192,7 +192,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     MintRedeemer (..),
     OnChainRoot (..),
@@ -303,9 +303,9 @@ main = do
                 "wrong-reason control: refusals matched against a marker \
                 \that cannot occur, so the matcher must fail the run naming \
                 \what came back"
-    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
+    registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     namingPath <- requireEnv "NAMING_BLUEPRINT"
-    outcome <- try (runMode mode mpfsPath namingPath) :: IO (Either SomeException ())
+    outcome <- try (runMode mode registryPath namingPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> do
             putStrLn "exit_status: 0"
@@ -320,21 +320,21 @@ main = do
 -- ---------------------------------------------------------
 
 runMode :: Mode -> FilePath -> FilePath -> IO ()
-runMode mode mpfsPath namingPath = do
+runMode mode registryPath namingPath = do
     -- The two frozen partitions: the applied state script (the
-    -- initialization's bootstrap enforcement, from the MPFS tree) and
+    -- initialization's bootstrap enforcement, from the registry tree) and
     -- the naming application + representative scripts (the policy
     -- identities the binding names, from the naming tree).
-    ebp <- loadBlueprint mpfsPath
-    mpfsBp <- either failWith pure ebp
+    ebp <- loadBlueprint registryPath
+    registryBp <- either failWith pure ebp
     stateBytes <-
         orFail
-            (extractCompiledCode "state.state" mpfsBp)
-            "state.state compiled code not found in the MPFS blueprint"
+            (extractCompiledCode "state.state" registryBp)
+            "state.state compiled code not found in the registry blueprint"
     requestBytes <-
         orFail
-            (extractCompiledCode "request.request" mpfsBp)
-            "request.request compiled code not found in the MPFS blueprint"
+            (extractCompiledCode "request.request" registryBp)
+            "request.request compiled code not found in the registry blueprint"
     enbp <- loadBlueprint namingPath
     namingBp <- either failWith pure enbp
     appBytes <-
@@ -1719,7 +1719,7 @@ defaultNamingIdentityPath = "../naming-onchain/script-identity.json"
 
 identityPathFromEnv :: IO FilePath
 identityPathFromEnv =
-    lookupEnv "MPFS_SCRIPT_IDENTITY"
+    lookupEnv "REGISTRY_SCRIPT_IDENTITY"
         >>= maybe (pure defaultIdentityPath) pure
 
 namingIdentityPathFromEnv :: IO FilePath

@@ -1,4 +1,4 @@
-name = "hal/mpf"
+name = "singular/registry"
 version = "0.0.0"
 compiler = "v1.1.16"
 plutus = "v3"

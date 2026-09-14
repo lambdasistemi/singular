@@ -88,23 +88,23 @@ import Cardano.Slotting.Slot (SlotNo (..))
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     ConwayEra,
     ConwayTxBody,
     PParams,
     Root (..),
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie (Trie (..), TrieManager (..))
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -135,7 +135,7 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     trySlots,
     txInToRef,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     ConsumerRedeemer (..),
     Migration (..),
@@ -149,8 +149,8 @@ import Cardano.MPFS.Cage.Types (
     UpdateRedeemer (..),
     stateConsumerPinBytes,
  )
-import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
-import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
+import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
@@ -186,9 +186,9 @@ main = do
     hSetBuffering stdout LineBuffering
     hSetBuffering stderr LineBuffering
     emit "row" "issue #79: the imported-validator repair rows on a real ledger"
-    mPath <- lookupEnv "MPFS_BLUEPRINT"
+    mPath <- lookupEnv "REGISTRY_BLUEPRINT"
     path <- case mPath of
-        Nothing -> failWith "MPFS_BLUEPRINT is not set"
+        Nothing -> failWith "REGISTRY_BLUEPRINT is not set"
         Just p -> pure p
     outcome <- try (runRepair path) :: IO (Either SomeException ())
     case outcome of
@@ -1370,11 +1370,11 @@ processOne trie (_txIn, txOut) = do
             pure (fromMaybe [] mSteps)
         OpDelete _ -> do
             mSteps <- getProofSteps trie (requestKey req)
-            _ <- Cardano.MPFS.Cage.Trie.delete trie (requestKey req)
+            _ <- Singular.Registry.Trie.delete trie (requestKey req)
             pure (fromMaybe [] mSteps)
         OpUpdate _ v -> do
             mSteps <- getProofSteps trie (requestKey req)
-            _ <- Cardano.MPFS.Cage.Trie.delete trie (requestKey req)
+            _ <- Singular.Registry.Trie.delete trie (requestKey req)
             _ <- insert trie (requestKey req) v
             pure (fromMaybe [] mSteps)
 
@@ -1775,7 +1775,7 @@ recordRow :: IORef [Value] -> Value -> IO ()
 recordRow ref row = modifyIORef' ref (row :)
 
 writeReceipt :: IORef [Value] -> FilePath -> String -> IO ()
-writeReceipt ref mpfsPath candidate = do
+writeReceipt ref registryPath candidate = do
     rows <- readIORef ref
     receiptPath <- receiptPathFromEnv
     existing <- tryReadReceipt receiptPath
@@ -1784,7 +1784,7 @@ writeReceipt ref mpfsPath candidate = do
             object
                 [ "candidate" .= candidate
                 , "namingBlueprint" .= Aeson.Null
-                , "mpfsBlueprint" .= mpfsPath
+                , "registryBlueprint" .= registryPath
                 , "rows" .= merged
                 ]
     BSL.writeFile receiptPath (Aeson.encode top)

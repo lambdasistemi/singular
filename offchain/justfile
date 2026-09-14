@@ -9,7 +9,7 @@ haskell-build:
 # Run the devnet E2E (drives a real cardano-node subprocess). The recipe
 # builds the Aiken blueprint FIRST, from the onchain flake:
 # onchain/plutus.json is not a committed file, so the recipe must produce
-# the artifact it consumes and point MPFS_BLUEPRINT at the store path.
+# the artifact it consumes and point REGISTRY_BLUEPRINT at the store path.
 # Pinned toolchains only (D-006): cabal from this tree's dev shell, and
 # cardano-node from .#cardano-node — the input this flake already locks,
 # exposed as a package output so the recipe consumes the locked identity
@@ -26,8 +26,8 @@ haskell-e2e:
     set -euo pipefail
     blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
     node="$(nix build --quiet --no-link --print-out-paths .#cardano-node)"
-    echo "MPFS_BLUEPRINT=$blueprint"
-    MPFS_BLUEPRINT="$blueprint" PATH="$node/bin:$PATH" \
+    echo "REGISTRY_BLUEPRINT=$blueprint"
+    REGISTRY_BLUEPRINT="$blueprint" PATH="$node/bin:$PATH" \
         nix develop --command cabal test e2e-tests -O0
 
 # Hermetic devnet E2E (D-011). Builds the blueprint from the onchain
@@ -38,8 +38,8 @@ e2e:
     #!/usr/bin/env bash
     set -euo pipefail
     blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-    echo "MPFS_BLUEPRINT=$blueprint"
-    MPFS_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+    echo "REGISTRY_BLUEPRINT=$blueprint"
+    REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
 
 # Regenerate the ONCHAIN golden from the OFFCHAIN generator. This is the
 # ONLY recipe that writes onchain/validators/cage_vectors.ak — an
@@ -61,7 +61,7 @@ generate-vectors:
 # either tree is written. This procedure — not `nix flake check` — is
 # the only freshness gate: a green `nix flake check` on either flake
 # asserts NOTHING about vector freshness (D-003). Enforced in CI by
-# .github/workflows/mpfs.yml (A-002).
+# .github/workflows/registry.yml (A-002).
 vectors-check:
     #!/usr/bin/env bash
     set -euo pipefail

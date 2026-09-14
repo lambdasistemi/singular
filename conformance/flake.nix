@@ -69,7 +69,7 @@
         # Synthesized build root (issue #63)
         # -------------------------------------------------------
         # conformance/ is self-contained but imports
-        # cardano-mpfs-cage without editing offchain/: the build root
+        # singular-registry without editing offchain/: the build root
         # carries both packages, and the merged cabal.project is
         # derived from offchain's own at build time so it cannot
         # drift from it (no hand-copied index-state or pins).
@@ -157,7 +157,7 @@
         # devnet genesis defaulting to the offchain sources carried in
         # the synthesized root (E2E_GENESIS_DIR still overrides). The
         # blueprint comes from the caller at run time
-        # (MPFS_BLUEPRINT); no store path is baked in.
+        # (REGISTRY_BLUEPRINT); no store path is baked in.
         conformance = pkgs.runCommand "conformance" {
           buildInputs = [ pkgs.makeWrapper ];
           meta = (components.exes.conformance.meta or { }) // {

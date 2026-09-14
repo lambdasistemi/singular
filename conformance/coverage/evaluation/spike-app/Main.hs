@@ -162,7 +162,7 @@ releaseSessionWith observe tag sess = do
     Nothing -> pure ()
 
 blueprintPath :: IO FilePath
-blueprintPath = lookupEnv "MPFS_BLUEPRINT" >>= maybe (die "MPFS_BLUEPRINT unset") return
+blueprintPath = lookupEnv "REGISTRY_BLUEPRINT" >>= maybe (die "REGISTRY_BLUEPRINT unset") return
 
 conformanceDir :: IO FilePath
 conformanceDir =

@@ -80,7 +80,7 @@ The hashed formal source, finite parity, and source-line refusal inventory do no
 
 The page was started with the shared `page-template.mjs start` command and retains the exact template snapshot. Its first style block is unchanged. Shared DOM helpers and immutable tree primitives are retained verbatim in `template-generic.js`. Singular-specific panels and renderers replace checkpoint-specific controls, scenes, and value drawers. The added stylesheet is a second style block.
 
-The machine-specific renderer port also changes the template’s generic page wiring and render orchestration to use Singular’s state and evidence shapes. A full generic-renderer identity check is not claimed. No prior MPFS or KERI model source was imported. The retained shared template is provenance, not formal authority.
+The machine-specific renderer port also changes the template’s generic page wiring and render orchestration to use Singular’s state and evidence shapes. A full generic-renderer identity check is not claimed. No prior registry or KERI model source was imported. The retained shared template is provenance, not formal authority.
 
 ## Verification boundary
 

@@ -14,7 +14,7 @@ every fact from ledger bytes and the built blueprint, and writes one
 verdict per S3 obligation:
 
 > connected-verifier --evidence <dir> --blueprint <path>
->   --mpfs-blueprint <path> --candidate <sha> --out <verdicts.json>
+>   --registry-blueprint <path> --candidate <sha> --out <verdicts.json>
 
 `{ "<obligation>": { "status": "ESTABLISHED" | "REFUTED" |
 "COULD-NOT-EVALUATE", "detail": "..." } }`.
@@ -83,23 +83,23 @@ import Cardano.Ledger.TxIn (TxId (..))
 
 import Cardano.Ledger.Binary (DecCBOR (..), decodeFull', decodeFullAnnotator)
 import Cardano.Ledger.Binary.Version (Version)
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     applyBytesParam,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (extractCageDatum, onChainTokenId)
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.TxBuilder.Internal (extractCageDatum, onChainTokenId)
+import Singular.Registry.Ledger (
     AssetName (..),
     ConwayEra,
     TokenId (..),
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     scriptHashBytes,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -159,7 +159,7 @@ cne = Verdict CouldNotEvaluate
 data Args = Args
     { argEvidence :: FilePath
     , argBlueprint :: FilePath
-    , argMpfsBlueprint :: FilePath
+    , argRegistryBlueprint :: FilePath
     , argCandidate :: String
     , argOut :: FilePath
     }
@@ -171,14 +171,14 @@ parseArgs =
     go a [] = valid a
     go a ("--evidence" : v : rest) = go (a{argEvidence = v}) rest
     go a ("--blueprint" : v : rest) = go (a{argBlueprint = v}) rest
-    go a ("--mpfs-blueprint" : v : rest) = go (a{argMpfsBlueprint = v}) rest
+    go a ("--registry-blueprint" : v : rest) = go (a{argRegistryBlueprint = v}) rest
     go a ("--candidate" : v : rest) = go (a{argCandidate = v}) rest
     go a ("--out" : v : rest) = go (a{argOut = v}) rest
     go _ _ = Nothing
     valid a
         | null (argEvidence a)
             || null (argBlueprint a)
-            || null (argMpfsBlueprint a)
+            || null (argRegistryBlueprint a)
             || null (argCandidate a)
             || null (argOut a) =
             Nothing
@@ -187,7 +187,7 @@ parseArgs =
 usage :: String
 usage =
     "connected-verifier --evidence <dir> --blueprint <path> \
-    \--mpfs-blueprint <path> --candidate <sha> --out <verdicts.json>"
+    \--registry-blueprint <path> --candidate <sha> --out <verdicts.json>"
 
 main :: IO ()
 main = do
@@ -357,13 +357,13 @@ data Identities = Identities
     }
 
 loadIdentities :: FilePath -> FilePath -> IO (Either String Identities)
-loadIdentities namingPath mpfsPath = do
+loadIdentities namingPath registryPath = do
     outcome <- try loadAll :: IO (Either SomeException Identities)
     pure (first show outcome)
   where
     loadAll = do
         nbp <- either fail pure =<< loadBlueprint namingPath
-        mbp <- either fail pure =<< loadBlueprint mpfsPath
+        mbp <- either fail pure =<< loadBlueprint registryPath
         case
             ( extractCompiledCode "application.application" nbp
             , extractCompiledCode "representative.representative" nbp
@@ -500,7 +500,7 @@ data ResolvedPurpose
 
 data Shape
     = ConnectedFold
-    | MpfsFold
+    | RegistryFold
     | EndAttempt
     | MigratingMint
     | BurningMint
@@ -536,7 +536,7 @@ resolvePurposes ids utxos tx = map resolve (txPurposes tx)
 classifyBody :: [ResolvedPurpose] -> Shape
 classifyBody purposes
     | 2 `elem` stateIdxs && 1 `elem` requestIdxs && 2 `elem` appIdxs = ConnectedFold
-    | 2 `elem` stateIdxs && 1 `elem` requestIdxs && null mintIdxs && length spendCount == 2 = MpfsFold
+    | 2 `elem` stateIdxs && 1 `elem` requestIdxs && null mintIdxs && length spendCount == 2 = RegistryFold
     | 0 `elem` stateIdxs = EndAttempt
     | stateMintIdxs == [1] && null spendCount = MigratingMint
     | stateMintIdxs == [2] && null spendCount = BurningMint
@@ -567,7 +567,7 @@ runVerifier args = do
     case ev of
         Left err -> pure (allCne ("evidence unloadable: " <> err))
         Right evd -> do
-            ids <- loadIdentities (argBlueprint args) (argMpfsBlueprint args)
+            ids <- loadIdentities (argBlueprint args) (argRegistryBlueprint args)
             case ids of
                 Left err -> pure (allCne ("blueprint unloadable: " <> err))
                 Right idents -> do
@@ -1246,7 +1246,7 @@ vControlSupported ctx =
     let producers = producerIndex ctx
         foldOk = case
             [ tx
-            | (tag, tx) <- bodiesOfShape ctx MpfsFold
+            | (tag, tx) <- bodiesOfShape ctx RegistryFold
             , isAccepted tag
             , foldRequestProduced producers tx
             ] of

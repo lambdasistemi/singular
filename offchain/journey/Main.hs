@@ -2,7 +2,7 @@
 
 {- |
 Module      : Main
-Description : The bounded MPFS cage journey, verified against a real devnet
+Description : The bounded registry journey, verified against a real devnet
 License     : Apache-2.0
 
 One command that runs the bounded journey against a real devnet
@@ -18,7 +18,7 @@ node and verifies it, one line per step:
   (`End` refuses for every party under the ownerless ruling;
   that evidence lives in repair-rows.)
 
-The three negative cases are MPFS cage negative cases. They
+The three negative cases are registry negative cases. They
 exercise the imported validators' identity, certified-output and
 witness guards; no Singular naming behaviour
 exists in this runner.
@@ -31,7 +31,7 @@ against a root this runner derived from the same trie.
 
 This is the vehicle for Singular's naming claim, not the claim:
 nothing this runner prints describes a name as claimed, registered
-or maintained. It exercises the MPFS cage protocol only.
+or maintained. It exercises the registry protocol only.
 
 It uses the same code path as the E2E suite — 'bootTokenImpl',
 'requestInsertImpl', 'updateTokenImpl' and a real node-to-client
@@ -103,13 +103,13 @@ import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import PlutusTx.IsData.Class (FromData (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
@@ -117,20 +117,20 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     NodeSession (..),
     awaitTx,
     funderAddr,
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie qualified as CageTrie
-import Cardano.MPFS.Cage.Trie (TrieManager (..))
-import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
@@ -147,10 +147,10 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
-import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
-import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
-import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
+import Singular.Registry.TxBuilder.Request (requestInsertImpl)
+import Singular.Registry.TxBuilder.Update (updateTokenImpl)
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -213,7 +213,7 @@ main = journey `catch` \(e :: SomeException) -> do
 
 journey :: IO ()
 journey = do
-    blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     identityPath <- identityPathFromEnv
     si <- readScriptIdentity identityPath
     printIdentity si
@@ -243,7 +243,7 @@ defaultIdentityPath = "../onchain/script-identity.json"
 
 identityPathFromEnv :: IO FilePath
 identityPathFromEnv =
-    lookupEnv "MPFS_SCRIPT_IDENTITY"
+    lookupEnv "REGISTRY_SCRIPT_IDENTITY"
         >>= maybe (pure defaultIdentityPath) pure
 
 {- | The pinned identities in @onchain\/script-identity.json@:
@@ -503,7 +503,7 @@ witnessScriptHashes tx =
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr
@@ -735,7 +735,7 @@ expectedRejectionReason =
 phase2ScriptFailureMarker :: String -> Bool
 phase2ScriptFailureMarker = isInfixOf "PlutusFailure"
 
-{- | The MPFS cage negative section. With one unapplied
+{- | The registry negative section. With one unapplied
 insert request pending, build the valid update transaction
 the oracle would submit, derive four transactions from it
 that are each invalid in exactly one intended way, and
@@ -847,7 +847,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
     -- the requirement). This case instead drops the fold's Merkle proof
     -- witness: Lean's `.fold` refuses a fold whose demanded witnesses
     -- are absent (`representative-witness` / `application-mint-witness`
-    -- when the corresponding net is nonzero), and on this MPFS apply
+    -- when the corresponding net is nonzero), and on this registry apply
     -- the carried witness is the Merkle proof certifying the net
     -- effect — `mpf` verification of a witnessless Update must fail.
     expectRejected

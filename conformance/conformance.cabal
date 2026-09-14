@@ -105,7 +105,7 @@ executable conformance
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
-    , cardano-mpfs-cage
+    , singular-registry
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-strict-containers

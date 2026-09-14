@@ -1,0 +1,533 @@
+cabal-version: 3.4
+name:          singular-registry
+version:       0.1.0.0
+synopsis:      Registry validator types, tx builders, and E2E tests
+description:
+  PlutusData types matching the Aiken cage validator,
+  transaction builders using the TxBuild DSL from
+  cardano-node-clients, JSON/Aiken test vector generator,
+  and devnet E2E tests. Single source of truth for all
+  Haskell cage code.
+
+license:       Apache-2.0
+license-file:  LICENSE
+author:        Paolo Veronelli
+maintainer:    paolo.veronelli@gmail.com
+category:      Cardano
+build-type:    Simple
+
+common warnings
+  ghc-options:
+    -Wall -Werror -Wunused-imports -Wunused-packages
+    -Wmissing-export-lists -Wname-shadowing
+    -Wdeferred-out-of-scope-variables -Wpartial-type-signatures
+    -Wredundant-constraints
+
+  default-extensions:
+    DerivingStrategies
+    DuplicateRecordFields
+    OverloadedStrings
+    RecordWildCards
+    StrictData
+
+library
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   lib naming/src
+  build-depends:
+    , aeson                  >=2.1  && <2.3
+    , async
+    , base                   >=4.14 && <5
+    , base16-bytestring
+    , bech32
+    , bytestring             >=0.11 && <0.13
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-strict-containers
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-slotting
+    , cardano-tx-tools:tx-build
+    , containers             >=0.6  && <0.8
+    , crypton
+    , directory
+    , filepath
+    , memory
+    , microlens
+    , mts:mpf-write
+    , ouroboros-network
+    , plutus-core
+    , plutus-ledger-api
+    , plutus-tx
+    , process
+    , text                   >=2.0  && <2.2
+    , time
+
+  exposed-modules:
+    Singular.Registry.AssetName
+    Singular.Registry.Blueprint
+    Singular.Registry.Candidate
+    Singular.Registry.Config
+    Singular.Registry.Ledger
+    Singular.Registry.Node
+    Singular.Registry.Proof
+    Singular.Registry.Provider
+    Singular.Registry.Trie
+    Singular.Registry.Trie.Pure
+    Singular.Registry.Trie.PureManager
+    Singular.Registry.TxBuilder.Boot
+    Singular.Registry.TxBuilder.Internal
+    Singular.Registry.TxBuilder.Register
+    Singular.Registry.TxBuilder.Reject
+    Singular.Registry.TxBuilder.Request
+    Singular.Registry.TxBuilder.Retract
+    Singular.Registry.TxBuilder.ConnectedFold
+    Singular.Registry.TxBuilder.Update
+    Singular.Registry.Types
+    Naming.Datum
+    Naming.Register
+    Naming.Request
+    Naming.Verify
+    Naming.Wire
+    Naming.Wire.Vectors
+
+executable cage-test-vectors
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   app/test-vectors
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , aiken-codegen
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , singular-registry
+    , crypton
+    , lens
+    , memory
+    , mts:mpf-write
+    , plutus-core
+    , plutus-tx
+    , text
+
+-- The bounded journey runner (D-012): narrates the registry
+-- journey — boot a cage, submit a request, apply it, read the
+-- resulting state back — against a real devnet node, using the
+-- same library code path as the E2E suite. Source lives in
+-- journey/; every imported Haskell module stays untouched.
+executable journey
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , mts:mpf-write
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The LI01 canonical-initialization runner (issue #47): executes
+-- the contract row LI01-canonical-initialization-accepts on a real
+-- devnet, reads the resulting state, binding, checkpoint datum and
+-- witness shape back from the chain, and fails non-zero on any
+-- mismatch. Source lives in journey/li01/; the naming codec comes
+-- from the library (Naming.* moved inside this flake root, issue
+-- #51) and every imported Haskell module stays untouched.
+executable li01
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/li01
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The LM/LC maintenance and cancellation row runner (issue #56):
+-- executes the ten contract rows LM01..LM04, WR01 and LC01..LC06 on a
+-- real devnet against Singular's naming application validator,
+-- attributes every refusal to its phase-2 reason, proves LM01
+-- preservation and LC01 approval consumption from the chain, and
+-- fails non-zero on any mismatch. Source lives in journey/lmlc/; the
+-- naming codec comes from the library and every imported Haskell
+-- module stays untouched.
+executable naming-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/lmlc
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The LR recovery rows (issue #62): executes the contract rows
+-- LR01..LR11 on a real devnet against Singular's naming application
+-- validator, attributes every refusal to its phase-2 reason, proves LR01
+-- preservation and transfer from the chain, runs LR04/LR05 after a real
+-- LR01 against the genuine successor, proves maintenance under the
+-- recovered controller, and fails non-zero on any mismatch. Source lives
+-- in journey/recovery/; the naming codec comes from the library and every
+-- imported Haskell module stays untouched.
+executable recovery-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/recovery
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The LT retirement rows (issue #66): executes the in-scope contract rows
+-- LT01..LT03, LT05, LT06, LT08, LT09 on a real devnet against Singular's
+-- naming application validator and the new completion-only custody script,
+-- attributes every refusal to its phase-2 reason (LT09's replay to the
+-- ledger's own phase-1 refusal), proves custody and the record's end from
+-- the chain after LT01 and LT02, and fails non-zero on any mismatch.
+-- Source lives in journey/retirement/; the naming codec comes from the
+-- library and every imported Haskell module stays untouched.
+executable retirement-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/retirement
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , directory
+    , filepath
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The genuine insert flow (issue #77): mints the insert approval binding
+-- the proposal core, queues the insert request, folds it into Active with
+-- the representative minted +1 under the applied representative policy,
+-- refuses the occupied-key second insert with its free-key control, and
+-- refuses every new mint/fold check on its reason — all on a real devnet,
+-- with a machine-readable receipt. Source lives in journey/register/.
+executable register-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/register
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-binary
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , plutus-tx
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , directory
+    , filepath
+    , memory
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The seven wrong canonical initialization refusals (issue #50):
+-- executes the contract rows LI02..LI08 on a real devnet against the
+-- frozen partitions (the applied state script for the bootstrap, the
+-- naming application and representative policies for the substituted
+-- identities), attributes every refusal to its reason, runs LI06 after
+-- a real LI01 on the genuinely consumed seed, proves the canonical
+-- state unchanged, and fails non-zero on any mismatch. Source lives in
+-- journey/li-refusals/.
+executable li-refusals
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/li-refusals
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-crypto-class
+    , cardano-strict-containers
+    , containers
+    , crypton
+    , memory
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- The issue #79 repair rows: permissionless folding and insert-only
+-- retraction on a real devnet (Defects 1 and 2 with their controls).
+-- Source lives in journey/repair/; every imported Haskell module stays
+-- untouched (the permissionless fold and ownerless End builders are local
+-- copies of the imported TxBuild programs with the owner-signature line
+-- omitted, not edits to the library).
+executable repair-rows
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/repair
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , async
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-allegra
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-slotting
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , plutus-tx
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- Offline independent reader for retirement creation evidence
+-- (NOTE-024 item 3): verifies recovery/controller/quorum retirements
+-- from retained CBOR plus public log lines, with no signing keys and
+-- no runner setup constants. Source lives in journey/retire-verify/.
+executable retirement-verify
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/retire-verify
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-crypto-class
+    , containers
+    , directory
+    , filepath
+    , microlens
+    , plutus-core
+    , plutus-tx
+    , cardano-tx-tools:tx-build
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+executable connected-verifier
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   journey/verifier
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-alonzo
+    , cardano-ledger-binary
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , filepath
+    , microlens
+    , plutus-core
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+test-suite cage-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  other-modules:
+    Singular.Registry.CandidateSpec
+    Singular.Registry.FailureMatchSpec
+    Singular.Registry.NodeSpec
+    Singular.Registry.TypesSpec
+    Naming.CompleteVerifySpec
+    Naming.RegisterSpec
+    Naming.RetireVerifySpec
+  build-depends:
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , singular-registry
+    , directory
+    , filepath
+    , hspec
+    , plutus-core
+    , plutus-tx
+    , QuickCheck
+    , text
+
+test-suite e2e-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   e2e-test
+  main-is:          main.hs
+  other-modules:
+    Singular.Registry.E2E.CageSpec
+    Singular.Registry.E2E.Fork81Spec
+    Singular.Registry.E2E.NodeSpec
+  build-depends:
+    , async
+    , base
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , directory
+    , hspec
+    , microlens
+    , mts:mpf-write
+    , ouroboros-network
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N

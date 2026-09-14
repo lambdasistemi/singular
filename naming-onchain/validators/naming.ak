@@ -193,8 +193,8 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
   ))
 }
 
-/// The MPFS registry state hash (issue #77, E-001 repair): the spent state
-/// input's address. Regenerated from the MPFS blueprint; never hand-typed.
+/// The registry state hash (issue #77, E-001 repair): the spent state
+/// input's address. Regenerated from the registry blueprint; never hand-typed.
 /// Source: onchain/script-identity.json state.state hash — regen via
 /// `just script-identity-regen` in onchain, then update this constant.
 /// Lives here (not in the application validator) so both the validator and
@@ -202,7 +202,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 pub const mpfs_state_hash =
   #"8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
 
-/// Mirror of the MPFS `State` datum (issue #77, E-001 repair; sixth field
+/// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
 /// representative policy and the pinned consumer script hash. Field order
 /// matches onchain/validators/types.ak `State` byte-for-byte (the policy
@@ -244,7 +244,7 @@ pub fn mpfs_state_root(datum: Data) -> ByteArray {
   state.root
 }
 
-/// Mirror of the MPFS request datum (NOTE-031): field order mirrors
+/// Mirror of the registry request datum (NOTE-031): field order mirrors
 /// onchain request bytes exactly (token, owner, key, value, fee,
 /// submitted-at); variant order mirrors the operation
 /// (`Insert`, `Delete`, `Update`). Cross-check `consumer.ak`
@@ -297,7 +297,7 @@ pub fn over_marker_for(burned: ByteArray) -> ByteArray {
   concat(#"6f766572", burned)
 }
 
-/// Mirror of the MPFS `UpdateRedeemer` action list (NOTE-029): variant
+/// Mirror of the registry `UpdateRedeemer` action list (NOTE-029): variant
 /// order and field counts match onchain/validators/types.ak
 /// (`End`, `Contribute`, `Modify`, `Retract`, `Sweep`) and the MPF
 /// proof steps (`Branch`, `Fork`, `Leaf`, `Neighbor`). The
