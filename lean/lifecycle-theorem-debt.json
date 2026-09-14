@@ -36,6 +36,18 @@
     "statementSha256": "e1bca3bc99cda4c8540d8ce2111c533ff49ed998d031054f49085ffb02b853ae"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.connected_withdrawal_composition_example",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e02a8a0efc996dd49598f8a2a9ed7748d2e0c9cd8c1a38932c1f1e13ff25bda6"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.pending_claim_maintenance_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "27491f3092faf3c3b637aa5ee63e99aa9b3539c9cd60115664a75e2a9cb0cd52"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.folded_claim_cancellation_refused",
     "status": "PROVED",
     "debt": "none",

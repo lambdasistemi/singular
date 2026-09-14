@@ -1,11 +1,12 @@
-# Responsibilities
+# Scoped modules
 
-M01: naming application authenticates pending claim cancellation, approval burn
-and the committed refund; preserves existing fold and WithdrawApproval paths.
-M02: naming offchain library owns the reusable production cancellation builder
-consumed by the connected journey and the naming CLI. Exact placement and API
-await coordination with #114's extraction.
-M03: isolated devnet journey and CI observe CC01–CC06 through production builders
-and real node queries. They distinguish ledger and builder refusals.
+`validators/connected.ak` owns the parameterized application and certificate
+branches; `application.ak` retains its accepted entry and shares its Active
+transition implementation behind the connected entry's custody guard.
+`Naming.Connected` owns the production builders and portable receipt.
+The existing register runner owns the connected real-node sequence and refusals;
+`offchain#connected-cancellation` packages that gate plus legacy WithdrawApproval
+checks and CI executes it. No CLI or deployment module is changed by #117.
 
-Data constraints are in data-model.md; API constraints in functions-model.md.
+Accepted #110 is integrated; its spelling-derived representative identity and
+registry-bound mint/retirement witness are preserved. See decisions.md.

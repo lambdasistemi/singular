@@ -350,9 +350,9 @@
       }
     }
   ],
-  "lifecycleStatementsSha256": "bb45f3fc274dc297d35daf91dd40ae0c82ba06d4a2fbb89c2e6ad8502835e8f1",
+  "lifecycleStatementsSha256": "eaac9adbb781d610f40b17c8dea927eccb214e1b5f5be194cfd1d2590fb8866b",
   "modelSha256": "8ba0e632700a840be578233db54f9cfb9596a7dbf5ffebd6eab263f901202ea1",
-  "payloadSha256": "cda01cb54f23836b4d101a9af6538ea4bb024966c592ddae803990d97cc61790",
+  "payloadSha256": "b8731f174258aa43dc92591db0d6bf329f12afa88d37b9bc220a01017e325ba9",
   "registrations": [
     {
       "accepted": true,
@@ -2414,7 +2414,7 @@
     "lean/Singular/NamingLemmas.lean": "10a6be7042c5f8ed33ae3b276085245cb5a0a95c27a6bcbc7cc460479a0ce0b8",
     "lean/Singular/NamingLifecycle.lean": "8ba0e632700a840be578233db54f9cfb9596a7dbf5ffebd6eab263f901202ea1",
     "lean/Singular/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
-    "lean/Singular/NamingLifecycleStatements.lean": "bb45f3fc274dc297d35daf91dd40ae0c82ba06d4a2fbb89c2e6ad8502835e8f1",
+    "lean/Singular/NamingLifecycleStatements.lean": "eaac9adbb781d610f40b17c8dea927eccb214e1b5f5be194cfd1d2590fb8866b",
     "lean/Singular/NamingStatements.lean": "5aed05c06d541c1cb630a155f2568e8324d0e249e234373a534720f9f3505d3f",
     "lean/Singular/NamingWire.lean": "4464720b2946183c1a6faf4a2f0a7689ea45dd1d96b9e86aba138e9131edaf8d",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
@@ -29404,7 +29404,7 @@
       }
     }
   ],
-  "theoremManifestSha256": "8566f55434fa5e5d4ac4826371446295b3f0c6f1631bcb285b9ad5044bb4dba7",
+  "theoremManifestSha256": "171fe013a3b7115fb5a0404567cf46871ba8161585177720ce431fb1ca24a884",
   "wire": [
     {
       "decoded": {

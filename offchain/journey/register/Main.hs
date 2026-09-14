@@ -174,7 +174,6 @@ import Singular.Registry.Blueprint (
  )
 import Singular.Registry.Candidate (resolveCandidate, sourceName)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
@@ -220,6 +219,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
     RawRedeemer (..),
     connectedFoldTx,
+    generousUnits,
     syncFoldedRequests,
  )
 import Singular.Registry.TxBuilder.Internal (
@@ -871,15 +871,35 @@ runConnectedCancellation env record = do
     active <- foldConnectedPair env foldReceipt foldedKey foldClaim foldRequest
     rootAfterFold <- chainRootHex env
     unless (rootAfterFold /= rootBefore) $ failWith "connected fold did not create an Active entry"
-    alreadyFolded <- try (Connected.cancelConnected (envCfg env) (envAppScript env) (envProv env) (envTok env)
-        foldReceipt (fst foldClaim) (envAdvHash env) (envFolderAddr env)) :: IO (Either SomeException ConwayTx)
+    alreadyFolded <-
+        try
+            ( Connected.cancelConnected
+                (envCfg env)
+                (envAppScript env)
+                (envProv env)
+                (envTok env)
+                foldReceipt
+                (fst foldClaim)
+                (envAdvHash env)
+                (envFolderAddr env)
+            ) ::
+            IO (Either SomeException ConwayTx)
     case alreadyFolded of
         Left err | "unavailable" `isInfixOf` displayException err -> emit "row" "CC04: folded claim unavailable to production cancellation builder"
         Left err -> failWith ("CC04 wrong refusal: " <> displayException err)
         Right _ -> failWith "CC04: production cancellation built for an already folded claim"
     waitForPhase2 env (requestSubmittedAt (Connected.registrationRequestDatum receipt))
-    unsigned <- retryHorizon 3 $ Connected.cancelConnected (envCfg env) (envAppScript env) (envProv env) (envTok env)
-        receipt (fst claim) (envAdvHash env) (envFolderAddr env)
+    unsigned <-
+        retryHorizon 3 $
+            Connected.cancelConnected
+                (envCfg env)
+                (envAppScript env)
+                (envProv env)
+                (envTok env)
+                receipt
+                (fst claim)
+                (envAdvHash env)
+                (envFolderAddr env)
     let sign = addKeyWitness (mkSignKey advSeed) . addKeyWitness (mkSignKey folderSeed)
         redirect tx =
             tx & bodyTxL . outputsTxBodyL .~ fmap changeRefund (tx ^. bodyTxL . outputsTxBodyL)
@@ -889,12 +909,23 @@ runConnectedCancellation env record = do
         replaceMint redeemerData tx =
             let Redeemers entries = tx ^. witsTxL . rdmrsTxWitsL
                 changed = Redeemers (Map.adjust (\(_, units) -> (Data redeemerData, units)) (ConwayMinting (AsIx 0)) entries)
-             in tx & witsTxL . rdmrsTxWitsL .~ changed
-                   & bodyTxL . scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) changed
+             in tx
+                    & witsTxL . rdmrsTxWitsL .~ changed
+                    & bodyTxL . scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) changed
     expectRefused MainRun env "CC02-redirect" "withdraw-refund-address" "full refund output was redirected" (sign (redirect unsigned))
-    expectRefused MainRun env "CC07-insert-only" "withdraw-binding" "distinct withdrawal issuance is absent"
+    expectRefused
+        MainRun
+        env
+        "CC07-insert-only"
+        "withdraw-binding"
+        "distinct withdrawal issuance is absent"
         (sign (replaceMint (Connected.foldApprovalRedeemer receipt) unsigned))
-    expectRefused MainRun env "CC08-wrong-issuer" "application-approval" "the named withdrawal issuer did not authorize issuance"
+    expectRefused
+        MainRun
+        env
+        "CC08-wrong-issuer"
+        "application-approval"
+        "the named withdrawal issuer did not authorize issuance"
         (sign (replaceMint (Connected.cancelApprovalRedeemer receipt (envPartyHash env)) unsigned))
     retainListings env "connected-cancellation-before"
     let signed = sign unsigned
@@ -907,8 +938,12 @@ runConnectedCancellation env record = do
     unless (rootAfter == rootAfterFold) $ failWith "CC01: cancellation changed the registry root"
     let withdrawal = Connected.withdrawalName receipt (fst request)
         MultiAsset minted = signed ^. bodyTxL . mintTxBodyL
-        expectedMint = Map.singleton (envAppPolicy env) (Map.fromList
-            [(AssetName (SBS.toShort (Connected.insertName receipt)), -1), (AssetName (SBS.toShort withdrawal), 1)])
+        expectedMint =
+            Map.singleton
+                (envAppPolicy env)
+                ( Map.fromList
+                    [(AssetName (SBS.toShort (Connected.insertName receipt)), -1), (AssetName (SBS.toShort withdrawal), 1)]
+                )
     unless (minted == expectedMint) $ failWith "CC01: mint must be exactly Insert burn plus distinct withdrawal certificate"
     outputs <- Cage.queryUTxOs (envProv env) (Connected.registrationRefund receipt)
     let refunds = utxosByTxId outputs (txIdHex signed)
@@ -918,23 +953,48 @@ runConnectedCancellation env record = do
     unless (refunded >= claimAmount + requestAmount) $ failWith "CC01: full claim/request refund did not land"
     replay <- submitRetain env "CC03-replay" signed
     case replay of
-        Rejected reason | "BadInputsUTxO" `isInfixOf` T.unpack (TE.decodeUtf8Lenient reason) -> emit "row" "CC03: consumed request/claim replay refused by ledger"
+        Rejected reason
+            | let message = T.unpack (TE.decodeUtf8Lenient reason)
+            , "BadInputsUTxO" `isInfixOf` message
+                || "All inputs are spent. Transaction has probably already been included" `isInfixOf` message ->
+                emit "row" "CC03: consumed request/claim replay refused by node input-availability check"
         other -> failWith ("CC03 wrong replay outcome: " <> show other)
     retainListings env "connected-cancellation-after"
-    record $ object ["row" .= ("CC01" :: String), "outcome" .= ("accepted" :: String), "transaction" .= txIdHex signed,
-        "claim" .= showIn (fst claim), "request" .= showIn (fst request), "refund" .= hex (serialiseAddr (Connected.registrationRefund receipt)),
-        "withdrawalCertificate" .= hex withdrawal, "rootBefore" .= rootAfterFold, "rootAfter" .= rootAfter]
+    record $
+        object
+            [ "row" .= ("CC01" :: String)
+            , "outcome" .= ("accepted" :: String)
+            , "transaction" .= txIdHex signed
+            , "claim" .= showIn (fst claim)
+            , "request" .= showIn (fst request)
+            , "refund" .= hex (serialiseAddr (Connected.registrationRefund receipt))
+            , "withdrawalCertificate" .= hex withdrawal
+            , "rootBefore" .= rootAfterFold
+            , "rootAfter" .= rootAfter
+            ]
     emit "row" "CC01: both inputs consumed; distinct certificate and full refund observed; no representative mint or registry root change"
     connectedRetirementRefusal env foldReceipt foldedKey active
 
 createConnectedPair :: Env -> ByteString -> IO (Connected.Registration, KeySetup, (TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra))
 createConnectedPair env spelling = do
     ks <- setupKey env (show spelling) spelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
-    (unsigned, receipt) <- Connected.registerConnected (envCfg env) (envAppScript env) (envProv env) (envTok env)
-        (envFolderAddr env) (envPartyHash env) (keyDatum ks) spelling (envSecondAddr env)
+    (unsigned, receipt) <-
+        Connected.registerConnected
+            (envCfg env)
+            (envAppScript env)
+            (envProv env)
+            (envTok env)
+            (envFolderAddr env)
+            (envPartyHash env)
+            (keyDatum ks)
+            spelling
+            (envSecondAddr env)
     let encodedReceipt = Connected.serialiseRegistration receipt
-    decodedReceipt <- maybe (failWith "connected receipt failed portable roundtrip") pure
-        (Connected.deserialiseRegistration encodedReceipt)
+    decodedReceipt <-
+        maybe
+            (failWith "connected receipt failed portable roundtrip")
+            pure
+            (Connected.deserialiseRegistration encodedReceipt)
     unless (Connected.registrationData decodedReceipt == Connected.registrationData receipt) $
         failWith "connected receipt roundtrip changed its commitment"
     unless (isNothing (Connected.deserialiseRegistration (encodedReceipt <> "trailing"))) $
@@ -957,14 +1017,32 @@ foldConnectedPair env receipt ks claim request = do
     let Coin amount = snd claim ^. coinTxOutL
         rep = keyRepName ks
         repValue = MultiAsset (Map.singleton (envRepPolicy env) (Map.singleton (AssetName (SBS.toShort rep)) 1))
-        recordOut = scriptOut (envPp env) (envAppAddr env) amount repValue (keyDatum ks)
-    (unsigned, _) <- connectedFoldTx ConnectedFoldArgs
-        { cfaCfg = envCfg env, cfaProvider = envProv env, cfaTrie = envTrie env, cfaToken = envTok env
-        , cfaFeeAddr = envFolderAddr env, cfaStateUtxo = state, cfaReqUtxos = [request], cfaFeeUtxo = fee, cfaPp = envPp env
-        , cfaSpends = [ConnectedSpend claim (RawRedeemer (foldRedeemer [rep])) (envAppScript env)]
-        , cfaMints = [ConnectedMint (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort (Connected.insertName receipt))) (-1)) (RawRedeemer (Connected.foldApprovalRedeemer receipt)) (envAppScript env)
-                    , ConnectedMint (envRepPolicy env) (Map.singleton (AssetName (SBS.toShort rep)) 1) (RawRedeemer (PLC.Constr 0 [])) (envRepScript env)]
-        , cfaOutputs = [recordOut], cfaSigners = [], cfaRefUtxos = envRefUtxos env, cfaSkipEval = False, cfaAttachScripts = [], cfaAdjustRoot = id }
+        recordOut = mkBasicTxOut (envAppAddr env) (MaryValue (Coin amount) repValue)
+            & datumTxOutL .~ mkInlineDatum (namingDataToData (keyDatum ks))
+    (unsigned, _) <-
+        connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = envCfg env
+                , cfaProvider = envProv env
+                , cfaTrie = envTrie env
+                , cfaToken = envTok env
+                , cfaFeeAddr = envFolderAddr env
+                , cfaStateUtxo = state
+                , cfaReqUtxos = [request]
+                , cfaFeeUtxo = fee
+                , cfaPp = envPp env
+                , cfaSpends = [ConnectedSpend claim (RawRedeemer (foldRedeemer [rep])) (envAppScript env)]
+                , cfaMints =
+                    [ ConnectedMint (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort (Connected.insertName receipt))) (-1)) (RawRedeemer (Connected.foldApprovalRedeemer receipt)) (envAppScript env)
+                    , ConnectedMint (envRepPolicy env) (Map.singleton (AssetName (SBS.toShort rep)) 1) (RawRedeemer (PLC.Constr 0 [])) (envRepScript env)
+                    ]
+                , cfaOutputs = [recordOut]
+                , cfaSigners = []
+                , cfaRefUtxos = envRefUtxos env
+                , cfaSkipEval = False
+                , cfaAttachScripts = []
+                , cfaAdjustRoot = id
+                }
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
     submitAccepted env "CC04-fold-positive" signed
     awaitTx signed
@@ -981,36 +1059,55 @@ connectedRetirementRefusal env receipt ks active = do
     (stateIn, _) <- queryStateUtxo env
     (fund, collateral) <- takeFundCollateral env
     blueprint <- loadBlueprint (envNamingBlueprint env) >>= either failWith pure
-    custodyBytes <- maybe (failWith "CC05: custody blueprint missing") pure
-        (extractCompiledCode "retirement_custody.retirement_custody" blueprint)
+    custodyBytes <-
+        maybe
+            (failWith "CC05: custody blueprint missing")
+            pure
+            (extractCompiledCode "retirement_custody.retirement_custody" blueprint)
     now <- currentPosixMs
     let reqAddr = requestAddrFromCfg (envCfg env) (envTok env) Testnet
         rep = keyRepName ks
-        reqData = mkRequestDatum (envTok env) (envFolderAddr env) (keySpelling ks)
-            (OpUpdate rep (overMarkerFor rep)) 1000000 now
+        reqData =
+            mkRequestDatum
+                (envTok env)
+                (envFolderAddr env)
+                (keySpelling ks)
+                (OpUpdate rep (overMarkerFor rep))
+                1000000
+                now
         draft = mkBasicTxOut reqAddr (MaryValue (Coin 0) mempty) & datumTxOutL .~ mkInlineDatum reqData
         refundDraft = mkBasicTxOut (envFolderAddr env) (MaryValue (Coin 0) mempty)
         requestOut = draft & coinTxOutL .~ requestLockedAda (envPp env) draft refundDraft 1000000
         custodyHash = computeScriptHash custodyBytes
         custody = mkBasicTxOut (Addr Testnet (ScriptHashObj custodyHash) StakeRefNull) (snd active ^. valueTxOutL)
         inputs = Set.fromList [fst active, fst fund]
-        redeemers = Redeemers (Map.fromList
-            [(ConwaySpending (AsIx (spendingIndex (fst active) inputs)),
-              (Data (PLC.Constr 3 [PLC.List [PLC.B rep], PLC.B (keySpelling ks)]), maxUnits)),
-             (ConwayRewarding (AsIx 0), (Data (PLC.Constr 0 []), maxUnits))])
+        redeemers =
+            Redeemers
+                ( Map.fromList
+                    [
+                        ( ConwaySpending (AsIx (spendingIndex (fst active) inputs))
+                        , (Data (PLC.Constr 3 [PLC.List [PLC.B rep], PLC.B (keySpelling ks)]), generousUnits)
+                        )
+                    , (ConwayRewarding (AsIx 0), (Data (PLC.Constr 0 []), generousUnits))
+                    ]
+                )
         Coin activeCoin = snd active ^. coinTxOutL
         Coin fundCoin = snd fund ^. coinTxOutL
         change = changeOut (activeCoin + fundCoin) flatFee [custody, requestOut] (envPartyAddr env)
-        body = mkBasicTxBody & inputsTxBodyL .~ inputs
-            & referenceInputsTxBodyL .~ Set.singleton stateIn
-            & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-            & outputsTxBodyL .~ StrictSeq.fromList [custody, requestOut, change]
-            & feeTxBodyL .~ Coin flatFee
-            & withdrawalsTxBodyL .~ Withdrawals (Map.singleton (hookAccountAddress Testnet (scriptHashBytes (envRepHash env))) (Coin 0))
-            & reqSignerHashesTxBodyL .~ Set.singleton (addrWitnessKeyHash (keyControllerHash ks))
-            & scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) redeemers
-        tx = mkBasicTx body & witsTxL . rdmrsTxWitsL .~ redeemers
-            & witsTxL . scriptTxWitsL .~ Map.fromList [(envAppHash env, envAppScript env), (envRepHash env, envRepScript env)]
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ inputs
+                & referenceInputsTxBodyL .~ Set.singleton stateIn
+                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
+                & outputsTxBodyL .~ StrictSeq.fromList [custody, requestOut, change]
+                & feeTxBodyL .~ Coin flatFee
+                & withdrawalsTxBodyL .~ Withdrawals (Map.singleton (hookAccountAddress Testnet (scriptHashBytes (envRepHash env))) (Coin 0))
+                & reqSignerHashesTxBodyL .~ Set.singleton (addrWitnessKeyHash (keyControllerHash ks))
+                & scriptIntegrityHashTxBodyL .~ computeScriptIntegrity (envPp env) redeemers
+        tx =
+            mkBasicTx body
+                & witsTxL . rdmrsTxWitsL .~ redeemers
+                & witsTxL . scriptTxWitsL .~ Map.fromList [(envAppHash env, envAppScript env), (envRepHash env, envRepScript env)]
         signed = addKeyWitness (mkSignKey partySeed) tx
     submitAccepted env "CC05-retire-positive" signed
     awaitTx signed
@@ -1020,10 +1117,24 @@ connectedRetirementRefusal env receipt ks active = do
     requestDatum <- case extractCageDatum reqOut of
         Just (RequestDatum requestDatum) -> pure requestDatum
         _ -> failWith "CC05: retirement request datum missing"
-    let retirementReceipt = receipt { Connected.registrationRequestIndex = 1,
-            Connected.registrationRequestDatum = requestDatum }
-    refused <- try (Connected.cancelConnected (envCfg env) (envAppScript env) (envProv env) (envTok env)
-        retirementReceipt retirementClaim (envAdvHash env) (envFolderAddr env)) :: IO (Either SomeException ConwayTx)
+    let retirementReceipt =
+            receipt
+                { Connected.registrationRequestIndex = 1
+                , Connected.registrationRequestDatum = requestDatum
+                }
+    refused <-
+        try
+            ( Connected.cancelConnected
+                (envCfg env)
+                (envAppScript env)
+                (envProv env)
+                (envTok env)
+                retirementReceipt
+                retirementClaim
+                (envAdvHash env)
+                (envFolderAddr env)
+            ) ::
+            IO (Either SomeException ConwayTx)
     case refused of
         Left err | "cancellation-insert-only" `isInfixOf` displayException err -> pure ()
         other -> failWith ("CC05: wrong retirement cancellation outcome: " <> show other)
@@ -1031,10 +1142,11 @@ connectedRetirementRefusal env receipt ks active = do
     unless live $ failWith "CC05: refusal consumed retirement request"
     emit "row" "CC05: genuine retirement Update request remains live; production cancellation refuses cancellation-insert-only"
 
--- | Baseline reproducer: combine the existing native retract boundary with
--- the naming Cancel spend over an approval minted by setupNamingClaim.
--- The native datum has no refund field; the chosen intended refund is the
--- request owner's address. This instrument establishes no refund binding.
+{- | Baseline reproducer: combine the existing native retract boundary with
+the naming Cancel spend over an approval minted by setupNamingClaim.
+The native datum has no refund field; the chosen intended refund is the
+request owner's address. This instrument establishes no refund binding.
+-}
 runCancellationProbe :: Env -> IO ()
 runCancellationProbe env = do
     ks <- setupKey env "cancel" "cancel-probe" (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
@@ -4279,6 +4391,8 @@ expectRefusedBy expectedScript mode env rowName modelReason guard signed = do
         Rejected reason -> do
             let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
                 phase2 = "PlutusFailure" `isInfixOf` reasonText
+            when (isBudgetFailure reasonText) $
+                failWith (rowName <> ": execution-budget exhaustion is not the required guard refusal")
             unless (phase2 || wrongReasonMode) $
                 failWith
                     ( rowName

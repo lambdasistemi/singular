@@ -1,11 +1,12 @@
-# API constraints
+# Production functions
 
-F01: the production cancellation builder accepts enough authenticated pending
-registration state to identify the claim, Insert request and committed refund;
-it returns a transaction ready for the existing signing/submission boundary.
-Exact Haskell signature awaits the source-bound representation ruling and #114
-extraction coordination. It must refuse unavailable, folded and non-Insert
-requests without pretending a generic retraction cancelled the naming claim.
+`Naming.Connected.connectedApplication` applies the genuine native request script
+hash to the connected application template. `registerConnected` constructs the
+atomic claim/request transaction and returns its receipt. `cancelConnected`
+authenticates live inputs, preserves native Retract signer/window, requires
+separate withdrawal issuance, burns Insert and refunds both inputs. It evaluates
+the final balanced body before returning it to the caller for signing/submission.
 
-F02: the connected-cancellation app requires no external node and returns failure
-when any required connected observation or positive control fails.
+`serialiseRegistration` / `deserialiseRegistration` persist the exact versioned
+canonical CBOR witness. The devnet runner consumes these same production exports.
+Exact signatures and model/ledger effects are in [decisions.md](decisions.md).

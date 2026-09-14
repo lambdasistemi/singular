@@ -215,9 +215,14 @@
             fi
             unset SINGULAR_NODE_SOCKET SINGULAR_NETWORK_MAGIC SINGULAR_WALLET_SKEY
             unset SINGULAR_DEPLOYMENT CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID
+            unset S3_EVIDENCE LMLC_CONTROL LMLC_PROBE
             candidate=${pkgs.lib.escapeShellArg (self.rev or "")}
             if [ -z "$candidate" ]; then candidate=$(git rev-parse HEAD); fi
             export CANDIDATE_SHA="$candidate"
+            evidence="''${S77_EVIDENCE_DIR:-$PWD/connected-cancellation-evidence}"
+            mkdir -p "$evidence"
+            S77_EVIDENCE_DIR=$(realpath "$evidence")
+            export S77_EVIDENCE_DIR
             export REGISTER_CONTROL=connected-cancellation
             export NAMING_SCRIPT_IDENTITY=${connectedSource}/naming-onchain/script-identity.json
             export REGISTRY_SCRIPT_IDENTITY=${connectedSource}/onchain/script-identity.json
@@ -230,12 +235,12 @@
             cp -r ${connectedSource}/offchain/e2e-test/genesis "$work/e2e-test/genesis"
             export TMPDIR="$work/node"
             cd "$work"
-            register-rows
+            register-rows 2>&1 | tee "$S77_EVIDENCE_DIR/connected.log"
             # CC06: preserve the existing WithdrawApproval lifecycle on its
             # own fresh ledger, using the same candidate naming blueprint.
             mkdir -p "$work/legacy-node"
             export TMPDIR="$work/legacy-node"
-            naming-rows
+            naming-rows 2>&1 | tee "$S77_EVIDENCE_DIR/cc06-legacy.log"
           '';
         };
 

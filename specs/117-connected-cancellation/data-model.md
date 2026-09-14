@@ -1,10 +1,12 @@
-# Data constraints
+# State carried by the connected pair
 
-D01: pending registration associates an Insert request with its naming claim and
-approval, and authenticates the proposal's committed refund address. The accepted
-model is NamingLifecycle.cancelNamingClaim at the revision in spec.md.
-D02: cancellation consumes the approval and claim, disposes of the associated
-request under the existing generic lifecycle, and preserves records/root.
-D03: four-field NamingDatum and current InsertApproval lack that refund/request
-association. Exact representation and any authorization change await an operator
-ruling; no format is chosen by this planning record.
+`Naming.Connected.Registration` is the public immutable receipt binding consumed
+seed, registry policy/token, native request output index/address/datum, full
+refund address, and unchanged four-field naming datum. The claim and request
+are created in the same transaction. Active custody guards prevent pending claim
+relocation, preserving the output-origin binding.
+
+Insert and withdrawal certificate names are distinct domain-separated hashes.
+The withdrawal certificate binds registry, exact consumed request and refund;
+it remains at the refund output after both pending inputs and Insert token die.
+Exact encodings and A-003/A-004 authority are in [decisions.md](decisions.md).

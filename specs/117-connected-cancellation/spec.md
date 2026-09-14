@@ -10,7 +10,7 @@ Acceptance command to ship and run in CI from the repository root:
 nix run ./offchain#connected-cancellation
 ```
 
-This new dedicated command must start its own isolated devnet and exercise the production register/cancellation builders. It is an acceptance deliverable, not a currently existing executable. Exit 0 requires:
+This new dedicated command must start its own isolated devnet and exercise the production register/cancellation builders. It is implemented; complete repaired real-node acceptance remains required. Exit 0 requires:
 
 - CC01: create a genuine pending Insert claim and associated generic request, cancel before fold, observe the claim and approval consumed, refund at the request's committed address, and the exact generic request disposition; no representative mint and no Active entry.
 - CC02: redirected refund refuses at the application/ledger boundary.
@@ -24,3 +24,5 @@ Retain baseline failing and repaired node observations with candidate, command, 
 Scope: minimal naming application/register representation, offchain builder, focused tests and CI required to restore the accepted cancellation story after any necessary ruling. Preserve the existing generic request lifecycle. Coordinate overlapping validator/register paths with #110/PR112; integrate accepted #110 before final acceptance. No use of unmerged sibling code as accepted authority.
 
 Excludes economic deposits, Lean deposit work, deployment prices, CLI wrapper, follower/folder implementation, unrelated validator changes and new deployment. Use isolated devnet only; shared preprod identities and writes remain governed by existing single-writer ownership.
+
+A-003 through A-006 rulings and exact two-transition/certificate mapping are recorded in [decisions.md](decisions.md). The old Insert-only baseline refusal is expected under the preserved theorem. CC07/CC08 additionally require actual application refusal when distinct withdrawal issuance or its issuer authorization is absent. Accepted #110 merge b4a36eaf72d8a355d9048a00081a8f999c195e27 is integrated.
