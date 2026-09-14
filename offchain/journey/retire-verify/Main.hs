@@ -363,32 +363,33 @@ verifyUnit index custodyHash acceptedTxids unit = do
                     <> ": expected exactly one naming-claim input in creation tx, found "
                     <> show (length claimControls)
                 )
-    reqTokens <- requestTokensOf index creationTx
+    requests <- creationRequestsOf index creationTx
+    spelling <- case requests of
+        [(_, key)] -> pure key
+        _ -> failWith (label <> ": expected one creation request key")
+    let reqTokens = map fst requests
     tokenName <- case reqTokens of
         [] -> failWith (label <> ": no registry request input in creation tx")
         (t : ts) -> do
             unless (all (== t) ts) $
                 failWith (label <> ": creation-tx requests disagree on token")
             pure t
-    (spendTxid, _, finalRec) <- followSpendingChain index label recOut
-    (retireTxid, retireTx, keyHash) <- findRetireTx index finalRec
+    (spendTxid, _, finalRec) <- followSpendingChain acceptedTxids index label recOut
+    (retireTxid, retireTx, keyHash) <- findRetireTx acceptedTxids index finalRec
     policyBytes <- statePolicyOf creationTx
     (custodyPolicy, custodyName, custodyQty) <- custodyTriple retireTx custodyHash
-    incarnation <- case BS.unsnoc custodyName of
-        Just (_, w) -> pure w
-        Nothing -> failWith (label <> ": custody rep name is empty")
     creatingDatum <- creatingRecordDatum index finalRec
     currentControl <- controlHashOfDatum label creatingDatum
     let evidence =
             RetireEvidence
                 { reRecord = label
                 , reRetireTx = retireTxid
-                , reKeyHash = keyHash
+                , reKey = keyHash
+                , reSpelling = spelling
                 , reCreationHash = claimControl
                 , reCreationHashLog = cuCreationHash unit
                 , reStatePolicy = policyBytes
                 , reToken = tokenName
-                , reIncarnation = incarnation
                 , reCreationMint = mintTriples creationTx
                 , reCustodyPolicy = custodyPolicy
                 , reCustodyName = custodyName
@@ -411,7 +412,7 @@ verifyUnit index custodyHash acceptedTxids unit = do
             <> label
             <> " retire="
             <> retireTxid
-            <> " key=creation-hash rep-bound"
+            <> " key=creation-spelling rep-bound"
         )
     repPolicy <- case positiveMintPolicy (mintTriples creationTx) of
         Right p -> pure p
@@ -714,16 +715,16 @@ claimControlsOf index tx =
             (map txInOutRef (txInputs tx))
 
 -- | The registry request token names spent by a tx.
-requestTokensOf ::
-    Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [ByteString]
-requestTokensOf index tx =
+creationRequestsOf ::
+    Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [(ByteString, ByteString)]
+creationRequestsOf index tx =
     fmap concat $
         mapM
             ( \inRef -> case resolveOut index inRef of
                 Nothing -> pure []
                 Just (_, out) -> case extractCageDatum out of
                     Just (RequestDatum req) ->
-                        pure [tokenNameOf (requestToken req)]
+                        pure [(tokenNameOf (requestToken req), requestKey req)]
                     _ -> pure []
             )
             (map txInOutRef (txInputs tx))
@@ -734,12 +735,13 @@ requestTokensOf index tx =
 -- record (RR units rotate once; LT units have no recover step).
 -- Returns (spending-txid, spending-tx, final-record-outref).
 followSpendingChain ::
+    [String] ->
     Map.Map String (FilePath, ConwayTx) ->
     String ->
     OutRef ->
     IO (String, ConwayTx, OutRef)
-followSpendingChain index label ref = do
-    spenders <- pure (spendingTxs index ref)
+followSpendingChain acceptedTxids index label ref = do
+    let spenders = filter (\(ctid, _) -> ctid `elem` acceptedTxids) (spendingTxs index ref)
     case spenders of
         [] -> failWith (label <> ": record outref spent by no retained tx")
         [(stxid, stx)] -> case recoverContinuation stx ref of
@@ -748,7 +750,7 @@ followSpendingChain index label ref = do
         _ ->
             failWith
                 ( label
-                    <> ": record outref spent by several retained txs ("
+                    <> ": record outref spent by several accepted txs ("
                     <> show (length spenders)
                     <> ")"
                 )
@@ -808,13 +810,14 @@ recoverBoundTo tx ref =
 -- redeemer resolves through the builder's own index rule (sorted
 -- inputs, mirroring spendingIndex) and must land on the record;
 -- exactly one such invocation per tx, exactly one retire tx per
--- record across the evidence (refused replays share the shape but
--- carry no acceptance — see the log cross-check in verifyUnit).
--- Returns (txid, tx, key-hash).
+-- record across accepted evidence. Refused probes can share that record
+-- and redeemer shape but never consume it.
+-- Returns (txid, tx, spelling).
 findRetireTx ::
+    [String] ->
     Map.Map String (FilePath, ConwayTx) -> OutRef -> IO (String, ConwayTx, ByteString)
-findRetireTx index ref = do
-    let spenders = spendingTxs index ref
+findRetireTx acceptedTxids index ref = do
+    let spenders = filter (\(ctid, _) -> ctid `elem` acceptedTxids) (spendingTxs index ref)
     bound <- fmap concat $
         mapM
             (\(ctid, tx) -> pure [(ctid, tx, kh) | kh <- retireKeysFor tx ref])

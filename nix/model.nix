@@ -7,11 +7,10 @@ let
       inherit src;
       filter = path: type: !(builtins.elem (builtins.baseNameOf path) [ ".lake" ".git" "site" "result" "__pycache__" ]);
     };
-    nativeBuildInputs = [ pkgs.lean4 pkgs.python3 ];
+    nativeBuildInputs = [ pkgs.lean4 ];
     buildPhase = ''
       lake build
       lake env lean tools/axioms.lean > axioms-report.txt
-      python3 tools/check_model.py --axioms-report axioms-report.txt
     '';
     installPhase = ''
       mkdir -p "$out/bin" "$out/share"

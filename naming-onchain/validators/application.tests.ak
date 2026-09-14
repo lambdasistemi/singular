@@ -1,5 +1,7 @@
+use cardano/address
+use representative
 use application.{Cancel, Fold, InsertApproval, Maintain, Recover, Retire, WithdrawApproval}
-use aiken/crypto.{blake2b_224, blake2b_256}
+use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{InlineDatum, NoDatum, Output}
@@ -7,7 +9,7 @@ use fixtures.{
   as_datum,
   altered_control, app_policy, burn_approval, claim_input,
   claim_value_with_approval, continuation_output, controller, custody_address,
-  deposit, foreign_registry_token, member2, member3,
+  deposit, member2, member3,
   mock_registry_token,
   redirected_output_address,
   redirected_refund, refund_destination, refund_output_address, rep_policy,
@@ -380,7 +382,7 @@ test cancellation_misaddressed_refund_refuses() fail {
 // ===========================================================================
 
 fn representative_name() {
-  #"5265700102030405060708090a0b0c0d"
+  blake2b_256("alice")
 }
 
 /// The value a live claim carries: its deposit plus the withdraw
@@ -553,7 +555,7 @@ test retire_with_continuation_refuses() fail {
     Some(fixtures.as_datum(source)),
     Retire {
       representatives: [representative_name()],
-      key_hash: controller,
+      key: "alice",
     },
     self_ref,
     tx(
@@ -1109,6 +1111,15 @@ test recovery_destination_tamper_refuses() fail {
 // Retirement — the LT rows (issue #66, RED: Retire is a stub)
 // ===========================================================================
 
+fn retirement_tx(inputs, outputs, signers, mint, redeemers) {
+  let base = tx(inputs, outputs, signers, mint, redeemers)
+  transaction.Transaction {
+    ..base,
+    reference_inputs: [fixtures.state_input()],
+    withdrawals: [Pair(address.Script(rep_policy), 0)],
+  }
+}
+
 /// The retirement source: control distinct from the quorum so each route
 /// is shown sufficient alone — the controller hash (member1) is not among
 /// the quorum members [member2, member3], threshold 2.
@@ -1120,7 +1131,7 @@ fn retirement_source() {
 }
 
 fn retirement_claim_value() {
-  add(record_value, rep_policy, expected_rep_name(fixtures.controller), 1)
+  add(record_value, rep_policy, expected_rep_name("alice"), 1)
 }
 
 fn retirement_custody_output(value) {
@@ -1138,9 +1149,9 @@ test lt01_controller_retirement_accepts() {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
@@ -1159,9 +1170,9 @@ test lt02_quorum_retirement_accepts() {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
@@ -1180,9 +1191,9 @@ test lt03_insufficient_quorum_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key_hash: controller },
+    Retire { representatives: [fixtures.representative_name], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [member2],
@@ -1198,9 +1209,9 @@ test lt03_duplicate_member_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key_hash: controller },
+    Retire { representatives: [fixtures.representative_name], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [member2, member2],
@@ -1226,9 +1237,9 @@ test lt03_duplicate_stored_member_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key_hash: controller },
+    Retire { representatives: [fixtures.representative_name], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [member2],
@@ -1253,9 +1264,9 @@ test lt08_wrong_custody_refuses() fail {
     }
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
@@ -1275,12 +1286,12 @@ test lt08_wrong_custody_refuses() fail {
 test lt08_foreign_policy_refuses() fail {
   let source = retirement_source()
   let foreign_value =
-    add(record_value, "foreign_policy", expected_rep_name(fixtures.controller), 1)
+    add(record_value, "foreign_policy", expected_rep_name("alice"), 1)
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), foreign_value),
         fixtures.state_input(),
@@ -1293,18 +1304,17 @@ test lt08_foreign_policy_refuses() fail {
   )
 }
 
-/// `representative-identity` with registry (NOTE-007): retiring a record
-/// whose name is bound to a foreign registry refuses even under the honest
-/// policy — the recomputation uses the supplied state's token.
-test lt08_foreign_registry_refuses() fail {
+/// Retiring a record under a different spelling refuses even with the
+/// correct registry witness and representative policy.
+test lt08_other_spelling_refuses() fail {
   let source = retirement_source()
-  let foreign_name = foreign_rep_name(fixtures.controller)
+  let foreign_name = other_spelling_rep_name(fixtures.controller)
   let foreign_value = add(record_value, rep_policy, foreign_name, 1)
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [foreign_name], key_hash: controller },
+    Retire { representatives: [foreign_name], key: "alice" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), foreign_value),
         fixtures.state_input(),
@@ -1317,15 +1327,14 @@ test lt08_foreign_registry_refuses() fail {
   )
 }
 
-/// `key_hash` length (NOTE-011): a non-28-byte creation hash refuses for
-/// its own reason, before any recomputation.
-test lt08_short_key_hash_refuses() fail {
+/// Different spelling bytes refuse even with otherwise valid retirement.
+test lt08_wrong_spelling_bytes_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: #"00" },
+    Retire { representatives: [expected_rep_name("alice")], key: #"00" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
@@ -1345,9 +1354,9 @@ test lt08_wrong_key_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: member2 },
+    Retire { representatives: [expected_rep_name("alice")], key: "bob" },
     self_ref,
-    tx(
+    retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
@@ -1365,7 +1374,7 @@ test lt08_wrong_key_refuses() fail {
 test lt01_reference_state_accepts() {
   let source = retirement_source()
   let base =
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [controller],
@@ -1374,7 +1383,7 @@ test lt01_reference_state_accepts() {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
     fixtures.with_state_reference(base, fixtures.state_input()),
   )
@@ -1385,7 +1394,7 @@ test lt01_reference_state_accepts() {
 test retire_forged_reference_refuses() fail {
   let source = retirement_source()
   let base =
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [controller],
@@ -1394,7 +1403,7 @@ test retire_forged_reference_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
     fixtures.with_state_reference(base, fixtures.state_input_no_token()),
   )
@@ -1406,7 +1415,7 @@ test retire_forged_reference_refuses() fail {
 test retire_foreign_datum_reference_refuses() fail {
   let source = retirement_source()
   let base =
-    tx(
+    retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
       [retirement_custody_output(retirement_claim_value())],
       [controller],
@@ -1415,7 +1424,7 @@ test retire_foreign_datum_reference_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name(fixtures.controller)], key_hash: controller },
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
     self_ref,
     fixtures.with_state_reference(base, fixtures.state_input_foreign_datum()),
   )
@@ -1448,45 +1457,19 @@ fn insert_approval_name_mirror() {
   )
 }
 
-/// The representative name equation with the registry bound (NOTE-007),
-/// copied — not called — so tests bind the formula, not the function:
-/// `0x526570 ‖ blake2b_224(registry_asset_id ‖ keyHash) ‖ incarnation`
-/// over the mock cage token. `insert_rep_name_mirror` is the controller
-/// case, kept so existing call sites read unchanged.
-fn expected_rep_name(key_hash: ByteArray) -> ByteArray {
-  bytearray.concat(
-    bytearray.concat(
-      #"526570",
-      blake2b_224(
-        bytearray.concat(
-          bytearray.concat(mpfs_state_hash, mock_registry_token),
-          key_hash,
-        ),
-      ),
-    ),
-    #"00",
-  )
+/// Copy the operator equation using stdlib primitives, not the implementation.
+fn expected_rep_name(key: ByteArray) -> ByteArray {
+  blake2b_256(key)
 }
 
-fn foreign_rep_name(key_hash: ByteArray) -> ByteArray {
-  bytearray.concat(
-    bytearray.concat(
-      #"526570",
-      blake2b_224(
-        bytearray.concat(
-          bytearray.concat(mpfs_state_hash, foreign_registry_token),
-          key_hash,
-        ),
-      ),
-    ),
-    #"00",
-  )
+fn other_spelling_rep_name(_key: ByteArray) -> ByteArray {
+  blake2b_256("bob")
 }
 
 /// The representative name the insert fold must mint for the source
-/// record, registry-bound to the mock cage. Copied, not called.
+/// request key. Copied, not called.
 fn insert_rep_name_mirror() {
-  expected_rep_name(fixtures.controller)
+  expected_rep_name("alice")
 }
 
 fn insert_claim_value() {
@@ -1593,11 +1576,12 @@ test fold_insert_freezes_and_mints_accepts() {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1606,7 +1590,7 @@ test fold_insert_freezes_and_mints_accepts() {
 /// the record's control does not determine refuses.
 test fold_insert_tampered_representative_refuses() fail {
   let source = source_record()
-  let tampered = expected_rep_name(member2)
+  let tampered = expected_rep_name("bob")
   application.application.spend(
     Some(fixtures.as_datum(source)),
     Fold {
@@ -1617,11 +1601,12 @@ test fold_insert_tampered_representative_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1640,11 +1625,12 @@ test fold_insert_missing_record_representative_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), record_value)],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1663,11 +1649,12 @@ test fold_insert_withdraw_approval_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), live_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       fold_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1698,11 +1685,12 @@ test fold_insert_foreign_policy_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), foreign_record_value)],
       [],
       foreign_mint,
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1711,9 +1699,9 @@ test fold_insert_foreign_policy_refuses() fail {
 /// carrying the honest policy but a name bound to a foreign registry
 /// refuses — association is recomputed from the supplied state's own
 /// token, not from the redeemer.
-test fold_insert_foreign_registry_refuses() fail {
+test fold_insert_other_spelling_refuses() fail {
   let source = source_record()
-  let foreign_name = foreign_rep_name(fixtures.controller)
+  let foreign_name = other_spelling_rep_name(fixtures.controller)
   let foreign_mint =
     add(
       add(zero, app_policy, insert_approval_name_mirror(), -1),
@@ -1732,11 +1720,12 @@ test fold_insert_foreign_registry_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), foreign_record_value)],
       [],
       foreign_mint,
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1756,11 +1745,12 @@ test fold_insert_two_token_state_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input_two_tokens(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1779,11 +1769,12 @@ test fold_insert_untokened_state_refuses() fail {
       [
         claim_input(fixtures.as_datum(source), insert_claim_value()),
         fixtures.state_input_no_token(),
+        spelling_request("alice", expected_rep_name("alice")),
       ],
       [continuation_output(fixtures.as_datum(source), insert_record_value())],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
   )
 }
@@ -1804,7 +1795,131 @@ test fold_empty_with_insert_approval_refuses() fail {
       [continuation_output(fixtures.as_datum(source), record_value)],
       [],
       insert_burn(),
-      [],
+      native_modify(),
     ),
+  )
+}
+
+fn spelling_fold_tx(name: ByteArray, key: ByteArray) {
+  let request_datum: Data = naming.MRequestDatum(naming.MRequest {
+    requestToken: naming.MTokenId { assetName: mock_registry_token },
+    requestOwner: controller,
+    requestKey: key,
+    requestValue: naming.MInsert(name),
+    tip: 0,
+    submitted_at: 0,
+  })
+  let modify: Data = naming.MirrorModify([naming.MAUpdate([])])
+  tx(
+    [
+      claim_input(fixtures.as_datum(source_record()), insert_claim_value()),
+      fixtures.state_input(),
+      transaction.Input {
+        output_reference: transaction.OutputReference {
+          transaction_id: #"1234", output_index: 0,
+        },
+        output: Output {
+          address: fixtures.app_address,
+          value: record_value,
+          datum: InlineDatum(request_datum),
+          reference_script: None,
+        },
+      },
+    ],
+    [continuation_output(fixtures.as_datum(source_record()), add(record_value, rep_policy, name, 1))],
+    [],
+    add(add(zero, app_policy, insert_approval_name_mirror(), -1), rep_policy, name, 1),
+    [Pair(transaction.Spend(fixtures.state_ref), modify)],
+  )
+}
+
+test fold_spelling_hash_accepts() {
+  let name = blake2b_256("alice")
+  application.application.spend(
+    Some(fixtures.as_datum(source_record())),
+    Fold { representatives: [name] }, self_ref,
+    spelling_fold_tx(name, "alice"),
+  )
+}
+
+test fold_wrong_spelling_hash_refuses() fail {
+  let name = blake2b_256("bob")
+  application.application.spend(
+    Some(fixtures.as_datum(source_record())),
+    Fold { representatives: [name] }, self_ref,
+    spelling_fold_tx(name, "alice"),
+  )
+}
+
+fn spelling_request(key: ByteArray, name: ByteArray) -> transaction.Input {
+  let datum: Data = naming.MRequestDatum(naming.MRequest {
+    requestToken: naming.MTokenId { assetName: mock_registry_token },
+    requestOwner: controller, requestKey: key, requestValue: naming.MInsert(name),
+    tip: 0, submitted_at: 0,
+  })
+  transaction.Input {
+    output_reference: transaction.OutputReference { transaction_id: #"1234", output_index: 0 },
+    output: Output { address: fixtures.app_address, value: record_value,
+      datum: InlineDatum(datum), reference_script: None },
+  }
+}
+
+fn native_modify() {
+  let modify: Data = naming.MirrorModify([naming.MAUpdate([])])
+  [Pair(transaction.Spend(fixtures.state_ref), modify)]
+}
+
+/// A correctly named but rejected native request cannot authorize a mint.
+test fold_rejected_spelling_request_refuses() fail {
+  let name = blake2b_256("alice")
+  let base = spelling_fold_tx(name, "alice")
+  let rejected: Data = naming.MirrorModify([naming.MARejected])
+  application.application.spend(
+    Some(fixtures.as_datum(source_record())),
+    Fold { representatives: [name] }, self_ref,
+    transaction.Transaction { ..base, redeemers: [Pair(transaction.Spend(fixtures.state_ref), rejected)] },
+  )
+}
+
+/// Issue #110 regression probe: B has an authentic different token but copies
+/// A's configured policy. Retirement must not associate A's NFT with B.
+test lt01_foreign_registry_reference_refuses() fail {
+  let source = retirement_source()
+  let base = retirement_tx(
+    [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+    [retirement_custody_output(retirement_claim_value())],
+    [controller], zero, [],
+  )
+  let canonical = fixtures.state_input()
+  let foreign = transaction.Input {
+    ..canonical,
+    output: Output {
+      ..canonical.output,
+      value: add(record_value, naming.mpfs_state_hash, fixtures.foreign_registry_token, 1),
+    },
+  }
+  let witnessed = fixtures.with_state_reference(base, foreign)
+  expect application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
+    self_ref,
+    witnessed,
+  )
+  representative.representative.withdraw(
+    app_policy, bytearray.concat(naming.mpfs_state_hash, mock_registry_token),
+    #"", address.Script(rep_policy), witnessed,
+  )
+}
+
+test retire_without_representative_witness_refuses() fail {
+  let source = retirement_source()
+  let base = retirement_tx(
+    [claim_input(fixtures.as_datum(source), retirement_claim_value())],
+    [retirement_custody_output(retirement_claim_value())], [controller], zero, [],
+  )
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" }, self_ref,
+    transaction.Transaction { ..base, withdrawals: [] },
   )
 }

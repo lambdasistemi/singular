@@ -7,14 +7,10 @@ use application.{ApplicationRedeemer, retirement_custody_hash}
 use cardano/transaction.{Input, Spend, Transaction}
 use naming.{mpfs_state_hash}
 
-/// The representative minting policy (issue #52): one representative
-/// per naming record; `assetScope` is the record's incarnation, so
-/// reuse mints a fresh representative under the same policy.
-///
-/// The policy is parameterized by the application validator's script
-/// hash — with the application validator itself carrying zero
-/// parameters, the pinned application hash is the parameter value. The
-/// policy never moves an asset on its own authority: every mint or burn
+/// One representative per naming record, scoped to a canonical registry.
+/// The policy parameters bind the application and registry asset identity.
+/// Naming's Over state is permanent.
+/// The policy never moves an asset on its own authority: every mint or burn
 /// must ride a transaction that spends a naming record or claim at the
 /// application validator, or spends retirement custody holding the burned
 /// asset — and the spend's own redeemer (application side) or the custody
@@ -34,8 +30,10 @@ pub type RepresentativeRedeemer {
   BurnRepresentative
 }
 
-validator representative(application_policy: PolicyId) {
+validator representative(application_policy: PolicyId, registry: ByteArray) {
   mint(redeemer: RepresentativeRedeemer, policy_id: PolicyId, tx: Transaction) {
+    expect application.registry_identity(tx) == registry
+    expect application.expected_rep_policy(tx) == policy_id
     when redeemer is {
       MintRepresentative -> {
         expect
@@ -55,13 +53,22 @@ validator representative(application_policy: PolicyId) {
           True
         } else {
           expect
-            application.Retire { representatives, key_hash: _ }: ApplicationRedeemer =
+            application.Retire { representatives, key: _ }: ApplicationRedeemer =
             application_spend_redeemer(application_policy, tx)
           expect exact_movement(tx.mint, policy_id, representatives, -1)
           True
         }
       }
     }
+  }
+
+  /// Zero withdrawal executes the same registry binding during retirement,
+  /// when the NFT moves into custody without a mint or burn.
+  withdraw(_redeemer: Data, account: address.Credential, tx: Transaction) {
+    let (referenced, policy) = application.referenced_registry(tx)
+    expect referenced == registry
+    expect account == address.Script(policy)
+    True
   }
 
   else(_) {

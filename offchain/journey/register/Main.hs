@@ -34,7 +34,7 @@ Ledger realisation (offchain\/naming-correspondence.md, t77 entries):
 
   * the representative is minted under
     @representative.representative.mint@ applied with the application
-    policy hash (1 parameter), named @Rep \|\| control key hash \|\| 0x00@
+    policy hash and registry asset id (2 parameters), named @blake2b_256(spelling)@
     (32 bytes, never a canonical address); the registry half of
     @Singular.representative@'s scope is the parameterised policy
     itself. No longer does any row carry an application-policy stand-in:
@@ -163,6 +163,7 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
@@ -197,6 +198,8 @@ import Singular.Registry.Deployment (
     loadMirror,
     mirrorPathFor,
     readDeployment,
+    Deployment (..),
+    parseOutRef,
     saveMirror,
  )
 import Singular.Registry.Provider qualified as Cage
@@ -245,6 +248,7 @@ import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
+    OnChainTxOutRef,
     CageDatum (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -487,6 +491,16 @@ runMode mode namingPath registryPath = do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
+        mDeployment <- deploymentPathFromEnvironment
+        seedRef <- case mDeployment of
+            Just path -> do
+                dep <- readDeployment path
+                txInToRef <$> either failWith pure (parseOutRef (depSeedOutRef dep))
+            Nothing -> do
+                utxos <- Cage.queryUTxOs prov genesisAddr
+                case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+                    [] -> failWith "boot: funding wallet has no UTxOs"
+                    (txIn, _) : _ -> pure (txInToRef txIn)
         let appScript = scriptFromBytes "naming-application" appBytes
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
@@ -495,7 +509,8 @@ runMode mode namingPath registryPath = do
             repUnappliedHex =
                 hex (scriptHashBytes (computeScriptHash repBytes))
             repAppliedBytes =
-                applyBytesParam (scriptHashBytes appHash) repBytes
+                applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) (deriveAssetName seedRef)) $
+                    applyBytesParam (scriptHashBytes appHash) repBytes
             repAppliedHash = computeScriptHash repAppliedBytes
             repAppliedHex = hex (scriptHashBytes repAppliedHash)
             repAppliedPolicy = PolicyID repAppliedHash
@@ -521,7 +536,7 @@ runMode mode namingPath registryPath = do
                 <> repUnappliedHex
                 <> " applied 0x"
                 <> repAppliedHex
-                <> " (parameter: application-policy hash); registry state \
+                <> " (parameters: application-policy hash and registry asset id); registry state \
                    \unapplied 0x"
                 <> stateUnappliedHex
                 <> " applied 0x"
@@ -574,7 +589,6 @@ runMode mode namingPath registryPath = do
         -- The registry this run works against: the one it boots, or
         -- the one a deployment manifest records (issue #102). Nothing
         -- below distinguishes the two; only how they are acquired does.
-        mDeployment <- deploymentPathFromEnvironment
         let cageParts =
                 let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
                         deriveConsumerBinding consumerBytes
@@ -604,7 +618,7 @@ runMode mode namingPath registryPath = do
         writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath registryPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <- case attached of
             Nothing ->
-                bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+                bootCage seedRef prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
             Just (path, att) -> do
                 emit
                     "attached"
@@ -660,6 +674,14 @@ runMode mode namingPath registryPath = do
                                 failWith ("staking-registration: rejected: " <> show reason)
                         _ <- waitConfirmation (txIdHex signedStakingReg <> " (staking-registration)")
                         emit "consumer" "staking stake credential registered for the swapped-hook control"
+                unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
+                let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
+                repRegResult <- submitRetainAt evDir evNext submit "representative-registration" signedRepReg
+                case repRegResult of
+                    Submitted _ -> pure ()
+                    Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
+                _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
+                emit "representative" "representative stake credential registered; retirement witness is live"
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
@@ -686,6 +708,7 @@ runMode mode namingPath registryPath = do
         let env =
                 Env
                     { envSpelling = spelling
+                    , envAttached = case attached of Just _ -> True; Nothing -> False
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
@@ -764,6 +787,7 @@ runMode mode namingPath registryPath = do
 
 data Env = Env
     { envSpelling :: ByteString
+    , envAttached :: Bool
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
@@ -858,7 +882,7 @@ runRows env record = do
     -- key3: fold negatives against a live insert claim (naming only).
     key3 <- setupKey env "key3" "carol" (mustCodecOf tamperSeed) (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed))) (addrKeyHashBytes (enterpriseAddr (keyHashFromSignKey (mkSignKey tamperSeed)))) tamperSeed nextSeed
     (_claim3Tx, claim3In, _claim3Out) <- setupNamingClaim env key3
-    rowFoldTamperedRep env key3 claim3In
+    rowFoldTamperedRep env key3
     rowFoldMissingRep env key3 claim3In
     rowFoldEmptyReps env key3 claim3In
     -- Withdraw-approval claim: an insert fold cannot consume it.
@@ -892,6 +916,7 @@ runRows env record = do
     rowHookPin env record
     rowHookCrosswired env record
     -- Final sweep: chain root plus one Active record per folded name.
+    unless (envAttached env) $ rowForeignRegistryRefused env alice
     finalSweep env alice bob foldTxAlice
     emit
         "complete"
@@ -936,14 +961,14 @@ setupKey env label spelling codec addr controllerHash controllerSeed revealSeed 
                         }
                 }
         approval = insertApprovalName (serialiseAddr addr) commitment
-        -- Registry-bound representative (NOTE-007): name commits to the
-        -- cage token recorded in the environment (post-boot tok) under the
-        -- state policy, recomputed identically on chain from the supplied
-        -- state. Stored once; `keyRepName` reads it (accessor syntax at use
-        -- sites is unchanged from when it was a function).
+        -- The policy binds the registry; the name hashes only the exact
+        -- spelling. Retain the registry token separately for evidence.
         TokenId (AssetName tokSbs) = envTok env
         registryToken = SBS.fromShort tokSbs
-        repName = representativeName controllerHash (scriptHashBytes (envStateHash env)) registryToken freshIncarnation
+        repName = representativeName spelling
+    if spelling == "alice"
+        then putStrLn "printf %s alice | b2sum -l 256"
+        else putStrLn ("printf %s '" <> concatMap (\c -> if c == '\'' then "'\\''" else [c]) (T.unpack (TE.decodeUtf8 spelling)) <> "' | b2sum -l 256")
     emit
         "key"
         ( label
@@ -971,7 +996,7 @@ setupKey env label spelling codec addr controllerHash controllerSeed revealSeed 
             , keyRepName = repName
             }
 
--- | The registry-bound representative name stored at setup (field
+-- | The spelling-hash representative name stored at setup (field
 -- accessor; use sites read `keyRepName ks` exactly as before).
 
 -- ---------------------------------------------------------
@@ -979,6 +1004,7 @@ setupKey env label spelling codec addr controllerHash controllerSeed revealSeed 
 -- ---------------------------------------------------------
 
 bootCage ::
+    OnChainTxOutRef ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
@@ -989,11 +1015,7 @@ bootCage ::
     FilePath ->
     IORef Int ->
     IO (CageConfig, TokenId)
-bootCage prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
-    utxos <- Cage.queryUTxOs prov genesisAddr
-    seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "boot: genesis wallet has no UTxOs"
-        (txIn, _) : _ -> pure (txInToRef txIn)
+bootCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
     let ConsumerBinding
             { cbPin = consumerPin
             , cbScriptBytes = consumerScriptBytes
@@ -1346,7 +1368,7 @@ connectedAccept env record tm ks checkSync rowKind = do
     _ <- waitConfirmation (txid <> " (" <> keyLabel ks <> " fold)")
     -- NOTE-001.3: the mint field carries the APPLIED representative
     -- identity with the expected name at +1.
-    assertRepMintedByFold env signed repName txid (keyLabel ks)
+    assertRepMintedByFold env signed (keySpelling ks) txid (keyLabel ks)
     -- NOTE-001.2, post-submit: witnesses name no owner either.
     assertOwnerAbsentWitnesses env signed txid (keyLabel ks)
     -- NOTE-001.1: the fold is connected — state moved, request and claim
@@ -2252,14 +2274,9 @@ runHookMutantRow env record rowName operation spelling mutant = do
         Submitted _ ->
             failWith (rowName <> ": accepted (must refuse)")
 
--- | Cross-wired fold (NOTE-013 corrected control 4 on ledger): the
--- The registry side consumes B's paid request while the naming side folds A's
--- claim, mints A's representative and records A. Every layer passes
--- on its own evidence — cage proofs over B, naming fold over A's
--- recomputed name, rep mint matching the fold redeemer — and ONLY the
--- consumer refuses (the minted name was never requested). Coherently
--- posted against the correctly pinned consumer and a valid bootstrap;
--- local evaluation is skipped so the LEDGER attributes the refusal.
+-- | A paid request for B cannot accompany A's minted representative.
+-- Both the consumer and naming application now bind the spelling. The
+-- ledger refusal is matched to the consumer's named failed-witness field.
 runHookCrosswiredRow :: Env -> (Value -> IO ()) -> IO ()
 runHookCrosswiredRow env record = do
     ksA <-
@@ -2503,11 +2520,12 @@ assertFoldPermissionless _env signed label = do
         )
 
 -- | The fold's mint field carries the APPLIED representative policy —
--- derived from the exact application-policy parameter — with the
+-- derived from the application and registry parameters — with the
 -- expected asset name at exactly +1. The unapplied manifest pin is
 -- recorded separately and is never accepted here.
 assertRepMintedByFold :: Env -> ConwayTx -> ByteString -> String -> String -> IO ()
-assertRepMintedByFold env signed repName txid label = do
+assertRepMintedByFold env signed spelling txid label = do
+    let repName = convert (hash spelling :: Digest Blake2b_256)
     let MultiAsset mintMap = signed ^. bodyTxL . mintTxBodyL
         repQty =
             Map.lookup (envRepPolicy env) mintMap
@@ -2522,8 +2540,10 @@ assertRepMintedByFold env signed repName txid label = do
                     <> hex repName
                     <> " at +1 under the applied representative policy 0x"
                     <> envRepHex env
-                    <> " (parameter: application-policy hash 0x"
+                    <> " (application hash 0x"
                     <> envAppHex env
+                    <> "; registry token 0x"
+                    <> hex (case envTok env of TokenId (AssetName n) -> SBS.fromShort n)
                     <> ")"
                 )
         other ->
@@ -2689,6 +2709,16 @@ rowMintNoSigner env = do
 -- to the application script); the honest alice/bob folds stay accepted.
 rowForeignPolicyRefused :: Env -> KeySetup -> IO ()
 rowForeignPolicyRefused env ks = do
+    (signed, snapClaim) <- policyRefusalTx env ks (envAttackerPolicy env) (envAttackerScript env) (PLC.B "")
+    retainListings env "eve-fold-pre"
+    expectRefused MainRun env "fold-foreign-policy-refused" "representative-policy"
+        "the fold carries the name under a foreign policy" signed
+    retainListings env "eve-fold-post"
+    noTrace env snapClaim "fold-foreign-policy"
+
+-- | Build the same complete fold for foreign-policy and foreign-registry probes.
+policyRefusalTx :: Env -> KeySetup -> PolicyID -> Script ConwayEra -> PLC.Data -> IO (ConwayTx, Snap)
+policyRefusalTx env ks mintPolicy mintScript mintRedeemer = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
@@ -2699,7 +2729,7 @@ rowForeignPolicyRefused env ks = do
         foreignTokens =
             MultiAsset $
                 Map.singleton
-                    (envAttackerPolicy env)
+                    mintPolicy
                     (Map.singleton (AssetName (SBS.toShort repName)) 1)
         recordOut =
             scriptOut
@@ -2745,118 +2775,74 @@ rowForeignPolicyRefused env ks = do
                         , cmScript = envAppScript env
                         }
                     , ConnectedMint
-                        { cmPolicy = envAttackerPolicy env
+                        { cmPolicy = mintPolicy
                         , cmAssets =
                             Map.singleton
                                 (AssetName (SBS.toShort repName))
                                 1
-                        , cmRedeemer = RawRedeemer (PLC.B "")
-                        , cmScript = envAttackerScript env
+                        , cmRedeemer = RawRedeemer mintRedeemer
+                        , cmScript = mintScript
                         }
                     ]
                 , cfaOutputs = [recordOut]
                 , cfaSigners = []
                 , cfaRefUtxos = envRefUtxos env
-                , cfaAttachScripts = [envAttackerScript env]
+                , cfaAttachScripts = if mintPolicy == envRepPolicy env then [] else [mintScript]
                 , cfaSkipEval = True
                 , cfaAdjustRoot = id
                 }
-    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
-    retainListings env "eve-fold-pre"
-    expectRefused
-        MainRun
-        env
-        "fold-foreign-policy-refused"
-        "representative-policy"
-        "the fold names the correct representative but moves it under the \
-        \attacker's always-true policy instead of the registry's expected policy"
-        signed
-    retainListings env "eve-fold-post"
-    noTrace env snapClaim "fold-foreign-policy"
+    pure (addKeyWitness (mkSignKey folderSeed) unsigned, snapClaim)
 
-rowFoldTamperedRep :: Env -> KeySetup -> TxIn -> IO ()
-rowFoldTamperedRep env ks claimIn = do
-    snapClaim <- mustSnap env claimIn
-    let tampered = BS.map complement (keyRepName ks)
-        approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
-        tamperedMintMA =
-            MultiAsset $
-                Map.singleton
-                    (envRepPolicy env)
-                    (Map.singleton (AssetName (SBS.toShort tampered)) 1)
-        burnMA =
-            MultiAsset $
-                Map.singleton
-                    (envAppPolicy env)
-                    (Map.singleton (AssetName (SBS.toShort approval)) (-1))
-        mintMA = burnMA <> tamperedMintMA
-    (fund, collateral) <- takeFundCollateral env
-    let recordOut =
-            scriptOut
-                (envPp env)
-                (envAppAddr env)
-                (snapCoin snapClaim)
-                tamperedMintMA
-                (keyDatum ks)
-        change =
-            changeOut
-                (snapCoin snapClaim + coinOf fund)
-                flatFee
-                [recordOut]
-                (envPartyAddr env)
-        spendIdx = spendingIndex claimIn (Set.fromList [claimIn, fst fund])
-        redeemers =
-            Redeemers $
-                Map.fromList
-                    [
-                        ( ConwaySpending (AsIx spendIdx)
-                        , (Data (foldRedeemer [tampered]), maxUnits)
-                        )
-                    ,
-                        ( ConwayMinting (AsIx (mintIndexOf mintMA (envAppPolicy env)))
-                        , ( Data
-                                ( insertApprovalRedeemer
-                                    (keyControllerHash ks)
-                                    (keyControlBytes ks)
-                                    (keyCommitment ks)
-                                )
-                          , maxUnits
-                          )
-                        )
-                    ,
-                        ( ConwayMinting (AsIx (mintIndexOf mintMA (envRepPolicy env)))
-                        , (Data mintRepresentativeRedeemer, maxUnits)
-                        )
-                    ]
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.fromList [claimIn, fst fund]
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [recordOut, change]
-                & feeTxBodyL .~ Coin flatFee
-                & mintTxBodyL .~ mintMA
-                & reqSignerHashesTxBodyL .~ Set.empty
-                & scriptIntegrityHashTxBodyL .~ integrity
-        tx =
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ Map.fromList
-                        [ (envAppHash env, envAppScript env)
-                        , (envRepHash env, envRepScript env)
-                        ]
-                & witsTxL . rdmrsTxWitsL .~ redeemers
-        signed = addKeyWitness (mkSignKey partySeed) tx
-    expectRefused
-        MainRun
-        env
-        "fold-misnamed-representative-refused"
-        "representative-identity"
-        "the fold names a representative the record control does not determine"
-        signed
+-- | A second registry copies A's configured policy. It cannot authorize that
+-- policy, even with a fresh alice request, claim, and a valid absence proof.
+rowForeignRegistryRefused :: Env -> KeySetup -> IO ()
+rowForeignRegistryRefused env alice = do
+    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+    seedRef <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "registry B: no seed UTxO"
+        (txIn, _) : _ -> pure (txInToRef txIn)
+    let cfgB = (envCfg env){cageSeed = seedRef}
+        foreignTokenBytes = deriveAssetName seedRef
+        tokB = TokenId (AssetName (SBS.toShort foreignTokenBytes))
+        policyB = computeScriptHash $
+            applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) foreignTokenBytes) $
+                applyBytesParam (scriptHashBytes (envAppHash env)) (envRepUnapplied env)
+    unless (tokB /= envTok env && policyB /= envRepHash env) $
+        failWith "registry B did not produce a distinct token and policy"
+    unsignedBoot <- bootTokenImpl cfgB (envProv env) genesisAddr
+    let signedBoot = addKeyWitness genesisSignKey unsignedBoot
+    submitAccepted env "registry-b-boot" signedBoot
+    awaitTx signedBoot
+    trieB <- mkPureTrieManager
+    createTrie trieB tokB
+    requestRefsB <- publishScripts (envProv env) (envSubmit env) (envPp env)
+        (envPool env) [mkRequestScript cfgB tokB] (envPartyAddr env) (envEvDir env) (envEvNext env)
+    let envB = env{envCfg = cfgB, envTok = tokB, envTrie = trieB,
+            envRefUtxos = requestRefsB ++ envRefUtxos env}
+        aliceB = alice{keyLabel = "alice-registry-b", keyRegistryToken = foreignTokenBytes}
+    rootA <- chainRootHex env
+    rootB <- chainRootHex envB
+    (signed, snapClaim) <- policyRefusalTx envB aliceB (envRepPolicy env) (envRepScript env) mintRepresentativeRedeemer
+    expectRefusedBy (envRepHex env) MainRun envB "fold-foreign-registry-refused"
+        "representative-registry" "registry B cannot mint under registry A's applied policy" signed
+    noTrace envB snapClaim "foreign-registry"
+    afterA <- chainRootHex env
+    afterB <- chainRootHex envB
+    unless (afterA == rootA && afterB == rootB) $ failWith "foreign-registry refusal moved a root"
+    emit "registry-binding" ("registry A policy 0x" <> envRepHex env
+        <> "; registry B policy 0x" <> hex (scriptHashBytes policyB)
+        <> "; alice uses the same spelling hash; B refused under A's policy")
+
+-- | A valid connected Insert carries a name derived from different bytes.
+-- Native registry processing and the policy registry binding are satisfied;
+-- the application must refuse the spelling/name mismatch.
+rowFoldTamperedRep :: Env -> KeySetup -> IO ()
+rowFoldTamperedRep env ks = do
+    let tampered = ks{keyRepName = representativeName (keySpelling ks <> "\n")}
+    (signed, snapClaim) <- policyRefusalTx env tampered (envRepPolicy env) (envRepScript env) mintRepresentativeRedeemer
+    expectRefused MainRun env "fold-misnamed-representative-refused"
+        "representative-identity" "the minted name hashes different spelling bytes" signed
     noTrace env snapClaim "fold-misnamed-representative"
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
 rowFoldMissingRep :: Env -> KeySetup -> TxIn -> IO ()
 rowFoldMissingRep env ks claimIn = do
@@ -3293,7 +3279,7 @@ runFaultRepPolicy env = do
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let tamperedParam = BS.map complement (scriptHashBytes (envAppHash env))
-        tamperedBytes = applyBytesParam tamperedParam (envRepUnapplied env)
+        tamperedBytes = applyBytesParam (registryAssetId (scriptHashBytes (envStateHash env)) (keyRegistryToken alice)) (applyBytesParam tamperedParam (envRepUnapplied env))
         tamperedScript = scriptFromBytes "tampered-representative" tamperedBytes
         tamperedPolicy = PolicyID (computeScriptHash tamperedBytes)
         tamperedHex = hex (scriptHashBytes (computeScriptHash tamperedBytes))
@@ -4021,11 +4007,14 @@ expectRefused ::
     String ->
     ConwayTx ->
     IO ()
-expectRefused mode env rowName modelReason guard signed = do
+expectRefused mode env = expectRefusedBy (envAppHex env) mode env
+
+expectRefusedBy :: String -> Mode -> Env -> String -> String -> String -> ConwayTx -> IO ()
+expectRefusedBy expectedScript mode env rowName modelReason guard signed = do
     let wrongReasonMode = mode == ControlWrongReason
         expectedMarker
             | wrongReasonMode = wrongReasonMarker
-            | otherwise = envAppHex env
+            | otherwise = expectedScript
     result <- submitRetain env rowName signed
     case result of
         Submitted _ ->
@@ -4041,7 +4030,7 @@ expectRefused mode env rowName modelReason guard signed = do
                 failWith
                     ( rowName
                         <> ": expected-rejection-reason <phase-2 PlutusFailure \
-                           \naming the application validator> but the node \
+                           \naming the expected validator> but the node \
                            \rejected with <"
                         <> reasonText
                         <> "> — a phase-1 refusal proves nothing about the guard"
@@ -4060,9 +4049,9 @@ expectRefused mode env rowName modelReason guard signed = do
                 ( rowName
                     <> ": REFUSED, reason matched (model reason "
                     <> modelReason
-                    <> "; phase-2 PlutusFailure naming the application validator \
+                    <> "; phase-2 PlutusFailure naming the expected validator \
                        \0x"
-                    <> envAppHex env
+                    <> expectedScript
                     <> "): "
                     <> reasonText
                     <> " — "

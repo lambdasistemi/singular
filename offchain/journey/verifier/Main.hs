@@ -39,13 +39,12 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable qualified as Foldable
 import Data.Word (Word32)
-import Data.List (isInfixOf, isSuffixOf, sortOn)
+import Data.List (isInfixOf, isSuffixOf, nub, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
@@ -113,7 +112,6 @@ import Naming.Wire
     ( Address (..)
     , WireData (..)
     , addressBytes
-    , decodeAddress
     )
 
 -- ---------------------------------------------------------
@@ -346,7 +344,8 @@ loadListings dir names = do
 -- ---------------------------------------------------------
 
 data Identities = Identities
-    { idAppHash :: ByteString
+    { idRegistryToken :: ByteString
+    , idAppHash :: ByteString
     , idAppHex :: String
     , idRepUnappliedHex :: String
     , idRepAppliedHash :: ByteString
@@ -356,8 +355,8 @@ data Identities = Identities
     , idReqCode :: SBS.ShortByteString
     }
 
-loadIdentities :: FilePath -> FilePath -> IO (Either String Identities)
-loadIdentities namingPath registryPath = do
+loadIdentities :: Evidence -> FilePath -> FilePath -> IO (Either String Identities)
+loadIdentities evidence namingPath registryPath = do
     outcome <- try loadAll :: IO (Either SomeException Identities)
     pure (first show outcome)
   where
@@ -370,15 +369,31 @@ loadIdentities namingPath registryPath = do
             , extractCompiledCode "state.state" mbp
             , extractCompiledCode "request.request" mbp
             ) of
-            (Just appBytes, Just repBytes, Just stateBytes, Just reqBytes) ->
-                pure (assemble appBytes repBytes stateBytes reqBytes)
+            (Just appBytes, Just repBytes, Just stateBytes, Just reqBytes) -> do
+                let stateHash = computeScriptHash stateBytes
+                    candidates = nub
+                        [ tok
+                        | out <- Map.elems (evUtxos evidence)
+                        , addrCredentialHex out == Just (hexStr (scriptHashBytes stateHash))
+                        , MaryValue _ (MultiAsset assets) <- [out ^. valueTxOutL]
+                        , Just names <- [Map.lookup (PolicyID stateHash) assets]
+                        , [(AssetName tokSbs, 1)] <- [Map.toList names]
+                        , let tok = SBS.fromShort tokSbs
+                        , Just (StateDatum st) <- [outCageDatum out]
+                        , stateRepPolicyBytes st == idRepAppliedHash (assemble tok appBytes repBytes stateBytes reqBytes)
+                        ]
+                case candidates of
+                    [tok] -> pure (assemble tok appBytes repBytes stateBytes reqBytes)
+                    _ -> fail "expected one registry with a matching applied representative policy"
+
             _ -> fail "required validator code missing from blueprints"
-    assemble appBytes repBytes stateBytes reqBytes =
+    assemble tok appBytes repBytes stateBytes reqBytes =
         let appH = scriptHashBytes (computeScriptHash appBytes)
-            repApplied = applyBytesParam appH repBytes
+            repApplied = applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) tok) (applyBytesParam appH repBytes)
             repAppliedH = scriptHashBytes (computeScriptHash repApplied)
          in Identities
-                { idAppHash = appH
+                { idRegistryToken = tok
+                , idAppHash = appH
                 , idAppHex = hexStr appH
                 , idRepUnappliedHex = hexStr (scriptHashBytes (computeScriptHash repBytes))
                 , idRepAppliedHash = repAppliedH
@@ -567,7 +582,7 @@ runVerifier args = do
     case ev of
         Left err -> pure (allCne ("evidence unloadable: " <> err))
         Right evd -> do
-            ids <- loadIdentities (argBlueprint args) (argRegistryBlueprint args)
+            ids <- loadIdentities evd (argBlueprint args) (argRegistryBlueprint args)
             case ids of
                 Left err -> pure (allCne ("blueprint unloadable: " <> err))
                 Right idents -> do
@@ -941,45 +956,10 @@ vRepresentativeAsset ctx = case foldActiveBody ctx of
   where
     policyBytes (PolicyID sh) = scriptHashBytes sh
 
--- | The expected representative name, re-derived from the observed
--- claim datum plus the spent state's own authenticating token (NOTE-007):
--- control address to key hash, registry token from the state value NFT,
--- state policy from identities, incarnation 0x00. `Nothing` when the claim,
--- the state input, or a single token name does not resolve (fail closed).
+-- | Recompute the name from the consumed registry request's spelling bytes.
 expectedRepName :: Ctx -> ConwayTx -> Maybe ByteString
-expectedRepName ctx tx = do
-    (_, _, datum, _) <- foldClaim ctx tx
-    shape <- decodeAddress (addressBytes (controlAddress datum))
-    tokName <- foldStateToken ctx tx
-    pure
-        ( representativeName
-            (addressPaymentHash shape)
-            (idStateHash (ctxIdentities ctx))
-            tokName
-            freshIncarnation
-        )
+expectedRepName ctx tx = representativeName <$> foldRequestKey ctx tx
 
--- | The single cage-token name carried by the fold's spent state value
--- (NOTE-007 association input). `Nothing` unless exactly one distinct
--- asset name sits under the state policy — the on-chain rule requires
--- exactly one token at quantity 1, so ambiguity here is CNE, never a guess.
-foldStateToken :: Ctx -> ConwayTx -> Maybe ByteString
-foldStateToken ctx tx = do
-    let ids = ctxIdentities ctx
-    inp <- case [i | RStateSpend i 2 <- resolvePurposes ids (evUtxos (ctxEvidence ctx)) tx] of
-        [i] -> Just i
-        _ -> Nothing
-    out <- Map.lookup (showInShort inp) (evUtxos (ctxEvidence ctx))
-    case out ^. valueTxOutL of
-        MaryValue _ (MultiAsset ma) -> case
-            [ n
-            | (pid, ns) <- Map.toList ma
-            , let PolicyID sh = pid
-            , scriptHashBytes sh == idStateHash ids
-            , (AssetName n, _) <- Map.toList ns
-            ] of
-                [n] -> Just (SBS.fromShort n)
-                _ -> Nothing
 
 vRepresentativeApproval :: Ctx -> Verdict
 vRepresentativeApproval ctx = case foldActiveBody ctx of
@@ -1008,21 +988,14 @@ vRepresentativeApproval ctx = case foldActiveBody ctx of
 vRepresentativeKey :: Ctx -> Verdict
 vRepresentativeKey ctx = case foldActiveBody ctx of
     Nothing -> cne "no anchored fold-active body"
-    Just (_tag, tx, _) -> case (foldRequestKey ctx tx, expectedRepName ctx tx) of
-        (Just spelling, Just rep) -> case BS.unsnoc rep of
-            Just (prefixKey, incarnation)
-                | BS.length rep == 32
-                , BS.take 3 rep == representativePrefix
-                , incarnation == freshIncarnation ->
-                    established
-                        ( "key/incarnation agreement recomputed in-tx: request key "
-                            <> show spelling
-                            <> " co-consumed with the claim whose control determines "
-                            <> hexStr (BS.drop 3 prefixKey)
-                            <> " at incarnation 0x00. Residue (NOTE-011): the spelling-to-control binding beyond same-tx co-consumption is Lean's external spellingKey table, not re-derivable here."
-                        )
-            _ -> refuted "representative name is not Rep||keyHash||0x00"
-        _ -> cne "request key or expected name does not recompute"
+    Just (_tag, tx, _) -> case foldRequestKey ctx tx of
+        Just spelling ->
+            let minted = [(n, q) | (PolicyID sh, n, q) <- txMint tx,
+                    scriptHashBytes sh == idRepAppliedHash (ctxIdentities ctx)]
+             in if minted == [(representativeName spelling, 1)]
+                then established ("minted request spelling hash: " <> show spelling)
+                else refuted "minted representative does not match the request spelling hash"
+        Nothing -> cne "consumed request key does not resolve"
 
 -- ---------------------------------------------------------
 -- Refusal obligations (attribution binds rejection text to blueprint)
@@ -1059,36 +1032,10 @@ refusedAttributed ctx shape operation expectedHex = do
                     Just (cne (operation <> ": refusal does not name " <> expectedHex))
                 | otherwise -> Just (refuted (operation <> ": refused without phase-2 evidence"))
 
--- | The request validator hash for this run's token: the boot mint
--- names the token under the state policy; applying the bound parameters
--- (state policy id, token name) to the compiled request program gives
--- the applied identity the Sweep spend resolves through.
+-- | Derive the request identity from the registry token authenticated by
+-- the retained state outputs. Attached runs carry no boot transaction.
 requestAppliedHex :: Ctx -> Maybe String
-requestAppliedHex ctx = do
-    (_, bootTx) <- findBoot ctx
-    (policyId, name, qty) <- findMint bootTx
-    if hexStr (policyBytes policyId) /= idStateHex (ctxIdentities ctx) || qty /= 1
-        then Nothing
-        else Just (hexStr (requestHashFor ctx name))
-  where
-    policyBytes (PolicyID sh) = scriptHashBytes sh
-    findBoot c =
-        let boots =
-                [ (tag, tx)
-                | (tag, tx) <- ctxBodies c
-                , Just o <- [evOutcome c tag]
-                , outcomeStatus o == Just "accepted"
-                , isBootShape tx
-                ]
-         in case boots of
-                (b : _) -> Just b
-                _ -> Nothing
-    isBootShape tx = case txMint tx of
-        [(_, _, 1)] -> null [() | PSpend _ _ <- txPurposes tx]
-        _ -> False
-    findMint tx = case txMint tx of
-        [(p, n, q)] -> Just (p, n, q)
-        _ -> Nothing
+requestAppliedHex ctx = Just (hexStr (requestHashFor ctx (idRegistryToken (ctxIdentities ctx))))
 
 requestHashFor :: Ctx -> ByteString -> ByteString
 requestHashFor ctx name = scriptHashBytes (computeScriptHash applied)
