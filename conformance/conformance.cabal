@@ -116,7 +116,6 @@ executable conformance
     , filepath >=1.4 && <1.6
     , microlens
     , mts:mpf-write
-    , ouroboros-network
     , plutus-core
     , plutus-tx
     , process >=1.6 && <1.7

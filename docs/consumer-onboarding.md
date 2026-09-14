@@ -64,7 +64,7 @@ blueprints the archive carries and compares them with the pinned manifest. It
 needs only `bash` and `jq`. If it exits non-zero, stop: the archive does not
 carry the validators the release claims, and nothing below is meaningful.
 
-The [release archive guide](../onchain-release/README.md) describes what else
+The [release archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md) describes what else
 the archive contains and how to replay evidence from it.
 
 ## Step 2 — point at your preprod node
@@ -120,10 +120,15 @@ which is what a Plutus transaction spends as collateral.
 
 ## Step 4 — run a journey
 
+Build the two compiled blueprints from the archive's own flakes and export
+them the way the [release archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
+describes, then run each runner from the archive's `offchain/` directory.
+
 Start with the canonical initialization, the shortest run that touches the
 chain:
 
 ```sh
+cd offchain
 nix run .#li01 -- \
   --node-socket /run/cardano-node/node.socket \
   --network-magic 1 \
