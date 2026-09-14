@@ -66,9 +66,11 @@ sequenceDiagram
 ```
 
 An authenticated active result includes the representative, record input and
-current datum. Pending request references are reported separately. The draft
-refuses occupied values without a matching authenticated live representative;
-final Active/Over support awaits the representative identity integration. If
+current datum. Pending request references are reported separately. The command
+authenticates the spelling-derived representative or its Over marker against
+the registry root. Over is reported as retired and remains occupied. Unknown
+occupied values are refused; an authenticated representative without a live
+record is reported as unavailable. If
 the registry state moves during observation, repeat the command against the
 new state.
 

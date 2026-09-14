@@ -35,8 +35,9 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusCore.Data qualified as PLC
 
 import Naming.CLI.Options (Command (..), Connection (..), Options (..))
-import Naming.CLI.Values (CandidateResult (..), authenticateCandidates)
+import Naming.CLI.Values (CandidateResult (..), authenticateName)
 import Naming.Datum (NamingDatum (..), PaymentDestination (..), RetirementQuorum (..), decodeNamingDatum)
+import Naming.Register (registryAssetId)
 import Naming.Wire (Address (..), WireData (..))
 import Singular.Registry.Blueprint (applyBytesParam, extractCompiledCode, loadBlueprint)
 import Singular.Registry.Config (CageConfig (..))
@@ -129,7 +130,11 @@ loadParts dep = do
     consumer <- need registry "consumer.consumer"
     application <- need naming "application.application"
     representative <- need naming "representative.representative"
-    let applied = applyBytesParam (scriptHashBytes (computeScriptHash application)) representative
+    tokenBytes <- unhex (depCageToken dep)
+    let applied =
+            applyBytesParam
+                (registryAssetId (scriptHashBytes (computeScriptHash state)) tokenBytes)
+                (applyBytesParam (scriptHashBytes (computeScriptHash application)) representative)
         ConsumerBinding{cbPin = pin, cbScriptBytes = script} = deriveConsumerBinding consumer
     unless (T.unpack (depApplicationHash dep) == hex (scriptHashBytes (computeScriptHash application))) $
         failWith "application-mismatch: manifest does not name this naming application"
@@ -168,7 +173,7 @@ validateAttached dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_,
 
 inspectName :: Cage.Provider IO -> Deployment -> Attached -> FilePath -> String -> IO Value
 inspectName provider dep attached@Attached{attCfg = cfg, attToken = token} manifest name = do
-    (expectedRoot, value) <- lookupName provider dep attached manifest name
+    (expectedRoot, value) <- lookupName attached manifest name
     let key = encodeUtf8 (T.pack name)
     requests <- findRequestUtxos token <$> Cage.queryUTxOs provider (requestAddrFromCfg cfg token (network cfg))
     let pending =
@@ -192,8 +197,8 @@ inspectName provider dep attached@Attached{attCfg = cfg, attToken = token} manif
             , "entry" .= status
             ]
 
-lookupName :: Cage.Provider IO -> Deployment -> Attached -> FilePath -> String -> IO (BS.ByteString, Maybe BS.ByteString)
-lookupName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
+lookupName :: Attached -> FilePath -> String -> IO (BS.ByteString, Maybe BS.ByteString)
+lookupName Attached{attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
     expectedRoot <- case extractCageDatum stateOut of
         Just (StateDatum state) -> let OnChainRoot root = stateRoot state in pure root
         _ -> failWith "registry-datum-invalid"
@@ -208,21 +213,10 @@ lookupName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo = 
     case occupied of
         Nothing -> pure (expectedRoot, Nothing)
         Just _ -> do
-            (appAddr, repPolicy) <- applicationIdentity dep cfg
-            outputs <- Cage.queryUTxOs provider appAddr
-            let candidates =
-                    [ SBS.fromShort nameBytes
-                    | (_, out) <- outputs
-                    , let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-                    , Just tokens <- [Map.lookup repPolicy assets]
-                    , (AssetName nameBytes, quantity) <- Map.toList tokens
-                    , quantity == 1
-                    , SBS.length nameBytes == 32
-                    ]
-            matching <- authenticateCandidates manager token key (Root expectedRoot) candidates
+            matching <- authenticateName manager token key (Root expectedRoot)
             case matching of
                 Authenticated value -> pure (expectedRoot, Just value)
-                ValueUnavailable -> failWith "occupied-value-unavailable: name is occupied but no live representative authenticates its value"
+                ValueUnavailable -> failWith "occupied-value-unavailable: name is occupied but neither its representative nor Over value authenticates"
                 ValueAmbiguous -> failWith "registry-value-ambiguous: multiple candidates authenticate against one root"
 
 inspectRecord :: Cage.Provider IO -> Deployment -> CageConfig -> BS.ByteString -> IO Value

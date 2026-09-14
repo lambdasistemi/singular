@@ -4,7 +4,8 @@ import Cardano.Ledger.Mary.Value (AssetName (..))
 import Data.ByteString.Short (toShort)
 import Data.List (isInfixOf)
 import Naming.CLI.Options (Command (..), Connection (..), Options (..), parserInfo)
-import Naming.CLI.Values (CandidateResult (..), authenticateCandidates)
+import Naming.CLI.Values (CandidateResult (..), authenticateCandidates, authenticateName)
+import Naming.Register (overMarkerFor, representativeName)
 import Options.Applicative (
     ParserResult (..),
     defaultPrefs,
@@ -67,6 +68,26 @@ main = hspec $ do
         it "requires the authorization key separately from fee funding" $
             refused (connection ++ ["maintain", "--name", "alice", "--wallet-skey", "fees.skey", "--clear-payment-destination"]) `shouldBe` True
     describe "authenticated name values" $ do
+        it "authenticates the accepted spelling-derived Active and Over values without changing the mirror" $ do
+            (manager, token, _) <- fixture
+            let rep = representativeName "alice"
+            activeRoot <- Trie.withTrie manager token $ \trie -> do
+                _ <- Trie.delete trie "alice"
+                Trie.insert trie "alice" rep
+            authenticateName manager token "alice" activeRoot `shouldReturn` Authenticated rep
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` activeRoot
+            overRoot <- Trie.withTrie manager token $ \trie -> do
+                _ <- Trie.delete trie "alice"
+                Trie.insert trie "alice" (overMarkerFor rep)
+            authenticateName manager token "alice" overRoot `shouldReturn` Authenticated (overMarkerFor rep)
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` overRoot
+        it "refuses an occupied spelling containing another name's representative" $ do
+            (manager, token, _) <- fixture
+            root <- Trie.withTrie manager token $ \trie -> do
+                _ <- Trie.delete trie "alice"
+                Trie.insert trie "alice" (representativeName "bob")
+            authenticateName manager token "alice" root `shouldReturn` ValueUnavailable
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` root
         it "accepts the stored value and rejects a wrong preimage without changing the mirror" $ do
             (manager, token, root) <- fixture
             authenticateCandidates manager token "alice" root ["wrong", "representative"] `shouldReturn` Authenticated "representative"

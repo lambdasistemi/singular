@@ -11,7 +11,7 @@
   ],
   "select-the-registry-and-inspect-a-name": [
     {
-      "text": "Select a deployment manifest, node socket and network magic. The sequence diagram shows the command verifying the live deployment, comparing the local mirror root with the chain, authenticating candidate representative values by reconstruction, and checking the current record. Pending requests are reported separately. Unknown occupied values are refused; final Active and Over support awaits representative identity integration. A missing verified mirror never proves that a name is free.",
+      "text": "Select a deployment manifest, node socket and network magic. The sequence diagram shows the command verifying the live deployment, comparing the local mirror root with the chain, authenticating candidate representative values by reconstruction, and checking the current record. Pending requests are reported separately. The candidate values are the accepted spelling-derived representative and its Over marker. Over is retired and remains occupied. Unknown occupied values are refused; a missing live record is reported as unavailable. A missing verified mirror never proves that a name is free.",
       "pause": 500
     }
   ],

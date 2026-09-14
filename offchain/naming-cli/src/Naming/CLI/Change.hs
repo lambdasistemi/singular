@@ -74,7 +74,7 @@ runChange conn payerFile name controllerFile change = do
         let provider = nsProvider session
         attached <- attach provider dep parts
         validateAttached dep attached
-        (_, entry) <- lookupName provider dep attached (deploymentFile conn) name
+        (_, entry) <- lookupName attached (deploymentFile conn) name
         representative <- case entry of
             Just bytes | BS.length bytes == 32 -> pure bytes
             _ -> failWith "name-not-active: no live representative for this name"
