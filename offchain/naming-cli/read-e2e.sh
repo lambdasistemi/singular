@@ -21,6 +21,7 @@ deployment="$(nix build --quiet --no-link --print-out-paths "$root/offchain#depl
 devnet="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")/bin/devnet"
 "$cli" --help > "$evidence/help.txt"
 export TMPDIR="$work"
+export E2E_GENESIS_DIR="$root/offchain/e2e-test/genesis"
 "$devnet" > "$evidence/node.out" 2> "$evidence/node.err" &
 node_pid=$!
 for _ in $(seq 1 300); do

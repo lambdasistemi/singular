@@ -6,7 +6,7 @@ License     : Apache-2.0
 Connection lifetime is bounded by the requested action. All observations
 are bound to a verified deployment; an unverified mirror never proves absence.
 -}
-module Naming.CLI.Read (runRead) where
+module Naming.CLI.Read (runRead, loadParts, validateAttached, lookupName, recordAt, wireOf, hex, unhex, failWith) where
 
 import Control.Concurrent.Async (race)
 import Control.Monad (unless)
@@ -23,7 +23,7 @@ import System.Environment (getEnv)
 
 import Cardano.Crypto.Hash qualified as Crypto
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Api.Tx.Out (datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, valueTxOutL)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
@@ -48,7 +48,7 @@ import Singular.Registry.Deployment (
     readDeployment,
     renderOutRef,
  )
-import Singular.Registry.Ledger (Root (..), TokenId (..))
+import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..), TxIn)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
@@ -77,6 +77,7 @@ runRead Options{connection = conn, command = action} = do
         result <- case action of
             Attach -> pure $ object ["status" .= ("attached" :: String)]
             Inspect name -> inspectName provider dep attached (deploymentFile conn) name
+            ChangeRecord{} -> failWith "internal error: write action sent to read dispatcher"
         refreshed <- attach provider dep parts
         unless (fst (attStateUtxo attached) == fst (attStateUtxo refreshed)) $
             failWith "registry-moved: repeat the observation against the current state"
@@ -165,18 +166,9 @@ validateAttached dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_,
         $ failWith "registry-configuration-mismatch: state disagrees with manifest timing or tip"
 
 inspectName :: Cage.Provider IO -> Deployment -> Attached -> FilePath -> String -> IO Value
-inspectName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
-    expectedRoot <- case extractCageDatum stateOut of
-        Just (StateDatum state) -> let OnChainRoot root = stateRoot state in pure root
-        _ -> failWith "registry-datum-invalid"
-    mirror <- loadMirror manifest
-    (manager, _) <- mkPureTrieManagerFrom mirror
-    unless (Map.member token mirror) $ Trie.createTrie manager token
-    Root actualRoot <- Trie.withTrie manager token Trie.getRoot
-    unless (actualRoot == expectedRoot) $
-        failWith "mirror-unavailable: no current verified mirror; rebuild it from the node before inspecting"
+inspectName provider dep attached@Attached{attCfg = cfg, attToken = token} manifest name = do
+    (expectedRoot, value) <- lookupName attached manifest name
     let key = encodeUtf8 (T.pack name)
-    value <- Trie.withTrie manager token (\trie -> Trie.lookup trie key)
     requests <- findRequestUtxos token <$> Cage.queryUTxOs provider (requestAddrFromCfg cfg token (network cfg))
     let pending =
             [ renderOutRef ref
@@ -187,7 +179,7 @@ inspectName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo =
     status <- case value of
         Nothing -> pure $ object ["status" .= (if null pending then "absent" else "pending" :: String)]
         Just rep
-            | BS.length rep == 36 && "over" `BS.isPrefixOf` rep ->
+            | BS.length rep == 35 && "over" `BS.isPrefixOf` rep ->
                 pure $ object ["status" .= ("retired" :: String)]
             | BS.length rep == 32 -> inspectRecord provider dep cfg rep
             | otherwise -> failWith "naming-entry-invalid: registry value is neither a representative nor Over"
@@ -199,8 +191,37 @@ inspectName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo =
             , "entry" .= status
             ]
 
+lookupName :: Attached -> FilePath -> String -> IO (BS.ByteString, Maybe BS.ByteString)
+lookupName Attached{attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
+    expectedRoot <- case extractCageDatum stateOut of
+        Just (StateDatum state) -> let OnChainRoot root = stateRoot state in pure root
+        _ -> failWith "registry-datum-invalid"
+    mirror <- loadMirror manifest
+    (manager, _) <- mkPureTrieManagerFrom mirror
+    unless (Map.member token mirror) $ Trie.createTrie manager token
+    Root actualRoot <- Trie.withTrie manager token Trie.getRoot
+    unless (actualRoot == expectedRoot) $
+        failWith "mirror-unavailable: no current verified mirror; rebuild it from the node before inspecting"
+    let key = encodeUtf8 (T.pack name)
+    value <- Trie.withTrie manager token (\trie -> Trie.lookup trie key)
+    pure (expectedRoot, value)
+
 inspectRecord :: Cage.Provider IO -> Deployment -> CageConfig -> BS.ByteString -> IO Value
 inspectRecord provider dep cfg representative = do
+    record <- recordAt provider dep cfg representative
+    pure $ case record of
+        Nothing -> object ["status" .= ("pending" :: String), "representative" .= hex representative]
+        Just ((ref, _), datum) ->
+            object
+                [ "status" .= ("active" :: String)
+                , "representativePolicy" .= depRepresentativePolicy dep
+                , "representative" .= hex representative
+                , "recordInput" .= renderOutRef ref
+                , "datum" .= datumJSON datum
+                ]
+
+recordAt :: Cage.Provider IO -> Deployment -> CageConfig -> BS.ByteString -> IO (Maybe ((TxIn, TxOut ConwayEra), NamingDatum))
+recordAt provider dep cfg representative = do
     app <- unhex (depApplicationHash dep)
     policy <- unhex (depRepresentativePolicy dep)
     appHash <- hashFromBytes app
@@ -214,21 +235,14 @@ inspectRecord provider dep cfg representative = do
             , Map.lookup (AssetName (SBS.toShort representative)) tokens == Just 1
             ]
     case matching of
-        [] -> pure $ object ["status" .= ("pending" :: String), "representative" .= hex representative]
+        [] -> pure Nothing
         [(ref, out)] -> do
             datum <- case out ^. datumTxOutL of
                 Datum binary ->
                     let Data raw = binaryDataToData binary
                      in maybe (failWith "naming-datum-invalid") pure (wireOf raw >>= decodeNamingDatum)
                 _ -> failWith "naming-datum-not-inline"
-            pure $
-                object
-                    [ "status" .= ("active" :: String)
-                    , "representativePolicy" .= depRepresentativePolicy dep
-                    , "representative" .= hex representative
-                    , "recordInput" .= renderOutRef ref
-                    , "datum" .= datumJSON datum
-                    ]
+            pure (Just ((ref, out), datum))
         _ -> failWith "representative-ambiguous: more than one live application output"
   where
     hashFromBytes bytes = maybe (failWith "manifest-script-hash-invalid") (pure . ScriptHash) (Crypto.hashFromBytes bytes)

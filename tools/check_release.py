@@ -129,6 +129,7 @@ if onchain_present:
         "README.md",
         "RELEASE.md",
         "RELEASE-COMMIT",
+        "NAMING-CLI.md",
         "SHA256SUMS",
         "verify-identities.sh",
         "onchain/plutus.json",

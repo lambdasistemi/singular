@@ -5,7 +5,10 @@ and run one naming action with my own addresses and keys.
 
 This is the implementation contract for
 [issue 114](https://github.com/lambdasistemi/singular/issues/114).
-The management executable is not implemented in this initial draft.
+The draft executable currently implements attachment, inspection, maintenance
+and recovery. The packaged read path has devnet evidence; write commands still
+need connected acceptance. Registration/cancellation await the separate repair's
+accepted binding, and the remaining integration work below is unfinished.
 
 ## Command contract
 

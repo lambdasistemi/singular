@@ -52,6 +52,14 @@ main = hspec $ do
             refused (connection ++ ["inspect", "--name", ""]) `shouldBe` True
         it "rejects unused signing keys on read-only actions" $
             refused (connection ++ ["inspect", "--name", "alice", "--wallet-skey", "key.skey"]) `shouldBe` True
+    describe "controller changes" $ do
+        let maintain = connection ++ ["maintain", "--name", "alice", "--wallet-skey", "fees.skey", "--control-skey", "controller.skey"]
+        it "requires an explicit destination change" $
+            refused maintain `shouldBe` True
+        it "refuses two conflicting destination choices" $
+            refused (maintain ++ ["--payment-destination", "address", "--clear-payment-destination"]) `shouldBe` True
+        it "requires the authorization key separately from fee funding" $
+            refused (connection ++ ["maintain", "--name", "alice", "--wallet-skey", "fees.skey", "--clear-payment-destination"]) `shouldBe` True
   where
     connection = ["--deployment", "registry.json", "--node-socket", "/run/node.socket", "--network-magic", "42"]
     parse = execParserPure defaultPrefs parserInfo

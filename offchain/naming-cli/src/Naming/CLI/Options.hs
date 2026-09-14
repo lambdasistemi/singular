@@ -10,6 +10,7 @@ module Naming.CLI.Options (
     Connection (..),
     Command (..),
     Options (..),
+    RecordChange (..),
     parserInfo,
 ) where
 
@@ -20,6 +21,7 @@ import Options.Applicative (
     ReadM,
     command,
     eitherReader,
+    flag',
     fullDesc,
     header,
     help,
@@ -32,6 +34,7 @@ import Options.Applicative (
     progDesc,
     strOption,
     (<**>),
+    (<|>),
  )
 import Text.Read (readMaybe)
 
@@ -44,7 +47,12 @@ data Connection = Connection
     deriving stock (Eq, Show)
 
 -- | One action performed by one invocation.
-data Command = Attach | Inspect String
+data Command = Attach | Inspect String | ChangeRecord FilePath String FilePath RecordChange
+    deriving stock (Eq, Show)
+
+data RecordChange
+    = Maintain (Maybe String)
+    | Recover String String
     deriving stock (Eq, Show)
 
 -- | Parsed connection and action. No implicit defaults select a network.
@@ -89,6 +97,28 @@ actionParser =
                     (Inspect <$> option nameReader (long "name" <> metavar "NAME" <> help "Exact name spelling (UTF-8, no normalization)") <**> helper)
                     (progDesc "Inspect a name against the authenticated registry state")
                 )
+            <> changeCommand "maintain" maintenance "Change a name's payment destination with its current controller"
+            <> changeCommand "update" maintenance "Alias for maintain"
+            <> changeCommand "recover" recovery "Reveal the next controller and commit to a fresh successor"
   where
+    changeCommand label change description =
+        Options.Applicative.command label $
+            info
+                ( ChangeRecord
+                    <$> strOption (long "wallet-skey" <> metavar "FILE" <> help "Payment signing key for fees and collateral")
+                    <*> option nameReader (long "name" <> metavar "NAME" <> help "Exact name spelling")
+                    <*> strOption (long "control-skey" <> metavar "FILE" <> help "Current controller key for maintain; revealed controller key for recover")
+                    <*> change <**> helper
+                )
+                (progDesc description)
+    maintenance =
+        Maintain
+            <$> ( (Just <$> strOption (long "payment-destination" <> metavar "ADDRESS" <> help "New payment destination (bech32)"))
+                    <|> flag' Nothing (long "clear-payment-destination" <> help "Remove the payment destination")
+                )
+    recovery =
+        Recover
+            <$> strOption (long "next-control-address" <> metavar "ADDRESS" <> help "Bech32 address committed by the current record")
+            <*> strOption (long "fresh-next-control-commitment" <> metavar "HEX" <> help "Fresh 32-byte successor commitment")
     nameReader = eitherReader $ \name ->
         if null name then Left "name must not be empty" else Right name

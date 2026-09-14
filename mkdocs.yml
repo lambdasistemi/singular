@@ -13,6 +13,7 @@ nav:
       - Certification: docs/certification.md
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
+  - Manage names with the CLI: docs/naming-cli.md
   - Recovery and retirement: docs/recovery-retirement.md
   - Run against your own preprod node: docs/consumer-onboarding.md
   - Executable candidate:

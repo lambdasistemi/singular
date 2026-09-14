@@ -34,6 +34,11 @@ forever afterwards: re-registering it is refused, which is what
 
 ## What the archive carries
 
+To select your own registry and run individual naming actions, install
+`nix profile install ./offchain#singular-naming` from this directory and
+follow [the naming CLI manual](NAMING-CLI.md). Its help lists the commands
+available in this release.
+
 | path | contents |
 |---|---|
 | `onchain/` | the imported registry partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |

@@ -1,0 +1,30 @@
+{
+  "_source": {
+    "file": "docs/naming-cli.md",
+    "sha256": "78360fc5981bd796ab25f2ba7693b4c667ad7584c52742f1c76a7ad002db9095"
+  },
+  "install-the-executable": [
+    {
+      "text": "Install singular naming from the offchain flake in the verified release archive. Its package carries the compiled naming and registry scripts. A source checkout instead requires explicit paths to the freshly built blueprints. Help works without reading a wallet or connecting to a node.",
+      "pause": 500
+    }
+  ],
+  "select-the-registry-and-inspect-a-name": [
+    {
+      "text": "Select a deployment manifest, node socket and network magic. The sequence diagram shows the command verifying the live deployment, comparing the local mirror root with the chain, reading the matching record, and checking that the registry state has not moved. The result distinguishes active, pending and retired names. A missing verified mirror produces a refusal, never a claim that a name is free.",
+      "pause": 500
+    }
+  ],
+  "change-the-payment-destination": [
+    {
+      "text": "Choose maintain, the exact name, a fee wallet and the current controller key. Supply one new payment destination or explicitly clear it. The node checks the existing authorization rules. The transaction preserves the controller, recovery commitment, quorum and representative. Confirmation reads back the expected new record.",
+      "pause": 500
+    }
+  ],
+  "recover-with-the-committed-next-controller": [
+    {
+      "text": "Recover by revealing the committed next controller address, signing with its key, and providing a fresh thirty-two byte commitment. Recovery preserves the payment destination, quorum and representative. An invalid reveal or authorization is refused. The node supplies current fees and script budgets.",
+      "pause": 500
+    }
+  ]
+}

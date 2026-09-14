@@ -70,6 +70,7 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out:
     copy_tracked_partitions(root, farm, ("onchain", "naming-onchain", "offchain"))
     for relative in ("README.md", "RELEASE.md", "verify-identities.sh"):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
+    shutil.copyfile(root / "docs" / "naming-cli.md", farm / "NAMING-CLI.md")
     (farm / "fixtures").mkdir()
     shutil.copyfile(root / "onchain-release" / "fixtures" / "README.md", farm / "fixtures" / "README.md")
     shutil.copyfile(

@@ -56,6 +56,24 @@ concurrency:
   group: blueprint-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  naming-cli-read:
+    name: Packaged naming CLI attachment and inspection
+    needs: [blueprint, naming-validators]
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Parse explicit commands and signing roles
+        working-directory: offchain
+        run: nix develop --quiet -c cabal test naming-cli-options-tests -O0
+      - name: Read a selected deployment and refuse a mismatched manifest
+        run: nix run --quiet ./offchain#naming-cli-read-e2e -- "$GITHUB_WORKSPACE"
   naming-validators:
     name: Naming validators build, refuse, and match their pinned identity
     runs-on: nixos
