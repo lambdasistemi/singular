@@ -215,6 +215,8 @@ mint for each selected request. Attach it to the published deployment from
 `offchain/`:
 
 ```sh
+export REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+export NAMING_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
 nix run .#register-rows -- --node-socket /path/to/node.socket \
   --network-magic 1 --wallet-skey /path/to/joiner.skey \
   --deployment /path/to/preprod.json --spelling new-name
