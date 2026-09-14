@@ -1,0 +1,16 @@
+control: Normal
+base: 034ed1f24a79a4084d1c1e0786232fb439d22b28
+tree: clean
+consumer: pinned consumer 0xe61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26
+node: cardano-node 10.7.0 - linux-x86_64 - ghc-9.6
+tmpdir: /code/singular-t81-fork-absence/.gate/t/conformance-359854-1789371642596
+consumer: consumer stake credential 0xe61455043f0ba3177e9fd8d4b873b7b59fdea15de167ea29a0097b26 registered tx=b7d7fb5f9ad2ecfa37e299fb2371f7ff89a2aaf41e6a8a4cc826fbd25c47ad7f; hook withdrawals are live
+CS07-fold: "cs07-fork-A" steps=[] txid=4d56669bb4f8354336de2acc01ccef326282c6bad7b556ec2946c87b50841c87
+CS07-fold: "cs07-fork-B1294" steps=[2] txid=d8c11059e50412c577c4807397ff876da01cb2a48a88fc4ca38006256b0f8d9c
+CS07-fold: "cs07-fork-C11" steps=[1] txid=314409292b6fb34594b5973d2f4befb1f847bbcc298eea2b493cc5d24c74b507
+CS07-fold: "cs07-fork-D127" steps=[2,1] txid=2198bf2b2c285e20857ed9c2aec69b07dfd7062f7bdbb498e47d37be3d0743af
+CS07-fold: "cs07-fork-E400" steps=[2,0] txid=18d4de6f20ee8ab3b9997215707cdc2d697503d506f6b396b24930637439520c
+measure: CS07 mem=1365045/140000000 cpu=440748630/10000000000 size=13638/16384 (83.23974609375%)
+row: CS07: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded
+complete: 1/1 rows ok
+exit_status: 0

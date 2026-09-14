@@ -281,13 +281,13 @@ jobs:
       # NOTE-052): their accepting legs execute with submitted
       # transactions while End/Sweep (CS03) and Burning (CS05) stay
       # named unexercised residuals with reason and limit inside the
-      # receipts — never green. CS07 carries no receipt and runs
-      # nowhere: its Fork finding is escalated, and an unmarked row
-      # stays unmarked. CS01/CS06 run locally (blueprint-check and
+      # receipts — never green. CS07 executes the repaired lone-Fork
+      # absence fold and witnesses Branch/Leaf in the same journey.
+      # CS01/CS06 run locally (blueprint-check and
       # param-check, no node); the devnet terminal therefore reports
-      # the five devnet rows (complete: 5/5) before the partial
-      # exception. The assertion binds that five-devnet completion
-      # plus the two local receipts, requiring all seven CS receipt
+      # the six devnet rows (complete: 6/6) before the partial
+      # exception. The assertion binds that six-devnet completion
+      # plus the two local receipts, requiring all eight CS receipt
       # IDs with no missing/extra, then the exact verdicts and the
       # loader/inventory enforcement.
       - name: Run the serialization rows as a packaged app without a dev shell
@@ -295,18 +295,18 @@ jobs:
         run: |
           mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           set +e
-          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
+          MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "serialization session exit: $run_rc (expected: exactly 1, the known-partial status)"
           head_sha="$(git rev-parse HEAD)"
           [ "$run_rc" -eq 1 ] || { echo "FAIL: serialization exit $run_rc is not the known-partial exit 1"; exit 1; }
-          grep -q 'complete: 5/5 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: serialization did not complete all 5 devnet rows'; exit 1; }
+          grep -q 'complete: 6/6 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: serialization did not complete all 6 devnet rows'; exit 1; }
           grep -q 'ROWS PARTIAL' /tmp/serialization-rows.log || { echo 'FAIL: serialization terminal is not the partial report'; exit 1; }
           partial="$(sed -n 's/^- Partial: //p' /tmp/serialization-rows.log)"
           [ "$partial" = "CS03 CS05" ] || [ "$partial" = "CS05 CS03" ] || { echo "FAIL: partial set moved: got '$partial', expected 'CS03 CS05'"; exit 1; }
-          # all seven CS receipt IDs present, no missing/extra
-          printf '%s\n' CS01 CS02 CS03 CS04 CS05 CS06 CS08 | sort > /tmp/expected-cs.txt
+          # all eight CS receipt IDs present, no missing/extra
+          printf '%s\n' CS01 CS02 CS03 CS04 CS05 CS06 CS07 CS08 | sort > /tmp/expected-cs.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-CS*.json | sort > /tmp/receipt-cs.txt
           if [ "$(</tmp/expected-cs.txt)" != "$(</tmp/receipt-cs.txt)" ]; then
             echo 'FAIL: CS receipt set mismatch (missing or extra row)'
@@ -315,7 +315,7 @@ jobs:
             exit 1
           fi
           # exact per-receipt verdicts, every receipt candidate-bound
-          for row in CS01 CS02 CS04 CS06 CS08; do
+          for row in CS01 CS02 CS04 CS06 CS07 CS08; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "agrees-with-model" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
@@ -332,7 +332,7 @@ jobs:
           # exact named residual constructor sets (never green, never omitted)
           [ "$(nix run --quiet nixpkgs#jq -- -r '[.partial.constructors[] | select(.standing != "accepted") | .constructor] | sort | join(",")' "${CONFORMANCE_RECEIPTS}"/receipt-CS03.json)" = "End,Sweep" ] || { echo 'FAIL: CS03 residual set moved'; exit 1; }
           [ "$(nix run --quiet nixpkgs#jq -- -r '[.partial.constructors[] | select(.standing != "accepted") | .constructor] | sort | join(",")' "${CONFORMANCE_RECEIPTS}"/receipt-CS05.json)" = "Burning,Migrating" ] || { echo 'FAIL: CS05 residual set moved'; exit 1; }
-          echo 'PARTIAL = known-partial assertion held: 5 devnet rows executed plus CS01/CS06 local receipts, CS03/CS05 partial with exact named residuals, rest agrees-with-model.'
+          echo 'PARTIAL = known-partial assertion held: 6 devnet rows executed plus CS01/CS06 local receipts, CS03/CS05 partial with exact named residuals, rest agrees-with-model.'
       # Loader and inventory enforcement over the session receipts:
       # the loader validates every receipt (constructor accounting
       # included — a false success or omitted constructor fails
@@ -345,22 +345,42 @@ jobs:
         working-directory: conformance
         run: |
           nix run --quiet .#conformance -- list --receipts "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/inventory-render.log
-          c3=0 c5=0
+          c3=0 c5=0 c7=0
           while IFS= read -r row || [[ -n "$row" ]]; do
             id=${row%%$'\t'*}
-            [[ "$id" == CS03 || "$id" == CS05 ]] || continue
+            [[ "$id" == CS03 || "$id" == CS05 || "$id" == CS07 ]] || continue
             # Preserve empty TSV fields; whitespace IFS would collapse them.
             for column in 1 2 3; do
               [[ "$row" == *$'\t'* ]] || { echo "FAIL: $id missing state column after field $column"; exit 1; }
               row=${row#*$'\t'}
             done
             state=${row%%$'\t'*}
-            [[ "$state" == partial ]] || { echo "FAIL: $id state: $state"; exit 1; }
-            if [[ "$id" == CS03 ]]; then c3=$((c3 + 1)); else c5=$((c5 + 1)); fi
+            expected=partial
+            [[ "$id" == CS07 ]] && expected=executed
+            [[ "$state" == "$expected" ]] || { echo "FAIL: $id state: $state"; exit 1; }
+            case "$id" in
+              CS03) c3=$((c3 + 1)) ;;
+              CS05) c5=$((c5 + 1)) ;;
+              CS07) c7=$((c7 + 1)) ;;
+            esac
           done < /tmp/inventory-render.log
           [[ "$c3" == 1 ]] || { echo "FAIL: CS03 rows: $c3"; exit 1; }
           [[ "$c5" == 1 ]] || { echo "FAIL: CS05 rows: $c5"; exit 1; }
-          echo 'INVENTORY = partial rows render partial (column 4, unique), loader accepted the accounting.'
+          [[ "$c7" == 1 ]] || { echo "FAIL: CS07 rows: $c7"; exit 1; }
+          echo 'INVENTORY = CS03/CS05 partial, CS07 executed (column 4, unique), loader accepted the accounting.'
+      - name: CS07 missing-Fork control fails
+        working-directory: conformance
+        run: |
+          mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          control_dir="$RUNNER_TEMP/cs07-control-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          set +e
+          CONFORMANCE_CONTROL=missing-witness MPFS_BLUEPRINT="$mpfs" nix run --quiet .#conformance -- run CS07 --receipts-dir "$control_dir" > /tmp/cs07-control.log 2>&1
+          control_rc=$?
+          set -e
+          cat /tmp/cs07-control.log
+          [ "$control_rc" -eq 1 ]
+          grep -Fq 'CS07: missing accepted ProofStep witness' /tmp/cs07-control.log
+          test ! -e "$control_dir/receipt-CS07.json"
       - name: Preserve candidate-bound conformance receipts
         if: always() && env.CONFORMANCE_RECEIPTS != ''
         uses: actions/upload-artifact@v4
