@@ -43,11 +43,11 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "ac9275397aec154cc19e2179c22bc454bf3ef5e1a593198ee873457097676f47"
+    "sha256": "ff9e41183e76bd650975fae6a86ee08c8ce5d896b25339616917d045d8090d51"
   },
   "finding-alice": [
     {
-      "text": "To find alice, take the registry's representative policy identifier and hash the spelling bytes with BLAKE2b two hundred and fifty-six, without a newline. The page shows the exact command also printed by register rows, plus a Koios query for the live UTxO. The holding address and datum distinguish an active record from retirement custody. An empty result means no live NFT; history is needed to distinguish unregistered from fully retired.",
+      "text": "To find alice, take the registry's representative policy identifier and hash the spelling bytes with BLAKE2b two hundred and fifty-six, without a newline. The page shows the exact command also printed by register rows, plus a Koios query for the live UTxO. The holding address and datum distinguish an active record from retirement custody. If the UTxO result is empty, query the same asset's mint and burn history: minted once and burned once means permanent Over; never minted means unclaimed. This is the only place history is needed, and it is the asset's history, not the trie's.",
       "pause": 400
     }
   ]

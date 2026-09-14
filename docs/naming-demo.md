@@ -57,7 +57,15 @@ jq -n --arg p "$policy_id" --arg n "$asset_name" \
     -H 'Content-Type: application/json' --data-binary @-
 ```
 
-The holding address and inline datum identify the active record or pending retirement custody. An empty result means no live NFT; distinguishing an unregistered name from a completed retirement requires history. No trie or creation-controller lookup is needed to locate a live NFT.
+The holding address and inline datum identify the active record or pending retirement custody. No trie or creation-controller lookup is needed to locate a live NFT. If `asset_utxos` is empty, query [the same asset's mint/burn history](https://api.koios.rest/#get-/asset_history):
+
+```sh
+curl --fail-with-body -sS --get https://preprod.koios.rest/api/v1/asset_history \
+  --data-urlencode "_asset_policy=$policy_id" \
+  --data-urlencode "_asset_name=$asset_name"
+```
+
+Minted once and burned once means permanent **Over**; never minted means **unclaimed**. This is the only place history is needed: the asset's own mint/burn history, not the trie's.
 
 ## What you see when it is refused
 
