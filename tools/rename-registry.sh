@@ -44,8 +44,13 @@
 #      Mpfs* binder) become their registry* equivalents. Exact-identifier
 #      matches only: MPFStandalone*, mpfCodecs, MPFHash and haskell-mts
 #      imports (the trie, not the product) cannot match.
-#   7. Final gate: git grep -iw mpfs (with the exclusions above) must list
-#      only the two citation files.
+#   7. Final gate: git grep -iw mpfs (with the exclusions above) may only
+#      leave hits sitting on the two upstream citation lines. Allowed files
+#      are derived from that same grep, never a hand list.
+#
+# `--gate-only` runs just step 7 against the current tree: for re-checking
+# an already-renamed tree without re-running the renames (this is also how
+# tools/rename-registry.test.sh exercises the gate in isolation).
 #
 # Deliberate gate deviation: the brief's gate command does not exclude
 # docs/prior-art.speech.json, but that file is the curated narration bound
@@ -58,14 +63,19 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
 # Tracked files the rewrite may touch. Frozen history, provenance, prior art
-# and frozen evidence are never rewritten.
+# and frozen evidence are never rewritten. Shell and Python files are
+# scanned like every other text kind (#108): a tracked *.sh kept
+# export MPFS_BLUEPRINT because the kinds list missed it. The rename tool
+# and its test are excluded: they must keep naming the product they rename,
+# and are exempt from the gate for the same reason.
 scan_files() {
   git ls-files -z \
     -- '*.hs' '*.cabal' 'cabal.project' '*/cabal.project' '*.nix' '*.md' \
-       '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' \
+       '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' '*.sh' '*.py' \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \
-    ':!conformance/coverage/evaluation/evidence'
+    ':!conformance/coverage/evaluation/evidence' \
+    ':!tools/rename-registry.sh' ':!tools/rename-registry.test.sh'
 }
 
 step1_move_modules() {
@@ -234,30 +244,45 @@ step7_gate() {
   echo "step 7: final gate"
   residual="$(git grep -iw mpfs -- \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
-    ':!CHANGELOG.md' ':!site' ':!.docs-source' || true)"
+    ':!CHANGELOG.md' ':!site' ':!.docs-source' \
+    ':!tools/rename-registry.sh' ':!tools/rename-registry.test.sh' || true)"
   if [ -z "$residual" ]; then
     echo "error: no mpfs matches at all; the upstream citations must survive" >&2
     exit 1
   fi
-  echo "$residual" | cut -d: -f1 | sort -u > /tmp/rename-registry-residual-files.txt
-  # shellcheck disable=SC2016
-  allowed='conformance/app/Conformance/Run.hs
-conformance/rows.json'
-  if [ "$(cat /tmp/rename-registry-residual-files.txt)" != "$allowed" ]; then
-    echo "error: mpfs remains outside the two citation files:" >&2
-    echo "$residual" >&2
+  # Allowed residuals are derived from the same grep above, never a hand
+  # list (#108): a file survives only if every one of its mpfs hits sits on
+  # an upstream citation line (cardano-mpfs-onchain#100/#101, with or
+  # without the space before the issue number). The gate must pass on a
+  # clean main and fail on any other product mention.
+  strays="$(printf '%s\n' "$residual" \
+    | grep -Ev 'cardano-mpfs-onchain ?#(100|101)' || true)"
+  if [ -n "$strays" ]; then
+    echo "error: mpfs remains outside the upstream citation lines:" >&2
+    echo "$strays" >&2
     exit 1
   fi
   echo "$residual"
-  echo "gate: only the two upstream citation files remain"
+  echo "gate: only upstream citation lines remain"
 }
 
-step1_move_modules
-step2_modules_and_package
-step3_env_vars
-step4_workflow
-step5_aiken_and_identities
-step6_prose
-step6b_identifier_sweep
-step7_gate
-echo "rename-registry.sh: complete"
+case "${1:-}" in
+  --gate-only)
+    step7_gate
+    ;;
+  "")
+    step1_move_modules
+    step2_modules_and_package
+    step3_env_vars
+    step4_workflow
+    step5_aiken_and_identities
+    step6_prose
+    step6b_identifier_sweep
+    step7_gate
+    echo "rename-registry.sh: complete"
+    ;;
+  *)
+    echo "usage: $0 [--gate-only]" >&2
+    exit 2
+    ;;
+esac
