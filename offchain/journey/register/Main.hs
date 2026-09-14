@@ -1250,8 +1250,9 @@ runFolder ::
     String ->
     TxIn ->
     ((TxIn, TxOut ConwayEra) -> [(TxIn, TxOut ConwayEra)] -> IO ConnectedFoldArgs) ->
-    IO ConwayTx
+    IO (ConwayTx, TxIn, String)
 runFolder env tm label request prepare = do
+    selectedState <- newIORef Nothing
     result <-
         foldAll
             FoldAllArgs
@@ -1259,7 +1260,10 @@ runFolder env tm label request prepare = do
                 , foldProvider = envProv env
                 , foldTrie = tm
                 , foldToken = envTok env
-                , prepareFold = prepare
+                , prepareFold = \current batch -> do
+                    when (request `elem` map fst batch) $
+                        writeIORef selectedState (Just current)
+                    prepare current batch
                 , signFold = addKeyWitness (mkSignKey folderSeed)
                 , foldSubmitter = Submitter $ \signed -> do
                     assertFoldPermissionless env signed label
@@ -1268,8 +1272,11 @@ runFolder env tm label request prepare = do
                 , reportFold = putStrLn . renderFoldEvent
                 , persistFold = envPersistMirror env
                 }
-    case filter (Set.member request . (\tx -> tx ^. bodyTxL . inputsTxBodyL)) (foldedTransactions result) of
-        [signed] -> pure signed
+    selected <- readIORef selectedState
+    case (filter (Set.member request . (\tx -> tx ^. bodyTxL . inputsTxBodyL)) (foldedTransactions result), selected) of
+        ([signed], Just (stateIn, stateOut))
+            | Just (StateDatum st) <- extractCageDatum stateOut ->
+                pure (signed, stateIn, hex (unOnChainRoot (stateRoot st)))
         _ -> failWith (label <> ": folder did not confirm the expected request; skips=" <> show (skippedRequests result))
 
 {- | Fold one name through the connected transaction and assert every
