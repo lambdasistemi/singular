@@ -77,3 +77,12 @@ vectors-check:
         echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
         exit 1
     fi
+
+# Rebuild a mirror and fold with it against a real private node.
+follower-e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+    work="$(mktemp -d /tmp/s107.XXXXXX)"
+    trap 'rm -rf "$work"' EXIT
+    TMPDIR="$work" REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match 'registry follower'

@@ -173,11 +173,11 @@
       "pause": 450
     },
     {
-      "text": "One thing has to travel with the manifest. Writing to a registry — folding a claim in — means proving the key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. Nothing on chain hands you the trie in one query, so this deployment carries it as a file beside the manifest. Copy the manifest to a second machine and you must copy that mirror file with it; without it, the machine can read the deployment but cannot fold into it.",
+      "text": "On a second machine, copy the manifest and run deployment follow with your node socket. The manifest supplies the network and bootstrap identity. Replay uses no signing key or external indexer. It recovers request datums and fold actions from the chain, checks the rebuilt root against the current registry state and atomically saves the mirror only when they agree.",
       "pause": 500
     },
     {
-      "text": "The runners do not guess about this. A run whose mirror root disagrees with the registry's root stops and says so, rather than building proofs against a history the chain does not have.",
+      "text": "The mirror stores the last replayed block and outstanding requests. Follow resumes there, or restarts if that point was rolled back. A journey that writes the mirror invalidates its old checkpoint. Add the rebuild flag when attaching a journey to recover a missing or mismatched mirror automatically.",
       "pause": 450
     },
     {
@@ -185,7 +185,7 @@
       "pause": 450
     },
     {
-      "text": "Rebuilding the trie from the chain instead of carrying it, by following the registry token from the bootstrap transaction and replaying each fold's request datums, is the next milestone's work, not this release's.",
+      "text": "The diagram shows the manifest identifying the bootstrap and the node supplying request datums and fold actions. The follower saves a mirror only if the replayed root equals the current state. Otherwise it refuses and preserves the previous file. If another writer folded during verification, rerun follow.",
       "pause": 500
     }
   ],
@@ -197,6 +197,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "5102f9fb1ad909aa7607a8d4fade7816538bd49c25d6d459052791d08d5d2f90"
+    "sha256": "1a34d9a728d68a592bde991e3aab99f2ef1c2b37f4d9086b8f4172cb008fb40b"
   }
 }

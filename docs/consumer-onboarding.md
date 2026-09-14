@@ -269,25 +269,41 @@ the registry that already exists and stops, rather than making a second
 one nobody recorded. `nix run .#deployment -- verify --deployment
 ./preprod.json` asks the node whether it still agrees, claim by claim.
 
-**One thing has to travel with the manifest.** Writing to a registry —
-folding a claim in — means proving the key against the registry's current
-trie, and that proof needs the whole trie, not the root the chain reports.
-Nothing on chain hands you the trie in one query, so this deployment
-carries it as a file beside the manifest: `preprod.json` is accompanied by
-`preprod.mirror.json`, which each run reads and writes. Copy the manifest
-to a second machine and you must copy the mirror with it; without it that
-machine can read the deployment but cannot fold into it. The runners do
-not guess about this — a run whose mirror root disagrees with the
-registry's root stops and says so, rather than building proofs against a
-history the chain does not have.
+**On a second machine, rebuild the mirror from your node.** Copy the
+manifest and run from `offchain/`:
+
+```bash
+nix run .#deployment -- follow --deployment ./preprod.json \
+  --node-socket "$SINGULAR_NODE_SOCKET"
+```
+
+The manifest supplies the network and bootstrap identity. No wallet or
+external indexer is needed for replay. The follower reads request datums
+and fold actions from chain-sync, rebuilds the trie, checks its root
+against the current registry state, and atomically writes
+`preprod.mirror.json` only when they agree. A named refusal leaves the
+previous file intact. If another writer folds during verification,
+rerun the command against the new tip.
+
+The mirror records the last replayed block and outstanding requests.
+Later `follow` runs resume there; a rolled-back point restarts replay.
+A journey that writes the mirror invalidates that checkpoint so the next
+follow rebuilds from the bootstrap. Add `--rebuild` to a journey using
+`--deployment` to rebuild automatically when its mirror is absent or
+its root differs from the chain.
+
+```mermaid
+flowchart LR
+    N[Your node] -->|request datums and fold actions| F[Follow]
+    M[Manifest] -->|bootstrap identity| F
+    F -->|replayed root| C{Matches current state?}
+    C -->|yes| T[Save mirror for folding]
+    C -->|no| R[Refuse and preserve previous file]
+```
 
 Reading is unaffected. Proving a name is alive and finding where its
 application state lives needs the registry entry and the NFT, and no trie
 at all — a resolver needs nothing from the mirror.
-
-Rebuilding the trie from the chain instead of carrying it — following the
-registry token from the bootstrap transaction and replaying each fold's
-request datums — is the next milestone's work, not this release's.
 
 ## What this page does not cover
 

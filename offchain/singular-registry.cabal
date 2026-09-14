@@ -43,6 +43,10 @@ library
     , bech32
     , bytestring             >=0.11 && <0.13
     , cardano-crypto-class
+    , cardano-ledger-byron
+    , cardano-ledger-binary
+    , cardano-ledger-read
+    , chain-follower
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
@@ -63,7 +67,9 @@ library
     , memory
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-consensus
+    , ouroboros-network:api
+    , ouroboros-network:protocols
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
@@ -77,6 +83,7 @@ library
     Singular.Registry.Candidate
     Singular.Registry.Config
     Singular.Registry.Deployment
+    Singular.Registry.Follower
     Singular.Registry.Ledger
     Singular.Registry.Node
     Singular.Registry.Proof
@@ -552,6 +559,7 @@ test-suite e2e-tests
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
+    Singular.Registry.E2E.FollowerSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
   build-depends:
@@ -569,6 +577,9 @@ test-suite e2e-tests
     , containers
     , directory
     , hspec
+    , filepath
+    , temporary
+    , plutus-tx
     , microlens
     , mts:mpf-write
     , ouroboros-network

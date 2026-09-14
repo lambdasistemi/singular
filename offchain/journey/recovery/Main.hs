@@ -97,7 +97,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
-import System.Environment (lookupEnv)
+import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
@@ -156,6 +156,8 @@ import Singular.Registry.Ledger (
  )
 import Singular.Registry.Node (
     NodeSession (..),
+    NodeMode (..),
+    ExternalNode (..),
     awaitChain,
     awaitTx,
     awaitTxId,
@@ -163,6 +165,7 @@ import Singular.Registry.Node (
     funderSignKey,
     withNode,
  )
+import Singular.Registry.Follower (attachRebuilding)
 import Singular.Registry.Deployment (
     Attached (..),
     CageParts (..),
@@ -445,7 +448,12 @@ runMode mode blueprintPath registryPath = do
                         }
         attached <- forM mDeployment $ \path -> do
             dep <- readDeployment path
-            att <- attach prov dep cageParts
+            args <- getArgs
+            att <- if elem "--rebuild" args
+                then case nsMode sess of
+                    External external -> attachRebuilding prov dep cageParts path (extSocket external)
+                    Devnet -> failWith "attach --rebuild needs the socket of a persistent node"
+                else attach prov dep cageParts
             pure (path, att)
         -- A deployment made a moment ago has an empty registry and no
         -- mirror file yet, which is the same trie a boot would create.

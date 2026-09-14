@@ -180,6 +180,8 @@ import Singular.Registry.Ledger (
  )
 import Singular.Registry.Node (
     NodeSession (..),
+    NodeMode (..),
+    ExternalNode (..),
     currentTipSlot,
     scriptStakeRegistered,
     awaitChain,
@@ -189,6 +191,7 @@ import Singular.Registry.Node (
     funderSignKey,
     withNode,
  )
+import Singular.Registry.Follower (attachRebuilding)
 import Singular.Registry.Deployment (
     Attached (..),
     CageParts (..),
@@ -588,7 +591,12 @@ runMode mode namingPath registryPath = do
                         }
         attached <- forM mDeployment $ \path -> do
             dep <- readDeployment path
-            att <- attach prov dep cageParts
+            args <- getArgs
+            att <- if elem "--rebuild" args
+                then case nsMode sess of
+                    External external -> attachRebuilding prov dep cageParts path (extSocket external)
+                    Devnet -> failWith "attach --rebuild needs the socket of a persistent node"
+                else attach prov dep cageParts
             pure (path, att)
         -- A deployment made a moment ago has an empty registry and no
         -- mirror file yet, which is the same trie a boot would create.
