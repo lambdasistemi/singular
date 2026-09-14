@@ -15,6 +15,10 @@ mutated.
 module Singular.Registry.Trie.PureManager (
     -- * Construction
     mkPureTrieManager,
+
+    -- * Carrying a mirror between runs
+    mkPureTrieManagerFrom,
+    dumpPureTries,
 ) where
 
 import Data.IORef (
@@ -43,18 +47,27 @@ import Singular.Registry.Trie.Pure (
 of per-token in-memory MPF databases.
 -}
 mkPureTrieManager :: IO (TrieManager IO)
-mkPureTrieManager = do
-    ref <-
-        newIORef
-            ( Map.empty ::
-                Map
-                    TokenId
-                    (IORef MPFInMemoryDB)
-            )
+mkPureTrieManager = fst <$> mkPureTrieManagerFrom Map.empty
+
+{- | A manager seeded with tries a previous run left behind, paired with
+the action that reads them back out.
+
+An in-memory trie dies with the process, which is right for a runner
+that boots its own registry. A runner attaching to a registry that
+outlives it needs the trie that registry already has: the proofs it
+builds are against the whole trie, not just the root the chain reports.
+This is the seam that lets one run hand that trie to the next.
+-}
+mkPureTrieManagerFrom ::
+    Map TokenId MPFInMemoryDB ->
+    IO (TrieManager IO, IO (Map TokenId MPFInMemoryDB))
+mkPureTrieManagerFrom initial = do
+    seeded <- traverse newIORef initial
+    ref <- newIORef seeded
     hiddenRef <-
         newIORef (Set.empty :: Set TokenId)
     pure
-        TrieManager
+        ( TrieManager
             { withTrie =
                 pureWithTrie ref hiddenRef
             , withSpeculativeTrie =
@@ -67,6 +80,16 @@ mkPureTrieManager = do
             , unhideTrie =
                 pureUnhideTrie hiddenRef
             }
+        , dumpPureTries ref
+        )
+
+{- | Read every trie the manager holds back out, so a run can hand what
+it built to the next one.
+-}
+dumpPureTries ::
+    IORef (Map TokenId (IORef MPFInMemoryDB)) ->
+    IO (Map TokenId MPFInMemoryDB)
+dumpPureTries ref = readIORef ref >>= traverse readIORef
 
 -- | Run an action with access to a token's trie.
 pureWithTrie ::
