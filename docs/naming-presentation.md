@@ -4,9 +4,9 @@ template: naming-presentation.html
 
 # A registry explained through naming
 
-As a Cardano developer, you can use this ten-slide presentation to see why
-Singular needs a registry: follow one name through registration, recovery and
-permanent retirement, with the rules and evidence in the speaker notes.
+As a Cardano developer, follow Alice as she claims a name, changes her payment
+address, recovers from key loss and retires the name. Ten visual user stories
+put the explanations and evidence in your speaker notes.
 
 ## Watch the presentation
 
@@ -15,24 +15,19 @@ permanent retirement, with the rules and evidence in the speaker notes.
 Click inside the slides and use the arrow keys or the navigation controls.
 The full-screen view also provides presenter mode with notes.
 
-## The boundary the naming app demonstrates
+## Follow Alice's story
 
 ```mermaid
 flowchart LR
-  subgraph Registry[Singular registry]
-    Root[Authenticated name map]
-  end
-  subgraph Application[Naming application]
-    Record[Application output<br/>representative NFT and naming datum]
-  end
-  Root -->|successful fold mints the representative into| Record
-  Controller[Controller] -->|maintains the destination in| Record
+  Claim[I want alice] --> Registered[My claim is registered]
+  Registered --> Wallet[New wallet, same name]
+  Wallet --> Recovery[Lost key, recovered control]
+  Recovery --> Retire[Retirement requested]
+  Retire --> Over[Retirement complete<br/>Nobody can reuse my name]
 ```
 
-The registry establishes uniqueness within its namespace. The application owns
-its state and authorization rules. Maintenance changes the application output
-while keeping the representative; retirement eventually burns it and leaves
-the name permanently occupied.
+Alice keeps her name through changes of wallet and controller. After completed
+retirement, that name stays occupied within the registry.
 
 ## The preprod demonstration
 

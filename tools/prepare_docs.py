@@ -92,7 +92,7 @@ shutil.copyfile(os.environ["MERMAID_JS"], assets / "mermaid.min.js")
 slides = stage / "presentations"
 (slides / "naming").mkdir(parents=True)
 deck = root / "presentations/naming.md"
-subprocess.run(["marp", "--no-config-file", str(deck), "-o", str(slides / "naming/index.html")], check=True)
+subprocess.run(["marp", "--no-config-file", "--html", str(deck), "-o", str(slides / "naming/index.html")], check=True)
 notes = re.findall(r"<!--\s*\n(.*?)\n-->", deck.read_text(), flags=re.S)
 if not notes:
     raise RuntimeError("the presentation has no speaker notes")

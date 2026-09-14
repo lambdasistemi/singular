@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "naming-presentation.md",
-    "sha256": "0bac8043eda8cff92762f2a953a5863f9b215d79a344b34f1851c4c94137d496"
+    "sha256": "05759688b4dffe7fe26aeee3302690b7f1a82f8c297be9e9fd803bee2c869877"
   },
   "watch-the-presentation": [
     {
@@ -9,9 +9,9 @@
       "pause": 500
     }
   ],
-  "the-boundary-the-naming-app-demonstrates": [
+  "follow-alices-story": [
     {
-      "text": "The diagram separates the Singular registry from the naming application. A successful fold updates the authenticated name map and mints the representative N F T into an application output. The controller maintains the payment destination there. The registry supplies uniqueness within its namespace; the application owns its state and authorization rules. Retirement burns the representative and leaves the name permanently occupied.",
+      "text": "Follow Alice as she claims her name and gets it registered. When she changes wallets, she updates the payment destination while keeping the name. If she loses her controller key, she can recover using the next controller committed beforehand. She or her fixed retirement quorum can initiate retirement. After completion, nobody can reuse that name within the same registry.",
       "pause": 500
     }
   ],
