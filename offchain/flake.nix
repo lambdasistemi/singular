@@ -304,6 +304,7 @@
       in
       {
         packages = {
+          naming-cli-options-tests = components.tests.naming-cli-options-tests;
           inherit singular-naming naming-cli-read-e2e;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
@@ -329,6 +330,10 @@
         checks = haskellChecks;
 
         apps = haskellApps // {
+          naming-cli-options-tests = {
+            type = "app";
+            program = pkgs.lib.getExe components.tests.naming-cli-options-tests;
+          };
           singular-naming = {
             type = "app";
             program = pkgs.lib.getExe singular-naming;
