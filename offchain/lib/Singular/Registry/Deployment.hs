@@ -25,13 +25,19 @@ Three operations:
   manifest and resolves the reference outputs, so a run uses them
   instead of creating its own.
 
-__What the manifest cannot carry.__ A fold proves a key against the
-registry's current root, and building that proof needs the whole trie,
-not just the root. A run that attaches therefore needs the trie as it
-stands on chain, and reconstructing it from chain history needs an
-indexer this release does not have. The trie is kept in a file beside
-the manifest instead ('mirrorPathFor'), written by each run and read by
-the next: local state, and the deployment's one non-chain dependency.
+__What the manifest cannot carry.__ Writing to a registry — folding a
+claim in — means proving the key against the registry's current trie,
+and that proof needs the whole trie, not the root the chain reports.
+Nothing on chain hands it over in one query, so a deployment carries it
+as a file beside the manifest ('mirrorPathFor'), written by each run
+and read by the next.
+
+That file is the deployment's one non-chain dependency: a second
+machine needs a copy of it to fold, though not to read — proving a name
+is alive needs the registry entry and the NFT, and no trie at all.
+Rebuilding the trie from the chain instead, by following the registry
+token from the bootstrap transaction and replaying each fold's request
+datums, is the next milestone's work.
 
 That file is a hazard, so it is checked rather than hoped away —
 'attach' refuses when the mirror's root and the chain's root disagree,

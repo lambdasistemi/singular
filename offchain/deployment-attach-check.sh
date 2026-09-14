@@ -19,15 +19,28 @@ mpfs="$(nix build --quiet --no-link --print-out-paths "$here/../onchain#plutus-b
 naming="$(nix build --quiet --no-link --print-out-paths "$here/../naming-onchain#plutus-blueprint")"
 export MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming"
 
+# Build everything first. A `nix run` that has to build spends minutes
+# before its program prints anything, and the socket wait below would
+# time out on the build rather than on the devnet.
+echo "attach-check: building the runners and tools"
+nix build --quiet --no-link "$here#devnet" "$here#deployment" \
+    "$here#register-rows" "$here#recovery-rows" "$here#retirement-rows"
+
 echo "attach-check: starting a devnet the deployment can outlive"
 nix run --quiet "$here#devnet" > "$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
-for _ in $(seq 1 120); do
+for _ in $(seq 1 300); do
     sock="$(head -n1 "$work/devnet.out" 2>/dev/null || true)"
     [ -n "$sock" ] && [ -S "$sock" ] && break
+    kill -0 "$devnet_pid" 2>/dev/null || break
     sleep 1
 done
-[ -n "${sock:-}" ] || { echo "attach-check: the devnet never printed a socket" >&2; exit 1; }
+if [ -z "${sock:-}" ] || [ ! -S "${sock:-}" ]; then
+    echo "attach-check: the devnet never printed a usable socket" >&2
+    echo "--- devnet stdout ---" >&2; cat "$work/devnet.out" >&2 || true
+    echo "--- devnet stderr ---" >&2; tail -40 "$work/devnet.err" >&2 || true
+    exit 1
+fi
 echo "attach-check: devnet socket $sock"
 
 # The devnet genesis key, in the file form a joiner supplies.
