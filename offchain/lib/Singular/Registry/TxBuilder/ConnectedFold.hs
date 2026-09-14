@@ -26,12 +26,13 @@ module Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
     ConnectedMint (..),
     ConnectedFoldArgs (..),
+    FoldBuildFailure (..),
     connectedFoldTx,
     syncFoldedRequests,
     generousUnits,
 ) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception (Exception, SomeException, throwIO, try)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock (getCurrentTime)
@@ -135,6 +136,13 @@ data ConnectedFoldArgs = ConnectedFoldArgs
     , cfaAdjustRoot :: Root -> Root
     }
 
+-- | A transaction refused by script evaluation or final ledger checks.
+-- Other builder and provider failures remain fatal to the caller.
+newtype FoldBuildFailure = FoldBuildFailure String
+    deriving stock (Show)
+
+instance Exception FoldBuildFailure
+
 -- | Build the connected fold transaction (unsigned), returning the
 -- computed new root the state continuation carries.
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
@@ -197,6 +205,8 @@ connectedFoldTx args = do
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
         Right tx -> pure (tx, newRoot)
+        Left err@Tx.EvalFailure{} -> throwIO (FoldBuildFailure (show err))
+        Left err@Tx.ChecksFailed{} -> throwIO (FoldBuildFailure (show err))
         Left err -> error ("connectedFold: build failed: " <> show err)
 
 -- | Generous per-purpose budget stated when local evaluation is
