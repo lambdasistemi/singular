@@ -51,7 +51,9 @@ module Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     currentTipSlot,
+    scriptStakeRegistered,
     awaitTx,
+    awaitTxId,
     confirmationDelay,
     withNode,
     withNodeMode,
@@ -79,6 +81,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word32)
 import System.Environment (getArgs, getEnvironment)
@@ -90,15 +93,17 @@ import Codec.Binary.Bech32 qualified as Bech32
 import Lens.Micro ((^.))
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..), SlotNo)
+import Cardano.Ledger.BaseTypes (Network (..), SlotNo, TxIx (..))
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
+import Cardano.Ledger.Hashes (ScriptHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
@@ -350,6 +355,10 @@ data NodeSession = NodeSession
     -- ^ Network the funding address is built for
     , nsPParams :: PParams ConwayEra
     -- ^ Protocol parameters queried from the running node
+    , nsTxInLive :: TxIn -> IO Bool
+    -- ^ Query an output by its exact transaction input reference
+    , nsScriptRegistered :: ScriptHash -> IO Bool
+    -- ^ Whether this script has a registered reward account, including zero balance
     , nsTipSlot :: IO SlotNo
     -- ^ Current chain tip queried from this session
     , nsMode :: NodeMode
@@ -408,6 +417,10 @@ withNodeMode mode k = case mode of
                             , nsMagic = magic
                             , nsNetwork = walletNetwork wallet
                             , nsPParams = pp
+                            , nsTxInLive = \i -> Map.member i <$> N2C.queryUTxOByTxIn (mkN2CProvider lsqCh) (Set.singleton i)
+                            , nsScriptRegistered = \h -> do
+                                let credential = ScriptHashObj h
+                                Map.member credential <$> N2C.queryStakeRewards (mkN2CProvider lsqCh) (Set.singleton credential)
                             , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot (mkN2CProvider lsqCh)
                             , nsMode = mode
                             }
@@ -425,6 +438,10 @@ session it names the error rather than guessing.
 openSession :: IORef (Maybe NodeSession)
 openSession = unsafePerformIO (newIORef Nothing)
 {-# NOINLINE openSession #-}
+
+-- | Registration is global to a script credential, shared by registries.
+scriptStakeRegistered :: ScriptHash -> IO Bool
+scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (\s -> nsScriptRegistered s h)
 
 -- | Read the live tip for a transaction built in the active session.
 currentTipSlot :: IO SlotNo
@@ -475,6 +492,20 @@ awaitTx tx = do
             else do
                 threadDelay (confirmationPollSeconds * 1_000_000)
                 go prov addr (n - 1)
+
+{- | Confirm a just-submitted transaction by observing output zero.
+Call before a dependent transaction spends that output. This supports
+journey helpers that retain a transaction id but not the complete body.
+-}
+awaitTxId :: String -> IO ()
+awaitTxId txid = do
+    raw <- either (const (die "awaitTxId: transaction id is not hex")) pure (B16.decode (BC.pack txid))
+    h <- maybe (die "awaitTxId: transaction id is not 32 bytes") pure (hashFromBytes raw)
+    sess <- readIORef openSession >>= maybe (die "awaitTxId called outside a node session") pure
+    let wanted = TxIn (TxId (unsafeMakeSafeHash h)) (TxIx 0)
+    awaitChain ("transaction " <> txid <> " output 0") $ do
+        live <- nsTxInLive sess wanted
+        pure (if live then Just () else Nothing)
 
 {- | Retry a chain observation until it yields, then return it; name
 what never appeared when it does not.

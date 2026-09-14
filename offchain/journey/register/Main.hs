@@ -181,9 +181,10 @@ import Singular.Registry.Ledger (
 import Singular.Registry.Node (
     NodeSession (..),
     currentTipSlot,
+    scriptStakeRegistered,
     awaitChain,
     awaitTx,
-    confirmationDelay,
+    awaitTxId,
     funderAddr,
     funderSignKey,
     withNode,
@@ -632,25 +633,33 @@ runMode mode namingPath registryPath = do
                     \registered when the deployment was made; a run that \
                     \attaches registers nothing"
             Nothing -> do
-                unsignedReg <- registerConsumerImpl cfg prov genesisAddr
-                let signedReg = addKeyWitness genesisSignKey unsignedReg
-                regResult <- submitRetainAt evDir evNext submit "consumer-registration" signedReg
-                case regResult of
-                    Submitted _ -> pure ()
-                    Rejected reason ->
-                        failWith ("consumer-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
-                emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+                consumerRegistered <- scriptStakeRegistered (pinScriptHash (SBS.fromShort (cfgConsumerPin cfg)))
+                if consumerRegistered
+                    then emit "consumer" "consumer stake credential already registered; reused"
+                    else do
+                        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+                        let signedReg = addKeyWitness genesisSignKey unsignedReg
+                        regResult <- submitRetainAt evDir evNext submit "consumer-registration" signedReg
+                        case regResult of
+                            Submitted _ -> pure ()
+                            Rejected reason ->
+                                failWith ("consumer-registration: rejected: " <> show reason)
+                        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
                 let stakingScript = scriptFromBytes "staking" stakingBytes
-                unsignedStakingReg <- registerScriptImpl prov genesisAddr (hashScript stakingScript)
-                let signedStakingReg = addKeyWitness genesisSignKey unsignedStakingReg
-                stakingRegResult <- submitRetainAt evDir evNext submit "staking-registration" signedStakingReg
-                case stakingRegResult of
-                    Submitted _ -> pure ()
-                    Rejected reason ->
-                        failWith ("staking-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedStakingReg <> " (staking-registration)")
-                emit "consumer" "staking stake credential registered for the swapped-hook control"
+                stakingRegistered <- scriptStakeRegistered (hashScript stakingScript)
+                if stakingRegistered
+                    then emit "consumer" "staking stake credential already registered; reused"
+                    else do
+                        unsignedStakingReg <- registerScriptImpl prov genesisAddr (hashScript stakingScript)
+                        let signedStakingReg = addKeyWitness genesisSignKey unsignedStakingReg
+                        stakingRegResult <- submitRetainAt evDir evNext submit "staking-registration" signedStakingReg
+                        case stakingRegResult of
+                            Submitted _ -> pure ()
+                            Rejected reason ->
+                                failWith ("staking-registration: rejected: " <> show reason)
+                        _ <- waitConfirmation (txIdHex signedStakingReg <> " (staking-registration)")
+                        emit "consumer" "staking stake credential registered for the swapped-hook control"
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
@@ -4062,7 +4071,7 @@ expectRefused mode env rowName modelReason guard signed = do
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay confirmationDelay
+    awaitTxId (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------

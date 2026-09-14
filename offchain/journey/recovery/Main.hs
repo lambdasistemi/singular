@@ -68,7 +68,6 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -159,7 +158,7 @@ import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
-    confirmationDelay,
+    awaitTxId,
     funderAddr,
     funderSignKey,
     withNode,
@@ -2014,7 +2013,7 @@ assertWitness env signed = do
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay confirmationDelay
+    awaitTxId (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------
