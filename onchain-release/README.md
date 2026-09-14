@@ -41,7 +41,7 @@ forever afterwards: re-registering it is refused, which is what
 | `onchain/script-identity.json`, `naming-onchain/script-identity.json` | the **pinned unapplied identities**: every validator's compiled hash and parameter count, plus the compiler string |
 | `offchain/` | the runnable journey and the row runners (`offchain/journey/`), their library, and the vendored fixtures module (`offchain/naming/src/Naming/Wire/Vectors.hs`) |
 | `fixtures/` | the contract fixtures — the vendored v0.2.0 wire vectors — with their provenance (`fixtures/README.md`) |
-| `RELEASE.md` | what this release is and is not — read it before relying on any of this |
+| `RELEASE.md` | an introduction to Singular and instructions for using the release archive |
 | `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
 | `verify-identities.sh` | the identity check of this archive, needing only `bash` and `jq` |
 | `SHA256SUMS` | the checksum manifest of every file in this archive |
@@ -201,7 +201,7 @@ same log against the retained bytes.
 
 ## Scope and limits
 
-Read `RELEASE.md`: this is the epic-17 delivery (connected claim,
+This archive carries the connected registry lifecycle (claim,
 recovery, retirement and permanent Over, plus all retained earlier
 rows); the row evidence is finite fixture execution on a devnet —
 not a statement about arbitrary transactions. Live-node assertions
