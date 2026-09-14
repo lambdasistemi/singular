@@ -26,14 +26,18 @@ module Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
     ConnectedMint (..),
     ConnectedFoldArgs (..),
+    FoldBuildFailure (..),
+    prepareRegistryFold,
     connectedFoldTx,
     syncFoldedRequests,
     generousUnits,
 ) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception (ErrorCall, Exception, displayException, throwIO, try)
+import Data.List (isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Ord (Down (..))
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Void (Void)
@@ -41,24 +45,28 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Alonzo.Plutus.Evaluate (TransactionScriptFailure (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
+    coinTxOutL,
     datumTxOutL,
     mkBasicTxOut,
     valueTxOutL,
  )
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (ToData (..))
 
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     ConwayEra,
@@ -85,8 +93,6 @@ import Singular.Registry.Types (
     UpdateRedeemer (..),
     stateConsumerPinBytes,
  )
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | A raw Plutus-data redeemer for attached (non-registry) purposes.
 newtype RawRedeemer = RawRedeemer PLC.Data
@@ -127,16 +133,68 @@ data ConnectedFoldArgs = ConnectedFoldArgs
     , cfaSigners :: [KeyHash Guard]
     , cfaRefUtxos :: [(TxIn, TxOut ConwayEra)]
     , cfaAttachScripts :: [Script ConwayEra]
-    -- | Skip local script evaluation, stating generous budgets instead,
-    -- so the LEDGER executes every purpose for real. Adversarial use
-    -- only: the duplicate fold must be refused on-chain (attributed to
-    -- the refusing script) rather than at local estimation.
     , cfaSkipEval :: Bool
+    {- ^ Skip local script evaluation, stating generous budgets instead,
+    so the LEDGER executes every purpose for real. Adversarial use
+    only: the duplicate fold must be refused on-chain (attributed to
+    the refusing script) rather than at local estimation.
+    -}
     , cfaAdjustRoot :: Root -> Root
     }
 
--- | Build the connected fold transaction (unsigned), returning the
--- computed new root the state continuation carries.
+{- | A transaction refused by script evaluation or final ledger checks.
+Other builder and provider failures remain fatal to the caller.
+-}
+newtype FoldBuildFailure = FoldBuildFailure String
+
+instance Show FoldBuildFailure where
+    show (FoldBuildFailure reason) = "connectedFold: build failed: " <> reason
+
+instance Exception FoldBuildFailure
+
+{- | Prepare a plain registry batch using current protocol parameters and
+funding. Applications add their spends, mints and outputs to this value.
+-}
+prepareRegistryFold ::
+    CageConfig ->
+    Provider IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    [(TxIn, TxOut ConwayEra)] ->
+    (TxIn, TxOut ConwayEra) ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ConnectedFoldArgs
+prepareRegistryFold cfg prov tm tok addr refs current batch = do
+    wallet <- queryUTxOs prov addr
+    fee <- case sortOn (Down . (^. coinTxOutL) . snd) wallet of
+        [] -> fail "fold-all: funding wallet has no UTxOs"
+        x : _ -> pure x
+    pp <- queryProtocolParams prov
+    pure
+        ConnectedFoldArgs
+            { cfaCfg = cfg
+            , cfaProvider = prov
+            , cfaTrie = tm
+            , cfaToken = tok
+            , cfaFeeAddr = addr
+            , cfaStateUtxo = current
+            , cfaReqUtxos = batch
+            , cfaFeeUtxo = fee
+            , cfaPp = pp
+            , cfaSpends = []
+            , cfaMints = []
+            , cfaOutputs = []
+            , cfaSigners = []
+            , cfaRefUtxos = refs
+            , cfaAttachScripts = []
+            , cfaSkipEval = False
+            , cfaAdjustRoot = id
+            }
+
+{- | Build the connected fold transaction (unsigned), returning the
+computed new root the state continuation carries.
+-}
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
 connectedFoldTx args = do
     let cfg = cfaCfg args
@@ -160,13 +218,13 @@ connectedFoldTx args = do
                 pure (Map.map (const (Right generousUnits)) rdmrs)
             | otherwise = \tx -> do
                 r <- evaluateTx prov tx
-                pure $
-                    Map.map
-                        ( \case
-                            Left e -> Left (show e)
-                            Right eu -> Right eu
-                        )
-                        r
+                traverse
+                    ( \case
+                        Left e@ContextError{} -> fail ("connectedFold: evaluation context: " <> show e)
+                        Left e -> pure (Left (show e))
+                        Right eu -> pure (Right eu)
+                    )
+                    r
         prog =
             buildProgram
                 cfg
@@ -197,20 +255,23 @@ connectedFoldTx args = do
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
         Right tx -> pure (tx, newRoot)
+        Left err@Tx.EvalFailure{} -> throwIO (FoldBuildFailure (show err))
+        Left err@Tx.ChecksFailed{} -> throwIO (FoldBuildFailure (show err))
         Left err -> error ("connectedFold: build failed: " <> show err)
 
--- | Generous per-purpose budget stated when local evaluation is
--- skipped (adversarial path only); the ledger re-executes for real.
--- Sized 2026-09-13 from MEASURED minima (NOTE-023): the crosswired
--- exhibit tx overspent 3M mem (needed 5.39M+ and counting — the error
--- reports the next step only, not completion) and 200M cpu (needed
--- 200.05M+); the honest consumer measures 295M cpu on tiny Aiken
--- fixtures; the full-fold app script likewise exceeds 3M/200M (double
--- budget failure on the same tx). 14M mem / 1B steps per purpose sits
--- at 10% of this devnet's tx limits (140M mem / 10B steps) with ~3x
--- headroom over every measured minimum; stated fees (~0.9 ADA/purpose)
--- stay covered by folder funding (balance fails loudly otherwise).
--- Revisit if ledgers tighten limits or scripts grow.
+{- | Generous per-purpose budget stated when local evaluation is
+skipped (adversarial path only); the ledger re-executes for real.
+Sized 2026-09-13 from MEASURED minima (NOTE-023): the crosswired
+exhibit tx overspent 3M mem (needed 5.39M+ and counting — the error
+reports the next step only, not completion) and 200M cpu (needed
+200.05M+); the honest consumer measures 295M cpu on tiny Aiken
+fixtures; the full-fold app script likewise exceeds 3M/200M (double
+budget failure on the same tx). 14M mem / 1B steps per purpose sits
+at 10% of this devnet's tx limits (140M mem / 10B steps) with ~3x
+headroom over every measured minimum; stated fees (~0.9 ADA/purpose)
+stay covered by folder funding (balance fails loudly otherwise).
+Revisit if ledgers tighten limits or scripts grow.
+-}
 generousUnits :: ExUnits
 generousUnits = ExUnits 14_000_000 1_000_000_000
 
@@ -290,23 +351,32 @@ computeUpperSlot prov oldState reqUtxos = do
                 map
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
-    mUpperSlot <-
-        try (posixMsToSlot prov earliestDeadline) :: IO (Either SomeException SlotNo)
-    case mUpperSlot of
-        Right s -> pure s
-        Left _ -> do
-            nowUtc <- getCurrentTime
-            let posixSec = utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
-                map
-                    (\d -> round ((posixSec + d) * 1000))
-                    [30, 5, 2]
+    nowUtc <- getCurrentTime
+    let posixSec = utcTimeToPOSIXSeconds nowUtc
+    choose $
+        earliestDeadline
+            : [ min earliestDeadline (round ((posixSec + d) * 1000))
+              | d <- [30, 5, 2]
+              ]
+  where
+    -- Ceil can turn an interpretable time into the exclusive horizon-end
+    -- slot, which evaluation cannot translate. Floor stays inside the
+    -- forecast and never extends a request's processing deadline.
+    choose [] = fail "connectedFold: all validity bounds past horizon"
+    choose (ms : rest) = do
+        result <- try @ErrorCall (posixMsToSlot prov ms)
+        case result of
+            Right slot -> pure slot
+            Left err
+                | "PastHorizon" `isInfixOf` displayException err -> choose rest
+                | otherwise -> throwIO err
 
--- | The TxBuild program: registry spends, attached spends and mints,
--- outputs, witnesses. Processed requests lock into the state output
--- (see `prepareState`); no refund outputs are emitted here because
--- connected folds only ever process (`Update`); rejected rows are built
--- by the reject path with `computeRefund`. No owner signature.
+{- | The TxBuild program: registry spends, attached spends and mints,
+outputs, witnesses. Processed requests lock into the state output
+(see `prepareState`); no refund outputs are emitted here because
+connected folds only ever process (`Update`); rejected rows are built
+by the reject path with `computeRefund`. No owner signature.
+-}
 buildProgram ::
     CageConfig ->
     TxIn ->
@@ -390,9 +460,11 @@ buildProgram
         mapM_ Tx.requireSignature extraSigners
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
--- | Replay accepted fold inputs into the manager's persistent trie so
--- later proof computations start from the chain's root. Call only with
--- inputs the ledger accepted, in fold order.
+
+{- | Replay accepted fold inputs into the manager's persistent trie so
+later proof computations start from the chain's root. Call only with
+inputs the ledger accepted, in fold order.
+-}
 syncFoldedRequests ::
     TrieManager IO ->
     TokenId ->

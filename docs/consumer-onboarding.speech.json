@@ -197,6 +197,12 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "5102f9fb1ad909aa7607a8d4fade7816538bd49c25d6d459052791d08d5d2f90"
-  }
+    "sha256": "13049a201d933ad4ffe79a519476ac8578448eb2cd3e8a3729f02b05f4787a20"
+  },
+  "run-the-folder": [
+    {
+      "text": "As a folder, you can let the node determine how many requests fit in each transaction. The registry journey uses fold all on a private devnet. Each attempt reports its batch size and outcome. Refused batches are halved; confirmed batches update the mirror before fresh proofs are computed against the chain root. A request refused alone is reported and skipped for the rest of the invocation, and stays on chain. A stale proof mirror stops the run. The folder runbook describes the library interface and the real node test that drains multiple batches.",
+      "pause": 500
+    }
+  ]
 }

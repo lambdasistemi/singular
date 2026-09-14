@@ -45,9 +45,9 @@ this document.
    proof, folds it to the root it implies, and compares that root
    against the root read back from the chain's state datum. Prints
    `proved absent` with the matched root; any mismatch fails the run.
-5. **apply.** Acts as the oracle: builds the update with
-   `updateTokenImpl` (proof from the trie manager), signs, submits,
-   and observes the request UTxO being consumed.
+5. **apply.** Runs `foldAll`, which builds and evaluates the batch,
+   signs, submits, confirms and updates the proof mirror. The request
+   UTxO must be consumed.
 6. **derived-applied-identity.** Ties the two identity layers
    together. First requires each pinned unapplied hash to equal the
    hash of the blueprint's raw code this run actually loaded. Then
@@ -77,9 +77,9 @@ this document.
 9. **negative section — the validators must refuse.** These are
    **registry** negative cases, exercised against a real devnet in
    the same run; no Singular naming behaviour is involved. A second,
-   unapplied insert request is submitted (`reject-request`), the
-   applied insert is replayed into the trie manager so its proofs
-   stand on the root the chain actually has, and the valid oracle
+   unapplied insert request is submitted (`reject-request`). The
+   mirror already reflects the confirmed fold, so its proofs stand
+   on the root the chain actually has, and the valid oracle
    update is built but never submitted. Four single-defect mutants
    of it are derived and each must be refused by the node for the
    matched reason (a phase-2 `PlutusFailure` naming the expected
@@ -158,3 +158,74 @@ the run fails.
   the same builders and a real node.
 - It does not touch the onchain tree: the blueprint and the identity
   manifest are read at run time.
+
+## Run the folder
+
+As a folder, you can process the requests a registry has accumulated without
+choosing a fixed transaction limit. The journey uses `foldAll` to drain its
+registry; the node decides which batch fits. From `offchain/`:
+
+```sh
+blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+```
+
+Each attempt reports `size`, `outcome` and a transaction identity when one has
+been built. A refusal halves the batch. A confirmed batch sets the size for the
+next attempt. A request refused alone is reported with its reason, left on
+chain and skipped for the rest of this invocation.
+
+```mermaid
+flowchart TD
+    Q[Read pending requests and confirmed root] -->|Mirror agrees| B[Build and evaluate a batch]
+    B -->|Fits| S[Submit and confirm]
+    B -->|Refused| H{More than one request?}
+    H -->|Yes| R[Halve the batch]
+    R -->|Fresh proofs| B
+    H -->|No| K[Report and skip this input]
+    K -->|Continue| Q
+    S -->|Replay confirmed inputs into mirror| Q
+    Q -->|No unskipped requests| E[Return transactions and refusals]
+```
+
+Integrators call `Singular.Registry.FoldAll.foldAll` with a provider, the
+registry's proof mirror, a signing function and a submitter. `prepareFold`
+supplies the application actions for exactly the selected requests;
+`prepareRegistryFold` prepares the plain registry portion with fresh funding
+and protocol parameters. Naming applications retain their attached claim
+spends, representative mints and outputs. `persistFold` saves the mirror after
+each confirmation. A missing or stale mirror stops the run before more proofs
+are built; connection, funding and confirmation failures also stop the run.
+
+The real-node batching test is:
+
+```sh
+nix develop --quiet -c just fold-all-test
+```
+
+It creates varied-size requests that exceed one transaction's limits and one
+poisoned request. It checks multiple confirmed batches, one skipped poison,
+and the chain root against the mirror after each batch. The ordinary journey
+creates a private devnet registry; attaching the folder to the shared preprod
+deployment requires the deployed manifest and its matching proof mirror.
+
+The naming registration runner also uses `foldAll` for its successful
+folds, supplying the existing naming claim, approval burn and representative
+mint for each selected request. Attach it to the published deployment from
+`offchain/`:
+
+```sh
+export REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+export NAMING_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+nix run .#register-rows -- --node-socket /path/to/node.socket \
+  --network-magic 1 --wallet-skey /path/to/joiner.skey \
+  --deployment /path/to/preprod.json --fold-only --spelling new-name
+```
+
+The adjacent mirror is loaded through the deployment interface and saved
+after every confirmed batch. `--fold-only` registers the supplied name and
+drains through the folder without running the full journey's fixed fixtures.
+Choose a name that is not already registered. This runner demonstrates its own registration
+claims; applications draining other naming claims must supply their matching
+attached actions through `prepareFold`. Run against a shared registry only
+in its coordinated writing window.

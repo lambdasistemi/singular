@@ -77,3 +77,13 @@ vectors-check:
         echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
         exit 1
     fi
+
+# Real-node adaptive batching and singleton rejection.
+fold-all-test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    task_tmp="$(mktemp -d /tmp/s104.XXXXXX)"
+    trap 'rm -rf "$task_tmp"' EXIT
+    export TMPDIR="$task_tmp"
+    blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+    REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match 'Adaptive folder'
