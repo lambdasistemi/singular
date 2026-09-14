@@ -148,6 +148,23 @@ control through the committed next controller, retire it into completion-only
 custody, and complete the retirement permissionlessly so the name reads Over
 and can never be claimed again.
 
+## Run the folder
+
+As a folder, you can let the node determine how many pending requests fit in
+each transaction. The registry journey uses `foldAll`; to try it on a private
+devnet, with the registry blueprint exported as above, run from `offchain/`:
+
+```sh
+nix run .#journey
+```
+
+The folder reports each batch size, refusal or confirmation, and transaction
+identifier. It halves refused batches and recomputes proofs against the root
+read back after each confirmation. A request that fails alone is reported and
+skipped for that invocation; it remains on chain. A stale proof mirror stops
+the run. See the [folder runbook](https://github.com/lambdasistemi/singular/blob/main/offchain/journey/README.md#run-the-folder)
+for the library interface and the real-node multi-batch test.
+
 ## What a run looks like
 
 Each runner narrates what it did and what it then observed on chain. The first

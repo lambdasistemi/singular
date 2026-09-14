@@ -8,7 +8,7 @@ License     : Apache-2.0
 module Singular.Registry.E2E.FoldAllSpec (spec) where
 
 import Control.Exception (try)
-import Control.Monad (forM_, unless, when)
+import Control.Monad (forM_, unless)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -89,14 +89,17 @@ spec = describe "Adaptive folder" $
                 putStrLn ("all-good-batch-refused: " <> refusal)
                 refusal `shouldSatisfy` (\r -> any (`isInfixOf` r) ["MaxTxSize", "TxSize", "ExUnits", "Budget", "budget"])
                 control <- lookupEnv "FOLD_ALL_CONTROL"
-                when (control == Just "single-batch") $
-                    fail ("single-batch control cannot drain: " <> refusal)
                 poison <- submitInsertRequest cfg prov submit tok "occupied" "poison"
-                result <- foldAll args
-                map fst (skippedRequests result) `shouldBe` [poison]
-                length (foldedTransactions result) `shouldSatisfy` (> 1)
+                -- The control keeps only the refused all-good attempt above.
+                -- The same chain-read drain assertion must detect no retry loop.
+                result <-
+                    if control == Just "single-batch"
+                        then pure (FoldResult [] [])
+                        else foldAll args
                 rest <- pending
                 map fst rest `shouldBe` [poison]
+                map fst (skippedRequests result) `shouldBe` [poison]
+                length (foldedTransactions result) `shouldSatisfy` (> 1)
                 es <- reverse <$> readIORef events
                 length [() | Skipped i _ <- es, i == poison] `shouldBe` 1
                 unless (any (\case Refused is _ -> length is > 1; _ -> False) es) $

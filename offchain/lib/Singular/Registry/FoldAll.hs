@@ -13,13 +13,17 @@ module Singular.Registry.FoldAll (
 
 import Control.Exception (throwIO, try)
 import Control.Monad (unless)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.List (sortOn)
 import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 
+import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Api.Tx (txIdTx)
 import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.Hashes (extractHash)
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -65,10 +69,16 @@ renderFoldEvent :: FoldEvent -> String
 renderFoldEvent event =
     "fold-all: " <> case event of
         Trying is -> "size=" <> show (length is) <> " outcome=trying tx=none"
-        Refused is reason -> "size=" <> show (length is) <> " outcome=refused " <> reason
+        Refused is reason -> "size=" <> show (length is) <> " outcome=refused " <> compact reason
         Confirmed is txid root ->
-            "size=" <> show (length is) <> " outcome=confirmed tx=" <> txid <> " root=" <> show root
-        Skipped i reason -> "size=1 outcome=skipped input=" <> show i <> " reason=" <> reason
+            "size=" <> show (length is) <> " outcome=confirmed tx=" <> txid <> " root=" <> BC.unpack (B16.encode (unRoot root))
+        Skipped i reason -> "size=1 outcome=skipped input=" <> show i <> " reason=" <> compact reason
+  where
+    -- Evaluation failures can embed an entire script and transaction context.
+    -- Callers retain the original reason in the event and FoldResult.
+    compact reason
+        | length reason > 1000 = take 1000 reason <> " [truncated; full reason in FoldEvent/FoldResult]"
+        | otherwise = reason
 
 -- | The confirmed transactions and singleton refusals, in processing order.
 data FoldResult = FoldResult
@@ -164,9 +174,11 @@ foldAll args = go Nothing Nothing Set.empty [] []
                     Right (unsigned, expectedRoot) -> do
                         let signed = signFold args unsigned
                             txid = txIdTx signed
+                            TxId h = txid
+                            identity = BC.unpack (B16.encode (hashToBytes (extractHash h)))
                         result <- submitTx (foldSubmitter args) signed
                         case result of
-                            Rejected reason -> refuse ("tx=" <> show txid <> " reason=" <> show reason)
+                            Rejected reason -> refuse ("tx=" <> identity <> " reason=" <> show reason)
                             Submitted _ -> do
                                 confirmed <- awaitChain ("fold-all: confirmation " <> show txid) $ do
                                     us <- queryUTxOs prov stateAddr
@@ -180,5 +192,5 @@ foldAll args = go Nothing Nothing Set.empty [] []
                                 syncFoldedRequests tm tok batch
                                 checkRoot confirmed
                                 persistFold args
-                                emit (Confirmed inputs (show txid) actualRoot)
+                                emit (Confirmed inputs identity actualRoot)
                                 go (Just (length batch)) Nothing skipped (signed : txs) failures
