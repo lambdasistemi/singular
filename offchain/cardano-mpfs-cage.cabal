@@ -50,18 +50,22 @@ library
     , cardano-tx-tools:tx-build
     , containers             >=0.6  && <0.8
     , crypton
+    , directory
+    , filepath
     , memory
     , microlens
     , mts:mpf-write
     , plutus-core
     , plutus-ledger-api
     , plutus-tx
+    , process
     , text                   >=2.0  && <2.2
     , time
 
   exposed-modules:
     Cardano.MPFS.Cage.AssetName
     Cardano.MPFS.Cage.Blueprint
+    Cardano.MPFS.Cage.Candidate
     Cardano.MPFS.Cage.Config
     Cardano.MPFS.Cage.Ledger
     Cardano.MPFS.Cage.Proof
@@ -327,7 +331,6 @@ executable register-rows
     , directory
     , filepath
     , memory
-    , process
     , microlens
     , plutus-core
     , text
@@ -477,6 +480,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Cardano.MPFS.Cage.CandidateSpec
     Cardano.MPFS.Cage.FailureMatchSpec
     Cardano.MPFS.Cage.TypesSpec
     Naming.CompleteVerifySpec
@@ -487,6 +491,8 @@ test-suite cage-tests
     , base16-bytestring
     , bytestring
     , cardano-mpfs-cage
+    , directory
+    , filepath
     , hspec
     , plutus-core
     , plutus-tx

@@ -128,6 +128,7 @@ if onchain_present:
         for required in (
         "README.md",
         "RELEASE.md",
+        "RELEASE-COMMIT",
         "SHA256SUMS",
         "verify-identities.sh",
         "onchain/plutus.json",

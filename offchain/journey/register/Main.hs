@@ -117,7 +117,6 @@ import System.Directory (createDirectoryIfMissing)
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.FilePath ((</>))
-import System.Process (readProcess)
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -169,6 +168,7 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
+import Cardano.MPFS.Cage.Candidate (resolveCandidate, sourceName)
 import Cardano.MPFS.Cage.Config (CageConfig (..))
 import Cardano.MPFS.Cage.Ledger (
     AssetName (..),
@@ -546,8 +546,8 @@ runMode mode namingPath mpfsPath = do
         evDir <- evidenceDirFromEnv
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
-        (candidate, worktreeDirty) <- candidateFromRepo
-        writeEvidenceMeta evDir candidate worktreeDirty namingPath mpfsPath appHex repAppliedHex appliedStateHex
+        (candidate, worktreeDirty, source) <- either failWith pure =<< resolveCandidate
+        writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath mpfsPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <-
             bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
         -- Consumer + staking stake registrations (NOTE-020 items 2-4),
@@ -3984,13 +3984,14 @@ evidenceDirFromEnv = do
             pure (tmpdir ++ "/register-evidence")
 
 writeEvidenceMeta ::
-    FilePath -> String -> Bool -> FilePath -> FilePath -> String -> String -> String -> IO ()
-writeEvidenceMeta evDir candidate dirty namingBp mpfsBp appH repH stateH =
+    FilePath -> String -> Bool -> String -> FilePath -> FilePath -> String -> String -> String -> IO ()
+writeEvidenceMeta evDir candidate dirty candidateSource namingBp mpfsBp appH repH stateH =
     BSL.writeFile
         (evDir </> "meta.json")
         ( Aeson.encode $
             object
                 [ "candidate" .= candidate
+                , "candidateSource" .= candidateSource
                 , "worktreeDirty" .= dirty
                 , "namingBlueprint" .= namingBp
                 , "mpfsBlueprint" .= mpfsBp
@@ -3999,22 +4000,6 @@ writeEvidenceMeta evDir candidate dirty namingBp mpfsBp appH repH stateH =
                 , "stateScriptHash" .= stateH
                 ]
         )
-
--- | Candidate revision, derived not told: an explicit override wins for
--- smoke runs, else the invocation repository's HEAD. A revision that
--- cannot be established fails the run closed — never "unknown".
-candidateFromRepo :: IO (String, Bool)
-candidateFromRepo = do
-    override <- lookupEnv "CANDIDATE_SHA"
-    headOut <- try (readProcess "git" ["rev-parse", "HEAD"] "") :: IO (Either SomeException String)
-    statusOut <- try (readProcess "git" ["status", "--porcelain"] "") :: IO (Either SomeException String)
-    let dirty = case statusOut of
-            Right status -> not (null (filter (/= '\n') status))
-            Left _ -> True
-    case (override, headOut) of
-        (Just sha, _) -> pure (sha, dirty)
-        (Nothing, Right sha) -> pure (filter (/= '\n') sha, dirty)
-        (Nothing, Left err) -> failWith ("candidate: cannot establish repository revision: " <> displayException err)
 
 -- | Retain the signed transaction bytes. Returns the tag.
 retainTxAt :: FilePath -> IORef Int -> String -> ConwayTx -> IO String

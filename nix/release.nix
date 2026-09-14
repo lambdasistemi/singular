@@ -3,6 +3,14 @@ let
   version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
   python = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
 
+  # Issue #91: the candidate revision the on-chain archive publishes as
+  # its RELEASE-COMMIT file (the archive is not a git checkout, so the
+  # runners could not otherwise establish their candidate). The
+  # pipeline's TAG_COMMIT (github.sha) wins at run time; a local build
+  # falls back to the flake's own revision; a tree with no git identity
+  # says so instead of inventing one.
+  releaseCommit = src.rev or (src.dirtyRev or "unknown-dirty");
+
   # NOTE-001 (t57-release): the root flake never crosses a flake boundary at
   # eval time — no builtins.getFlake, no path inputs, no lock edit. The two
   # compiled blueprints the on-chain release carries are built as their own
@@ -29,6 +37,11 @@ let
       cd "$root"
       mpfs_bp="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
       naming_bp="$(nix build --quiet --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
+      # Issue #91: the archive carries the commit it publishes (see
+      # releaseCommit above); assemble_onchain_release.py writes it into
+      # the archive root as RELEASE-COMMIT.
+      RELEASE_COMMIT="''${TAG_COMMIT:-${releaseCommit}}"
+      export RELEASE_COMMIT
       python3 "$root/tools/assemble_onchain_release.py" \
         "$root" "$docs" "$mpfs_bp" "$naming_bp" "$out"
       # The full release check — version agreement, archive members, both
