@@ -15,34 +15,36 @@ style: |
 
 <div class="eyebrow">WHY CARDANO-KERI NEEDS A REGISTRY</div>
 
-# While developing cardano-keri, I found that two features<br>depend on a registry that proves uniqueness.
+# Use KERI identities on Cardano<br>by reading their current keys through CIP-31.
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 460" role="img" aria-label="The two reasons for uniqueness: authorize payments against one live key record, and prevent a convicted identity from registering again." style="font-family:Arial,sans-serif"><title>Payment authorization and permanent conviction need uniqueness</title><rect x="45" y="65" width="470" height="282" rx="24" fill="white"/><rect x="605" y="65" width="470" height="282" rx="24" fill="white"/><text x="280" y="119" font-size="30" fill="#182f3b" text-anchor="middle">Authorize payments</text><circle cx="258" cy="185" r="18" fill="none" stroke="#087f78" stroke-width="7"/><path d="M276 185 H327 V201 M310 185 V201" fill="none" stroke="#087f78" stroke-width="7"/><text x="280" y="267" font-size="25" fill="#087f78" text-anchor="middle">One identity, one live record</text><text x="280" y="312" font-size="23" fill="#647780" text-anchor="middle">Know which keys to check</text><text x="840" y="119" font-size="30" fill="#182f3b" text-anchor="middle">Keep convictions final</text><circle cx="840" cy="185" r="27" fill="#f5e1d9"/><path d="M830 175 L850 195 M850 175 L830 195" stroke="#b54c3a" stroke-width="5"/><text x="840" y="267" font-size="25" fill="#087f78" text-anchor="middle">Same identity, no clean slate</text><text x="840" y="312" font-size="23" fill="#647780" text-anchor="middle">No fresh registration</text><text x="560" y="407" font-size="25" fill="#087f78" text-anchor="middle">One identity · One permanent registry entry</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 460" role="img" aria-label="A Cardano contract reads the unique current-key UTxO for an active KERI AID through CIP-31. Once duplicity is proved on Cardano, that AID must never authorize again." style="font-family:Arial,sans-serif"><title>Unique current-key reference and permanent rejection after duplicity</title><rect x="45" y="65" width="470" height="282" rx="20" fill="white"/><rect x="605" y="65" width="470" height="282" rx="20" fill="white"/><text x="280" y="116" font-size="27" fill="#182f3b" text-anchor="middle">One active AID, one key UTxO</text><rect x="74" y="168" width="180" height="75" rx="20" fill="#dceee7"/><text x="164" y="201" font-size="21" fill="#087f78" text-anchor="middle">Cardano</text><text x="164" y="226" font-size="21" fill="#087f78" text-anchor="middle">contract</text><rect x="340" y="168" width="147" height="75" rx="20" fill="#dceee7"/><text x="413" y="201" font-size="21" fill="#087f78" text-anchor="middle">Current</text><text x="413" y="226" font-size="21" fill="#087f78" text-anchor="middle">keys</text><path d="M268 205 H324 M313 197 L325 205 L313 213" fill="none" stroke="#087f78" stroke-width="4"/><text x="296" y="183" font-size="18" fill="#087f78" text-anchor="middle">reads</text><text x="280" y="304" font-size="24" fill="#647780" text-anchor="middle">No competing key records</text><text x="840" y="116" font-size="26" fill="#182f3b" text-anchor="middle">Convicted AID: never usable again</text><circle cx="840" cy="195" r="28" fill="#f5e1d9"/><path d="M830 185 L850 205 M850 185 L830 205" stroke="#b54c3a" stroke-width="5"/><text x="840" y="264" font-size="24" fill="#087f78" text-anchor="middle">Duplicity proved on Cardano</text><text x="840" y="304" font-size="23" fill="#647780" text-anchor="middle">No recovery or re-registration</text><text x="560" y="407" font-size="27" fill="#087f78" text-anchor="middle">Uniqueness now · Conviction forever</text></svg>
 
 <!--
-Start with payments. A contract must know which key record to trust.
+Read the current keys through a CIP 31 reference input.
 
-Without uniqueness, old keys can create a rival record.
+Require one authoritative key UTxO for each active AID.
 
-Then explain conviction. The same identity must not escape its conviction by registering again.
+When duplicity is proved on Cardano, reject that AID permanently.
 
-These are the two reasons I needed a registry.
+Conflicting histories can both carry valid signatures. The same AID must not recover or register again.
 -->
 
 ---
 
 <div class="eyebrow">WHY I AM PRESENTING NAMING</div>
 
-# I use naming to demonstrate the registry.<br>cardano-keri needs a presentation of its own.
+# cardano-keri is complex. Today, focus on the registry.<br>Show its flexibility through a familiar naming application.
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 460" role="img" aria-label="Naming is the simpler surrogate application used in this presentation. Cardano-keri adds key-event histories, witnesses and conflict evidence and belongs in a separate presentation." style="font-family:Arial,sans-serif"><title>Naming is the simpler surrogate application used in this presentation. Cardano-keri adds key-event histories, witnesses and conflict evidence and belongs in a separate presentation.</title><rect x="27" y="63" width="510" height="296" rx="22" fill="#ffffff" stroke="none" stroke-width="2"/><text x="282" y="114" font-size="34" fill="#182f3b" font-weight="700" text-anchor="middle">cardano-keri</text><text x="282" y="180" font-size="25" fill="#647780" font-weight="400" text-anchor="middle">Key-event histories</text><text x="282" y="225" font-size="24" fill="#647780" font-weight="400" text-anchor="middle">Witnesses · Conflict evidence</text><rect x="107" y="288" width="350" height="44" rx="22" fill="#edf0ee" stroke="none" stroke-width="2"/><text x="282" y="318" font-size="20" fill="#647780" font-weight="600" text-anchor="middle">A separate presentation</text><rect x="579" y="63" width="510" height="296" rx="22" fill="#dceee7" stroke="none" stroke-width="2"/><text x="834" y="114" font-size="26" fill="#182f3b" font-weight="700" text-anchor="middle">The naming application</text><text x="834" y="180" font-size="27" fill="#087f78" font-weight="600" text-anchor="middle">A name · A key</text><text x="834" y="225" font-size="27" fill="#087f78" font-weight="600" text-anchor="middle">A payment address</text><rect x="659" y="288" width="350" height="44" rx="22" fill="#ffffff" stroke="none" stroke-width="2"/><text x="834" y="318" font-size="20" fill="#087f78" font-weight="600" text-anchor="middle">The surrogate application</text><text x="560" y="418" font-size="27" fill="#087f78" font-weight="600" text-anchor="middle">Today: claim → update → recover → retire</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 460" role="img" aria-label="This talk isolates the registry from cardano-keri complexity. A naming application uses the familiar ADA Handle idea of a name for a payment address and demonstrates pluggable recovery and retirement rules. It is not an ADA Handle replacement." style="font-family:Arial,sans-serif"><title>A familiar naming application demonstrates a pluggable registry</title><rect x="20" y="62" width="490" height="286" rx="22" fill="white"/><text x="265" y="114" font-size="33" fill="#182f3b" text-anchor="middle">cardano-keri</text><text x="265" y="170" font-size="24" fill="#647780" text-anchor="middle">Key histories · Witnesses</text><text x="265" y="210" font-size="22" fill="#647780" text-anchor="middle">A separate presentation</text><rect x="60" y="252" width="410" height="65" rx="22" fill="#dceee7"/><text x="265" y="293" font-size="30" fill="#087f78" text-anchor="middle">The registry</text><path d="M526 284 H604 M591 275 L605 284 L591 293" fill="none" stroke="#087f78" stroke-width="4"/><rect x="622" y="62" width="478" height="286" rx="22" fill="#dceee7"/><text x="861" y="114" font-size="27" fill="#182f3b" text-anchor="middle">A handle-style application</text><text x="861" y="173" font-size="26" fill="#087f78" text-anchor="middle">name → payment address</text><text x="861" y="229" font-size="21" fill="#647780" text-anchor="middle">Our chosen rules</text><text x="861" y="274" font-size="26" fill="#087f78" text-anchor="middle">Recovery · Retirement</text><text x="861" y="319" font-size="20" fill="#087f78" text-anchor="middle">Different rules, same registry</text><text x="560" y="409" font-size="25" fill="#087f78" text-anchor="middle">Inspired by ADA Handle. Not a replacement for it.</text></svg>
 
 <!--
-Keep KERI for another talk. Its event history, witnesses and conflict rules would distract from the registry.
+Leave KERI's complexity for another presentation.
 
-Use naming to show the same need through something familiar.
+Show the registry through a familiar idea: a name pointing to a payment address, like ADA Handle.
 
-Follow one name from registration to permanent retirement.
+Add our chosen recovery and retirement rules to demonstrate pluggable applications.
+
+This is a demonstration, not a replacement for ADA Handle.
 -->
 
 ---

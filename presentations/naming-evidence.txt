@@ -11,7 +11,9 @@ https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e962
 https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e96210976d5a327/docs/design/trust-model.md
 https://github.com/lambdasistemi/cardano-keri/blob/8021ff9588bb4609dab215556e96210976d5a327/lean/CardanoKeri/RegistryGoals.lean
 
-The consumer needs a unique checkpoint to consult, while duplicate registration lets a holder of past keys create a rival record. Registry uniqueness does not guarantee freshness of unsubmitted KERI events. R2_one_ckpt_per_aid and R1_registered_refused state model uniqueness and repeat-registration refusal. R3_convicted_permanent and R3_convicted_never_registered state the consumer model's terminal-conviction policy. These motivate integration; they are not a completed Singular-to-KERI conformance claim. Source inspection only, no new model or ledger execution.
+The consumer reads the checkpoint UTxO carrying the current keys via a CIP-31 reference input; it does not spend that checkpoint or consult the registry during authorization. It needs a unique checkpoint to consult, while duplicate registration lets a holder of past keys create a rival record. Registry uniqueness does not guarantee freshness of unsubmitted KERI events. R2_one_ckpt_per_aid and R1_registered_refused state model uniqueness and repeat-registration refusal. R3_convicted_permanent and R3_convicted_never_registered state the consumer model's terminal-conviction policy. These motivate integration; they are not a completed Singular-to-KERI conformance claim. Source inspection only, no new model or ledger execution.
+
+A conviction here means proven duplicity on Cardano: incompatible witnessed histories for the same AID. Valid signatures can occur on those conflicting histories; this is a failure of unambiguous authority, not a break of the signature algorithm. This project chooses permanent refusal of the convicted AID, including refusal of a fresh registration. KERI leaves the trust decision to its validators; the slide states cardano-keri’s selected policy, not a universal rule that every KERI validator must adopt.
 
 Uniqueness is within an authenticated deployment, not a ban on rival registries or different identities.
 
@@ -19,9 +21,11 @@ Uniqueness is within an authenticated deployment, not a ban on rival registries 
 
 Slide 2
 
-The operator's reason for the surrogate: cardano-keri is substantially more complex and belongs in another presentation. Its key-event histories, witness checks and conflict evidence would obscure the narrower registry story here. Naming uses a name, a controller key and payment-destination data to make uniqueness and the lifecycle concrete.
+The user’s framing: isolate the registry component from the complexity of cardano-keri. Use a small handle-style application to demonstrate that different consumer rules can be attached to the registry. Naming is a surrogate demonstration, not a replacement for ADA Handle or completed KERI integration.
 
-Naming is the surrogate application, not the ultimate product objective or a complete model of KERI. The two consumers have distinct authorization and lifecycle rules: in particular, naming's voluntary permanent retirement must not be equated with KERI's conviction. The actual product direction remains on-chain Singular support for cardano-keri. See the first slide's pinned KERI model and the third slide's planned consumer work. Wallet and resolver integration are not asserted by these diagrams.
+ADA Handle describes its basic purpose as replacing wallet addresses with readable names. Official source, checked 14 September 2026: https://handle.me/. The slide uses only that familiar naming purpose as its analogy; it makes no comparative claim that ADA Handle lacks recovery, retirement or any other feature.
+
+The demo’s chosen recovery and retirement rules are defined by the naming application. The registry supplies identity uniqueness and representative custody; it does not mandate these naming-specific rules for every consumer. See the pinned Singular README, the naming application source and the slide-specific evidence below. The programmable-value extension remains planned work, not a capability this slide accepts as delivered.
 
 ====================
 
