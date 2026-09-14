@@ -78,6 +78,11 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out:
     )
     shutil.copyfile(onchain_bp, farm / "onchain" / "plutus.json")
     shutil.copyfile(naming_bp, farm / "naming-onchain" / "plutus.json")
+    # Keep the installed naming command self-contained inside the offchain flake.
+    cli_assets = farm / "offchain" / "naming-cli" / "assets"
+    cli_assets.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(onchain_bp, cli_assets / "registry.json")
+    shutil.copyfile(naming_bp, cli_assets / "naming.json")
     # Issue #91: the archive is not a git checkout, so the commit it
     # publishes rides at its root as RELEASE-COMMIT — the row runners
     # resolve their candidate by walking up from their working

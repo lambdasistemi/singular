@@ -575,3 +575,43 @@ test-suite e2e-tests
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
+
+test-suite naming-cli-options-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   naming-cli/test naming-cli/src
+  main-is:          OptionsSpec.hs
+  other-modules:    Naming.CLI.Options
+  build-depends:
+    , base                  >=4.14 && <5
+    , hspec                 >=2.8 && <3
+    , optparse-applicative   >=0.17 && <0.20
+
+executable singular-naming
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   naming-cli naming-cli/src
+  main-is:          Main.hs
+  other-modules:
+    Naming.CLI.Options
+    Naming.CLI.Read
+  build-depends:
+    , aeson                 >=2.1 && <2.3
+    , async
+    , base                  >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-node-clients
+    , containers
+    , microlens
+    , optparse-applicative   >=0.17 && <0.20
+    , ouroboros-network
+    , plutus-core
+    , singular-registry
+    , text
+  ghc-options:      -threaded

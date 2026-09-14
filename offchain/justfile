@@ -77,3 +77,13 @@ vectors-check:
         echo "ERROR: committed vectors are stale — run 'just generate-vectors' and commit" >&2
         exit 1
     fi
+
+# Focused CLI iteration, separate from the full lifecycle acceptance.
+naming-cli-options:
+    nix develop --quiet --command cabal test naming-cli-options-tests -O0
+
+naming-cli-build:
+    nix develop --quiet --command cabal build singular-naming -O0
+
+naming-cli-read-e2e:
+    nix run --quiet .#naming-cli-read-e2e -- ..
