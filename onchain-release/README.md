@@ -42,6 +42,7 @@ forever afterwards: re-registering it is refused, which is what
 | `offchain/` | the runnable journey and the row runners (`offchain/journey/`), their library, and the vendored fixtures module (`offchain/naming/src/Naming/Wire/Vectors.hs`) |
 | `fixtures/` | the contract fixtures — the vendored v0.2.0 wire vectors — with their provenance (`fixtures/README.md`) |
 | `RELEASE.md` | what this release is and is not — read it before relying on any of this |
+| `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
 | `verify-identities.sh` | the identity check of this archive, needing only `bash` and `jq` |
 | `SHA256SUMS` | the checksum manifest of every file in this archive |
 

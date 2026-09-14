@@ -18,6 +18,7 @@ Produces in <out-dir>:
     SHA256SUMS                          checksums of both archives
 """
 import hashlib
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -77,6 +78,14 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out:
     )
     shutil.copyfile(onchain_bp, farm / "onchain" / "plutus.json")
     shutil.copyfile(naming_bp, farm / "naming-onchain" / "plutus.json")
+    # Issue #91: the archive is not a git checkout, so the commit it
+    # publishes rides at its root as RELEASE-COMMIT — the row runners
+    # resolve their candidate by walking up from their working
+    # directory. The assembler shell sets RELEASE_COMMIT from the
+    # pipeline's TAG_COMMIT or the flake revision; a direct invocation
+    # without either stays honest instead of inventing a commit.
+    release_commit = os.environ.get("RELEASE_COMMIT", "").strip() or "unknown-dirty"
+    (farm / "RELEASE-COMMIT").write_text(release_commit + "\n", encoding="utf-8")
 
     staging = work / "staging"
     stage_release(farm, staging)
