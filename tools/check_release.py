@@ -171,27 +171,9 @@ if onchain_present:
         }
         assert covered == expected, "on-chain archive internal checksum manifest drift"
         release_text = bundle.extractfile(members["RELEASE.md"]).read().decode()
-        for phrase in (
-            "epic-17",
-            "recovery",
-            "retirement",
-            "permanent retirement",
-            "occupied-key",
-            "finite",
-            "not a statement about arbitrary transactions",
-            "196",
-            "E18",
-        ):
-            assert phrase in release_text, f"release text does not state: {phrase}"
-        # Stale scope is a contradiction, not an absence: the old
-        # future-E17 sentences must not appear even alongside current
-        # tokens (NOTE-104 — the negative control injects exactly this
-        # shape and binds its refusal here).
-        for stale in (
-            "as future work",
-            "belong to epic 17",
-        ):
-            assert stale not in release_text, f"release text carries stale scope: {stale}"
+        assert release_text == (root / "onchain-release/RELEASE.md").read_text(), "archive release instructions differ from source"
+        for phrase in ("epic", "E18", "obligation", "milestone artifact"):
+            assert phrase.casefold() not in release_text.casefold(), f"release text contains forbidden wording: {phrase}"
         readme_text = bundle.extractfile(members["README.md"]).read().decode()
         for phrase in (
             "verify-identities.sh",
