@@ -344,7 +344,8 @@ loadListings dir names = do
 -- ---------------------------------------------------------
 
 data Identities = Identities
-    { idAppHash :: ByteString
+    { idRegistryToken :: ByteString
+    , idAppHash :: ByteString
     , idAppHex :: String
     , idRepUnappliedHex :: String
     , idRepAppliedHash :: ByteString
@@ -391,7 +392,8 @@ loadIdentities evidence namingPath registryPath = do
             repApplied = applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) tok) (applyBytesParam appH repBytes)
             repAppliedH = scriptHashBytes (computeScriptHash repApplied)
          in Identities
-                { idAppHash = appH
+                { idRegistryToken = tok
+                , idAppHash = appH
                 , idAppHex = hexStr appH
                 , idRepUnappliedHex = hexStr (scriptHashBytes (computeScriptHash repBytes))
                 , idRepAppliedHash = repAppliedH
@@ -1030,36 +1032,10 @@ refusedAttributed ctx shape operation expectedHex = do
                     Just (cne (operation <> ": refusal does not name " <> expectedHex))
                 | otherwise -> Just (refuted (operation <> ": refused without phase-2 evidence"))
 
--- | The request validator hash for this run's token: the boot mint
--- names the token under the state policy; applying the bound parameters
--- (state policy id, token name) to the compiled request program gives
--- the applied identity the Sweep spend resolves through.
+-- | Derive the request identity from the registry token authenticated by
+-- the retained state outputs. Attached runs carry no boot transaction.
 requestAppliedHex :: Ctx -> Maybe String
-requestAppliedHex ctx = do
-    (_, bootTx) <- findBoot ctx
-    (policyId, name, qty) <- findMint bootTx
-    if hexStr (policyBytes policyId) /= idStateHex (ctxIdentities ctx) || qty /= 1
-        then Nothing
-        else Just (hexStr (requestHashFor ctx name))
-  where
-    policyBytes (PolicyID sh) = scriptHashBytes sh
-    findBoot c =
-        let boots =
-                [ (tag, tx)
-                | (tag, tx) <- ctxBodies c
-                , Just o <- [evOutcome c tag]
-                , outcomeStatus o == Just "accepted"
-                , isBootShape tx
-                ]
-         in case boots of
-                (b : _) -> Just b
-                _ -> Nothing
-    isBootShape tx = case txMint tx of
-        [(_, _, 1)] -> null [() | PSpend _ _ <- txPurposes tx]
-        _ -> False
-    findMint tx = case txMint tx of
-        [(p, n, q)] -> Just (p, n, q)
-        _ -> Nothing
+requestAppliedHex ctx = Just (hexStr (requestHashFor ctx (idRegistryToken (ctxIdentities ctx))))
 
 requestHashFor :: Ctx -> ByteString -> ByteString
 requestHashFor ctx name = scriptHashBytes (computeScriptHash applied)
