@@ -126,7 +126,7 @@ pub const second_mock_token = #"7365636f6e642d6d6f636b2d746f6b656e"
 /// the policy check (which uses `foreign_policy` as the mint/value policy).
 pub const foreign_registry_token = #"666f726569676e2d746f6b656e"
 
-/// Mock registry state datum (issue #77, E-001): a spent state at the MPFS
+/// Mock registry state datum (issue #77, E-001): a spent state at the registry
 /// address carrying the expected representative policy — the `rep_policy`
 /// placeholder, matching test mints and values. Built by the naming
 /// module's single construction site (no mirror drift).
@@ -141,7 +141,7 @@ pub fn with_state_reference(base: Transaction, state_ref_input: Input) -> Transa
 }
 
 /// Mock spent registry state input for insert-fold and retire tests: at the
-/// MPFS state address with the mock state datum above. Included so
+/// Registry state address with the mock state datum above. Included so
 /// `expected_rep_policy` resolves to `rep_policy`; tests without it refuse
 /// on missing state (same script, unattributed at the node-text layer).
 pub fn state_input() -> Input {

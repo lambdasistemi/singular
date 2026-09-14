@@ -108,6 +108,6 @@ The mint field records net quantities per asset, not one ledger action per logic
 | Insert withdrawal and refunds | Separate application-minted Withdraw token binds the exact pending Insert and refund effects; concrete economics, approval conditions and disposal remain open |
 | Representative identity across Delete/reinsert | A deleted key may be registered again; old signatures or certificates must not silently authorize a fresh incarnation |
 | Batch selection and limits | Operations follow successive MPF states; no arbitrary skip semantics or capacity claim is assumed |
-| Implementation and shared libraries | Singular owns these application semantics; old MPFS code or proofs do not automatically establish them |
+| Implementation and shared libraries | Singular owns these application semantics; old registry code or proofs do not automatically establish them |
 
 This is an adopted design with unresolved construction details. There is no implementation, completed proof, universal application language or mandatory general-purpose validation plugin in this repository.

@@ -9,7 +9,7 @@ release journey is documented separately in [recovery and permanent retirement](
 
 The rows answer to the consumer contract source-bound to
 `lambdasistemi/cardano-keri@14a64a4681d3e429fab5877062b5c476c2a4bfe2`:
-`docs/design/registry-as-mpfs.md` (eleven operator rulings and fourteen registry theorems) and
+the registry design rulings (eleven operator rulings and fourteen registry theorems) and
 `docs/user/consumer-checklist.md`. cardano-keri consumes the
 **generic** registry — Insert, Update, Delete — not the naming
 application, whose restriction refuses Delete and reuse by design.
@@ -204,7 +204,7 @@ checkpoint, goDormant/goConvicted/convict refund to the recorded owner,
 rejection returns the operation bond — guarded by `rejectable` **and**
 `userPostable`, not on demand — and the fold tip goes to the
 folder. A blanket exact-refund repair would preserve the wrong value
-mode and prevent checkpoint funding. Upstream cardano-mpfs-onchain
+mode and prevent checkpoint funding. Upstream
 `#100`/`#101` are referenced proposals, **not a delivered partition fix**: `#101` is open, and **Singular owns the required local repair**. `R5_plugin_pinned` needs a distinction this page
 previously collapsed. It is about **the plugin, not a registry owner**:
 the bound `Registry.Sys` carries `plugin`, and the consumer's fold checks
@@ -339,7 +339,7 @@ these rows never appear in a devnet-executed count.
 
 | row | outcome | evidence |
 |---|---|---|
-| CS01 Haskell encodings against the blueprint schema | accept (`blueprint-check`), schema pending | all thirteen `ToData` types round-trip **and** each constructor index and field order matches the compiled blueprint's declared schema read at run time (`MPFS_BLUEPRINT`), including field-title order; no type needed a gap; `Constr` 99 validates against nothing and index 99 demanded for `End` fails the run (control); `txSize` is the blueprint file size in bytes, 92048. The checked schema is the six-field owner-bearing state: superseded at epic 17's pending repair, re-executed against the repaired blueprint |
+| CS01 Haskell encodings against the blueprint schema | accept (`blueprint-check`), schema pending | all thirteen `ToData` types round-trip **and** each constructor index and field order matches the compiled blueprint's declared schema read at run time (`REGISTRY_BLUEPRINT`), including field-title order; no type needed a gap; `Constr` 99 validates against nothing and index 99 demanded for `End` fails the run (control); `txSize` is the blueprint file size in bytes, 92048. The checked schema is the six-field owner-bearing state: superseded at epic 17's pending repair, re-executed against the repaired blueprint |
 | CS06 parameter application derived in Haskell | accept (`param-check`) | parameter counts and encodings published from the blueprint — state 1 (`previousPolicies`), request 2 (`statePolicyId`, `cageTokenName`, in source order), staking 0 — unapplied hashes match the pinned blueprint hashes, the applied state hash is `874e476d…`, non-empty allowlists and swapped request params discriminate; 2 demanded for state fails the run (control); `txSize` is the largest applied script size in bytes, 7805 |
 
 ### CS07: unmarked and escalated
@@ -481,17 +481,17 @@ checks. Superseded rows remain listed and are not runtime commands.
 
 ```sh
 nix run ./conformance#conformance -- list
-mpfs="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
+blueprint="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
 receipts="$(mktemp -d /tmp/singular-conformance.XXXXXX)"
 
 # Expected exit 1: exact held set CG11, CG12, CG19; no failed rows.
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$receipts/generic"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$receipts/generic"
 
 # Expected exit 0 after all five identity rows and their controls.
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$receipts/identity"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$receipts/identity"
 
 # Expected exit 1: CS03 and CS05 are partial; the other five agree.
-MPFS_BLUEPRINT="$mpfs" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir "$receipts/serialization"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CS01 CS02 CS03 CS04 CS05 CS06 CS08 --receipts-dir "$receipts/serialization"
 
 nix run ./conformance#conformance -- list --receipts "$receipts/generic"
 nix run ./conformance#conformance -- list --receipts "$receipts/identity"

@@ -444,7 +444,7 @@ fn fold(
 }
 
 /// A retire consumes the record into completion-only custody (issue
-/// #66, `beginRetirement` without the MPFS request layer): authorized by
+/// #66, `beginRetirement` without the registry request layer): authorized by
 /// the controller or by a distinct-member quorum threshold
 /// (`retirement-authorization`), the representative lands at the custody
 /// script (`retirement-request`), and the record does not continue.

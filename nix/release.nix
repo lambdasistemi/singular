@@ -35,7 +35,7 @@ let
       # Each blueprint: built from this checkout's own partition flake, its
       # own lock — the same builds CI's script-identity jobs verify.
       cd "$root"
-      mpfs_bp="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
+      registry_bp="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
       naming_bp="$(nix build --quiet --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
       # Issue #91: the archive carries the commit it publishes (see
       # releaseCommit above); assemble_onchain_release.py writes it into
@@ -43,7 +43,7 @@ let
       RELEASE_COMMIT="''${TAG_COMMIT:-${releaseCommit}}"
       export RELEASE_COMMIT
       python3 "$root/tools/assemble_onchain_release.py" \
-        "$root" "$docs" "$mpfs_bp" "$naming_bp" "$out"
+        "$root" "$docs" "$registry_bp" "$naming_bp" "$out"
       # The full release check — version agreement, archive members, both
       # checksum manifests, release text, and identity verification run from
       # the extracted artifact — against the exact bytes to be published.

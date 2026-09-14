@@ -45,7 +45,7 @@ import System.Process (readProcess)
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     Blueprint (..),
     Validator (..),
     applyPreviousPolicies,
@@ -53,11 +53,11 @@ import Cardano.MPFS.Cage.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     scriptHashBytes,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     OnChainTokenId (..),
  )
 

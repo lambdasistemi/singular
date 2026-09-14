@@ -12,7 +12,7 @@ use types.{
 }
 
 // ============================================================================
-// Fixtures (MPFS side uses the REAL validator types — mirror drift
+// Fixtures (registry side uses the REAL validator types — mirror drift
 // refuses here, not on ledger)
 // ============================================================================
 
@@ -172,7 +172,7 @@ fn withdraw(tx: Transaction) -> Bool {
 // ============================================================================
 
 /// Honest funded request (2M carries the 0.5M tip): passes with no mint
-/// and no naming evidence (pure-MPFS batch).
+/// and no naming evidence (pure-registry batch).
 test r1_funded_request_accepts() {
   expect withdraw(
     consumer_tx([state_input, funded_request(2_000_000, 500_000, Insert("v"))], zero),

@@ -1,5 +1,5 @@
 {
-  description = "MPFS off-chain — Haskell cage package";
+  description = "Registry off-chain — Haskell cage package";
 
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
@@ -68,7 +68,7 @@
         };
 
         components =
-          project.project.hsPkgs.cardano-mpfs-cage.components;
+          project.project.hsPkgs.singular-registry.components;
 
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
@@ -90,7 +90,7 @@
         # — wrapped so it brings the locked cardano-node on its own
         # PATH, exactly like cage-tests-e2e in ./nix/checks.nix.
         # The blueprint and the identity manifest come from the
-        # caller at run time (MPFS_BLUEPRINT, MPFS_SCRIPT_IDENTITY);
+        # caller at run time (REGISTRY_BLUEPRINT, REGISTRY_SCRIPT_IDENTITY);
         # no store path is baked in.
         journey = pkgs.runCommand "journey" {
           buildInputs = [ pkgs.makeWrapper ];
@@ -166,8 +166,8 @@
         # The seven wrong canonical initialization refusals (issue
         # #50), wrapped the same way as journey, li01 and naming-rows:
         # the locked cardano-node on its own PATH, no store path baked
-        # in. Both blueprints (the MPFS bootstrap and the naming
-        # policies) come from the caller at run time (MPFS_BLUEPRINT,
+        # in. Both blueprints (the registry bootstrap and the naming
+        # policies) come from the caller at run time (REGISTRY_BLUEPRINT,
         # NAMING_BLUEPRINT).
         li-refusals = pkgs.runCommand "li-refusals" {
           buildInputs = [ pkgs.makeWrapper ];
@@ -198,7 +198,7 @@
         # The connected verifier (issue #77, S3): recomputes verdicts from
         # raw run evidence. Pure offline tool: no node on PATH needed, but
         # wrapped like the runners for uniformity. Blueprints come from the
-        # caller at run time (--blueprint/--mpfs-blueprint).
+        # caller at run time (--blueprint/--blueprint-blueprint).
         connected-verifier = pkgs.runCommand "connected-verifier" {
           buildInputs = [ pkgs.makeWrapper ];
           meta = (components.exes.connected-verifier.meta or { }) // {
@@ -213,8 +213,8 @@
         # The issue #79 repair rows (permissionless fold + insert-only
         # retract), wrapped the same way as the other row runners: the
         # locked cardano-node on its own PATH, no store path baked in.
-        # The MPFS blueprint comes from the caller at run time
-        # (MPFS_BLUEPRINT).
+        # The registry blueprint comes from the caller at run time
+        # (REGISTRY_BLUEPRINT).
         repair-rows = pkgs.runCommand "repair-rows" {
           buildInputs = [ pkgs.makeWrapper ];
           meta = (components.exes.repair-rows.meta or { }) // {

@@ -1,0 +1,398 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
+
+{- |
+Module      : Singular.Registry.TxBuilder.Update
+Description : Update token transaction
+License     : Apache-2.0
+
+Builds the oracle update transaction that processes
+all pending requests for a token. Consumes the State
+UTxO and all request UTxOs, applies each operation
+speculatively through the trie to generate proofs,
+then outputs a new State UTxO with the updated root
+and per-request refund outputs.
+-}
+module Singular.Registry.TxBuilder.Update (
+    updateTokenImpl,
+) where
+
+import Control.Exception (SomeException, try)
+import Control.Monad (when)
+import Data.List (sortOn)
+import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Ord (Down (..))
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (
+    utcTimeToPOSIXSeconds,
+ )
+import Data.Void (Void)
+import Lens.Micro ((&), (.~), (^.))
+
+import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Alonzo.Scripts (AsIx)
+import Cardano.Ledger.Api.Tx (
+    bodyTxL,
+ )
+import Cardano.Ledger.Api.Tx.Body (
+    feeTxBodyL,
+ )
+import Cardano.Ledger.Api.Tx.Out (
+    TxOut,
+    coinTxOutL,
+    datumTxOutL,
+    mkBasicTxOut,
+    valueTxOutL,
+ )
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.Scripts (
+    ConwayPlutusPurpose,
+ )
+import Cardano.Ledger.Core (Script)
+import Cardano.Ledger.Plutus.ExUnits (ExUnits)
+
+import Singular.Registry.Config (
+    CageConfig (..),
+ )
+import Singular.Registry.Ledger (
+    ConwayEra,
+    PParams,
+    Root (..),
+    TokenId,
+    TxIn,
+ )
+import Singular.Registry.Provider (
+    Provider (..),
+ )
+import Singular.Registry.Trie (
+    Trie (..),
+    TrieManager (..),
+ )
+import Singular.Registry.TxBuilder.Internal
+import Singular.Registry.Types (
+    CageDatum (..),
+    ConsumerRedeemer (..),
+    OnChainOperation (..),
+    OnChainRequest (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
+    ProofStep,
+    RequestAction (..),
+    UpdateRedeemer (..),
+    stateConsumerPinBytes,
+ )
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
+
+-- | Empty query GADT (no context needed).
+data NoCtx a
+
+-- | Build an update-token transaction (fair fee).
+updateTokenImpl ::
+    CageConfig ->
+    Provider IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    IO ConwayTx
+updateTokenImpl cfg prov tm tid addr = do
+    (stateUtxo, reqUtxos, feeUtxo, pp) <-
+        queryContext cfg prov tid addr
+    let (stateIn, stateOut) = stateUtxo
+    (proofs, newRoot) <-
+        computeProofs tm tid reqUtxos
+    let (oldState, newStateOut, script) =
+            prepareState
+                cfg
+                stateOut
+                newRoot
+        requestScript = mkRequestScript cfg tid
+    upperSlot <-
+        computeUpperSlot prov oldState reqUtxos
+    let evalTx = mkEvalTx prov
+        prog =
+            buildProgram
+                cfg
+                pp
+                stateIn
+                stateOut
+                reqUtxos
+                feeUtxo
+                oldState
+                newStateOut
+                script
+                requestScript
+                proofs
+                upperSlot
+    result <-
+        Tx.build
+            (Tx.mkPParamsBound pp)
+            (Tx.InterpretIO (const (pure undefined)))
+            evalTx
+            (feeUtxo : stateUtxo : reqUtxos)
+            []
+            addr
+            (prog :: Tx.TxBuild NoCtx Void ())
+    case result of
+        Right tx -> pure tx
+        Left err ->
+            error $
+                "updateToken: build failed: "
+                    <> show err
+
+{- | Query cage UTxOs, find the state and request
+UTxOs, pick a fee-paying wallet UTxO.
+-}
+queryContext ::
+    CageConfig ->
+    Provider IO ->
+    TokenId ->
+    Addr ->
+    IO
+        ( (TxIn, TxOut ConwayEra)
+        , [(TxIn, TxOut ConwayEra)]
+        , (TxIn, TxOut ConwayEra)
+        , PParams ConwayEra
+        )
+queryContext cfg prov tid addr = do
+    let stateAddr =
+            cageAddrFromCfg cfg (network cfg)
+        reqAddr =
+            requestAddrFromCfg cfg tid (network cfg)
+    stateUtxos <- queryUTxOs prov stateAddr
+    requestUtxos <- queryUTxOs prov reqAddr
+    let policyId = cagePolicyIdFromCfg cfg
+    stateUtxo <- case findStateUtxo
+        policyId
+        tid
+        stateUtxos of
+        Nothing ->
+            error
+                "updateToken: state UTxO \
+                \not found"
+        Just x -> pure x
+    let reqUtxos =
+            sortOn fst $
+                findRequestUtxos tid requestUtxos
+    when (null reqUtxos) $
+        error "updateToken: no pending requests"
+    pp <- queryProtocolParams prov
+    walletUtxos <- queryUTxOs prov addr
+    feeUtxo <- case sortOn
+        (Down . (^. coinTxOutL) . snd)
+        walletUtxos of
+        [] -> error "updateToken: no UTxOs"
+        (u : _) -> pure u
+    pure (stateUtxo, reqUtxos, feeUtxo, pp)
+
+{- | Run speculative trie operations to compute
+proofs and the new root hash.
+-}
+computeProofs ::
+    TrieManager IO ->
+    TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ([[ProofStep]], Root)
+computeProofs tm tid reqUtxos =
+    withSpeculativeTrie tm tid $ \trie -> do
+        ps <- mapM (processRequest trie) reqUtxos
+        r <- getRoot trie
+        pure (ps, r)
+
+{- | Extract old state, build new state output,
+cage script, and owner key hash.
+-}
+prepareState ::
+    CageConfig ->
+    TxOut ConwayEra ->
+    Root ->
+    (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
+prepareState cfg stateOut newRoot =
+    let scriptAddr =
+            cageAddrFromCfg cfg (network cfg)
+        oldState =
+            case extractCageDatum stateOut of
+                Just (StateDatum s) -> s
+                _ ->
+                    error
+                        "updateToken: invalid \
+                        \state datum"
+        newStateDatum =
+            StateDatum
+                oldState
+                    { stateRoot =
+                        OnChainRoot
+                            (unRoot newRoot)
+                    }
+        newStateOut =
+            mkBasicTxOut
+                scriptAddr
+                (stateOut ^. valueTxOutL)
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        (toPlcData newStateDatum)
+        script = mkCageScript cfg
+     in (oldState, newStateOut, script)
+
+-- | Compute the validity upper slot.
+computeUpperSlot ::
+    Provider IO ->
+    OnChainTokenState ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO SlotNo
+computeUpperSlot prov oldState reqUtxos = do
+    let extractSubmittedAt (_, rOut) =
+            case extractCageDatum rOut of
+                Just (RequestDatum r) ->
+                    requestSubmittedAt r
+                _ -> 0
+        earliestDeadline =
+            minimum $
+                map
+                    ( \u ->
+                        extractSubmittedAt u
+                            + stateProcessTime
+                                oldState
+                    )
+                    reqUtxos
+    mUpperSlot <-
+        try @SomeException
+            (posixMsToSlot prov earliestDeadline)
+    case mUpperSlot of
+        Right s -> pure s
+        Left _ -> do
+            nowUtc <- getCurrentTime
+            let posixSec =
+                    utcTimeToPOSIXSeconds nowUtc
+            trySlots prov $
+                map
+                    ( \d ->
+                        round
+                            ((posixSec + d) * 1000)
+                    )
+                    [30, 5, 2]
+
+-- | Wrap the Provider's evaluateTx for the DSL.
+mkEvalTx ::
+    Provider IO ->
+    ConwayTx ->
+    IO
+        ( Map.Map
+            ( ConwayPlutusPurpose
+                AsIx
+                ConwayEra
+            )
+            (Either String ExUnits)
+        )
+mkEvalTx prov tx = do
+    r <- evaluateTx prov tx
+    pure $
+        Map.map
+            ( \case
+                Left e -> Left (show e)
+                Right eu -> Right eu
+            )
+            r
+
+-- | The TxBuild DSL program for an update tx.
+buildProgram ::
+    CageConfig ->
+    PParams ConwayEra ->
+    TxIn ->
+    TxOut ConwayEra ->
+    [(TxIn, TxOut ConwayEra)] ->
+    (TxIn, TxOut ConwayEra) ->
+    OnChainTokenState ->
+    TxOut ConwayEra ->
+    Script ConwayEra ->
+    Script ConwayEra ->
+    [[ProofStep]] ->
+    SlotNo ->
+    Tx.TxBuild NoCtx Void ()
+buildProgram
+    _cfg
+    _pp
+    stateIn
+    _stateOut
+    reqUtxos
+    feeUtxo
+    _oldState
+    newStateOut
+    script
+    requestScript
+    proofs
+    upperSlot = do
+        let stateRef = txInToRef stateIn
+        let actions = map Update proofs
+        _ <- Tx.spendScript stateIn (Modify actions)
+        mapM_
+            ( \(rIn, _) ->
+                Tx.spendScript
+                    rIn
+                    (Contribute stateRef)
+            )
+            reqUtxos
+        _ <- Tx.output newStateOut
+        Coin _fee <- Tx.peek $ \tx ->
+            let f = tx ^. bodyTxL . feeTxBodyL
+             in if f > Coin 0
+                    then Tx.Ok f
+                    else Tx.Iterate f
+        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
+        -- pinned in the spent state with a null redeemer — the consumer
+        -- authenticates the batch from transaction evidence alone
+        -- (request value coverage, representative-mint binding). No
+        -- operator, no manifest: coherent batches pass no matter who
+        -- submits them.
+        Tx.withdrawScript
+            ( hookAccountAddress
+                (network _cfg)
+                (stateConsumerPinBytes _oldState)
+            )
+            (Coin 0)
+            Hook
+        Tx.attachScript (mkConsumerScript _cfg)
+        Tx.attachScript script
+        Tx.attachScript requestScript
+        Tx.collateral (fst feeUtxo)
+        Tx.validTo upperSlot
+
+-- | Process a single request.
+processRequest ::
+    (Monad m) =>
+    Trie m ->
+    (TxIn, TxOut ConwayEra) ->
+    m [ProofStep]
+processRequest trie (_txIn, txOut) = do
+    let OnChainRequest
+            { requestKey = key
+            , requestValue = op
+            } = case extractCageDatum txOut of
+                Just (RequestDatum r) -> r
+                _ ->
+                    error
+                        "processRequest: \
+                        \invalid request datum"
+    case op of
+        OpInsert v -> do
+            _ <- insert trie key v
+            mSteps <- getProofSteps trie key
+            pure (fromMaybe [] mSteps)
+        OpDelete _ -> do
+            mSteps <- getProofSteps trie key
+            _ <-
+                Singular.Registry.Trie.delete
+                    trie
+                    key
+            pure (fromMaybe [] mSteps)
+        OpUpdate _ v -> do
+            mSteps <- getProofSteps trie key
+            _ <-
+                Singular.Registry.Trie.delete
+                    trie
+                    key
+            _ <- insert trie key v
+            pure (fromMaybe [] mSteps)

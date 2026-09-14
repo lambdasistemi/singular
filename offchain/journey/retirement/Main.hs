@@ -143,13 +143,13 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
@@ -157,7 +157,7 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
@@ -166,12 +166,12 @@ import Cardano.MPFS.Cage.Node (
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie (TrieManager (..))
-import Cardano.MPFS.Cage.Trie qualified as Trie
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie qualified as Trie
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
     ConnectedSpend (..),
@@ -180,7 +180,7 @@ import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     generousUnits,
     syncFoldedRequests,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -202,9 +202,9 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     spendingIndex,
     txInToRef,
  )
-import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl, requestLockedAda)
-import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl)
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.TxBuilder.Request (requestInsertImpl, requestLockedAda)
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainOperation (..),
     OnChainRoot (..),
@@ -305,9 +305,9 @@ main = do
                 "wrong-reason control: refusals matched against a marker \
                 \that cannot occur, so the matcher must fail the run"
     blueprintPath <- requireEnv "NAMING_BLUEPRINT"
-    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
+    registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     outcome <-
-        try (runMode mode blueprintPath mpfsPath) :: IO (Either SomeException ())
+        try (runMode mode blueprintPath registryPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -319,10 +319,10 @@ main = do
 -- ---------------------------------------------------------
 
 runMode :: Mode -> FilePath -> FilePath -> IO ()
-runMode mode blueprintPath mpfsPath = do
+runMode mode blueprintPath registryPath = do
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
-    embp <- loadBlueprint mpfsPath
+    embp <- loadBlueprint registryPath
     mbp <- either failWith pure embp
     appBytes <- case extractCompiledCode "application.application" bp of
         Just bytes -> pure bytes
@@ -347,15 +347,15 @@ runMode mode blueprintPath mpfsPath = do
                 \the naming blueprint"
     stateBytes <- case extractCompiledCode "state.state" mbp of
         Just bytes -> pure bytes
-        Nothing -> failWith "state.state compiled code not found in the MPFS blueprint"
+        Nothing -> failWith "state.state compiled code not found in the registry blueprint"
     requestBytes <- case extractCompiledCode "request.request" mbp of
         Just bytes -> pure bytes
-        Nothing -> failWith "request.request compiled code not found in the MPFS blueprint"
+        Nothing -> failWith "request.request compiled code not found in the registry blueprint"
     consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "consumer.consumer compiled code not found in the MPFS \
+                "consumer.consumer compiled code not found in the registry \
                 \blueprint (every Modify withdraws the pinned consumer)"
     withNode $ \sess -> do
         let prov = nsProvider sess
@@ -664,7 +664,7 @@ data Env = Env
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr
@@ -1842,7 +1842,7 @@ rowLX01 env = do
                 "row"
                 ( "LX01-re-registration-after-over-refused: REFUSED at build (model \
                   \reason occupied-key): the fold's local evaluation fails naming the \
-                  \MPFS state script 0x"
+                  \registry state script 0x"
                     <> stateHex
                     <> " at a ConwaySpending purpose — the absence proof the insert \
                        \requires is unproducible against the chain root holding rt-over: "
@@ -1856,7 +1856,7 @@ rowLX01 env = do
                 "LX01-re-registration-after-over-refused"
                 "occupied-key"
                 stateHex
-                "the MPFS state script"
+                "the registry state script"
                 "absence proof unproducible: the key is occupied"
                 signed
     -- Control: the same registration succeeds for an unretired key in
@@ -2663,7 +2663,7 @@ publishBatch prov submit pp poolRef addr scripts = do
         failWith "publish: script outputs not found"
     pure (take (length scripts) mine)
 
--- | Submit one MPFS insert request (spelling -> representative name),
+-- | Submit one registry insert request (spelling -> representative name),
 -- genesis-funded like the rest of this runner.
 submitRetirementRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitRetirementRequest env spelling value = do
@@ -2672,7 +2672,7 @@ submitRetirementRequest env spelling value = do
     unsigned <-
         requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
-    tag <- retainTx env ("mpfs-request-" <> show spelling) signed
+    tag <- retainTx env ("blueprint-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed
     case result of
         Submitted _ -> do
@@ -2680,9 +2680,9 @@ submitRetirementRequest env spelling value = do
             pure ()
         Rejected reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (MPFS request " <> show spelling <> ")")
+    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
-    reqIn <- mustFindUTxO (envProv env) reqAddr txid "MPFS request"
+    reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt env reqAddr reqIn
     pure (reqIn, reqOut)
 
@@ -2738,7 +2738,7 @@ chainRetirementRoot env = do
              in pure (hex bs)
         _ -> failWith "the state UTxO carries no state datum"
 
--- | Fold one genuine record through the CONNECTED transaction: MPFS
+-- | Fold one genuine record through the CONNECTED transaction: registry
 -- request keyed by the given spelling plus the naming claim, one state
 -- Modify, approval burn and representative mint. Returns the fold txid
 setupRecoveryRecord ::
@@ -2808,7 +2808,7 @@ setupRecoveryRecord env datum label spelling = do
             ("setup: " <> label <> " claim")
     snapClaim <- mustSnap env claimIn
     claimLive <- mustOutAt env (envAppAddr env) claimIn
-    -- The MPFS request keyed by the spelling.
+    -- The registry request keyed by the spelling.
     (reqIn, reqOut) <- submitRetirementRequest env spelling repName
     -- The connected fold: state Modify, request Contribute, claim Fold.
     (stateIn, stateOut) <- queryRetirementState env
@@ -3288,7 +3288,7 @@ checkPinnedConsumer :: String -> IO ()
 checkPinnedConsumer unappliedHex = do
     path <-
         fromMaybe "../onchain/script-identity.json"
-            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+            <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     bytes <- BS.readFile path
     manifest <- either failWith pure (eitherDecode' (BSL.fromStrict bytes))
     let pins =
@@ -3298,7 +3298,7 @@ checkPinnedConsumer unappliedHex = do
             ]
     unless (length pins >= 1) $
         failWith
-            "identity: no consumer.consumer pin in the MPFS manifest"
+            "identity: no consumer.consumer pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
             ( "identity: the manifest pins unapplied consumer hash(es) "

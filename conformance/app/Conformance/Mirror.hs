@@ -85,18 +85,18 @@ import MPF.Proof.Insertion (
     mkMPFInclusionProof,
  )
 
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (TokenId)
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie qualified as CageTrie
-import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (TokenId)
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     extractCageDatum,
     findStateUtxo,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainRoot (..),
     OnChainTokenState (..),

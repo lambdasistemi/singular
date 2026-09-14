@@ -8,7 +8,7 @@ License     : Apache-2.0
 
 Executes @Singular.foldOne@'s @.insert@ case and @Singular.fold_iff@'s
 fold leg against a real devnet node as one connected transaction: the
-registry cage is booted, an MPFS insert request keyed by the name
+registry cage is booted, a registry insert request keyed by the name
 spelling is submitted, an insert approval is minted under the
 application policy binding the exact proposal core, the insert request
 (claim) is queued at the naming application validator, and a single
@@ -72,8 +72,8 @@ observation. All exit 1 by design, after executing rows.
 Hermetic run (D-011), from @offchain/@:
 
 > naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-> mpfs="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-> TMPDIR=/tmp/s77-devnet NAMING_BLUEPRINT="$naming" MPFS_BLUEPRINT="$mpfs" nix run --quiet .#register-rows
+> blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+> TMPDIR=/tmp/s77-devnet NAMING_BLUEPRINT="$naming" REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#register-rows
 -}
 module Main (main) where
 
@@ -162,14 +162,14 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.Candidate (resolveCandidate, sourceName)
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.Candidate (resolveCandidate, sourceName)
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
@@ -177,7 +177,7 @@ import Cardano.MPFS.Cage.Ledger (
     Root (..),
     TokenId (..),
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
@@ -186,11 +186,11 @@ import Cardano.MPFS.Cage.Node (
     funderSignKey,
     withNode,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie (Trie (..), TrieManager (..))
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
     ConnectedSpend (..),
@@ -198,7 +198,7 @@ import Cardano.MPFS.Cage.TxBuilder.ConnectedFold (
     connectedFoldTx,
     syncFoldedRequests,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
@@ -224,10 +224,10 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
-import Cardano.MPFS.Cage.TxBuilder.Request (requestInsertImpl)
-import Cardano.MPFS.Cage.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
-import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.TxBuilder.Request (requestInsertImpl)
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
+import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -385,9 +385,9 @@ main = do
                 \from any fold — the run must fail naming the wrong \
                 \observation"
     namingPath <- requireEnv "NAMING_BLUEPRINT"
-    mpfsPath <- requireEnv "MPFS_BLUEPRINT"
+    registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     outcome <-
-        try (runMode mode namingPath mpfsPath) :: IO (Either SomeException ())
+        try (runMode mode namingPath registryPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -401,7 +401,7 @@ main = do
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr
@@ -412,7 +412,7 @@ genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
 genesisSignKey = funderSignKey
 
 runMode :: Mode -> FilePath -> FilePath -> IO ()
-runMode mode namingPath mpfsPath = do
+runMode mode namingPath registryPath = do
     enbp <- loadBlueprint namingPath
     nbp <- either failWith pure enbp
     appBytes <- case extractCompiledCode "application.application" nbp of
@@ -433,29 +433,29 @@ runMode mode namingPath mpfsPath = do
             failWith
                 "e001_attacker.e001_attacker compiled code not found in \
                 \the naming blueprint (E-001 foreign-policy row needs it)"
-    embp <- loadBlueprint mpfsPath
+    embp <- loadBlueprint registryPath
     mbp <- either failWith pure embp
     stateBytes <- case extractCompiledCode "state.state" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "state.state compiled code not found in the MPFS blueprint"
+                "state.state compiled code not found in the registry blueprint"
     requestBytes <- case extractCompiledCode "request.request" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "request.request compiled code not found in the MPFS blueprint"
+                "request.request compiled code not found in the registry blueprint"
     consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "consumer.consumer compiled code not found in the MPFS \
+                "consumer.consumer compiled code not found in the registry \
                 \blueprint (every Modify withdraws the pinned consumer)"
     stakingBytes <- case extractCompiledCode "staking.staking" mbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "staking.staking compiled code not found in the MPFS \
+                "staking.staking compiled code not found in the registry \
                 \blueprint (the swapped-hook control withdraws from it)"
     withNode $ \sess -> do
         let prov = nsProvider sess
@@ -484,7 +484,7 @@ runMode mode namingPath mpfsPath = do
             appliedStateHex = hex (scriptHashBytes appliedStateHash)
         checkPinnedNamingApplication appHex
         checkPinnedRepresentative repUnappliedHex
-        checkPinnedMpfsState stateUnappliedHex
+        checkPinnedRegistryState stateUnappliedHex
         checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
@@ -551,7 +551,7 @@ runMode mode namingPath mpfsPath = do
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
         (candidate, worktreeDirty, source) <- either failWith pure =<< resolveCandidate
-        writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath mpfsPath appHex repAppliedHex appliedStateHex
+        writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath registryPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <-
             bootCage prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
         -- Consumer + staking stake registrations (NOTE-020 items 2-4),
@@ -636,7 +636,7 @@ runMode mode namingPath mpfsPath = do
                     , envEvNext = evNext
                     , envCandidate = candidate
                     , envNamingBlueprint = namingPath
-                    , envMpfsBlueprint = mpfsPath
+                    , envRegistryBlueprint = registryPath
                     }
         receiptRef <- newIORef []
         let record = recordRow receiptRef
@@ -654,7 +654,7 @@ runMode mode namingPath mpfsPath = do
                 object
                     [ "candidate" .= envCandidate env
                     , "namingBlueprint" .= envNamingBlueprint env
-                    , "mpfsBlueprint" .= envMpfsBlueprint env
+                    , "registryBlueprint" .= envRegistryBlueprint env
                     , "rows" .= reverse rows
                     ]
             )
@@ -701,7 +701,7 @@ data Env = Env
     , envEvNext :: IORef Int
     , envCandidate :: String
     , envNamingBlueprint :: FilePath
-    , envMpfsBlueprint :: FilePath
+    , envRegistryBlueprint :: FilePath
     }
 
 -- ---------------------------------------------------------
@@ -919,24 +919,24 @@ bootCage prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir ev
     emit "boot" "booted the registry cage (permissionless folds from here)"
     pure (cfg, tok)
 
--- | Submit one MPFS insert request: spelling -> representative name.
+-- | Submit one registry insert request: spelling -> representative name.
 -- Returns the request input and output.
-submitMPFSRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
-submitMPFSRequest env spelling value = do
+submitRegistryRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
+submitRegistryRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
     unsigned <-
         requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value (envFolderAddr env)
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
-    result <- submitRetain env ("mpfs-request-" <> show spelling) signed
+    result <- submitRetain env ("blueprint-request-" <> show spelling) signed
     case result of
         Submitted _ -> pure ()
         Rejected reason ->
             failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (MPFS request " <> show spelling <> ")")
+    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
-    reqIn <- mustFindUTxO (envProv env) reqAddr txid "MPFS request"
+    reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt (envProv env) reqAddr reqIn
     emit
         "requested"
@@ -1073,7 +1073,7 @@ connectedAccept env record tm ks checkSync rowKind = do
     (_claimTx, claimIn, _claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
-    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling ks) (keyRepName ks)
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     (stateIn, _stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -1183,7 +1183,7 @@ connectedAccept env record tm ks checkSync rowKind = do
             )
     reqLive <- isLiveAt (envProv env) (requestAddrFromCfg (envCfg env) (envTok env) Testnet) reqIn
     when reqLive $
-        failWith (keyLabel ks <> ": the MPFS request survived the fold")
+        failWith (keyLabel ks <> ": the registry request survived the fold")
     claimLive <- isLiveAt (envProv env) (envAppAddr env) claimIn
     when claimLive $
         failWith (keyLabel ks <> ": the naming claim survived the fold")
@@ -1282,7 +1282,7 @@ runAdversarial env record ksAccepted ks = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
-    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling ks) (keyRepName ks)
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -1835,11 +1835,11 @@ parkGarbageAt env addr = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | A plain MPFS request for the supported-action rows (no naming
+-- | A plain registry request for the supported-action rows (no naming
 -- parts): submitted early so it ages into the retract window.
 submitSupportRequest :: Env -> (Value -> IO ()) -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitSupportRequest env record spelling value = do
-    (reqIn, reqOut) <- submitMPFSRequest env spelling value
+    (reqIn, reqOut) <- submitRegistryRequest env spelling value
     retainListings env ("support-request-" <> show spelling <> "-post")
     record $
         object
@@ -1855,7 +1855,7 @@ submitSupportRequest env record spelling value = do
 -- builder: the registry still works.
 runSupportFold :: Env -> (Value -> IO ()) -> IO ()
 runSupportFold env record = do
-    (reqIn, reqOut) <- submitMPFSRequest env "support" "support-value"
+    (reqIn, reqOut) <- submitRegistryRequest env "support" "support-value"
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -2021,7 +2021,7 @@ alterStatePin tx =
             _ -> out
      in tx & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outs'
 
--- | Build an honest pure-MPFS fold, mutate the UNSIGNED transaction,
+-- | Build an honest pure-registry fold, mutate the UNSIGNED transaction,
 -- sign with the folder key, submit, and require refusal attributed to
 -- the exact script. Used for omitted-hook, swapped-hook and pin
 -- mutants (the honest shape underneath isolates the mutant delta).
@@ -2034,7 +2034,7 @@ runHookMutantRow ::
     (Env -> ConwayTx -> ConwayTx) ->
     IO ()
 runHookMutantRow env record rowName operation spelling mutant = do
-    (reqIn, reqOut) <- submitMPFSRequest env spelling "hook-value"
+    (reqIn, reqOut) <- submitRegistryRequest env spelling "hook-value"
     (stateIn, _stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -2070,7 +2070,7 @@ runHookMutantRow env record rowName operation spelling mutant = do
             failWith (rowName <> ": accepted (must refuse)")
 
 -- | Cross-wired fold (NOTE-013 corrected control 4 on ledger): the
--- MPFS side consumes B's paid request while the naming side folds A's
+-- The registry side consumes B's paid request while the naming side folds A's
 -- claim, mints A's representative and records A. Every layer passes
 -- on its own evidence — cage proofs over B, naming fold over A's
 -- recomputed name, rep mint matching the fold redeemer — and ONLY the
@@ -2091,7 +2091,7 @@ runHookCrosswiredRow env record = do
             hookRevealSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ksA
     snapClaim <- mustSnap env claimIn
-    (reqInB, reqOutB) <- submitMPFSRequest env "hook-crosswire" "hook-B-value"
+    (reqInB, reqOutB) <- submitRegistryRequest env "hook-crosswire" "hook-B-value"
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -2473,7 +2473,7 @@ rowForeignPolicyRefused :: Env -> KeySetup -> IO ()
 rowForeignPolicyRefused env ks = do
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env ks
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling ks) (keyRepName ks)
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let repName = keyRepName ks
@@ -3071,7 +3071,7 @@ runFaultRepPolicy env = do
     alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling alice) (keyRepName alice)
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let tamperedParam = BS.map complement (scriptHashBytes (envAppHash env))
@@ -3197,7 +3197,7 @@ runFaultOwnerSigned env = do
     alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     (_claimTx, claimIn, claimOut) <- setupNamingClaim env alice
     snapClaim <- mustSnap env claimIn
-    (reqIn, reqOut) <- submitMPFSRequest env (keySpelling alice) (keyRepName alice)
+    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling alice) (keyRepName alice)
     (stateIn, stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     let repName = keyRepName alice
@@ -3921,18 +3921,18 @@ checkPinnedRepresentative unappliedHex = do
                 <> unappliedHex
             )
 
-checkPinnedMpfsState :: String -> IO ()
-checkPinnedMpfsState unappliedHex = do
+checkPinnedRegistryState :: String -> IO ()
+checkPinnedRegistryState unappliedHex = do
     path <-
         fromMaybe "../onchain/script-identity.json"
-            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+            <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
     let pins = pinsUnder manifest "state.state"
     unless (length pins >= 1) $
-        failWith "identity: no state.state pin in the MPFS manifest"
+        failWith "identity: no state.state pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
-            ( "identity: the MPFS manifest pins unapplied state hash(es) "
+            ( "identity: the registry manifest pins unapplied state hash(es) "
                 <> show pins
                 <> " but this run's blueprint code hashes to 0x"
                 <> unappliedHex
@@ -3942,14 +3942,14 @@ checkPinnedConsumer :: String -> IO ()
 checkPinnedConsumer unappliedHex = do
     path <-
         fromMaybe "../onchain/script-identity.json"
-            <$> lookupEnv "MPFS_SCRIPT_IDENTITY"
+            <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
     let pins = pinsUnder manifest "consumer.consumer"
     unless (length pins >= 1) $
-        failWith "identity: no consumer.consumer pin in the MPFS manifest"
+        failWith "identity: no consumer.consumer pin in the registry manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
-            ( "identity: the MPFS manifest pins unapplied consumer hash(es) "
+            ( "identity: the registry manifest pins unapplied consumer hash(es) "
                 <> show pins
                 <> " but this run's blueprint code hashes to 0x"
                 <> unappliedHex
@@ -3990,7 +3990,7 @@ evidenceDirFromEnv = do
 
 writeEvidenceMeta ::
     FilePath -> String -> Bool -> String -> FilePath -> FilePath -> String -> String -> String -> IO ()
-writeEvidenceMeta evDir candidate dirty candidateSource namingBp mpfsBp appH repH stateH =
+writeEvidenceMeta evDir candidate dirty candidateSource namingBp registryBp appH repH stateH =
     BSL.writeFile
         (evDir </> "meta.json")
         ( Aeson.encode $
@@ -3999,7 +3999,7 @@ writeEvidenceMeta evDir candidate dirty candidateSource namingBp mpfsBp appH rep
                 , "candidateSource" .= candidateSource
                 , "worktreeDirty" .= dirty
                 , "namingBlueprint" .= namingBp
-                , "mpfsBlueprint" .= mpfsBp
+                , "registryBlueprint" .= registryBp
                 , "applicationPolicy" .= appH
                 , "representativeAppliedPolicy" .= repH
                 , "stateScriptHash" .= stateH

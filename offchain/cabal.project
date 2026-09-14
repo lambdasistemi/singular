@@ -89,7 +89,7 @@ source-repository-package
 allow-newer: chain-follower:data-default
 allow-newer: mts:containers
 
--- cardano-mpfs-cage uses only the pure cardano-tx-tools:tx-build sublibrary
+-- singular-registry uses only the pure cardano-tx-tools:tx-build sublibrary
 -- (Cardano.Tx.Build/Balance/Ledger). Disable the node-tools components so
 -- cabal does not solve their ouroboros 3.x / chain-follower closure, which
 -- conflicts with this project's ouroboros-consensus ==1.0.0.0 pin.

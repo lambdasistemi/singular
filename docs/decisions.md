@@ -55,7 +55,7 @@ The diagram separates the desired identity from the unresolved enforcement mecha
 | Withdrawal and refunds | Withdrawal approval conditions, refund economics and disposal | Exact cancellation target and declared refund requirements; application approval remains conditional. |
 | Identity across reinsertion | Representative identity and approval scope across Delete/reinsert | Scoped logical authorization and explicit representative identity; no universal incarnation allocation scheme selected. |
 | Batch construction | Batch selection, limits and failure presentation | Sequential transition semantics; executable examples do not establish capacity, fairness or a skip policy. |
-| Ledger execution | Ledger transaction shapes, allocation of checks to concrete scripts and shared libraries | Executing logical witness obligations, including net minting; no proof of Cardano execution or imported MPFS guarantees. |
+| Ledger execution | Ledger transaction shapes, allocation of checks to concrete scripts and shared libraries | Executing logical witness obligations, including net minting; no proof of Cardano execution or imported registry guarantees. |
 | Naming application | Naming normalization, authorization, datum schema, resolver authentication and economics | Illustrative register/resolve/change-address stories under explicit model assumptions. |
 
 ## Evidence and next stage

@@ -1,9 +1,9 @@
-# journey — the bounded MPFS cage journey, narrated
+# journey — the bounded registry journey, narrated
 
 One command runs the bounded journey against a real devnet node and
 narrates it, one line per step. This is epic 16's runnable artifact.
 
-**Scope, stated plainly.** What runs today is the **MPFS cage journey**
+**Scope, stated plainly.** What runs today is the **registry journey**
 — boot a cage, submit a request, apply it, read the resulting state
 back. It is the vehicle for Singular's naming claim, **not the claim**:
 nothing this runner prints describes a name as claimed, registered or
@@ -18,7 +18,7 @@ exact order. A step that failed to happen here would be a defect in
 this document.
 
 0. **Identity header.** Reads `onchain/script-identity.json` (path
-   from `MPFS_SCRIPT_IDENTITY`, default `../onchain/script-identity.json`)
+   from `REGISTRY_SCRIPT_IDENTITY`, default `../onchain/script-identity.json`)
    and prints the upstream source revision and every pinned validator
    hash, each labelled **unapplied** with the validator's parameter
    count. The pins are the reviewable blueprint identities (#34) —
@@ -31,7 +31,7 @@ this document.
    querying protocol parameters and the genesis wallet.
 2. **boot.** Builds the boot transaction with the library's
    `bootTokenImpl` (state and request validator bytes come from the
-   blueprint at `MPFS_BLUEPRINT`), signs with the genesis key,
+   blueprint at `REGISTRY_BLUEPRINT`), signs with the genesis key,
    submits, waits for confirmation, derives the cage token id from the
    mint, registers the token's trie, and observes the state UTxO at
    the cage address. It reads the boot state datum and records the
@@ -75,7 +75,7 @@ this document.
    is on chain), max fee, processing window, retract window and stake
    script.
 9. **negative section — the validators must refuse.** These are
-   **MPFS cage** negative cases, exercised against a real devnet in
+   **registry** negative cases, exercised against a real devnet in
    the same run; no Singular naming behaviour is involved. A second,
    unapplied insert request is submitted (`reject-request`), the
    applied insert is replayed into the trie manager so its proofs
@@ -130,7 +130,7 @@ warm developer state. From `offchain/`:
 
 ```sh
 blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-MPFS_BLUEPRINT="$blueprint" nix run --quiet .#journey
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
 ```
 
 The app is the Nix-built `journey` binary wrapped with the locked
@@ -142,11 +142,11 @@ Environment:
 
 | Variable              | Required | Meaning                                              |
 |-----------------------|----------|------------------------------------------------------|
-| `MPFS_BLUEPRINT`      | yes      | Path to the built `plutus.json` blueprint            |
-| `MPFS_SCRIPT_IDENTITY`| no       | Path to `script-identity.json` (default `../onchain/script-identity.json`) |
+| `REGISTRY_BLUEPRINT`      | yes      | Path to the built `plutus.json` blueprint            |
+| `REGISTRY_SCRIPT_IDENTITY`| no       | Path to `script-identity.json` (default `../onchain/script-identity.json`) |
 
 CI runs the same thing as the `journey` job in
-`.github/workflows/mpfs.yml`, after the blueprint job, and fails when
+`.github/workflows/registry.yml`, after the blueprint job, and fails when
 the run fails.
 
 ## What it is not

@@ -4,9 +4,9 @@ Description : CS01 blueprint schema checks for Haskell encodings
 License     : Apache-2.0
 
 Every 'ToData'/'FromData' instance in
-'Cardano.MPFS.Cage.Types' must match the compiled blueprint's own
+'Singular.Registry.Types' must match the compiled blueprint's own
 declared schema — constructor index and field order — read at run
-time via @MPFS_BLUEPRINT@. A round trip proves self-consistency and
+time via @REGISTRY_BLUEPRINT@. A round trip proves self-consistency and
 says nothing about the ledger; this row checks each type's 'Data'
 against the blueprint's schemas with 'validateData', asserts explicit
 constructor indices, and asserts field-title order read from the
@@ -45,19 +45,19 @@ import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..), BuiltinData (..))
 import PlutusTx.IsData.Class (ToData (..))
 
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.Blueprint (
     Blueprint (..),
     Schema (..),
     extractCompiledCode,
     loadBlueprint,
     validateData,
  )
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     scriptHashBytes,
  )
 
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     ConsumerRedeemer (..),
     Migration (..),

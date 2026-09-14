@@ -1,4 +1,4 @@
-name = "singular/naming-onchain"
+name = "singular/naming-app"
 version = "0.1.0"
 compiler = "v1.1.21"
 plutus = "v3"

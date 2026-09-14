@@ -11,7 +11,7 @@ use cardano/transaction.{InlineDatum, Input, Transaction}
 /// The consumer authenticates every `Modify` batch from the
 /// transaction's own evidence — never from a declaration:
 ///
-/// R1 — request value coverage: every spent MPFS request addressed to
+/// R1 — request value coverage: every spent registry request addressed to
 /// this cage's token carries lovelace at least its datum-stated tip.
 /// Builder convention locks tip-plus-buffer into every request; the
 /// cage never checks carriage, so costless fabricated requests would
@@ -33,9 +33,9 @@ use cardano/transaction.{InlineDatum, Input, Transaction}
 /// naming validator's job); not KERI (no key-event verification
 /// anywhere in naming).
 ///
-/// Mirrors below duplicate the MPFS `State`/`Request` and naming
+/// Mirrors below duplicate the registry `State`/`Request` and naming
 /// `NamingEnvelope` shapes field-for-field (cross-partition imports
-/// are impossible; the MPFS mirrors are drift-guarded by unit tests
+/// are impossible; the registry mirrors are drift-guarded by unit tests
 /// decoding REAL validator types in `consumer.tests.ak`, the naming
 /// mirror by hand-encoded envelope vectors plus devnet agreement —
 /// any drift refuses honest batches LOUDLY on ledger).
@@ -44,7 +44,7 @@ pub type ConsumerRedeemer {
   Hook
 }
 
-// ---- MPFS mirrors (onchain/validators/types.ak) ----
+// ---- registry mirrors (onchain/validators/types.ak) ----
 
 pub type CTokenId {
   CTokenId { assetName: ByteArray }
@@ -163,7 +163,7 @@ fn datum_data(input: Input) -> Option<Data> {
   }
 }
 
-/// Try-decode an input's datum as an MPFS cage datum (total: `None`
+/// Try-decode an input's datum as a registry datum (total: `None`
 /// for anything else — claims, lovelace-only inputs, foreign shapes).
 fn decode_cage(input: Input) -> Option<CCageDatum> {
   when datum_data(input) is {

@@ -36,7 +36,7 @@ forever afterwards: re-registering it is refused, which is what
 
 | path | contents |
 |---|---|
-| `onchain/` | the imported MPFS cage partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |
+| `onchain/` | the imported registry partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |
 | `naming-onchain/` | Singular's own naming partition: the same shape, with its compiled `plutus.json` |
 | `onchain/script-identity.json`, `naming-onchain/script-identity.json` | the **pinned unapplied identities**: every validator's compiled hash and parameter count, plus the compiler string |
 | `offchain/` | the runnable journey and the row runners (`offchain/journey/`), their library, and the vendored fixtures module (`offchain/naming/src/Naming/Wire/Vectors.hs`) |
@@ -107,15 +107,15 @@ the pinned identity manifests from `../onchain/` and
 node socket path length is limited):
 
 ```sh
-mpfs="$(nix build --no-link --print-out-paths ./onchain#plutus-blueprint)"
+blueprint="$(nix build --no-link --print-out-paths ./onchain#plutus-blueprint)"
 naming="$(nix build --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
-export TMPDIR=/tmp/s77-exhibit MPFS_BLUEPRINT="$mpfs" NAMING_BLUEPRINT="$naming"
+export TMPDIR=/tmp/s77-exhibit REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming"
 ```
 
 Then, from `offchain/`:
 
 ```sh
-# the bounded MPFS cage journey (boot, request, apply, read back),
+# the bounded registry journey (boot, request, apply, read back),
 # printing the pinned and applied identities it verifies
 nix run .#journey
 

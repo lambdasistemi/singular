@@ -211,16 +211,16 @@ import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
 
-import Cardano.MPFS.Cage.AssetName (deriveAssetName)
-import Cardano.MPFS.Cage.Blueprint (
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
     applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
-import Cardano.MPFS.Cage.TxBuilder.Reject (rejectRequestsImpl)
-import Cardano.MPFS.Cage.Config (CageConfig (..))
-import Cardano.MPFS.Cage.Ledger (
+import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
     ConwayEra,
@@ -230,12 +230,12 @@ import Cardano.MPFS.Cage.Ledger (
     TokenId (..),
     TxOut,
  )
-import Cardano.MPFS.Cage.Provider qualified as Cage
-import Cardano.MPFS.Cage.Trie (TrieManager (..))
-import Cardano.MPFS.Cage.Trie qualified as CageTrie
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.TxBuilder.Boot (bootTokenImpl)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     addrFromKeyHashBytes,
     addrKeyHashBytes,
@@ -266,17 +266,17 @@ import Cardano.MPFS.Cage.TxBuilder.Internal (
     trySlots,
     txInToRef,
  )
-import Cardano.MPFS.Cage.TxBuilder.Register (
+import Singular.Registry.TxBuilder.Register (
     registerScriptImpl,
  )
-import Cardano.MPFS.Cage.TxBuilder.Retract (retractRequestImpl)
-import Cardano.MPFS.Cage.TxBuilder.Request (
+import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
+import Singular.Registry.TxBuilder.Request (
     requestDeleteImpl,
     requestInsertImpl,
     requestUpdateImpl,
  )
-import Cardano.MPFS.Cage.TxBuilder.Update (updateTokenImpl)
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.TxBuilder.Update (updateTokenImpl)
+import Singular.Registry.Types (
     CageDatum (..),
     ConsumerRedeemer (..),
     OnChainOperation (..),
@@ -289,7 +289,7 @@ import Cardano.MPFS.Cage.Types (
     UpdateRedeemer (..),
     stateConsumerPinBytes,
  )
-import Cardano.MPFS.Cage.Node (
+import Singular.Registry.Node (
     checkFunding,
     defaultFundingFloor,
     devnetGenesis,
@@ -298,7 +298,7 @@ import Cardano.MPFS.Cage.Node (
     sessionMagic,
     withNodeSocket,
  )
-import Cardano.MPFS.Cage.Types qualified as CageTypes
+import Singular.Registry.Types qualified as CageTypes
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
     enterpriseAddr,
@@ -605,7 +605,7 @@ runRows rawRows receiptsDir = do
               \controls; the CG rows they cannot arm would pass \
               \vacuously"
             )
-    blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     -- Observe tree identity before any side effect: creating the
     -- receipts directory first would always report dirty.
     base <- requireBase
@@ -756,7 +756,7 @@ checkConsumerPin consumerBytes = do
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
 mode it is the joiner's own signing key
-(`Cardano.MPFS.Cage.Node`). The name is kept so the funding sites
+(`Singular.Registry.Node`). The name is kept so the funding sites
 below read unchanged.
 -}
 genesisAddr :: Addr
@@ -2053,7 +2053,7 @@ instance FromJSON ScriptManifest where
         ScriptManifest <$> o .: "validators"
 
 {- | The manifest is a tracked file of the pinned onchain tree; the
-run reads it, never edits it. @MPFS_SCRIPT_IDENTITY@ overrides the
+run reads it, never edits it. @REGISTRY_SCRIPT_IDENTITY@ overrides the
 path (the li-refusals convention); the default resolves against the
 repository root, wherever the run is invoked from.
 -}
@@ -2069,7 +2069,7 @@ readScriptManifest = do
 
 manifestPath :: IO FilePath
 manifestPath = do
-    override <- lookupEnv "MPFS_SCRIPT_IDENTITY"
+    override <- lookupEnv "REGISTRY_SCRIPT_IDENTITY"
     case override of
         Just p -> pure p
         Nothing -> do
@@ -5132,7 +5132,7 @@ cageCfgWith stateBytes requestBytes consumerBytes seed processMs retractMs =
             , defaultRetractTime = retractMs
             , defaultTip = Coin 1_000_000
             -- Ownerless registry (NOTE-028/A-003, NOTE-046): the
-            -- representative policy is 28 zero bytes on MPFS-only
+            -- representative policy is 28 zero bytes on registry-only
             -- cages (no naming validator reads it here; enforced
             -- at representative mint, not fold). The consumer pin
             -- and script are the candidate's REAL consumer
@@ -5472,7 +5472,7 @@ runCS08 ::
     String ->
     IO ()
 runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
-    -- Base cage (MPFS-only zero representative policy; REAL pinned
+    -- Base cage (registry-only zero representative policy; REAL pinned
     -- consumer from the session binding).
     (seedBase, _) <- largestWalletUtxo prov
     let cfgBase = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedBase)
@@ -6058,7 +6058,7 @@ not a row; shapes and verdicts are the evidence.
 -}
 runForkProbe :: IO ()
 runForkProbe = do
-    blueprintPath <- requireEnv "MPFS_BLUEPRINT"
+    blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     (stateBytes, requestBytes, consumerBytes) <- loadCodes blueprintPath
     devnetGenesis >>= mapM_ checkGenesis
     nodeVer <- readNodeVersion

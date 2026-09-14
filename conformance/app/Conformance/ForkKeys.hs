@@ -52,12 +52,12 @@ import MPF.Interface (HexDigit (..), byteStringToHexKey)
 
 import Cardano.Ledger.Mary.Value (AssetName (..))
 
-import Cardano.MPFS.Cage.Ledger (Root (..), TokenId (..))
-import Cardano.MPFS.Cage.Trie (TrieManager (..))
-import Cardano.MPFS.Cage.Trie qualified as CageTrie
-import Cardano.MPFS.Cage.Trie.Pure (mkPureTrieFromRef)
-import Cardano.MPFS.Cage.Trie.PureManager (mkPureTrieManager)
-import Cardano.MPFS.Cage.Types (Neighbor (..), ProofStep (..))
+import Singular.Registry.Ledger (Root (..), TokenId (..))
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.Types (Neighbor (..), ProofStep (..))
 import Conformance.Mirror (mirrorExclusionSteps, mirrorExclusionVerifies, mirrorInsert, newMirror)
 
 -- | Hash pipeline nibbles for a candidate key: the exact mapping the

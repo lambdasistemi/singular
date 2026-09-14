@@ -90,13 +90,13 @@ import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Cardano.MPFS.Cage.Ledger (AssetName (..), ConwayEra)
-import Cardano.MPFS.Cage.TxBuilder.Internal (
+import Singular.Registry.Ledger (AssetName (..), ConwayEra)
+import Singular.Registry.TxBuilder.Internal (
     extractCageDatum,
     pinScriptHash,
     scriptHashBytes,
  )
-import Cardano.MPFS.Cage.Types (
+import Singular.Registry.Types (
     CageDatum (..),
     OnChainOperation (..),
     OnChainRequest (..),
@@ -365,7 +365,7 @@ verifyUnit index custodyHash acceptedTxids unit = do
                 )
     reqTokens <- requestTokensOf index creationTx
     tokenName <- case reqTokens of
-        [] -> failWith (label <> ": no MPFS request input in creation tx")
+        [] -> failWith (label <> ": no registry request input in creation tx")
         (t : ts) -> do
             unless (all (== t) ts) $
                 failWith (label <> ": creation-tx requests disagree on token")
@@ -713,7 +713,7 @@ claimControlsOf index tx =
             )
             (map txInOutRef (txInputs tx))
 
--- | The MPFS request token names spent by a tx.
+-- | The registry request token names spent by a tx.
 requestTokensOf ::
     Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [ByteString]
 requestTokensOf index tx =
@@ -871,7 +871,7 @@ txWitnesses tx =
     [hashToBytes (unKeyHash (witVKeyHash w)) | w <- toList (tx ^. witsTxL . addrTxWitsL)]
 
 -- | State policy bytes from the state output's own address (the output
--- whose datum decodes as an MPFS state; exactly one per honest tx).
+-- whose datum decodes as a registry state; exactly one per honest tx).
 statePolicyOf :: ConwayTx -> IO ByteString
 statePolicyOf tx = case mapMaybe stateAddr (txOutputs tx) of
     [h] -> pure h
