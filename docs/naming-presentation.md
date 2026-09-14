@@ -4,9 +4,11 @@ template: naming-presentation.html
 
 # A registry explained through naming
 
-As a Cardano developer, follow Alice as she claims a name, changes her payment
-address, recovers from key loss and retires the name. Ten visual user stories
-put the explanations and evidence in your speaker notes.
+As a Cardano developer, see the direction from Singular's registry to its
+intended KERI consumer. Naming is the simpler surrogate application: follow
+Alice as she claims a name, changes her payment address, recovers from key loss
+and retires the name. Eleven visual slides spell out each user story; the
+supporting explanations and evidence stay in your speaker notes.
 
 ## Watch the presentation
 

@@ -1,11 +1,11 @@
 {
   "_source": {
     "file": "naming-presentation.md",
-    "sha256": "05759688b4dffe7fe26aeee3302690b7f1a82f8c297be9e9fd803bee2c869877"
+    "sha256": "5fbd2cc80250db2cd33cc93c692df9c97330adec27e8d7d9320b302cc2468375"
   },
   "watch-the-presentation": [
     {
-      "text": "Watch the ten-slide naming presentation here, or open the full-screen view. Click inside the slides and use the arrow keys or navigation controls. The full-screen view also offers presenter mode. The Markdown and speaker notes are available separately.",
+      "text": "Watch the eleven-slide presentation here, or open the full-screen view. It begins with the real direction: the Singular registry supports an intended KERI consumer. Naming is the simpler surrogate application used to demonstrate that foundation. Every slide spells out a user role, a desired action and its purpose. Click inside the slides and use the arrow keys or navigation controls. Presenter mode, downloadable Markdown and speaker notes are available separately.",
       "pause": 500
     }
   ],
