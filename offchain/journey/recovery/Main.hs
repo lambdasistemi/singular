@@ -632,7 +632,7 @@ fundPublicLifecycle env = do
         outs = [fund deposit, collateral, fund (Coin 0), fund (Coin 0), collateral, fund lastDeposit, collateral]
         -- The insert request spends the wallet change, outside the manual pool.
         reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs
-    wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+    wallet <- Cage.queryUTxOs (Lifecycle.fundingProvider [] (envProv env)) genesisAddr
     let Coin available = mconcat [out ^. coinTxOutL | (_, out) <- wallet, out ^. referenceScriptTxOutL == SNothing]
         Coin required = Lifecycle.fundingRequirement pp outs <> reserve
     emit "funding" ("public lifecycle total requirement " <> show required <> " lovelace; spendable " <> show available)
@@ -1573,8 +1573,10 @@ submitRecoveryRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut Conw
 submitRecoveryRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
+    pool <- readIORef (envPool env)
+    let prov = if envLifecycle env then Lifecycle.fundingProvider (map fst pool) (envProv env) else envProv env
     unsigned <-
-        requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
+        requestInsertImpl cfg prov (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
     result <- submitTx (envSubmit env) signed
     case result of

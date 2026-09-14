@@ -692,7 +692,7 @@ fundPublicLifecycle env = do
         completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
         completion = [Lifecycle.fundedOutput pp refs completerAddr (Coin 0), Lifecycle.collateralOutput pp refs completerAddr]
         reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs <> Lifecycle.fundingRequirement pp completion
-    wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+    wallet <- Cage.queryUTxOs (Lifecycle.fundingProvider [] (envProv env)) genesisAddr
     let Coin available = mconcat [out ^. coinTxOutL | (_, out) <- wallet, out ^. referenceScriptTxOutL == SNothing]
         Coin required = Lifecycle.fundingRequirement pp outs <> reserve
     emit "funding" ("public lifecycle total requirement " <> show required <> " lovelace; spendable " <> show available)
@@ -2856,8 +2856,10 @@ submitRetirementRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut Co
 submitRetirementRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
+    pool <- readIORef (envPool env)
+    let prov = if envLifecycle env then Lifecycle.fundingProvider (map fst pool) (envProv env) else envProv env
     unsigned <-
-        requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value genesisAddr
+        requestInsertImpl cfg prov (Coin 1_000_000) tok spelling value genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
     tag <- retainTx env ("blueprint-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed

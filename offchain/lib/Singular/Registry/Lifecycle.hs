@@ -14,6 +14,7 @@ module Singular.Registry.Lifecycle (
     verifyLifecycleBudget,
     fundingRequirement,
     fundLifecycle,
+    fundingProvider,
     checkExecutionLimit,
     prepareLifecycleTx,
 ) where
@@ -132,21 +133,21 @@ fundingRequirement pp outs =
         Coin change = minimumCoin pp (mkBasicTxOut funderAddr (MaryValue (Coin 0) mempty))
      in Coin (sum [c | o <- outs, let { Coin c = o ^. coinTxOutL }] + fees + change)
 
-{- | Fund only the requested lifecycle actors. Reference publications and
-token-bearing outputs are never funding candidates. No fixture pool exists.
--}
+-- | Keep request funding away from references and inputs reserved for later steps.
+fundingProvider :: [TxIn] -> Provider IO -> Provider IO
+fundingProvider reserved prov = prov
+    { queryUTxOs = \addr -> filter available <$> queryUTxOs prov addr
+    }
+  where
+    available (i, out) = i `notElem` reserved
+        && out ^. referenceScriptTxOutL == SNothing
+        && (let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL in Map.null assets)
+
+-- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle :: Provider IO -> Submitter IO -> PParams ConwayEra -> [TxOut ConwayEra] -> IO [(TxIn, TxOut ConwayEra)]
 fundLifecycle prov submit pp outs = do
-    wallet <- queryUTxOs prov funderAddr
-    let ordinary =
-            sortOn
-                (Down . (^. coinTxOutL) . snd)
-                [ u
-                | u@(_, o) <- wallet
-                , o ^. referenceScriptTxOutL == SNothing
-                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
-                , Map.null assets
-                ]
+    wallet <- queryUTxOs (fundingProvider [] prov) funderAddr
+    let ordinary = sortOn (Down . (^. coinTxOutL) . snd) wallet
         Coin available = foldMap ((^. coinTxOutL) . snd) ordinary
         Coin need = fundingRequirement pp outs
         pick :: Integer -> [(TxIn, TxOut ConwayEra)] -> [(TxIn, TxOut ConwayEra)]
