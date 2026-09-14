@@ -67,7 +67,7 @@ fn expected_rep_token(tx: Transaction) -> ByteArray {
 /// `Retire` may place the representative at. Regenerated from the
 /// custody validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"c2337e05bb6a705adeb8bb8fb20155309a85d7c4cda174f9e8afa2d6"
+  #"c6e795719018a2515efc1b75085cf556d4a867f4dbd706a03bc56d0e"
 
 /// The naming application validator (issue #52; mint burn half added
 /// by #56's ledger run).
