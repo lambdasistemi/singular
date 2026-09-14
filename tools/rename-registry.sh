@@ -232,18 +232,18 @@ step6b_identifier_sweep() {
 
 step7_gate() {
   echo "step 7: final gate"
+  # The migration's own old-name patterns are not product terminology.
   residual="$(git grep -iw mpfs -- \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
-    ':!CHANGELOG.md' ':!site' ':!.docs-source' || true)"
+    ':!CHANGELOG.md' ':!site' ':!.docs-source' ':!tools/rename-registry.sh' || true)"
   if [ -z "$residual" ]; then
     echo "error: no mpfs matches at all; the upstream citations must survive" >&2
     exit 1
   fi
-  echo "$residual" | cut -d: -f1 | sort -u > /tmp/rename-registry-residual-files.txt
   # shellcheck disable=SC2016
   allowed='conformance/app/Conformance/Run.hs
 conformance/rows.json'
-  if [ "$(cat /tmp/rename-registry-residual-files.txt)" != "$allowed" ]; then
+  if [ "$(echo "$residual" | cut -d: -f1 | sort -u)" != "$allowed" ]; then
     echo "error: mpfs remains outside the two citation files:" >&2
     echo "$residual" >&2
     exit 1
