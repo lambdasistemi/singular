@@ -79,10 +79,10 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
-import Data.List (intercalate, isInfixOf, sortBy)
+import Data.List (intercalate, isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
-import Data.Ord (comparing)
+import Data.Ord (Down (..), comparing)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -1393,9 +1393,14 @@ setupFoldClaim env datumFold = do
 splitGenesis :: Cage.Provider IO -> Submitter IO -> IO [(TxIn, TxOut ConwayEra)]
 splitGenesis prov submit = do
     utxos <- Cage.queryUTxOs prov genesisAddr
-    (bigIn, bigOut) <- case sortBy (comparing outSortKey) utxos of
+    -- The largest output, which is what "big" meant all along. Ordering
+    -- by transaction id picked the right one only because a devnet this
+    -- run booted for itself has exactly one output at this address; a
+    -- funding wallet shared with a deployment has many, and the first in
+    -- lexical order is an arbitrary small one.
+    (bigIn, bigOut) <- case sortOn (Down . outValue) utxos of
         (b : _) -> pure b
-        [] -> failWith "split: the genesis wallet has no UTxOs"
+        [] -> failWith "split: the funding wallet has no UTxOs"
     let Coin total = bigOut ^. coinTxOutL
         perSplit = 2_000_000_000
         nSplits = 24 :: Integer
@@ -1440,7 +1445,7 @@ splitGenesis prov submit = do
             )
     pure (sortBy (comparing (txInIndex . fst)) mine)
   where
-    outSortKey (i, _) = (txInTxIdHex i, txInIndex i)
+    outValue (_, o) = let Coin c = o ^. coinTxOutL in c
 
 txInTxIdHex :: TxIn -> String
 txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))

@@ -814,9 +814,6 @@ runRows env record = do
             <> root0
             <> " read from the chain state datum — no name Active"
         )
-    -- Supported request, submitted early so it ages into the retract
-    -- window for the closing retract row.
-    supportReq <- submitSupportRequest env record "support-aging" "support-value"
     -- alice: the connected insert, accepted.
     alice <- setupKey env "alice" aliceSpelling (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
     foldTxAlice <- connectedAccept env record (envTrie env) alice True "fold-active"
@@ -857,6 +854,15 @@ runRows env record = do
     runOwnerlessSweep env record False
     runOwnerlessSweep env record True
     -- Supported actions: plain fold and retract on the same cage.
+    --
+    -- The retract window is thirty seconds wide and measured from this
+    -- request's own submission, so the request is submitted here rather
+    -- than at the top of the run. Ageing it across forty intervening
+    -- rows made the window a race against however long those rows take:
+    -- an attached run reached the retract 457 s after submitting, with
+    -- the window closed since 150 s. Ageing it deliberately, by waiting,
+    -- is the same phase-2 evidence without the race.
+    supportReq <- submitSupportRequest env record "support-aging" "support-value"
     runSupportFold env record
     runSupportRetract env record supportReq
     -- Hook exhibit (NOTE-020 item 4 + NOTE-021 consumer v2): cage-side
@@ -2069,7 +2075,7 @@ runSupportRetract env record (reqIn, reqOut) = do
     submittedAt <- case extractCageDatum reqOut of
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
         _ -> failWith "support retract: request datum does not decode"
-    waitForPhase2 submittedAt
+    waitForPhase2 env submittedAt
     built <- try (retryHorizon 3 (retractRequestImpl (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env))) :: IO (Either SomeException ConwayTx)
     unsigned <- case built of
         Right tx -> pure tx
@@ -2368,13 +2374,41 @@ retryHorizon n act = do
                 else throwIO e
 
 -- | Sleep until the request's phase-2 window opens.
-waitForPhase2 :: Integer -> IO ()
-waitForPhase2 submittedAt = do
+{- | Wait until a request has aged into its retract window, and refuse to
+build if the window has already closed.
+
+Two things this does not assume. The phase-1 window is the one the
+registry was booted with, read from the configuration rather than
+written here as a constant: a run attached to a deployment uses that
+deployment's economics. And the window closes — a run that arrives late
+gets a sentence naming how late, instead of a transaction the node
+refuses for a validity interval nobody reads.
+-}
+waitForPhase2 :: Env -> Integer -> IO ()
+waitForPhase2 env submittedAt = do
     now <- currentPosixMs
-    let target = submittedAt + 120_000 + 5_000
+    let processTime = defaultProcessTime (envCfg env)
+        retractTime = defaultRetractTime (envCfg env)
+        opens = submittedAt + processTime
+        closes = opens + retractTime
+        target = opens + 2_000
     when (now < target) $ do
         emit "wait" "sleeping into the retract window"
         threadDelay (fromIntegral (target - now) * 1000)
+    arrived <- currentPosixMs
+    when (arrived >= closes) $
+        failWith
+            ( "support retract: the request's retract window closed "
+                <> show ((arrived - closes) `div` 1000)
+                <> "s ago (it opened "
+                <> show (processTime `div` 1000)
+                <> "s after submission and lasted "
+                <> show (retractTime `div` 1000)
+                <> "s). The run reached the retract too late for the \
+                   \window the registry was booted with; this is a \
+                   \harness timing failure, not a refusal by the \
+                   \validator."
+            )
 
 -- | Hex facts from a submitted transaction for report rows.
 signerHexes :: ConwayTx -> [String]

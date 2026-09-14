@@ -171,6 +171,7 @@ data Compiled = Compiled
     , cAppBytes :: SBS.ShortByteString
     , cRepAppliedBytes :: SBS.ShortByteString
     , cCustodyBytes :: SBS.ShortByteString
+    , cStakingBytes :: SBS.ShortByteString
     }
 
 loadCompiled :: IO Compiled
@@ -194,6 +195,7 @@ loadCompiled = do
     appBytes <- need "naming" nbp "application.application"
     repBytes <- need "naming" nbp "representative.representative"
     custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
+    stakingBytes <- need "MPFS" mbp "staking.staking"
     let appHash = computeScriptHash appBytes
     pure
         Compiled
@@ -204,6 +206,7 @@ loadCompiled = do
             , cRepAppliedBytes =
                 applyBytesParam (scriptHashBytes appHash) repBytes
             , cCustodyBytes = custodyBytes
+            , cStakingBytes = stakingBytes
             }
 
 -- | The release's compiled halves, in the shape a manifest consumes.
@@ -448,7 +451,17 @@ bootRegistry prov submit compiled txs = do
         )
     pure (cfg, tok, signed, seedIn)
 
--- | The stake credentials a registry's hook withdrawals need, once.
+{- | Every stake credential a run withdraws from, registered once.
+
+Three of them, and each belongs to a different runner: the pinned
+consumer every @Modify@ withdraws, the completion-only custody script
+the retirement rows use, and the always-true staking script that serves
+the swapped-hook control — its withdraw arm always succeeds, so the
+ledger passes it and only the cage's own exact-credential check can
+refuse. A registry that attaches cannot register them itself (a second
+registration is refused), so a deployment missing one turns that
+runner's row into a refusal with no evidence behind it.
+-}
 registerCredentials ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -460,10 +473,17 @@ registerCredentials prov submit cfg compiled txs = do
     consumerTx <- registerConsumerImpl cfg prov funderAddr
     _ <- submitted submit txs "consumer-registration" consumerTx
     emit "credential" "consumer stake credential registered"
-    let custody = scriptFromBytes "naming-custody" (cCustodyBytes compiled)
-    custodyTx <- registerScriptImpl prov funderAddr (hashScript custody)
-    _ <- submitted submit txs "custody-registration" custodyTx
-    emit "credential" "custody stake credential registered"
+    let named name bytes = (name, scriptFromBytes name bytes)
+    mapM_
+        registerOne
+        [ named "naming-custody" (cCustodyBytes compiled)
+        , named "staking" (cStakingBytes compiled)
+        ]
+  where
+    registerOne (name, script) = do
+        tx <- registerScriptImpl prov funderAddr (hashScript script)
+        _ <- submitted submit txs (name <> "-registration") tx
+        emit "credential" (name <> " stake credential registered")
 
 {- | Publish the five reference scripts every runner reads: the
 registry's state and request validators, the naming application, its

@@ -1753,9 +1753,14 @@ mintRepresentativeRedeemer = PLC.Constr 0 []
 splitGenesis :: Cage.Provider IO -> Submitter IO -> Integer -> IO [(TxIn, TxOut ConwayEra)]
 splitGenesis prov submit nSplits = do
     utxos <- Cage.queryUTxOs prov genesisAddr
-    (bigIn, bigOut) <- case sortBy (comparing outSortKey) utxos of
+    -- The largest output, which is what "big" meant all along. Ordering
+    -- by transaction id picked the right one only because a devnet this
+    -- run booted for itself has exactly one output at this address; a
+    -- funding wallet shared with a deployment has many, and the first in
+    -- lexical order is an arbitrary small one.
+    (bigIn, bigOut) <- case sortOn (Down . outValue) utxos of
         (b : _) -> pure b
-        [] -> failWith "split: the genesis wallet has no UTxOs"
+        [] -> failWith "split: the funding wallet has no UTxOs"
     let Coin total = bigOut ^. coinTxOutL
         perSplit = 2_000_000_000
         fee = 1_000_000
@@ -1799,7 +1804,7 @@ splitGenesis prov submit nSplits = do
             )
     pure (sortBy (comparing (txInIndex . fst)) mine)
   where
-    outSortKey (i, _) = (txInTxIdHex i, txInIndex i)
+    outValue (_, o) = let Coin c = o ^. coinTxOutL in c
 
 txInTxIdHex :: TxIn -> String
 txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
