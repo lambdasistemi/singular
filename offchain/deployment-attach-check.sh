@@ -11,6 +11,13 @@
 # has never been seen to fail is not evidence.
 set -euo pipefail
 
+journey_args=()
+case "${1:-}" in
+    "") ;;
+    --lifecycle) journey_args=(--lifecycle) ;;
+    *) echo "usage: $0 [--lifecycle]" >&2; exit 2 ;;
+esac
+
 here="$(cd "$(dirname "$0")" && pwd)"
 cd "$here"
 work="$(mktemp -d)"
@@ -84,12 +91,21 @@ for runner in register-rows recovery-rows retirement-rows; do
     echo "attach-check: $runner, attached"
     spelling=()
     [ "$runner" != register-rows ] || spelling=(--spelling audience-name)
-    nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest" "${spelling[@]}"
+    nix run --quiet "$here#$runner" -- "${external[@]}" --deployment "$manifest" "${spelling[@]}" "${journey_args[@]}"
 done
 
-echo "attach-check: the exact spelling is already held; rerun must submit and observe duplicate refusal"
-nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name | tee "$work/rerun.out"
-grep -F 'spelling "audience-name" is already held: duplicate insert refused' "$work/rerun.out"
+if [ "${#journey_args[@]}" -gt 0 ]; then
+    echo "attach-check: public duplicate preflight must refuse before spending"
+    if nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name --lifecycle > "$work/rerun.out" 2>&1; then
+        echo "FAIL: public lifecycle reused a claimed spelling" >&2; exit 1
+    fi
+    grep -F 'requested spelling is already claimed' "$work/rerun.out"
+else
+    echo "attach-check: the exact spelling is already held; rerun must submit and observe duplicate refusal"
+    nix run --quiet "$here#register-rows" -- "${external[@]}" --deployment "$manifest" --spelling=audience-name | tee "$work/rerun.out"
+    grep -F 'spelling "audience-name" is already held: duplicate insert refused' "$work/rerun.out"
+
+fi
 
 after_state="$(count_state_outputs)"
 after_refs="$(count_reference_outputs)"

@@ -78,6 +78,7 @@ library
     Singular.Registry.Config
     Singular.Registry.Deployment
     Singular.Registry.Ledger
+    Singular.Registry.Lifecycle
     Singular.Registry.Node
     Singular.Registry.Proof
     Singular.Registry.Provider
@@ -527,12 +528,14 @@ test-suite cage-tests
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeSpec
+    Singular.Registry.LifecycleSpec
     Singular.Registry.TypesSpec
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
   build-depends:
     , base               >=4.14 && <5
+    , cardano-ledger-core
     , base16-bytestring
     , bytestring
     , singular-registry

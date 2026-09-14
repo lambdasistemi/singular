@@ -97,7 +97,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
-import System.Environment (lookupEnv)
+import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
@@ -155,6 +155,7 @@ import Singular.Registry.Ledger (
     Root (..),
     TokenId (..),
  )
+import Singular.Registry.Lifecycle qualified as Lifecycle
 import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
@@ -162,7 +163,7 @@ import Singular.Registry.Node (
     awaitTxId,
     funderAddr,
     funderSignKey,
-    withNode,
+    withNodeForPlannedFunding,
  )
 import Singular.Registry.Deployment (
     Attached (..),
@@ -177,6 +178,7 @@ import Singular.Registry.Deployment (
     saveMirror,
  )
 import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
@@ -191,6 +193,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
  )
 import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.Types (
+    OnChainOperation (..),
     OnChainTxOutRef,
     CageDatum (..),
     OnChainRoot (..),
@@ -204,6 +207,7 @@ import Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     computeScriptHash,
     computeScriptIntegrity,
+    currentPosixMs,
     deriveConsumerBinding,
     extractCageDatum,
     findStateUtxo,
@@ -355,11 +359,15 @@ runMode mode blueprintPath registryPath = do
             failWith
                 "consumer.consumer compiled code not found in the registry \
                 \blueprint (every Modify withdraws the pinned consumer)"
-    withNode $ \sess -> do
+    args <- getArgs
+    withNodeForPlannedFunding $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
+            lifecycle = Lifecycle.lifecycleRequested sess args
+        when ("--funding-only" `elem` args && not lifecycle) $ failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
+        when (lifecycle && mDeployment == Nothing) $ failWith "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
             Just path -> do
                 dep <- readDeployment path
@@ -512,7 +520,7 @@ runMode mode blueprintPath registryPath = do
                 _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
                 emit "representative" "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
-        pool <- splitGenesis prov submit 80
+        pool <- if lifecycle then pure [] else splitGenesis prov submit 80
         poolRef <- newIORef pool
         scriptRefs <- case attached of
             Nothing ->
@@ -532,6 +540,8 @@ runMode mode blueprintPath registryPath = do
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
+                    , envLifecycle = lifecycle
+                    , envFundingOnly = "--funding-only" `elem` args
                     , envPool = poolRef
                     , envScript = script
                     , envScriptHash = appHash
@@ -559,44 +569,86 @@ runMode mode blueprintPath registryPath = do
                     , envDatumCorrect = datumCorrect
                     , envDatumForged = datumForged
                     }
-        emit "setup" "folding the three recovery records (main, refusals, forged)"
-        (txMain, recMain) <-
-            setupGenuineRecord env oldSeed oldHash datumCorrect "main" "rc-main"
-        _ <- waitConfirmation (txMain <> " (setup: main)")
-        (txRef, recRefusals) <-
-            setupGenuineRecord env refusalsSeed refusalsHash datumRefusals "refusals" "rc-refusals"
-        _ <- waitConfirmation (txRef <> " (setup: refusals)")
-        (txForged, recForged) <-
-            setupGenuineRecord env forgedSeed forgedHash datumForged "forged" "rc-forged"
-        _ <- waitConfirmation (txForged <> " (setup: forged)")
-        emit
-            "setup"
-            ( "records live at the application validator 0x"
-                <> appHex
-                <> ": main="
-                <> showIn recMain
-                <> " (representative 0x"
-                <> hex (representativeName "rc-main")
-                <> ") refusals="
-                <> showIn recRefusals
-                <> " (representative 0x"
-                <> hex (representativeName "rc-refusals")
-                <> ") forged="
-                <> showIn recForged
-                <> " (representative 0x"
-                <> hex (representativeName "rc-forged")
-                <> ") — each folded from its own insert with its \
-                   \representative minted +1 under the applied policy 0x"
-                <> repAppliedHex
-                <> "; the former application-policy stand-in shape is \
-                   \removed; main/refusals store the domain-separated \
-                   \commitment of the reveal, forged stores the \
-                   \non-domain-separated digest"
-            )
-        case mode of
-            MainRun -> runRows env recMain recRefusals recForged
-            ControlValid -> runControlValid env recRefusals
-            ControlWrongReason -> runControlWrongReason env recMain recRefusals
+        if lifecycle
+            then do
+                fundPublicLifecycle env
+                unless (envFundingOnly env) $ runLifecycle env
+            else do
+                emit "setup" "folding the three recovery records (main, refusals, forged)"
+                (txMain, recMain) <-
+                    setupGenuineRecord env oldSeed oldHash datumCorrect "main" "rc-main"
+                _ <- waitConfirmation (txMain <> " (setup: main)")
+                (txRef, recRefusals) <-
+                    setupGenuineRecord env refusalsSeed refusalsHash datumRefusals "refusals" "rc-refusals"
+                _ <- waitConfirmation (txRef <> " (setup: refusals)")
+                (txForged, recForged) <-
+                    setupGenuineRecord env forgedSeed forgedHash datumForged "forged" "rc-forged"
+                _ <- waitConfirmation (txForged <> " (setup: forged)")
+                emit
+                    "setup"
+                    ( "records live at the application validator 0x"
+                        <> appHex
+                        <> ": main="
+                        <> showIn recMain
+                        <> " (representative 0x"
+                        <> hex (representativeName "rc-main")
+                        <> ") refusals="
+                        <> showIn recRefusals
+                        <> " (representative 0x"
+                        <> hex (representativeName "rc-refusals")
+                        <> ") forged="
+                        <> showIn recForged
+                        <> " (representative 0x"
+                        <> hex (representativeName "rc-forged")
+                        <> ") — each folded from its own insert with its \
+                           \representative minted +1 under the applied policy 0x"
+                        <> repAppliedHex
+                        <> "; the former application-policy stand-in shape is \
+                           \removed; main/refusals store the domain-separated \
+                           \commitment of the reveal, forged stores the \
+                           \non-domain-separated digest"
+                    )
+                case mode of
+                    MainRun -> runRows env recMain recRefusals recForged
+                    ControlValid -> runControlValid env recRefusals
+                    ControlWrongReason -> runControlWrongReason env recMain recRefusals
+
+fundPublicLifecycle :: Env -> IO ()
+fundPublicLifecycle env = do
+    occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie "rc-main"
+    when (occupied /= Nothing) $ failWith "public lifecycle: rc-main is already claimed"
+    now <- currentPosixMs
+    let pp = envPp env
+        refs = envRefUtxos env
+        datum = envDatumCorrect env
+        approval = insertApprovalName (addressBytes (controlAddress datum)) (nextControlCommitment datum)
+        tokens = Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1)
+        deposit = Lifecycle.minimumCoin pp (scriptOut pp (envAppAddr env) 0 tokens datum)
+        insertDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rc-main" (OpInsert (representativeName "rc-main")) now
+        fund = Lifecycle.fundedOutput pp refs genesisAddr
+        collateral = Lifecycle.collateralOutput pp refs genesisAddr
+        lastDeposit = Coin 0
+        -- Claim, connected fold, recovery, then maintenance.
+        outs = [fund deposit, collateral, fund (Coin 0), fund (Coin 0), collateral, fund lastDeposit, collateral]
+        -- The insert request spends the wallet change, outside the manual pool.
+        reserve = insertDeposit <> Lifecycle.protocolFeeReserve pp refs
+    wallet <- Cage.queryUTxOs (envProv env) genesisAddr
+    let Coin available = mconcat [out ^. coinTxOutL | (_, out) <- wallet, out ^. referenceScriptTxOutL == SNothing]
+        Coin required = Lifecycle.fundingRequirement pp outs <> reserve
+    emit "funding" ("public lifecycle total requirement " <> show required <> " lovelace; spendable " <> show available)
+    unless (available >= required) $ failWith ("public lifecycle needs " <> show required <> " lovelace")
+    emit "funding" ("lifecycle total requirement: " <> show required <> " lovelace")
+    unless (envFundingOnly env) $ do
+        funded <- Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+        writeIORef (envPool env) funded
+
+runLifecycle :: Env -> IO ()
+runLifecycle env = do
+    (_, record) <- setupGenuineRecord env oldSeed (envOldHash env) (envDatumCorrect env) "main" "rc-main"
+    original <- mustSnap env record
+    recovered <- rowLR01 env original
+    _ <- rowMaintainRecovered env recovered
+    emit "complete" "public lifecycle: connected claim, recovery and recovered-controller maintenance accepted"
 
 data Env = Env
     { envAttached :: Maybe (FilePath, Attached)
@@ -606,6 +658,8 @@ data Env = Env
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
+    , envLifecycle :: Bool
+    , envFundingOnly :: Bool
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
     , envScript :: Script ConwayEra
     , envScriptHash :: ScriptHash
@@ -1277,17 +1331,17 @@ recoverTx env snap revealed reps registry successor signers = do
         integrity = computeScriptIntegrity (envPp env) redeemers
         contOut =
             scriptOut (envPp env) (envAppAddr env) (snapCoin snap) (snapRepTokens env snap) successor
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
+        change = changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [contOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [contOut, change]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    preparePublicTx env (1 + length signers) $
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1315,17 +1369,17 @@ maintainTx env snap successor signers = do
         integrity = computeScriptIntegrity (envPp env) redeemers
         contOut =
             scriptOut (envPp env) (envAppAddr env) (snapCoin snap) (snapRepTokens env snap) successor
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
+        change = changeOut (snapCoin snap + coinOf fund) (lifecycleFee env) [contOut]
         body =
             mkBasicTxBody
                 & inputsTxBodyL .~ inputs
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [contOut, change]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & reqSignerHashesTxBodyL
                     .~ Set.fromList (map addrWitnessKeyHash signers)
                 & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
+    preparePublicTx env (1 + length signers) $
         ( mkBasicTx body
             & witsTxL . scriptTxWitsL
                 .~ Map.singleton (envScriptHash env) (envScript env)
@@ -1512,8 +1566,9 @@ publishBatch prov submit pp poolRef addr scripts = do
         failWith "publish: script outputs not found"
     pure (take (length scripts) mine)
 
--- | Submit one registry insert request (spelling -> representative name),
--- genesis-funded like the rest of this runner.
+{- | Submit one registry insert request (spelling -> representative name),
+genesis-funded like the rest of this runner.
+-}
 submitRecoveryRequest :: Env -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitRecoveryRequest env spelling value = do
     let cfg = envCfg env
@@ -1543,9 +1598,15 @@ queryRecoveryState env = do
         Nothing -> failWith "state UTxO not found"
 
 queryRecoveryFee :: Env -> IO (TxIn, TxOut ConwayEra)
-queryRecoveryFee env = do
-    (fund, _collateral) <- takeFundCollateral env
-    pure fund
+queryRecoveryFee env
+    | envLifecycle env = do
+        pool <- readIORef (envPool env)
+        case pool of
+            fund : rest -> writeIORef (envPool env) rest >> pure fund
+            [] -> failWith "lifecycle funding exhausted"
+    | otherwise = do
+        (fund, _collateral) <- takeFundCollateral env
+        pure fund
 
 mustOutAt :: Env -> Addr -> TxIn -> IO (TxOut ConwayEra)
 mustOutAt env addr txin = do
@@ -1587,13 +1648,14 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     -- The insert request (claim) at the application validator.
     (fundA, collateralA) <- takeFundCollateral env
     let claimOut =
-            scriptOut
-                (envPp env)
-                (envAppAddr env)
-                claimCoin
-                approvalTokens
-                datum
-        changeA = changeOut (coinOf fundA) flatFee [claimOut]
+            Lifecycle.sizedOutput (envLifecycle env) (envPp env) $
+                scriptOut
+                    (envPp env)
+                    (envAppAddr env)
+                    claimCoin
+                    approvalTokens
+                    datum
+        changeA = changeOut (coinOf fundA) (lifecycleFee env) [claimOut]
         redeemersA =
             Redeemers $
                 Map.singleton
@@ -1612,7 +1674,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
                 & inputsTxBodyL .~ Set.fromList [fst fundA]
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateralA)
                 & outputsTxBodyL .~ StrictSeq.fromList [claimOut, changeA]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & mintTxBodyL .~ MultiAsset approvalTokens
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash controllerHash)
@@ -1622,10 +1684,11 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton (envScriptHash env) (envScript env)
                 & witsTxL . rdmrsTxWitsL .~ redeemersA
+    evaluatedA <- preparePublicTx env 2 txA
     let signedA =
             addKeyWitness
                 (mkSignKey controllerSeed)
-                (addKeyWitness genesisSignKey txA)
+                (addKeyWitness genesisSignKey evaluatedA)
     submitAccepted env ("setup-" <> label <> "-insert") signedA
     _ <- waitConfirmation (txIdHex signedA <> " (setup: " <> label <> " claim)")
     claimIn <-
@@ -1704,10 +1767,12 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
                 , cfaAttachScripts = []
                 , cfaAdjustRoot = id
                 }
+    Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsignedF
     let signedF = addKeyWitness genesisSignKey unsignedF
     submitAccepted env ("setup-" <> label <> "-fold") signedF
     _ <- waitConfirmation (txIdHex signedF <> " (setup: " <> label <> " fold)")
     syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
+    when (envLifecycle env) $ forM_ (envAttached env) $ \(path, _) -> saveMirror path =<< envDumpTries env
     rootAfter <- chainRecoveryRoot env
     emit
         "setup-fold"
@@ -1729,6 +1794,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     pure (txIdHex signedF, recordIn)
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
+
 -- | Spend redeemer @Fold { representatives }@.
 foldRedeemer :: [ByteString] -> PLC.Data
 foldRedeemer reps = PLC.Constr 2 [PLC.List (map PLC.B reps)]
@@ -1803,6 +1869,14 @@ txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
 
 txInIndex :: TxIn -> Integer
 txInIndex (TxIn _ (TxIx i)) = toInteger i
+
+lifecycleFee :: Env -> Integer
+lifecycleFee env
+    | envLifecycle env = let Coin fee = Lifecycle.protocolFeeReserve (envPp env) (envRefUtxos env) in fee
+    | otherwise = flatFee
+
+preparePublicTx :: Env -> Int -> ConwayTx -> IO ConwayTx
+preparePublicTx env = Lifecycle.prepareLifecycleTx (envLifecycle env) (envProv env) (envPp env) (envRefUtxos env)
 
 takeFundCollateral ::
     Env ->

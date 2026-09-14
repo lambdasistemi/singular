@@ -179,6 +179,7 @@ import Singular.Registry.Ledger (
     Root (..),
     TokenId (..),
  )
+import Singular.Registry.Lifecycle qualified as Lifecycle
 import Singular.Registry.Node (
     NodeSession (..),
     currentTipSlot,
@@ -188,7 +189,7 @@ import Singular.Registry.Node (
     awaitTxId,
     funderAddr,
     funderSignKey,
-    withNode,
+    withNodeForPlannedFunding,
  )
 import Singular.Registry.Deployment (
     Attached (..),
@@ -248,6 +249,7 @@ import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
+    OnChainOperation (..),
     OnChainTxOutRef,
     CageDatum (..),
     OnChainRequest (..),
@@ -487,11 +489,15 @@ runMode mode namingPath registryPath = do
             failWith
                 "staking.staking compiled code not found in the registry \
                 \blueprint (the swapped-hook control withdraws from it)"
-    withNode $ \sess -> do
+    args <- getArgs
+    withNodeForPlannedFunding $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
+            lifecycle = Lifecycle.lifecycleRequested sess args
+        when ("--funding-only" `elem` args && not lifecycle) $ failWith "--funding-only requires a public node or --lifecycle"
         mDeployment <- deploymentPathFromEnvironment
+        when (lifecycle && mDeployment == Nothing) $ failWith "the public lifecycle requires --deployment; deploy the registry once first"
         seedRef <- case mDeployment of
             Just path -> do
                 dep <- readDeployment path
@@ -686,7 +692,7 @@ runMode mode namingPath registryPath = do
         -- with the cage: proofs built against it fail on-chain, which is
         -- exactly the occupied-key refusal.
         createTrie tmFresh tok
-        pool <- faucetParty prov submit evDir evNext
+        pool <- if lifecycle then pure [] else faucetParty prov submit evDir evNext
         poolRef <- newIORef pool
         scriptRefs <- case attached of
             Nothing -> do
@@ -712,6 +718,8 @@ runMode mode namingPath registryPath = do
                     , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
+                    , envLifecycle = lifecycle
+                    , envFundingOnly = "--funding-only" `elem` args
                     , envPool = poolRef
                     , envCfg = cfg
                     , envTok = tok
@@ -751,14 +759,15 @@ runMode mode namingPath registryPath = do
                     , envNamingBlueprint = namingPath
                     , envRegistryBlueprint = registryPath
                     }
+        when lifecycle $ fundPublicLifecycle env
         receiptRef <- newIORef []
         let record = recordRow receiptRef
-        case mode of
+        unless (envFundingOnly env) $ case mode of
             MainRun -> do
                 occupied <- withTrie tm tok $ \trie -> Trie.lookup trie spelling
                 case (attached, occupied) of
                     (Just _, Just _) -> runAttachedDuplicate env record
-                    _ -> runRows env record
+                    _ -> if lifecycle then runLifecycle env record else runRows env record
             ControlValid -> runControlValid env
             ControlWrongReason -> runControlWrongReason env
             FaultRepPolicy -> runFaultRepPolicy env
@@ -785,12 +794,45 @@ runMode mode namingPath registryPath = do
                     <> " for the next run that attaches"
                 )
 
+-- | One public claim and its connected fold; the full row suite stays below.
+runLifecycle :: Env -> (Value -> IO ()) -> IO ()
+runLifecycle env record = do
+    key <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    _ <- connectedAccept env record (envTrie env) key True "fold-active"
+    emit "complete" "public lifecycle: exact spelling claimed and folded into Active"
+
+fundPublicLifecycle :: Env -> IO ()
+fundPublicLifecycle env = do
+    occupied <- withTrie (envTrie env) (envTok env) $ \trie -> Trie.lookup trie (envSpelling env)
+    when (occupied /= Nothing) $ failWith "public lifecycle: requested spelling is already claimed; choose an unclaimed spelling explicitly"
+    key <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
+    now <- currentPosixMs
+    let pp = envPp env
+        refs = envRefUtxos env
+        approval = insertApprovalName (keyControlBytes key) (keyCommitment key)
+        tokens = MultiAsset (Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1))
+        claim = scriptOut pp (envAppAddr env) 0 tokens (keyDatum key)
+        deposit = Lifecycle.minimumCoin pp claim
+        request = Lifecycle.requestDeposit pp (envCfg env) (envTok env) (envFolderAddr env) (envSpelling env) (OpInsert (representativeName (envSpelling env))) now
+        outs =
+            [ Lifecycle.fundedOutput pp refs (envPartyAddr env) deposit
+            , Lifecycle.collateralOutput pp refs (envPartyAddr env)
+            , Lifecycle.fundedOutput pp refs (envFolderAddr env) (request <> Lifecycle.protocolFeeReserve pp refs)
+            ]
+    let Coin required = Lifecycle.fundingRequirement pp outs
+    emit "funding" ("lifecycle total requirement: " <> show required <> " lovelace")
+    unless (envFundingOnly env) $ do
+        funded <- Lifecycle.fundLifecycle (envProv env) (envSubmit env) pp outs
+        writeIORef (envPool env) (take 2 funded)
+
 data Env = Env
     { envSpelling :: ByteString
     , envAttached :: Bool
     , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
+    , envLifecycle :: Bool
+    , envFundingOnly :: Bool
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
     , envCfg :: CageConfig
     , envTok :: TokenId
@@ -1196,13 +1238,14 @@ setupNamingClaim env ks = do
                     (Map.singleton (AssetName (SBS.toShort approval)) 1)
     (fund, collateral) <- takeFundCollateral env
     let claimOut =
-            scriptOut
-                (envPp env)
-                (envAppAddr env)
-                claimCoin
-                approvalMA
-                (keyDatum ks)
-        change = changeOut (coinOf fund) flatFee [claimOut] (envPartyAddr env)
+            Lifecycle.sizedOutput (envLifecycle env) (envPp env) $
+                scriptOut
+                    (envPp env)
+                    (envAppAddr env)
+                    claimCoin
+                    approvalMA
+                    (keyDatum ks)
+        change = changeOut (coinOf fund) (lifecycleFee env) [claimOut] (envPartyAddr env)
         redeemers =
             Redeemers $
                 Map.singleton
@@ -1221,7 +1264,7 @@ setupNamingClaim env ks = do
                 & inputsTxBodyL .~ Set.fromList [fst fund]
                 & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
                 & outputsTxBodyL .~ StrictSeq.fromList [claimOut, change]
-                & feeTxBodyL .~ Coin flatFee
+                & feeTxBodyL .~ Coin (lifecycleFee env)
                 & mintTxBodyL .~ approvalMA
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton
@@ -1232,10 +1275,11 @@ setupNamingClaim env ks = do
                 & witsTxL . scriptTxWitsL
                     .~ Map.singleton (envAppHash env) (envAppScript env)
                 & witsTxL . rdmrsTxWitsL .~ redeemers
-        signed =
+    evaluated <- preparePublicTx env 2 tx
+    let signed =
             addKeyWitness
                 (mkSignKey (keyControllerSeed ks))
-                (addKeyWitness (mkSignKey partySeed) tx)
+                (addKeyWitness (mkSignKey partySeed) evaluated)
     assertOwnerAbsentTx env signed (keyLabel ks <> " insert-request creation")
     submitAccepted env (keyLabel ks <> "-insert-request") signed
     let txid = txIdHex signed
@@ -1259,10 +1303,11 @@ setupNamingClaim env ks = do
 -- The connected fold: accept path
 -- ---------------------------------------------------------
 
--- | Fold one name through the connected transaction and assert every
--- NOTE-001 observation. Returns the fold txid. The trie manager must be
--- synced with the chain root (@checkSync@); the adversarial path passes
--- a fresh manager with no sync check.
+{- | Fold one name through the connected transaction and assert every
+NOTE-001 observation. Returns the fold txid. The trie manager must be
+synced with the chain root (@checkSync@); the adversarial path passes
+a fresh manager with no sync check.
+-}
 connectedAccept ::
     Env ->
     (Value -> IO ()) ->
@@ -1359,6 +1404,7 @@ connectedAccept env record tm ks checkSync rowKind = do
                 , cfaRefUtxos = envRefUtxos env
                 , cfaAdjustRoot = id
                 }
+    Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsigned
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
     -- NOTE-001.2, pre-submit: the fold carries no registry-owner signer.
     assertFoldPermissionless env signed (keyLabel ks)
@@ -1453,11 +1499,12 @@ connectedAccept env record tm ks checkSync rowKind = do
             , "requiredSigners" .= signerHexes signed
             , "vkeyWitnesses" .= witnessHexes signed
             ]
-            <> distinctFromField
+                <> distinctFromField
     pure txid
 
--- | The queued request holds the datum and the exact approval; the
--- registry entry is still absent (no root change yet).
+{- | The queued request holds the datum and the exact approval; the
+registry entry is still absent (no root change yet).
+-}
 assertQueuedRequest :: Env -> KeySetup -> Snap -> IO ()
 assertQueuedRequest env ks snap = do
     decoded <- chainDatumOf snap (keyLabel ks <> "-queued")
@@ -1804,12 +1851,14 @@ runOwnerlessEnd env record creatorSigned = do
         redeemers =
             Redeemers $
                 Map.fromList
-                    [ ( ConwaySpending (AsIx (spendingIndex stateIn (Set.fromList [stateIn, fst fund])))
-                      , (Data endRedeemer, maxUnits)
-                      )
-                    , ( ConwayMinting (AsIx 0)
-                      , (Data (burningRedeemer env), maxUnits)
-                      )
+                    [
+                        ( ConwaySpending (AsIx (spendingIndex stateIn (Set.fromList [stateIn, fst fund])))
+                        , (Data endRedeemer, maxUnits)
+                        )
+                    ,
+                        ( ConwayMinting (AsIx 0)
+                        , (Data (burningRedeemer env), maxUnits)
+                        )
                     ]
         integrity = computeScriptIntegrity (envPp env) redeemers
         body =
@@ -1845,8 +1894,9 @@ runOwnerlessEnd env record creatorSigned = do
         | creatorSigned = addKeyWitness genesisSignKey . addKeyWitness (mkSignKey partySeed)
         | otherwise = addKeyWitness (mkSignKey partySeed)
 
--- | Ownerless migration: mint under the state policy presenting the
--- `Migrating` redeemer. Submitted and must be refused.
+{- | Ownerless migration: mint under the state policy presenting the
+`Migrating` redeemer. Submitted and must be refused.
+-}
 runOwnerlessMigration :: Env -> (Value -> IO ()) -> IO ()
 runOwnerlessMigration env record = do
     (stateIn, _) <- queryStateUtxo env
@@ -1901,9 +1951,10 @@ runOwnerlessMigration env record = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | Ownerless burning: mint presenting the `Burning` redeemer (arm
--- isolation; the realistic termination shape is closed jointly with the
--- `End` rows). Submitted and must be refused.
+{- | Ownerless burning: mint presenting the `Burning` redeemer (arm
+isolation; the realistic termination shape is closed jointly with the
+`End` rows). Submitted and must be refused.
+-}
 runOwnerlessBurning :: Env -> (Value -> IO ()) -> IO ()
 runOwnerlessBurning env record = do
     (stateIn, _) <- queryStateUtxo env
@@ -1947,10 +1998,11 @@ runOwnerlessBurning env record = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | Ownerless Sweep, both signer variants: spend garbage at the request
--- address with a `Sweep` redeemer, the state as reference input.
--- Submitted and must be refused (request validator). Manual transaction
--- (no local evaluation) so the LEDGER attributes the refusal.
+{- | Ownerless Sweep, both signer variants: spend garbage at the request
+address with a `Sweep` redeemer, the state as reference input.
+Submitted and must be refused (request validator). Manual transaction
+(no local evaluation) so the LEDGER attributes the refusal.
+-}
 runOwnerlessSweep :: Env -> (Value -> IO ()) -> Bool -> IO ()
 runOwnerlessSweep env record creatorSigned = do
     let who
@@ -2037,8 +2089,9 @@ parkGarbageAt env addr = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | A plain registry request for the supported-action rows (no naming
--- parts): submitted early so it ages into the retract window.
+{- | A plain registry request for the supported-action rows (no naming
+parts): submitted early so it ages into the retract window.
+-}
 submitSupportRequest :: Env -> (Value -> IO ()) -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
 submitSupportRequest env record spelling value = do
     (reqIn, reqOut) <- submitRegistryRequest env spelling value
@@ -2155,9 +2208,10 @@ runSupportRetract env record (reqIn, reqOut) = do
 stripHookWithdrawal :: Env -> ConwayTx -> ConwayTx
 stripHookWithdrawal env tx =
     let stripped =
-            tx & bodyTxL . withdrawalsTxBodyL .~ Withdrawals Map.empty
-               & witsTxL . rdmrsTxWitsL .~ remainingRdmrs
-               & witsTxL . scriptTxWitsL .~ remainingScripts
+            tx
+                & bodyTxL . withdrawalsTxBodyL .~ Withdrawals Map.empty
+                & witsTxL . rdmrsTxWitsL .~ remainingRdmrs
+                & witsTxL . scriptTxWitsL .~ remainingScripts
         remainingRdmrs = case tx ^. witsTxL . rdmrsTxWitsL of
             Redeemers m ->
                 Redeemers (Map.delete (ConwayRewarding (AsIx 0)) m)
@@ -2171,27 +2225,29 @@ stripHookWithdrawal env tx =
                     (envPp env)
                     (stripped ^. witsTxL . rdmrsTxWitsL)
 
--- | Point the hook withdrawal at the STAKING script credential and swap
--- the witness the same way, keeping the redeemer and integrity
--- untouched. The staking withdraw arm always succeeds, so the ledger
--- passes the withdrawal and only the cage's exact-credential check can
--- refuse. (A key credential cannot serve here: Conway refuses
--- withdrawals from unregistered non-delegated keys pre-script —
--- observed as `WithdrawalsNotInRewardsCERTS`, evidence retained.)
+{- | Point the hook withdrawal at the STAKING script credential and swap
+the witness the same way, keeping the redeemer and integrity
+untouched. The staking withdraw arm always succeeds, so the ledger
+passes the withdrawal and only the cage's exact-credential check can
+refuse. (A key credential cannot serve here: Conway refuses
+withdrawals from unregistered non-delegated keys pre-script —
+observed as `WithdrawalsNotInRewardsCERTS`, evidence retained.)
+-}
 swapHookCredential :: Env -> ConwayTx -> ConwayTx
 swapHookCredential env tx =
     let stakingHash = hashScript (envStakingScript env)
         swapped =
-            tx & bodyTxL . withdrawalsTxBodyL
-                .~ Withdrawals
-                    ( Map.singleton
-                        ( hookAccountAddress
-                            Testnet
-                            (scriptHashBytes stakingHash)
+            tx
+                & bodyTxL . withdrawalsTxBodyL
+                    .~ Withdrawals
+                        ( Map.singleton
+                            ( hookAccountAddress
+                                Testnet
+                                (scriptHashBytes stakingHash)
+                            )
+                            (Coin 0)
                         )
-                        (Coin 0)
-                    )
-               & witsTxL . scriptTxWitsL .~ remainingScripts
+                & witsTxL . scriptTxWitsL .~ remainingScripts
         remainingScripts = case tx ^. witsTxL . scriptTxWitsL of
             scripts ->
                 Map.insert
@@ -2202,34 +2258,37 @@ swapHookCredential env tx =
             pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
      in swapped
 
--- | Rewrite the state output's consumer pin (28 0xdd bytes): every
--- other check passes, pin preservation refuses. Integrity covers
--- redeemers only, so no recompute is needed for a datum edit.
+{- | Rewrite the state output's consumer pin (28 0xdd bytes): every
+other check passes, pin preservation refuses. Integrity covers
+redeemers only, so no recompute is needed for a datum edit.
+-}
 alterStatePin :: ConwayTx -> ConwayTx
 alterStatePin tx =
     let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
         outs' = map rewriteState outs
         rewriteState out = case extractCageDatum out of
             Just (StateDatum st) ->
-                out & datumTxOutL
-                    .~ mkInlineDatum
-                        ( toPlcData
-                            ( StateDatum
-                                ( st
-                                    { stateConsumerPin =
-                                        BuiltinByteString
-                                            (BS.replicate 28 0xdd)
-                                    }
+                out
+                    & datumTxOutL
+                        .~ mkInlineDatum
+                            ( toPlcData
+                                ( StateDatum
+                                    ( st
+                                        { stateConsumerPin =
+                                            BuiltinByteString
+                                                (BS.replicate 28 0xdd)
+                                        }
+                                    )
                                 )
                             )
-                        )
             _ -> out
      in tx & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outs'
 
--- | Build an honest pure-registry fold, mutate the UNSIGNED transaction,
--- sign with the folder key, submit, and require refusal attributed to
--- the exact script. Used for omitted-hook, swapped-hook and pin
--- mutants (the honest shape underneath isolates the mutant delta).
+{- | Build an honest pure-registry fold, mutate the UNSIGNED transaction,
+sign with the folder key, submit, and require refusal attributed to
+the exact script. Used for omitted-hook, swapped-hook and pin
+mutants (the honest shape underneath isolates the mutant delta).
+-}
 runHookMutantRow ::
     Env ->
     (Value -> IO ()) ->
@@ -2701,12 +2760,13 @@ rowMintNoSigner env = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | E-001 foreign-policy refusal (issue #77): the connected fold names the
--- correct representative for a fresh spelling but mints and carries it under
--- the always-true attack policy. The spent state pins the honest applied
--- policy, so the application validator refuses on `representative-policy`.
--- Local evaluation is skipped (the ledger must refuse for real, attributed
--- to the application script); the honest alice/bob folds stay accepted.
+{- | E-001 foreign-policy refusal (issue #77): the connected fold names the
+correct representative for a fresh spelling but mints and carries it under
+the always-true attack policy. The spent state pins the honest applied
+policy, so the application validator refuses on `representative-policy`.
+Local evaluation is skipped (the ledger must refuse for real, attributed
+to the application script); the honest alice/bob folds stay accepted.
+-}
 rowForeignPolicyRefused :: Env -> KeySetup -> IO ()
 rowForeignPolicyRefused env ks = do
     (signed, snapClaim) <- policyRefusalTx env ks (envAttackerPolicy env) (envAttackerScript env) (PLC.B "")
@@ -2885,14 +2945,15 @@ rowFoldMissingRep env ks claimIn = do
                         )
                     ,
                         ( ConwayMinting (AsIx (mintIndexOf mintMA (envAppPolicy env)))
-                        , ( Data
+                        ,
+                            ( Data
                                 ( insertApprovalRedeemer
                                     (keyControllerHash ks)
                                     (keyControlBytes ks)
                                     (keyCommitment ks)
                                 )
-                          , maxUnits
-                          )
+                            , maxUnits
+                            )
                         )
                     ,
                         ( ConwayMinting (AsIx (mintIndexOf mintMA (envRepPolicy env)))
@@ -2962,14 +3023,15 @@ rowFoldEmptyReps env ks claimIn = do
                         )
                     ,
                         ( ConwayMinting (AsIx 0)
-                        , ( Data
+                        ,
+                            ( Data
                                 ( insertApprovalRedeemer
                                     (keyControllerHash ks)
                                     (keyControlBytes ks)
                                     (keyCommitment ks)
                                 )
-                          , maxUnits
-                          )
+                            , maxUnits
+                            )
                         )
                     ]
         integrity = computeScriptIntegrity (envPp env) redeemers
@@ -2999,8 +3061,9 @@ rowFoldEmptyReps env ks claimIn = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | A withdraw-approval claim for the tamper key: canonical-named
--- approval minted controller-signed, queued at the validator.
+{- | A withdraw-approval claim for the tamper key: canonical-named
+approval minted controller-signed, queued at the validator.
+-}
 createWithdrawClaim :: Env -> KeySetup -> IO String
 createWithdrawClaim env ks = do
     let destination = serialiseAddr (envSecondAddr env)
@@ -3097,13 +3160,14 @@ rowFoldWithdrawApproval env ks claimIn = do
                         )
                     ,
                         ( ConwayMinting (AsIx (mintIndexOf mintMA (envAppPolicy env)))
-                        , ( Data
+                        ,
+                            ( Data
                                 ( withdrawApprovalRedeemer
                                     (keyControllerHash ks)
                                     destination
                                 )
-                          , maxUnits
-                          )
+                            , maxUnits
+                            )
                         )
                     ,
                         ( ConwayMinting (AsIx (mintIndexOf mintMA (envRepPolicy env)))
@@ -3266,10 +3330,11 @@ runControlWrongReason env = do
 -- Fault controls (NOTE-001): same wording, one wrong observation
 -- ---------------------------------------------------------
 
--- | The fold mints under a tampered representative policy. The ledger
--- itself refuses — the tampered script cannot find the application
--- spend under its tampered credential — naming the tampered hash; the
--- red log carries the expected applied identity alongside.
+{- | The fold mints under a tampered representative policy. The ledger
+itself refuses — the tampered script cannot find the application
+spend under its tampered credential — naming the tampered hash; the
+red log carries the expected applied identity alongside.
+-}
 runFaultRepPolicy :: Env -> IO ()
 runFaultRepPolicy env = do
     alice <- setupKey env "alice" (envSpelling env) (envPartyCodec env) (envPartyAddr env) (envPartyHash env) partySeed nextSeed
@@ -3553,7 +3618,7 @@ runFaultSeededActive env = do
         _ ->
             failWith
                 ( "FAULT fault-seeded-active: seeded Active result is \
-                   \disconnected from any fold — placement "
+                  \disconnected from any fold — placement "
                     <> txid
                     <> " has no state Modify or request Contribute purpose \
                        \(purposes: "
@@ -3574,10 +3639,11 @@ runFaultSeededActive env = do
 -- Faucet and funding pool (ordinary-party funds only)
 -- ---------------------------------------------------------
 
--- | Fund the two ordinary wallets once, on disjoint addresses so the
--- manually-tracked pool (party) and the largest-first cage funding
--- (folder) can never select the same input: equal-value splits make
--- largest-first meaningless within one address.
+{- | Fund the two ordinary wallets once, on disjoint addresses so the
+manually-tracked pool (party) and the largest-first cage funding
+(folder) can never select the same input: equal-value splits make
+largest-first meaningless within one address.
+-}
 faucetParty :: Cage.Provider IO -> Submitter IO -> FilePath -> IORef Int -> IO [(TxIn, TxOut ConwayEra)]
 faucetParty prov submit evDir evNext = do
     let partyAddr =
@@ -3657,6 +3723,14 @@ faucetParty prov submit evDir evNext = do
             <> " cage UTxOs at the folder address (disjoint funding)"
         )
     pure (sortBy (comparing (txInIndex . fst)) mine)
+
+lifecycleFee :: Env -> Integer
+lifecycleFee env
+    | envLifecycle env = let Coin fee = Lifecycle.protocolFeeReserve (envPp env) (envRefUtxos env) in fee
+    | otherwise = flatFee
+
+preparePublicTx :: Env -> Int -> ConwayTx -> IO ConwayTx
+preparePublicTx env = Lifecycle.prepareLifecycleTx (envLifecycle env) (envProv env) (envPp env) (envRefUtxos env)
 
 takeFundCollateral ::
     Env ->

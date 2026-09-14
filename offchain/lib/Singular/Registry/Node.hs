@@ -56,6 +56,7 @@ module Singular.Registry.Node (
     awaitTxId,
     confirmationDelay,
     withNode,
+    withNodeForPlannedFunding,
     withNodeMode,
     withNodeSocket,
     devnetGenesis,
@@ -392,7 +393,16 @@ cannot pay, and run the body. The devnet is spawned and torn down
 around it; an external node is left alone.
 -}
 withNodeMode :: NodeMode -> (NodeSession -> IO a) -> IO a
-withNodeMode mode k = case mode of
+withNodeMode = withNodeModeAndFunding (Just defaultFundingFloor)
+
+-- | The lifecycle runners calculate their complete funding plans from the
+-- live parameters before submitting. A fixed 100 ADA floor here would reject
+-- wallets that can afford those plans, and would block read-only estimates.
+withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
+withNodeForPlannedFunding = withNodeModeAndFunding Nothing runMode
+
+withNodeModeAndFunding :: Maybe FundingFloor -> NodeMode -> (NodeSession -> IO a) -> IO a
+withNodeModeAndFunding fundingFloor mode k = case mode of
     Devnet -> do
         gDir <- genesisDir
         withCardanoNode gDir (\sock _startMs -> connect devnetMagic sock)
@@ -408,7 +418,9 @@ withNodeMode mode k = case mode of
                 verifyConnection magic sock nodeThread
                 let prov = adaptProvider (mkN2CProvider lsqCh)
                 pp <- Cage.queryProtocolParams prov
-                checkFunding prov (walletAddr wallet) defaultFundingFloor
+                case fundingFloor of
+                    Just floorRequired -> checkFunding prov (walletAddr wallet) floorRequired
+                    Nothing -> pure ()
                 announce mode magic sock (walletAddr wallet)
                 let sess =
                         NodeSession
