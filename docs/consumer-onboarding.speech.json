@@ -147,11 +147,45 @@
   ],
   "running-it-again": [
     {
-      "text": "Reruns are safe and expected. Each run claims its own fresh name and boots its own registry from a seed it designates out of your wallet's own outputs, so a second run does not collide with the first and does not depend on it having finished.",
+      "text": "Without the deployment flag, each run boots its own registry from a seed selected from your wallet's outputs. A second run therefore uses a separate registry and does not depend on the first having finished.",
       "pause": 450
     },
     {
-      "text": "Nothing in the archive holds state between runs; what persists lives on chain, under identities each run derives and prints. If a run fails part way, rerun it — the failed run's on-chain leftovers are inert, because they belong to that run's own registry token and no later run reads them.",
+      "text": "In fresh-registry mode, failed runs leave outputs under their own registry identity. Attached mode reuses a persistent registry and its mirror, so its rerun behavior is different.",
+      "pause": 500
+    }
+  ],
+  "attaching-to-a-deployment-and-what-has-to-travel-with-it": [
+    {
+      "text": "Everything above stands up a registry of its own for the run. A deployment is the other way round: the registry and the reference scripts are created once, recorded in a manifest, and used by every run afterwards.",
+      "pause": 450
+    },
+    {
+      "text": "The commands shown deploy once with your node and wallet, writing the manifest, and then run a journey against it with the deployment flag.",
+      "pause": 400
+    },
+    {
+      "text": "The register runner accepts a spelling flag, defaulting to alice. It claims those exact UTF-8 bytes with no automatic suffix. When an attached rerun finds the spelling already held, it submits a duplicate, checks the state validator refuses and the registry root stays unchanged, reports the occupied spelling, and finishes without repeating the other fixture rows. Recovery and retirement retain their explicit fixture spellings.",
+      "pause": 500
+    },
+    {
+      "text": "Deploy runs once. Given a manifest the node still agrees with, it names the registry that already exists and stops, rather than making a second one nobody recorded. A verify command asks the node whether it still agrees, claim by claim.",
+      "pause": 450
+    },
+    {
+      "text": "One thing has to travel with the manifest. Writing to a registry — folding a claim in — means proving the key against the registry's current trie, and that proof needs the whole trie, not the root the chain reports. Nothing on chain hands you the trie in one query, so this deployment carries it as a file beside the manifest. Copy the manifest to a second machine and you must copy that mirror file with it; without it, the machine can read the deployment but cannot fold into it.",
+      "pause": 500
+    },
+    {
+      "text": "The runners do not guess about this. A run whose mirror root disagrees with the registry's root stops and says so, rather than building proofs against a history the chain does not have.",
+      "pause": 450
+    },
+    {
+      "text": "Reading is unaffected. Proving a name is alive and finding where its application state lives needs the registry entry and the NFT, and no trie at all — a resolver needs nothing from the mirror.",
+      "pause": 450
+    },
+    {
+      "text": "Rebuilding the trie from the chain instead of carrying it, by following the registry token from the bootstrap transaction and replaying each fold's request datums, is the next milestone's work, not this release's.",
       "pause": 500
     }
   ],
@@ -163,6 +197,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "bf31f81c33c72984540686b92071281c0756dae85197d7c73494412961242d43"
+    "sha256": "5102f9fb1ad909aa7607a8d4fade7816538bd49c25d6d459052791d08d5d2f90"
   }
 }

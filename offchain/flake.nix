@@ -195,6 +195,36 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The deployment tool (issue #102): boots one registry, publishes
+        # one set of reference scripts, records the manifest, and checks a
+        # recorded manifest against a node. Wrapped like the runners so the
+        # locked cardano-node is on its own PATH when the devnet path is
+        # taken.
+        deployment = pkgs.runCommand "deployment" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.deployment.meta or { }) // {
+            mainProgram = "deployment";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.deployment} $out/bin/deployment \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
+        # A devnet that outlives the process that needed it (issue #102):
+        # a deployment is attached to by later runs, so proving attachment
+        # works needs one chain several processes can reach.
+        devnet = pkgs.runCommand "devnet" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.devnet.meta or { }) // {
+            mainProgram = "devnet";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.devnet} $out/bin/devnet \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # The connected verifier (issue #77, S3): recomputes verdicts from
         # raw run evidence. Pure offline tool: no node on PATH needed, but
         # wrapped like the runners for uniformity. Blueprints come from the
@@ -265,6 +295,9 @@
           # Issue #79: same for repair-rows.
           # Issue #77: same for register-rows.
           inherit naming-rows li-refusals recovery-rows retirement-rows repair-rows register-rows connected-verifier;
+          # Issue #102: the deployment tool and the devnet a deployment can
+          # outlive, both exposed so the attach check can reach them.
+          inherit deployment devnet;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.

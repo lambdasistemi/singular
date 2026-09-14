@@ -230,15 +230,64 @@ runs long can still exhaust a thinly funded wallet later.
 
 ## Running it again
 
-Reruns are safe and expected. Each run claims its own fresh name and boots its
-own registry from a seed it designates out of your wallet's own outputs, so a
+Without `--deployment`, each run boots its own registry from a seed it
+designates out of your wallet's own outputs, so a
 second run does not collide with the first and does not depend on it having
 finished. Nothing in the archive holds state between runs; what persists lives
 on chain, under identities each run derives and prints.
 
-If a run fails part way, rerun it. The failed run's on-chain leftovers are
+In this fresh-registry mode, if a run fails part way, rerun it. Its on-chain leftovers are
 inert: they belong to that run's own registry token and no later run reads
 them.
+
+## Attaching to a deployment, and what has to travel with it
+
+Everything above stands up a registry of its own for the run. A
+deployment is the other way round: the registry and the reference scripts
+are created once, recorded in a manifest, and used by every run
+afterwards.
+
+```sh
+nix run .#deployment -- deploy \
+  --node-socket /run/cardano-node/node.socket \
+  --network-magic 1 --wallet-skey ./joiner.skey \
+  --out ./preprod.json --release v0.4.1
+
+nix run .#register-rows -- --node-socket … --network-magic 1 \
+  --wallet-skey ./joiner.skey --deployment ./preprod.json
+```
+
+The register runner claims the exact UTF-8 spelling supplied with
+`--spelling`, defaulting to `alice`. It never appends a run suffix. On an
+attached rerun where that spelling is already held, it submits the duplicate,
+checks the state-validator refusal and unchanged registry root, reports that
+the spelling is already held, and finishes without rerunning the other
+fixture rows. Recovery and retirement retain their explicit fixture spellings.
+
+`deploy` runs once. Given a manifest the node still agrees with it names
+the registry that already exists and stops, rather than making a second
+one nobody recorded. `nix run .#deployment -- verify --deployment
+./preprod.json` asks the node whether it still agrees, claim by claim.
+
+**One thing has to travel with the manifest.** Writing to a registry —
+folding a claim in — means proving the key against the registry's current
+trie, and that proof needs the whole trie, not the root the chain reports.
+Nothing on chain hands you the trie in one query, so this deployment
+carries it as a file beside the manifest: `preprod.json` is accompanied by
+`preprod.mirror.json`, which each run reads and writes. Copy the manifest
+to a second machine and you must copy the mirror with it; without it that
+machine can read the deployment but cannot fold into it. The runners do
+not guess about this — a run whose mirror root disagrees with the
+registry's root stops and says so, rather than building proofs against a
+history the chain does not have.
+
+Reading is unaffected. Proving a name is alive and finding where its
+application state lives needs the registry entry and the NFT, and no trie
+at all — a resolver needs nothing from the mirror.
+
+Rebuilding the trie from the chain instead of carrying it — following the
+registry token from the bootstrap transaction and replaying each fold's
+request datums — is the next milestone's work, not this release's.
 
 ## What this page does not cover
 
