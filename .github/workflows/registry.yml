@@ -33,37 +33,25 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
-      # Issue #49: see the pull_request filter — the drift check also
-      # watches epic 15's live corpus.
+      # The drift check also watches epic 15's live corpus.
       - 'lean/**'
       - '.github/workflows/registry.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'onchain/**'
-      - 'naming-onchain/**'
-      - 'offchain/**'
-      # Issue #49: the drift check compares the vendored v0.2.0 vectors
-      # against epic 15's live corpus at lean/lifecycle-corpus.json, so
-      # a corpus-only revision must trigger this workflow too — without
-      # this entry the check would not fire exactly when the corpus
-      # moves (the blind spot the check exists to close).
-      - 'lean/**'
-      - '.github/workflows/registry.yml'
 permissions:
   contents: read
 concurrency:
   group: blueprint-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   naming-validators:
     name: Naming validators build, refuse, and match their pinned identity
     runs-on: nixos
     timeout-minutes: 20
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -94,9 +82,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 15
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-blueprint"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -115,9 +103,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 15
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-script-identity"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -144,9 +132,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-aiken-suite"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -180,9 +168,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-vectors-fresh"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -204,9 +192,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 15
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming-wire"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -231,9 +219,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 15
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-vector-drift"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -268,9 +256,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-li01"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -306,9 +294,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-naming-rows"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -341,9 +329,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-recovery-rows"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -380,9 +368,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-retirement-rows"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -427,9 +415,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-li-refusals"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -465,9 +453,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-repair-rows"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -504,9 +492,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 60
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-e2e"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
@@ -545,9 +533,9 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-journey"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6

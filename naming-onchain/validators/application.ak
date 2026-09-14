@@ -1,17 +1,18 @@
 use aiken/collection/dict.{get, keys}
-use aiken/collection/list.{all, filter, find, has}
-use aiken/crypto.{VerificationKeyHash, blake2b_224, blake2b_256}
+use aiken/collection/list.{all, filter, filter_map, find, has, zip}
+use aiken/collection/pairs
+use aiken/crypto.{VerificationKeyHash, blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
-use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
+use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Spend, Transaction}
 use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 
 /// The expected representative policy from the registry state (issue
 /// #77, E-001): genesis sets it, `validModify` preserves it. Read from the
 /// spent state when present, else from the reference (NOTE-014 item A1) —
 /// retires authenticate without spending.
-fn expected_rep_policy(tx: Transaction) -> PolicyId {
+pub fn expected_rep_policy(tx: Transaction) -> PolicyId {
   expect InlineDatum(datum) = find_registry_state(tx).output.datum
   naming.mpfs_state_policy(datum)
 }
@@ -63,11 +64,28 @@ fn expected_rep_token(tx: Transaction) -> ByteArray {
   token_name
 }
 
+/// The authenticated registry selected by the application. The representative
+/// policy compares these exact bytes with its deployment parameter, so both
+/// validators authorize against the same state input or reference.
+pub fn registry_identity(tx: Transaction) -> ByteArray {
+  registry_asset_id(mpfs_state_hash, expected_rep_token(tx))
+}
+
+/// Reference-only selection shared by retirement and its executing witness.
+/// Both read the same authenticated state, so an additional reference cannot
+/// supply a different policy or registry to the two validators.
+pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
+  expect Some(state) = find(tx.reference_inputs, is_registry_state)
+  expect [token] = keys(tokens(state.output.value, mpfs_state_hash))
+  expect InlineDatum(datum) = state.output.datum
+  (registry_asset_id(mpfs_state_hash, token), naming.mpfs_state_policy(datum))
+}
+
 /// The retirement custody script hash (issue #66): the only address a
 /// `Retire` may place the representative at. Regenerated from the
 /// custody validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"c6e795719018a2515efc1b75085cf556d4a867f4dbd706a03bc56d0e"
+  #"89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09"
 
 /// The naming application validator (issue #52; mint burn half added
 /// by #56's ledger run).
@@ -103,13 +121,8 @@ pub type ApplicationRedeemer {
   /// representative names are carried for the representative policy to
   /// bind.
   Fold { representatives: List<ByteArray> }
-  /// Retire a record: the datum must not continue. Carries the creation
-  /// control key hash (28 bytes, NOTE-010/011): the immutable key material
-  /// the representative name commits to. At retire time the record's
-  /// control may have rotated via recovery, so the validator recomputes
-  /// over this supplied value and checks it against the minted token
-  /// commitment — a wrong key, a wrong length, or a rival registry fails.
-  Retire { representatives: List<ByteArray>, key_hash: ByteArray }
+  /// Retire a record using its spelling; recovery never changes its name.
+  Retire { representatives: List<ByteArray>, key: ByteArray }
   /// Recover control with the committed next key (`LR` rows, issue #62):
   /// reveal the committed next-control address, prove its commitment,
   /// require its payment-key signer, install it as controller with a
@@ -156,8 +169,8 @@ validator application {
         cancel(record, presented_refund, claim, own_hash, tx)
       Fold { representatives } ->
         fold(record, representatives, claim, own_hash, tx)
-      Retire { representatives, key_hash } ->
-        retire(record, claim, key_hash, tx)
+      Retire { representatives, key } ->
+        retire(record, claim, key, tx)
       Recover { revealed_control, representatives, registry } ->
         recover(
           record,
@@ -410,18 +423,8 @@ fn fold(
           record.control_address,
           record.next_control_commitment,
         )
-      // `representative-identity`: the names are exactly this
-      // record's representative for this registry — control plus the
-      // supplied state's own authenticating token (NOTE-007). A copied
-      // name from another cage carries a different token hash and refuses.
-      expect representatives
-        == [
-          representative_name(
-            naming.control_hash(record),
-            mpfs_state_hash,
-            expected_rep_token(tx),
-          ),
-        ]
+      expect [name] = representatives
+      expect name == representative_name(folded_request_key(tx, name))
       // `representative-policy` (issue #77, E-001): the moved
       // representative's policy is the registry's own configuration — the
       // spent state's expected policy, genesis-set and `Modify`-preserved.
@@ -454,7 +457,7 @@ fn fold(
 fn retire(
   record: NamingRecord,
   claim: Input,
-  key_hash: ByteArray,
+  key: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
@@ -472,20 +475,9 @@ fn retire(
   // foreign-policy fakes. The representative moves, it does not burn here
   // (completion burns it later) — so no mint rides a retire.
   let stored_rep = single_asset_name(claim.output.value)
-  let expected = expected_rep_policy(tx)
-  // Registry association (NOTE-007/010/011): the carried name must equal
-  // the recomputation over the SUPPLIED creation key hash and the supplied
-  // state's own authenticating token — never the possibly-rotated current
-  // control. A record from another cage (copied-policy rival included)
-  // carries a different token hash and refuses here, on the token rather
-  // than the field. Wrong key and wrong length refuse for their own reasons.
-  expect bytearray.length(key_hash) == 28
-  expect stored_rep
-    == representative_name(
-      key_hash,
-      mpfs_state_hash,
-      expected_rep_token(tx),
-    )
+  let (_, expected) = referenced_registry(tx)
+  expect pairs.get_first(tx.withdrawals, address.Script(expected)) != None
+  expect stored_rep == representative_name(key)
   expect quantity_of(claim.output.value, expected, stored_rep) == 1
   expect
     filter(
@@ -557,41 +549,43 @@ fn insert_approval_name(control: ByteArray, commitment: ByteArray) -> ByteArray 
 /// `Value`). Not a textual hex concatenation: fixed 28-byte policy prefix
 /// keeps the parse unambiguous for hashing purposes, mirroring how
 /// `insert_approval_name` domain-separates raw fields. The ONE place the
-/// identity bytes are formed; both name sites call it.
+/// identity bytes are formed for the policy parameter and recovery binding.
 fn registry_asset_id(state_policy_bytes: ByteArray, token_name: ByteArray) -> ByteArray {
   expect bytearray.length(state_policy_bytes) == 28
   bytearray.concat(state_policy_bytes, token_name)
 }
 
-/// The representative asset name for a record (`Singular.representative`
-/// with `registry` made concrete, NOTE-007): `0x526570 ‖
-/// blake2b_224(registry_asset_id ‖ control_hash) ‖ incarnation` — 32 bytes
-/// (3 + 28 + 1), so never a canonical address. The prefix and incarnation
-/// shape is unchanged; the middle 28 bytes bind key AND registry (previously
-/// key alone — the same omission shape as E-001). Two `blake2b_224` calls
-/// per guarded transition (fold, retire); not on-chain program-parameter
-/// application. Exact type, order and bytes: `(control_hash : ByteArray,
-/// state_policy_bytes : ByteArray (28, the state script hash as bytes),
-/// token_name : ByteArray (cage token name))`;
-/// preimage `registry_asset_id(state_policy_bytes, token_name) ‖ control_hash`.
-fn representative_name(
-  control_hash: ByteArray,
-  state_policy_bytes: ByteArray,
-  token_name: ByteArray,
-) -> ByteArray {
-  expect bytearray.length(control_hash) == 28
-  bytearray.concat(
-    bytearray.concat(
-      #"526570",
-      blake2b_224(
-        bytearray.concat(
-          registry_asset_id(state_policy_bytes, token_name),
-          control_hash,
-        ),
-      ),
-    ),
-    #"00",
-  )
+/// Spelling bytes are the entire preimage. The applied policy scopes registry.
+fn representative_name(key: ByteArray) -> ByteArray {
+  blake2b_256(key)
+}
+
+/// Follow the same request order as the native Modify. Only a processed Insert
+/// storing this representative supplies its key; a rejected request cannot.
+fn folded_request_key(tx: Transaction, name: ByteArray) -> ByteArray {
+  let state = find_registry_state(tx)
+  let token = expected_rep_token(tx)
+  expect Some(redeemer) = pairs.get_first(tx.redeemers, Spend(state.output_reference))
+  expect naming.MirrorModify(actions): naming.MirrorRedeemer = redeemer
+  let requests = filter_map(tx.inputs, fn(input) {
+    when input.output.datum is {
+      InlineDatum(datum) ->
+        if datum is naming.MRequestDatum(request): naming.MRequestDatum {
+          if request.requestToken.assetName == token { Some(request) } else { None }
+        } else { None }
+      _ -> None
+    }
+  })
+  let matching = filter_map(zip(requests, actions), fn(pair) {
+    let (request, action) = pair
+    when (request.requestValue, action) is {
+      (naming.MInsert(value), naming.MAUpdate(_)) ->
+        if value == name { Some(request.requestKey) } else { None }
+      _ -> None
+    }
+  })
+  expect [key] = matching
+  key
 }
 
 /// The single non-ADA asset name a claim or record carries — the

@@ -128,10 +128,12 @@ import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
+    extractCageDatum,
     findStateUtxo,
     scriptHashBytes,
     txInToRef,
  )
+import Singular.Registry.Types (CageDatum (..), stateRepPolicyBytes)
 
 -- ---------------------------------------------------------
 -- The manifest
@@ -311,6 +313,9 @@ registry whose validator this code does not implement.
 cageConfigFor :: Deployment -> CageParts -> Either String CageConfig
 cageConfigFor dep parts = do
     seedIn <- parseOutRef (depSeedOutRef dep)
+    if T.pack (hex (SBS.fromShort (partsRepPolicy parts))) /= depRepresentativePolicy dep
+        then Left "this release's registry-bound representative policy differs from the deployment"
+        else pure ()
     let stateHash = computeScriptHash (partsStateBytes parts)
         stateHex = T.pack (hex (scriptHashBytes stateHash))
     if stateHex /= depStatePolicy dep
@@ -382,7 +387,11 @@ verifyDeployment prov dep parts = do
     cfg <- either die pure (cageConfigFor dep parts)
     tok <- either die pure (tokenFor dep)
     refs <- resolveReferenceScripts prov dep
-    (stateIn, _) <- resolveStateUtxo prov cfg tok
+    (stateIn, stateOut) <- resolveStateUtxo prov cfg tok
+    case extractCageDatum stateOut of
+        Just (StateDatum st)
+            | stateRepPolicyBytes st == SBS.fromShort (partsRepPolicy parts) -> pure ()
+        _ -> die "the live registry state does not configure this registry-bound representative policy"
     pure
         ( [ "release "
                 <> T.unpack (depRelease dep)
@@ -392,6 +401,8 @@ verifyDeployment prov dep parts = do
                 <> T.unpack (depSeedOutRef dep)
                 <> " determines the recorded registry token 0x"
                 <> T.unpack (depCageToken dep)
+          , "compiled representative policy agrees with the manifest and live registry configuration: 0x"
+                <> T.unpack (depRepresentativePolicy dep)
           ]
             <> [ "reference script "
                     <> T.unpack (refRole r)

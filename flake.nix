@@ -25,11 +25,9 @@
       packages = system: { default = (project system).docs; docs = (project system).docs; docs-release = (project system).releaseArchive; model = (model system).package; };
       buildGate = system:
         let pkgs = import nixpkgs { inherit system; };
+        # Build artifacts only; checks and check-running apps stay separate.
         in pkgs.linkFarm "singular-build-gate" (
           pkgs.lib.mapAttrsToList (name: path: { name = "package-${name}"; inherit path; }) (packages system)
-          ++ pkgs.lib.mapAttrsToList (name: path: { name = "check-${name}"; inherit path; }) self.checks.${system}
-          ++ pkgs.lib.mapAttrsToList (name: app: { name = "app-${name}"; path = app.program; }) self.apps.${system}
-          ++ [ { name = "dev-shell-inputs"; path = self.devShells.${system}.default.inputDerivation; } ]
         );
     in {
       packages = each (system: packages system // { build-gate = buildGate system; });
