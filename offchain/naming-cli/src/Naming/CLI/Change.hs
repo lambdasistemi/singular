@@ -37,7 +37,7 @@ import Naming.Datum (NamingDatum (..), PaymentDestination (..), decodeNamingDatu
 import Naming.Wire (Address (..), WireData (..), decodeAddress)
 import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
 import Singular.Registry.Deployment (Attached (..), Deployment (..), attach, readDeployment, renderOutRef)
-import Singular.Registry.Node (ExternalNode (..), NodeMode (..), NodeSession (..), Wallet (..), awaitTx, loadWallet, withNodeMode)
+import Singular.Registry.Node (NodeSession (..), Wallet (..), awaitTx, loadWallet, nodeModeFromArgs, withNodeMode)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes, addrWitnessKeyHash, mkInlineDatum, scriptFromBytes)
@@ -58,7 +58,17 @@ runChange conn payerFile name controllerFile change = do
         maybe (failWith "blueprint missing application.application") pure $
             extractCompiledCode "application.application" blueprint
     let script = scriptFromBytes "naming-application" appBytes
-        mode = External (ExternalNode (nodeSocket conn) (networkMagic conn) payerFile)
+    mode <-
+        either failWith pure $
+            nodeModeFromArgs
+                [ "--node-socket"
+                , nodeSocket conn
+                , "--network-magic"
+                , show (networkMagic conn)
+                , "--wallet-skey"
+                , payerFile
+                ]
+                []
     withNodeMode mode $ \session -> do
         let provider = nsProvider session
         attached <- attach provider dep parts
