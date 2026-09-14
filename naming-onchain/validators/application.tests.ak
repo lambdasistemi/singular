@@ -1304,9 +1304,8 @@ test lt08_foreign_policy_refuses() fail {
   )
 }
 
-/// `representative-identity` with registry (NOTE-007): retiring a record
-/// whose name is bound to a foreign registry refuses even under the honest
-/// policy — the recomputation uses the supplied state's token.
+/// Retiring a record under a different spelling refuses even with the
+/// correct registry witness and representative policy.
 test lt08_other_spelling_refuses() fail {
   let source = retirement_source()
   let foreign_name = other_spelling_rep_name(fixtures.controller)

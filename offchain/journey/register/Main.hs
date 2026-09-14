@@ -2266,14 +2266,9 @@ runHookMutantRow env record rowName operation spelling mutant = do
         Submitted _ ->
             failWith (rowName <> ": accepted (must refuse)")
 
--- | Cross-wired fold (NOTE-013 corrected control 4 on ledger): the
--- The registry side consumes B's paid request while the naming side folds A's
--- claim, mints A's representative and records A. Every layer passes
--- on its own evidence — cage proofs over B, naming fold over A's
--- recomputed name, rep mint matching the fold redeemer — and ONLY the
--- consumer refuses (the minted name was never requested). Coherently
--- posted against the correctly pinned consumer and a valid bootstrap;
--- local evaluation is skipped so the LEDGER attributes the refusal.
+-- | A paid request for B cannot accompany A's minted representative.
+-- Both the consumer and naming application now bind the spelling. The
+-- ledger refusal is matched to the consumer's named failed-witness field.
 runHookCrosswiredRow :: Env -> (Value -> IO ()) -> IO ()
 runHookCrosswiredRow env record = do
     ksA <-
@@ -2812,7 +2807,10 @@ rowForeignRegistryRefused env alice = do
     awaitTx signedBoot
     trieB <- mkPureTrieManager
     createTrie trieB tokB
-    let envB = env{envCfg = cfgB, envTok = tokB, envTrie = trieB, envRefUtxos = []}
+    requestRefsB <- publishScripts (envProv env) (envSubmit env) (envPp env)
+        (envPool env) [mkRequestScript cfgB tokB] (envPartyAddr env) (envEvDir env) (envEvNext env)
+    let envB = env{envCfg = cfgB, envTok = tokB, envTrie = trieB,
+            envRefUtxos = requestRefsB ++ envRefUtxos env}
         aliceB = alice{keyLabel = "alice-registry-b", keyRegistryToken = tokenBytes}
     rootA <- chainRootHex env
     rootB <- chainRootHex envB
