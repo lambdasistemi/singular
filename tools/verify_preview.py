@@ -12,6 +12,12 @@ assert revision == expected, (revision, expected)
 verified = {}
 names = [
     "index.html",
+    "docs/naming-presentation/index.html",
+    "docs/naming-presentation.speech.json",
+    "presentations/naming/index.html",
+    "presentations/naming.md.txt",
+    "presentations/naming-notes.txt",
+    "presentations/naming-evidence.txt",
     "docs/naming-demo/index.html",
     "docs/naming-demo.speech.json",
     "docs/naming-lifecycle/index.html",

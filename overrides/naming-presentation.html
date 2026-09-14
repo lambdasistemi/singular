@@ -1,0 +1,13 @@
+{% extends "main.html" %}
+{% block content %}
+  {% set player %}
+      <iframe src="{{ 'presentations/naming/' | url }}" title="Singular naming presentation — twelve slides" style="width:100%;aspect-ratio:16/9;min-height:300px;border:0" allow="fullscreen" allowfullscreen loading="lazy"></iframe>
+    <p>
+      <a href="{{ 'presentations/naming/' | url }}">Open the full-screen slides</a> ·
+      <a href="{{ 'presentations/naming.md.txt' | url }}" download="singular-naming.md">Download the Markdown</a> ·
+      <a href="{{ 'presentations/naming-notes.txt' | url }}">Read the speaker notes</a> ·
+      <a href="{{ 'presentations/naming-evidence.txt' | url }}">Technical references</a>
+    </p>
+  {% endset %}
+  {{ super() | replace('<!-- naming-presentation -->', player) | safe }}
+{% endblock %}

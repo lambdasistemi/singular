@@ -175,6 +175,12 @@ for path, page in pages.items():
         links += 1
     if path.name == "404.html" or path.is_relative_to(site / "simulator"):
         continue
+    # Marp supplies presenter notes; the MkDocs wrapper retains read-aloud speech.
+    if path == site / "presentations/naming/index.html":
+        assert (site / "presentations/naming-notes.txt").read_text().strip(), "missing presenter notes"
+        assert (site / "presentations/naming-evidence.txt").read_bytes() == (root / "presentations/naming-evidence.txt").read_bytes(), "stale technical references"
+        assert (site / "presentations/naming.md.txt").read_bytes() == (root / "presentations/naming.md").read_bytes(), "stale presentation source"
+        continue
     # specs/26-live-links/ and specs/29-docs-links-recut/ are ticket-
     # orchestration records staged verbatim by tools/prepare_docs.py (which
     # copies all of specs/); they are not in the nav, and speech companions
