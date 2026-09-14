@@ -33,8 +33,8 @@ module Singular.Registry.TxBuilder.ConnectedFold (
     generousUnits,
 ) where
 
-import Control.Exception (Exception, SomeException, throwIO, try)
-import Data.List (sortOn)
+import Control.Exception (ErrorCall, Exception, displayException, throwIO, try)
+import Data.List (isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
@@ -45,6 +45,7 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Alonzo.Plutus.Evaluate (TransactionScriptFailure (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (
@@ -215,13 +216,13 @@ connectedFoldTx args = do
                 pure (Map.map (const (Right generousUnits)) rdmrs)
             | otherwise = \tx -> do
                 r <- evaluateTx prov tx
-                pure $
-                    Map.map
-                        ( \case
-                            Left e -> Left (show e)
-                            Right eu -> Right eu
-                        )
-                        r
+                traverse
+                    ( \case
+                        Left e@ContextError{} -> fail ("connectedFold: evaluation context: " <> show e)
+                        Left e -> pure (Left (show e))
+                        Right eu -> pure (Right eu)
+                    )
+                    r
         prog =
             buildProgram
                 cfg
@@ -348,17 +349,25 @@ computeUpperSlot prov oldState reqUtxos = do
                 map
                     (\u -> extractSubmittedAt u + stateProcessTime oldState)
                     reqUtxos
-    mUpperSlot <-
-        try (posixMsToSlot prov earliestDeadline) :: IO (Either SomeException SlotNo)
-    case mUpperSlot of
-        Right s -> pure s
-        Left _ -> do
-            nowUtc <- getCurrentTime
-            let posixSec = utcTimeToPOSIXSeconds nowUtc
-            trySlots prov $
-                map
-                    (\d -> round ((posixSec + d) * 1000))
-                    [30, 5, 2]
+    nowUtc <- getCurrentTime
+    let posixSec = utcTimeToPOSIXSeconds nowUtc
+    choose $
+        earliestDeadline
+            : [ min earliestDeadline (round ((posixSec + d) * 1000))
+              | d <- [30, 5, 2]
+              ]
+  where
+    -- Ceil can turn an interpretable time into the exclusive horizon-end
+    -- slot, which evaluation cannot translate. Floor stays inside the
+    -- forecast and never extends a request's processing deadline.
+    choose [] = fail "connectedFold: all validity bounds past horizon"
+    choose (ms : rest) = do
+        result <- try @ErrorCall (posixMsToSlot prov ms)
+        case result of
+            Right slot -> pure slot
+            Left err
+                | "PastHorizon" `isInfixOf` displayException err -> choose rest
+                | otherwise -> throwIO err
 
 {- | The TxBuild program: registry spends, attached spends and mints,
 outputs, witnesses. Processed requests lock into the state output
