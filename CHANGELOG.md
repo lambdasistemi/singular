@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.6.0](https://github.com/lambdasistemi/singular/compare/v0.5.0...v0.6.0) (2026-09-14)
+
+
+### Features
+
+* a deployment manifest, and the deploy and verify commands ([c86bd3f](https://github.com/lambdasistemi/singular/commit/c86bd3f2b4134aa78977addf8be67411d13540ab)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+* a devnet check that the attach path boots and publishes nothing ([7ab2e56](https://github.com/lambdasistemi/singular/commit/7ab2e5665106d064cf3380283899504ed02af06d)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+* a persistent deployment — manifest, verifier, deploy command ([f558d0e](https://github.com/lambdasistemi/singular/commit/f558d0e8fc916eef494fffcef09cfe2ac5582b8e))
+* bind representative policies to their registry ([0a75b76](https://github.com/lambdasistemi/singular/commit/0a75b764d17f79893e64facfa79567df865f0d53))
+* deploy and verify registry-bound representative policies ([d796fda](https://github.com/lambdasistemi/singular/commit/d796fdabff43be7f74045f242754f6e9423aa58f))
+* derive representative names from spelling ([b4a36ea](https://github.com/lambdasistemi/singular/commit/b4a36eaf72d8a355d9048a00081a8f999c195e27))
+* derive representatives from spelling and witness retirement registry ([bea5e36](https://github.com/lambdasistemi/singular/commit/bea5e36a3ce5d823575a11417b0c5da7b0ffb18c))
+* the naming runners attach to a recorded deployment ([85bed5a](https://github.com/lambdasistemi/singular/commit/85bed5ae0a02ce79380de1d404d868089f30bbc3)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+
+
+### Fixes
+
+* **ci:** keep checks out of the build gate ([279d141](https://github.com/lambdasistemi/singular/commit/279d14191c892218719235a0b031668eb28a79eb))
+* **ci:** run every required check on all pull requests ([7e49825](https://github.com/lambdasistemi/singular/commit/7e49825a6c6a52dde674ef57d3052d917a923776))
+* count reference scripts at every journey publisher ([acd3ab8](https://github.com/lambdasistemi/singular/commit/acd3ab8cf132c60beb51a3322ff273e57d59dd6c))
+* create the trie an attaching run needs, and give the check its own chain ([be2280e](https://github.com/lambdasistemi/singular/commit/be2280efa32faec02dabdb5c9398502ad01950f0)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+* exercise registry refusal and follow accepted retirement evidence ([900936f](https://github.com/lambdasistemi/singular/commit/900936f948441c9dbbbcd48c08660bdf065c629a))
+* observe confirmations and reuse registered credentials ([f0c6506](https://github.com/lambdasistemi/singular/commit/f0c65061cbd7ad33c45242e73368a1b2b0442a17))
+* **offchain:** preserve reference publications when funding bootstrap ([e8079e4](https://github.com/lambdasistemi/singular/commit/e8079e4fbe25c974a8078674e1a4b4f8dddb87e3))
+* preserve exact spellings when attaching to a deployment ([df655ea](https://github.com/lambdasistemi/singular/commit/df655eacbf73390617b2fe4c59849b8621469da7))
+* the retract window, the staking credential, and picking a big UTxO ([b53bff7](https://github.com/lambdasistemi/singular/commit/b53bff75a3bd5176add2663a4dfac47feb70c2f5)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+* **tools:** scan sh/py files and derive the rename gate allowlist ([#108](https://github.com/lambdasistemi/singular/issues/108)) ([fc2ad9e](https://github.com/lambdasistemi/singular/commit/fc2ad9e5987b171ca33a430f5bbe170ab6423fd5))
+* **tools:** scan sh/py files and derive the rename gate allowlist ([#108](https://github.com/lambdasistemi/singular/issues/108)) ([a622ff7](https://github.com/lambdasistemi/singular/commit/a622ff72d45b320509d1e35cf7b09b062fb63e31))
+* verify attached request identity without a local boot ([64b0053](https://github.com/lambdasistemi/singular/commit/64b005363f1f201a4593616d4b5420bbd96590ab))
+* wait to the end of the retract window, not the start ([d07296e](https://github.com/lambdasistemi/singular/commit/d07296e52e09b8f9a640631e35e7a13fc4246cf5)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+
+
+### Documentation
+
+* distinguish Over from an unclaimed spelling ([83da8c6](https://github.com/lambdasistemi/singular/commit/83da8c6e228df7c2c19bc1d4be2bc35f1ac841e8))
+* what a deployment is, and what has to travel with its manifest ([6bf33d2](https://github.com/lambdasistemi/singular/commit/6bf33d2692617b280331884ab5eaaf8ffdebf557)), closes [#102](https://github.com/lambdasistemi/singular/issues/102)
+
 ## [0.5.0](https://github.com/lambdasistemi/singular/compare/v0.4.1...v0.5.0) (2026-09-14)
 
 
