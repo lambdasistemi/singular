@@ -1297,17 +1297,17 @@ connectedAccept env record tm ks checkSync rowKind = do
     snapClaim <- mustSnap env claimIn
     _ <- assertQueuedRequest env ks snapClaim
     (reqIn, _reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
-    rootBefore <- chainRootHex env
+    initialRoot <- chainRootHex env
     when checkSync $ do
         mgr <- managerRootHex env tm
-        unless (mgr == rootBefore) $
+        unless (mgr == initialRoot) $
             failWith
                 ( keyLabel ks
                     <> ": proofs would not be computed against the \
                        \chain-read root (manager "
                     <> mgr
                     <> " vs chain "
-                    <> rootBefore
+                    <> initialRoot
                     <> ")"
                 )
     let repName = keyRepName ks
@@ -1324,7 +1324,7 @@ connectedAccept env record tm ks checkSync rowKind = do
                 (snapCoin snapClaim)
                 recordTokens
                 (keyDatum ks)
-    signed <- runFolder env tm (keyLabel ks) reqIn $ \current batch -> do
+    (signed, stateIn, rootBefore) <- runFolder env tm (keyLabel ks) reqIn $ \current batch -> do
         base <- prepareRegistryFold (envCfg env) (envProv env) tm (envTok env) (envFolderAddr env) (envRefUtxos env) current batch
         let attached xs = if reqIn `elem` map fst batch then xs else []
         pure
@@ -2067,8 +2067,7 @@ submitSupportRequest env record spelling value = do
 runSupportFold :: Env -> (Value -> IO ()) -> IO ()
 runSupportFold env record = do
     (reqIn, _) <- submitRegistryRequest env "support" "support-value"
-    rootBefore <- chainRootHex env
-    signed <-
+    (signed, stateIn, rootBefore) <-
         runFolder env (envTrie env) "support" reqIn $
             prepareRegistryFold (envCfg env) (envProv env) (envTrie env) (envTok env) (envFolderAddr env) (envRefUtxos env)
     let txid = txIdHex signed
