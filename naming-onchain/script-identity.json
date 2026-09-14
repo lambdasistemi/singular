@@ -30,13 +30,13 @@
     },
     {
       "title": "representative.representative.mint",
-      "hash": "e5168c3313bb8e96c3a15ed496896724139e65f600ebda54a28b5233",
-      "parameters": 1
+      "hash": "b5851c945fbab6521f253981c65eaf5da2552cf932a2d3c1d227f3cb",
+      "parameters": 2
     },
     {
       "title": "representative.representative.else",
-      "hash": "e5168c3313bb8e96c3a15ed496896724139e65f600ebda54a28b5233",
-      "parameters": 1
+      "hash": "b5851c945fbab6521f253981c65eaf5da2552cf932a2d3c1d227f3cb",
+      "parameters": 2
     },
     {
       "title": "retirement_custody.retirement_custody.spend",

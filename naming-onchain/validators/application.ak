@@ -11,7 +11,7 @@ use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 /// #77, E-001): genesis sets it, `validModify` preserves it. Read from the
 /// spent state when present, else from the reference (NOTE-014 item A1) —
 /// retires authenticate without spending.
-fn expected_rep_policy(tx: Transaction) -> PolicyId {
+pub fn expected_rep_policy(tx: Transaction) -> PolicyId {
   expect InlineDatum(datum) = find_registry_state(tx).output.datum
   naming.mpfs_state_policy(datum)
 }
@@ -61,6 +61,13 @@ fn expected_rep_token(tx: Transaction) -> ByteArray {
   let policy_tokens = tokens(find_registry_state(tx).output.value, mpfs_state_hash)
   expect [token_name] = keys(policy_tokens)
   token_name
+}
+
+/// The authenticated registry selected by the application. The representative
+/// policy compares these exact bytes with its deployment parameter, so both
+/// validators authorize against the same state input or reference.
+pub fn registry_identity(tx: Transaction) -> ByteArray {
+  registry_asset_id(mpfs_state_hash, expected_rep_token(tx))
 }
 
 /// The retirement custody script hash (issue #66): the only address a
