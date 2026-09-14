@@ -472,10 +472,9 @@ resolveStateUtxo prov cfg tok = do
         Just u -> pure u
         Nothing ->
             die
-                ( "no output at the registry address carries the recorded \
-                  \token; the node does not know this deployment (wrong \
-                  \network, or the registry was never booted here)"
-                )
+                "no output at the registry address carries the recorded \
+                \token; the node does not know this deployment (wrong \
+                \network, or the registry was never booted here)"
 
 -- ---------------------------------------------------------
 -- Attaching
