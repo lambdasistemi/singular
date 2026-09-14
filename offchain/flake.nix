@@ -195,6 +195,41 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # The complete connected cancellation gate owns an isolated devnet.
+        # Blueprints are built from the same source as the packaged runner.
+        # Run outside the Nix build sandbox, like the existing node journeys.
+        connectedSource = pkgs.lib.cleanSourceWith {
+          src = ../.;
+          filter = path: _:
+            !(builtins.elem (builtins.baseNameOf path)
+              [ ".git" ".lake" "build" "dist-newstyle" "result" ".orch" ]);
+        };
+        connected-cancellation = pkgs.writeShellApplication {
+          name = "connected-cancellation";
+          runtimeInputs = [ pkgs.nix pkgs.coreutils register-rows ];
+          text = ''
+            if [ "$#" -ne 0 ]; then
+              echo "connected-cancellation takes no external-node arguments" >&2
+              exit 2
+            fi
+            unset SINGULAR_NODE_SOCKET SINGULAR_NETWORK_MAGIC SINGULAR_WALLET_SKEY
+            unset SINGULAR_DEPLOYMENT CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID
+            export REGISTER_CONTROL=connected-cancellation
+            export NAMING_SCRIPT_IDENTITY=${connectedSource}/naming-onchain/script-identity.json
+            export REGISTRY_SCRIPT_IDENTITY=${connectedSource}/onchain/script-identity.json
+            NAMING_BLUEPRINT=$(nix build --quiet --no-link --print-out-paths path:${connectedSource}/naming-onchain#plutus-blueprint)
+            REGISTRY_BLUEPRINT=$(nix build --quiet --no-link --print-out-paths path:${connectedSource}/onchain#plutus-blueprint)
+            export NAMING_BLUEPRINT REGISTRY_BLUEPRINT
+            work=$(mktemp -d /tmp/singular-connected-cancellation.XXXXXX)
+            trap 'rm -rf "$work"' EXIT
+            mkdir -p "$work/e2e-test" "$work/node"
+            cp -r ${connectedSource}/offchain/e2e-test/genesis "$work/e2e-test/genesis"
+            export TMPDIR="$work/node"
+            cd "$work"
+            register-rows
+          '';
+        };
+
         # The deployment tool (issue #102): boots one registry, publishes
         # one set of reference scripts, records the manifest, and checks a
         # recorded manifest against a node. Wrapped like the runners so the
@@ -345,6 +380,10 @@
           register-rows = {
             type = "app";
             program = pkgs.lib.getExe register-rows;
+          };
+          connected-cancellation = {
+            type = "app";
+            program = pkgs.lib.getExe connected-cancellation;
           };
           connected-verifier = {
             type = "app";

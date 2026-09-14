@@ -45,6 +45,36 @@ theorem insert_attestation_alone_cannot_cancel :
       .error "withdraw-binding" := by
   rfl
 
+/-- The connected ledger transaction represents two existing transitions:
+issue the distinct withdrawal attestation, then consume the pending pair.
+The retained certificate represents the approval that remains in the model;
+it does not keep the consumed request available for replay. This finite example
+does not claim correctness of the ledger codec or transaction builder. -/
+theorem connected_withdrawal_composition_example :
+    (claimedOnce.registry.requests.head?.map (·.id)) = some 1 ∧
+    (claimedOnce.registry.requests.head?.map (·.proposal.refundAddress)) = some demoRefundAddress ∧
+    recognized claimedOnce.registry
+      (cancellationAsset claimedOnce 1 demoRefundAddress) = false ∧
+    recognized cancellationPending.registry
+      (cancellationAsset cancellationPending 1 demoRefundAddress) = true ∧
+    cancelledClaim.registry.requests = [] ∧
+    cancelledClaim.claims = [] ∧
+    cancelledClaim.records = claimedOnce.records ∧
+    cancelledClaim.registry.entries = claimedOnce.registry.entries ∧
+    cancelledClaim.registry.approvals = cancellationPending.registry.approvals ∧
+    lifecycleStep fixtureHasher cancelledClaim (.cancelClaim 1 demoRefundAddress) =
+      .error "request-unavailable" := by
+  repeat' constructor
+  all_goals rfl
+
+/-- Pending claims are not Active naming records and cannot be relocated by
+maintenance. The connected output-origin binding depends on this distinction. -/
+theorem pending_claim_maintenance_refused :
+    maintainDestination claimedOnce 1 2 aliceKey clearedFixture
+      { requiredSigners := [controllerAddress] } =
+      .error "naming-record-unavailable" := by
+  rfl
+
 theorem folded_claim_cancellation_refused :
     lifecycleStep fixtureHasher activeOnce (.cancelClaim 1 demoRefundAddress) =
       .error "request-unavailable" := by

@@ -335,6 +335,28 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
           NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
+  connected-cancellation:
+    name: Connected registration and certified cancellation on isolated devnet
+    needs: [blueprint, naming-validators]
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run production connected cancellation and refusals
+        env:
+          S77_EVIDENCE_DIR: ${{ runner.temp }}/connected-cancellation
+        run: nix run --quiet ./offchain#connected-cancellation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-cancellation-${{ github.sha }}
+          path: ${{ runner.temp }}/connected-cancellation
   recovery-rows:
     name: The LR recovery rows on a real devnet
     needs: [blueprint, naming-validators]

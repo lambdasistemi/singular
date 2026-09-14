@@ -47,6 +47,21 @@
       "title": "retirement_custody.retirement_custody.else",
       "hash": "c6e795719018a2515efc1b75085cf556d4a867f4dbd706a03bc56d0e",
       "parameters": 0
+    },
+    {
+      "title": "connected.connected.spend",
+      "hash": "b75f9786b04a043d6859487b3edb8046988ae988ce1fe66db42cd721",
+      "parameters": 1
+    },
+    {
+      "title": "connected.connected.mint",
+      "hash": "b75f9786b04a043d6859487b3edb8046988ae988ce1fe66db42cd721",
+      "parameters": 1
+    },
+    {
+      "title": "connected.connected.else",
+      "hash": "b75f9786b04a043d6859487b3edb8046988ae988ce1fe66db42cd721",
+      "parameters": 1
     }
   ]
 }
