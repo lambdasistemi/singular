@@ -1,5 +1,7 @@
 # Restore cancellation of a pending registration
 
+## Delivery sequence
+
 A user who cancels before fold receives the refund bound to the queued Insert,
 without creating an Active name. The acceptance and refusal obligations are
 CC01–CC06 in spec.md, bound to Lean revision
@@ -16,3 +18,11 @@ library; keep wrapper implementation in #114.
 The independent Aiken probe cannot stand in for node/ledger evidence. Keep exact
 candidate, commands, exits and observations for both layers. No deposit, preprod
 write or deployment is part of this plan. One owner implements this bounded repair.
+
+```mermaid
+flowchart LR
+  R[Reproduce] -->|bind model| D[Resolve correspondence]
+  D -->|implement bounded repair| B[Production builders and validators]
+  B -->|execute| G[Isolated devnet and CI]
+  G -->|submit evidence| V[Desk review and sequencing]
+```

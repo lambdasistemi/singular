@@ -1,5 +1,7 @@
 # Tasks
 
+## Owner checklist
+
 - [x] T01: bind accepted source/model and create isolated issue lane.
 - [x] T02: reproduce component and actual connected devnet failure.
 - [x] T03: record exact refund/request association ruling and shared API contract.

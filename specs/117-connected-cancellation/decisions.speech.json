@@ -1,0 +1,24 @@
+{
+  "model-correspondence": [
+    {
+      "text": "A naming user cancels the exact pending pair to the refund fixed at registration. The accepted model requires separate withdrawal issuance before cancellation; burning the Insert approval alone remains insufficient. The diagram shows one transaction burning Insert, issuing the authorized request-bound withdrawal certificate, consuming the request and claim, and returning the refund with the retained certificate. Native retraction rules remain intact. Old deployed scripts cannot receive this repair retroactively.",
+      "pause": 400
+    }
+  ],
+  "exact-public-witness-and-transaction-encodings": [
+    {
+      "text": "The public receipt is the canonical CBOR preimage of the versioned Insert commitment. It binds the seed, registry identity, request index, full request address and datum, full refund and naming datum. A separate domain binds the withdrawal certificate to the registry, exact request out reference and refund. The encoding table specifies the ordered fields and constructor tags for registration, fold, cancellation and native retraction. Decoding requires supported, complete and canonical bytes; the on-chain hash authenticates them.",
+      "pause": 400
+    }
+  ],
+  "verification-scope": [
+    {
+      "text": "The packaged acceptance command builds its own blueprints, starts an isolated node and exercises the production builders. A second fresh ledger runs existing maintenance and withdrawal cancellation checks. Component tests and successful builds are distinct from observed ledger behavior. Owner evidence does not replace independent review or desk sequencing.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "decisions.md",
+    "sha256": "f75bba9ec458504b75f7351c8d5cb74c06b7ec93d02c5c7d254a29ee927443a3"
+  }
+}

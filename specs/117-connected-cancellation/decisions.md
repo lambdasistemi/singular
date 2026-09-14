@@ -1,5 +1,7 @@
 # Connected cancellation rulings and implementation mapping
 
+## Model correspondence
+
 As a naming user, I create a pending registration and later cancel it, with an
 explicit withdrawal approval, to the refund destination fixed at registration.
 The registration and native request disappear together and no Active name is
@@ -64,7 +66,15 @@ write is authorized. #114 existing-deployment cancellation acceptance remains
 open; the new exports are a draft dependency until #117 lands. Economic deposit
 rules and CLI code remain outside #117.
 
-# Exact public witness and transaction encodings
+```mermaid
+flowchart LR
+  I[Pending Insert approval] -->|burn exactly one| T[Certified cancellation transaction]
+  W[Named withdrawal issuer] -->|authorizes distinct mint| T
+  R[Exact native request and claim] -->|consume together| T
+  T -->|returns ADA and retained certificate| F[Committed refund address]
+```
+
+## Exact public witness and transaction encodings
 
 `R = Constr 0 [seedOutRef, B registryPolicy, B cageToken, I requestIndex,
 B fullRequestAddress, nativeRequestDatum, B fullRefundAddress, namingDatum]`.
@@ -90,7 +100,7 @@ The devnet route serializes each register-produced receipt, decodes it, compares
 the exact commitment, rejects trailing bytes, and uses the recovered receipt for
 cancellation; its CBOR bytes are retained with the registration transaction ID.
 
-# Verification scope
+## Verification scope
 
 The isolated app is `nix run ./offchain#connected-cancellation`; CI invokes the
 same app. It builds both blueprints from its own source snapshot, starts its own

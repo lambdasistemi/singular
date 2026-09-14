@@ -1,0 +1,12 @@
+{
+  "acceptance-contract": [
+    {
+      "text": "A naming user can cancel a genuine pending registration to its committed refund address, with a distinct authorized withdrawal approval. The exact native request and claim are consumed together without activating the name. Redirect, spent inputs, already folded claims, retirement requests and absent withdrawal authorization refuse at their corresponding boundaries. Existing withdrawal cancellation and connected fold remain positive controls. The diagram separates successful fold from certified cancellation; neither permits the original pending inputs to be reused.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "6632a29edb610fe3ace183e8a2abc47cd4cb539724958eecf12131221b5e6589"
+  }
+}

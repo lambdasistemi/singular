@@ -340,11 +340,20 @@ jobs:
         env:
           S77_EVIDENCE_DIR: ${{ runner.temp }}/connected-cancellation
         run: nix run --quiet ./offchain#connected-cancellation
+      - name: Archive exact evidence filenames
+        if: always()
+        env:
+          EVIDENCE_DIR: ${{ runner.temp }}/connected-cancellation
+          EVIDENCE_ARCHIVE: ${{ runner.temp }}/connected-cancellation.tar.gz
+        run: |
+          if [ -d "$EVIDENCE_DIR" ]; then
+            tar -czf "$EVIDENCE_ARCHIVE" -C "$EVIDENCE_DIR" .
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: connected-cancellation-${{ github.sha }}
-          path: ${{ runner.temp }}/connected-cancellation
+          name: connected-cancellation-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/connected-cancellation.tar.gz
   recovery-rows:
     name: The LR recovery rows on a real devnet
     needs: [blueprint, naming-validators]

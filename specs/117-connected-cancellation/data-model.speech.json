@@ -1,0 +1,12 @@
+{
+  "committed-pair": [
+    {
+      "text": "A naming user fixes the full refund address when registration creates the request and claim together. The public receipt binds the seed, registry, exact request output and datum, and unchanged naming datum. Active custody guards keep the pending claim at its original output. Distinct hash domains separate the Insert approval from the withdrawal certificate. The diagram shows the receipt commitment authenticating the stationary pair and immutable refund.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "89d7c3a171f1ba3b6c0056d041466abc8c2e1f9b6f456d1e44bb4027b7fa13e9"
+  }
+}
