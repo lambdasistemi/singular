@@ -146,7 +146,9 @@ data ConnectedFoldArgs = ConnectedFoldArgs
 Other builder and provider failures remain fatal to the caller.
 -}
 newtype FoldBuildFailure = FoldBuildFailure String
-    deriving stock (Show)
+
+instance Show FoldBuildFailure where
+    show (FoldBuildFailure reason) = "connectedFold: build failed: " <> reason
 
 instance Exception FoldBuildFailure
 
