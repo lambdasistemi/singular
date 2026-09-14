@@ -109,6 +109,7 @@ import Singular.Registry.Blueprint (
     loadBlueprint,
  )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.FoldAll (FoldAllArgs (..), FoldResult (..), foldAll, renderFoldEvent)
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
@@ -130,6 +131,7 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.ConnectedFold (prepareRegistryFold)
 import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
     cageAddrFromCfg,
@@ -656,8 +658,23 @@ stepApply ::
     Int ->
     IO ConwayTx
 stepApply cfg prov submit tm tid reqCount = do
-    unsigned <- updateTokenImpl cfg prov tm tid genesisAddr
-    signed <- submitWithGenesis submit unsigned
+    result <-
+        foldAll
+            FoldAllArgs
+                { foldConfig = cfg
+                , foldProvider = prov
+                , foldTrie = tm
+                , foldToken = tid
+                , prepareFold = prepareRegistryFold cfg prov tm tid genesisAddr []
+                , signFold = addKeyWitness genesisSignKey
+                , foldSubmitter = submit
+                , reportFold = putStrLn . renderFoldEvent
+                , persistFold = pure ()
+                }
+    require "apply: all requests foldable" (null (skippedRequests result))
+    signed <- case foldedTransactions result of
+        [tx] -> pure tx
+        _ -> failWith "apply: expected one batch for the single journey request"
     after <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid Testnet)
     require "apply: the request UTxO was consumed" $
         length after < reqCount
@@ -785,15 +802,8 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
             <> " request_utxos="
             <> show (length reqUtxos)
         )
-    -- The apply step ran inside a speculative session, whose
-    -- mutations were discarded: the manager's trie still holds
-    -- the empty boot state, while the chain holds the applied
-    -- hello insert. Replay that insert — committed this time —
-    -- so the second update's proofs are computed against the
-    -- root the chain actually has, and require the manager to
-    -- be in step before building on it.
+    -- fold-all has already replayed the confirmed insert into the manager.
     _ <- withTrie tm tid $ \trie -> do
-        _ <- CageTrie.insert trie journeyKey journeyValue
         managerRoot <- CageTrie.getRoot trie
         require
             "reject: trie manager is in step with the chain"

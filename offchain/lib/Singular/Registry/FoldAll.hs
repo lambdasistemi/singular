@@ -8,11 +8,13 @@ module Singular.Registry.FoldAll (
     FoldEvent (..),
     FoldResult (..),
     foldAll,
+    renderFoldEvent,
 ) where
 
 import Control.Exception (throwIO, try)
 import Control.Monad (unless)
 import Data.List (sortOn)
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 
 import Cardano.Ledger.Api.Tx (txIdTx)
@@ -46,8 +48,9 @@ import Singular.Registry.Types (
     OnChainTokenState (..),
  )
 
--- | A batch attempt and its observable outcome. Only confirmed batches
--- advance the mirror. Skipped inputs remain on chain for other actions.
+{- | A batch attempt and its observable outcome. Only confirmed batches
+advance the mirror. Skipped inputs remain on chain for other actions.
+-}
 data FoldEvent
     = Trying [TxIn]
     | Refused [TxIn] String
@@ -55,16 +58,29 @@ data FoldEvent
     | Skipped TxIn String
     deriving stock (Show)
 
+{- | One log line per attempt, with the batch size and transaction identity
+when one exists. Build refusals have no transaction to submit.
+-}
+renderFoldEvent :: FoldEvent -> String
+renderFoldEvent event =
+    "fold-all: " <> case event of
+        Trying is -> "size=" <> show (length is) <> " outcome=trying tx=none"
+        Refused is reason -> "size=" <> show (length is) <> " outcome=refused " <> reason
+        Confirmed is txid root ->
+            "size=" <> show (length is) <> " outcome=confirmed tx=" <> txid <> " root=" <> show root
+        Skipped i reason -> "size=1 outcome=skipped input=" <> show i <> " reason=" <> reason
+
 -- | The confirmed transactions and singleton refusals, in processing order.
 data FoldResult = FoldResult
     { foldedTransactions :: [ConwayTx]
     , skippedRequests :: [(TxIn, String)]
     }
 
--- | Chain access and application-specific transaction construction.
--- The preparer supplies fresh funding and attached actions for exactly the
--- selected batch. The loop supplies the state, inputs, and proof manager,
--- and always enables real node evaluation. The signer must preserve the body.
+{- | Chain access and application-specific transaction construction.
+The preparer supplies fresh funding and attached actions for exactly the
+selected batch. The loop supplies the state, inputs, and proof manager,
+and always enables real node evaluation. The signer must preserve the body.
+-}
 data FoldAllArgs = FoldAllArgs
     { foldConfig :: CageConfig
     , foldProvider :: Provider IO
@@ -81,11 +97,12 @@ data FoldAllArgs = FoldAllArgs
     -- ^ Save the updated mirror after each confirmed batch.
     }
 
--- | Drain the live queue in input-reference order. Start with all pending
--- requests, halve a refused batch, then keep the last successful size.
--- A refused singleton is recorded once and excluded for this invocation.
--- Provider, funding, signing, confirmation and mirror errors abort the run;
--- only explicit build/evaluation and node submission refusals are split.
+{- | Drain the live queue in input-reference order. Start with all pending
+requests, halve a refused batch, then keep the last successful size.
+A refused singleton is recorded once and excluded for this invocation.
+Provider, funding, signing, confirmation and mirror errors abort the run;
+only explicit build/evaluation and node submission refusals are split.
+-}
 foldAll :: FoldAllArgs -> IO FoldResult
 foldAll args = go Nothing Nothing Set.empty [] []
   where
@@ -113,7 +130,7 @@ foldAll args = go Nothing Nothing Set.empty [] []
         checkRoot current
         pending <- sortOn fst . findRequestUtxos tok <$> queryUTxOs prov requestAddr
         let remaining = filter (\(i, _) -> Set.notMember i skipped) pending
-            size = maybe (maybe (length remaining) id lastSize) id retrySize
+            size = fromMaybe (fromMaybe (length remaining) lastSize) retrySize
             batch = take size remaining
             inputs = map fst batch
             refuse reason = do
@@ -129,26 +146,27 @@ foldAll args = go Nothing Nothing Set.empty [] []
             else do
                 emit (Trying inputs)
                 prepared <- prepareFold args current batch
-                built <- try @FoldBuildFailure $
-                    connectedFoldTx
-                        prepared
-                            { cfaCfg = cfg
-                            , cfaProvider = prov
-                            , cfaTrie = tm
-                            , cfaToken = tok
-                            , cfaStateUtxo = current
-                            , cfaReqUtxos = batch
-                            , cfaSkipEval = False
-                            , cfaAdjustRoot = id
-                            }
+                built <-
+                    try @FoldBuildFailure $
+                        connectedFoldTx
+                            prepared
+                                { cfaCfg = cfg
+                                , cfaProvider = prov
+                                , cfaTrie = tm
+                                , cfaToken = tok
+                                , cfaStateUtxo = current
+                                , cfaReqUtxos = batch
+                                , cfaSkipEval = False
+                                , cfaAdjustRoot = id
+                                }
                 case built of
-                    Left (FoldBuildFailure reason) -> refuse reason
+                    Left (FoldBuildFailure reason) -> refuse ("tx=none reason=" <> reason)
                     Right (unsigned, expectedRoot) -> do
                         let signed = signFold args unsigned
                             txid = txIdTx signed
                         result <- submitTx (foldSubmitter args) signed
                         case result of
-                            Rejected reason -> refuse (show reason)
+                            Rejected reason -> refuse ("tx=" <> show txid <> " reason=" <> show reason)
                             Submitted _ -> do
                                 confirmed <- awaitChain ("fold-all: confirmation " <> show txid) $ do
                                     us <- queryUTxOs prov stateAddr

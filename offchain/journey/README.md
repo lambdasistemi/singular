@@ -158,3 +158,53 @@ the run fails.
   the same builders and a real node.
 - It does not touch the onchain tree: the blueprint and the identity
   manifest are read at run time.
+
+## Run the folder
+
+As a folder, you can process the requests a registry has accumulated without
+choosing a fixed transaction limit. The journey uses `foldAll` to drain its
+registry; the node decides which batch fits. From `offchain/`:
+
+```sh
+blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+```
+
+Each attempt reports `size`, `outcome` and a transaction identity when one has
+been built. A refusal halves the batch. A confirmed batch sets the size for the
+next attempt. A request refused alone is reported with its reason, left on
+chain and skipped for the rest of this invocation.
+
+```mermaid
+flowchart TD
+    Q[Read pending requests and confirmed root] -->|Mirror agrees| B[Build and evaluate a batch]
+    B -->|Fits| S[Submit and confirm]
+    B -->|Refused| H{More than one request?}
+    H -->|Yes| R[Halve the batch]
+    R -->|Fresh proofs| B
+    H -->|No| K[Report and skip this input]
+    K -->|Continue| Q
+    S -->|Replay confirmed inputs into mirror| Q
+    Q -->|No unskipped requests| E[Return transactions and refusals]
+```
+
+Integrators call `Singular.Registry.FoldAll.foldAll` with a provider, the
+registry's proof mirror, a signing function and a submitter. `prepareFold`
+supplies the application actions for exactly the selected requests;
+`prepareRegistryFold` prepares the plain registry portion with fresh funding
+and protocol parameters. Naming applications retain their attached claim
+spends, representative mints and outputs. `persistFold` saves the mirror after
+each confirmation. A missing or stale mirror stops the run before more proofs
+are built; connection, funding and confirmation failures also stop the run.
+
+The real-node batching test is:
+
+```sh
+nix develop --quiet -c just fold-all-test
+```
+
+It creates varied-size requests that exceed one transaction's limits and one
+poisoned request. It checks multiple confirmed batches, one skipped poison,
+and the chain root against the mirror after each batch. The ordinary journey
+creates a private devnet registry; attaching the folder to the shared preprod
+deployment requires the deployed manifest and its matching proof mirror.

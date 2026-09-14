@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Registry.E2E.FoldAllSpec
 Description : Adaptive folding against a real node
@@ -12,21 +13,18 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, sortOn)
-import Data.Ord (Down (..))
-import Lens.Micro ((^.))
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr, genesisSignKey)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 
 import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.E2E.CageSpec (submitInsertRequest, withBootedCage)
-import Singular.Registry.FoldAll (FoldAllArgs (..), FoldEvent (..), FoldResult (..), foldAll)
+import Singular.Registry.FoldAll (FoldAllArgs (..), FoldEvent (..), FoldResult (..), foldAll, renderFoldEvent)
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.ConnectedFold (ConnectedFoldArgs (..), FoldBuildFailure (..), connectedFoldTx)
+import Singular.Registry.TxBuilder.ConnectedFold (FoldBuildFailure (..), connectedFoldTx, prepareRegistryFold)
 import Singular.Registry.TxBuilder.Internal (cageAddrFromCfg, cagePolicyIdFromCfg, findRequestUtxos, findStateUtxo, requestAddrFromCfg)
 
 -- | The same test is available alone through @just fold-all-test@ and in E2E.
@@ -35,7 +33,7 @@ spec = describe "Adaptive folder" $
     it "splits a node-refused batch, drains varied values and skips one poisoned request" $ do
         path <- lookupEnv "REGISTRY_BLUEPRINT" >>= maybe (fail "REGISTRY_BLUEPRINT is required") pure
         bp <- loadBlueprint path >>= either fail pure
-        let script name = maybe (fail ("missing script " <> name)) pure (extractCompiledCode name bp)
+        let script name = maybe (fail ("missing script " <> show name)) pure (extractCompiledCode name bp)
         stateBytes <- script "state.state"
         requestBytes <- script "request.request"
         consumerBytes <- script "consumer.consumer"
@@ -48,51 +46,33 @@ spec = describe "Adaptive folder" $
                         us <- queryUTxOs prov stateAddr
                         maybe (fail "missing state") pure (findStateUtxo (cagePolicyIdFromCfg cfg) tok us)
                     pending = sortOn fst . findRequestUtxos tok <$> queryUTxOs prov reqAddr
-                    prepare current batch = do
-                        wallet <- queryUTxOs prov genesisAddr
-                        fee <- case sortOn (Down . (^. coinTxOutL) . snd) wallet of
-                            [] -> fail "missing fee input"
-                            x : _ -> pure x
-                        pp <- queryProtocolParams prov
-                        pure ConnectedFoldArgs
-                            { cfaCfg = cfg
-                            , cfaProvider = prov
-                            , cfaTrie = tm
-                            , cfaToken = tok
-                            , cfaFeeAddr = genesisAddr
-                            , cfaStateUtxo = current
-                            , cfaReqUtxos = batch
-                            , cfaFeeUtxo = fee
-                            , cfaPp = pp
-                            , cfaSpends = []
-                            , cfaMints = []
-                            , cfaOutputs = []
-                            , cfaSigners = []
-                            , cfaRefUtxos = []
-                            , cfaAttachScripts = []
-                            , cfaSkipEval = False
-                            , cfaAdjustRoot = id
+                    prepare = prepareRegistryFold cfg prov tm tok genesisAddr []
+                    args =
+                        FoldAllArgs
+                            { foldConfig = cfg
+                            , foldProvider = prov
+                            , foldTrie = tm
+                            , foldToken = tok
+                            , prepareFold = prepare
+                            , signFold = addKeyWitness genesisSignKey
+                            , foldSubmitter = submit
+                            , reportFold = \e -> putStrLn (renderFoldEvent e) >> modifyIORef' events (e :)
+                            , persistFold = pure ()
                             }
-                    args = FoldAllArgs
-                        { foldConfig = cfg
-                        , foldProvider = prov
-                        , foldTrie = tm
-                        , foldToken = tok
-                        , prepareFold = prepare
-                        , signFold = addKeyWitness genesisSignKey
-                        , foldSubmitter = submit
-                        , reportFold = \e -> print e >> modifyIORef' events (e :)
-                        , persistFold = pure ()
-                        }
                 -- A real accepted insert establishes an occupied key. The later
                 -- duplicate has a valid datum but an impossible insertion proof.
                 _ <- submitInsertRequest cfg prov submit tok "occupied" "seed"
                 seed <- foldAll args
                 length (foldedTransactions seed) `shouldBe` 1
                 forM_ [1 .. 24 :: Int] $ \i -> do
-                    _ <- submitInsertRequest cfg prov submit tok
-                        (BC.pack ("key-" <> show i))
-                        (BS.replicate (64 + 128 * i) (fromIntegral i))
+                    _ <-
+                        submitInsertRequest
+                            cfg
+                            prov
+                            submit
+                            tok
+                            (BC.pack ("key-" <> show i))
+                            (BS.replicate (64 + 128 * i) (fromIntegral i))
                     pure ()
                 -- First exercise only good requests: the refusal must really be
                 -- a size/unit limit, not the poison masking an oversized batch.

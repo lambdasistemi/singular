@@ -577,3 +577,23 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+  fold-all:
+    name: Adaptive folder drains varied requests and isolates poison
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Run adaptive folder against the node
+        working-directory: offchain
+        run: |
+          task_tmp="$(mktemp -d /tmp/s104.XXXXXX)"
+          trap 'rm -rf "$task_tmp"' EXIT
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          TMPDIR="$task_tmp" REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e -- --match 'Adaptive folder'
