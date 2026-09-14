@@ -376,7 +376,7 @@ import Conformance.Refusal (
 caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
-csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS08"]
+csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
 
 -- The issue #70 rows, listed by membership — never by exclusion or
 -- position: a partition defined by what it is not silently absorbs
@@ -5256,6 +5256,7 @@ runCSRow prov submit stateBytes requestBytes consumerBytes nodeVer base dirty re
     "CS03" -> runCS03 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS04" -> runCS04 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS05" -> runCS05 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS07" -> runCS07 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
     "CS08" -> runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
     _ -> failWith ("CS row not yet implemented: " <> row)
 
@@ -5570,6 +5571,88 @@ forkNeighborsWellFormed tx = all fromDatum (redeemerPlutusDatas tx)
     fromStep (PLC.Constr 1 [_, PLC.Constr 0 [_, _, _]]) = True
     fromStep (PLC.Constr 1 _) = False
     fromStep _ = True
+
+{- | CS07: sequential absence folds exercise Leaf, lone Fork and Branch.
+The C fold uses the exact historical C-over-{A,B} regression; D and E
+widen the trie until a Branch is witnessed by another accepted fold.
+-}
+runCS07 ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    String ->
+    String ->
+    Bool ->
+    FilePath ->
+    Control ->
+    String ->
+    IO ()
+runCS07 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    tm <- mkPureTrieManager
+    (seed, _) <- largestWalletUtxo prov
+    let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seed)
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    signedBoot <- submitWithGenesis submit unsignedBoot
+    tid <- extractTokenId cfg signedBoot
+    createTrie tm tid
+    folds <-
+        mapM
+            (insertWitness cfg tm tid)
+            [ ("cs07-fork-A", "va", [])
+            , ("cs07-fork-B1294", "vb", [2])
+            , ("cs07-fork-C11", "vc", [1])
+            , ("cs07-fork-D127", "vd", [2, 1])
+            , ("cs07-fork-E400", "ve", [2, 0])
+            ]
+    let observed = concat [proofStepConstrs tx | (tx, _, _) <- folds]
+        witnessed = case control of
+            MissingWitness -> filter (/= 1) observed
+            _ -> observed
+        mem = maximum [m | (_, m, _) <- folds]
+        cpu = maximum [c | (_, _, c) <- folds]
+        size = maximum [txSizeBytes tx | (tx, _, _) <- folds]
+    require "CS07: missing accepted ProofStep witness" (all (`elem` witnessed) [0, 1, 2])
+    emitMeasureProv prov "CS07" mem cpu size
+    writeCSReceipt
+        receiptsDir
+        "CS07"
+        Accepted
+        AgreesWithModel
+        (txIdHex signedBoot : [txIdHex tx | (tx, _, _) <- folds])
+        Nothing
+        Nothing
+        (Just mem)
+        (Just cpu)
+        (Just size)
+        "node-submit"
+        base
+        dirty
+        nodeVer
+        blueprintIdStr
+        Nothing
+    emit "row" "CS07: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded"
+  where
+    insertWitness cfg tm tid (key, val, expectedSteps) = do
+        unsignedReq <- requestInsertImpl cfg prov (defaultTip cfg) tid key val genesisAddr
+        _ <- submitWithGenesis submit unsignedReq
+        unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
+        require
+            ("CS07: unexpected proof for " <> show key <> ": " <> show (proofStepConstrs unsignedFold))
+            (proofStepConstrs unsignedFold == expectedSteps)
+        require "CS07: malformed Fork Neighbor" (forkNeighborsWellFormed unsignedFold)
+        (mem, cpu) <- measureUnitsProv prov unsignedFold
+        signedFold <- submitWithGenesis submit unsignedFold
+        root <- withTrie tm tid $ \trie -> do
+            _ <- CageTrie.insert trie key val
+            CageTrie.getRoot trie
+        observed <- readChainState cfg prov tid
+        require
+            "CS07: chain root differs from committed trie"
+            (unOnChainRoot (stateRoot observed) == unRoot root)
+        emit "CS07-fold" (show key <> " steps=" <> show expectedSteps <> " txid=" <> txIdHex signedFold)
+        pure (signedFold, mem, cpu)
 
 cs03KeyA, cs03ValA, cs03KeyB, cs03ValB :: ByteString
 cs03KeyA = "cs03-modify-key"
