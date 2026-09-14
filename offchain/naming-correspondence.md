@@ -393,3 +393,19 @@ unattributed at node-text layer) rather than isolating `identity` — the name
 check's devnet isolation is restored by giving those rows a no-op state when
 the census demands it; unit-level discrimination stands (`fold_insert_…`
 and `lt08_foreign_policy_refuses` fail-tests).
+
+## Spelling-only representative identity (issue #110, 2026-09-14)
+
+The current concrete encoding supersedes the historical t77 name equation above: `representativeName = blake2b_256(spelling bytes)`, with no prefix or incarnation. The connected Fold reads the key from the consumed native Insert selected by its state Modify action; retirement carries that spelling and custody completion checks the Update request key against the burned name. The consumer hook and Haskell evidence verifier independently use the same equation.
+
+The representative policy is applied first to the application hash, then to `statePolicyBytes <> registryTokenName`. The seed outRef determines that token before bootstrap; the state's configured representative policy is the resulting per-registry id. Mint and completion burn authenticate the exact bound registry, using the application's spent-before-reference selection. A second registry with a copied configured policy cannot mint under the first registry's policy.
+
+Lean's abstract representative remains `{registry, key, policy, assetScope}` at naming scope zero; its model and theorem statements are unchanged under the operator's NOTE-001 and A-001 rulings. Historical receipts above describe their original candidates, not the current encoding.
+
+### Retirement registry witness (A-003)
+
+| Lean obligation | Concrete check | Executing evidence |
+| --- | --- | --- |
+| `NamingLifecycle.retirementRequest` fixes the proposal registry, and `beginRetirement` requires that exact request | `application.Retire` requires a withdrawal under the representative policy read from the authenticated registry reference; `representative.withdraw` checks that same reference's exact registry asset id against its deployment parameter | Zero withdrawal with a redeemer, after registering the representative script stake credential; missing witness and copied-policy foreign-registry reference refuse |
+
+The application and withdrawal handler share one reference-only selection. Maintenance and recovery do not read referenced registry state: they preserve the spent record's token and authorize against its datum. Completion already spends the registry state and executes the representative mint handler's registry-bound burn, so it needs no additional withdrawal witness. Lean is unchanged.

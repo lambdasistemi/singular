@@ -15,7 +15,7 @@ NOTE-026 defect class: a dropped policy).
 module Naming.RetireVerifySpec (spec) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
+import Data.ByteString qualified as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 import Naming.Register (representativeName)
@@ -34,13 +34,8 @@ policyX = BS.replicate 28 0x58
 tokenT = "cage-token-name"
 
 repA, repB :: ByteString
-repA = representativeName keyA policyS tokenT 0
-repB = representativeName keyB policyS tokenT 0
--- NOTE-027 honesty: the name formula takes the STATE policy
--- (policyS, the preimage policy); the MINT policy (policyR) is the
--- separately-derived positiveMintPolicy value checked against
--- custody. The two are deliberately different constants here.
-
+repA = representativeName "alice"
+repB = representativeName "bob"
 quorum12 :: [ByteString]
 quorum12 = [BS.replicate 28 0x11, BS.replicate 28 0x12]
 
@@ -50,14 +45,14 @@ validLT =
     RetireEvidence
         { reRecord = "TxA#1"
         , reRetireTx = "TxR"
-        , reKeyHash = keyA
+        , reKey = "alice"
+        , reSpelling = "alice"
         , reCreationHash = keyA
         , reCreationHashLog = keyA
         , reCurrentControl = keyA
         , reQuorum = quorum12
         , reStatePolicy = policyS
         , reToken = tokenT
-        , reIncarnation = 0
         , reCreationMint = [("app-policy", "approval", -1), (policyR, repA, 1)]
         , reCustodyPolicy = policyR
         , reCustodyName = repA
@@ -67,8 +62,9 @@ validLT =
         , reWitnesses = [keyA, "folder-funds-key"]
         }
 
--- | A valid quorum-route bundle over a ROTATED record (control is
--- keyB, creation hash stays keyA).
+{- | A valid quorum-route bundle over a ROTATED record (control is
+keyB, creation hash stays keyA).
+-}
 validRR :: RetireEvidence
 validRR =
     validLT
@@ -94,7 +90,7 @@ spec = describe "retirement binding predicates" $ do
         verifyRetireEvidence validLT{reCustodyQty = 2}
             `shouldSatisfy` isLeft
     it "refuses a wrong retire key" $
-        verifyRetireEvidence validLT{reKeyHash = keyB}
+        verifyRetireEvidence validLT{reKey = "bob"}
             `shouldSatisfy` isLeft
     it "refuses a log mismatch on creation hash" $
         verifyRetireEvidence validLT{reCreationHashLog = keyB}

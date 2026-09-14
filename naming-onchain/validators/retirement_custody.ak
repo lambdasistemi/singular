@@ -1,5 +1,6 @@
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{filter, find, head}
+use aiken/crypto.{blake2b_256}
 use aiken/collection/pairs
 use cardano/address
 use cardano/assets.{PolicyId, Value, flatten, quantity_of, tokens}
@@ -103,6 +104,7 @@ fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
   expect [cageToken] = keys(tokens(stateIn.output.value, mpfs_state_hash))
   expect req.requestToken.assetName == cageToken
   expect MUpdate(old, new) = req.requestValue
+  expect old == blake2b_256(req.requestKey)
   expect InlineDatum(stateDatum) = stateIn.output.datum
   let expectedPolicy = mpfs_state_policy(stateDatum)
   expect new == over_marker_for(burned_of(claim, old, expectedPolicy))

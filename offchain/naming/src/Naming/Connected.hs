@@ -65,7 +65,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.Ledger (ConwayTx)
 import Naming.Datum (NamingDatum (..), decodeNamingDatum, encodeNamingDatum)
 import Naming.Register qualified as Register
-import Naming.Wire (WireData (..), addressBytes)
+import Naming.Wire (WireData (..))
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Blueprint (applyBytesParam)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
@@ -189,8 +189,7 @@ registerConnected cfg app prov token owner controller datum spelling refund = do
     let TokenId (AssetName tokenBytes) = token
         registryToken = SBS.fromShort tokenBytes
         policyBytes = scriptHashBytes (cfgScriptHash cfg)
-        controlHash = BS.take 28 (BS.drop 1 (addressBytes (controlAddress datum)))
-        representative = Register.representativeName controlHash policyBytes registryToken Register.freshIncarnation
+        representative = Register.representativeName spelling
         reqAddr = requestAddrFromCfg cfg token (network cfg)
         request = case fromBuiltinData (BuiltinData (mkRequestDatum token owner spelling (OpInsert representative) 1000000 now)) of
             Just (RequestDatum value) -> value

@@ -19,7 +19,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
@@ -40,12 +40,14 @@ import Cardano.Ledger.Api.Tx.Body (
 import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     mkBasicTxOut,
+    referenceScriptTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose (..),
  )
@@ -57,6 +59,7 @@ import Cardano.Ledger.Mary.Value (
 import Cardano.Ledger.TxIn (TxIn)
 import Data.List (find)
 
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (
     CageConfig (..),
@@ -75,7 +78,6 @@ import Singular.Registry.Types (
     OnChainRoot (..),
     OnChainTxOutRef,
  )
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Locate the wallet UTxO whose on-chain reference matches @cageSeed@.
 lookupSeed ::
@@ -108,7 +110,9 @@ bootTokenImpl cfg prov addr = do
                 \ a different seed than the wallet currently\
                 \ holds"
     let (seedRef, _seedOut) = seedUtxo
-        rest = filter (/= seedUtxo) utxos
+        -- A shared wallet also holds persistent reference publications.
+        -- Extra funding inputs must leave those outputs available to runners.
+        rest = filter (\u@(_, out) -> u /= seedUtxo && out ^. referenceScriptTxOutL == SNothing) utxos
         allInputUtxos = case rest of
             [] -> [seedUtxo]
             (u : _) -> [seedUtxo, u]

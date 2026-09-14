@@ -199,10 +199,7 @@ validator connected(native_request_hash: ByteArray) {
         expect Contribute(state.output_reference) == native_redeemer(request, tx)
         let native = native_request(registration)
         expect Insert(name) = native.operation
-        expect name == application.representative_name(
-          naming.control_hash(naming.expect_naming(registration.naming_datum)),
-          registration.registry_policy, registration.registry_token,
-        )
+        expect name == application.representative_name(native.key)
         expect representatives == [name]
         let rep_policy = representative_policy(state)
         expect dict.to_pairs(tokens(tx.mint, rep_policy)) == [Pair(name, 1)]
@@ -234,10 +231,7 @@ validator connected(native_request_hash: ByteArray) {
         expect request.datum == InlineDatum(registration.request_datum)
         let native = native_request(registration)
         expect Insert(name) = native.operation
-        expect name == application.representative_name(
-          naming.control_hash(naming.expect_naming(registration.naming_datum)),
-          registration.registry_policy, registration.registry_token,
-        )
+        expect name == application.representative_name(native.key)
         expect dict.to_pairs(tokens(tx.mint, policy)) == [Pair(insert_name(registration), 1)]
         expect [claim] = continuation(policy, tx)
         expect claim.datum == InlineDatum(registration.naming_datum)

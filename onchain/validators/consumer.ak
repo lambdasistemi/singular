@@ -1,5 +1,5 @@
-use aiken/collection/list.{any, filter_map, has}
-use aiken/crypto.{blake2b_224}
+use aiken/collection/list.{filter_map, has}
+use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{PolicyId, flatten, lovelace_of}
@@ -21,8 +21,7 @@ use cardano/transaction.{InlineDatum, Input, Transaction}
 /// R2 — representative-mint binding: every positive mint under the
 /// registry's representative policy must be (i) requested — some
 /// consumed request commits it as an `Insert` value — and (ii)
-/// correctly bound — it equals the registry-bound recomputation over
-/// the spent state's own token and some spent claim's control. A folder
+/// correctly bound — it equals the hash of that request's spelling bytes. A folder
 /// that consumes a victim's paid request but mints its own
 /// representative (request theft) refuses; coherent batches pass no
 /// matter who submits them.
@@ -271,36 +270,10 @@ fn check_requests(tx: Transaction) -> Bool {
 
 // ---- R2: representative-mint binding ----
 
-/// Registry-bound recomputation (NOTE-009 rule, duplicated from the
-/// application validator — the two implementations cross-check on
-/// devnet; the rule's authority is the operator-approved preimage, not
-/// either copy).
-pub fn consumer_representative_name(
-  control_hash: ByteArray,
-  state_policy_bytes: ByteArray,
-  token_name: ByteArray,
-) -> ByteArray {
-  expect bytearray.length(control_hash) == 28
-  bytearray.concat(
-    bytearray.concat(
-      #"526570",
-      blake2b_224(
-        bytearray.concat(
-          consumer_registry_asset_id(state_policy_bytes, token_name),
-          control_hash,
-        ),
-      ),
-    ),
-    #"00",
-  )
-}
-
-pub fn consumer_registry_asset_id(
-  state_policy_bytes: ByteArray,
-  token_name: ByteArray,
-) -> ByteArray {
-  expect bytearray.length(state_policy_bytes) == 28
-  bytearray.concat(state_policy_bytes, token_name)
+/// The representative name is computable from the spelling alone. The
+/// applied representative policy carries the registry identity.
+pub fn consumer_representative_name(key: ByteArray) -> ByteArray {
+  blake2b_256(key)
 }
 
 /// Claim control as recompute input: the SAME supported address
@@ -326,7 +299,12 @@ fn requested_names(
         Some(CRequestDatum(request)) ->
           if request.requestToken.assetName == token_name {
             when request.requestValue is {
-              CInsert(value) -> Some(value)
+              CInsert(value) ->
+                if value == consumer_representative_name(request.requestKey) {
+                  Some(value)
+                } else {
+                  None
+                }
               _ -> None
             }
           } else {
@@ -363,7 +341,7 @@ fn check_rep_mints(tx: Transaction) -> Bool {
     fn(s) {
       when s is {
         (input, state) -> {
-          let policy_bytes = state_policy_bytes(input)
+          expect bytearray.length(state_policy_bytes(input)) == 28
           let token_name = cage_token_name(input)
           let minted =
             list.filter_map(
@@ -383,18 +361,9 @@ fn check_rep_mints(tx: Transaction) -> Bool {
             minted,
             fn(rep) {
               expect has(requested_names(tx, token_name), rep)
-              expect
-                any(
-                  claim_controls(tx),
-                  fn(control) {
-                    rep
-                      == consumer_representative_name(
-                        control,
-                        policy_bytes,
-                        token_name,
-                      )
-                  },
-                )
+              // Preserve the supported payment-key control check; control
+              // authorizes a claim but does not enter the name preimage.
+              expect claim_controls(tx) != []
               True
             },
           )

@@ -38,6 +38,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       flake-utils,
       haskellNix,
@@ -206,7 +207,7 @@
         };
         connected-cancellation = pkgs.writeShellApplication {
           name = "connected-cancellation";
-          runtimeInputs = [ pkgs.nix pkgs.coreutils register-rows ];
+          runtimeInputs = [ pkgs.nix pkgs.coreutils pkgs.git register-rows naming-rows ];
           text = ''
             if [ "$#" -ne 0 ]; then
               echo "connected-cancellation takes no external-node arguments" >&2
@@ -214,6 +215,9 @@
             fi
             unset SINGULAR_NODE_SOCKET SINGULAR_NETWORK_MAGIC SINGULAR_WALLET_SKEY
             unset SINGULAR_DEPLOYMENT CARDANO_NODE_SOCKET_PATH CARDANO_NODE_NETWORK_ID
+            candidate=${pkgs.lib.escapeShellArg (self.rev or "")}
+            if [ -z "$candidate" ]; then candidate=$(git rev-parse HEAD); fi
+            export CANDIDATE_SHA="$candidate"
             export REGISTER_CONTROL=connected-cancellation
             export NAMING_SCRIPT_IDENTITY=${connectedSource}/naming-onchain/script-identity.json
             export REGISTRY_SCRIPT_IDENTITY=${connectedSource}/onchain/script-identity.json
@@ -227,6 +231,11 @@
             export TMPDIR="$work/node"
             cd "$work"
             register-rows
+            # CC06: preserve the existing WithdrawApproval lifecycle on its
+            # own fresh ledger, using the same candidate naming blueprint.
+            mkdir -p "$work/legacy-node"
+            export TMPDIR="$work/legacy-node"
+            naming-rows
           '';
         };
 

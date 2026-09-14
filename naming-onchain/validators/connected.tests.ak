@@ -13,7 +13,7 @@ const request_address = #"701111111111111111111111111111111111111111111111111111
 fn registration() -> Registration {
   let datum: Data = RequestDatum(NativeRequest {
     token: NativeToken { name: fixtures.mock_registry_token },
-    owner: fixtures.controller, key: "cancel", operation: Insert(application.representative_name(fixtures.controller, naming.mpfs_state_hash, fixtures.mock_registry_token)),
+    owner: fixtures.controller, key: "cancel", operation: Insert(application.representative_name("cancel")),
     fee: 1000000, submitted_at: 0,
   })
   Registration {

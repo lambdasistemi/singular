@@ -5,45 +5,47 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review, closed]
+    types: [opened, synchronize, reopened, closed]
 permissions:
   contents: read
 concurrency:
   group: docs-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   build-gate:
     if: github.event.action != 'closed'
     name: Build Gate
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-build-gate"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - run: nix build --quiet --no-eval-cache .#build-gate
+      - run: nix build --quiet .#build-gate
   model:
     if: github.event.action != 'closed'
     needs: build-gate
     name: Lean model and exact statement debt
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-model"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -55,14 +57,15 @@ jobs:
     name: Simulator corpus parity and controls
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-simulator"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -74,14 +77,15 @@ jobs:
     name: Simulator browser checks
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-browser"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -93,14 +97,15 @@ jobs:
     name: Theorem coverage strict completion (reporting)
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-coverage"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -120,14 +125,15 @@ jobs:
     name: Rendered documentation
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-rendered-docs"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -139,14 +145,15 @@ jobs:
     name: Development shell build
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-dev-shell"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -158,14 +165,15 @@ jobs:
     name: Documentation release checks
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-release-check"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -178,14 +186,15 @@ jobs:
     runs-on: nixos
     timeout-minutes: 45
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-release-artifacts"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -203,14 +212,15 @@ jobs:
     name: Live documentation preview
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-preview"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: cachix/cachix-action@v17
         with:
           name: paolino
@@ -237,9 +247,9 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: nixos
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-cleanup-preview"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: paolino/dev-assets/static-preview@a8f2ff7603bc793794d3e4459b2d5510a57e72a2
@@ -261,9 +271,9 @@ jobs:
       group: github-pages
       cancel-in-progress: false
     steps:
-      - name: Isolate Nix cache
+      - name: Reuse this runner's Nix cache
         run: |
-          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-pages"
+          cache_dir="$HOME/.cache/singular-ci-nix"
           mkdir -p "$cache_dir"
           printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6

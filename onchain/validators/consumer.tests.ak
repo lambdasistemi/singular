@@ -1,7 +1,6 @@
 use aiken/builtin
-use aiken/crypto.{blake2b_224}
+use aiken/crypto.{blake2b_256}
 use aiken/interval
-use aiken/primitive/bytearray
 use cardano/address.{Script, from_script}
 use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Transaction}
@@ -115,22 +114,9 @@ fn claim_input(control: ByteArray) -> Input {
   }
 }
 
-/// Independent recomputation per the NOTE-009 rule (stdlib primitives
-/// directly — not via the consumer's copy — so the accept test pins
-/// the rule, not the implementation).
-fn expected_rep_name(control: ByteArray) -> ByteArray {
-  bytearray.concat(
-    bytearray.concat(
-      #"526570",
-      blake2b_224(
-        bytearray.concat(
-          bytearray.concat(state_policy_hash, "cage_token"),
-          control,
-        ),
-      ),
-    ),
-    #"00",
-  )
+/// Independent spelling-only recomputation from stdlib primitives.
+fn expected_rep_name(key: ByteArray) -> ByteArray {
+  blake2b_256(key)
 }
 
 const control_a = #"60aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -224,11 +210,10 @@ test r1_foreign_token_skipped() {
 // ============================================================================
 
 /// Coherent connected fold: the minted rep was requested (Insert value)
-/// and equals the registry-bound recomputation over the spent state's
-/// token and the spent claim's control. Passes no matter who submits
+/// and equals the hash of the consumed request key. Passes no matter who submits
 /// (no signatures anywhere in this transaction).
 test r2_bound_requested_mint_accepts() {
-  let rep = expected_rep_name(bytearray.drop(control_a, 1))
+  let rep = expected_rep_name("42")
   let mint_value =
     from_asset(rep_policy_hash, rep, 1)
   expect withdraw(
@@ -244,10 +229,10 @@ test r2_bound_requested_mint_accepts() {
 
 /// Request theft: the victim's paid request is consumed but a DIFFERENT
 /// representative is minted (valid name, wrong request). Refuses even
-/// though the minted name is correctly bound to its own control.
+/// though the minted name is a valid hash of another spelling.
 test r2_unrequested_mint_refuses() fail {
-  let victim_rep = expected_rep_name(bytearray.drop(control_a, 1))
-  let thief_rep = expected_rep_name(bytearray.drop(control_b, 1))
+  let victim_rep = expected_rep_name("42")
+  let thief_rep = expected_rep_name("other")
   let mint_value =
     from_asset(rep_policy_hash, thief_rep, 1)
   withdraw(
@@ -261,10 +246,9 @@ test r2_unrequested_mint_refuses() fail {
 }
 
 /// Misbound mint: the minted name was requested but does not match the
-/// registry recomputation over the spent claim's control (folded claim
-/// and minted rep disagree). Refuses.
+/// hash of the consumed request key. Refuses.
 test r2_misbound_mint_refuses() fail {
-  let requested = expected_rep_name(bytearray.drop(control_b, 1))
+  let requested = expected_rep_name("other")
   let mint_value =
     from_asset(rep_policy_hash, requested, 1)
   withdraw(
@@ -283,10 +267,10 @@ test r2_misbound_mint_refuses() fail {
 
 /// Base payment-key control (kind 0, 57 bytes) carrying the SAME payment
 /// hash as the enterprise `control_a`: the recomputed name is identical
-/// and the coherent batch accepts. Representative preimage identity is
-/// the 28-byte payment hash for both address forms.
+/// and the coherent batch accepts. Control address form does not
+/// enter the spelling-only preimage.
 test r2_base_address_same_hash_accepts() {
-  let rep = expected_rep_name(bytearray.drop(control_a, 1))
+  let rep = expected_rep_name("42")
   let mint_value =
     from_asset(rep_policy_hash, rep, 1)
   expect withdraw(
@@ -304,7 +288,7 @@ test r2_base_address_same_hash_accepts() {
 /// credential is not a key. Refuses — script credentials are never
 /// control keys.
 test r2_script_enterprise_control_refuses() fail {
-  let rep = expected_rep_name(bytearray.drop(control_a, 1))
+  let rep = expected_rep_name("42")
   let mint_value =
     from_asset(rep_policy_hash, rep, 1)
   withdraw(
@@ -320,7 +304,7 @@ test r2_script_enterprise_control_refuses() fail {
 /// Base script control (kind 1, 57 bytes: script payment part): refuses
 /// on the same key-kind rule as the enterprise script form.
 test r2_script_base_control_refuses() fail {
-  let rep = expected_rep_name(bytearray.drop(control_a, 1))
+  let rep = expected_rep_name("42")
   let mint_value =
     from_asset(rep_policy_hash, rep, 1)
   withdraw(
@@ -335,7 +319,7 @@ test r2_script_base_control_refuses() fail {
 
 /// Malformed control (30 bytes: no supported form decodes it): refuses.
 test r2_malformed_control_refuses() fail {
-  let rep = expected_rep_name(bytearray.drop(control_a, 1))
+  let rep = expected_rep_name("42")
   let mint_value =
     from_asset(rep_policy_hash, rep, 1)
   withdraw(

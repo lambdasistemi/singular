@@ -45,6 +45,8 @@ import System.IO (hPutStrLn, stderr)
 import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 
+import Cardano.Crypto.Hash (hashToBytes)
+import Cardano.Ledger.Address (decodeAddrEither)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (
     feeTxBodyL,
@@ -63,14 +65,20 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
-import Cardano.Ledger.Address (decodeAddrEither)
-import Cardano.Crypto.Hash (hashToBytes)
-import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
-import Ouroboros.Network.Magic (NetworkMagic (..))
 import Data.Map.Strict qualified as Map
+import Ouroboros.Network.Magic (NetworkMagic (..))
 
+import Cardano.Node.Client.E2E.Setup (
+    addKeyWitness,
+    genesisSignKey,
+    rawSerialiseSignKeyDSIGN,
+ )
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
     extractCompiledCode,
@@ -105,22 +113,16 @@ import Singular.Registry.TxBuilder.Register (
     registerConsumerImpl,
     registerScriptImpl,
  )
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    genesisSignKey,
-    rawSerialiseSignKeyDSIGN,
- )
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- ---------------------------------------------------------
 -- Entry
 -- ---------------------------------------------------------
 
 main :: IO ()
-main = run `catch` \(e :: SomeException) -> do
-    hPutStrLn stderr ("deployment: FAILED: " <> displayException e)
-    exitWith (ExitFailure 1)
+main =
+    run `catch` \(e :: SomeException) -> do
+        hPutStrLn stderr ("deployment: FAILED: " <> displayException e)
+        exitWith (ExitFailure 1)
 
 run :: IO ()
 run = do
@@ -210,6 +212,19 @@ loadCompiled = do
             , cStakingBytes = stakingBytes
             }
 
+-- | Bind the representative only after the registry seed is known.
+bindSeed :: Compiled -> TxIn -> Compiled
+bindSeed c seedIn =
+    c
+        { cRepAppliedBytes =
+            applyBytesParam
+                (scriptHashBytes (computeScriptHash (cStateBytes c)) <> deriveAssetName (txInToRef seedIn))
+                (cRepAppliedBytes c)
+        }
+
+bindDeployment :: Compiled -> Deployment -> IO Compiled
+bindDeployment c dep = bindSeed c <$> either failWith pure (parseOutRef (depSeedOutRef dep))
+
 -- | The release's compiled halves, in the shape a manifest consumes.
 partsOf :: Compiled -> CageParts
 partsOf c =
@@ -235,13 +250,31 @@ doVerify = do
         Just p -> pure p
         Nothing -> failWith "verify needs --deployment MANIFEST"
     dep <- readDeployment path
-    compiled <- loadCompiled
+    compiled <- loadCompiled >>= (`bindDeployment` dep)
     withNode $ \sess -> do
-        claims <- verifyDeployment (nsProvider sess) dep (partsOf compiled)
+        claims <- verifyRegisteredDeployment sess dep compiled
         mapM_ (emit "verified") claims
         emit
             "complete"
             (show (length claims) <> " claim(s) hold against this node")
+
+verifyRegisteredDeployment :: NodeSession -> Deployment -> Compiled -> IO [String]
+verifyRegisteredDeployment sess dep compiled = do
+    claims <- verifyDeployment (nsProvider sess) dep (partsOf compiled)
+    credentials <-
+        mapM
+            check
+            [ ("consumer", partsConsumerScript (partsOf compiled))
+            , ("representative", cRepAppliedBytes compiled)
+            , ("custody", cCustodyBytes compiled)
+            , ("staking", cStakingBytes compiled)
+            ]
+    pure (claims <> credentials)
+  where
+    check (name, bytes) = do
+        registered <- nsScriptRegistered sess (computeScriptHash bytes)
+        unless registered $ failWith (name <> " stake credential is not registered on this node")
+        pure (name <> " stake credential is registered on this node")
 
 -- ---------------------------------------------------------
 -- count
@@ -267,7 +300,7 @@ doCount = do
         Just w -> pure w
         Nothing -> failWith "count needs --what state|reference"
     dep <- readDeployment path
-    compiled <- loadCompiled
+    compiled <- loadCompiled >>= (`bindDeployment` dep)
     cfg <- either failWith pure (cageConfigFor dep (partsOf compiled))
     withNode $ \sess -> do
         let prov = nsProvider sess
@@ -332,15 +365,15 @@ doDeploy = do
         Nothing -> failWith "deploy needs --out MANIFEST"
     let release = maybe "unreleased" T.pack (flagValue "--release" args)
         leanRev = maybe "unrecorded" T.pack (flagValue "--lean-revision" args)
-    compiled <- loadCompiled
+    unbound <- loadCompiled
     withNode $ \sess -> do
-        refuseIfAlreadyDeployed sess out compiled
+        refuseIfAlreadyDeployed sess out unbound
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
         txs <- newIORef []
-        (cfg, tok, bootTx, seedIn) <- bootRegistry prov submit compiled txs
-        registerCredentials prov submit cfg compiled txs
+        (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs
+        registerCredentials sess prov submit cfg compiled txs
         refs <- publishAll prov submit pp cfg tok compiled txs
         bootstrap <- reverse <$> readIORef txs
         let dep =
@@ -368,7 +401,7 @@ doDeploy = do
                     }
         writeDeployment out dep
         emit "manifest" ("wrote " <> out)
-        claims <- verifyDeployment prov dep (partsOf compiled)
+        claims <- verifyRegisteredDeployment sess dep compiled
         mapM_ (emit "verified") claims
         emit
             "complete"
@@ -387,10 +420,11 @@ with, say so and stop, rather than booting a second registry that
 nothing recorded will ever point at.
 -}
 refuseIfAlreadyDeployed :: NodeSession -> FilePath -> Compiled -> IO ()
-refuseIfAlreadyDeployed sess out compiled = do
+refuseIfAlreadyDeployed sess out unbound = do
     there <- doesFileExist out
     when there $ do
         dep <- readDeployment out
+        compiled <- bindDeployment unbound dep
         live <-
             (True <$ verifyDeployment (nsProvider sess) dep (partsOf compiled))
                 `catch` \(_ :: SomeException) -> pure False
@@ -420,13 +454,14 @@ bootRegistry ::
     Submitter IO ->
     Compiled ->
     IORef [Text] ->
-    IO (CageConfig, TokenId, ConwayTx, TxIn)
-bootRegistry prov submit compiled txs = do
+    IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
+bootRegistry prov submit unbound txs = do
     utxos <- Cage.queryUTxOs prov funderAddr
     seedIn <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "the funding wallet has no outputs to seed from"
         ((i, _) : _) -> pure i
-    let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
+    let compiled = bindSeed unbound seedIn
+        ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
             deriveConsumerBinding (cConsumerBytes compiled)
         cfg =
             CageConfig
@@ -457,11 +492,11 @@ bootRegistry prov submit compiled txs = do
             <> " from seed "
             <> T.unpack (renderOutRef seedIn)
         )
-    pure (cfg, tok, signed, seedIn)
+    pure (cfg, tok, signed, seedIn, compiled)
 
 {- | Every stake credential a run withdraws from, registered once.
 
-Three of them, and each belongs to a different runner: the pinned
+Four of them: the representative policy used to witness retirement, the pinned
 consumer every @Modify@ withdraws, the completion-only custody script
 the retirement rows use, and the always-true staking script that serves
 the swapped-hook control — its withdraw arm always succeeds, so the
@@ -471,27 +506,37 @@ registration is refused), so a deployment missing one turns that
 runner's row into a refusal with no evidence behind it.
 -}
 registerCredentials ::
+    NodeSession ->
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     Compiled ->
     IORef [Text] ->
     IO ()
-registerCredentials prov submit cfg compiled txs = do
-    consumerTx <- registerConsumerImpl cfg prov funderAddr
-    _ <- submitted submit txs "consumer-registration" consumerTx
-    emit "credential" "consumer stake credential registered"
+registerCredentials sess prov submit cfg compiled txs = do
+    registered <- nsScriptRegistered sess (computeScriptHash (cfgConsumerScript cfg))
+    if registered
+        then emit "credential" "consumer stake credential already registered; reused"
+        else do
+            consumerTx <- registerConsumerImpl cfg prov funderAddr
+            _ <- submitted submit txs "consumer-registration" consumerTx
+            emit "credential" "consumer stake credential registered"
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
         registerOne
-        [ named "naming-custody" (cCustodyBytes compiled)
+        [ named "representative" (cRepAppliedBytes compiled)
+        , named "naming-custody" (cCustodyBytes compiled)
         , named "staking" (cStakingBytes compiled)
         ]
   where
     registerOne (name, script) = do
-        tx <- registerScriptImpl prov funderAddr (hashScript script)
-        _ <- submitted submit txs (name <> "-registration") tx
-        emit "credential" (name <> " stake credential registered")
+        registered <- nsScriptRegistered sess (hashScript script)
+        if registered
+            then emit "credential" (name <> " stake credential already registered; reused")
+            else do
+                tx <- registerScriptImpl prov funderAddr (hashScript script)
+                _ <- submitted submit txs (name <> "-registration") tx
+                emit "credential" (name <> " stake credential registered")
 
 {- | Publish the five reference scripts every runner reads: the
 registry's state and request validators, the naming application, its
@@ -512,7 +557,8 @@ publishAll ::
     IORef [Text] ->
     IO [ReferenceScript]
 publishAll prov submit pp cfg tok compiled txs =
-    mapM one
+    mapM
+        one
         [ ("state", mkCageScript cfg)
         , ("request", mkRequestScript cfg tok)
         , ("application", scriptFromBytes "naming-application" (cAppBytes compiled))
