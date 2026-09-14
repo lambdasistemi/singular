@@ -33,23 +33,11 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
-      # Issue #49: see the pull_request filter — the drift check also
-      # watches epic 15's live corpus.
+      # The drift check also watches epic 15's live corpus.
       - 'lean/**'
       - '.github/workflows/registry.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'onchain/**'
-      - 'naming-onchain/**'
-      - 'offchain/**'
-      # Issue #49: the drift check compares the vendored v0.2.0 vectors
-      # against epic 15's live corpus at lean/lifecycle-corpus.json, so
-      # a corpus-only revision must trigger this workflow too — without
-      # this entry the check would not fire exactly when the corpus
-      # moves (the blind spot the check exists to close).
-      - 'lean/**'
-      - '.github/workflows/registry.yml'
 permissions:
   contents: read
 concurrency:

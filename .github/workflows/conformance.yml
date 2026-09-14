@@ -11,12 +11,6 @@ on:
       - '.github/workflows/conformance.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'conformance/**'
-      - 'onchain/**'
-      - 'lean/**'
-      - 'tools/**'
-      - '.github/workflows/conformance.yml'
 permissions:
   contents: read
 concurrency:
