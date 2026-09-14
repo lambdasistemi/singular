@@ -63,7 +63,6 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception
     ( ErrorCall (..)
     , SomeException
@@ -72,7 +71,7 @@ import Control.Exception
     , try
     )
 import Control.Applicative ((<|>))
-import Control.Monad (unless, when)
+import Control.Monad (forM, forM_, unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -86,6 +85,7 @@ import Data.Aeson (FromJSON (..), eitherDecode', encode, object, withObject, (.:
 import Data.List (isInfixOf, sortBy, sortOn)
 import Data.Foldable (toList)
 import Data.Map.Strict qualified as Map
+import MPF.Backend.Pure (MPFInMemoryDB)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Set qualified as Set
@@ -161,15 +161,25 @@ import Singular.Registry.Node (
     NodeSession (..),
     awaitChain,
     awaitTx,
-    confirmationDelay,
+    awaitTxId,
     funderAddr,
     funderSignKey,
     withNode,
  )
+import Singular.Registry.Deployment (
+    Attached (..),
+    CageParts (..),
+    attach,
+    deploymentPathFromEnvironment,
+    loadMirror,
+    mirrorPathFor,
+    readDeployment,
+    saveMirror,
+ )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie qualified as Trie
-import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
@@ -440,11 +450,42 @@ runMode mode blueprintPath registryPath = do
                 <> repAppliedHex
                 <> " (the applied mint identity this run mints representatives under)"
             )
-        tm <- mkPureTrieManager
+        -- The registry this run works against: the one it boots, or the
+        -- one a deployment manifest records (issue #102).
+        mDeployment <- deploymentPathFromEnvironment
+        let cageParts =
+                let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
+                        deriveConsumerBinding consumerBytes
+                 in CageParts
+                        { partsStateBytes = stateBytes
+                        , partsRequestBytes = requestBytes
+                        , partsRepPolicy =
+                            SBS.toShort (scriptHashBytes repAppliedHash)
+                        , partsConsumerPin = pin
+                        , partsConsumerScript = consumerScript
+                        }
+        attached <- forM mDeployment $ \path -> do
+            dep <- readDeployment path
+            att <- attach prov dep cageParts
+            pure (path, att)
+        -- A deployment made a moment ago has an empty registry and no
+        -- mirror file yet, which is the same trie a boot would create.
+        -- Carrying the distinction explicitly is what lets the root
+        -- check below mean something either way.
+        mirrorTries <- maybe (pure Map.empty) loadMirror mDeployment
+        (tm, dumpTries) <- mkPureTrieManagerFrom mirrorTries
         evDir <- evidenceDirFromEnv
         createDirectoryIfMissing True evDir
         evNext <- newIORef (0 :: Int)
-        (cfg, tok) <- bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+        (cfg, tok) <- case attached of
+            Nothing ->
+                bootRetirementCage prov submit tm stateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+            Just (path, att) -> do
+                emit
+                    "attached"
+                    ("registry from " <> path <> ": no registry booted")
+                ensureTrie tm mirrorTries (attToken att)
+                pure (attCfg att, attToken att)
         -- Registry-bound names (NOTE-007): derived post-boot once the cage
         -- token exists; every display, redeemer and minted value below uses
         -- these bindings (never the control-only shape).
@@ -453,31 +494,55 @@ runMode mode blueprintPath registryPath = do
                 Map.singleton
                     repAppliedPolicy
                     (Map.singleton (AssetName (SBS.toShort repBytes)) 1)
-        createTrie tm tok
+        forM_ attached $ \_ -> assertMirrorMatchesChain prov cfg tok tm
+        case attached of
+            Just _ -> pure ()
+            Nothing -> createTrie tm tok
         -- Consumer stake registration (NOTE-020 item 2), BEFORE split:
         -- the pinned consumer's credential must be registered before the
         -- first Modify withdraws it, and registration must consume a
         -- pristine-genesis UTxO — never a pool fragment (poolRef entries
         -- go stale once spent; spending one breaks publish with
         -- already-included inputs). Funded by genesis, witnessed by it.
-        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
-        let signedReg = addKeyWitness genesisSignKey unsignedReg
-        regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
-        regResult <- submitTx submit signedReg
-        case regResult of
-            Submitted _ -> do
-                retainOutcome evDir regTag "accepted" Nothing
-                pure ()
-            Rejected reason ->
-                failWith ("consumer-registration: rejected: " <> show reason)
-        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
-        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+        case attached of
+            Just _ ->
+                emit
+                    "attached"
+                    "the stake credentials were registered when the \
+                    \deployment was made; a run that attaches registers \
+                    \nothing"
+            Nothing -> do
+                unsignedReg <- registerConsumerImpl cfg prov genesisAddr
+                let signedReg = addKeyWitness genesisSignKey unsignedReg
+                regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
+                regResult <- submitTx submit signedReg
+                case regResult of
+                    Submitted _ -> do
+                        retainOutcome evDir regTag "accepted" Nothing
+                        pure ()
+                    Rejected reason ->
+                        failWith ("consumer-registration: rejected: " <> show reason)
+                _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                emit "consumer" "consumer stake credential registered; hook withdrawals are live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit 80
         poolRef <- newIORef pool
-        scriptRefs <- publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript (scriptFromBytes "naming-custody" custodyBytes)
-        let env =                Env
-                    { envProv = prov
+        scriptRefs <- case attached of
+            Nothing ->
+                publishRetirementRefs prov submit pp poolRef cfg tok script repAppliedScript (scriptFromBytes "naming-custody" custodyBytes)
+            Just (_, att) -> do
+                emit
+                    "attached"
+                    ( show (length (attRefUtxos att))
+                        <> " reference scripts taken from the deployment; \
+                           \none published"
+                    )
+                pure (attRefUtxos att)
+        let env =
+                Env
+                    { envAttached = attached
+                    , envDumpTries = dumpTries
+                    , envProv = prov
                     , envSubmit = submit
                     , envPp = pp
                     , envPool = poolRef
@@ -623,7 +688,11 @@ runMode mode blueprintPath registryPath = do
             ControlWrongReason -> runControlWrongReason env recAccept1 recRefusals
 
 data Env = Env
-    { envProv :: Cage.Provider IO
+    { envAttached :: Maybe (FilePath, Attached)
+    -- ^ The deployment this run attached to, if any
+    , envDumpTries :: IO (Map.Map TokenId MPFInMemoryDB)
+    -- ^ Read this run's tries back out, for the run that follows
+    , envProv :: Cage.Provider IO
     , envSubmit :: Submitter IO
     , envPp :: PParams ConwayEra
     , envPool :: IORef [(TxIn, TxOut ConwayEra)]
@@ -766,6 +835,14 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
     rowLX01 env
     -- Final no-trace sweep.
     finalNoTrace env recRefusals
+    forM_ (envAttached env) $ \(path, _) -> do
+        saveMirror path =<< envDumpTries env
+        emit
+            "mirror"
+            ( "wrote the registry's trie to "
+                <> mirrorPathFor path
+                <> " for the next run that attaches"
+            )
     emit
         "complete"
         ( "the retirement rows executed on a real devnet; every refusal \
@@ -773,6 +850,59 @@ runRows env recAccept1 recAccept2 recRefusals recDuplicates recR1 recR2 recOver 
           \from the chain, retirement completed permissionlessly into Over \
           \with the burn observed, the state after the refusals unchanged"
         )
+
+{- | The proof mirror this run loaded must be the trie the chain has.
+
+A fold proves against the whole trie, not the root, so a run attaching
+to a registry that outlives it works from a mirror carried in a file.
+Comparing the two roots first turns a drifted file into one sentence
+about the file, instead of a validator refusal nobody can read.
+-}
+{- | The trie an attaching run works from.
+
+A registry that was just deployed holds nothing and has no mirror file
+yet; a registry that has been folded into has both. Creating the empty
+trie only in the first case keeps the root check that follows honest:
+it compares what this run will build proofs from against what the chain
+says, whichever case it was.
+-}
+ensureTrie ::
+    TrieManager IO ->
+    Map.Map TokenId MPFInMemoryDB ->
+    TokenId ->
+    IO ()
+ensureTrie tm mirrorTries tok =
+    unless (Map.member tok mirrorTries) (createTrie tm tok)
+
+assertMirrorMatchesChain ::
+    Cage.Provider IO ->
+    CageConfig ->
+    TokenId ->
+    TrieManager IO ->
+    IO ()
+assertMirrorMatchesChain prov cfg tok tm = do
+    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
+    chain <- case findStateUtxo (cagePolicyIdFromCfg cfg) tok utxos of
+        Nothing -> failWith "attach: the registry has no state UTxO"
+        Just (_, out) -> case extractCageDatum out of
+            Just (StateDatum st) ->
+                let OnChainRoot bs = stateRoot st in pure (hex bs)
+            _ -> failWith "attach: the state UTxO carries no state datum"
+    Root mirrorBytes <- withTrie tm tok getRoot
+    let mirror = hex mirrorBytes
+    unless (mirror == chain) $
+        failWith
+            ( "the proof mirror does not match the chain: the mirror's root \
+              \is 0x"
+                <> mirror
+                <> " and the registry's root is 0x"
+                <> chain
+                <> ". The mirror beside the manifest belongs to a different \
+                   \history than the deployment."
+            )
+    emit
+        "mirror"
+        ("the proof mirror agrees with the registry's root 0x" <> chain)
 
 rowLT01 :: Env -> Snap -> IO ConwayTx
 rowLT01 env snap = do
@@ -2905,9 +3035,14 @@ setupRecoveryRecord env datum label spelling = do
 splitGenesis :: Cage.Provider IO -> Submitter IO -> Integer -> IO [(TxIn, TxOut ConwayEra)]
 splitGenesis prov submit nSplits = do
     utxos <- Cage.queryUTxOs prov genesisAddr
-    (bigIn, bigOut) <- case sortBy (comparing outSortKey) utxos of
+    -- The largest output, which is what "big" meant all along. Ordering
+    -- by transaction id picked the right one only because a devnet this
+    -- run booted for itself has exactly one output at this address; a
+    -- funding wallet shared with a deployment has many, and the first in
+    -- lexical order is an arbitrary small one.
+    (bigIn, bigOut) <- case sortOn (Down . outValue) utxos of
         (b : _) -> pure b
-        [] -> failWith "split: the genesis wallet has no UTxOs"
+        [] -> failWith "split: the funding wallet has no UTxOs"
     let Coin total = bigOut ^. coinTxOutL
         perSplit = 2_000_000_000
         fee = 1_000_000
@@ -2951,7 +3086,7 @@ splitGenesis prov submit nSplits = do
             )
     pure (sortBy (comparing (txInIndex . fst)) mine)
   where
-    outSortKey (i, _) = (txInTxIdHex i, txInIndex i)
+    outValue (_, o) = let Coin c = o ^. coinTxOutL in c
 
 txInTxIdHex :: TxIn -> String
 txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
@@ -3188,7 +3323,7 @@ retainOutcome evDir tag outcome mReason =
 
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
-    threadDelay confirmationDelay
+    awaitTxId (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------

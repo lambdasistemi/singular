@@ -10,6 +10,7 @@ State UTxO. Validity interval is Phase 2.
 -}
 module Singular.Registry.TxBuilder.Retract (
     retractRequestImpl,
+    retractRequestAtTipImpl,
 ) where
 
 import Data.List (sortOn)
@@ -56,6 +57,10 @@ import Cardano.Ledger.Conway.Scripts (
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.TxIn (TxIn)
 
+import Cardano.Tx.Ledger (ConwayTx)
+import PlutusTx.Builtins.Internal (
+    BuiltinByteString (..),
+ )
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -70,10 +75,6 @@ import Singular.Registry.Types (
     OnChainRequest (..),
     OnChainTokenState (..),
     UpdateRedeemer (..),
- )
-import Cardano.Tx.Ledger (ConwayTx)
-import PlutusTx.Builtins.Internal (
-    BuiltinByteString (..),
  )
 
 {- | Build a retract-request transaction.
@@ -92,7 +93,14 @@ retractRequestImpl ::
     -- | Requester's address (receives refund)
     Addr ->
     IO ConwayTx
-retractRequestImpl cfg prov tid reqTxIn addr = do
+retractRequestImpl = retractRequestAtTipImpl (SlotNo 0)
+
+{- | Use the submission-time tip as the lower validity bound, while
+staying inside the request's unchanged phase-2 window.
+-}
+retractRequestAtTipImpl ::
+    SlotNo -> CageConfig -> Provider IO -> TokenId -> TxIn -> Addr -> IO ConwayTx
+retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
     let reqAddr =
             requestAddrFromCfg cfg tid (network cfg)
         stateAddr =
@@ -152,11 +160,12 @@ retractRequestImpl cfg prov tid reqTxIn addr = do
             } = stateDatum
     let phase2Start = submAt + procTime
         phase2End = submAt + procTime + retrTime
-    lowerSlot <-
+    phase2Slot <-
         posixMsCeilSlot prov phase2Start
     SlotNo s <-
         posixMsToSlot prov phase2End
-    let upperSlot = SlotNo (max 0 (s - 1))
+    let lowerSlot = max tip phase2Slot
+        upperSlot = SlotNo (max 0 (s - 1))
         script = mkRequestScript cfg tid
         scriptHash = hashScript script
         allInputs =
