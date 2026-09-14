@@ -2391,7 +2391,14 @@ waitForPhase2 env submittedAt = do
         retractTime = defaultRetractTime (envCfg env)
         opens = submittedAt + processTime
         closes = opens + retractTime
-        target = opens + 2_000
+        -- Near the end of the window, not the start. The retract's
+        -- validity interval ends when the window does, and a node will
+        -- only convert a time to a slot inside its forecast horizon —
+        -- three seconds on this devnet. Arriving early means that upper
+        -- bound cannot be forecast (PastHorizon); arriving late means it
+        -- has expired. The five seconds of margin left here is what
+        -- retryHorizon spans while the chain catches up.
+        target = closes - 5_000
     when (now < target) $ do
         emit "wait" "sleeping into the retract window"
         threadDelay (fromIntegral (target - now) * 1000)
