@@ -85,7 +85,7 @@
 
         naming-cli-read-e2e = pkgs.writeShellApplication {
           name = "naming-cli-read-e2e";
-          runtimeInputs = [ pkgs.nix pkgs.jq pkgs.coreutils pkgs.bash ];
+          runtimeInputs = [ pkgs.nix pkgs.jq pkgs.coreutils pkgs.bash pkgs.procps ];
           text = ''
             exec bash ${./naming-cli/read-e2e.sh} "$@"
           '';

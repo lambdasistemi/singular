@@ -1,7 +1,7 @@
 {
   "_source": {
     "file": "docs/naming-cli.md",
-    "sha256": "78360fc5981bd796ab25f2ba7693b4c667ad7584c52742f1c76a7ad002db9095"
+    "sha256": "f18533908fe409d260cc8b42811e32ee7ad8645657295202bb001e5e7c6f017d"
   },
   "install-the-executable": [
     {
@@ -11,13 +11,13 @@
   ],
   "select-the-registry-and-inspect-a-name": [
     {
-      "text": "Select a deployment manifest, node socket and network magic. The sequence diagram shows the command verifying the live deployment, comparing the local mirror root with the chain, reading the matching record, and checking that the registry state has not moved. The result distinguishes active, pending and retired names. A missing verified mirror produces a refusal, never a claim that a name is free.",
+      "text": "Select a deployment manifest, node socket and network magic. The sequence diagram shows the command verifying the live deployment, comparing the local mirror root with the chain, authenticating candidate representative values by reconstruction, and checking the current record. Pending requests are reported separately. Unknown occupied values are refused; final Active and Over support awaits representative identity integration. A missing verified mirror never proves that a name is free.",
       "pause": 500
     }
   ],
   "change-the-payment-destination": [
     {
-      "text": "Choose maintain, the exact name, a fee wallet and the current controller key. Supply one new payment destination or explicitly clear it. The node checks the existing authorization rules. The transaction preserves the controller, recovery commitment, quorum and representative. Confirmation reads back the expected new record.",
+      "text": "Choose maintain, the exact name, a fee wallet and the current controller key. Supply one new payment destination or explicitly clear it. The node checks the existing authorization rules. The transaction preserves the controller, recovery commitment, quorum and representative. Confirmation reads back the expected new record. The fee wallet also funds any increase in minimum ADA required by the new datum.",
       "pause": 500
     }
   ],

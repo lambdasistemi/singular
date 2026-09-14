@@ -1,15 +1,21 @@
 module Main (main) where
 
+import Cardano.Ledger.Mary.Value (AssetName (..))
+import Data.ByteString.Short (toShort)
 import Data.List (isInfixOf)
 import Naming.CLI.Options (Command (..), Connection (..), Options (..), parserInfo)
+import Naming.CLI.Values (CandidateResult (..), authenticateCandidates)
 import Options.Applicative (
     ParserResult (..),
     defaultPrefs,
     execParserPure,
     renderFailure,
  )
+import Singular.Registry.Ledger (TokenId (..))
+import Singular.Registry.Trie qualified as Trie
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import System.Exit (ExitCode (..))
-import Test.Hspec (describe, hspec, it, shouldBe, shouldSatisfy)
+import Test.Hspec (describe, hspec, it, shouldBe, shouldReturn, shouldSatisfy)
 
 main :: IO ()
 main = hspec $ do
@@ -60,7 +66,31 @@ main = hspec $ do
             refused (maintain ++ ["--payment-destination", "address", "--clear-payment-destination"]) `shouldBe` True
         it "requires the authorization key separately from fee funding" $
             refused (connection ++ ["maintain", "--name", "alice", "--wallet-skey", "fees.skey", "--clear-payment-destination"]) `shouldBe` True
+    describe "authenticated name values" $ do
+        it "accepts the stored value and rejects a wrong preimage without changing the mirror" $ do
+            (manager, token, root) <- fixture
+            authenticateCandidates manager token "alice" root ["wrong", "representative"] `shouldReturn` Authenticated "representative"
+            authenticateCandidates manager token "alice" root ["wrong"] `shouldReturn` ValueUnavailable
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` root
+        it "refuses duplicate matching candidates rather than selecting an arbitrary output" $ do
+            (manager, token, root) <- fixture
+            authenticateCandidates manager token "alice" root ["representative", "representative"] `shouldReturn` ValueAmbiguous
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` root
+        it "does not interpret the existing lookup sentinel as the stored value" $ do
+            (manager, token, root) <- fixture
+            sentinel <- Trie.withTrie manager token (\trie -> Trie.lookup trie "alice")
+            case sentinel of
+                Just candidate -> authenticateCandidates manager token "alice" root [candidate] `shouldReturn` ValueUnavailable
+                Nothing -> fail "fixture name was not occupied"
+            Trie.withTrie manager token Trie.getRoot `shouldReturn` root
   where
+    fixture = do
+        manager <- mkPureTrieManager
+        let token = TokenId (AssetName (toShort "registry"))
+        Trie.createTrie manager token
+        _ <- Trie.withTrie manager token (\trie -> Trie.insert trie "bob" "another-value")
+        root <- Trie.withTrie manager token (\trie -> Trie.insert trie "alice" "representative")
+        pure (manager, token, root)
     connection = ["--deployment", "registry.json", "--node-socket", "/run/node.socket", "--network-magic", "42"]
     parse = execParserPure defaultPrefs parserInfo
     refused args = case parse args of

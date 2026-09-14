@@ -20,13 +20,14 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
 import Data.Text qualified as T
 import Data.Void (Void)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
 import System.Environment (getEnv)
 
 import Cardano.Ledger.Api.Tx (txIdTx)
-import Cardano.Ledger.Api.Tx.Out (coinTxOutL, datumTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out (addrTxOutL, coinTxOutL, valueTxOutL)
 import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Build qualified as Tx
@@ -40,7 +41,7 @@ import Singular.Registry.Deployment (Attached (..), Deployment (..), attach, rea
 import Singular.Registry.Node (NodeSession (..), Wallet (..), awaitTx, loadWallet, nodeModeFromArgs, withNodeMode)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.ConnectedFold (RawRedeemer (..))
-import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes, addrWitnessKeyHash, mkInlineDatum, scriptFromBytes)
+import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes, addrWitnessKeyHash, scriptFromBytes)
 
 -- | A closed transaction program needs no external query language.
 data NoCtx a
@@ -73,7 +74,7 @@ runChange conn payerFile name controllerFile change = do
         let provider = nsProvider session
         attached <- attach provider dep parts
         validateAttached dep attached
-        (_, entry) <- lookupName attached (deploymentFile conn) name
+        (_, entry) <- lookupName provider dep attached (deploymentFile conn) name
         representative <- case entry of
             Just bytes | BS.length bytes == 32 -> pure bytes
             _ -> failWith "name-not-active: no live representative for this name"
@@ -99,11 +100,14 @@ runChange conn payerFile name controllerFile change = do
             [u | u@(_, out) <- utxos, let MaryValue _ assets = out ^. valueTxOutL, assets == mempty] of
             [] -> failWith "funding-unavailable: fee wallet needs an ADA-only output for collateral"
             first : _ -> pure first
-        let continuation = recordOut & datumTxOutL .~ mkInlineDatum (toData (encodeNamingDatum successor))
-            signer = addrWitnessKeyHash (addrKeyHashBytes (walletAddr controller))
+        let signer = addrWitnessKeyHash (addrKeyHashBytes (walletAddr controller))
             program = do
                 _ <- Tx.spendScript recordIn (RawRedeemer redeemer)
-                _ <- Tx.output continuation
+                _ <-
+                    Tx.payTo'
+                        (recordOut ^. addrTxOutL)
+                        (recordOut ^. valueTxOutL)
+                        (RawRedeemer (toData (encodeNamingDatum successor)))
                 Tx.requireSignature signer
                 Tx.collateral (fst funding)
                 Tx.attachScript script
@@ -125,13 +129,13 @@ runChange conn payerFile name controllerFile change = do
             Submitted _ -> awaitTx signed
         confirmed <- recordAt provider dep (attCfg attached) representative
         case confirmed of
-            Just ((newRef, _), actual)
-                | actual == successor && newRef /= recordIn ->
+            Just ((newRef@(TxIn confirmedId _), _), actual)
+                | actual == successor && confirmedId == txIdTx signed ->
                     pure $
                         object
                             [ "status" .= ("confirmed" :: String)
                             , "name" .= name
-                            , "transaction" .= show (txIdTx signed)
+                            , "transaction" .= T.takeWhile (/= '#') (renderOutRef newRef)
                             , "recordInput" .= renderOutRef newRef
                             , "representative" .= hex representative
                             ]

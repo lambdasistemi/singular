@@ -65,14 +65,17 @@ sequenceDiagram
     CLI-->>User: JSON observation or a named refusal
 ```
 
-An active result includes the representative, record input and current datum.
-Pending request references are reported separately. A permanent Over entry is
-reported as retired. If the registry state moves during observation, repeat
-the command against the new state.
+An authenticated active result includes the representative, record input and
+current datum. Pending request references are reported separately. The draft
+refuses occupied values without a matching authenticated live representative;
+final Active/Over support awaits the representative identity integration. If
+the registry state moves during observation, repeat the command against the
+new state.
 
 ## Change the payment destination
 
-The fee wallet pays transaction fees and supplies collateral. The controller
+The fee wallet pays transaction fees, supplies collateral, and funds any
+minimum-ADA increase required by the updated datum. The controller
 key authorizes the record change. They may be the same file, but both roles
 must be supplied explicitly. Use existing payment signing-key files in the
 Cardano CLI text-envelope format.

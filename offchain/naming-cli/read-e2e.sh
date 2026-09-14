@@ -7,6 +7,9 @@ evidence="${SINGULAR_CLI_EVIDENCE:-$work/evidence}"
 mkdir -p "$evidence"
 cleanup() {
     if [ -n "${node_pid:-}" ]; then
+        # The background devnet does not unwind its Haskell bracket on TERM.
+        # Stop its direct node child before terminating the launcher.
+        pkill -TERM -P "$node_pid" 2>/dev/null || true
         kill "$node_pid" 2>/dev/null || true
         wait "$node_pid" 2>/dev/null || true
     fi

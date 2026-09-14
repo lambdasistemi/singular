@@ -582,11 +582,14 @@ test-suite naming-cli-options-tests
   default-language: GHC2021
   hs-source-dirs:   naming-cli/test naming-cli/src
   main-is:          OptionsSpec.hs
-  other-modules:    Naming.CLI.Options
+  other-modules:    Naming.CLI.Options Naming.CLI.Values
   build-depends:
     , base                  >=4.14 && <5
     , hspec                 >=2.8 && <3
     , optparse-applicative   >=0.17 && <0.20
+    , bytestring
+    , cardano-ledger-mary
+    , singular-registry
 
 executable singular-naming
   import:           warnings
@@ -597,6 +600,7 @@ executable singular-naming
     Naming.CLI.Options
     Naming.CLI.Read
     Naming.CLI.Change
+    Naming.CLI.Values
   build-depends:
     , aeson                 >=2.1 && <2.3
     , async

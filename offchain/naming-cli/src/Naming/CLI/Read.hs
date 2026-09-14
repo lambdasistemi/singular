@@ -35,6 +35,7 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 import PlutusCore.Data qualified as PLC
 
 import Naming.CLI.Options (Command (..), Connection (..), Options (..))
+import Naming.CLI.Values (CandidateResult (..), authenticateCandidates)
 import Naming.Datum (NamingDatum (..), PaymentDestination (..), RetirementQuorum (..), decodeNamingDatum)
 import Naming.Wire (Address (..), WireData (..))
 import Singular.Registry.Blueprint (applyBytesParam, extractCompiledCode, loadBlueprint)
@@ -167,7 +168,7 @@ validateAttached dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_,
 
 inspectName :: Cage.Provider IO -> Deployment -> Attached -> FilePath -> String -> IO Value
 inspectName provider dep attached@Attached{attCfg = cfg, attToken = token} manifest name = do
-    (expectedRoot, value) <- lookupName attached manifest name
+    (expectedRoot, value) <- lookupName provider dep attached manifest name
     let key = encodeUtf8 (T.pack name)
     requests <- findRequestUtxos token <$> Cage.queryUTxOs provider (requestAddrFromCfg cfg token (network cfg))
     let pending =
@@ -191,8 +192,8 @@ inspectName provider dep attached@Attached{attCfg = cfg, attToken = token} manif
             , "entry" .= status
             ]
 
-lookupName :: Attached -> FilePath -> String -> IO (BS.ByteString, Maybe BS.ByteString)
-lookupName Attached{attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
+lookupName :: Cage.Provider IO -> Deployment -> Attached -> FilePath -> String -> IO (BS.ByteString, Maybe BS.ByteString)
+lookupName provider dep Attached{attCfg = cfg, attToken = token, attStateUtxo = (_, stateOut)} manifest name = do
     expectedRoot <- case extractCageDatum stateOut of
         Just (StateDatum state) -> let OnChainRoot root = stateRoot state in pure root
         _ -> failWith "registry-datum-invalid"
@@ -203,35 +204,51 @@ lookupName Attached{attToken = token, attStateUtxo = (_, stateOut)} manifest nam
     unless (actualRoot == expectedRoot) $
         failWith "mirror-unavailable: no current verified mirror; rebuild it from the node before inspecting"
     let key = encodeUtf8 (T.pack name)
-    value <- Trie.withTrie manager token (\trie -> Trie.lookup trie key)
-    pure (expectedRoot, value)
+    occupied <- Trie.withTrie manager token (\trie -> Trie.lookup trie key)
+    case occupied of
+        Nothing -> pure (expectedRoot, Nothing)
+        Just _ -> do
+            (appAddr, repPolicy) <- applicationIdentity dep cfg
+            outputs <- Cage.queryUTxOs provider appAddr
+            let candidates =
+                    [ SBS.fromShort nameBytes
+                    | (_, out) <- outputs
+                    , let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
+                    , Just tokens <- [Map.lookup repPolicy assets]
+                    , (AssetName nameBytes, quantity) <- Map.toList tokens
+                    , quantity == 1
+                    , SBS.length nameBytes == 32
+                    ]
+            matching <- authenticateCandidates manager token key (Root expectedRoot) candidates
+            case matching of
+                Authenticated value -> pure (expectedRoot, Just value)
+                ValueUnavailable -> failWith "occupied-value-unavailable: name is occupied but no live representative authenticates its value"
+                ValueAmbiguous -> failWith "registry-value-ambiguous: multiple candidates authenticate against one root"
 
 inspectRecord :: Cage.Provider IO -> Deployment -> CageConfig -> BS.ByteString -> IO Value
 inspectRecord provider dep cfg representative = do
     record <- recordAt provider dep cfg representative
-    pure $ case record of
-        Nothing -> object ["status" .= ("pending" :: String), "representative" .= hex representative]
+    case record of
+        Nothing -> failWith "record-unavailable: authenticated representative has no current application output"
         Just ((ref, _), datum) ->
-            object
-                [ "status" .= ("active" :: String)
-                , "representativePolicy" .= depRepresentativePolicy dep
-                , "representative" .= hex representative
-                , "recordInput" .= renderOutRef ref
-                , "datum" .= datumJSON datum
-                ]
+            pure $
+                object
+                    [ "status" .= ("active" :: String)
+                    , "representativePolicy" .= depRepresentativePolicy dep
+                    , "representative" .= hex representative
+                    , "recordInput" .= renderOutRef ref
+                    , "datum" .= datumJSON datum
+                    ]
 
 recordAt :: Cage.Provider IO -> Deployment -> CageConfig -> BS.ByteString -> IO (Maybe ((TxIn, TxOut ConwayEra), NamingDatum))
 recordAt provider dep cfg representative = do
-    app <- unhex (depApplicationHash dep)
-    policy <- unhex (depRepresentativePolicy dep)
-    appHash <- hashFromBytes app
-    repHash <- hashFromBytes policy
-    outputs <- Cage.queryUTxOs provider (Addr (network cfg) (ScriptHashObj appHash) StakeRefNull)
+    (appAddr, repPolicy) <- applicationIdentity dep cfg
+    outputs <- Cage.queryUTxOs provider appAddr
     let matching =
             [ (ref, out)
             | (ref, out) <- outputs
             , let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
-            , Just tokens <- [Map.lookup (PolicyID repHash) assets]
+            , Just tokens <- [Map.lookup repPolicy assets]
             , Map.lookup (AssetName (SBS.toShort representative)) tokens == Just 1
             ]
     case matching of
@@ -244,6 +261,14 @@ recordAt provider dep cfg representative = do
                 _ -> failWith "naming-datum-not-inline"
             pure (Just ((ref, out), datum))
         _ -> failWith "representative-ambiguous: more than one live application output"
+
+applicationIdentity :: Deployment -> CageConfig -> IO (Addr, PolicyID)
+applicationIdentity dep cfg = do
+    app <- unhex (depApplicationHash dep)
+    policy <- unhex (depRepresentativePolicy dep)
+    appHash <- hashFromBytes app
+    repHash <- hashFromBytes policy
+    pure (Addr (network cfg) (ScriptHashObj appHash) StakeRefNull, PolicyID repHash)
   where
     hashFromBytes bytes = maybe (failWith "manifest-script-hash-invalid") (pure . ScriptHash) (Crypto.hashFromBytes bytes)
 
