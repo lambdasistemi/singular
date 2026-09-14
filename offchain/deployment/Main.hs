@@ -63,6 +63,7 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
+import Cardano.Ledger.Address (decodeAddrEither)
 import Cardano.Crypto.Hash (hashToBytes)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Core (Script, hashScript)
@@ -252,7 +253,8 @@ whether a run created any.
 @--what state@ counts outputs at the registry address carrying a token
 of the recorded policy: one per registry ever booted under this state
 validator. @--what reference@ counts outputs carrying a reference
-script at the address the deployment published to. A run that attached
+script at the funding address and an optional additional publisher address
+given as @--reference-address-bytes HEX@. A run that attached
 leaves both unchanged; a run that booted and published moves both.
 -}
 doCount :: IO ()
@@ -274,7 +276,13 @@ doCount = do
                 utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
                 print (length [() | (_, o) <- utxos, carriesPolicy cfg o])
             "reference" -> do
-                utxos <- Cage.queryUTxOs prov funderAddr
+                addresses <- case flagValue "--reference-address-bytes" args of
+                    Nothing -> pure [funderAddr]
+                    Just encoded -> do
+                        raw <- either failWith pure (B16.decode (BC.pack encoded))
+                        addr <- either (failWith . show) pure (decodeAddrEither raw)
+                        pure (Set.toList (Set.fromList [funderAddr, addr]))
+                utxos <- concat <$> mapM (Cage.queryUTxOs prov) addresses
                 print (length [() | (_, o) <- utxos, hasReferenceScript o])
             _ -> failWith ("count: --what must be state or reference, not " <> what)
   where
@@ -616,4 +624,3 @@ tokenText (TokenId (AssetName n)) = hexT (SBS.fromShort n)
 
 txText :: ConwayTx -> Text
 txText tx = let TxId h = txIdTx tx in hexT (hashToBytes (extractHash h))
-

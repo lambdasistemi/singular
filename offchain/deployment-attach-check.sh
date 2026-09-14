@@ -6,7 +6,7 @@
 # state outputs and the number of reference-script outputs are read
 # before and after the three runners, and any change fails this script.
 #
-# A control runs first: the same runner WITHOUT --deployment, which does
+# A control runs last: the same runner WITHOUT --deployment, which does
 # boot and publish, so the counters are shown able to move. A check that
 # has never been seen to fail is not evidence.
 set -euo pipefail
@@ -58,7 +58,11 @@ external=(--node-socket "$sock" --network-magic 42 --wallet-skey "$genesis_skey"
 manifest="$work/devnet-deployment.json"
 
 count_state_outputs() { nix run --quiet "$here#deployment" -- count "${external[@]}" --deployment "$manifest" --what state; }
-count_reference_outputs() { nix run --quiet "$here#deployment" -- count "${external[@]}" --deployment "$manifest" --what reference; }
+# Register publishes at its ordinary-party fixture address; deployment and
+# the other runners publish at the funder. Observe both in every snapshot.
+# This is the public address derived from register's partySeed.
+register_publisher=60adb59bbc097e8051233f8aa3c5a5113406e10c8510bc99378e78f242
+count_reference_outputs() { nix run --quiet "$here#deployment" -- count "${external[@]}" --deployment "$manifest" --what reference --reference-address-bytes "$register_publisher"; }
 
 echo "attach-check: deploying once"
 nix run --quiet "$here#deployment" -- deploy "${external[@]}" --out "$manifest" --release devnet-check
@@ -90,6 +94,7 @@ echo "attach-check: control — the same runner without --deployment must move b
 nix run --quiet "$here#register-rows" -- "${external[@]}"
 control_state="$(count_state_outputs)"
 control_refs="$(count_reference_outputs)"
+echo "attach-check: control — $control_state registry state output(s), $control_refs reference output(s)"
 [ "$control_state" -gt "$after_state" ] || { echo "FAIL: the control booted no registry, so the state counter proves nothing"; fail=1; }
 [ "$control_refs" -gt "$after_refs" ] || { echo "FAIL: the control published no reference scripts, so the reference counter proves nothing"; fail=1; }
 
