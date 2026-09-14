@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.1](https://github.com/lambdasistemi/singular/compare/v0.4.0...v0.4.1) (2026-09-14)
+
+
+### Fixes
+
+* check CS07 inventory with runner-available Bash ([b258622](https://github.com/lambdasistemi/singular/commit/b258622c63732d56cc77b06053ee7f7f245184a8))
+* execute CS07 proof variants with devnet receipts ([e7021ce](https://github.com/lambdasistemi/singular/commit/e7021cefb16a9e4a444daa6cc53ec2f989b39e38))
+* execute CS07 proof variants with devnet receipts ([6853aba](https://github.com/lambdasistemi/singular/commit/6853abaeca3e022ad96240bef58d839c8df391d3))
+* replace the vendored MPF patch with upstream v2.1.0 ([8a83cd6](https://github.com/lambdasistemi/singular/commit/8a83cd6582852deda20623254eb56cd3efbacf57))
+* replace the vendored MPF patch with upstream v2.1.0 ([a4e8e8f](https://github.com/lambdasistemi/singular/commit/a4e8e8ff8c61478d50ef51817f37c0a3601ae745))
+
 ## [0.4.0](https://github.com/lambdasistemi/singular/compare/v0.3.0...v0.4.0) (2026-09-13)
 
 
