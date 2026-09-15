@@ -1,0 +1,61 @@
+{
+    "depApplicationHash": "89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370",
+    "depBootstrapTxs": [
+        "6222eea4cbfc7b7a4882d13caba5d12a1963c32b08a2220b81526882ab1f1920",
+        "97361e8c60a37465fc824c05742d4033e93e334b87b87b8eff49de40163ef6ae",
+        "d4deba068fcbbf62f63f9032650e8f5f8c70ea09b461d239531baf767a2c039d",
+        "1e0b52844259025ea304daf3f0c784088ca67650acf42297cef78814be285a14",
+        "a3983772a65b3455166ec24442a99563cca081a2164b11d24ce555bdd6481a70",
+        "d604ab0b1d2daa0fabd403fb5e7b83307664dc952f36bc7c5273c3d230a6aa35",
+        "1fed8a48deafe88743c9cee64eb5e6b7ad6422a5b3a02dd132c1b6885a86377e"
+    ],
+    "depCageToken": "bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778",
+    "depConsumerHash": "bbe166ffb706d3f7e05b941ddc7615de39575af2ab2b3cca2a25bc70",
+    "depLeanRevision": "c48bac7b9c610194fbee991bb31e63aad293e203",
+    "depNetworkMagic": 1,
+    "depProcessTime": 600000,
+    "depReferenceScripts": [
+        {
+            "refAddress": "addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v",
+            "refAddressBytes": "604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad71",
+            "refHash": "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62",
+            "refOutRef": "d4deba068fcbbf62f63f9032650e8f5f8c70ea09b461d239531baf767a2c039d#0",
+            "refRole": "state"
+        },
+        {
+            "refAddress": "addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v",
+            "refAddressBytes": "604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad71",
+            "refHash": "67f907d5323b46eae9a6ee799bb0539ac482c869f957d046ff0cd7e6",
+            "refOutRef": "1e0b52844259025ea304daf3f0c784088ca67650acf42297cef78814be285a14#0",
+            "refRole": "request"
+        },
+        {
+            "refAddress": "addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v",
+            "refAddressBytes": "604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad71",
+            "refHash": "89409890d5a89debf410d6d31695fc9030fcf2b754b06206d7291370",
+            "refOutRef": "a3983772a65b3455166ec24442a99563cca081a2164b11d24ce555bdd6481a70#0",
+            "refRole": "application"
+        },
+        {
+            "refAddress": "addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v",
+            "refAddressBytes": "604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad71",
+            "refHash": "64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88",
+            "refOutRef": "d604ab0b1d2daa0fabd403fb5e7b83307664dc952f36bc7c5273c3d230a6aa35#0",
+            "refRole": "representative"
+        },
+        {
+            "refAddress": "addr_test1vp9nyjxd4pg6u5me3n379yu5kqy723uu5g5n96edt8m66ugf49x2v",
+            "refAddressBytes": "604b3248cda851ae53798ce3e29394b009e5479ca22932eb2d59f7ad71",
+            "refHash": "89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09",
+            "refOutRef": "1fed8a48deafe88743c9cee64eb5e6b7ad6422a5b3a02dd132c1b6885a86377e#0",
+            "refRole": "custody"
+        }
+    ],
+    "depRelease": "main-c27c3dd8ba5aac84732067deb996abd633c88202",
+    "depRepresentativePolicy": "64adbd9cd944738680f670cbd0456294951b20ac12eb1f3ebeb0dc88",
+    "depRequestHash": "67f907d5323b46eae9a6ee799bb0539ac482c869f957d046ff0cd7e6",
+    "depRetractTime": 300000,
+    "depSeedOutRef": "2d7c011c7850386cc89be7923c2b91c9e1c368f747b381c218bca488b7a33a39#2",
+    "depStatePolicy": "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62",
+    "depTip": 1000000
+}

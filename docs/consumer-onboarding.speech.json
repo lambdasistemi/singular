@@ -191,12 +191,12 @@
   ],
   "what-this-page-does-not-cover": [
     {
-      "text": "The canonical deployment on preprod — a published registry identity with its seed reference, applied script hashes, policy identifiers and bootstrap transactions — is recorded separately once it exists, from real values. Nothing here publishes or claims a canonical identity; each run stands up its own.",
+      "text": "The canonical deployment on preprod — a published registry identity with its seed reference, applied script hashes, policy identifiers and bootstrap transactions — is recorded on the preprod record page with its verifier output, journey transactions and mirror, from real values. Nothing here publishes or claims a canonical identity; each run stands up its own.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "5102f9fb1ad909aa7607a8d4fade7816538bd49c25d6d459052791d08d5d2f90"
+    "sha256": "27dd8d8b795661bf666bcac700af484a985b3dba5bd984c7d3bff0edbb87979c"
   }
 }

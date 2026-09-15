@@ -15,6 +15,7 @@ nav:
   - Naming lifecycle: docs/naming-lifecycle.md
   - Recovery and retirement: docs/recovery-retirement.md
   - Run against your own preprod node: docs/consumer-onboarding.md
+  - The preprod record: docs/preprod.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md

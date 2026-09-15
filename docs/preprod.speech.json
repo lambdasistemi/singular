@@ -1,0 +1,52 @@
+{
+  "what-is-deployed": [
+    {
+      "text": "One registry on preprod, network magic one, booted from the joiner wallet with a ten-minute processing window and a five-minute retract window — sized for a network that makes a block about every twenty seconds, not the factory devnet's one second.",
+      "pause": 400
+    },
+    {
+      "text": "The registry token, the five applied script hashes, the five reference-script outputs and the seven boot transactions are all named here exactly as the manifest records them, so every identifier on this page can be checked against the chain.",
+      "pause": 400
+    }
+  ],
+  "what-the-verifier-checks": [
+    {
+      "text": "The verifier reconnects to the node and checks the manifest claim by claim: the compiled state validator, the seed that determines the registry token, the representative policy, the request windows read back from the live state datum, each reference output, the state output, and four stake registrations. Fourteen claims hold; the output is reproduced verbatim.",
+      "pause": 400
+    }
+  ],
+  "the-three-journeys": [
+    {
+      "text": "Three journeys attached to this deployment and completed on chain, in order. Register claimed alice and folded her to Active. Recovery rotated control through the committed successor and maintained under it. Retirement retired the recovered name into custody and completed it to Over, burning the representative. Every transaction identifier is listed under its journey.",
+      "pause": 400
+    }
+  ],
+  "finding-alice": [
+    {
+      "text": "Alice's token is the registry's representative policy plus blake two of the spelling bytes, no newline, no prefix. Hash the spelling, substitute the published policy, and Koios returns the UTxO that holds the live record.",
+      "pause": 400
+    }
+  ],
+  "reproduce-it-yourself": [
+    {
+      "text": "Two commands replay the whole record from your own machine: deployment verify against the manifest in this repository, and an attached register run with your own spelling. Alice is already Active here, so a rerun asking for her is refused by design; the mirror file must travel with the manifest, and a run whose mirror disagrees with the chain stops and says so.",
+      "pause": 400
+    }
+  ],
+  "the-first-deployment-and-its-stranded-name": [
+    {
+      "text": "This is the second deployment on preprod. The first used a 120-second processing window; its retirement fixture reached custody after the window closed, and the validator rejects an aged request instead of folding it, so that name is stranded at custody with no way to complete. The stranded name is the reproduced defect behind this deployment's ten-minute windows, and the first registry is left untouched as the evidence.",
+      "pause": 400
+    }
+  ],
+  "what-this-record-does-not-cover": [
+    {
+      "text": "This page is a photograph of one deployment, not a promise about the next one. Future deployments boot new registries with new tokens and policies. Refusal behaviour, the naming walkthrough and operator onboarding stay on their own pages, and the raw run logs live in the milestone acceptance evidence.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "preprod.md",
+    "sha256": "57a8af206a705d25072e4fc77e74ce3a62262b58de54ab572a9977e0e86e4b84"
+  }
+}
