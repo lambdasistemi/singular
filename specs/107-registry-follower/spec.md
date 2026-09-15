@@ -22,6 +22,10 @@ colleague.
 
 ## What you can do
 
+The following describes the intended recovery journey. Current product evidence
+is bound to `cc635ce75357632c5947a6b910658813992bda63`; its limits are
+recorded in [the verification plan](plan.md#current-verification-state).
+
 Point `deployment follow` at a manifest and a node socket. It walks the
 registry token's spending chain through the node's chain-sync. Every
 spend of the state output is a fold: the consumed request datums carry
@@ -41,14 +45,15 @@ flowchart LR
     C[Mirror checkpoint] -->|resume point, when valid| F
     F -->|replay folds into a fresh trie| RB[Rebuilt root]
     RB -->|must equal| S[Root in the live state output]
-    S -->|equality only| W[preprod.mirror.json written atomically]
+    S -->|equality only| W[Mirror saved; interruption safety unexercised]
 ```
 
 ## What you see when it is refused
 
-Every refusal names its intended condition. A generic exception is a
-defect. The follower refuses rather than publishing bytes it cannot
-justify, and on refusal any existing mirror file is left untouched.
+The required behavior is a refusal naming its condition while leaving the
+existing mirror untouched. A generic exception is a defect against that
+requirement. Only the controls below demonstrate byte preservation; the
+requirement still applies to the uncontrolled variants.
 
 | Attempt | Intended condition |
 | --- | --- |
@@ -63,13 +68,32 @@ justify, and on refusal any existing mirror file is left untouched.
 | A state spend is not a `Modify` | `unsupported-state-spend: expected Modify` |
 | A node socket or query fails | `socket-query` |
 
-The module emits more named refusals than this table enumerates — thirty
-call sites in total. The table lists the classes the ticket's acceptance
-names; the remainder are shipped and uncontrolled, and are carried as a
-named residual in the follow-up register rather than claimed as verified.
-Eight named refusals are exercised with byte preservation by the gate.
+Keep the denominators distinct at the current product candidate:
+
+- **Eight logged preservation events**: two checkpoint-decode, two socket-query,
+  one chain-moved, one node-disconnected-before-root-verification and two
+  bootstrap-not-found events in the retained follower run.
+- **Six unique names across the checks**: the five names above plus
+  root-mismatch, whose before/after byte assertion is separate from the eight
+  printed events.
+- **Thirty refusal call sites** in the source inventory. Its **22 uncontrolled
+  rows** are a separate classification, not a subtraction of unique names or
+  logged events. The restore wrapper is exercised through CBOR decoding but
+  arbitrary restoration exceptions remain uncontrolled.
+
+Uncontrolled variants include malformed hex/outrefs, missing trie, checkpoint
+token/hash-width, bootstrap/manifest identity, malformed datums, action-count
+and state-chain continuity, and state-spend/redeemer diagnostics. The retained
+controls do not verify every refusal or all dependency exceptions.
 
 ## Requirements
+
+These are requirements, not nine completed acceptance claims. **Three acceptance
+obligations remain OPEN**: controlled interruption of the mirror write,
+bootstrap-start chain sync, and the frozen fresh-checkout preprod rebuild and
+successful fold. Recording a deviation does not satisfy it. Cold replay currently
+intersects at genesis, then identifies the bootstrap transaction; starting at
+the recorded bootstrap remains OPEN (F-107-OPUS-02 / R-01). Preprod is unobserved.
 
 | ID | Requirement |
 | --- | --- |
@@ -94,7 +118,7 @@ Eight named refusals are exercised with byte preservation by the gate.
 | I-COMPAT | A mirror written by the previous release loads without its checkpoint key present. | The new decoder requires a key old files do not have. |
 | I-ATOMIC | A crash during the mirror write leaves the previous bytes intact. **Intended, not established** — see the atomicity note below. | A truncated mirror is left on disk. |
 
-**Atomicity is implemented but unexercised.** `saveMirrorWithCheckpoint`
+**Atomicity is intended, IMPLEMENTED and UNEXERCISED.** `saveMirrorWithCheckpoint`
 uses `bracketOnError` with `openBinaryTempFile` and `renameFile`, which is
 the standard atomic-replace shape, and nothing shows it wrong. But no check
 anywhere interrupts, crashes or cancels a process during that write. Every
@@ -113,7 +137,11 @@ and `step` in `lean/Singular/Model.lean` govern the replay semantics.
 `deployment follow`, given only a manifest and a node socket on a
 machine with no mirror file, exits successfully and writes a
 `preprod.mirror.json` whose root equals the root in the state output at
-the chain tip; a fold submitted immediately afterwards is accepted.
+the chain tip; a fold submitted immediately afterwards is accepted. This is the intended
+outcome. The private-devnet follower E2E demonstrates recovery and a later
+successful fold. The separate CLI rebuild run reaches an existing-name
+duplicate refusal. The frozen preprod rebuild-and-fold observation is OPEN
+and unobserved.
 
 ## Out of scope
 

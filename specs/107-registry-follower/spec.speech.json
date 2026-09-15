@@ -1,36 +1,78 @@
 {
-  "rebuild-the-registry-mirror-from-the-chain": [
-    {"text": "This specification describes rebuilding a registry's proof mirror from the chain alone, so a writer needs only the deployment manifest and a node socket.", "pause": 400}
-  ],
   "who-this-is-for": [
-    {"text": "The reader is a writer attaching on a second machine that has never held the mirror file, and who wants to submit a fold without asking a colleague to copy one.", "pause": 400}
+    {
+      "text": "A writer on a second machine wants to recover the registry proof mirror with only a deployment manifest and node socket, then submit a fold without copying another machine’s file.",
+      "pause": 450
+    }
   ],
   "why-it-is-needed": [
-    {"text": "Proving a key against the current root needs the whole trie. Carrying that trie as a file beside the manifest is correct for one machine and is exactly what strands the second. The chain already holds every fold, so the registry token's spending chain can rebuild the trie from the node instead.", "pause": 450}
+    {
+      "text": "A writer needs the whole trie to prove a key against the current registry root. The mirror file works on one machine but does not help a second machine that lacks it. The chain records the accepted folds needed for reconstruction. Readers proving a key alive need only the representative NFT.",
+      "pause": 450
+    }
   ],
   "what-you-can-do": [
-    {"text": "The follow command walks the registry token's spending chain. Every spend of the state output is a fold: the consumed request datums carry key, value and operation, and replaying those into a fresh trie reconstructs the registry.", "pause": 400},
-    {"text": "At the tip the rebuilt root is compared with the root in the live state output, and the mirror is written only if they are equal. Rebuild during attach repairs a missing or mismatched mirror, and a recorded checkpoint lets a later run resume instead of replaying from the start.", "pause": 450}
+    {
+      "text": "The follower reads the registry spending chain, reconstructs requests and ordered folds, checks the root against the current state output, and saves only on equality. The diagram shows manifest, node and checkpoint feeding replay, with confirmed root equality permitting publication. Atomic publication is intended and unexercised.",
+      "pause": 450
+    },
+    {
+      "text": "Attachment with rebuild can recover a missing or mismatched mirror. A valid checkpoint supports incremental resume. A cold rebuild currently seeks genesis, then identifies the bootstrap transaction. Starting chain sync at the recorded bootstrap remains open.",
+      "pause": 450
+    }
   ],
   "what-you-see-when-it-is-refused": [
-    {"text": "Every refusal names its intended condition, and a generic exception is a defect. The follower refuses rather than publishing bytes it cannot justify, and any existing mirror is left untouched.", "pause": 400}
+    {
+      "text": "The required behavior is a named refusal with the existing mirror preserved. The table lists root mismatch, bootstrap identity or absence, disconnection before root verification, chain movement, malformed checkpoints, request/action count mismatch, broken state history, unsupported state spend and socket or query failure. The disconnected diagnostic uses hyphens: node-disconnected-before-root-verification.",
+      "pause": 450
+    },
+    {
+      "text": "Keep three denominators distinct. The retained run prints eight refusal-preservation events. Across those controls and the separate root-mismatch assertion, six unique refusal names are checked. The source inventory contains thirty refusal call sites. Twenty-two inventory rows remain uncontrolled; subtracting unique names or logged events is not a proof of call-site coverage.",
+      "pause": 450
+    },
+    {
+      "text": "Uncontrolled variants include malformed references, missing trie, checkpoint token or hash width, bootstrap identity, malformed datums, action counts and state-spend diagnostics. The controls do not verify all exceptions or every variant.",
+      "pause": 450
+    }
   ],
   "requirements": [
-    {"text": "Nine requirements are taken from the frozen issue: follow from the bootstrap over chain sync, replay each fold preserving insert, update, delete and rejected no-change effects, verify root equality before writing, add rebuild to attach, resume from a recorded point, stay backward compatible, write atomically, test on a devnet in continuous integration, and replace the onboarding page's second machine paragraph.", "pause": 500}
+    {
+      "text": "The nine requirements cover bootstrap-start chain sync, ordered insert, update, delete and rejected no-change replay, root equality before publication, rebuild during attachment, checkpoint resume, legacy mirror decoding, interrupted-write safety, the devnet rebuild and later fold in CI, and onboarding instructions. These are requirements, not a claim that all nine are satisfied.",
+      "pause": 450
+    },
+    {
+      "text": "Three acceptance obligations remain open: controlled interruption of the mirror write, starting chain sync at the recorded bootstrap, and the fresh-checkout preprod rebuild and successful fold. Recording any of these gaps does not satisfy it.",
+      "pause": 450
+    }
   ],
   "invariants": [
-    {"text": "Six invariants state what must hold and how each one fails: a mirror is published only at the confirmed root, replay reproduces every operation the module handles, every named refusal detects its condition while preserving the existing file, resuming matches a full replay, an older mirror still loads, and an interrupted write leaves the previous bytes intact.", "pause": 450},
-    {"text": "Replay does not re-derive custody, authorization, refunds or witness validity. Ledger acceptance owns those, and the follower observes transactions the ledger has already accepted.", "pause": 400}
+    {
+      "text": "Publication requires root equality. Replay must preserve each operation’s effect. Named refusals must detect their condition and preserve bytes. Resume must agree with full replay, and old-format mirrors must still load. These are intended invariants with bounded evidence.",
+      "pause": 450
+    },
+    {
+      "text": "Atomicity is implemented in the temp-file-and-rename shape under bracketOnError, but interruption safety is unexercised. No check interrupts, crashes or cancels the process during that write. Refusal-byte preservation observes a different event. The controlled-interruption obligation stays open.",
+      "pause": 450
+    },
+    {
+      "text": "The accepted Lean fold definitions govern replay semantics. Ledger acceptance owns authorization, custody, refunds and witnesses; the follower observes accepted transactions and does not re-prove those properties.",
+      "pause": 450
+    }
   ],
   "observable-success": [
-    {"text": "Given only a manifest and a node socket on a machine with no mirror, the follow command writes a mirror whose root equals the root at the chain tip, and a fold submitted immediately afterwards is accepted.", "pause": 400}
+    {
+      "text": "The intended result is a mirror matching the chain tip followed by an accepted fold. The current private-devnet E2E demonstrates recovery and a subsequent successful fold. The CLI rebuild run separately demonstrates a duplicate refusal, not another successful fold. The frozen fresh-checkout preprod rebuild and fold remain open and unobserved.",
+      "pause": 450
+    }
   ],
   "out-of-scope": [
-    {"text": "The adaptive multi-batch folder, the naming executable, the deposit price rule, any external indexer service, and any change to validator semantics are all outside this ticket.", "pause": 400}
-  ]
-,
+    {
+      "text": "The adaptive folder, naming executable, deposit price rule, external indexing services and validator changes remain outside this ticket.",
+      "pause": 450
+    }
+  ],
   "_source": {
     "file": "spec.md",
-    "sha256": "10b746e5e204977cd16089a83ddc3ef7b30f6d31acd3766129bec1b9304b4db8"
+    "sha256": "c7fc8c47fdd282f4d7b48000bc6dd7aedd6ab71f12135b45e6c625ecc6388c9e"
   }
 }

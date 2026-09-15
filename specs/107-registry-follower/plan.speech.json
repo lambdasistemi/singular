@@ -1,36 +1,70 @@
 {
-  "rebuild-a-registry-mirror-from-the-node": [
+  "implementation-and-boundaries": [
     {
-      "text": "A writer on a second machine should recover the registry trie using the manifest and a node socket, then submit a fold without copying a mirror. This intake plan binds the implementation to the accepted Lean fold definitions.",
-      "pause": 400
-    },
-    {
-      "text": "The diagram shows a manifest identifying the registry, a node supplying requests and ordered folds, and an optional checkpoint selecting a resume point. The follower saves the recovered mirror only after checking its root against the confirmed state output.",
+      "text": "A writer on another machine wants to recover the trie and fold with it. The accepted Lean revision is f558d0e8, using foldOne, foldItems and step. The follower reconstructs accepted operations; ledger validation remains responsible for authorization, custody, refunds and witnesses.",
       "pause": 450
     },
     {
-      "text": "The planned work adds compatible checkpoint storage, a chain follower, a follow command and rebuilding during attachment. The real-node test must rebuild after deleting a mirror, resume incrementally, refuse corrupted state and successfully fold again. Preprod execution needs the milestone desk to assign the existing deployment window. Verification, merge and release are separate remaining steps.",
-      "pause": 500
-    }
-  ],
-  "slices": [
-    {
-      "text": "The slice runs in owner mode. A separate accountable implementer owns the change, the ticket owner authors the mandate and accepts without writing behaviour, and an independent reviewer audits the candidate and the gates before trunk.",
-      "pause": 400
-    }
-  ],
-  "verification-state": [
-    {
-      "text": "This table records what the audited candidate actually demonstrates, so no reader mistakes a written intention for an enforced one. Root equality, checkpoint resume and atomic writing are verified. Following from the bootstrap carries an open deviation, only the insert replay arm is exercised, rebuild and genuine legacy loading are unexercised, and continuous integration covers the devnet check but not the offchain unit suite or the formatter.",
-      "pause": 500
+      "text": "The diagram connects the manifest, node blocks and optional checkpoint to replay, followed by a comparison with the confirmed state output before saving. The implementation uses the pinned chain follower, a compatible checkpoint, follow and rebuild entry points, and temp-file replacement. Interruption safety remains unexercised.",
+      "pause": 450
     },
     {
-      "text": "Eighteen named refusals ship and one has an executable control. Preprod remains blocked pending a verified milestone handoff and writer release, so the frozen preprod observation has no evidence.",
+      "text": "The decisions keep chain sync as the source, preserve legacy checkpoint-free decoding and deliberately use owner-only file mode. Root equality gates publication. There is no manifest schema change in this repair.",
+      "pause": 450
+    }
+  ],
+  "current-verification-state": [
+    {
+      "text": "This table concerns product candidate cc635ce. Verified means demonstrated only within the stated receipt scope. Implemented means present in source; unexercised means the claimed event has no executable observation; open means an obligation remains unsatisfied.",
+      "pause": 450
+    },
+    {
+      "text": "Confirmed folds cover insert, update, delete and rejected no-change. The retained rejected-arm mutation fails with root mismatch. Positional pairing of mixed request and action lists remains an untested lead.",
+      "pause": 450
+    },
+    {
+      "text": "Root equality, resume, immediate reset on both callback routes and legacy key-absent decoding have bounded evidence. The legacy fixture is synthetic old-format JSON, not a captured historical deployment. The unit suite has 108 examples and no failures.",
+      "pause": 450
+    },
+    {
+      "text": "The CLI executes follow and rebuild on a private magic-42 node. Rebuild reaches an existing-name duplicate refusal; the separate follower E2E demonstrates a successful later fold. Those runs do not prove one CLI rebuild-and-successful-fold journey.",
+      "pause": 450
+    },
+    {
+      "text": "Changed-file formatting, HLint and the unit suite are wired to CI. The delta inspector repeated the unit and formatter controls and inspected the HLint receipts. The full eleven-example E2E receipt predates the strengthened immediate-reset test. The final focused follower receipt covers two examples with no failures.",
+      "pause": 450
+    },
+    {
+      "text": "Keep three denominators distinct. The retained run prints eight refusal-preservation events. Across those controls and the separate root-mismatch assertion, six unique refusal names are checked. The source inventory contains thirty refusal call sites. Twenty-two inventory rows remain uncontrolled; subtracting unique names or logged events is not a proof of call-site coverage.",
+      "pause": 450
+    },
+    {
+      "text": "Three acceptance obligations remain open: controlled interruption of the mirror write, starting chain sync at the recorded bootstrap, and the fresh-checkout preprod rebuild and successful fold. Recording any of these gaps does not satisfy it.",
+      "pause": 450
+    },
+    {
+      "text": "Atomicity uses a temporary file and rename under bracketOnError. No check interrupts, crashes or cancels that write. Every byte-preservation assertion is across a named refusal, a different observable.",
+      "pause": 450
+    },
+    {
+      "text": "Preprod remains unobserved and blocked pending the complete verified milestone-one handoff, writer release and desk sequencing. Bootstrap-start remains open because cold replay intersects at genesis; the manifest lacks the block point needed to seek directly.",
+      "pause": 450
+    }
+  ],
+  "historical-evidence": [
+    {
+      "text": "The predecessor 112d20c is historical only. Its insert-only controls, unexercised CLI and old-format loading, and old refusal accounting must not be combined with current candidate evidence. The repair at cc635ce adds the bounded controls described above. The prior documentation-only candidate bf09955 preserved code but retained false narration and the wrong command directory. None of these receipts closes the three open acceptance obligations.",
+      "pause": 450
+    }
+  ],
+  "ownership-and-next-decision": [
+    {
+      "text": "The documentation author owns this six-file correction and runtime handoff. The ticket owner coordinates, and a fresh independent reviewer decides the documentation review. The implementation tree remains the cc635ce tree. Documentation correction is not implementation acceptance, preprod authorization, merge or release.",
       "pause": 450
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a8dd083771dd2ab3ba60b51fc6ded61b6bcbaa3656dbb92596ef344dfce8c7f9"
+    "sha256": "fd3314e3d664819b33d9dbd69fe97b9ef1592adac95797248ef304a503941622"
   }
 }

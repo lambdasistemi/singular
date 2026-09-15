@@ -1,23 +1,68 @@
 {
-  "tasks": [
-    {"text": "One slice rebuilds the registry mirror from the chain. Checked means demonstrated by an executable check on the candidate, not merely written; unchecked items are open work rather than pending paperwork.", "pause": 400}
-  ],
-  "landed-in-the-audited-candidate": [
-    {"text": "The audited candidate carries the mirror checkpoint, the follower over the pinned chain follower, per-fold and tip root equality with an executed failure control, atomic mirror writing, checkpoint resume, the follow and rebuild surfaces, the devnet end-to-end check in continuous integration, and the rewritten onboarding paragraph.", "pause": 500},
-    {"text": "The restored specification and reconciled plan are recorded here as ticket-owner work. They describe the candidate; they do not validate it.", "pause": 400}
-  ],
-  "open-repair-batch": [
-    {"text": "Seven repair items remain open, each carrying its failing and passing criterion in the adjudicated batch: bind every replay arm, make the offchain failure classes reachable by continuous integration, control the named refusal classes, exercise the rollback reset and genuine legacy mirror loading, invoke the shipped command entry points, decide the mirror file mode, and leave the manifest schema untouched.", "pause": 500}
+  "verified-repair-results": [
+    {
+      "text": "A writer needs to know which recovery claims have evidence and which remain open. This task record uses current product candidate cc635ce. Checked items mean the bounded observation stated beside them, not whole-ticket acceptance.",
+      "pause": 450
+    },
+    {
+      "text": "The retained checks cover all replay constructors, root equality and controlled refusals, resume and immediate reset on both routes, a synthetic legacy mirror with no checkpoint key, and owner-only file mode for creation and replacement. Changed-file lint and unit checks reach CI.",
+      "pause": 450
+    },
+    {
+      "text": "The published follow command and journey rebuild are executed. Rebuild reaches an existing-name duplicate refusal, while a separate follower E2E demonstrates a subsequent successful fold. Onboarding publishes the follow command, but no permanent check binds its text to the CLI script.",
+      "pause": 450
+    }
   ],
   "open-acceptance-dependencies": [
-    {"text": "Two dependencies stay open regardless of how the repairs land. The preprod observation is blocked pending a verified milestone handoff and writer assignment, so it is unobserved rather than satisfied. The bootstrap starting point needs a manifest chain point owned outside this ticket, and recording the deviation closes only the documentation task, never the requirement.", "pause": 500}
+    {
+      "text": "Three acceptance obligations remain open: controlled interruption of the mirror write, starting chain sync at the recorded bootstrap, and the fresh-checkout preprod rebuild and successful fold. Recording any of these gaps does not satisfy it.",
+      "pause": 450
+    },
+    {
+      "text": "Atomicity is implemented but unexercised: no interruption, crash or cancellation occurs during the mirror write in any retained check. Named-refusal preservation is a different observable.",
+      "pause": 450
+    },
+    {
+      "text": "The bootstrap-start requirement and its blocking finding remain open. Genesis replay does not satisfy that starting-point requirement; a manifest chain point is a separate shared-contract dependency. Preprod is unobserved and requires the verified milestone-one handoff and an explicitly released writer window.",
+      "pause": 450
+    }
   ],
-  "slice": [
-    {"text": "The slice is owner mode. A separate accountable implementer owns the change, and independent audit of the candidate and the changed gates is required before trunk; the implementer does not accept its own work.", "pause": 400}
-  ]
-,
+  "refusal-coverage-and-follow-ups": [
+    {
+      "text": "Keep three denominators distinct. The retained run prints eight refusal-preservation events. Across those controls and the separate root-mismatch assertion, six unique refusal names are checked. The source inventory contains thirty refusal call sites. Twenty-two inventory rows remain uncontrolled; subtracting unique names or logged events is not a proof of call-site coverage.",
+      "pause": 450
+    },
+    {
+      "text": "The open follow-up register also retains lint debt, the split CLI and E2E journey, untested asynchronous rethrow in namedBoundary, untested live-query disconnection detection, positional request/action pairing, documentation drift, default offchain lint behavior and the pre-existing magic-42 branch. These are bounded residuals or leads, not newly demonstrated defects.",
+      "pause": 450
+    }
+  ],
+  "reproducible-commands": [
+    {
+      "text": "The table gives each command, working directory, inputs and retained receipt. Run follower-e2e and the full e2e recipe from offchain. They build the registry blueprint and use the pinned node and test binary. The full-suite receipt is historical to the immediate-reset strengthening.",
+      "pause": 450
+    },
+    {
+      "text": "Build checks dot x86 64 linux dot cage-tests from offchain, where that flake attribute is exported. It executes the unit binary. Run lint-changes dot sh from offchain with the recorded base f558d0e8, and run the lint selection controls there too.",
+      "pause": 450
+    },
+    {
+      "text": "The CLI script also runs from offchain. It builds both blueprints and creates its own private deployment, node socket and signing key. These are private-devnet inputs. Root CI runs from the repository root and covers model, simulator, browser and documentation; its retained receipt predates this documentation correction.",
+      "pause": 450
+    },
+    {
+      "text": "No gate wrapper is supplied. The diagram shows source and inputs flowing through their actual recipe or script to a receipt and then to a bounded claim. A current documentation check does not re-execute historical product gates.",
+      "pause": 450
+    }
+  ],
+  "handback": [
+    {
+      "text": "One local documentation commit and the frozen claim comparison and corrected follow-up register go to the ticket owner for independent review. All non-document Git paths must equal cc635ce, and the change from bf09955 must contain exactly the six allowed files. No push, merge, release or preprod action is authorized.",
+      "pause": 450
+    }
+  ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a3a62f0c8350475df9d0cbfb2b8c3c84b5189f48882b2227e730884311b16ea5"
+    "sha256": "de21bab5ae1fe684b7527a8748f89b62d7a646e5f4f89801e9a6f1f933a5b53a"
   }
 }
