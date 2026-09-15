@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/lambdasistemi/singular/compare/v0.6.1...v0.6.2) (2026-09-15)
+
+
+### Fixes
+
+* preserve naming record asset shape ([1bee7ca](https://github.com/lambdasistemi/singular/commit/1bee7ca1d069737c81d441d1e895beff32392886))
+* preserve naming record asset shape ([5acd8d2](https://github.com/lambdasistemi/singular/commit/5acd8d2fffe96ca3f18bf9f2067834d3c7ffd0b7))
+
 ## [0.6.1](https://github.com/lambdasistemi/singular/compare/v0.6.0...v0.6.1) (2026-09-15)
 
 
