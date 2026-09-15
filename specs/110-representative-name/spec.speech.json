@@ -1,0 +1,48 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "A reader who knows the published representative policy id and wants to locate the live NFT for a spelling, with no history and no trie.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Hash the exact spelling bytes; that digest is the asset name, and the policy id already scopes the registry. The sequence diagram shows hashing, index lookup, and the mint that binds the name to the folded request key.",
+      "pause": 400
+    }
+  ],
+  "what-you-see-when-it-is-refused": [
+    {
+      "text": "Six named refusals: wrong mint name, cross-registry fold, foreign-registry retirement, missing withdrawal witness, rejected Insert, and wrong spelling at completion.",
+      "pause": 400
+    }
+  ],
+  "finding-alice": [
+    {
+      "text": "The exact hash command prints e 11 d 81 49 and friends, matching what register-rows prints. A trailing newline hashes differently, which exposed the planted preimage. Over means minted then burned; unclaimed means never minted.",
+      "pause": 400
+    }
+  ],
+  "acceptance-from-the-shipped-issue-and-pr-body": [
+    {
+      "text": "Docs checks green but not binding the equation. Binding checks: devnet folds printing the true digest, a planted preimage that fails, on-chain refusals, full Aiken, consumer, Haskell, and identity suites, and a green retirement journey, merged before the preprod deploy.",
+      "pause": 400
+    }
+  ],
+  "deviations": [
+    {
+      "text": "The mandate is the issue plus two binding rulings, with the model frozen. The base moved under the ticket without breaking its order, two workflow commits are recorded as out-of-mandate scope, and devnet observations stand as reported without a second run. No question raised.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "Lean unchanged with naming scope zero. Old conformance receipts keep their identities. Cancellation is untouched for its own lane. No preprod deployment or release claimed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ce26986045bf1748477401e5a9adfa3737773108e46f2ae9f8875901de37ce62"
+  }
+}

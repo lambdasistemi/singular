@@ -1,0 +1,30 @@
+{
+  "validator-functions": [
+    {
+      "text": "The name equation, fold binding to the processed Insert key, retire and burn bindings, registry-checked mint and burn, and the withdrawal witness path.",
+      "pause": 400
+    }
+  ],
+  "offchain-mirror": [
+    {
+      "text": "A byte-exact Haskell mirror, the consumer equation, seed-before-policy derivation shared by deployment and attached runners, and evidence verification over accepted records.",
+      "pause": 400
+    }
+  ],
+  "deployment-checks": [
+    {
+      "text": "Compiled policy compared with manifest and live state, live credential registration with reuse, substituted policies rejected, counts unchanged, and a fresh foreign-registry control.",
+      "pause": 400
+    }
+  ],
+  "test-surface": [
+    {
+      "text": "Aiken suites with the hash accept, the killed newline mutant, spelling refusals, foreign-registry and missing-witness controls, plus Haskell specs pinning the digest.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "5bcd79dd5c498778c2e40fa599dc0fbbdc38b4c4e5f86d99d06a452f9407c7b7"
+  }
+}
