@@ -235,6 +235,7 @@ import Cardano.Node.Client.Ledger (ConwayTx)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
 import Naming.Register
+import Naming.Verify (singleNamingToken)
 import Naming.Wire
     ( Address (..)
     , WireData (..)
@@ -1911,25 +1912,19 @@ mustSnap env txin = do
     case filter ((== txin) . fst) utxos of
         [(_, o)] -> do
             let Coin c = o ^. coinTxOutL
-                ofPolicy pid = case o ^. valueTxOutL of
+                assets = case o ^. valueTxOutL of
                     MaryValue _ (MultiAsset ma) ->
-                        maybe
-                            []
-                            ( Map.toAscList
-                                . Map.mapKeys (SBS.fromShort . assetNameBytes)
-                            )
-                            (Map.lookup pid ma)
-                tokens = ofPolicy (envAppPolicy env) <> ofPolicy (envRepPolicy env)
+                        [ (scriptHashBytes assetPolicyHash, SBS.fromShort (assetNameBytes name), quantity)
+                        | (PolicyID assetPolicyHash, names) <- Map.toAscList ma
+                        , (name, quantity) <- Map.toAscList names
+                        ]
+                policies =
+                    [ scriptHashBytes assetPolicyHash
+                    | PolicyID assetPolicyHash <- [envAppPolicy env, envRepPolicy env]
+                    ]
                 datum = datumDataOf o
-            case tokens of
-                [_] -> pure (Snap txin c tokens datum)
-                _ ->
-                    failWith
-                        ( "snapshot: "
-                            <> showIn txin
-                            <> " does not carry exactly one naming token \
-                               \under the application or representative policy"
-                        )
+            token <- either failWith pure (singleNamingToken policies assets)
+            pure (Snap txin c [token] datum)
         _ ->
             failWith
                 ( "snapshot: "

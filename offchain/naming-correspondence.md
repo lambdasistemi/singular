@@ -409,3 +409,14 @@ Lean's abstract representative remains `{registry, key, policy, assetScope}` at 
 | `NamingLifecycle.retirementRequest` fixes the proposal registry, and `beginRetirement` requires that exact request | `application.Retire` requires a withdrawal under the representative policy read from the authenticated registry reference; `representative.withdraw` checks that same reference's exact registry asset id against its deployment parameter | Zero withdrawal with a redeemer, after registering the representative script stake credential; missing witness and copied-policy foreign-registry reference refuse |
 
 The application and withdrawal handler share one reference-only selection. Maintenance and recovery do not read referenced registry state: they preserve the spent record's token and authorize against its datum. Completion already spends the registry state and executes the representative mint handler's registry-bound burn, so it needs no additional withdrawal witness. Lean is unchanged.
+
+## Record value refinement
+
+For a controller to retain recovery and retirement, a genuine folded record must
+keep the single-representative value shape. The operator's 2026-09-15 ruling for
+issue #146 places multi-asset encoding below Lean; no model changes are made.
+The binding is repository revision `41861a66b72a840042f2e633ce33a607e817d6c6`.
+
+| Lean abstraction | Implementation invariant and enforcement | Executing evidence and limits |
+| --- | --- | --- |
+| `Singular.Output` (`Model.lean:34-40`), with one representative and scalar value; `NamingLifecycle.maintainDestination`, `recoverController` and `beginRetirement` | A record's value is exactly ADA plus its representative. The genuine insert branch of `application.fold` establishes this with exact non-ADA triples; `value_preserved` in maintain and recover preserves those triples and permits only ADA top-up. Recover/retire handle invalid asset cardinality as `record-single-asset` before extraction. `Naming.Verify.singleNamingToken` checks the full non-ADA value in Haskell recovery/retirement readbacks. | Permanent `t146_*` Aiken tests cover the issue reproductions, additions, removal, replacement and quantity increase. The Haskell `record-value-tests` suite executes the production blueprint and checks named refusals; `Naming.RecordValueSpec` rejects a hidden foreign-policy asset. These are component checks. Existing polluted records remain maintain-only when their non-ADA value is unchanged; arbitrary deposits and the legacy empty-representatives fold fixture are outside the genuine insert-record invariant. Old deployed scripts are unchanged. |

@@ -170,17 +170,31 @@ validator application {
       Fold { representatives } ->
         fold(record, representatives, claim, own_hash, tx)
       Retire { representatives, key } ->
-        retire(record, claim, key, tx)
+        when single_asset_name(claim.output.value) is {
+          Some(stored_rep) -> retire(record, claim, stored_rep, key, tx)
+          None -> {
+            trace @"record-single-asset"
+            False
+          }
+        }
       Recover { revealed_control, representatives, registry } ->
-        recover(
-          record,
-          revealed_control,
-          representatives,
-          registry,
-          claim,
-          own_hash,
-          tx,
-        )
+        when single_asset_name(claim.output.value) is {
+          None -> {
+            trace @"record-single-asset"
+            False
+          }
+          Some(stored_rep) ->
+            recover(
+              record,
+              stored_rep,
+              revealed_control,
+              representatives,
+              registry,
+              claim,
+              own_hash,
+              tx,
+            )
+        }
     }
   }
 
@@ -246,8 +260,7 @@ fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
   expect successor.next_control_commitment == record.next_control_commitment
   expect successor.retirement_quorum == record.retirement_quorum
   // The record's value — including its representative — is preserved.
-  expect value_preserved(claim.output.value, continuation.value)
-  True
+  value_preserved(claim.output.value, continuation.value)
 }
 
 /// `LR01` accepts; `LR02`/`LR04`/`LR06` (commitment), `LR03`/`LR07`
@@ -269,6 +282,7 @@ fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
 /// four fields; no fifth field, no new datum shape.
 fn recover(
   record: NamingRecord,
+  stored_rep: ByteArray,
   revealed_control: ByteArray,
   representatives: List<ByteArray>,
   registry: ByteArray,
@@ -285,7 +299,6 @@ fn recover(
   // insert fold minted under the representative policy (issue #77; the
   // application-policy stand-in is gone) — so the
   // single-representative shape holds whatever policy carries it.
-  let stored_rep = single_asset_name(claim.output.value)
   expect representatives == [stored_rep]
   // The reveal is a canonical payment-key address (`recovery-payment-key`:
   // no row, but the order is load-bearing for attribution).
@@ -323,8 +336,6 @@ fn recover(
   expect successor.control_address == revealed_control
   expect successor.payment_destination == record.payment_destination
   expect successor.retirement_quorum == record.retirement_quorum
-  // The record's value — representative included — moves to the successor.
-  expect value_preserved(claim.output.value, continuation.value)
   // The successor's commitment is 32 bytes and differs from the consumed
   // one (`LR08`): the consumed commitment cannot be replayed.
   expect bytearray.length(successor.next_control_commitment) == 32
@@ -333,7 +344,7 @@ fn recover(
   // order closes the transition — expect_naming already enforced it, so
   // this names the reason rather than re-checking it).
   expect naming.well_formed(successor)
-  True
+  value_preserved(claim.output.value, continuation.value)
 }
 
 /// `LC01` accepts; `LC02` (redirect), `LC03` (no withdraw approval),
@@ -391,7 +402,7 @@ fn fold(
   let Transaction { mint, .. } = tx
   // Exactly one approval rides the claim under our own policy —
   // withdraw or insert. No token, no fold.
-  let approval = single_asset_name(claim.output.value)
+  expect Some(approval) = single_asset_name(claim.output.value)
   // The approval is consumed: burned exactly once, and nothing else
   // moves under our policy.
   expect [burned] = keys(tokens(mint, own_hash))
@@ -437,11 +448,12 @@ fn fold(
         all(representatives, fn(name) {
           quantity_of(mint, expected, name) == 1
         })
-      expect
-        all(representatives, fn(name) {
-          quantity_of(continuation.value, expected, name) == 1
-        })
-      True
+      if non_ada_assets(continuation.value) == [(expected, name, 1)] {
+        True
+      } else {
+        trace @"record-single-asset"
+        False
+      }
     }
   }
 }
@@ -457,6 +469,7 @@ fn fold(
 fn retire(
   record: NamingRecord,
   claim: Input,
+  stored_rep: ByteArray,
   key: ByteArray,
   tx: Transaction,
 ) -> Bool {
@@ -474,7 +487,6 @@ fn retire(
   // lands at the custody script address. `representative-policy` refuses
   // foreign-policy fakes. The representative moves, it does not burn here
   // (completion burns it later) — so no mint rides a retire.
-  let stored_rep = single_asset_name(claim.output.value)
   let (_, expected) = referenced_registry(tx)
   expect pairs.get_first(tx.withdrawals, address.Script(expected)) != None
   expect stored_rep == representative_name(key)
@@ -588,22 +600,20 @@ fn folded_request_key(tx: Transaction, name: ByteArray) -> ByteArray {
   key
 }
 
-/// The single non-ADA asset name a claim or record carries — the
-/// approval on a claim, the representative on a folded record. More
-/// than one, or none, refuses: the single-token shape Lean's `supply`
-/// counts.
-fn single_asset_name(value: Value) -> ByteArray {
-  let named =
-    filter(
-      flatten(value),
-      fn(entry) {
-        let (policy_id, _name, _quantity) = entry
-        policy_id != #""
-      },
-    )
-  expect [only] = named
-  let (_policy, asset_name, _quantity) = only
-  asset_name
+fn non_ada_assets(value: Value) -> List<(PolicyId, ByteArray, Int)> {
+  filter(flatten(value), fn(entry) {
+    let (policy, _, _) = entry
+    policy != #""
+  })
+}
+
+/// Claims carry an approval; folded records carry a representative.
+/// Malformed cardinality is reported by the caller before reading the name.
+fn single_asset_name(value: Value) -> Option<ByteArray> {
+  when non_ada_assets(value) is {
+    [(_, name, _)] -> Some(name)
+    _ -> None
+  }
 }
 
 /// The shared mint/burn roundtrip both approval arms ride: a fresh
@@ -682,12 +692,13 @@ fn value_preserved_except(
     })
 }
 
-/// Every non-ADA asset of the previous value is present in the next at
-/// the same quantity, and the lovelace does not decrease.
+/// Non-ADA policy, name and quantity are identical; ADA may only increase.
 fn value_preserved(previous: Value, next: Value) -> Bool {
-  lovelace_of(next) >= lovelace_of(previous)
-    && all(flatten(previous), fn(entry) {
-      let (policy_id, asset_name, quantity) = entry
-      quantity_of(next, policy_id, asset_name) >= quantity
-    })
+  if lovelace_of(next) >= lovelace_of(previous)
+    && non_ada_assets(next) == non_ada_assets(previous) {
+    True
+  } else {
+    trace @"record-value-preservation"
+    False
+  }
 }

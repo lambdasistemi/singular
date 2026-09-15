@@ -1,7 +1,7 @@
 { pkgs, checks }:
 let
   runnable = {
-    inherit (checks) cage-tests cage-tests-e2e cage-test-vectors lint;
+    inherit (checks) cage-tests record-value-tests cage-tests-e2e cage-test-vectors lint;
   };
 in
 builtins.mapAttrs

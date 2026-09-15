@@ -1,0 +1,30 @@
+{
+  "for-a-names-controller": [
+    {
+      "text": "Wallet change must not disable recovery or retirement. Insert fold creates a record with ADA and one representative. Maintain and recover preserve every token policy, name and quantity. ADA may increase. The diagram follows a clean record through maintenance, recovery and custody, with an extra token causing refusal.",
+      "pause": 400
+    }
+  ],
+  "when-a-value-is-refused": [
+    {
+      "text": "Record value preservation means a continuation changed its tokens or reduced ADA. Keep wallet change separate. Record single asset identifies an invalid input shape or insert-fold output. The compiled validator retains these diagnostic names, and the runners inspect every policy. Existing polluted records remain maintainable only with unchanged tokens; this repair cannot recover or retire them.",
+      "pause": 400
+    }
+  ],
+  "deployment-compatibility": [
+    {
+      "text": "The application validator hash changes as recorded in the regenerated script identity manifest. Its spending and minting purposes share that hash. Other unapplied hashes stay the same, but the next deployment must derive addresses and applied policies with the new application parameter. Existing records and deployment manifests are not migrated; no preprod deployment is included.",
+      "pause": 400
+    }
+  ],
+  "checks-and-model-boundary": [
+    {
+      "text": "Run the record value test recipe from offchain for a positive maintenance control and named refusals against the production blueprint. These are component fixtures, not submitted transactions. Naming flake checks cover Aiken and identity; root CI covers model, simulator, browser and documentation. Lean is unchanged, and the correspondence table records the single-representative refinement.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "record-value.md",
+    "sha256": "407b7a2dfe66d89854fef9ce9afdc3a00c18464143fee2a367a8b51a16b1db5f"
+  }
+}
