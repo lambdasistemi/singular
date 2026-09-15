@@ -94,6 +94,7 @@ import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word32)
 import System.Environment (getArgs, getEnvironment)
+import System.Directory (createDirectoryIfMissing)
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcess)
@@ -263,6 +264,7 @@ echoKoios evDir tag raw = case runMode of
     External _ -> do
         let cborPath = evDir </> ("tx-" <> tag <> ".cbor")
             koiosPath = evDir </> ("tx-" <> tag <> ".koios.txt")
+        createDirectoryIfMissing True evDir
         BS.writeFile cborPath raw
         r <-
             try
