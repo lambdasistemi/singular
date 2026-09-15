@@ -1715,8 +1715,12 @@ rowLX01ValidAccept env spelling = do
 {- | The slot the completion fold must land before: the completion
 request's own process deadline (A-003; the request validator folds a
 request as accepted only in phase 1).
+
+@Nothing@ when the node cannot convert the deadline — a @PastHorizon@
+forecast means the deadline lies beyond the horizon the node can
+express, so the tip cannot be past it and the guard does not refuse.
 -}
-completionDeadline :: Env -> TxOut ConwayEra -> IO SlotNo
+completionDeadline :: Env -> TxOut ConwayEra -> IO (Maybe SlotNo)
 completionDeadline env reqOut = do
     submittedAt <- case extractCageDatum reqOut of
         Just (RequestDatum r) -> pure (requestSubmittedAt r)
@@ -1725,7 +1729,11 @@ completionDeadline env reqOut = do
     processTime <- case extractCageDatum stateOut of
         Just (StateDatum st) -> pure (stateProcessTime st)
         _ -> failWith "OV-complete: the state UTxO carries no state datum"
-    Cage.posixMsToSlot (envProv env) (submittedAt + processTime)
+    r <-
+        try
+            (Cage.posixMsToSlot (envProv env) (submittedAt + processTime))
+            :: IO (Either SomeException SlotNo)
+    pure (either (const Nothing) Just r)
 
 rowOVComplete :: Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ConwayTx
 rowOVComplete env custody reqUtxo@(_, reqOut) feeUtxo = do
@@ -1738,18 +1746,21 @@ rowOVComplete env custody reqUtxo@(_, reqOut) feeUtxo = do
     -- deadline (validator in_phase1). Refuse to build once the tip is
     -- past it — an expired request is phase 3 and the fold can only
     -- ever be refused.
-    deadline <- completionDeadline env reqOut
+    mDeadline <- completionDeadline env reqOut
     tip <- currentTipSlot
-    unless (tip < deadline) $
-        failWith
-            ( "OV-complete: the completion window is already behind the tip: "
-                <> "process deadline slot "
-                <> show deadline
-                <> ", tip slot "
-                <> show tip
-                <> " — the request is phase 3 (rejectable), refusing to \
-                   \build an accept fold that cannot land"
-            )
+    case mDeadline of
+        Just deadline
+            | tip >= deadline ->
+                failWith
+                    ( "OV-complete: the completion window is already behind the tip: "
+                        <> "process deadline slot "
+                        <> show deadline
+                        <> ", tip slot "
+                        <> show tip
+                        <> " — the request is phase 3 (rejectable), refusing to \
+                           \build an accept fold that cannot land"
+                    )
+        _ -> pure ()
     (stateIn, stateOut) <- queryRetirementState env
     rootBefore <- chainRetirementRoot env
     (unsigned, _newRoot) <-
