@@ -385,3 +385,16 @@ spec = do
                                         OnChainTxOutRef txId2 0
                                  in deriveAssetName ref1
                                         =/= deriveAssetName ref2
+
+    describe "requestPhase" $
+        describe "with the fixed boundaries accept=100, retract=200" $ do
+            it "folds the request as accepted before the process deadline" $
+                requestPhase 100 200 50 `shouldBe` PhaseAccept
+            it "retracts inside the retract window" $
+                requestPhase 100 200 150 `shouldBe` PhaseRetract
+            it "rejects once the retract deadline has passed" $
+                requestPhase 100 200 300 `shouldBe` PhaseReject
+            it "treats the accept deadline slot itself as too late to accept" $
+                requestPhase 100 200 100 `shouldBe` PhaseRetract
+            it "treats the retract deadline slot itself as rejectable" $
+                requestPhase 100 200 200 `shouldBe` PhaseReject

@@ -26,6 +26,8 @@ module Singular.Registry.Types (
     -- * On-chain domain types
     OnChainTokenId (..),
     OnChainOperation (..),
+    RequestPhase (..),
+    requestPhase,
     OnChainRoot (..),
     OnChainRequest (..),
     OnChainTokenState (..),
@@ -44,6 +46,7 @@ module Singular.Registry.Types (
 ) where
 
 import Data.ByteString (ByteString)
+import Cardano.Ledger.BaseTypes (SlotNo (..))
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal (
     BuiltinByteString (..),
@@ -149,6 +152,43 @@ data OnChainTokenState = OnChainTokenState
     -- must withdraw exactly this script.
     }
     deriving stock (Show, Eq)
+
+-- ---------------------------------------------------------
+-- Request phase (A-002): what a request's age allows
+-- ---------------------------------------------------------
+
+{- | The action a registry request's age allows at a chain tip.
+
+Mirrors @onchain/validators/shared.ak@: a request is foldable as
+accepted while the tip is before @submitted_at + process_time@
+(phase 1), retractable by its owner before @submitted_at +
+process_time + retract_time@ (phase 2), and rejectable by any
+permissionless fold afterwards (phase 3).
+-}
+data RequestPhase = PhaseAccept | PhaseRetract | PhaseReject
+    deriving stock (Show, Eq)
+
+{- | Classify a request from its two boundary slots and the live tip.
+
+The boundaries are the slots the builders can express: the accept
+fold's validity upper bound is the process deadline slot, the retract's
+is the retract deadline slot. The comparison is strict, so a phase is
+chosen only while the tip is inside what that phase's builder can
+still build — a window already behind the tip never classifies into
+the phase that would build it.
+-}
+requestPhase ::
+    -- | Last slot an accept fold can carry (process deadline).
+    SlotNo ->
+    -- | Last slot a retract can carry (retract deadline).
+    SlotNo ->
+    -- | The live tip.
+    SlotNo ->
+    RequestPhase
+requestPhase acceptDeadline retractDeadline tip
+    | tip < acceptDeadline = PhaseAccept
+    | tip < retractDeadline = PhaseRetract
+    | otherwise = PhaseReject
 
 -- ---------------------------------------------------------
 -- On-chain-only types (datum / redeemer wrappers)
