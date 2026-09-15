@@ -1,0 +1,36 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "As a name controller, I want wallet change to leave recovery and retirement available. This specification follows issue 146 and the frozen operator acceptance of September fifteenth.",
+      "pause": 400
+    }
+  ],
+  "required-behavior": [
+    {
+      "text": "Maintenance and recovery preserve exactly the non-ADA policies, names and quantities, allowing ADA top-up. An added token refuses as record value preservation. Insert fold creates only the representative and ADA. The diagram shows these preservation steps and the refusal branch before a polluted continuation becomes a record.",
+      "pause": 400
+    }
+  ],
+  "existing-polluted-records": [
+    {
+      "text": "The three reproductions become permanent tests. Polluted recovery and retirement return a named Boolean refusal instead of crashing. Unchanged polluted maintenance remains accepted. This does not repair an old record or migrate an old script output.",
+      "pause": 400
+    }
+  ],
+  "acceptance-and-controls": [
+    {
+      "text": "Boolean refusal tests must fail on a crash. Clean controls accept. Added, removed, replaced and increased tokens refuse, while ADA top-up accepts. Recovery and insert-fold pollution also refuse. A compiled cage test checks names, the suites and CI pass, identity is regenerated, and Haskell readers inspect the complete value.",
+      "pause": 400
+    }
+  ],
+  "model-binding-and-limits": [
+    {
+      "text": "Lean stays at the exact bound repository revision. Its output contains one representative, quantity and scalar value. Naming lifecycle transitions remain authoritative. Multi-asset encoding is the operator-assigned implementation refinement; the correspondence names its enforcement. Fixtures prove component behavior only. No preprod deployment.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "f747843cfc5033967db06f49ae71056f4637b01069449c5c70e4a0ae890dae02"
+  }
+}

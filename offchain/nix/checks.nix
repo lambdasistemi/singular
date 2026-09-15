@@ -20,6 +20,7 @@ in
 {
   library = components.library;
   cage-tests = components.tests.cage-tests;
+  record-value-tests = components.tests.record-value-tests;
   cage-tests-e2e = e2eTestsWrapped;
   cage-test-vectors = components.exes.cage-test-vectors;
   lint = pkgs.writeShellApplication {

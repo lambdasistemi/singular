@@ -519,6 +519,20 @@ executable connected-verifier
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+test-suite record-value-tests
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  default-language: GHC2021
+  hs-source-dirs:   record-value-test
+  main-is:          Main.hs
+  build-depends:
+    , base >=4.14 && <5
+    , bytestring
+    , hspec
+    , plutus-core
+    , plutus-ledger-api
+    , singular-registry
+
 test-suite cage-tests
   import:           warnings
   type:             exitcode-stdio-1.0
@@ -534,6 +548,7 @@ test-suite cage-tests
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
+    Naming.RecordValueSpec
   build-depends:
     , base               >=4.14 && <5
     , cardano-ledger-api

@@ -14,6 +14,7 @@ nav:
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
   - Recovery and retirement: docs/recovery-retirement.md
+  - Record value and recovery: docs/record-value.md
   - Run against your own preprod node: docs/consumer-onboarding.md
   - The preprod record: docs/preprod.md
   - Executable candidate:

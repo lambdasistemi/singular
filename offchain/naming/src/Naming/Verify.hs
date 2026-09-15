@@ -22,11 +22,23 @@ module Naming.Verify (
     positiveMintPolicy,
     verifyRetireEvidence,
     verifyCompletion,
+    singleNamingToken,
 ) where
 
 import Data.ByteString (ByteString)
 
 import Naming.Register (overMarkerFor, representativeName)
+
+-- | Read one naming token from complete non-ADA value triples. The caller
+-- supplies the deployment's allowed approval and representative policies.
+singleNamingToken ::
+    [ByteString] ->
+    [(ByteString, ByteString, Integer)] ->
+    Either String (ByteString, Integer)
+singleNamingToken policies assets =
+    case assets of
+        [(policy, name, quantity)] | policy `elem` policies -> Right (name, quantity)
+        _ -> Left "record-single-asset"
 
 {- | One retired record, fully resolved to plain evidence. Every hash
 is raw bytes as found in bodies or public lines — never a runner

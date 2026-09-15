@@ -1,0 +1,18 @@
+{
+  "prevent-new-pollution-and-diagnose-old-pollution": [
+    {
+      "text": "The specification, tests, validator repair, Haskell readback, compiled checks, identity and documentation are complete for submission. Local checks pass. Independent audit, remote checks and merge remain pending.",
+      "pause": 400
+    }
+  ],
+  "dependency-order": [
+    {
+      "text": "Specification precedes tests, tests precede repair, and code precedes regenerated identity and verification. The frozen candidate precedes the external audit. PASS and finished remote checks precede merge. No parallel agents.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "8d4f90f3bf15ff315107670b4e5caa026e9faa59733644c0cb093a6073199b09"
+  }
+}

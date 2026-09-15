@@ -2,6 +2,13 @@
 develop:
     nix develop
 
+# Execute the production naming blueprint with accepted/refused value contexts.
+record-value-test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+    NAMING_BLUEPRINT="$blueprint" nix run --quiet .#record-value-tests
+
 # Build Haskell cage library
 haskell-build:
     nix develop --command cabal build -O0 all

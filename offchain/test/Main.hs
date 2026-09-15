@@ -8,6 +8,7 @@ import Singular.Registry.TypesSpec qualified
 import Naming.CompleteVerifySpec qualified
 import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
+import Naming.RecordValueSpec qualified
 import Test.Hspec (hspec)
 
 main :: IO ()
@@ -20,3 +21,4 @@ main = hspec $ do
     Naming.CompleteVerifySpec.spec
     Naming.RegisterSpec.spec
     Naming.RetireVerifySpec.spec
+    Naming.RecordValueSpec.spec

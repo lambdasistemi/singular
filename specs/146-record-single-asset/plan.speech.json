@@ -1,0 +1,30 @@
+{
+  "outcome-and-authority": [
+    {
+      "text": "Deliver one repair slice that keeps a clean record recoverable and retirable. Follow the frozen specification and constitution; keep the bound Lean revision unchanged.",
+      "pause": 400
+    }
+  ],
+  "implementation": [
+    {
+      "text": "First add permanent tests, requiring Boolean refusals so crashes fail. Then compare complete non-ADA values, handle malformed cardinality before extraction, preserve maintenance and recovery, and enforce the genuine insert-fold output. The diagram orders tests, repair, Haskell checking, compiled identity, documentation, CI, independent audit and merge.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Exact token equality allows ADA top-up while forbidding additions and quantity changes. Named false values diagnose malformed records. Insert-fold checking establishes the invariant, and unchanged polluted maintenance preserves the issue reproduction verdict.",
+      "pause": 400
+    }
+  ],
+  "verification-and-delivery": [
+    {
+      "text": "Retain behavioral RED and GREEN evidence. Run Aiken, Haskell and compiled identity checks, root CI and presentation checks. The draft PR records model correspondence, hashes and limits. Stop for external blind audit; merge only after PASS and completed remote checks. One worker, no comments, no Lean edits or preprod deployment.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "589b4ca7eed81df44f4bbf42b48656ea046125a9b51631c23947217ba865219f"
+  }
+}

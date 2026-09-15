@@ -1923,3 +1923,250 @@ test retire_without_representative_witness_refuses() fail {
     transaction.Transaction { ..base, withdrawals: [] },
   )
 }
+
+// Permanent second-asset regression controls.
+const extra_policy = #"ffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544"
+
+fn extra_token(value) { add(value, extra_policy, "junk", 1) }
+
+test t146_lr01_with_extra_token_refuses() {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), extra_token(recovery_record_value()))],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        extra_token(recovery_record_value()),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_lt01_with_extra_token_refuses() {
+  let source = retirement_source()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
+    self_ref,
+    retirement_tx(
+      [
+        claim_input(fixtures.as_datum(source), extra_token(retirement_claim_value())),
+        fixtures.state_input(),
+      ],
+      [retirement_custody_output(extra_token(retirement_claim_value()))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_lm01_with_extra_token_accepts() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), extra_token(record_value))],
+      [continuation_output(fixtures.as_datum(maintained), extra_token(record_value))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_extra_token_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), record_value)],
+      [continuation_output(fixtures.as_datum(maintained), extra_token(record_value))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_lovelace_topup_accepts() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), record_value)],
+      [continuation_output(fixtures.as_datum(maintained), from_lovelace(deposit + 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_lovelace_reduction_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), record_value)],
+      [continuation_output(fixtures.as_datum(maintained), from_lovelace(deposit - 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_addition_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(maintained), add(recovery_record_value(), extra_policy, "junk", 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_same_policy_addition_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(maintained), add(recovery_record_value(), app_policy, "junk", 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_quantity_increase_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(maintained), add(recovery_record_value(), app_policy, recovery_rep, 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_removal_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(maintained), record_value)],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_maintain_replacement_refuses() {
+  let source = source_record()
+  let maintained = fixtures.maintained_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Maintain,
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(fixtures.as_datum(maintained), add(record_value, extra_policy, recovery_rep, 1))],
+      [controller],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_recover_extra_token_refuses() {
+  let source = recovery_source()
+  let successor = recovery_successor()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Recover {
+      revealed_control: recovery_revealed,
+      representatives: [recovery_rep],
+      registry: app_policy,
+    },
+    self_ref,
+    tx(
+      [claim_input(fixtures.as_datum(source), recovery_record_value())],
+      [continuation_output(
+        fixtures.as_datum(successor),
+        extra_token(recovery_record_value()),
+      )],
+      [recovery_revealed_hash],
+      zero,
+      [],
+    ),
+  )
+}
+
+test t146_fold_extra_token_refuses() {
+  let source = source_record()
+  !application.application.spend(
+    Some(fixtures.as_datum(source)),
+    Fold {
+      representatives: [insert_rep_name_mirror()],
+    },
+    self_ref,
+    tx(
+      [
+        claim_input(fixtures.as_datum(source), insert_claim_value()),
+        fixtures.state_input(),
+        spelling_request("alice", expected_rep_name("alice")),
+      ],
+      [continuation_output(fixtures.as_datum(source), extra_token(insert_record_value()))],
+      [],
+      insert_burn(),
+      native_modify(),
+    ),
+  )
+}

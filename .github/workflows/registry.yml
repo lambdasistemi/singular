@@ -77,6 +77,11 @@ jobs:
       - name: Run the naming validator suite and identity check
         working-directory: naming-onchain
         run: nix flake check
+      - name: Check compiled maintenance value refusals
+        working-directory: offchain
+        run: |
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          NAMING_BLUEPRINT="$blueprint" nix run --quiet .#record-value-tests
   blueprint:
     name: Aiken blueprint builds first
     runs-on: nixos
