@@ -293,5 +293,6 @@ request datums — is the next milestone's work, not this release's.
 
 The canonical deployment on preprod — a published registry identity with its
 seed reference, applied script hashes, policy identifiers and bootstrap
-transactions — is recorded separately once it exists, from real values. Nothing
+transactions — is recorded with its verifier output, journey transactions
+and mirror on [the preprod record](preprod.md), from real values. Nothing
 here publishes or claims a canonical identity; each run stands up its own.

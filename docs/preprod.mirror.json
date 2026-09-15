@@ -1,0 +1,45 @@
+{
+    "mirrorTries": [
+        {
+            "mtJournal": [],
+            "mtKv": [
+                [
+                    "0040dc4c9d31327a3d750d9659d5e2234b8a178eb475eb2e402cb2f87149fab6d125",
+                    "7e2785d793ebfb2b0f810a75a149f145c533ede13af432acc9f46c1701bb30ec"
+                ],
+                [
+                    "0040de7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c",
+                    "f32b3c3025868db86c40b5f7d278bf4671d0956bc347b3441466ed0b0a19cc24"
+                ],
+                [
+                    "0040e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c",
+                    "beb12cbce48da18b1ac4b6cbfac21b3d3b6f293fafa746ce05d3e752ac289a15"
+                ]
+            ],
+            "mtMetrics": [],
+            "mtMpf": [
+                [
+                    "0000",
+                    "00000020b203676facaa35f6fa5fdb8c7373595f52715f3af335fc201bcac96bacfa329b00"
+                ],
+                [
+                    "0001d0",
+                    "000000202f0beff9d3d13df0d92f01c5d704ec0daa7ca61cf3ad38c9da0da536817d0aee00"
+                ],
+                [
+                    "0001e0",
+                    "003f11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c00020beb12cbce48da18b1ac4b6cbfac21b3d3b6f293fafa746ce05d3e752ac289a1501"
+                ],
+                [
+                    "0002dc",
+                    "003e4c9d31327a3d750d9659d5e2234b8a178eb475eb2e402cb2f87149fab6d12500207e2785d793ebfb2b0f810a75a149f145c533ede13af432acc9f46c1701bb30ec01"
+                ],
+                [
+                    "0002de",
+                    "003e7e424a988efea4c02a178947ced9dc6215a05a4bb31a93b5dcb476b65c3a7c0020f32b3c3025868db86c40b5f7d278bf4671d0956bc347b3441466ed0b0a19cc2401"
+                ]
+            ],
+            "mtToken": "bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778"
+        }
+    ]
+}
