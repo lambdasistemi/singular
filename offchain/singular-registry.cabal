@@ -16,6 +16,8 @@ maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
 
+data-files: test/fixtures/mirror-before-checkpoints.json
+
 common warnings
   ghc-options:
     -Wall -Werror -Wunused-imports -Wunused-packages
@@ -531,6 +533,8 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Paths_singular_registry
+    Singular.Registry.MirrorSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeSpec
@@ -538,7 +542,12 @@ test-suite cage-tests
     Naming.CompleteVerifySpec
     Naming.RegisterSpec
     Naming.RetireVerifySpec
+  autogen-modules: Paths_singular_registry
   build-depends:
+    , mts:mpf-write
+    , containers
+    , temporary
+    , unix
     , base               >=4.14 && <5
     , base16-bytestring
     , bytestring
@@ -559,10 +568,16 @@ test-suite e2e-tests
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
+    Singular.Registry.E2E.Constructors
     Singular.Registry.E2E.FollowerSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
   build-depends:
+    , unix
+    , chain-follower
+    , template-haskell
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
     , async
     , base
     , base16-bytestring
@@ -582,7 +597,7 @@ test-suite e2e-tests
     , plutus-tx
     , microlens
     , mts:mpf-write
-    , ouroboros-network
+    , ouroboros-network:api
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N

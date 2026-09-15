@@ -5,7 +5,7 @@ One slice: `S-follower` — rebuild the registry mirror from the chain.
 Checked means demonstrated by an executable check on the candidate, not
 written. Unchecked items are open work, not pending paperwork.
 
-## Landed in candidate 112d20c52c276012541f71b2926018b6f64a9cbc
+## Landed in the audited candidate
 
 - [x] T-checkpoint: compatible optional mirror checkpoint plus bounded request/state replay data; legacy `saveMirror` invalidates the checkpoint rather than silently advancing it.
 - [x] T-follower: `Singular.Registry.Follower` over the pinned chain-follower and node chain-sync adapter — bootstrap identity, request outputs, state spends, `Modify` actions, per-fold root.
@@ -17,9 +17,9 @@ written. Unchecked items are open work, not pending paperwork.
 - [x] T-onboarding: onboarding page's "second machine" paragraph replaced by the `follow` command, speech restamped.
 - [x] T-speckit-restore: `spec.md` authored and `plan.md` reconciled with a per-requirement verification-state table. Ticket-owner-owned; not an implementation claim and not retroactive validation of earlier work.
 
-## Open — adjudicated repair batch (submission 2)
+## Open repair batch
 
-Batch: `ticket-107/team-owner/handoffs/REPAIR-BATCH.md` sha256
+Adjudicated repair batch, submission 2. Batch: `ticket-107/team-owner/handoffs/REPAIR-BATCH.md` sha256
 `02d2aac4a739995b0eea8a5fd472e5d4c68b7ca47c74ef90001030a28ba023fe`.
 Each carries its failing and passing criterion there.
 
@@ -31,9 +31,9 @@ Each carries its failing and passing criterion there.
 - [ ] T-RB-06: decide the mirror file mode (0644 restored, or 0600 kept deliberately) and assert it in the gate.
 - [ ] T-RB-07: leave the manifest schema untouched. F-02 is recorded, not implemented, and remains open — see the acceptance dependencies below.
 
-## Open acceptance dependencies — not closed by this ticket, and not waived
+## Open acceptance dependencies
 
-Desk A-001: recording a deviation closes the documentation task only. It
+These are not closed by this ticket and are not waived. Desk A-001: recording a deviation closes the documentation task only. It
 does not close the requirement or its blocking finding. Both items below
 stay OPEN in the final disposition even if every in-scope repair passes.
 

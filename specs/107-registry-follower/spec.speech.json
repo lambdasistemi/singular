@@ -1,0 +1,36 @@
+{
+  "rebuild-the-registry-mirror-from-the-chain": [
+    {"text": "This specification describes rebuilding a registry's proof mirror from the chain alone, so a writer needs only the deployment manifest and a node socket.", "pause": 400}
+  ],
+  "who-this-is-for": [
+    {"text": "The reader is a writer attaching on a second machine that has never held the mirror file, and who wants to submit a fold without asking a colleague to copy one.", "pause": 400}
+  ],
+  "why-it-is-needed": [
+    {"text": "Proving a key against the current root needs the whole trie. Carrying that trie as a file beside the manifest is correct for one machine and is exactly what strands the second. The chain already holds every fold, so the registry token's spending chain can rebuild the trie from the node instead.", "pause": 450}
+  ],
+  "what-you-can-do": [
+    {"text": "The follow command walks the registry token's spending chain. Every spend of the state output is a fold: the consumed request datums carry key, value and operation, and replaying those into a fresh trie reconstructs the registry.", "pause": 400},
+    {"text": "At the tip the rebuilt root is compared with the root in the live state output, and the mirror is written only if they are equal. Rebuild during attach repairs a missing or mismatched mirror, and a recorded checkpoint lets a later run resume instead of replaying from the start.", "pause": 450}
+  ],
+  "what-you-see-when-it-is-refused": [
+    {"text": "Every refusal names its intended condition, and a generic exception is a defect. The follower refuses rather than publishing bytes it cannot justify, and any existing mirror is left untouched.", "pause": 400}
+  ],
+  "requirements": [
+    {"text": "Nine requirements are taken from the frozen issue: follow from the bootstrap over chain sync, replay each fold preserving insert, update, delete and rejected no-change effects, verify root equality before writing, add rebuild to attach, resume from a recorded point, stay backward compatible, write atomically, test on a devnet in continuous integration, and replace the onboarding page's second machine paragraph.", "pause": 500}
+  ],
+  "invariants": [
+    {"text": "Six invariants state what must hold and how each one fails: a mirror is published only at the confirmed root, replay reproduces every operation the module handles, every named refusal detects its condition while preserving the existing file, resuming matches a full replay, an older mirror still loads, and an interrupted write leaves the previous bytes intact.", "pause": 450},
+    {"text": "Replay does not re-derive custody, authorization, refunds or witness validity. Ledger acceptance owns those, and the follower observes transactions the ledger has already accepted.", "pause": 400}
+  ],
+  "observable-success": [
+    {"text": "Given only a manifest and a node socket on a machine with no mirror, the follow command writes a mirror whose root equals the root at the chain tip, and a fold submitted immediately afterwards is accepted.", "pause": 400}
+  ],
+  "out-of-scope": [
+    {"text": "The adaptive multi-batch folder, the naming executable, the deposit price rule, any external indexer service, and any change to validator semantics are all outside this ticket.", "pause": 400}
+  ]
+,
+  "_source": {
+    "file": "spec.md",
+    "sha256": "3a96890518a5b54a0d96bccdd5dbcc7435666ab007500de31fd45b3100734cc6"
+  }
+}

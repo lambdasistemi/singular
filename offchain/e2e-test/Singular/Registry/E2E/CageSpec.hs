@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -42,7 +41,33 @@ import Cardano.Ledger.Mary.Value (
  )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-
+import Cardano.Node.Client.E2E.Devnet (
+    withCardanoNode,
+ )
+import Cardano.Node.Client.E2E.Setup (
+    addKeyWitness,
+    genesisAddr,
+    genesisDir,
+    genesisSignKey,
+ )
+import Cardano.Node.Client.N2C.Connection (
+    newLSQChannel,
+    newLTxSChannel,
+    runNodeClient,
+ )
+import Cardano.Node.Client.N2C.Provider (
+    mkN2CProvider,
+ )
+import Cardano.Node.Client.N2C.Submitter (
+    mkN2CSubmitter,
+ )
+import Cardano.Node.Client.Provider qualified as N2C
+import Cardano.Node.Client.Submitter (
+    SubmitResult (..),
+    Submitter (..),
+ )
+import Cardano.Tx.Ledger (ConwayTx)
+import Ouroboros.Network.Magic (NetworkMagic (..))
 import Singular.Registry.Blueprint (
     extractCompiledCode,
     loadBlueprint,
@@ -87,33 +112,6 @@ import Singular.Registry.TxBuilder.Update (
     updateTokenImpl,
  )
 import Singular.Registry.Types (OnChainTxOutRef)
-import Cardano.Node.Client.E2E.Devnet (
-    withCardanoNode,
- )
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
- )
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (
-    mkN2CProvider,
- )
-import Cardano.Node.Client.N2C.Submitter (
-    mkN2CSubmitter,
- )
-import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (
-    SubmitResult (..),
-    Submitter (..),
- )
-import Cardano.Tx.Ledger (ConwayTx)
-import Ouroboros.Network.Magic (NetworkMagic (..))
 
 {- | Full cage protocol E2E test spec.
 Skips when @REGISTRY_BLUEPRINT@ is not set.
@@ -292,10 +290,10 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
-    -- No End / Sweep / staking cases: termination, migration and seizure
-    -- refuse for every party under the ownerless ruling (NOTE-028/A-003).
-    -- That refusal evidence, with success controls, lives in repair-rows
-    -- (ownerless-end/migration/sweep, receipted) instead of here.
+-- No End / Sweep / staking cases: termination, migration and seizure
+-- refuse for every party under the ownerless ruling (NOTE-028/A-003).
+-- That refusal evidence, with success controls, lives in repair-rows
+-- (ownerless-end/migration/sweep, receipted) instead of here.
 
 withBootedCage ::
     (CageConfig -> CageConfig) ->
@@ -428,8 +426,9 @@ withE2E ::
     SBS.ShortByteString ->
     -- | Unparameterized request compiled-code bytes
     SBS.ShortByteString ->
-    -- | Unparameterized consumer compiled-code bytes (the consumer
-    -- takes no parameters — NOTE-021).
+    {- | Unparameterized consumer compiled-code bytes (the consumer
+    takes no parameters — NOTE-021).
+    -}
     SBS.ShortByteString ->
     ( FilePath ->
       CageConfig ->

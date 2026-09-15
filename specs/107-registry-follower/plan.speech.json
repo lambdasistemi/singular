@@ -13,8 +13,24 @@
       "pause": 500
     }
   ],
+  "slices": [
+    {
+      "text": "The slice runs in owner mode. A separate accountable implementer owns the change, the ticket owner authors the mandate and accepts without writing behaviour, and an independent reviewer audits the candidate and the gates before trunk.",
+      "pause": 400
+    }
+  ],
+  "verification-state": [
+    {
+      "text": "This table records what the audited candidate actually demonstrates, so no reader mistakes a written intention for an enforced one. Root equality, checkpoint resume and atomic writing are verified. Following from the bootstrap carries an open deviation, only the insert replay arm is exercised, rebuild and genuine legacy loading are unexercised, and continuous integration covers the devnet check but not the offchain unit suite or the formatter.",
+      "pause": 500
+    },
+    {
+      "text": "Eighteen named refusals ship and one has an executable control. Preprod remains blocked pending a verified milestone handoff and writer release, so the frozen preprod observation has no evidence.",
+      "pause": 450
+    }
+  ],
   "_source": {
     "file": "plan.md",
-    "sha256": "e7ff560380fd10a0b012cb678a59e51053e0600ef08612de71e9ca2283ba60e1"
+    "sha256": "462cbafabdeec1a775512ce6d100880db11435aea1624ebc64cad20767d3a243"
   }
 }

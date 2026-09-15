@@ -16,12 +16,15 @@ only after its root agrees with a current node query.
 module Singular.Registry.Follower (
     FollowResult (..),
     followDeployment,
+    FollowSource (..),
+    nodeSource,
+    followDeploymentWith,
     rebuildIfNeeded,
     attachRebuilding,
 ) where
 
 import Control.Concurrent.Async (race)
-import Control.Exception (throwIO)
+import Control.Exception (SomeAsyncException, SomeException, catch, displayException, fromException, throwIO)
 import Control.Monad (foldM, unless, void, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -143,19 +146,61 @@ hex :: ByteString -> Text
 hex = T.pack . BC.unpack . B16.encode
 
 unhex :: Text -> IO ByteString
-unhex = either (const (failFollow "invalid checkpoint hex")) pure . B16.decode . BC.pack . T.unpack
+unhex = either (const (failFollow "checkpoint-decode: invalid hex")) pure . B16.decode . BC.pack . T.unpack
 
 -- | Rebuild from a manifest and node socket; no signing key is used.
 followDeployment :: FilePath -> FilePath -> IO FollowResult
-followDeployment = followDeploymentFrom False
+followDeployment = followDeploymentWith nodeSource
 
-followDeploymentFrom :: Bool -> FilePath -> FilePath -> IO FollowResult
-followDeploymentFrom fromBootstrap manifest socket = do
+{- | Transport boundary. Injected sources drive the same replay/reset and
+publication path as the real node; they do not supply computed roots.
+-}
+data FollowSource = FollowSource
+    { followChain :: Intersector BlockPoint Network.SlotNo Block -> [BlockPoint] -> IO ()
+    , currentOutputs :: TxIn -> IO (Maybe (Map.Map TxIn (TxOut ConwayEra)))
+    -- ^ Nothing means a disconnected query client, not an empty UTxO result.
+    }
+
+nodeSource :: Deployment -> FilePath -> FollowSource
+nodeSource dep socket = FollowSource run query
+  where
+    magic = NetworkMagic (depNetworkMagic dep)
+    run intersector points = do
+        let epochSlots = EpochSlots (if depNetworkMagic dep == 42 then 42 else 21600)
+        outcome <- runChainSyncN2C epochSlots magic socket (finiteClient intersector points)
+        either throwIO pure outcome
+    query stateRef = do
+        lsq <- newLSQChannel 16
+        submit <- newLTxSChannel 16
+        queried <-
+            race (runNodeClient magic socket lsq submit) $
+                Node.queryUTxOByTxIn (mkN2CProvider lsq) (Set.singleton stateRef)
+        case queried of
+            Left (Left err) -> throwIO err
+            Left (Right ()) -> pure Nothing
+            Right rows -> pure (Just rows)
+
+-- Preserve already classified follower errors and asynchronous cancellation.
+-- Only boundary failures acquire the checkpoint/network diagnostic prefix.
+namedBoundary :: String -> IO a -> IO a
+namedBoundary name action =
+    action `catch` \(err :: SomeException) ->
+        case fromException err :: Maybe SomeAsyncException of
+            Just _ -> throwIO err
+            Nothing
+                | "registry-follow:" `T.isInfixOf` T.pack (displayException err) -> throwIO err
+                | otherwise -> failFollow (name <> ": " <> displayException err)
+
+followDeploymentWith :: (Deployment -> FilePath -> FollowSource) -> FilePath -> FilePath -> IO FollowResult
+followDeploymentWith = followDeploymentFrom False
+
+followDeploymentFrom :: Bool -> (Deployment -> FilePath -> FollowSource) -> FilePath -> FilePath -> IO FollowResult
+followDeploymentFrom fromBootstrap sourceFor manifest socket = do
     dep <- readDeployment manifest
     tok <- deploymentToken dep
-    saved <- if fromBootstrap then pure Nothing else loadReplayCheckpoint manifest
+    saved <- if fromBootstrap then pure Nothing else namedBoundary "checkpoint-decode" (loadReplayCheckpoint manifest)
     initial <- case saved of
-        Just cp | cpDeployment cp == dep -> restoreReplay manifest tok cp
+        Just cp | cpDeployment cp == dep -> namedBoundary "checkpoint-decode" (restoreReplay manifest tok cp)
         _ -> freshReplay
     ref <- newIORef initial
     let restart = do
@@ -182,30 +227,16 @@ followDeploymentFrom fromBootstrap manifest socket = do
                             _ <- restart
                             pure (Reset intersector)
                 }
-        magic = NetworkMagic (depNetworkMagic dep)
-        epochSlots = EpochSlots (if depNetworkMagic dep == 42 then 42 else 21600)
-    outcome <-
-        runChainSyncN2C
-            epochSlots
-            magic
-            socket
-            (finiteClient intersector [replayPoint initial])
-    either throwIO pure outcome
+        source = sourceFor dep socket
+    namedBoundary "socket-query" (followChain source intersector [replayPoint initial])
     final <- readIORef ref
     (stateRef, stateOut) <- maybe (failFollow "bootstrap-not-found: registry state was not found from the recorded bootstrap") pure (replayState final)
     db <- readIORef (replayDb final)
     checkRoot db stateOut
     -- Query the exact still-live output: a concurrent fold or rollback
     -- cannot turn the replayed snapshot into an apparently current mirror.
-    lsq <- newLSQChannel 16
-    submit <- newLTxSChannel 16
-    queried <-
-        race (runNodeClient magic socket lsq submit) $
-            Node.queryUTxOByTxIn (mkN2CProvider lsq) (Set.singleton stateRef)
-    utxos <- case queried of
-        Left (Left err) -> throwIO err
-        Left (Right ()) -> failFollow "node disconnected before root verification"
-        Right rows -> pure rows
+    queried <- namedBoundary "socket-query" (currentOutputs source stateRef)
+    utxos <- maybe (failFollow "node-disconnected-before-root-verification") pure queried
     case Map.lookup stateRef utxos of
         Just out | out == stateOut -> checkRoot db out
         _ -> failFollow "chain-moved: replayed registry state is no longer current; rerun follow"
@@ -250,7 +281,7 @@ rebuildIfNeeded manifest socket attached = do
     let db = Map.findWithDefault emptyMPFInMemoryDB (attToken attached) mirrors
     Root local <- getRootFromDb db
     chain <- outputRoot (snd (attStateUtxo attached))
-    when (not exists || local /= chain) (void (followDeploymentFrom True manifest socket))
+    when (not exists || local /= chain) (void (followDeploymentFrom True nodeSource manifest socket))
 
 deploymentToken :: Deployment -> IO TokenId
 deploymentToken dep = do
@@ -292,7 +323,7 @@ encodeOutput = hex . serialize' (eraProtVerLow @ConwayEra)
 decodeOutput :: Text -> IO (TxOut ConwayEra)
 decodeOutput value = do
     raw <- unhex value
-    either (failFollow . ("checkpoint output: " <>) . show) pure (decodeFull' (eraProtVerLow @ConwayEra) raw)
+    either (failFollow . ("checkpoint-decode: output: " <>) . show) pure (decodeFull' (eraProtVerLow @ConwayEra) raw)
 
 outputRoot :: TxOut ConwayEra -> IO ByteString
 outputRoot out = case extractCageDatum out of

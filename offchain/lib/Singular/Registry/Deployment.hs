@@ -659,6 +659,8 @@ saveMirrorWithCheckpoint :: FilePath -> Maybe ReplayCheckpoint -> Map.Map TokenI
 saveMirrorWithCheckpoint manifest checkpoint tries = do
     let path = mirrorPathFor manifest
         bytes = encodePretty (Mirror (map one (Map.toList tries)) checkpoint) <> "\n"
+    -- Deliberately owner-only (0600), including replacement of a formerly
+    -- more permissive mirror. Proof state is local to the following writer.
     bracketOnError
         (openBinaryTempFile (takeDirectory path) (takeFileName path <> ".tmp"))
         (\(tmp, handle) -> hClose handle >> removeFile tmp)

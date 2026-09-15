@@ -56,6 +56,39 @@ concurrency:
   group: blueprint-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  offchain-checks:
+    name: Changed Haskell formatting and HLint execute
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Prove changed-file selection and failed-diff refusal
+        working-directory: offchain
+        run: bash test/lint-selection.sh
+      - name: Execute changed-file formatting and lint
+        working-directory: offchain
+        env:
+          LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$LINT_BASE"
+          if [ -z "$base" ] || [ "$base" = 0000000000000000000000000000000000000000 ]; then
+            base=HEAD^
+          fi
+          bash lint-changes.sh "$base"
+  offchain-unit:
+    name: Whole offchain unit suite executes independently of lint
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Execute the packaged unit suite in its check derivation
+        working-directory: offchain
+        run: nix build -L --no-link .#checks.x86_64-linux.cage-tests
   naming-validators:
     name: Naming validators build, refuse, and match their pinned identity
     runs-on: nixos
@@ -598,3 +631,6 @@ jobs:
       - name: Rebuild, resume and refuse a corrupt mirror on a real devnet
         working-directory: offchain
         run: nix develop --quiet -c just follower-e2e
+      - name: Execute the published follow command and journey --rebuild
+        working-directory: offchain
+        run: bash follower-cli-check.sh

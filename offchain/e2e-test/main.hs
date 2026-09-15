@@ -2,8 +2,8 @@ module Main (main) where
 
 import Test.Hspec (hspec)
 
-import Singular.Registry.E2E.FollowerSpec qualified
 import Singular.Registry.E2E.CageSpec qualified
+import Singular.Registry.E2E.FollowerSpec qualified
 import Singular.Registry.E2E.Fork81Spec qualified
 import Singular.Registry.E2E.NodeSpec qualified
 
