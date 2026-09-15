@@ -37,7 +37,7 @@
   ],
   "deviations": [
     {
-      "text": "No dedicated issue exists; the mandate is the pull request body plus the operator's funding ruling. Two related tickets are referenced but not closed. The retroactive audit passed with one documented residual and no user-visible disagreement, so no question was raised.",
+      "text": "No dedicated issue exists; the mandate is the pull request body plus the operator's funding ruling. Two related tickets are referenced but not closed. The retroactive audit passed with two documented residuals, coverage and U T X O shape, and no user-visible disagreement, so no question was raised.",
       "pause": 400
     }
   ],
@@ -49,6 +49,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "bfc218635b546260f1d08ee1f0d72caaa5f633835a6b4831495cae65a26f3afc"
+    "sha256": "c1511689c8245fad28d8ee5db4c33f73e4617457200916d6c81f254089756604"
   }
 }

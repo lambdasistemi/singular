@@ -80,8 +80,9 @@ which complete their funding preflight before spending.
 
 ## Acceptance (from the shipped PR body)
 
-- `nix develop --quiet -c just ci` green; the final delta is isolated
-  to request funding selection and its regression.
+- `nix develop --quiet -c just ci` green on the docs record; it does
+  not compile offchain Haskell, so it does not bind the funding
+  layer — the layer is bound by the cage-tests rows below.
 - `cabal build -O0 register-rows recovery-rows retirement-rows` and
   `cabal test -O0 cage-tests`: 109 examples, 0 failures, including the
   exact aggregate boundary accept and the excess memory and steps
@@ -104,12 +105,23 @@ actors and actual deposits from live parameters, evaluate execution
 costs before signing, stop any aggregate per-transaction overflow).
 Tickets #102 and #18 are referenced and are not closed by this PR.
 The retroactive audit
-(`/tmp/projects/singular/milestone-1/t-audit/handoffs/audit-122.md`,
-verdict PASS) found the diff matches the PR body claims; its one
-residual — a wallet can pass the lovelace preflight yet fail later on
-a UTxO-shape problem such as a missing ada-only collateral fragment —
-is a documented limit, not a user-visible disagreement. No question
-raised.
+(https://gist.github.com/paolino/97542618ae79c9f9a5653d341664e52d,
+verdict PASS) found the diff matches the PR body claims, with two
+residuals, neither a user-visible disagreement. No question raised.
+
+- UTxO shape: a wallet can pass the lovelace preflight yet fail later
+  on a UTxO-shape problem such as a missing ada-only collateral
+  fragment; the funding check sums lovelace and does not re-check
+  the collateral fragment shape.
+- Coverage: root `just ci` and the GitHub registry jobs do not
+  execute `cage-tests` or `deployment-attach-check.sh --lifecycle`
+  — those are local-only, and magic-42 CI keeps
+  `lifecycleRequested = False` — so the `just ci` line above does
+  not bind the funding layer, and the `--lifecycle` attach-check
+  pass was not independently re-run by the commit audit. The checks
+  that actually bind the layer are the `cage-tests` 109/0 rows,
+  including the exact-boundary accept and the reserved-input mutant
+  kill (expected `[#1]`, got `[#0,#1]`).
 
 ## Limits of this slice
 
