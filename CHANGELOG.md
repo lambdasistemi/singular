@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.6.1](https://github.com/lambdasistemi/singular/compare/v0.6.0...v0.6.1) (2026-09-15)
+
+
+### Fixes
+
+* classify a pending request by phase before resuming it ([58dae70](https://github.com/lambdasistemi/singular/commit/58dae70515a70c69e9d2dca2bc63dfc8762c7542))
+* classify a pending request by phase before resuming it ([9ae4d3f](https://github.com/lambdasistemi/singular/commit/9ae4d3fcc6540fac10ce58f412544ebb2e3436a8))
+* create the evidence directory before the Koios echo writes into it ([fceba9c](https://github.com/lambdasistemi/singular/commit/fceba9c3f2c4f903e72145e51155cc604c1d6e4b))
+* create the evidence directory before the Koios echo writes into it ([447b484](https://github.com/lambdasistemi/singular/commit/447b4844cee43657751d87b316378c3cf6fee4cc))
+* deploy window parameters; complete retirement inside its window ([c27c3dd](https://github.com/lambdasistemi/singular/commit/c27c3dd8ba5aac84732067deb996abd633c88202))
+* deploy window parameters; complete retirement inside its window ([1580d32](https://github.com/lambdasistemi/singular/commit/1580d32c151266f7fb342ae8548a4dc6677c7231))
+* echo every register submission to Koios; gate resume on attached mode ([84d9b17](https://github.com/lambdasistemi/singular/commit/84d9b17287481f1ba1cf6df1a4b51eab335a2537))
+* fund public naming lifecycles from live protocol parameters ([6ab1093](https://github.com/lambdasistemi/singular/commit/6ab1093367e00290a4b74638f03f5ef44b3137e6))
+* fund public naming lifecycles from live protocol parameters ([345658d](https://github.com/lambdasistemi/singular/commit/345658df4231bc2623e77c11ba50d86add03359c))
+* preserve reserved lifecycle inputs during request funding ([e4ae941](https://github.com/lambdasistemi/singular/commit/e4ae94111e02e87f766b75a220c1bad97a76c2ba))
+* **release:** publish version changes and usable archive instructions ([454aec3](https://github.com/lambdasistemi/singular/commit/454aec3858f0aa029d93928f09b5c4447bf49894))
+* **release:** publish version changes and usable archive instructions ([1f85239](https://github.com/lambdasistemi/singular/commit/1f85239ddb5df15b9f0d5e9acd9865ad2f02892d))
+* resume a pending claim and bound confirmation polls by validity window ([4657615](https://github.com/lambdasistemi/singular/commit/46576154450dc1dab70dda92a9d9f0ea7519118d))
+* resume a pending claim and bound confirmation polls by validity window ([b1c453f](https://github.com/lambdasistemi/singular/commit/b1c453f1f57197e58012c6677d657ff44ee47514))
+* run the custody refusal probes before completion on devnet ([01602a4](https://github.com/lambdasistemi/singular/commit/01602a4881747464b3b83f2547e018dfe6b168d9))
+* treat an unforecastable completion deadline as not-yet-passed ([5808d77](https://github.com/lambdasistemi/singular/commit/5808d77e2c19a26db605eae9dbd8aabff68c933c))
+
+
+### Documentation
+
+* **specs:** repair 122 record per audit-123 FAIL (gist link, coverage residual) ([6306c95](https://github.com/lambdasistemi/singular/commit/6306c952acf292afa656b88ddcb741c72cd3d328))
+* **specs:** retroactive record for PR [#106](https://github.com/lambdasistemi/singular/issues/106) persistent deployment ([b63055c](https://github.com/lambdasistemi/singular/commit/b63055ca0f510be7deb9ba7d5376204b139a6cea))
+* **specs:** retroactive record for PR [#106](https://github.com/lambdasistemi/singular/issues/106) persistent deployment ([25c99a1](https://github.com/lambdasistemi/singular/commit/25c99a11fe8442dc0189293ee830753ca5e0ac87))
+* **specs:** retroactive record for PR [#109](https://github.com/lambdasistemi/singular/issues/109) rename script gate ([76105ca](https://github.com/lambdasistemi/singular/commit/76105ca6b8fa9d500a363618611b82cb7f6efc60))
+* **specs:** retroactive record for PR [#109](https://github.com/lambdasistemi/singular/issues/109) rename script gate ([de8f957](https://github.com/lambdasistemi/singular/commit/de8f9577934bcca780fddd7775f81ce43de2ea7d))
+* **specs:** retroactive record for PR [#112](https://github.com/lambdasistemi/singular/issues/112) representative name ([7c5618a](https://github.com/lambdasistemi/singular/commit/7c5618a0ac7759656c90a098f7c3cf56a55aafbb))
+* **specs:** retroactive record for PR [#112](https://github.com/lambdasistemi/singular/issues/112) representative name ([745eaae](https://github.com/lambdasistemi/singular/commit/745eaae9a7d8f9aabdc2e46ad63ac887829b5037))
+* **specs:** retroactive record for PR [#121](https://github.com/lambdasistemi/singular/issues/121) release notes ([bb06044](https://github.com/lambdasistemi/singular/commit/bb060443e8c0812a6528b98bc83b8f5f690b854d))
+* **specs:** retroactive record for PR [#121](https://github.com/lambdasistemi/singular/issues/121) release notes ([9734298](https://github.com/lambdasistemi/singular/commit/97342984b40cd64dde662e92db6241fc4737c498))
+* **specs:** retroactive record for PR [#122](https://github.com/lambdasistemi/singular/issues/122) lifecycle funding ([7fbbb12](https://github.com/lambdasistemi/singular/commit/7fbbb124cb7d78ba7e4f305942a02d2c96ff01ab))
+* **specs:** retroactive record for PR [#122](https://github.com/lambdasistemi/singular/issues/122) lifecycle funding ([437611a](https://github.com/lambdasistemi/singular/commit/437611aab46ffdfd7fb19151b353e2ccac91c9b4))
+* **specs:** speech companions for the 122 lifecycle funding record ([b8586ee](https://github.com/lambdasistemi/singular/commit/b8586ee1241fcdeb07fce5f47f9fcbbce50d05e3))
+
 ## [0.6.0](https://github.com/lambdasistemi/singular/compare/v0.5.0...v0.6.0) (2026-09-14)
 
 
