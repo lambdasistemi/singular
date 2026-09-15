@@ -766,14 +766,23 @@ runOverJourney env recOver = do
     let completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
     (completerFund, _completerColl) <- fundCompleter env completerAddr
     -- A-003: the completion fold must land inside the request's own
-    -- process window. Build and submit it immediately after the retire's
-    -- confirmation; the LO01 custody/pending checks observe the same
-    -- outputs and run once the completion is confirmed.
-    signedComplete <- rowOVComplete env custodyOver reqOver completerFund
-    rowLO01 env signedOverRetire snapOverR
-    unless (envLifecycle env) $ rowOVWithdrawRefused env custodyOver completerAddr
-    unless (envLifecycle env) $ rowOVBurnOnlyRefused env custodyOver
-    rowLO02 env signedComplete snapOverR
+    -- process window. Attached runs build and submit it immediately
+    -- after the retire's confirmation. Devnet keeps its refusal probes
+    -- first — they spend the custody output while it is still live and
+    -- their value is the phase-2 custody refusal, not a spent-input
+    -- refusal — then complete, then the LO01/LO02 custody checks, which
+    -- observe the same outputs either way.
+    case envLifecycle env of
+        False -> do
+            rowOVWithdrawRefused env custodyOver completerAddr
+            rowOVBurnOnlyRefused env custodyOver
+            signedComplete <- rowOVComplete env custodyOver reqOver completerFund
+            rowLO01 env signedOverRetire snapOverR
+            rowLO02 env signedComplete snapOverR
+        True -> do
+            signedComplete <- rowOVComplete env custodyOver reqOver completerFund
+            rowLO01 env signedOverRetire snapOverR
+            rowLO02 env signedComplete snapOverR
 
 data Env = Env
     { envAttached :: Maybe (FilePath, Attached)
