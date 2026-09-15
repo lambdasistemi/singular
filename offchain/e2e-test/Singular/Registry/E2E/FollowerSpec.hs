@@ -17,7 +17,7 @@ import Cardano.Ledger.Plutus.Data (Data (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import ChainFollower (Follower (..), Intersector (..), ProgressOrRewind (..))
 import Control.Concurrent (threadDelay)
-import Control.Monad (forM_, void)
+import Control.Monad (forM_, void, when)
 import Data.Bits ((.&.))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -162,7 +162,7 @@ recoverySpec = it "rebuilds from bootstrap, resumes pending requests, refuses co
                 -- manufactured former branch, never to the replayed chain.
                 let orphan = (T.replicate 64 "f" <> "#0", pendingOutput)
                 saveFollowedMirror manifest validCheckpoint{cpRequests = [orphan]} validMirrors
-                let resetSource dep' sock =
+                let resetSource replay dep' sock =
                         let real = nodeSource dep' sock
                          in real
                                 { followChain = \intersector points -> do
@@ -179,9 +179,12 @@ recoverySpec = it "rebuilds from bootstrap, resumes pending requests, refuses co
                                                 _ -> fail "expected one saved point"
                                             else intersectNotFound intersector
                                     starts `shouldBe` [Network.genesisPoint]
-                                    followChain real next starts
+                                    when replay (followChain real next starts)
                                 }
-                reset <- followDeploymentWith resetSource manifest socket
+                -- Observe discard before a later node rollback can reset a
+                -- second time and mask a disabled intersect/rollback arm.
+                refusesPreserving manifest "bootstrap-not-found" (followDeploymentWith (resetSource False) manifest socket)
+                reset <- followDeploymentWith (resetSource True) manifest socket
                 followedResumed reset `shouldBe` False
                 followedFolds reset `shouldBe` 3
                 followedRoot reset `shouldBe` expected
