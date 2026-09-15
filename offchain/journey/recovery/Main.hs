@@ -117,6 +117,7 @@ import Cardano.Ledger.Api.Tx.Body (
     scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
+import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     coinTxOutL,
@@ -161,6 +162,8 @@ import Singular.Registry.Node (
     awaitChain,
     awaitTx,
     awaitTxId,
+    awaitTxWindow,
+    echoKoios,
     funderAddr,
     funderSignKey,
     withNodeForPlannedFunding,
@@ -509,7 +512,7 @@ runMode mode blueprintPath registryPath = do
                     Submitted _ -> pure ()
                     Rejected reason ->
                         failWith ("consumer-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                _ <- waitConfirmationTx signedReg (txIdHex signedReg <> " (consumer-registration)")
                 emit "consumer" "consumer stake credential registered; hook withdrawals are live"
                 unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
                 let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
@@ -517,7 +520,7 @@ runMode mode blueprintPath registryPath = do
                 case repRegResult of
                     Submitted _ -> pure ()
                     Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
+                _ <- waitConfirmationTx signedRepReg (txIdHex signedRepReg <> " (representative-registration)")
                 emit "representative" "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- if lifecycle then pure [] else splitGenesis prov submit 80
@@ -818,7 +821,7 @@ rowLR01 env snap = do
     when (Set.member (addrWitnessKeyHash (envOldHash env)) (signed ^. bodyTxL . reqSignerHashesTxBodyL)) $
         failWith "LR01: the old controller must not be among the required signers"
     submitAccepted env "LR01" signed
-    _ <- waitConfirmation (txIdHex signed <> " (LR01)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (LR01)")
     contIn <-
         mustFindUTxO (envProv env) (envAppAddr env) (txIdHex signed) "LR01 continuation"
     contSnap <- mustSnap env contIn
@@ -1140,7 +1143,7 @@ rowMaintainRecovered env snap1 = do
     tx <- maintainTx env snap1 maintained [envRevealedHash env]
     let signed = addKeyWitness (mkSignKey revealedSeed) (addKeyWitness genesisSignKey tx)
     submitAccepted env "maintain-recovered" signed
-    _ <- waitConfirmation (txIdHex signed <> " (maintain-recovered)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (maintain-recovered)")
     contIn <-
         mustFindUTxO (envProv env) (envAppAddr env) (txIdHex signed) "maintain-recovered continuation"
     contSnap <- mustSnap env contIn
@@ -1583,7 +1586,7 @@ submitRecoveryRequest env spelling value = do
         Submitted _ -> pure ()
         Rejected reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
+    _ <- waitConfirmationTx signed (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
     reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt env reqAddr reqIn
@@ -1692,7 +1695,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
                 (mkSignKey controllerSeed)
                 (addKeyWitness genesisSignKey evaluatedA)
     submitAccepted env ("setup-" <> label <> "-insert") signedA
-    _ <- waitConfirmation (txIdHex signedA <> " (setup: " <> label <> " claim)")
+    _ <- waitConfirmationTx signedA (txIdHex signedA <> " (setup: " <> label <> " claim)")
     claimIn <-
         mustFindUTxO
             (envProv env)
@@ -1772,7 +1775,7 @@ setupGenuineRecord env controllerSeed controllerHash datum label spelling = do
     Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsignedF
     let signedF = addKeyWitness genesisSignKey unsignedF
     submitAccepted env ("setup-" <> label <> "-fold") signedF
-    _ <- waitConfirmation (txIdHex signedF <> " (setup: " <> label <> " fold)")
+    _ <- waitConfirmationTx signedF (txIdHex signedF <> " (setup: " <> label <> " fold)")
     syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
     when (envLifecycle env) $ forM_ (envAttached env) $ \(path, _) -> saveMirror path =<< envDumpTries env
     rootAfter <- chainRecoveryRoot env
@@ -2068,8 +2071,11 @@ redeemerRecover revealed reps registry =
 -- ---------------------------------------------------------
 
 submitAccepted :: Env -> String -> ConwayTx -> IO ()
-submitAccepted env label signed =
-    submitTx (envSubmit env) signed >>= \case
+submitAccepted env label signed = do
+    evDir <- evidenceDirFromEnv
+    result <- submitTx (envSubmit env) signed
+    echoKoios evDir label (serializeTxBytes signed)
+    case result of
         Submitted _ ->
             emit "submit" (label <> ": accepted tx=" <> txIdHex signed)
         Rejected reason ->
@@ -2098,6 +2104,32 @@ waitConfirmation :: String -> IO ()
 waitConfirmation what = do
     awaitTxId (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
+
+{- | Confirm a transaction the runner still holds, polling until that
+transaction's own validity upper bound expires — not a fixed window.
+-}
+waitConfirmationTx :: ConwayTx -> String -> IO ()
+waitConfirmationTx signed what = do
+    awaitTxWindow signed (take 64 what)
+    emit "confirm" ("confirmed on chain: " <> what)
+
+-- | The evidence directory the run retains its diagnostics in.
+evidenceDirFromEnv :: IO FilePath
+evidenceDirFromEnv = do
+    gateOwned <- lookupEnv "S3_EVIDENCE"
+    smokeOverride <- lookupEnv "S77_EVIDENCE_DIR"
+    case (gateOwned, smokeOverride) of
+        (Just dir, _) -> pure dir
+        (Nothing, Just dir) -> pure dir
+        (Nothing, Nothing) -> do
+            tmpdir <- fromMaybe "/tmp" <$> lookupEnv "TMPDIR"
+            pure (tmpdir ++ "/recovery-evidence")
+
+-- | The signed transaction's exact CBOR bytes, for the Koios echo.
+serializeTxBytes :: ConwayTx -> ByteString
+serializeTxBytes tx = serialize' evidenceVersion tx
+  where
+    evidenceVersion = maxBound
 
 -- ---------------------------------------------------------
 -- Pinned identity

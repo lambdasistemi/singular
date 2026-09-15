@@ -101,6 +101,7 @@ import Data.Coerce (coerce)
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, stripPrefix, sortBy, sortOn)
+import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import MPF.Backend.Pure (MPFInMemoryDB)
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -186,7 +187,8 @@ import Singular.Registry.Node (
     scriptStakeRegistered,
     awaitChain,
     awaitTx,
-    awaitTxId,
+    awaitTxWindow,
+    echoKoios,
     funderAddr,
     funderSignKey,
     withNodeForPlannedFunding,
@@ -664,7 +666,7 @@ runMode mode namingPath registryPath = do
                             Submitted _ -> pure ()
                             Rejected reason ->
                                 failWith ("consumer-registration: rejected: " <> show reason)
-                        _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                        _ <- waitConfirmationTx signedReg (txIdHex signedReg <> " (consumer-registration)")
                         emit "consumer" "consumer stake credential registered; hook withdrawals are live"
                 let stakingScript = scriptFromBytes "staking" stakingBytes
                 stakingRegistered <- scriptStakeRegistered (hashScript stakingScript)
@@ -678,7 +680,7 @@ runMode mode namingPath registryPath = do
                             Submitted _ -> pure ()
                             Rejected reason ->
                                 failWith ("staking-registration: rejected: " <> show reason)
-                        _ <- waitConfirmation (txIdHex signedStakingReg <> " (staking-registration)")
+                        _ <- waitConfirmationTx signedStakingReg (txIdHex signedStakingReg <> " (staking-registration)")
                         emit "consumer" "staking stake credential registered for the swapped-hook control"
                 unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
                 let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
@@ -686,7 +688,7 @@ runMode mode namingPath registryPath = do
                 case repRegResult of
                     Submitted _ -> pure ()
                     Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
+                _ <- waitConfirmationTx signedRepReg (txIdHex signedRepReg <> " (representative-registration)")
                 emit "representative" "representative stake credential registered; retirement witness is live"
         -- The adversarial manager gets its own empty trie, never synced
         -- with the cage: proofs built against it fail on-chain, which is
@@ -1117,7 +1119,7 @@ submitRegistryRequest env spelling value = do
         Rejected reason ->
             failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
+    _ <- waitConfirmationTx signed (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
     reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt (envProv env) reqAddr reqIn
@@ -1283,7 +1285,7 @@ setupNamingClaim env ks = do
     assertOwnerAbsentTx env signed (keyLabel ks <> " insert-request creation")
     submitAccepted env (keyLabel ks <> "-insert-request") signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (" <> keyLabel ks <> " insert-request)")
+    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " insert-request)")
     claimIn <- mustFindUTxO (envProv env) (envAppAddr env) txid (keyLabel ks <> " claim")
     claimLive <- mustOutAt (envProv env) (envAppAddr env) claimIn
     emit
@@ -1308,6 +1310,32 @@ NOTE-001 observation. Returns the fold txid. The trie manager must be
 synced with the chain root (@checkSync@); the adversarial path passes
 a fresh manager with no sync check.
 -}
+{- | A previous run's unfinished insert: the live claim output carrying
+this key's insert approval at the application address, together with
+the live registry request for the same spelling, or nothing. A fresh
+registry has neither, so only a run whose predecessor died between
+requesting and folding takes the resume path.
+-}
+findPendingInsert ::
+    Env ->
+    KeySetup ->
+    IO (Maybe ((TxIn, TxOut ConwayEra), (TxIn, TxOut ConwayEra)))
+findPendingInsert env ks = do
+    let approval = insertApprovalName (keyControlBytes ks) (keyCommitment ks)
+        reqAddr = requestAddrFromCfg (envCfg env) (envTok env) Testnet
+    claims <- Cage.queryUTxOs (envProv env) (envAppAddr env)
+    requests <- Cage.queryUTxOs (envProv env) reqAddr
+    let isClaim utxo =
+            lookupToken (extractSnap utxo) (envAppPolicy env) approval == Just 1
+        isRequest (_, out) = case extractCageDatum out of
+            Just (RequestDatum r) ->
+                requestKey r == keySpelling ks
+                    && requestValue r == OpInsert (keyRepName ks)
+            _ -> False
+    case (List.find isClaim claims, List.find isRequest requests) of
+        (Just claim, Just request) -> pure (Just (claim, request))
+        _ -> pure Nothing
+
 connectedAccept ::
     Env ->
     (Value -> IO ()) ->
@@ -1317,10 +1345,33 @@ connectedAccept ::
     String ->
     IO String
 connectedAccept env record tm ks checkSync rowKind = do
-    (_claimTx, claimIn, _claimOut) <- setupNamingClaim env ks
-    snapClaim <- mustSnap env claimIn
-    _ <- assertQueuedRequest env ks snapClaim
-    (reqIn, reqOut) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+    (snapClaim, claimIn, claimOut, reqIn, reqOut) <- do
+        pending <-
+            if envAttached env
+                then findPendingInsert env ks
+                else pure Nothing -- a devnet run never resumes; only an attached deployment can have a pending claim
+        case pending of
+            Just ((cin, cout), (rin, rout)) -> do
+                snap <- mustSnap env cin
+                _ <- assertQueuedRequest env ks snap
+                emit
+                    "resume"
+                    ( "a live insert request for spelling "
+                        <> show (keySpelling ks)
+                        <> " is already queued at "
+                        <> showIn rin
+                        <> " with its claim at "
+                        <> showIn cin
+                        <> ": folding the pending request instead of \
+                           \creating another claim"
+                    )
+                pure (snap, cin, cout, rin, rout)
+            Nothing -> do
+                (_claimTx, cin, cout) <- setupNamingClaim env ks
+                snap <- mustSnap env cin
+                _ <- assertQueuedRequest env ks snap
+                (rin, rout) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+                pure (snap, cin, cout, rin, rout)
     (stateIn, _stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
@@ -1364,7 +1415,7 @@ connectedAccept env record tm ks checkSync rowKind = do
                 , cfaPp = envPp env
                 , cfaSpends =
                     [ ConnectedSpend
-                        { csUtxo = (claimIn, _claimOut)
+                        { csUtxo = (claimIn, claimOut)
                         , csRedeemer =
                             RawRedeemer (foldRedeemer [repName])
                         , csScript = envAppScript env
@@ -1411,7 +1462,7 @@ connectedAccept env record tm ks checkSync rowKind = do
     retainListings env (keyLabel ks <> "-fold-pre")
     submitAccepted env (keyLabel ks <> "-fold") signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (" <> keyLabel ks <> " fold)")
+    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " fold)")
     -- NOTE-001.3: the mint field carries the APPLIED representative
     -- identity with the expected name at +1.
     assertRepMintedByFold env signed (keySpelling ks) txid (keyLabel ks)
@@ -2140,7 +2191,7 @@ runSupportFold env record = do
     retainListings env "support-fold-pre"
     submitAccepted env "support-fold" signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (support fold)")
+    _ <- waitConfirmationTx signed (txid <> " (support fold)")
     rootAfter <- chainRootHex env
     retainListings env "support-fold-post"
     unless (rootAfter == hex (unRoot newRoot)) $
@@ -3115,7 +3166,7 @@ createWithdrawClaim env ks = do
                 (addKeyWitness (mkSignKey partySeed) tx)
     submitAccepted env (keyLabel ks <> "-withdraw-claim") signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (" <> keyLabel ks <> " withdraw claim)")
+    _ <- waitConfirmationTx signed (txid <> " (" <> keyLabel ks <> " withdraw claim)")
     pure txid
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
@@ -3595,7 +3646,7 @@ runFaultSeededActive env = do
         signed = addKeyWitness (mkSignKey partySeed) tx
     submitAccepted env "fault-seeded-placement" signed
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (fault seeded placement)")
+    _ <- waitConfirmationTx signed (txid <> " (fault seeded placement)")
     emit
         "row"
         ( "fault-seeded-observed: placement "
@@ -4132,9 +4183,14 @@ expectRefusedBy expectedScript mode env rowName modelReason guard signed = do
                     <> guard
                 )
 
-waitConfirmation :: String -> IO ()
-waitConfirmation what = do
-    awaitTxId (take 64 what)
+{- | Confirm a transaction the runner still holds, polling until that
+transaction's own validity upper bound expires — not a fixed window.
+A lost preprod fold was declared dead after five fixed minutes while
+its validity ran eight more; this helper is the repair.
+-}
+waitConfirmationTx :: ConwayTx -> String -> IO ()
+waitConfirmationTx signed what = do
+    awaitTxWindow signed (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------
@@ -4356,6 +4412,7 @@ submitRetain :: Env -> String -> ConwayTx -> IO SubmitResult
 submitRetain env label signed = do
     tag <- retainTx env label signed
     result <- submitTx (envSubmit env) signed
+    echoKoios (envEvDir env) tag (serialize' evidenceVersion signed)
     retainOutcome env tag result signed
     pure result
 
@@ -4364,6 +4421,7 @@ submitRetainAt ::
 submitRetainAt evDir evNext submit label signed = do
     tag <- retainTxAt evDir evNext label signed
     result <- submitTx submit signed
+    echoKoios evDir tag (serialize' evidenceVersion signed)
     retainOutcomeAt evDir tag result signed
     pure result
 

@@ -54,6 +54,11 @@ module Singular.Registry.Node (
     scriptStakeRegistered,
     awaitTx,
     awaitTxId,
+    awaitTxWindow,
+    confirmDeadline,
+    txUpperBoundSlot,
+    nodeIsExternal,
+    echoKoios,
     confirmationDelay,
     withNode,
     withNodeForPlannedFunding,
@@ -69,7 +74,10 @@ module Singular.Registry.Node (
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, poll)
-import Control.Exception (ErrorCall (..), bracket, throwIO)
+import Control.Exception (ErrorCall (..), SomeException, displayException, bracket, throwIO, try)
+import Control.Monad (unless)
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Aeson (eitherDecodeStrict, withObject, (.:))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString (ByteString)
@@ -88,6 +96,8 @@ import Data.Word (Word32)
 import System.Environment (getArgs, getEnvironment)
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
+import System.Process (readProcess)
+import System.FilePath ((</>))
 import Text.Read (readMaybe)
 
 import Codec.Binary.Bech32 qualified as Bech32
@@ -96,10 +106,11 @@ import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
-import Cardano.Ledger.BaseTypes (Network (..), SlotNo, TxIx (..))
+import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
@@ -230,6 +241,50 @@ between this and any other action can change what it reads.
 runMode :: NodeMode
 runMode = unsafePerformIO nodeModeFromEnvironment
 {-# NOINLINE runMode #-}
+
+{- | Whether this process runs against an external (public) node.
+Diagnostics that only make sense off the factory devnet gate on it.
+-}
+nodeIsExternal :: Bool
+nodeIsExternal = case runMode of
+    Devnet -> False
+    External _ -> True
+
+{- | Preprod diagnostic: POST the same transaction bytes to Koios's
+public submittx endpoint and write its verbatim answer next to the
+transaction's retained evidence. The node this process talks to
+remains the only verdict; a Koios refusal, a transport error or a
+missing curl is recorded and never raised. Devnet runs keep no Koios
+echo — the factory devnet has no public endpoint.
+-}
+echoKoios :: FilePath -> String -> ByteString -> IO ()
+echoKoios evDir tag raw = case runMode of
+    Devnet -> pure ()
+    External _ -> do
+        let cborPath = evDir </> ("tx-" <> tag <> ".cbor")
+            koiosPath = evDir </> ("tx-" <> tag <> ".koios.txt")
+        BS.writeFile cborPath raw
+        r <-
+            try
+                ( readProcess
+                    "curl"
+                    [ "-sS"
+                    , "--max-time"
+                    , "30"
+                    , "-X"
+                    , "POST"
+                    , "-H"
+                    , "Content-Type: application/cbor"
+                    , "--data-binary"
+                    , "@" <> cborPath
+                    , "https://preprod.koios.rest/api/v1/submittx"
+                    ]
+                    ""
+                )
+                :: IO (Either SomeException String)
+        case r of
+            Right body -> writeFile koiosPath body
+            Left err -> writeFile koiosPath (displayException err)
 
 -- ---------------------------------------------------------
 -- Wallet
@@ -467,6 +522,14 @@ five-second wait calibrated on the devnet silently becomes a race on
 preprod. This polls for an output the transaction actually created —
 the strongest evidence a local state query carries — and names the
 transaction when it never appears.
+
+The wait is bounded by the transaction's own validity upper bound plus
+a two-minute margin, not by a fixed poll count: a transaction that is
+still valid can still land, and a fixed five-minute window declared a
+healthy preprod fold lost while eight minutes of its validity remained
+(2026-09-14, registry request for spelling "alice"). A transaction
+with no upper bound cannot expire, so the historical fixed window
+stays its only bound.
 -}
 awaitTx :: ConwayTx -> IO ()
 awaitTx tx = do
@@ -485,29 +548,27 @@ awaitTx tx = do
                     <> show txid
                     <> ": it creates no output to observe"
                 )
-    go (nsProvider sess) addr confirmationAttempts
+    deadline <- windowDeadlineFor sess tx
+    pollTx sess addr deadline
   where
     txid = txIdTx tx
-    go _ _ 0 =
-        die
-            ( "transaction "
-                <> show txid
-                <> " was accepted by the node but has not appeared in a \
-                   \block after "
-                <> show (confirmationAttempts * confirmationPollSeconds)
-                <> " seconds"
-            )
-    go prov addr n = do
-        utxos <- Cage.queryUTxOs prov addr
+    pollTx sess addr deadline = do
+        utxos <- Cage.queryUTxOs (nsProvider sess) addr
         if any (\(TxIn i _, _) -> i == txid) utxos
             then pure ()
             else do
-                threadDelay (confirmationPollSeconds * 1_000_000)
-                go prov addr (n - 1)
+                tip <- nsTipSlot sess
+                whenExpired (show txid) tip deadline $ do
+                    threadDelay (confirmationPollSeconds * 1_000_000)
+                    pollTx sess addr deadline
 
 {- | Confirm a just-submitted transaction by observing output zero.
 Call before a dependent transaction spends that output. This supports
 journey helpers that retain a transaction id but not the complete body.
+
+Prefer 'awaitTxWindow' wherever the runner still holds the transaction:
+there the wait is bounded by the transaction's own validity window
+rather than by this fixed window.
 -}
 awaitTxId :: String -> IO ()
 awaitTxId txid = do
@@ -518,6 +579,101 @@ awaitTxId txid = do
     awaitChain ("transaction " <> txid <> " output 0") $ do
         live <- nsTxInLive sess wanted
         pure (if live then Just () else Nothing)
+
+{- | Confirm a just-submitted transaction by observing output zero,
+polling until the transaction's own validity upper bound plus a
+two-minute margin. The runner holds the transaction it just built and
+signed, so the wait can be exactly as long as the transaction can
+still land — and the failure names the expired window instead of a
+fixed poll count. A transaction with no upper bound cannot expire;
+the fixed window of 'awaitTxId' stays its bound.
+-}
+awaitTxWindow :: ConwayTx -> String -> IO ()
+awaitTxWindow tx txid = do
+    ms <- readIORef openSession
+    sess <- case ms of
+        Just s -> pure s
+        Nothing ->
+            die
+                "awaitTxWindow was called outside a node session; a runner \
+                \must wait for confirmation inside withNode"
+    deadline <- windowDeadlineFor sess tx
+    raw <- either (const (die "awaitTxWindow: transaction id is not hex")) pure (B16.decode (BC.pack txid))
+    h <- maybe (die "awaitTxWindow: transaction id is not 32 bytes") pure (hashFromBytes raw)
+    let wanted = TxIn (TxId (unsafeMakeSafeHash h)) (TxIx 0)
+    go sess wanted deadline
+  where
+    go sess wanted deadline = do
+        live <- nsTxInLive sess wanted
+        unless live $ do
+            tip <- nsTipSlot sess
+            whenExpired txid tip deadline $ do
+                threadDelay (confirmationPollSeconds * 1_000_000)
+                go sess wanted deadline
+
+{- | The poll-until deadline for a transaction: its own validity upper
+bound plus a two-minute margin; the historical fixed window when it
+carries no upper bound. The margin is measured in slots through the
+node's own time-to-slot conversion, so it means two minutes on every
+network. If that conversion fails the run is dying anyway; the fixed
+window restated in slots keeps the deadline total.
+-}
+windowDeadlineFor :: NodeSession -> ConwayTx -> IO SlotNo
+windowDeadlineFor sess tx = do
+    r <- try (confirmDeadline (nsProvider sess) tx) :: IO (Either SomeException SlotNo)
+    case r of
+        Right d -> pure d
+        Left _ -> do
+            tip <- nsTipSlot sess
+            pure (tip + fromIntegral (confirmationAttempts * confirmationPollSeconds))
+
+-- | Two minutes expressed in slots of the chain the provider talks to.
+twoMinutesInSlots :: Cage.Provider IO -> IO SlotNo
+twoMinutesInSlots prov = do
+    now <- getCurrentTime
+    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+    s0 <- Cage.posixMsToSlot prov nowMs
+    s1 <- Cage.posixMsToSlot prov (nowMs + 120_000)
+    pure (s1 - s0)
+
+{- | The slot after which a submitted transaction can no longer land:
+its validity upper bound plus a two-minute margin. A transaction with
+no upper bound never expires, so the historical fixed window
+('confirmationAttempts' polls) stays its deadline.
+-}
+confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO SlotNo
+confirmDeadline prov tx =
+    case txUpperBoundSlot tx of
+        Just bound -> (bound +) <$> twoMinutesInSlots prov
+        Nothing -> do
+            now <- getCurrentTime
+            let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+            Cage.posixMsToSlot prov (nowMs + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000)
+
+{- | The validity upper bound a transaction carries, if any. The fold,
+update and retract builders pin one (request deadline, phase-2 end);
+registration, request and boot transactions leave it open.
+-}
+txUpperBoundSlot :: ConwayTx -> Maybe SlotNo
+txUpperBoundSlot tx =
+    let vldt = tx ^. bodyTxL . vldtTxBodyL
+     in case invalidHereafter vldt of
+            SJust bound -> Just bound
+            SNothing -> Nothing
+
+-- | Die once the chain's tip passes the deadline; run the retry otherwise.
+whenExpired :: (Show a, Ord a) => String -> a -> a -> IO () -> IO ()
+whenExpired txid tip deadline retry
+    | tip >= deadline =
+        die
+            ( "transaction "
+                <> txid
+                <> " was accepted by the node but has not appeared in a block: \
+                   \its confirmation window (the transaction's validity upper \
+                   \bound plus a two-minute polling margin) closed at slot "
+                <> show deadline
+            )
+    | otherwise = retry
 
 {- | Retry a chain observation until it yields, then return it; name
 what never appeared when it does not.

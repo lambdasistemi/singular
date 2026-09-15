@@ -246,6 +246,7 @@ executable recovery-rows
     , bytestring
     , cardano-ledger-api
     , cardano-ledger-alonzo
+    , cardano-ledger-binary
     , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -536,6 +537,8 @@ test-suite cage-tests
   build-depends:
     , base               >=4.14 && <5
     , cardano-ledger-api
+    , cardano-ledger-alonzo
+    , cardano-ledger-allegra
     , cardano-ledger-core
     , base16-bytestring
     , bytestring
@@ -543,10 +546,12 @@ test-suite cage-tests
     , directory
     , filepath
     , hspec
+    , microlens
     , plutus-core
     , plutus-tx
     , QuickCheck
     , text
+    , time
 
 test-suite e2e-tests
   import:           warnings

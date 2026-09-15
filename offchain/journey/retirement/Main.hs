@@ -163,6 +163,8 @@ import Singular.Registry.Node (
     awaitChain,
     awaitTx,
     awaitTxId,
+    awaitTxWindow,
+    echoKoios,
     funderAddr,
     funderSignKey,
     withNodeForPlannedFunding,
@@ -528,22 +530,24 @@ runMode mode blueprintPath registryPath = do
                 let signedReg = addKeyWitness genesisSignKey unsignedReg
                 regTag <- retainTxAt evDir evNext "consumer-registration" signedReg
                 regResult <- submitTx submit signedReg
+                echoKoios evDir regTag (serializeTxBytes signedReg)
                 case regResult of
                     Submitted _ -> do
                         retainOutcome evDir regTag "accepted" Nothing
                         pure ()
                     Rejected reason ->
                         failWith ("consumer-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedReg <> " (consumer-registration)")
+                _ <- waitConfirmationTx signedReg (txIdHex signedReg <> " (consumer-registration)")
                 emit "consumer" "consumer stake credential registered; hook withdrawals are live"
                 unsignedRepReg <- registerScriptImpl prov genesisAddr repAppliedHash
                 let signedRepReg = addKeyWitness genesisSignKey unsignedRepReg
                 repRegTag <- retainTxAt evDir evNext "representative-registration" signedRepReg
                 repRegResult <- submitTx submit signedRepReg
+                echoKoios evDir repRegTag (serializeTxBytes signedRepReg)
                 case repRegResult of
                     Submitted _ -> retainOutcome evDir repRegTag "accepted" Nothing
                     Rejected reason -> failWith ("representative-registration: rejected: " <> show reason)
-                _ <- waitConfirmation (txIdHex signedRepReg <> " (representative-registration)")
+                _ <- waitConfirmationTx signedRepReg (txIdHex signedRepReg <> " (representative-registration)")
                 emit "representative" "representative stake credential registered; retirement witness is live"
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- if lifecycle then pure [] else splitGenesis prov submit 80
@@ -967,7 +971,7 @@ rowLT01 env snap = do
         )
         $ failWith "LT01: no quorum member may be among the required signers"
     submitAccepted env "LT01" signed
-    _ <- waitConfirmation (txIdHex signed <> " (LT01)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (LT01)")
     assertCustody env "LT01" signed
     assertGone env snap "LT01"
     emit
@@ -1002,7 +1006,7 @@ rowLT02 env snap = do
         )
         $ failWith "LT02: the controller must not be among the required signers"
     submitAccepted env "LT02" signed
-    _ <- waitConfirmation (txIdHex signed <> " (LT02)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (LT02)")
     assertCustody env "LT02" signed
     assertGone env snap "LT02"
     emit
@@ -1029,7 +1033,7 @@ rowRetireCtl env snap = do
                 (mkSignKey quorum1Seed)
                 (addKeyWitness (mkSignKey quorum2Seed) (addKeyWitness genesisSignKey tx))
     submitAccepted env "CTL-retire" signed
-    _ <- waitConfirmation (txIdHex signed <> " (CTL-retire)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (CTL-retire)")
     assertCustody env "CTL-retire" signed
     assertGone env snap "CTL-retire"
     emit
@@ -1086,7 +1090,7 @@ rowRecoverRecord env snap label = do
         )
         $ failWith (label <> ": neither the old controller nor quorum may sign the recovery")
     submitAccepted env (label <> "-recover") signed
-    _ <- waitConfirmation (txIdHex signed <> " (" <> label <> " recover)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (" <> label <> " recover)")
     -- The exact observed successor: fresh chain snap of outputs[0].
     snapSucc <- mustSnap env (TxIn (txIdTx signed) (TxIx 0))
     rotated <- chainDatumOf env snapSucc (label <> "-rotated")
@@ -1130,7 +1134,7 @@ rowRetireRecoveredController env snap label spelling = do
         )
         $ failWith (label <> ": neither the old controller nor quorum may be among the required signers")
     submitAccepted env label signed
-    _ <- waitConfirmation (txIdHex signed <> " (" <> label <> ")")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (" <> label <> ")")
     assertCustody env label signed
     assertGone env snap label
     emit
@@ -1168,7 +1172,7 @@ rowRetireRecoveredQuorum env snap = do
         )
         $ failWith "RR2: the original controller must not be among the required signers"
     submitAccepted env "RR2" signed
-    _ <- waitConfirmation (txIdHex signed <> " (RR2)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (RR2)")
     assertCustody env "RR2" signed
     assertGone env snap "RR2"
     emit
@@ -1650,7 +1654,7 @@ rowN2ValidAccept env signedCustody ownReq = do
     case result of
         Submitted _ -> do
             retainOutcome (envEvDir env) tag "accepted" Nothing
-            _ <- waitConfirmation (txIdHex signed <> " (N2-CV accept)")
+            _ <- waitConfirmationTx signed (txIdHex signed <> " (N2-CV accept)")
             syncFoldedRequests (envTrie env) (envTok env) [ownReq]
             pure (ProbeFired "correct pair accepted as constructed")
         Rejected reason ->
@@ -1697,7 +1701,7 @@ rowLX01ValidAccept env spelling = do
             case outcome of
                 Submitted _ -> do
                     retainOutcome (envEvDir env) tag "accepted" Nothing
-                    _ <- waitConfirmation (txIdHex signed <> " (LX01-CV accept)")
+                    _ <- waitConfirmationTx signed (txIdHex signed <> " (LX01-CV accept)")
                     pure (ProbeFired "fresh-key fold accepted as constructed")
                 Rejected reason ->
                     pure (ProbeBroken ("fresh fold unexpectedly refused: " <> T.unpack (TE.decodeUtf8Lenient reason)))
@@ -1754,7 +1758,7 @@ rowOVComplete env custody reqUtxo feeUtxo = do
     let signed = addKeyWitness completerKey unsigned
     assertBurnField env "OV-complete" signed
     submitAccepted env "OV-complete" signed
-    _ <- waitConfirmation (txIdHex signed <> " (OV-complete)")
+    _ <- waitConfirmationTx signed (txIdHex signed <> " (OV-complete)")
     syncFoldedRequests (envTrie env) (envTok env) [reqUtxo]
     rootAfter <- chainRetirementRoot env
     when (rootAfter == rootBefore) $
@@ -1901,7 +1905,7 @@ lx01Claim env = do
                 (mkSignKey oldSeed)
                 (addKeyWitness genesisSignKey txA)
     submitAccepted env "LX01-reuse-insert" signedA
-    _ <- waitConfirmation (txIdHex signedA <> " (LX01: reuse claim)")
+    _ <- waitConfirmationTx signedA (txIdHex signedA <> " (LX01: reuse claim)")
     claimIn <-
         mustFindUTxO
             (envProv env)
@@ -2414,7 +2418,7 @@ fundCompleter env completerAddr
                     & feeTxBodyL .~ Coin flatFee
             signed = addKeyWitness genesisSignKey (mkBasicTx body)
         submitAccepted env "over-completer-funding" signed
-        _ <- waitConfirmation (txIdHex signed <> " (over: completer funding)")
+        _ <- waitConfirmationTx signed (txIdHex signed <> " (over: completer funding)")
         -- The two completer outputs are indices 0 (fund) and 1
         -- (collateral); resolve both against the funding txid.
         utxos <- Cage.queryUTxOs (envProv env) completerAddr
@@ -2869,7 +2873,7 @@ submitRetirementRequest env spelling value = do
             pure ()
         Rejected reason -> failWith ("request: rejected: " <> show reason)
     let txid = txIdHex signed
-    _ <- waitConfirmation (txid <> " (registry request " <> show spelling <> ")")
+    _ <- waitConfirmationTx signed (txid <> " (registry request " <> show spelling <> ")")
     let reqAddr = requestAddrFromCfg cfg tok Testnet
     reqIn <- mustFindUTxO (envProv env) reqAddr txid "registry request"
     reqOut <- mustOutAt env reqAddr reqIn
@@ -2996,7 +3000,7 @@ setupRecoveryRecord env datum label spelling = do
                 (mkSignKey oldSeed)
                 (addKeyWitness genesisSignKey evaluatedA)
     submitAccepted env ("setup-" <> label <> "-insert") signedA
-    _ <- waitConfirmation (txIdHex signedA <> " (setup: " <> label <> " claim)")
+    _ <- waitConfirmationTx signedA (txIdHex signedA <> " (setup: " <> label <> " claim)")
     claimIn <-
         mustFindUTxO
             (envProv env)
@@ -3076,7 +3080,7 @@ setupRecoveryRecord env datum label spelling = do
     Lifecycle.verifyLifecycleBudget (envLifecycle env) (envPp env) unsignedF
     let signedF = addKeyWitness genesisSignKey unsignedF
     submitAccepted env ("setup-" <> label <> "-fold") signedF
-    _ <- waitConfirmation (txIdHex signedF <> " (setup: " <> label <> " fold)")
+    _ <- waitConfirmationTx signedF (txIdHex signedF <> " (setup: " <> label <> " fold)")
     syncFoldedRequests (envTrie env) (envTok env) [(reqIn, reqOut)]
     when (envLifecycle env) $ forM_ (envAttached env) $ \(path, _) -> saveMirror path =<< envDumpTries env
     rootAfter <- chainRetirementRoot env
@@ -3329,7 +3333,9 @@ mintRepresentativeRedeemer = PLC.Constr 0 []
 submitAccepted :: Env -> String -> ConwayTx -> IO ()
 submitAccepted env label signed = do
     tag <- retainTx env label signed
-    submitTx (envSubmit env) signed >>= \case
+    result <- submitTx (envSubmit env) signed
+    echoKoios (envEvDir env) tag (serializeTxBytes signed)
+    case result of
         Submitted _ -> do
             retainOutcome (envEvDir env) tag "accepted" Nothing
             emit "submit" (label <> ": accepted tx=" <> txIdHex signed)
@@ -3349,6 +3355,10 @@ submitAccepted env label signed = do
 -- journey: the txid self-check validates the choice empirically).
 evidenceVersion :: Version
 evidenceVersion = maxBound
+
+-- | The signed transaction's exact CBOR bytes, for the Koios echo.
+serializeTxBytes :: ConwayTx -> ByteString
+serializeTxBytes tx = serialize' evidenceVersion tx
 
 serializeTxHex :: ConwayTx -> String
 serializeTxHex tx = hex (serialize' evidenceVersion tx)
@@ -3397,6 +3407,14 @@ retainOutcome evDir tag outcome mReason =
 waitConfirmation :: String -> IO ()
 waitConfirmation what = do
     awaitTxId (take 64 what)
+    emit "confirm" ("confirmed on chain: " <> what)
+
+{- | Confirm a transaction the runner still holds, polling until that
+transaction's own validity upper bound expires — not a fixed window.
+-}
+waitConfirmationTx :: ConwayTx -> String -> IO ()
+waitConfirmationTx signed what = do
+    awaitTxWindow signed (take 64 what)
     emit "confirm" ("confirmed on chain: " <> what)
 
 -- ---------------------------------------------------------
