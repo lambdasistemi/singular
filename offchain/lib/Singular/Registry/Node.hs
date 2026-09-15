@@ -669,10 +669,9 @@ whenExpired txid tip deadline retry
             ( "transaction "
                 <> txid
                 <> " was accepted by the node but has not appeared in a block: \
-                   \its validity window expired at slot "
+                   \its confirmation window (the transaction's validity upper \
+                   \bound plus a two-minute polling margin) closed at slot "
                 <> show deadline
-                <> " (polled to the window's end, two minutes past the \
-                   \transaction's own upper bound)"
             )
     | otherwise = retry
 

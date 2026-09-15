@@ -1346,7 +1346,10 @@ connectedAccept ::
     IO String
 connectedAccept env record tm ks checkSync rowKind = do
     (snapClaim, claimIn, claimOut, reqIn, reqOut) <- do
-        pending <- findPendingInsert env ks
+        pending <-
+            if envAttached env
+                then findPendingInsert env ks
+                else pure Nothing -- a devnet run never resumes; only an attached deployment can have a pending claim
         case pending of
             Just ((cin, cout), (rin, rout)) -> do
                 snap <- mustSnap env cin
@@ -4409,6 +4412,7 @@ submitRetain :: Env -> String -> ConwayTx -> IO SubmitResult
 submitRetain env label signed = do
     tag <- retainTx env label signed
     result <- submitTx (envSubmit env) signed
+    echoKoios (envEvDir env) tag (serialize' evidenceVersion signed)
     retainOutcome env tag result signed
     pure result
 
