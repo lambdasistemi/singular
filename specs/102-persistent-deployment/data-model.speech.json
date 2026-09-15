@@ -1,0 +1,30 @@
+{
+  "manifest": [
+    {
+      "text": "One JSON file: release tag, Lean revision, network magic, seed reference, cage token, script hashes, policy ids, reference outputs, and bootstrap transactions. The entity diagram shows state, references, mirror, and policies. The verifier confirms a node agrees.",
+      "pause": 400
+    }
+  ],
+  "mirror": [
+    {
+      "text": "The writer's trie travels beside the manifest. Every attached runner compares its root with live state before funding. A mismatch is an error; the mirror never rewrites the root.",
+      "pause": 400
+    }
+  ],
+  "run-modes": [
+    {
+      "text": "Devnet boots and publishes with full rows. Attached runs reuse everything with exact spellings. Fresh negative rows boot where they say so but still use recorded scripts.",
+      "pause": 400
+    }
+  ],
+  "counts": [
+    {
+      "text": "State and reference outputs are counted before and after. Attached journeys leave both unchanged; a fresh bootstrap increases both; every publisher address is observed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "6f5de2c149661588374857091ab6b6f55e3de1f45c0e0b7e7e59eb86a7e96296"
+  }
+}

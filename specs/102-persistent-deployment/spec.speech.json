@@ -1,0 +1,48 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "A runner operator who wants one persistent deployment instead of every run publishing scripts and booting a throwaway registry nothing else will see.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Deploy once from the joiner wallet, then attach every runner to the manifest. The sequence diagram shows deployment, manifest, mirror-checked attach, and journeys with no boot and no publish. Spellings stay exact; held spellings stop after a counted refusal.",
+      "pause": 400
+    }
+  ],
+  "what-you-see-when-it-is-refused": [
+    {
+      "text": "A second deploy against one manifest is refused. A mirror mismatch errors before funding. A held spelling ends in a counted phase-2 refusal. Fresh-registry rows say so and still use recorded scripts.",
+      "pause": 400
+    }
+  ],
+  "timely-windows-not-fixed-sleeps": [
+    {
+      "text": "A retract once arrived five minutes after its thirty-second window closed. Requests now live beside their rows, validity starts from a fresh chain tip, and runners poll for outputs instead of sleeping.",
+      "pause": 400
+    }
+  ],
+  "acceptance-from-the-shipped-issue-and-pr-body": [
+    {
+      "text": "Docs checks green but not binding the runners. Binding evidence: the shared-devnet attach gate with stable counts across all journeys, increased counts on the fresh control, accepted retracts on live-tip bounds, a demonstrated faulty counter repaired in the same history, and a twice-refusing deploy.",
+      "pause": 400
+    }
+  ],
+  "deviations": [
+    {
+      "text": "The published preprod record and the canonical deployment itself are deferred with the ticket left open, stated plainly in the shipped body. The retract repair goes beyond the ticket with a measured reason. The mirror travels per ruling. No question raised.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "Public-network deposits and budgets are not established here; the later lifecycle-funding slice owns that repair. The identity encoding change arrives separately. Lean unchanged.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "674bca8929544767202aab974472102013306994d67cbd3c5944bdd85959ba45"
+  }
+}
