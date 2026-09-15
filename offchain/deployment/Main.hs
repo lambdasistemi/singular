@@ -365,6 +365,16 @@ doDeploy = do
         Nothing -> failWith "deploy needs --out MANIFEST"
     let release = maybe "unreleased" T.pack (flagValue "--release" args)
         leanRev = maybe "unrecorded" T.pack (flagValue "--lean-revision" args)
+    processTime <- case flagValue "--process-time" args of
+        Nothing -> pure 120_000
+        Just ms -> case reads ms of
+            [(n :: Integer, "")] | n > 0 -> pure n
+            _ -> failWith "--process-time needs a positive number of milliseconds"
+    retractTime <- case flagValue "--retract-time" args of
+        Nothing -> pure 30_000
+        Just ms -> case reads ms of
+            [(n :: Integer, "")] | n > 0 -> pure n
+            _ -> failWith "--retract-time needs a positive number of milliseconds"
     unbound <- loadCompiled
     withNode $ \sess -> do
         refuseIfAlreadyDeployed sess out unbound
@@ -372,7 +382,7 @@ doDeploy = do
             submit = nsSubmitter sess
             pp = nsPParams sess
         txs <- newIORef []
-        (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs
+        (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs processTime retractTime
         registerCredentials sess prov submit cfg compiled txs
         refs <- publishAll prov submit pp cfg tok compiled txs
         bootstrap <- reverse <$> readIORef txs
@@ -454,8 +464,12 @@ bootRegistry ::
     Submitter IO ->
     Compiled ->
     IORef [Text] ->
+    Integer ->
+    -- | Process window (ms), from @--process-time@.
+    Integer ->
+    -- | Retract window (ms), from @--retract-time@.
     IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
-bootRegistry prov submit unbound txs = do
+bootRegistry prov submit unbound txs processTime retractTime = do
     utxos <- Cage.queryUTxOs prov funderAddr
     seedIn <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "the funding wallet has no outputs to seed from"
@@ -469,8 +483,8 @@ bootRegistry prov submit unbound txs = do
                 , requestScriptBytes = cRequestBytes compiled
                 , cfgScriptHash = computeScriptHash (cStateBytes compiled)
                 , cageSeed = txInToRef seedIn
-                , defaultProcessTime = 120_000
-                , defaultRetractTime = 30_000
+                , defaultProcessTime = processTime
+                , defaultRetractTime = retractTime
                 , defaultTip = Coin 1_000_000
                 , cfgRepPolicy =
                     SBS.toShort

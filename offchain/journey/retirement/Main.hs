@@ -155,6 +155,7 @@ import Singular.Registry.Ledger (
     ConwayEra,
     PParams,
     Root (..),
+    SlotNo,
     TokenId (..),
  )
 import Singular.Registry.Lifecycle qualified as Lifecycle
@@ -164,6 +165,7 @@ import Singular.Registry.Node (
     awaitTx,
     awaitTxId,
     awaitTxWindow,
+    currentTipSlot,
     echoKoios,
     funderAddr,
     funderSignKey,
@@ -759,14 +761,18 @@ runOverJourney env recOver = do
                \fails the linkage above, loudly"
         )
     unless (envLifecycle env) $ rowOVReplay env recOver signedOverRetire
-    rowLO01 env signedOverRetire snapOverR
     custodyOver <- overCustodyOut env signedOverRetire "OV-retire"
     reqOver <- overRequestOut env signedOverRetire "OV-retire"
     let completerAddr = enterpriseAddr (keyHashFromSignKey (mkSignKey completerSeed))
     (completerFund, _completerColl) <- fundCompleter env completerAddr
+    -- A-003: the completion fold must land inside the request's own
+    -- process window. Build and submit it immediately after the retire's
+    -- confirmation; the LO01 custody/pending checks observe the same
+    -- outputs and run once the completion is confirmed.
+    signedComplete <- rowOVComplete env custodyOver reqOver completerFund
+    rowLO01 env signedOverRetire snapOverR
     unless (envLifecycle env) $ rowOVWithdrawRefused env custodyOver completerAddr
     unless (envLifecycle env) $ rowOVBurnOnlyRefused env custodyOver
-    signedComplete <- rowOVComplete env custodyOver reqOver completerFund
     rowLO02 env signedComplete snapOverR
 
 data Env = Env
@@ -1706,13 +1712,44 @@ rowLX01ValidAccept env spelling = do
                 Rejected reason ->
                     pure (ProbeBroken ("fresh fold unexpectedly refused: " <> T.unpack (TE.decodeUtf8Lenient reason)))
 
+{- | The slot the completion fold must land before: the completion
+request's own process deadline (A-003; the request validator folds a
+request as accepted only in phase 1).
+-}
+completionDeadline :: Env -> TxOut ConwayEra -> IO SlotNo
+completionDeadline env reqOut = do
+    submittedAt <- case extractCageDatum reqOut of
+        Just (RequestDatum r) -> pure (requestSubmittedAt r)
+        _ -> failWith "OV-complete: the completion request datum does not decode"
+    (_, stateOut) <- queryRetirementState env
+    processTime <- case extractCageDatum stateOut of
+        Just (StateDatum st) -> pure (stateProcessTime st)
+        _ -> failWith "OV-complete: the state UTxO carries no state datum"
+    Cage.posixMsToSlot (envProv env) (submittedAt + processTime)
+
 rowOVComplete :: Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ConwayTx
-rowOVComplete env custody reqUtxo feeUtxo = do
+rowOVComplete env custody reqUtxo@(_, reqOut) feeUtxo = do
     let completerKey = mkSignKey completerSeed
         completerAddr = enterpriseAddr (keyHashFromSignKey completerKey)
         completerHash = addrKeyHashBytes completerAddr
     when (completerHash `elem` [envOldHash env, envQuorum1Hash env, envQuorum2Hash env]) $
         failWith "OV-complete: completer key is not fresh — it collides with a route party"
+    -- A-003: the completion window closes at the request's own process
+    -- deadline (validator in_phase1). Refuse to build once the tip is
+    -- past it — an expired request is phase 3 and the fold can only
+    -- ever be refused.
+    deadline <- completionDeadline env reqOut
+    tip <- currentTipSlot
+    unless (tip < deadline) $
+        failWith
+            ( "OV-complete: the completion window is already behind the tip: "
+                <> "process deadline slot "
+                <> show deadline
+                <> ", tip slot "
+                <> show tip
+                <> " — the request is phase 3 (rejectable), refusing to \
+                   \build an accept fold that cannot land"
+            )
     (stateIn, stateOut) <- queryRetirementState env
     rootBefore <- chainRetirementRoot env
     (unsigned, _newRoot) <-

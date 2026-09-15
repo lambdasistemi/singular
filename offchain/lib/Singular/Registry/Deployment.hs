@@ -78,6 +78,7 @@ module Singular.Registry.Deployment (
     renderAddrBytes,
 ) where
 
+import Control.Monad (unless)
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (
     FromJSON (..),
@@ -133,7 +134,11 @@ import Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     txInToRef,
  )
-import Singular.Registry.Types (CageDatum (..), stateRepPolicyBytes)
+import Singular.Registry.Types (
+    CageDatum (..),
+    OnChainTokenState (..),
+    stateRepPolicyBytes,
+ )
 
 -- ---------------------------------------------------------
 -- The manifest
@@ -388,10 +393,20 @@ verifyDeployment prov dep parts = do
     tok <- either die pure (tokenFor dep)
     refs <- resolveReferenceScripts prov dep
     (stateIn, stateOut) <- resolveStateUtxo prov cfg tok
-    case extractCageDatum stateOut of
+    stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
-            | stateRepPolicyBytes st == SBS.fromShort (partsRepPolicy parts) -> pure ()
+            | stateRepPolicyBytes st == SBS.fromShort (partsRepPolicy parts) -> pure st
         _ -> die "the live registry state does not configure this registry-bound representative policy"
+    unless
+        ( stateProcessTime stateLive == depProcessTime dep
+            && stateRetractTime stateLive == depRetractTime dep
+        )
+        $ die
+            ( "the live registry state carries process/retract windows "
+                <> show (stateProcessTime stateLive, stateRetractTime stateLive)
+                <> " but the manifest records "
+                <> show (depProcessTime dep, depRetractTime dep)
+            )
     pure
         ( [ "release "
                 <> T.unpack (depRelease dep)
@@ -403,6 +418,11 @@ verifyDeployment prov dep parts = do
                 <> T.unpack (depCageToken dep)
           , "compiled representative policy agrees with the manifest and live registry configuration: 0x"
                 <> T.unpack (depRepresentativePolicy dep)
+          , "registry state carries the recorded request windows: process "
+                <> show (depProcessTime dep)
+                <> " ms, retract "
+                <> show (depRetractTime dep)
+                <> " ms"
           ]
             <> [ "reference script "
                     <> T.unpack (refRole r)
