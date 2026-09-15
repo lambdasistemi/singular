@@ -54,11 +54,20 @@ justify, and on refusal any existing mirror file is left untouched.
 | --- | --- |
 | Rebuilt root differs from the root at the tip | `root-mismatch`, naming both roots |
 | First state output is not the manifest's bootstrap | `bootstrap-identity-mismatch` |
-| Node closes before the root can be verified | `node disconnected before root verification` |
-| A stored checkpoint cannot be decoded | named checkpoint-decode refusal |
+| No registry state is found from the recorded bootstrap | `bootstrap-not-found` |
+| Node closes before the root can be verified | `node-disconnected-before-root-verification` |
+| The replayed state is no longer current | `chain-moved` |
+| A stored checkpoint cannot be decoded | `checkpoint-decode`, and `checkpoint-state-token-mismatch` |
 | A fold's action count does not match its request inputs | `request-action-count-mismatch` |
-| The state output chain is broken | `registry-state-chain-broken` |
+| The state output chain is broken | `registry-state-chain-broken`, `registry-state-ended-or-missing` |
 | A state spend is not a `Modify` | `unsupported-state-spend: expected Modify` |
+| A node socket or query fails | `socket-query` |
+
+The module emits more named refusals than this table enumerates — thirty
+call sites in total. The table lists the classes the ticket's acceptance
+names; the remainder are shipped and uncontrolled, and are carried as a
+named residual in the follow-up register rather than claimed as verified.
+Eight named refusals are exercised with byte preservation by the gate.
 
 ## Requirements
 
@@ -83,7 +92,16 @@ justify, and on refusal any existing mirror file is left untouched.
 | I-REFUSE | Every named refusal detects its stated condition, and the existing mirror file survives any refusal. | A refusal is unreachable, or a failed run destroys a good mirror. |
 | I-RESUME | Resuming from a valid checkpoint yields the same trie as a full replay; an invalid or rolled-back checkpoint falls back to full replay. | A resumed run silently skips folds. |
 | I-COMPAT | A mirror written by the previous release loads without its checkpoint key present. | The new decoder requires a key old files do not have. |
-| I-ATOMIC | A crash during the mirror write leaves the previous bytes intact. | A truncated mirror is left on disk. |
+| I-ATOMIC | A crash during the mirror write leaves the previous bytes intact. **Intended, not established** — see the atomicity note below. | A truncated mirror is left on disk. |
+
+**Atomicity is implemented but unexercised.** `saveMirrorWithCheckpoint`
+uses `bracketOnError` with `openBinaryTempFile` and `renameFile`, which is
+the standard atomic-replace shape, and nothing shows it wrong. But no check
+anywhere interrupts, crashes or cancels a process during that write. Every
+byte-preservation assertion in the gate is taken across a *named refusal*,
+which is a different observable. I-ATOMIC is therefore an OPEN assurance
+obligation, not a verified invariant; the missing controlled-interruption
+check is recorded as follow-up FU-107-01.
 
 Replay does not re-derive custody, authorization, refunds or witness
 validity. Ledger acceptance owns those, and the follower observes

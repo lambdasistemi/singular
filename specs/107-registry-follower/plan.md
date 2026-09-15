@@ -35,7 +35,7 @@ This section records what is actually demonstrated at candidate 112d20c52c276012
 | R-04 `attach --rebuild` | IMPLEMENTED, UNEXERCISED | No test or CI job passes `--rebuild`; the arms refuse under Devnet mode, the only mode any test uses. |
 | R-05 checkpoint resume | VERIFIED for resume and invalidation | Earlier-rollback and intersect-not-found reset arms are executed by nothing. |
 | R-06 backward-compatible mirror load | IMPLEMENTED, UNEXERCISED | Every mirror the test reads was written by this candidate and serialises an explicit null checkpoint; no fixture in the genuine pre-#107 format, with the key absent, is parsed. |
-| R-07 atomic mirror write | VERIFIED | Temp-file plus rename under bracketOnError; the gate asserts byte-preservation of the previous mirror. Side effect: mirror mode moves from umask-derived to 0600. |
+| R-07 atomic mirror write | IMPLEMENTED, UNEXERCISED | Temp-file plus rename under `bracketOnError`, the standard atomic-replace shape, and nothing shows it wrong. But no check interrupts, crashes or cancels a process during the write: every byte-preservation assertion the gate makes is taken across a NAMED REFUSAL, a different observable. Crash safety is therefore an OPEN assurance obligation, follow-up FU-107-01. The mode change from umask-derived to 0600 was kept deliberately and IS asserted. |
 | R-08 devnet test in CI | PARTIAL | `just follower-e2e` runs in registry.yml. No CI job runs the offchain unit suite or fourmolu/hlint, so lint and unit regressions in this package cannot fail CI. |
 | R-09 onboarding page | DONE, COMMAND UNEXERCISED | The page publishes `deployment follow`; nothing executes that entry point. |
 
