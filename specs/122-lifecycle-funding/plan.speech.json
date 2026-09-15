@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Keep every existing transaction constructor and add a funding and evaluation layer beside it, used only by the public lifecycle path. The flowchart shows live parameters flowing into the funding layer and then into the three runners.",
+      "pause": 400
+    }
+  ],
+  "what-the-diff-actually-built": [
+    {
+      "text": "One new library module owns path selection, fee reserve, minimum change, deposits, budget verification, filtered funding, the aggregate limit check, and evaluate-and-rebalance. The node setup gains a planned-funding entry with no fixed floor. The three runners call the layer only on the public path.",
+      "pause": 400
+    }
+  ],
+  "verification-as-shipped": [
+    {
+      "text": "Docs checks green, 109 passing cage tests, the lifecycle attach check green, read-only preprod allowance plans, and no submitted public transaction. The retroactive audit killed a mutant on the reserved-input row.",
+      "pause": 400
+    }
+  ],
+  "file-fence-files-the-merge-touched": [
+    {
+      "text": "Three new files and seven edited offchain files. No Lean, validator, workflow, or check-setting edits.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "One slice: public lifecycle funding and evaluation, shipped as two fix commits.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "f5159cbc6c162cf1a88831deb9cd70f96dc46015ca4db4dfad26bf2986333144"
+  }
+}

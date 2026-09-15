@@ -1,0 +1,30 @@
+{
+  "funding-requirement": [
+    {
+      "text": "The requirement sums the actor outputs, one maximum-size fee allowance, and minimum change. The entity diagram shows outputs, allowance, change, deposits, and collateral. Everything derives from the live parameters.",
+      "pause": 400
+    }
+  ],
+  "provider-selection": [
+    {
+      "text": "A selectable output is ada-only, carries no reference script, and is not reserved for a later step. Reference publications never fund.",
+      "pause": 400
+    }
+  ],
+  "execution-budget": [
+    {
+      "text": "Per-purpose costs are measured by node evaluation and summed. The total must fit the live per-transaction limit in both memory and steps, and the refusal reports both numbers.",
+      "pause": 400
+    }
+  ],
+  "path-selection": [
+    {
+      "text": "Public external nodes select the lifecycle automatically; elsewhere an explicit flag does. Plain devnet runs keep every fixture and row.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "7feb1e1eb894594709884c7330ec533249a55e9c2c18889542422e7e08b655f8"
+  }
+}

@@ -3,8 +3,9 @@
 Retroactive record, written 2026-09-15 from PR #122 merged at
 `6ab1093367e00290a4b74638f03f5ef44b3137e6`.
 
-New public functions in `offchain/lib/Singular/Registry/Lifecycle.hs`.
-No bodies here.
+## New public functions
+
+In the new lifecycle module. No bodies here.
 
 | Function | Arguments | Result | Constraint |
 | --- | --- | --- | --- |
@@ -22,13 +23,17 @@ No bodies here.
 | `checkExecutionLimit` | `live limit`, `per-purpose costs` | aggregate or refusal text | Sum must fit in both memory and steps; the refusal names both. |
 | `prepareLifecycleTx` | `lifecycle flag`, `provider`, `PParams`, `references`, `witness count`, `transaction` | transaction | No-op off the path; on the path evaluates every redeemer with the node, replaces every declared budget, rebalances the fee from the final change output only, and converges within four rounds. |
 
-## Node entry point (`offchain/lib/Singular/Registry/Node.hs`)
+## Node entry point
+
+Changed behaviour in the node setup module:
 
 | Function | Arguments | Result | Constraint |
 | --- | --- | --- | --- |
 | `withNodeForPlannedFunding` | `session use` | result | Existing node-mode setup with no fixed funding floor; the lifecycle layer's own preflight decides. |
 
-## Test surface (`offchain/test/Singular/Registry/LifecycleSpec.hs`)
+## Test surface
+
+New regression tests in the cage suite:
 
 Exact-boundary aggregate accept, two over-memory refusals, one
 over-steps refusal, one refusal-text identity, and one

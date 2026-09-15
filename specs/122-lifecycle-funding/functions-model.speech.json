@@ -1,0 +1,24 @@
+{
+  "new-public-functions": [
+    {
+      "text": "Thirteen new functions: path selection, fee reserve, minimum change, funded and collateral outputs, lifecycle-only resizing, request deposits, budget verification, funding requirement, the filtered provider, funding, the aggregate limit check, and evaluate-and-rebalance before signing.",
+      "pause": 400
+    }
+  ],
+  "node-entry-point": [
+    {
+      "text": "One new node entry runs the existing setup with no fixed funding floor; the lifecycle layer's own preflight decides.",
+      "pause": 400
+    }
+  ],
+  "test-surface": [
+    {
+      "text": "Five regression cases: exact-boundary accept, two over-memory refusals, one over-steps refusal, one refusal-text identity, and one reserved-input exclusion.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "bf1781898fb341a2a11e751d6cca62914ddc628e388eee85a8ee7d593118a313"
+  }
+}
