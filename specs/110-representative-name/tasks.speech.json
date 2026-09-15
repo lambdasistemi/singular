@@ -1,0 +1,12 @@
+{
+  "slice": [
+    {
+      "text": "Nine commits in order, all done: policy binding, spelling derivation with retirement witness, registry-refusal evidence, Over docs, deployment integration, attached-identity verification, two CI scoping fixes, and reference-publication preservation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "ab9225a2c691e880d12c8b48c135db8c4c7dacd5b7e28b516f74feb7e63a4954"
+  }
+}

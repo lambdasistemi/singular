@@ -1,0 +1,30 @@
+{
+  "asset-name": [
+    {
+      "text": "The asset name is exactly the 32-byte hash of the spelling bytes. The entity diagram shows spelling to digest to live NFT under the scoping policy. Alice and its newline variant are pinned.",
+      "pause": 400
+    }
+  ],
+  "policy-parameters": [
+    {
+      "text": "The representative policy takes the application hash and the registry asset identity. The application validator itself takes no parameters.",
+      "pause": 400
+    }
+  ],
+  "registry-binding": [
+    {
+      "text": "Mint and burn enforce the exact registry credential and token. Maintenance and recovery preserve the token; completion spends the registry state; retirement goes through a withdrawal witness.",
+      "pause": 400
+    }
+  ],
+  "lifecycle-values": [
+    {
+      "text": "Permanent Over and incarnation zero. Over was minted then burned; unclaimed was never minted. The abstract model keeps naming scope zero.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "75cc8f58b6142fd8e6f835c43891f768bc221019ed92bb108cc24fab9d9f0413"
+  }
+}

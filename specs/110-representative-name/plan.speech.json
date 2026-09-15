@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Put the ruled equation everywhere a name is produced or checked while the model stays frozen. The flowchart shows the ruling flowing into validators, mirror, policy, tests, journeys, deployment, and docs.",
+      "pause": 400
+    }
+  ],
+  "what-the-diff-actually-built": [
+    {
+      "text": "The equation and fold, retire, and burn bindings in the application validator, registry-scoped mint, burn, and withdrawal in the representative validator, the same equation at the consumer hook, a byte-exact Haskell mirror, seed-before-policy deployment with attached derivation, the docs paragraph, and required check contexts on every pull request.",
+      "pause": 400
+    }
+  ],
+  "verification-as-shipped": [
+    {
+      "text": "Docs checks green, full Aiken, consumer, Haskell, and identity suites green, devnet folds with the true mint, a planted preimage that fails and is removed, named refusals, and a green retirement journey.",
+      "pause": 400
+    }
+  ],
+  "file-fence-what-the-merge-touched": [
+    {
+      "text": "Thirty-six files, all outside the Lean directory: validators, tests, identities, runners, mirror, docs page, and workflows.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "One slice: the computable name with registry-bound policy and witnessed retirement, shipped as nine commits from policy binding to required checks.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "f4df324fd6c6fe0f94803df2ba2fa0c49452242b23e24d45b13832217973659e"
+  }
+}

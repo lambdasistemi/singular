@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "Validators, mirror, runners, verifier, docs page, and workflows, each with its responsibility and its must-not. The flowchart shows the ruling flowing into validators and mirror, then journeys, verifiers, and docs.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "The ruling flows into validators and mirror together; journeys and verifiers consume both; docs describe the deployed result. Lean stays upstream and unchanged.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "No new shared library. The registry parameter is promoted into the policy head because mint, burn, and withdraw all enforce it; the application stays unparameterized.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "6f85bf87f9f61d71f249f89c7b767977f2b7d874338a9811a6202db1a73e7a5d"
+  }
+}
