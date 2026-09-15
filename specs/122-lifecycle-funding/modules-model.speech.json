@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "One new funding module, the node setup, the three runners, the attach check, the joiner guide, and the regression suite. The flowchart shows parameters flowing into the funding layer and then into the runners, with docs and tests describing the layer.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Live parameters flow into the funding layer, the funding layer flows into the runners, and the runners keep their existing transaction builders.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "One new library module owned by the lifecycle runners. No shared extraction and no changes to Lean, validators, workflow, or gates.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "805c041d773b891d930713593a1d6f2a56d5695a13bbfc10a58724f42a187b9a"
+  }
+}

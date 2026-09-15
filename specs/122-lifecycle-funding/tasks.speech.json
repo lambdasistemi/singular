@@ -1,0 +1,12 @@
+{
+  "slice": [
+    {
+      "text": "Two fix commits in order, both done: live-parameter lifecycle funding, then the reserved-input funding filter with its regression test.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "6b962f38ff52c93caba6be77b196484bdddea3cad9453a0778658511ef16e5ce"
+  }
+}

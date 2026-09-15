@@ -1,0 +1,54 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "A joiner with a wallet on a public node who wants to run the three positive naming lifecycles against one persistent deployment, without reserving the devnet fixture pools.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Point the three runners at a deployment manifest. Each funds only its own positive actors from the live protocol parameters, evaluates every transaction with the node before signing, and stops with a named requirement before spending when the wallet is short or the spelling is taken. The sequence diagram shows the preflight, the funded submit, and the two stop-before-spending branches.",
+      "pause": 400
+    }
+  ],
+  "what-you-see-when-it-is-refused": [
+    {
+      "text": "Five named refusals: short wallet, already-claimed spelling, aggregate execution over the live limit, evaluated fee that does not fit the change minimum, and incomplete node evaluation. No refusal probe is submitted on the public path.",
+      "pause": 400
+    }
+  ],
+  "the-three-lifecycles": [
+    {
+      "text": "Register claims one exact spelling, recovery claims rc-main and maintains it, retirement claims rt-over and completes it permissionlessly into Over. The flowchart shows funding, evaluation, submission, and the two refusal branches.",
+      "pause": 400
+    }
+  ],
+  "funding-rule": [
+    {
+      "text": "Deposits, minimum change, collateral, and one maximum-size fee allowance all derive from the live parameters. Request funding never selects reference scripts, multi-asset outputs, or inputs reserved for later steps.",
+      "pause": 400
+    }
+  ],
+  "acceptance-from-the-shipped-pr-body": [
+    {
+      "text": "Docs checks green, three runners rebuilt with 109 passing cage tests, the lifecycle attach check green with the full suite retained, and read-only preprod allowance plans against a spendable balance. No public transaction was submitted by this change.",
+      "pause": 400
+    }
+  ],
+  "deviations": [
+    {
+      "text": "No dedicated issue exists; the mandate is the pull request body plus the operator's funding ruling. Two related tickets are referenced but not closed. The retroactive audit passed with two documented residuals, coverage and U T X O shape, and no user-visible disagreement, so no question was raised.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "Public journey acceptance stays pending until all three lifecycles run against preprod. The previous release predates this repair. No validator, Lean, workflow, or check-setting changes are included.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "c1511689c8245fad28d8ee5db4c33f73e4617457200916d6c81f254089756604"
+  }
+}
