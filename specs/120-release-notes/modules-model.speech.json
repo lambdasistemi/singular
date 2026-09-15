@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "The publisher composes, the stable text introduces, the publish checker doubles, the release checker compares, and the archive README describes. The flowchart shows changelog and stable text flowing into the publisher and both checkers observing.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Changelog and stable text flow into the publisher and then the release; both checkers observe the real scripts without replacing them.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "No new modules. The existing shell stays the extractor; checks replace hand assertions with the composed-body identity.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "c3be9a3e0f613d5b66b01f80d24ba643a485360021775659451185a1f6aac332"
+  }
+}

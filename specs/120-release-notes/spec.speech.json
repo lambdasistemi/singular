@@ -1,0 +1,42 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "A Singular user choosing a version and running it, who wants the release page to say what changed and how to use the archive.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Open any release from 0.6.1 on: first that version's own changelog section, then a short introduction and archive instructions. The sequence diagram shows extraction, composition, and verified upload.",
+      "pause": 400
+    }
+  ],
+  "what-stops-publication": [
+    {
+      "text": "A missing or empty changelog section, internal wording in the stable text, shipped instructions differing from the source, and the three negative controls all stop publication.",
+      "pause": 400
+    }
+  ],
+  "acceptance-from-the-shipped-issue-and-pr-body": [
+    {
+      "text": "Docs checks green but not running the publisher. Binding evidence: double-backed release-check cases, verified archives with checksums and identities, packaged shell checks, and refused negative controls with a passing restored candidate.",
+      "pause": 400
+    }
+  ],
+  "deviations": [
+    {
+      "text": "All four ticket items implemented. The sibling archive checker carries the same wording rules, recorded not hidden. The deployed-registry guide is referenced conditionally until it exists. No question raised.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "The doubles never create a real release, and old published bodies stay as edited. Only the version-to-section-to-body mapping changes; no model or contract behaviour.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "58c38cef52c0bda7fed47b487002dcf2faf1f2313ec538a386139dbddff1debc"
+  }
+}

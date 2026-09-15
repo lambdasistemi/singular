@@ -1,0 +1,24 @@
+{
+  "release-body": [
+    {
+      "text": "The manifest version selects the changelog section, which opens the body; the stable text follows. The entity diagram shows version to section to body. Empty sections stop publication.",
+      "pause": 400
+    }
+  ],
+  "archive-contents": [
+    {
+      "text": "Both archives with checksums, identities verified, shipped instructions byte-equal to the source, and the README row describing the new purpose.",
+      "pause": 400
+    }
+  ],
+  "check-cases": [
+    {
+      "text": "Four wrong-input refusals, three missing-or-empty refusals with the loud message, three passing compositions with exact bodies, and one already-published pass without recreating.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "00c4f4a7a441e13d1b0b7f0e94de3684e615e4a2a58cc3298481ee72b47421e7"
+  }
+}

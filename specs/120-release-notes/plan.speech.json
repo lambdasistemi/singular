@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Compose every release body from the changelog section plus stable text, and enforce it on both sides: the publisher refuses bad sections before upload, the archive checker requires equality with the source. The flowchart shows composition, upload, download, and both checks.",
+      "pause": 400
+    }
+  ],
+  "what-the-diff-actually-built": [
+    {
+      "text": "Rewritten stable text, section extraction with loud refusal, extended publisher checks with eleven double-backed cases, the sibling archive check rewritten to equality plus wording, and the archive README row.",
+      "pause": 400
+    }
+  ],
+  "verification-as-shipped": [
+    {
+      "text": "Docs checks green, release-check cases green, both archives verified, packaged shell checks green, negative controls refuse, restored candidate passes.",
+      "pause": 400
+    }
+  ],
+  "file-fence-what-the-merge-touched": [
+    {
+      "text": "Five files: the two archive texts and three release tools. No Lean, validator, runner, workflow, or check-setting edits.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "One slice: versioned release bodies with usable archive instructions, shipped as a single commit.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "ada0dcdbce12e110eb2a44f7a163c56fb4dd36bf0bf9324df61e1d900217c315"
+  }
+}
