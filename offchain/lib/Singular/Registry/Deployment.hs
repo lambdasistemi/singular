@@ -25,25 +25,10 @@ Three operations:
   manifest and resolves the reference outputs, so a run uses them
   instead of creating its own.
 
-__What the manifest cannot carry.__ Writing to a registry — folding a
-claim in — means proving the key against the registry's current trie,
-and that proof needs the whole trie, not the root the chain reports.
-Nothing on chain hands it over in one query, so a deployment carries it
-as a file beside the manifest ('mirrorPathFor'), written by each run
-and read by the next.
-
-That file is the deployment's one non-chain dependency: a second
-machine needs a copy of it to fold, though not to read — proving a name
-is alive needs the registry entry and the NFT, and no trie at all.
-Rebuilding the trie from the chain instead, by following the registry
-token from the bootstrap transaction and replaying each fold's request
-datums, is the next milestone's work.
-
-That file is a hazard, so it is checked rather than hoped away —
-'attach' refuses when the mirror's root and the chain's root disagree,
-so a mirror that drifted (a run that died mid-fold, a copy belonging to
-another deployment) fails by name instead of building proofs against a
-trie the chain does not have.
+The proof mirror beside the manifest is a recoverable cache. The follower
+rebuilds it from request datums and fold actions supplied by node chain-sync,
+then saves only after the rebuilt root agrees with confirmed chain state.
+Ordinary writers invalidate its replay checkpoint when saving an updated trie.
 -}
 module Singular.Registry.Deployment (
     -- * The manifest
@@ -71,6 +56,9 @@ module Singular.Registry.Deployment (
     mirrorPathFor,
     loadMirror,
     saveMirror,
+    ReplayCheckpoint (..),
+    loadReplayCheckpoint,
+    saveFollowedMirror,
 
     -- * Output references
     renderOutRef,
@@ -78,11 +66,14 @@ module Singular.Registry.Deployment (
     renderAddrBytes,
 ) where
 
-import Control.Exception (ErrorCall (..), throwIO)
+import Control.Exception (ErrorCall (..), bracketOnError, throwIO)
 import Data.Aeson (
     FromJSON (..),
     ToJSON (..),
     eitherDecodeFileStrict',
+    withObject,
+    (.:),
+    (.:?),
  )
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -96,11 +87,12 @@ import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Word (Word16, Word32)
+import Data.Word (Word16, Word32, Word64)
 import GHC.Generics (Generic)
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist, removeFile, renameFile)
 import System.Environment (getArgs, lookupEnv)
-import System.FilePath (dropExtension, (<.>))
+import System.FilePath (dropExtension, takeDirectory, takeFileName, (<.>))
+import System.IO (hClose, openBinaryTempFile)
 import Text.Read (readMaybe)
 
 import Lens.Micro ((^.))
@@ -491,10 +483,9 @@ resolveStateUtxo prov cfg tok = do
         Just u -> pure u
         Nothing ->
             die
-                ( "no output at the registry address carries the recorded \
-                  \token; the node does not know this deployment (wrong \
-                  \network, or the registry was never booted here)"
-                )
+                "no output at the registry address carries the recorded \
+                \token; the node does not know this deployment (wrong \
+                \network, or the registry was never booted here)"
 
 -- ---------------------------------------------------------
 -- Attaching
@@ -567,13 +558,56 @@ hex = BC.unpack . B16.encode
 them: per registry token, the four key/value maps an in-memory MPF
 database is, hex-encoded so the file stays diffable.
 -}
-newtype Mirror = Mirror {mirrorTries :: [MirrorTrie]}
+data Mirror = Mirror
+    { mirrorTries :: [MirrorTrie]
+    , mirrorCheckpoint :: Maybe ReplayCheckpoint
+    }
     deriving (Eq, Show, Generic)
 
 instance ToJSON Mirror where
     toJSON = Aeson.genericToJSON Aeson.defaultOptions
 instance FromJSON Mirror where
+    parseJSON = withObject "Mirror" $ \o ->
+        Mirror <$> o .: "mirrorTries" <*> o .:? "mirrorCheckpoint"
+
+{- | A complete block boundary: the trie, state output and outstanding
+request outputs all describe this same chain point. Only the follower
+writes it; ordinary mirror writers invalidate it explicitly.
+-}
+data ReplayCheckpoint = ReplayCheckpoint
+    { cpDeployment :: Deployment
+    -- ^ Manifest identity this replay belongs to
+    , cpSlot :: Word64
+    -- ^ Last fully replayed block's slot
+    , cpBlockHash :: Text
+    -- ^ Raw block header hash in hex
+    , cpStateRef :: Text
+    -- ^ Registry state output reference at the checkpoint
+    , cpStateOutput :: Text
+    -- ^ CBOR state output in hex
+    , cpRequests :: [(Text, Text)]
+    -- ^ Outstanding request references and CBOR outputs in hex
+    }
+    deriving (Eq, Show, Generic)
+
+instance ToJSON ReplayCheckpoint where
+    toJSON = Aeson.genericToJSON Aeson.defaultOptions
+instance FromJSON ReplayCheckpoint where
     parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+-- | Read a checkpoint when present; old mirror files have none.
+loadReplayCheckpoint :: FilePath -> IO (Maybe ReplayCheckpoint)
+loadReplayCheckpoint manifest = do
+    let path = mirrorPathFor manifest
+    there <- doesFileExist path
+    if not there
+        then pure Nothing
+        else do
+            parsed <- eitherDecodeFileStrict' path
+            either
+                (die . ("proof mirror checkpoint: " <>))
+                (pure . mirrorCheckpoint)
+                parsed
 
 -- | One registry's trie.
 data MirrorTrie = MirrorTrie
@@ -606,7 +640,7 @@ loadMirror manifest = do
             parsed <- eitherDecodeFileStrict' path
             case parsed of
                 Left err -> die ("proof mirror " <> path <> ": " <> err)
-                Right (Mirror tries) ->
+                Right (Mirror tries _) ->
                     Map.fromList <$> mapM one tries
   where
     one mt = do
@@ -626,10 +660,20 @@ loadMirror manifest = do
 
 -- | Write the mirror beside a manifest, replacing what was there.
 saveMirror :: FilePath -> Map.Map TokenId MPFInMemoryDB -> IO ()
-saveMirror manifest tries =
-    BL.writeFile
-        (mirrorPathFor manifest)
-        (encodePretty (Mirror (map one (Map.toList tries))) <> "\n")
+saveMirror manifest = saveMirrorWithCheckpoint manifest Nothing
+
+-- | Atomically save a root-verified follower snapshot and its point.
+saveFollowedMirror :: FilePath -> ReplayCheckpoint -> Map.Map TokenId MPFInMemoryDB -> IO ()
+saveFollowedMirror manifest cp = saveMirrorWithCheckpoint manifest (Just cp)
+
+saveMirrorWithCheckpoint :: FilePath -> Maybe ReplayCheckpoint -> Map.Map TokenId MPFInMemoryDB -> IO ()
+saveMirrorWithCheckpoint manifest checkpoint tries = do
+    let path = mirrorPathFor manifest
+        bytes = encodePretty (Mirror (map one (Map.toList tries)) checkpoint) <> "\n"
+    bracketOnError
+        (openBinaryTempFile (takeDirectory path) (takeFileName path <> ".tmp"))
+        (\(tmp, handle) -> hClose handle >> removeFile tmp)
+        (\(tmp, handle) -> BL.hPut handle bytes >> hClose handle >> renameFile tmp path)
   where
     one (TokenId (AssetName n), db) =
         MirrorTrie

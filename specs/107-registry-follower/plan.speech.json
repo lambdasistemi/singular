@@ -1,0 +1,20 @@
+{
+  "rebuild-a-registry-mirror-from-the-node": [
+    {
+      "text": "A writer on a second machine should recover the registry trie using the manifest and a node socket, then submit a fold without copying a mirror. This intake plan binds the implementation to the accepted Lean fold definitions.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows a manifest identifying the registry, a node supplying requests and ordered folds, and an optional checkpoint selecting a resume point. The follower saves the recovered mirror only after checking its root against the confirmed state output.",
+      "pause": 450
+    },
+    {
+      "text": "The planned work adds compatible checkpoint storage, a chain follower, a follow command and rebuilding during attachment. The real-node test must rebuild after deleting a mirror, resume incrementally, refuse corrupted state and successfully fold again. Preprod execution needs the milestone desk to assign the existing deployment window. Verification, merge and release are separate remaining steps.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "e7ff560380fd10a0b012cb678a59e51053e0600ef08612de71e9ca2283ba60e1"
+  }
+}

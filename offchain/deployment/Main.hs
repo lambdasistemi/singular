@@ -85,6 +85,7 @@ import Singular.Registry.Blueprint (
     loadBlueprint,
  )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Follower (followDeployment)
 import Singular.Registry.Deployment
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams, TokenId (..))
 import Singular.Registry.Node (
@@ -130,6 +131,7 @@ run = do
     case [a | a <- args, not ("-" `isPrefixOf` a)] of
         ("deploy" : _) -> doDeploy
         ("verify" : _) -> doVerify
+        ("follow" : _) -> doFollow
         ("count" : _) -> doCount
         ("genesis-skey" : _) -> doGenesisSkey
         _ ->
@@ -137,7 +139,19 @@ run = do
                 "usage: deployment deploy --out MANIFEST [--release TAG] \
                 \[--node-socket P --network-magic N --wallet-skey F]\n\
                 \       deployment verify --deployment MANIFEST \
-                \[--node-socket P --network-magic N --wallet-skey F]"
+                \[--node-socket P --network-magic N --wallet-skey F]\n\
+                \       deployment follow --deployment MANIFEST --node-socket P"
+
+-- | Recover a proof mirror without loading a wallet or a blueprint.
+doFollow :: IO ()
+doFollow = do
+    args <- getArgs
+    manifest <- maybe (failWith "follow needs --deployment MANIFEST") pure (flagValue "--deployment" args)
+    environmentSocket <- lookupEnv "SINGULAR_NODE_SOCKET"
+    socket <- maybe (failWith "follow needs --node-socket SOCKET or SINGULAR_NODE_SOCKET") pure
+        (case flagValue "--node-socket" args of Just s -> Just s; Nothing -> environmentSocket)
+    result <- followDeployment manifest socket
+    emit "follow" (show result)
 
 -- | One narration line: what was done and what was then observed.
 emit :: String -> String -> IO ()

@@ -10,6 +10,7 @@ License     : Apache-2.0
 module Singular.Registry.E2E.CageSpec (
     spec,
     withBootedCage,
+    withBootedCageAtSocket,
     submitInsertRequest,
     submitWithGenesis,
 ) where
@@ -310,11 +311,29 @@ withBootedCage ::
     ) ->
     IO a
 withBootedCage adjustCfg stateBytes requestBytes consumerBytes action =
+    withBootedCageAtSocket adjustCfg stateBytes requestBytes consumerBytes (const action)
+
+-- | The same connected bootstrap, with its live socket for chain replay.
+withBootedCageAtSocket ::
+    (CageConfig -> CageConfig) ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    ( FilePath ->
+      CageConfig ->
+      Cage.Provider IO ->
+      Submitter IO ->
+      TrieManager IO ->
+      TokenId ->
+      IO a
+    ) ->
+    IO a
+withBootedCageAtSocket adjustCfg stateBytes requestBytes consumerBytes action =
     withE2E stateBytes requestBytes consumerBytes $
-        \cfg0 prov submit tm -> do
+        \sock cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             tokenId <- bootCage cfg prov submit tm
-            action cfg prov submit tm tokenId
+            action sock cfg prov submit tm tokenId
 
 bootCage ::
     CageConfig ->
@@ -412,7 +431,8 @@ withE2E ::
     -- | Unparameterized consumer compiled-code bytes (the consumer
     -- takes no parameters — NOTE-021).
     SBS.ShortByteString ->
-    ( CageConfig ->
+    ( FilePath ->
+      CageConfig ->
       Cage.Provider IO ->
       Submitter IO ->
       TrieManager IO ->
@@ -474,7 +494,7 @@ withE2E stateBytes requestBytes consumerBytes action = do
                     requestBytes
                     consumerBytes
                     seedRef
-        result <- action cfg prov submit tm
+        result <- action sock cfg prov submit tm
         cancel nodeThread
         pure result
 
