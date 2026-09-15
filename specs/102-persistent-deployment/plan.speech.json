@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Separate identity from execution: publish and boot once into a manifest, attach every runner to it, keep devnet mode unchanged, carry the trie as a checked witness, and replace fixed sleeps with polling. The flowchart shows deployment, manifest, attach, counters, duplicate, and fresh control.",
+      "pause": 400
+    }
+  ],
+  "what-the-diff-actually-built": [
+    {
+      "text": "A deployment command, a registry identity library, three attaching runners with exact spellings and credential reuse, an attach check with duplicate and counter control, tip-anchored retract, and the onboarding account.",
+      "pause": 400
+    }
+  ],
+  "verification-as-shipped": [
+    {
+      "text": "Docs checks green, packaged builds pass, the attach gate exits zero with one state and five references stable, two states and nine references on the fresh control, both retracts accepted, and the faulty counter demonstrated before repair.",
+      "pause": 400
+    }
+  ],
+  "file-fence-what-the-merge-touched": [
+    {
+      "text": "Fifteen files, all offchain plus one docs page: the new command and library, three runners, the check, wiring, and the onboarding page. No Lean, validator, workflow, or check-setting edits.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "One slice: persistent deployment with attached runners, shipped as eleven commits from manifest to reference counting.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "92629a78a735d5eb8aa02239861ec4657f1debad5f0308d07def94ea93c102a2"
+  }
+}

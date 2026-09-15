@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "A new deployment command and identity library, three attaching runners, the gate check, the carried mirror, the tip-anchored retract builder, and the onboarding page, each with its must-not. The flowchart shows identity flowing from command to manifest to runners.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Identity flows from command into manifest and from manifest into every runner, which keep their existing builders. Docs describe the commands without defining identity.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "One new library module owned by deployment and the attached runners. No wider extraction and no changes to Lean, validators, workflow, or gates.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "db7abe89f70e9e26f04554895f519f6aed7c831101748a0b5c6cc7f49d9160b1"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "deployment-commands": [
+    {
+      "text": "Deploy once with no second run, verify a node against the manifest, and attach all three journeys with exact spellings and an explicit duplicate refusal.",
+      "pause": 400
+    }
+  ],
+  "library-behaviour": [
+    {
+      "text": "Token derivation from the seed, identity comparison that rejects substitutions, hash-resolved references, quantity-one state location, pre-funding mirror check, tip-anchored retract, and polled confirmations.",
+      "pause": 400
+    }
+  ],
+  "attach-gate": [
+    {
+      "text": "Deploy once on a shared devnet, count, run all attached journeys, repeat the spelling for the refusal, then require both counters to rise on a fresh register.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "25d32f9ee4c1376421b9b330ac9811d6bf20f3181f89c2206d4d165440c405b4"
+  }
+}

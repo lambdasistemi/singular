@@ -1,0 +1,12 @@
+{
+  "slice": [
+    {
+      "text": "Eleven commits in order, all done: manifest and commands, runner attach, devnet attach check, deployment docs, trie and chain, retract window and credentials, window-end wait, rename carry-over, exact spellings, polled confirmations, and reference counting.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "102889c521fbefd0bab5b2859294bd21568c9f9dfb27def51df857e283bc4278"
+  }
+}
