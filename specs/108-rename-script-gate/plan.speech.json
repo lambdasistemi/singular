@@ -1,0 +1,36 @@
+{
+  "strategy": [
+    {
+      "text": "Fix the tool's own defects without touching what it rewrites: widen the scan, derive the allowlist from the same grep the gate runs. The flowchart shows scan, rename, derived gate, and the test feeding docs checks.",
+      "pause": 400
+    }
+  ],
+  "what-the-diff-actually-built": [
+    {
+      "text": "Shell and Python added to the scan, citation-line survival derived from grep output, a twice-run test with byte snapshots and a planted stray, wired into docs checks.",
+      "pause": 400
+    }
+  ],
+  "verification-as-shipped": [
+    {
+      "text": "Docs checks green including the new test, pre-fix failure at run one, weakened derivation firing the control, gate green on clean main.",
+      "pause": 400
+    }
+  ],
+  "file-fence-what-the-merge-touched": [
+    {
+      "text": "Three files: the tool, its new test, and the justfile. No model, validator, runner, docs, workflow, or check-setting edits.",
+      "pause": 400
+    }
+  ],
+  "slice": [
+    {
+      "text": "One slice: the rename gate that scans shells and derives its allowlist, shipped as a single commit.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "bb980dd45dbaebfd2ca79a18776501306ee6105266541428259be4f4b68092fb"
+  }
+}

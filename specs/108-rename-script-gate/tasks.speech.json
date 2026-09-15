@@ -1,0 +1,12 @@
+{
+  "slice": [
+    {
+      "text": "One commit, done: shell and Python scan with a derived gate allowlist, proven twice-run with a planted stray.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "b1cf646d2d106f21c8b6906c4390830d13d71053ddb8cf329868f98bfec25590"
+  }
+}
