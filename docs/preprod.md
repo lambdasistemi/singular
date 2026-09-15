@@ -178,15 +178,15 @@ whose mirror root disagrees with the chain stops and says so.
 
 This is the second deployment on preprod. The first (registry
 `0xe82f5e34833d7a74ad0359788dfa31d7879d851d2af6c5d4f0f88518f11433b9`,
-manifest kept as [`preprod.json` history in the acceptance
-evidence](https://github.com/lambdasistemi/singular/tree/main/onchain-release),
-120-second process window) stranded a name: its retirement fixture
-`rt-over` reached custody, but the completion fold was built after the
-120-second request window had closed, and the validator rejects an aged
-request instead of folding it — so `rt-over` sits at custody with no way
-to complete. That reproduction is the evidence behind the deployment
-window parameters this deployment boots with and the filed defect it
-reproduces; the first registry is untouched and its remaining funds stay
+120-second process window, [manifest and mirror kept as
+history](preprod-history/preprod-1.json)) stranded a name: its retirement
+fixture `rt-over` reached custody, but the completion fold was built
+after the 120-second request window had closed, and the validator
+rejects an aged request instead of folding it — so `rt-over` sits at
+custody with no way to complete. That reproduction is recorded as
+[issue #130](https://github.com/lambdasistemi/singular/issues/130) and is
+the evidence behind the deployment window parameters this deployment
+boots with; the first registry is untouched and its remaining funds stay
 where they are.
 
 ## What this record does not cover

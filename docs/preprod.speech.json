@@ -35,7 +35,7 @@
   ],
   "the-first-deployment-and-its-stranded-name": [
     {
-      "text": "This is the second deployment on preprod. The first used a 120-second processing window; its retirement fixture reached custody after the window closed, and the validator rejects an aged request instead of folding it, so that name is stranded at custody with no way to complete. The stranded name is the reproduced defect behind this deployment's ten-minute windows, and the first registry is left untouched as the evidence.",
+      "text": "This is the second deployment on preprod. The first used a 120-second processing window; its retirement fixture reached custody after the window closed, and the validator rejects an aged request instead of folding it, so that name is stranded at custody with no way to complete. The reproduction is recorded as issue one hundred thirty and is the evidence behind this deployment ten-minute windows; the first registry is left untouched as the evidence.",
       "pause": 400
     }
   ],
@@ -47,6 +47,6 @@
   ],
   "_source": {
     "file": "preprod.md",
-    "sha256": "57a8af206a705d25072e4fc77e74ce3a62262b58de54ab572a9977e0e86e4b84"
+    "sha256": "75ad2155e1a7eef137253346316decb301c62e884f0a6d89ca13da768006bf14"
   }
 }
