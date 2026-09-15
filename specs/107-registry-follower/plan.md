@@ -29,7 +29,7 @@ This section records what is actually demonstrated at candidate 112d20c52c276012
 
 | Requirement | State at 112d20c | Evidence or gap |
 | --- | --- | --- |
-| R-01 follow from bootstrap over chain-sync | IMPLEMENTED, DEVIATION OPEN | A cold rebuild issues FindIntersect at genesis, not at the bootstrap: the manifest records bootstrap transaction ids with no slot or block hash, so no intersection point exists to seek to. Cost is invisible on the ~455-block devnet and unmeasured at preprod scale. |
+| R-01 follow from bootstrap over chain-sync | IMPLEMENTED, DEVIATION OPEN | A cold rebuild issues FindIntersect at genesis, not at the bootstrap: the manifest records bootstrap transaction ids with no slot or block hash, so no intersection point exists to seek to. Cost is invisible on the ~455-block devnet and unmeasured at preprod scale. Desk A-001: this requirement is NOT waived and recording it here does not close it; the additive manifest chain point is a separate shared-contract dependency. |
 | R-02 replay preserves insert/update/delete order and rejected no-change | IMPLEMENTED, COVERAGE OPEN | Only the insert arm is produced by any test; the follower gate queues exclusively through submitInsertRequest, so OpDelete, OpUpdate and Rejected never execute. |
 | R-03 root equality gates the write, refusal by name | VERIFIED | Root-checked per fold and at the tip; the root-mismatch refusal has an executed failure control. |
 | R-04 `attach --rebuild` | IMPLEMENTED, UNEXERCISED | No test or CI job passes `--rebuild`; the arms refuse under Devnet mode, the only mode any test uses. |

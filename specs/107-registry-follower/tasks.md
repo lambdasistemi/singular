@@ -29,12 +29,16 @@ Each carries its failing and passing criterion there.
 - [ ] T-RB-04: execute the earlier-rollback / intersect-not-found reset arm, and load a mirror fixture in the genuine pre-#107 format with the checkpoint key absent.
 - [ ] T-RB-05: one executable invocation each of `deployment follow` and a journey `--rebuild`.
 - [ ] T-RB-06: decide the mirror file mode (0644 restored, or 0600 kept deliberately) and assert it in the gate.
-- [ ] T-RB-07: leave the manifest schema untouched; F-02 is recorded, not implemented.
+- [ ] T-RB-07: leave the manifest schema untouched. F-02 is recorded, not implemented, and remains open — see the acceptance dependencies below.
 
-## Blocked — not this ticket's to close
+## Open acceptance dependencies — not closed by this ticket, and not waived
+
+Desk A-001: recording a deviation closes the documentation task only. It
+does not close the requirement or its blocking finding. Both items below
+stay OPEN in the final disposition even if every in-scope repair passes.
 
 - [ ] T-preprod: the frozen "Done when" preprod observation — a fresh checkout rebuilding the mirror from a **preprod** node. BLOCKED by A-002: needs the complete verified M1 manifest/mirror/chainpoint/state handoff, explicit writer release and desk sequencing. No preprod node, socket, credential or configuration has been touched. This is unobserved, not satisfied.
-- [ ] T-bootstrap-chainpoint: a cold rebuild issues `FindIntersect` at genesis because the manifest records bootstrap transaction ids with no chain point. Fixing it requires a manifest schema change, which is #106's shared contract with #104/#114 and outside this ticket's authority. Escalated to the desk as a contract question; recorded in `plan.md`.
+- [ ] T-bootstrap-chainpoint (F-107-OPUS-02 / R-01, BLOCKING, OPEN): a cold rebuild issues `FindIntersect` at genesis because the manifest records bootstrap transaction ids with no slot or block hash. Implementing the fix needs an additive manifest chain point, which is #106's shared contract with #104/#114 and outside this ticket's authority — scoped separately at `handoffs/indexer-bootstrap-chainpoint-followup.md` (local scope draft; no issue filed, no worker launched, no contract changed). Genesis replay does NOT satisfy the frozen starting-point requirement and must not be described as doing so. The cost remains unmeasured and no wrong-root claim is justified. Documented in `plan.md`; the requirement stays open.
 
 ## Slice
 
