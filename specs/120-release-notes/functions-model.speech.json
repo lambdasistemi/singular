@@ -1,0 +1,24 @@
+{
+  "publisher-behaviour": [
+    {
+      "text": "Extract the version section, refuse loudly when absent, compose section plus stable text or override, skip creation when published, and verify both archives with identities and equality.",
+      "pause": 400
+    }
+  ],
+  "check-behaviour": [
+    {
+      "text": "Assert a non-empty section and clean wording, then drive the real publisher through eleven doubled cases and compare every passing body exactly.",
+      "pause": 400
+    }
+  ],
+  "test-surface": [
+    {
+      "text": "Eleven double-backed cases plus forbidden-phrase, original-publisher, and stable-only controls, with the restored candidate passing.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "d7648a7b2b431925fc078f5456b12a5a295991aabbadb03eb964da91d79256af"
+  }
+}
