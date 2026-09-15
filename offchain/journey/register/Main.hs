@@ -248,6 +248,7 @@ import Singular.Registry.TxBuilder.Internal (
     txInToRef,
  )
 import Singular.Registry.TxBuilder.Request (requestInsertImpl)
+import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
@@ -257,6 +258,8 @@ import Singular.Registry.Types (
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
+    RequestPhase (..),
+    requestPhase,
  )
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
@@ -1336,6 +1339,97 @@ findPendingInsert env ks = do
         (Just claim, Just request) -> pure (Just (claim, request))
         _ -> pure Nothing
 
+{- | The resume decision for a leftover pair (A-002): the request's age
+selects the action. The message names the phase and both deadline slots
+so a refused build is attributable.
+-}
+classifyPending ::
+    Env ->
+    KeySetup ->
+    (TxIn, TxOut ConwayEra) ->
+    IO RequestPhase
+classifyPending env ks (reqIn, reqOut) = do
+    submittedAt <- case extractCageDatum reqOut of
+        Just (RequestDatum r) -> pure (requestSubmittedAt r)
+        _ -> failWith "resume: the pending request datum does not decode"
+    (_, stateOut) <- queryStateUtxo env
+    (processTime, retractTime) <- case extractCageDatum stateOut of
+        Just (StateDatum st) -> pure (stateProcessTime st, stateRetractTime st)
+        _ -> failWith "resume: the state UTxO carries no state datum"
+    tip <- currentTipSlot
+    let conv = Cage.posixMsToSlot (envProv env)
+    acceptDeadline <- conv (submittedAt + processTime)
+    retractDeadline <- conv (submittedAt + processTime + retractTime)
+    let phase = requestPhase acceptDeadline retractDeadline tip
+    emit
+        "resume"
+        ( "pending request "
+            <> showIn reqIn
+            <> " for spelling "
+            <> show (keySpelling ks)
+            <> " is in phase "
+            <> show phase
+            <> " (accept deadline slot "
+            <> show acceptDeadline
+            <> ", retract deadline slot "
+            <> show retractDeadline
+            <> ", tip slot "
+            <> show tip
+            <> ")"
+        )
+    pure phase
+
+{- | Phase 2 resume: the requester — the folder wallet the runner funds
+and signs with — retracts the aged request; the run then claims fresh.
+The same builders the support-retract control uses (waitForPhase2,
+retractRequestAtTipImpl).
+-}
+retractPendingRequest :: Env -> (TxIn, TxOut ConwayEra) -> IO ()
+retractPendingRequest env (reqIn, reqOut) = do
+    submittedAt <- case extractCageDatum reqOut of
+        Just (RequestDatum r) -> pure (requestSubmittedAt r)
+        _ -> failWith "resume retract: the pending request datum does not decode"
+    waitForPhase2 env submittedAt
+    built <-
+        try
+            ( retryHorizon 3 $ do
+                tip <- currentTipSlot
+                retractRequestAtTipImpl tip (envCfg env) (envProv env) (envTok env) reqIn (envFolderAddr env)
+            )
+            :: IO (Either SomeException ConwayTx)
+    unsigned <- case built of
+        Right tx -> pure tx
+        Left err -> failWith ("resume retract build failed: " <> displayException err)
+    let signed = addKeyWitness (mkSignKey folderSeed) unsigned
+    result <- submitRetain env "resume-retract" signed
+    case result of
+        Submitted _ -> do
+            _ <- waitConfirmationTx signed (txIdHex signed <> " (resume retract)")
+            emit "resume" ("retract accepted: " <> txIdHex signed <> "; claiming fresh")
+        Rejected reason ->
+            failWith ("resume retract refused: " <> show reason)
+
+{- | Phase 3 resume: a permissionless fold consumes the expired request
+as Rejected (refund to the requester, trie root unchanged) — the same
+rejectRequestsImpl builder the E2E refund-floor control uses — then the
+run claims fresh.
+-}
+rejectPendingRequests :: Env -> IO ()
+rejectPendingRequests env = do
+    built <-
+        try (rejectRequestsImpl (envCfg env) (envProv env) (envTok env) (envFolderAddr env))
+            :: IO (Either SomeException ConwayTx)
+    signed <- case built of
+        Right tx -> pure (addKeyWitness (mkSignKey folderSeed) tx)
+        Left err -> failWith ("resume reject build failed: " <> displayException err)
+    result <- submitRetain env "resume-reject" signed
+    case result of
+        Submitted _ -> do
+            _ <- waitConfirmationTx signed (txIdHex signed <> " (resume reject)")
+            emit "resume" ("reject accepted: " <> txIdHex signed <> "; claiming fresh")
+        Rejected reason ->
+            failWith ("resume reject refused: " <> show reason)
+
 connectedAccept ::
     Env ->
     (Value -> IO ()) ->
@@ -1345,33 +1439,40 @@ connectedAccept ::
     String ->
     IO String
 connectedAccept env record tm ks checkSync rowKind = do
-    (snapClaim, claimIn, claimOut, reqIn, reqOut) <- do
-        pending <-
-            if envAttached env
-                then findPendingInsert env ks
-                else pure Nothing -- a devnet run never resumes; only an attached deployment can have a pending claim
-        case pending of
-            Just ((cin, cout), (rin, rout)) -> do
-                snap <- mustSnap env cin
-                _ <- assertQueuedRequest env ks snap
-                emit
-                    "resume"
-                    ( "a live insert request for spelling "
-                        <> show (keySpelling ks)
-                        <> " is already queued at "
-                        <> showIn rin
-                        <> " with its claim at "
-                        <> showIn cin
-                        <> ": folding the pending request instead of \
-                           \creating another claim"
-                    )
-                pure (snap, cin, cout, rin, rout)
-            Nothing -> do
-                (_claimTx, cin, cout) <- setupNamingClaim env ks
-                snap <- mustSnap env cin
-                _ <- assertQueuedRequest env ks snap
-                (rin, rout) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
-                pure (snap, cin, cout, rin, rout)
+    let fresh = do
+            (_claimTx, cin, cout) <- setupNamingClaim env ks
+            snap <- mustSnap env cin
+            _ <- assertQueuedRequest env ks snap
+            (rin, rout) <- submitRegistryRequest env (keySpelling ks) (keyRepName ks)
+            pure (snap, cin, cout, rin, rout)
+    prepared <-
+        if envAttached env
+            then do
+                mPending <- findPendingInsert env ks
+                case mPending of
+                    Nothing -> fresh
+                    Just ((cin, cout), reqPair) ->
+                        classifyPending env ks reqPair >>= \case
+                            PhaseAccept -> do
+                                snap <- mustSnap env cin
+                                _ <- assertQueuedRequest env ks snap
+                                emit
+                                    "resume"
+                                    ( "a live insert request for spelling "
+                                        <> show (keySpelling ks)
+                                        <> " is still in phase 1: folding the \
+                                           \pending request instead of creating \
+                                           \another claim"
+                                    )
+                                pure (snap, cin, cout, fst reqPair, snd reqPair)
+                            PhaseRetract -> do
+                                retractPendingRequest env reqPair
+                                fresh
+                            PhaseReject -> do
+                                rejectPendingRequests env
+                                fresh
+            else fresh
+    let (snapClaim, claimIn, claimOut, reqIn, reqOut) = prepared
     (stateIn, _stateOut) <- queryStateUtxo env
     feeUtxo <- queryFeeUtxo env
     rootBefore <- chainRootHex env
