@@ -1,0 +1,42 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "Anyone who runs the rename script on a pre-rename branch and expects every text kind scanned and a gate that passes a clean tree.",
+      "pause": 400
+    }
+  ],
+  "what-was-broken": [
+    {
+      "text": "Two self-inflicted defects: the gate failed main itself over citation lines its hand allowlist missed, and shell scripts were never scanned, so one kept a product export past the rename.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Run the script twice on a scratch worktree: first run completes with the gate passing, second is a byte-for-byte no-op. The sequence diagram shows both runs plus the planted stray that must fail.",
+      "pause": 400
+    }
+  ],
+  "acceptance-from-the-shipped-issue-and-pr-body": [
+    {
+      "text": "Docs checks green including the new test, which is why this slice is bound by just ci itself. Twice-run proof, planted-stray failure naming the file, both falsification directions observed, merge commit on green.",
+      "pause": 400
+    }
+  ],
+  "deviations": [
+    {
+      "text": "Every ticket item implemented, no departure found, no question raised.",
+      "pause": 400
+    }
+  ],
+  "limits-of-this-slice": [
+    {
+      "text": "Underscored tokens stay invisible to the word grep, which is why scanning shells matters. Both citation spacings match. Tool and test are exempt. No product behaviour changes.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "5991ffbba44985db04f1ff0defe7879dbbcad300727168994b7dd19cd4819c08"
+  }
+}

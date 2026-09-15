@@ -1,0 +1,24 @@
+{
+  "tool-behaviour": [
+    {
+      "text": "Scan shells and Python, rewrite, grep residuals with the same grep, derive survival from citation lines, pass clean trees and name planted strays.",
+      "pause": 400
+    }
+  ],
+  "test-behaviour": [
+    {
+      "text": "Cut a throwaway worktree, snapshot index and bytes, compare two runs for the no-op, plant the stray, require the failure, clean up.",
+      "pause": 400
+    }
+  ],
+  "test-surface": [
+    {
+      "text": "Run-one pass, run-two no-op pass, planted-stray failure, pre-fix failure at run one, weakened derivation firing.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "d686697171f11e88b83520efd27cd1dbc0d4dd51a0b9dcd39f5d2270ee3f5d2c"
+  }
+}

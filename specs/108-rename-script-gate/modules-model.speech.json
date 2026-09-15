@@ -1,0 +1,24 @@
+{
+  "new-and-changed-responsibilities": [
+    {
+      "text": "The tool rewrites and self-checks, the test proves it twice over with a planted stray, the recipe wires it into docs checks. The flowchart shows tool to tree to test to recipe to checks.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "The tool rewrites the tree, the test drives the tool, the recipe wires the test. Nothing feeds back into product code.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "No new shared modules. The derived rule lives in the tool; the twice-run discipline lives in its test.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "7f77db7368b622aef9e742fbbda41025da6cc34b35ed9f10df309384d67ed1df"
+  }
+}

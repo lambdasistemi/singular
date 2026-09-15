@@ -1,0 +1,24 @@
+{
+  "scan-universe": [
+    {
+      "text": "All tracked text files including shells and Python. The entity diagram shows files to scan to hits to citation-only survival. Both citation spacings match.",
+      "pause": 400
+    }
+  ],
+  "exemptions": [
+    {
+      "text": "Tool and test are exempt from scan and gate; they must keep naming the product they rename.",
+      "pause": 400
+    }
+  ],
+  "test-states": [
+    {
+      "text": "First run completes with the gate passing, second run changes nothing with the gate passing, and a planted stray fails the gate alone naming the file.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "7c8f44d96a8f4fe3250a74440ce712b8e06e5cf46d774570d6cfbdb6fb436598"
+  }
+}
