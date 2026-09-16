@@ -1,0 +1,26 @@
+{
+  "builders-offchainlib": [
+    {
+      "text": "Builders (offchain/lib).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 6 rows, columns declaration, shape. The rows: buildApprovalMint edge key owner destination signers; buildRequest op key destination approval tip; buildFold state requests proofs mints outputs; buildCustodySpend custody request; buildRetireWithCompletion record custody key; buildFreeBurn token.",
+      "pause": 400
+    }
+  ],
+  "journey-offchainjourneywitness-rowsmainhs": [
+    {
+      "text": "Journey (offchain/journey/witness-rows/Main.hs).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns declaration, shape. The rows: main; setup; row :: RowId -> Expect -> IO Observation; attribute :: SubmitFailure -> Maybe (Script, Trace); verify :: Observation -> Expect -> Bool.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f7c391a87bc8c157fd3f365c6ccdfc6e5178b0ffbddf33460c5a61aa93658736"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "the-json-report": [
+    {
+      "text": "The JSON report.",
+      "pause": 500
+    },
+    {
+      "text": "One object per row:",
+      "pause": 400
+    },
+    {
+      "text": "A code block reads: { \"id\": \"WR03\", \"expected\": \"accept\" | \"refuse\", \"observed\": \"accept\" | \"refuse\" | \"skipped\", \"txIds\": [...], \"policyIds\": {...}, \"assetNames\": {...}, \"attribution\": { \"script\": \"cage\" | \"witness\" | \"application\" | null, \"trace\": \"read-non-terminal\" | ... | null }, \"verified\": true | false }",
+      "pause": 300
+    },
+    {
+      "text": "verified is false whenever observed ≠ expected or, for a refusal, the attribution differs from #157's trace-label table. The run's exit status is non-zero iff any row is not verified or is skipped.",
+      "pause": 400
+    }
+  ],
+  "evidence-directory": [
+    {
+      "text": "Evidence directory.",
+      "pause": 500
+    },
+    {
+      "text": "A code block reads: evidence/witness-rows/<run-id>/ report.json WR01.tx.cbor … WR12.tx.cbor      every submitted transaction, accepted or refused narration.log",
+      "pause": 300
+    }
+  ],
+  "actors-on-the-devnet": [
+    {
+      "text": "Actors on the devnet.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns actor, role. The rows: Alice; Bob; Carol; Dave; the folder.",
+      "pause": 400
+    }
+  ],
+  "names-and-keys": [
+    {
+      "text": "Names and keys.",
+      "pause": 500
+    },
+    {
+      "text": "Keys are the naming spelling hashes as #157 fixes them; the asset name under each token policy is the key.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "afcd71957da4b8c560d0a97abc5494fc7ad5712ed03a2e99d7918f718502e498"
+  }
+}
