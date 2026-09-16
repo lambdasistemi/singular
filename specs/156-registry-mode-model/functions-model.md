@@ -29,7 +29,7 @@ audit bind to these exact identities.
 | declaration | shape | constraint |
 |---|---|---|
 | `Singular.Config` | structure with the eight fields of `data-model.md` | no `consumerPin`; equal before and after every fold |
-| `Singular.admits` | `(c : Config) → (e : Edge) → (approval : Option Approval) → Bool` | true for `witnessTerminal` with `none`; for the six tree edges requires an approval under `c.applicationPolicy` |
+| `Singular.admits` | `(c : Config) → (e : Edge) → (approval : Option Approval) → Bool` | true for `witnessTerminal` with `none`; for the six tree edges requires an approval under `c.applicationPolicy` **whose `(edge, key, owner, destination)` tuple matches the request** (D-APPROVAL). The approval's asset name is `blake2b_256(edge ‖ key ‖ owner ‖ destination)` and it is **not burned at the fold** |
 | `Singular.route` | `(k : TokenKind) → (request : Request) → Destination` | `absent` to cage custody, whose datum records the `insertAbsent` refund address; `active` and `terminal` to the request's named output. On consumption the absent token's value goes to that refund address (R-ADA) |
 | `Singular.step` | `(s : RegistryState) → (a : Action) → Except String Result` | refuses every `(primitive, value, before-leaf)` triple outside the R2 table, the refused reads included; reasons distinct where the distinction is observable (R3) |
 | `Singular.foldBatch` | `(s : RegistryState) → (batch : List Action) → Except String Result` | atomic; refuses a zero-request batch; threads the root so the k-th proof is verified against the root at position k; refuses any mint differing from the summed delta |
@@ -48,7 +48,7 @@ oracle reads; everything behind them is the author's to shape freely.
 
 | declaration | shape | constraint |
 |---|---|---|
-| `Singular.Oracle.Approval` | inductive: `none`, `application`, `other` | the three admission cases the oracle distinguishes |
+| `Singular.Oracle.Approval` | inductive: `none`, `application`, `other`, `mismatched` | the four admission cases the oracle distinguishes. `mismatched` is an approval under the **correct** pinned policy whose `(edge, key, owner, destination)` tuple does not match — the case that makes D-APPROVAL observable, and the one a model gets wrong by checking only the policy |
 | `Singular.Oracle.Destination` | inductive: `cageCustody`, `requestOutput` | where a minted token goes |
 | `Singular.Oracle.RefundTarget` | inductive: `insertRefundAddress`, `requestOutput`, `folder` | the three candidate deposit destinations; only the first is correct (R-ADA), and the other two exist so a wrong answer is *expressible* and therefore detectable |
 | `Singular.Oracle.transition` | `(e : Edge) → (before : Leaf) → Option Leaf` | `none` is refusal |

@@ -112,6 +112,14 @@ token minted under `Config.applicationPolicy`. `witnessTerminal` requires none.
 Policing is checked at fold time as the presence of the approval; nothing
 application-specific runs at fold time. The pins are immutable across folds.
 
+**D-APPROVAL — what one approval certifies** (#157's frozen contract, carried
+here so the Lean model and the cage agree). An approval is scoped by the tuple
+`(edge, key, owner, destination)`; its asset name is
+`blake2b_256(edge ‖ key ‖ owner ‖ destination)`; and it is **not burned at the
+fold**. So an approval minted under the pinned policy but naming a different
+edge, key, owner or destination does **not** admit this request: right policy is
+necessary and not sufficient.
+
 ### R5 — the read (interface §2)
 
 `Read(value)` proves `key → value` against the **fold's root at that action's
@@ -259,7 +267,7 @@ incomplete for the absent edges.
 | `updateActive` | the signature of the controller who will own the record — exactly as `insertActive`; booking a witnessed-absent name is indistinguishable from booking an unknown one |
 | `deleteAbsent` | the signature of **the refund address the `insertAbsent` request named** — the inserter only, never anyone else, never nobody |
 | `insertActive` | the controller's signature |
-| `updateTerminal` | the quorum |
+| `updateTerminal` | **the committed recovery key** — the key whose hash the record commits to, revealed and signing exactly as `Recover` proves it — **or** a distinct-member quorum. The current control key alone **never** certifies it (operator ruling, NOTE-008). |
 | `deleteActive` | **never** |
 
 The story these rows serve: Carol owns the **witness** — only she can retract it,
