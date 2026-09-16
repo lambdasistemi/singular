@@ -36,8 +36,12 @@ the author. Order follows `plan.md`.
 - [ ] T157-11 — `Approve` arm for the six edges per R-NM4 (N1–N5).
 - [ ] T157-12 — the fold-created record; `Fold`/`Cancel`/claim lifecycle
       removed (N7).
-- [ ] T157-13 — `Retire` co-mints the terminate approval and the completion
-      request; completion folds `Update(0x01,0x02)` (N6, N8).
+- [ ] T157-13 — `Retire` authorized by the committed recovery key or the
+      quorum, never the current control key alone; co-mints the terminate
+      approval and the completion request; completion folds
+      `Update(0x01,0x02)` (N6, N8).
+- [ ] T157-13b — the destination output of a folded booking or read carries at
+      least the request's value minus the tip (T6).
 - [ ] T157-14 — `Maintain`/`Recover` rows re-run; `naming.ak` loses its value
       vocabulary (N9, N10).
 - [ ] T157-15 — `just test` and `just script-identity-regen` in both partitions;

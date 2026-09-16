@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 4 rows, columns declaration, shape, constraint. The rows: ApplicationRedeemer; ApplicationMintRedeemer; approve(edge, key, owner, destination, tx) -> Bool; retire(record, custody_out, key, tx).",
+      "text": "A table of 4 rows, columns declaration, shape, constraint. The rows: ApplicationRedeemer; ApplicationMintRedeemer; approve(edge, key, owner, destination, tx) -> Bool; retire(record, custody_out, key, revealed_control, tx).",
       "pause": 400
     }
   ],
@@ -71,6 +71,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "c8fb681d1a664414398f6fb37058a6596ce8a2ab79aea51d655e9f89ebf570fd"
+    "sha256": "6b56ff08756c892b21f9ab1a4afa1a026357d4db168892848eb8a61853d49d6b"
   }
 }

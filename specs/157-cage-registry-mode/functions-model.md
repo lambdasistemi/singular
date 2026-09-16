@@ -40,8 +40,8 @@ constraints. No bodies.
 |---|---|---|
 | `ApplicationRedeemer` | `Maintain`, `Retire { key }`, `Recover { revealed_control, registry }` | `Fold`, `Cancel` removed |
 | `ApplicationMintRedeemer` | `Approve { edge, key, owner, destination }` | asset name `== approvalName(..)`; exactly one asset moves |
-| `approve(edge, key, owner, destination, tx) -> Bool` | the six arms of R-NM4 | `insertAbsent` unconditional; `insertActive`/`updateActive` owner signs and `destination` is the application address with a well-formed record datum hash; `updateTerminal` controller or quorum from the record input; `deleteAbsent` refund key signs, custody as reference input; `deleteActive` `False` |
-| `retire(record, custody_out, key, tx)` | as today plus: the same transaction mints `Approve { updateTerminal, key, .. }` and creates the completion request | authorization unchanged (LT01/LT02/LT03) |
+| `approve(edge, key, owner, destination, tx) -> Bool` | the six arms of R-NM4 | `insertAbsent` unconditional; `insertActive`/`updateActive` owner signs and `destination` is the application address with a well-formed record datum hash; `updateTerminal` the committed recovery key (reveal + signature, as `recover`) or quorum from the record input — never the current control key alone; `deleteAbsent` refund key signs, custody as reference input; `deleteActive` `False` |
+| `retire(record, custody_out, key, revealed_control, tx)` | authorized by the committed recovery key (reveal of `next_control_commitment` + its signature) or by the quorum; the same transaction mints `Approve { updateTerminal, key, .. }` and creates the completion request | LT01 (control key alone) is retired as a row; LT02/LT03 stand; a wrong reveal refuses |
 
 ## `naming-onchain/validators/naming.ak`
 

@@ -179,6 +179,28 @@
       "pause": 400
     }
   ],
+  "known-weaknesses-stated-so-they-are-read": [
+    {
+      "text": "Known weaknesses, stated so they are read.",
+      "pause": 500
+    },
+    {
+      "text": "Adjudicated wanted, and visible (want-ledger R2 and R3):",
+      "pause": 400
+    },
+    {
+      "text": "The quorum is fixed for the life of the name. No action rewrites.",
+      "pause": 300
+    },
+    {
+      "text": "retirement_quorum after booking; a member who is lost or hostile is   permanent. The only way to a new quorum is to retire and re-book. - The quorum can retire the name while the controller is present. Nothing   checks that Alice is gone; a threshold of members ends the name at any time.",
+      "pause": 400
+    },
+    {
+      "text": "The naming docs (X2) state both in the retirement section.",
+      "pause": 400
+    }
+  ],
   "the-story": [
     {
       "text": "The story.",
@@ -255,7 +277,7 @@
       "pause": 300
     },
     {
-      "text": "carrying it, with inline datum AbsentCustody { key, refund } where refund   is the address the request named (D-CUSTODY). No other asset in that output. - absent token consumed (Update(0x00,0x01), Delete(0x00)) — the custody   UTxO for that key is a spent input; its lovelace is paid to an output at its   refund address (R-ADA, #156). The cage's own spending path for a custody   UTxO is: spent in a Modify that consumes a request for that key with one of   these two operations, and nothing else. - active or terminal token minted — exactly one output at the request's   named destination, with the inline datum whose hash the request names, carrying   the token (D-DEST). For Update(0x01,0x02) the active token must be an input   and burned; the cage does not care where it came from — the application's   custody does (N4).",
+      "text": "carrying it, with inline datum AbsentCustody { key, refund } where refund   is the address the request named (D-CUSTODY). No other asset in that output. - absent token consumed (Update(0x00,0x01), Delete(0x00)) — the custody   UTxO for that key is a spent input; its lovelace is paid to an output at its   refund address (R-ADA, #156). The cage's own spending path for a custody   UTxO is: spent in a Modify that consumes a request for that key with one of   these two operations, and nothing else. - active or terminal token minted — exactly one output at the request's   named destination, with the inline datum whose hash the request names, carrying   the token (D-DEST) and at least the request's value minus the tip: the   deposit that rode the request returns to the requester as that output's   value. The folder earns the tip and nothing else (want-ledger R4: no folder   incentive exists in this version, so the deposit is returned). For Update(0x01,0x02) the active token must be an input   and burned; the cage does not care where it came from — the application's   custody does (N4).",
       "pause": 400
     }
   ],
@@ -275,7 +297,7 @@
       "pause": 500
     },
     {
-      "text": "Retire is unchanged in authorization: the controller's signature or the quorum moves the active token from the record into completion-only custody. The same transaction mints the updateTerminal approval (N2 — the signatures are present) and creates the completion request carrying it — today's co-created request. Completion is the fold of Update(0x01, 0x02): the custody UTxO is spent, its held token is the burn the delta requires, and the record's name is 0x02 forever. retirement_custody.ak keeps its rules; over_marker_for and the naming-specific value vocabulary in naming.ak are deleted.",
+      "text": "Retire changes its controller path: it is authorized by the committed recovery key (reveal of next_control_commitment plus that key's signature, the proof Recover uses) or by the quorum — never by the current control key alone. A thief holding Alice's current key can change where the name pays until she recovers; they can no longer end it. The authorized transaction moves the active token from the record into completion-only custody, mints the updateTerminal approval (N2 — the same proof is present) and creates the completion request carrying it — today's co-created request. Completion is the fold of Update(0x01, 0x02): the custody UTxO is spent, its held token is the burn the delta requires, and the record's name is 0x02 forever. retirement_custody.ak keeps its rules; over_marker_for and the naming-specific value vocabulary in naming.ak are deleted.",
       "pause": 400
     }
   ],
@@ -345,7 +367,7 @@
       "pause": 500
     },
     {
-      "text": "As N4: in the Retire transaction, on the controller's signature or the quorum's — the interface's \"only the controller or the quorum can obtain an approval for updateTerminal\". R-NM4's row reads \"the quorum\" as shorthand for the retirement authorization naming already has (LT01 controller, LT02 quorum); both stand.",
+      "text": "As N4: in the Retire transaction, on the committed recovery key's proof or the quorum's signatures. Operator adjudication of want-ledger row R1 (2026-09-16): a name must not be endable by whoever holds the current control key, because a key thief and Alice are indistinguishable there; the recovery key is the one thing the thief does not have. LT01 (controller retirement accepts) is therefore retired as a row: the current control key alone is refused; the committed key accepts; LT02/LT03 stand.",
       "pause": 400
     }
   ],
@@ -375,6 +397,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "c8e64a6a6e10cf3c275a987f33d75bbb2039ef6262238fde80fda5c169264a53"
+    "sha256": "e70ef61c7c8953b877c86ea6a7dc898907b7a112ca0079d2040b3b8f294bbe01"
   }
 }
