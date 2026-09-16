@@ -71,8 +71,14 @@ manifest like any other declaration.
 `Singular.NamingStatements.over_terminal`,
 `Singular.NamingStatements.naming_delete_refused`, `Singular.Naming.WellFormed`
 and the recovery rows keep their qualified names and their meaning, re-stated over
-the new alphabet. The lifecycle row identities bound by `tools/check_model.py`
-(`LIFECYCLE_IDS`) are preserved exactly.
+the new alphabet.
+
+Under ruling A-001 `tools/check_model.py` is **opened to the new identities**, so
+its previous corpus-id and source-extent lists are not constraints on this
+deliverable. Its discipline is: exact identity matching against the manifests,
+PROVED only from the standard axioms, STATED for admitted declarations,
+byte-for-byte corpus regeneration, and the keyword/proof-hole audit over `lean/`.
+Weakening any of those is a finding, not a repair.
 
 Naming's approval policy certifies `insertActive` on the controller's signature
 and `updateTerminal` on the quorum's, and never certifies `deleteActive`.

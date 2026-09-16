@@ -1,56 +1,83 @@
-# #156 — plan and invariant mandate
+# #156 — plan, slices and invariant mandate
 
-Strategy, slice, and the exact invariant rows. Every row binds a Lean identity, a
-Given/When/Then, the executable model observation that exhibits it, and a control
-able to fail **for the intended reason**. A row whose only check would be a
-source-text match is not a row: it is a blocked question naming the row.
+Two sequential slices in one PR (ruling A-001). Every invariant row binds a Lean
+identity, a Given/When/Then, the executable observation that exhibits it, and a
+control able to fail **for the intended reason**. A row whose only check would be
+a source-text match is not a row: it is a blocked question naming the row.
 
 ## Strategy
 
 The model is rewritten, not migrated. `Value`, `incarnation`, `assetScope` and
 `reuseIdentity` are deleted; the edge set replaces the three-operation
-`insert/update/delete` vocabulary; `Config` goes to eight fields. Because every
-naming module imports the model, and because the corpora and manifests are
-byte-bound to the sources they are generated from, **no partial tree builds**.
-This is therefore one slice, not three: a tree that has the new `Model.lean` and
-the old `NamingStatements.lean` does not compile, so it is not a bisect point.
+`insert/update/delete` vocabulary; `Config` goes to eight fields.
 
-Order inside the slice is fixed by the issue: **definitions first**, so the model
+Because every naming module imports the model, and because the corpora and
+manifests are byte-bound to the sources they are generated from, **no partial
+Lean tree builds**: a tree with the new `Model.lean` and the old
+`NamingStatements.lean` does not compile, so it is not a bisect point. Slice A is
+therefore indivisible.
+
+Because the simulator is a hand transcription of the model, slice A's tree is
+green on the model gate and red on the simulator. That is expected and bounded:
+it is never pushed and never claimed as repository-green.
+
+Order inside slice A is fixed by the issue: **definitions first**, so the model
 can be reasoned about; then the generic statements; then the open application as
 the smallest instantiation, proved first; then naming; then the generated
-surfaces and the correspondence page.
+surfaces and the pages.
+
+## Slices
+
+| slice | owns | author | auditor |
+|---|---|---|---|
+| **A — model** | `lean/**` (definitions, statements, proofs, lemmas, manifests, debt surfaces, `lean/*.json` corpora and their generators); `tools/check_model.py`; `docs/theorems.md`, `docs/model-ledger.md`, `docs/mutants.md` and their speech stamps | `glm --approve` loading `lean-creator` + `lean4` | fresh Opus loading `lean-auditor` |
+| **B — simulator (#163)** | `simulator/**`; `docs/simulation.md`, `docs/LEAN-CLARITY.md`; the model-bound browser checks; the replayed corpora and the counts on the front page and `docs/design.md`; their speech stamps | `muse --approve` loading `lean-simulations` | fresh Opus loading `lean-simulations-auditor` |
+
+**Slice B does not start until slice A's audit passes and the slice-A Lean
+interface is frozen.** Slice B transcribes the frozen interface; it never edits
+it. A slice-B finding against the Lean is a Q to this ticket owner, not a repair.
+
+### Staffing, checked against the operator's rule
+
+Operator ruling, verbatim: "use codex as eo, opus as to, glm or muse as co";
+"use opus as auditor". It overrides the standing claude-below-milestone bar for
+this epic.
+
+- Slice A author `glm` — the one GLM seat this ticket is capped at.
+- Slice B author `muse` — a different seat from slice A's author, as A-001
+  requires, and inside the operator's GLM/Muse rule. **No escalation needed**:
+  both launchers resolve in a non-interactive shell (`/home/paolino/.local/bin/glm`,
+  `/home/paolino/.local/bin/muse`).
+- Every gate auditor and candidate auditor:
+  `claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort high`,
+  fresh context, fresh runtime root, fresh detached audit worktree, own pane.
+- Alternation holds at every edge: ticket owner `claude` ≠ authors `glm`/`muse`;
+  authors `glm`/`muse` ≠ auditors `claude`.
+- `draft=NONE`.
 
 ## Constraints
 
 - Lean is the behavioral authority. Do not weaken a statement to make it provable;
   a proved weaker statement is the wrong contract. Escalate as a user story.
-- Sorry-free at acceptance. `#print axioms` for every statement in the frozen
-  modules yields only `propext`, `Classical.choice`, `Quot.sound`.
-- The compiled axiom gate (`Singular.Audit`) runs while the library elaborates; it
-  must keep covering every statements module, including the naming ones.
-- **`tools/check_model.py` is outside this ticket's surface and is treated as
-  frozen** (pending Q-001). Its constraints therefore bind the deliverable:
-  the generic corpus source extent stays the current six-file `GENERIC_SOURCES`
-  list; the generic corpus keeps row-id prefixes `S01`–`S21` and `N01`–`N07`;
-  the naming corpus keeps its six sections and the prefixes
-  `SP, NQ, NF, NS, NR, NRP`; the lifecycle corpus keeps the **exact**
-  `LIFECYCLE_IDS` set. Meaning is re-stated over the new model; identities are
-  preserved. If a row's meaning cannot survive under its current id, that is a Q,
-  not a silent rename.
-- No `sorry` outside `lean/Singular/Statements.lean`; `audit_sources` rejects
-  `axiom`, `admit`, `unsafe`, `implemented_by`, `extern` anywhere in `lean/`.
-- Planning artifacts carry no implementation. The commit owner owns every line of
-  Lean, every generator row, and every proof.
+- Sorry-free at acceptance: every statement's axioms are exactly within
+  `propext`, `Classical.choice`, `Quot.sound`.
+- The compiled axiom gate (`Singular.Audit` and the naming gates) must keep
+  covering **every** statements module. A statements module with no gate is a
+  hole, not an omission.
+- `tools/check_model.py` is **opened to the new identities, not relaxed**: exact
+  identity matching, PROVED only from standard axioms, STATED for admitted
+  declarations, byte-for-byte corpus regeneration, and the keyword/proof-hole
+  audit over `lean/` all remain. Weakening any of them is a finding, not a repair.
+- No `sorry` outside the frozen statements module; `audit_sources` keeps
+  rejecting `axiom`, `admit`, `unsafe`, `implemented_by`, `extern` in `lean/`.
+- **Nothing lands or is pushed red.** Slice A's commit stays local until slice B
+  is accepted; the branch is pushed once, with the combined tree.
+- Planning artifacts carry no implementation. The authors own every line of Lean,
+  every generator row, every proof, and every line of simulator JavaScript.
 
-## Slice
+## Invariant rows — slice A
 
-**T-S1 `registry-mode-model`** — the whole model rewrite, its statements, both
-instances, the regenerated surfaces and the correspondence page, as one
-bisect-safe commit. Maximum two audited submissions.
-
-## Invariant rows
-
-`Given / When / Then` are the obligation. **Observation** is the executable model
+`Given / When / Then` is the obligation. **Observation** is the executable model
 row or inversion that exhibits it. **Control** is the seeded fault that must make
 that observation fail, and fail for the named reason.
 
@@ -58,12 +85,13 @@ that observation fail, and fail for the named reason.
 
 | id | Lean identity | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| D1 | `Singular.Leaf`, `Singular.State` | Given any key; when its leaf is read; then it is `Unknown` or `Known s` with `s ∈ {Absent, Active, Terminal}` and nothing else. `Value`, `incarnation`, `assetScope`, `reuseIdentity` do not exist. | Corpus rows covering all four leaf shapes | A leaf carrying an application payload does not typecheck / does not decode |
+| D1 | `Singular.Leaf`, `Singular.State` | Given any key; when its leaf is read; then it is `Unknown` or `Known s` with `s ∈ {Absent, Active, Terminal}` and nothing else. | Corpus rows covering all four leaf shapes | A leaf carrying an application payload does not elaborate |
+| D1b | absence of the old vocabulary | Given the **elaborated environment**; when `Singular.Value`, `Entry.incarnation`, `Representative.assetScope`, `Config.reuseIdentity`, `Config.consumerPin` are looked up; then none resolves. | An environment query in the audit gate, not a grep | Re-adding any one of them makes the query find it and the leg fail |
 | D2 | `Singular.Edge`, `Singular.delta` | Given an edge; when it is folded; then its from→to transition and its token delta are exactly the R2 table. | One accepted corpus row per edge with its recorded delta | Each edge with a delta off by one is refused `net-mint-mismatch` |
-| D3 | `Singular.Read`, the fold's root threading | Given a batch `[…, Read k v, …]`; when the fold reaches position k; then the proof is verified against the **intermediate** root at that position and the leaf is unchanged. | An accepted `[Insert k v, Read k v]` batch; the leaf equal before and after the read | The same read verified against the initial or final root is refused |
-| D4 | `Singular.admits`, `Config.applicationPolicy` | Given a tree-edge request without an approval under the pinned policy; when the fold runs; then it is refused. Given `witnessTerminal` without one; then it is accepted. | One refusal row per tree edge; one accepted read row | An approval under any other policy is refused |
-| D5 | `Singular.Config` | Given the state datum; when its fields are enumerated; then exactly `root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy, terminalPolicy`; no `consumerPin`. | Eight-field round-trip row | A nine-field or `consumerPin`-bearing datum does not decode |
-| D6 | `Singular.step` refusal reasons | Given each of `insert Terminal`, `update Absent`, any edge out of `Terminal`, `deleteTerminal`, a zero-request batch, a mint ≠ summed delta; when folded; then each is refused with its own distinct reason. | One refusal row per combination, reasons pairwise distinct | Deleting one guard turns its row accepted |
+| D3 | `Singular.Read`, root threading | Given a batch `[…, Read k v, …]`; when the fold reaches position k; then the proof is verified against the **intermediate** root at that position and the leaf is unchanged. | An accepted `[Insert k v, Read k v]` batch; leaf equal before and after | The same read verified against the initial or the final root is refused |
+| D4 | `Singular.admits`, `Config.applicationPolicy` | Given a tree-edge request without an approval under the pinned policy; when folded; then refused. Given `witnessTerminal` without one; then accepted. | One refusal row per tree edge; one accepted read row | An approval under any other policy is refused |
+| D5 | `Singular.Config` | Given the state datum; when its fields are enumerated; then exactly the eight of R7; no `consumerPin`. | Eight-field round-trip row | A nine-field or `consumerPin`-bearing datum does not decode |
+| D6 | `Singular.step` refusal reasons | Given each of `insert Terminal`, `update Absent`, any edge out of `Terminal`, `deleteTerminal`, a zero-request batch, a mint ≠ summed delta; when folded; then each is refused with its **own distinct** reason. | One refusal row per combination, reasons pairwise distinct | Removing one guard turns its row accepted |
 | D7 | `Singular.route` | Given a fold minting an absent token; when it completes; then the absent token is in cage custody and the active/terminal tokens are at the request's named output. | Custody rows per token kind | An absent token routed to the request's output is refused |
 | D-ADA | `Singular.route` (value) | Given `Known Absent` with its absent token in cage custody; when `updateActive` or `deleteAbsent` consumes it; then the value it held is paid to the output the consuming request names. | Value-flow row for both edges | Paying it to the folder, or retaining it in custody, is refused |
 
@@ -71,23 +99,23 @@ that observation fail, and fail for the named reason.
 
 | id | Lean identity | Given / When / Then | Observation | Control |
 |---|---|---|---|---|
-| C1 | `Singular.encodeState`, `Singular.decodeState` | Given any `State`; when encoded and decoded; then the original returns. `0x00` Absent, `0x01` Active, `0x02` Terminal. | Round-trip row per state | A codec mapping two states to one byte fails the round trip |
-| C2 | `Singular.decodeState` totality | Given any byte string that is not one of the three; when decoded; then no state is produced and the cage refuses the leaf. | Refusal rows for `0x03`, empty, multi-byte | A permissive decoder accepts `0x03` and the row goes green — it must not |
-| C3 | naming-era bytes | Given a leaf byte string from the naming era (representative name, `over` marker); when decoded; then it is not a valid leaf. | Refusal row over a naming-era byte string | A decoder that still accepts naming bytes fails this row |
+| C1 | `Singular.encodeState`, `Singular.decodeState` | Given any `State`; when encoded then decoded; then the original returns. `0x00`/`0x01`/`0x02`. | Round-trip row per state | A codec mapping two states to one byte fails the round trip |
+| C2 | `decodeState` totality | Given any byte string that is not one of the three; when decoded; then no state is produced and the cage refuses the leaf. | Refusal rows for `0x03`, empty, multi-byte | A permissive decoder accepts `0x03`; that row must then fail |
+| C3 | naming-era bytes | Given a leaf byte string from the naming era; when decoded; then it is not a valid leaf. | Refusal row over a naming-era byte string | A decoder that still accepts naming bytes fails this row |
 
 ### Statements (interface §6 and §4)
 
-Each is proved without `sorryAx` and carries the Given/When/Then below.
+Each proved without `sorryAx`, at these bound identities.
 
 | id | Lean identity | Given / When / Then |
 |---|---|---|
 | I-P1 | `Singular.Statements.no_tree_change_without_approval` | Given any reachable state and any fold; when a tree change occurs; then the request carried an approval under the pinned application policy, and the pins are equal before and after. |
-| I-L1 | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic (all-or-nothing), and each request is spent once. |
-| I-S1 | `Singular.Statements.terminal_attestation_sound` | Given a terminal token for `key` exists; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
-| I-S2 | `Singular.Statements.terminal_attestation_permanent` | Given a terminal token valid in state `s`; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
+| I-L1 | `Singular.Statements.booked_at_most_once` | Given any reachable state; when a batch is folded; then a key is booked at most once at a time, the batch is atomic, and each request is spent once. |
+| I-S1 | `Singular.Statements.terminal_attestation_sound` | Given a terminal token for `key`; when its provenance is traced; then it was minted by a fold that accepted `Read Terminal` for `key`, which holds only if the leaf was `Known Terminal`. No attestation of an `Active`, `Absent` or `Unknown` key exists. |
+| I-S2 | `Singular.Statements.terminal_attestation_permanent` | Given a terminal token valid in `s`; when any sequence of folds is applied; then it is valid in every later state, because a `Terminal` leaf admits no edge that moves it. |
 | I-S3 | `Singular.Statements.biconditional_supply_sync` | Given any key and either biconditional kind; when the supply is counted; then it is 1 iff the key is in that token's state, and 0 otherwise — unconditionally. Identity is `(policy, key)`; a key recreated after `deleteActive` carries the same identity, by design. |
-| I-O1 | `Singular.Statements.occupancy` | Given a key whose leaf is `Active` or `Terminal` ("taken"); when a booking edge (`insertActive` or `updateActive`) is folded; then it is refused; and when the key is not taken, it succeeds. |
-| I-T1 | `Singular.Statements.termination` | Given `Known Terminal`; when any edge is attempted; then it is refused, so the key stays terminated forever and is never re-booked. |
+| I-O1 | `Singular.Statements.occupancy` | Given a key whose leaf is `Active` or `Terminal`; when a booking edge is folded; then refused; and when the key is not taken, it succeeds. |
+| I-T1 | `Singular.Statements.termination` | Given `Known Terminal`; when any edge is attempted; then refused, so the key stays terminated forever and is never re-booked. |
 | I-W1 | `Singular.Statements.active_witness_unique` | Given any key; when active tokens are counted; then at most one, and exactly one iff the leaf is `Known Active`. |
 | I-W2 | `Singular.Statements.absent_witness_unique` | Given any key; when absent tokens are counted; then at most one, and exactly one iff the leaf is `Known Absent`. |
 | I-W3 | `Singular.Statements.terminal_witness_plural` | Given `Known Terminal`; when terminal tokens are minted or burned; then any number may exist, all true, all freely burnable; and any exists only if the leaf is `Known Terminal`. |
@@ -97,19 +125,25 @@ Each is proved without `sorryAx` and carries the Given/When/Then below.
 
 | id | Given / When / Then | Observation | Control |
 |---|---|---|---|
-| OA1 | Given the open application — a policy that certifies everything; when each statement I-P1…I-W4 is instantiated at it; then all hold. This is the smallest instantiation and is proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
+| OA1 | Given the open application — a policy that certifies everything; when each statement I-P1…I-W4 is instantiated at it; then all hold. The smallest instantiation, proved **first**. | Instantiation of every statement at the open policy | A statement that silently assumed naming's policy fails to instantiate |
 | NM1 | Given naming; when a record is registered; then the record UTxO holds the active token and the trie carries only `Active`. | Naming corpus registration rows | A record whose data sits in the leaf fails D1 |
 | NM2 | Given a live record; when `maintain` or `recover` runs; then the application UTxO is spent and **the trie is untouched** — root equal before and after. | Root-equality rows for both moves | A maintain that changes the root is refused |
-| NM3 | Given retirement; when it completes; then it is `updateTerminal`, and the existing `over_terminal` and `naming_delete_refused` meanings hold over the new model. | Re-stated naming statements at their preserved identities | Re-admitting either statement turns the build red |
+| NM3 | Given retirement; when it completes; then it is `updateTerminal`, and `over_terminal` and `naming_delete_refused` hold over the new model. | Re-stated naming statements at their preserved identities | Re-admitting either statement turns the build red |
 | NM4 | Given naming's approval policy; when an `insertActive` request carries the controller's signature, or `updateTerminal` the quorum's; then an approval is minted; for `deleteActive`, never. | Admission rows per edge | An approval minted for `deleteActive` is refused |
-| NM5 | Given the naming recovery rows and `WellFormed`; when re-stated over the new model; then their meaning is preserved and their lifecycle ids are unchanged. | `LIFECYCLE_IDS` set equality holds | A dropped recovery row breaks the exact-set assertion |
+| NM5 | Given the naming recovery rows and `WellFormed`; when re-stated over the new model; then their meaning is preserved. | The lifecycle corpus replays under the new identities | A dropped recovery row is missing from the regenerated manifest |
 
 ### Mutants — the four named in #154
 
-Each must break **its** law, under audit, with a positive control proving the law
-holds on the unmutated model. A compile failure is **not** a behavioral kill and
-may not be presented as one: each mutant must elaborate and then be refuted by a
-statement or an executable row.
+Each must break **its** law. A compile failure is **not** a behavioral kill and
+may not be presented as one. For each mutant the ledger records, per mutant:
+
+1. the mutated definition **elaborates** — so what is being measured is a
+   semantic change, not a syntax error;
+2. the kill is **either** a named statement whose proof no longer closes, with
+   the failing goal recorded, **or** an executable corpus row whose verdict
+   flips — and which of the two it is, is recorded, never left implicit;
+3. a **positive control** on the unmutated model showing that same statement
+   proves, or that same row holds.
 
 | id | mutant | must break |
 |---|---|---|
@@ -118,13 +152,58 @@ statement or an executable row.
 | M3 | attest an active key (`Read Active` admitted) | I-S1 |
 | M4 | leave the absent token outstanding on `updateActive` | I-S3 and I-W4 |
 
+`docs/mutants.md` today declares every row PROPOSED / NOT EXECUTED and defines a
+kill as "the mutated model no longer builds". Both statements are superseded for
+these four: they are executed, and a build failure alone does not count.
+
+## Invariant rows — slice B (#163)
+
+| id | Given / When / Then | Observation | Control |
+|---|---|---|---|
+| B1 | Given the frozen slice-A interface; when the generic profile is played; then the seven edges and the read are exposed, with the token movement shown per edge. | Simulator profile exercised over every edge | An edge missing from the profile fails the denominator check |
+| B2 | Given each illegal combination of R3; when attempted in the simulator; then it is refused **by name**, matching the model's reason. | One named refusal per combination | A generic "invalid" refusal that does not name the combination fails |
+| B3 | Given the new corpora; when the simulator replays them; then every finite row agrees with the Lean-computed result. | Full-corpus replay with an executed/discovered denominator | A single altered expected verdict turns the replay red |
+| B4 | Given the naming profile; when a retired key is read; then the Over witness is minted by a **folded read** and can be freely burned. | Naming profile journey | Minting it without a folded read fails |
+| B5 | Given the front page and `docs/design.md`; when their counts are read; then they equal what actually replays. | Counts derived from the replay, not hand-written | A stale count fails its check |
+| B6 | Given every changed page; when `just check-presentation` runs; then speech is fresh and stamped. | `just check-presentation` exit 0 | An unstamped page fails |
+| B7 | Given the transcription; when `docs/LEAN-CLARITY.md` is written; then it records what the formal artifacts did and did not communicate to the transcriber. | The page, authored from the transcription experience | — (a record, not a check) |
+
+Slice B states its finite-model limits explicitly: the simulator exhibits the
+corpora it replays and proves nothing universally.
+
+## Gates
+
+Three frozen artifacts, each proved able to fail **per failure class** before the
+work it judges begins, and each audited blind before that work starts.
+
+**Gate A — slice A, focused.** Deliberately **not** whole-repository green, since
+the simulator is red until slice B by construction. Classes: Lean elaboration;
+axiom cleanliness (no `sorryAx`, standard axioms only, every statements module
+gated); exact identity/manifest discipline and byte-for-byte corpus
+regeneration; removed-vocabulary absence from the elaborated environment (D1b);
+per-edge and per-refusal corpus rows with distinct reasons; the four mutants with
+their positive controls; the three owned pages regenerated with fresh speech
+stamps and their declaration tables equal to the generated manifests.
+
+**Gate B — slice B, focused.** Classes: simulator build and self-test; full
+corpus replay agreement; named refusal of every illegal combination; browser
+checks; the count checks of B5; presentation and speech stamps.
+
+**Ticket gate — the atomic result.** `nix develop --quiet -c just ci` exit 0 plus
+both focused gates, run on the combined tree, plus green GitHub CI on the exact
+pushed head. This is the only gate that may claim the repository green.
+
 ## Evidence required at acceptance
 
-- `nix develop --quiet -c just model` exit 0;
-- `nix develop --quiet -c just ci` exit 0 — **green criterion pending Q-001**;
-- compiled axiom report clean for every statement above, no `sorryAx`;
+- `nix develop --quiet -c just model` exit 0 and `nix develop --quiet -c just ci`
+  exit 0 on the combined tree;
+- compiled axiom report clean for every statement, no `sorryAx`;
 - the four mutants each producing their intended law failure, each with its
-  positive control, none classified from a compile failure;
-- regenerated corpora, manifests, `docs/theorems.md` and its stamped speech file
-  corresponding to the accepted revision;
-- a fresh independent Opus `lean-auditor` report bound to candidate and base.
+  positive control, each classified as statement-kill or row-kill, none
+  classified from a compile failure;
+- regenerated corpora, manifests and every owned page corresponding to the
+  accepted revision, with fresh speech stamps;
+- a fresh independent Opus `lean-auditor` report for slice A and a fresh
+  independent Opus `lean-simulations-auditor` report for slice B, each bound to
+  its candidate and base;
+- green GitHub CI on the exact pushed head, which is pushed once, never red.
