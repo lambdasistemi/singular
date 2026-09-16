@@ -1,0 +1,2 @@
+# Resume — Singular M1 desk
+Outcome test met 2026-09-15 (v0.6.1, preprod journeys, #102/#18 closed). M1 stays open by operator ruling 2026-09-16: the live demo (#141) is in scope and epic #154 (Over witnesses) blocks it; the operator's own desk parents that lane. Desk duties: keep the map (wiki/ledger) reconciled at each #154 landing, answer asks, and close the milestone when #154, #152 and the #141 steps are delivered or the operator rules otherwise. Read STATUS.md tail first.
