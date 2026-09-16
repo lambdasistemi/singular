@@ -19,7 +19,7 @@
   ],
   "constraints": [
     {
-      "text": "Lean is the behavioral authority; a proved weaker statement is the wrong contract. Nothing lands or is pushed red, and the model checker is opened to new identities without being relaxed.",
+      "text": "Lean is the behavioral authority; a proved weaker statement is the wrong contract. Nothing lands red, but intermediate red heads on the draft branch are allowed, so an audited candidate is not stranded on one worktree for the duration of the second slice.",
       "pause": 400
     }
   ],
@@ -43,19 +43,31 @@
   ],
   "statements-interface-6-and-4": [
     {
-      "text": "The eleven promises at their bound identities: policing, atomicity, soundness, permanence, synchronisation, occupancy, termination, and the four laws of the witnesses.",
+      "text": "The eleven promises at their bound identities. Every row quantifies over states reachable from genesis by folds: over an arbitrary state value the supply laws are simply false. Unconditional means no application hypothesis, never no reachability hypothesis.",
       "pause": 400
     }
   ],
   "instances": [
     {
-      "text": "The open application first, as the proof that the guarantees are unconditional in the application; then naming, whose trie-free moves must leave the root equal.",
+      "text": "The open application first, as the proof that the guarantees are unconditional in the application; then naming, whose approval policy follows the operator's ruling for all six edges and whose trie-free moves must leave the root equal.",
       "pause": 400
     }
   ],
   "mutants-the-four-named-in-154": [
     {
       "text": "Each mutant must elaborate first, so what is measured is a semantic change and not a syntax error; the kill is either a statement whose proof no longer closes or a corpus row whose verdict flips, recorded per mutant with a positive control. A compile failure alone is not a behavioral kill.",
+      "pause": 400
+    }
+  ],
+  "r12-the-retirement-map-for-the-44-generic-declarations": [
+    {
+      "text": "Each of the forty-four base declarations is carried, renamed to a named identity, or retired with a reason. The retirement theorem is in the generic module and is superseded rather than preserved, so without the map a dropped guarantee is indistinguishable from a rename.",
+      "pause": 400
+    }
+  ],
+  "slice-a-audit-obligations-beyond-the-gate": [
+    {
+      "text": "Three things the gate cannot judge: the four mutants with their kill classification and positive controls; that the model checker still checks what it claims, since the author rewrites the very file one gate leg runs; and that the retirement map is complete against the base manifest.",
       "pause": 400
     }
   ],
@@ -73,7 +85,7 @@
   ],
   "gates": [
     {
-      "text": "Three frozen gates: a focused model gate that deliberately does not claim the repository green, a focused simulator gate, and the ticket gate on the combined tree, which is the only one that may.",
+      "text": "Three gates. The model gate deliberately does not claim the repository green, since the simulator is red until the second slice. The axiom class has no leg of its own because the compiled audit throws during elaboration, so a separate leg could never fail independently of the build — and a leg that cannot fail on its own is an echo, not a second opinion.",
       "pause": 400
     }
   ],
@@ -85,6 +97,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c82b47da8bf8bedc94f6194cce587122a01e4c21b5aa5f7818453b1ad7a6b6d2"
+    "sha256": "42da00a55fa1f0a766079bfe073014c7545118ea4023b04bb2b61545d7d2d700"
   }
 }

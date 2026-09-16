@@ -51,6 +51,18 @@ proved before naming.
 - [ ] T156-20 — `tools/check_model.py` gains the page-against-manifest
       cross-check, seen to fail before it is trusted (X2), so the gap that
       survived v0.6.1 cannot recur once this ticket's gate is gone.
+- [ ] T156-21 — the refused reads `Read Active` and `Read Absent` are in the
+      refusal set with rows and controls, and R3 is stated as the complement of
+      the R2 table rather than an enumeration (A-002 SPEC 1, 2).
+- [ ] T156-22 — the absent token's custody datum carries the `insertAbsent`
+      refund address; both exits pay there; the custody census holds (R-ADA,
+      D-CUST). The control uses an inserter and a consumer that differ.
+- [ ] T156-23 — naming's approval policy implements R-NM4 for all six edges,
+      with the four refusal controls (A-002 SPEC 5).
+- [ ] T156-24 — the retirement map for all 44 base generic declarations:
+      carried, renamed to what, or retired why (R12).
+- [ ] T156-25 — every statement quantifies over `Singular.Reachable` states,
+      not arbitrary `State` values (A-002 SPEC 3).
 
 ## Slice B — `#163 simulator` (author `muse`, auditor Opus `lean-simulations-auditor`)
 

@@ -35,9 +35,9 @@
       "pause": 400
     }
   ],
-  "r3-the-refused-combinations": [
+  "r3-the-refused-combinations-as-the-complement-of-r2": [
     {
-      "text": "Nothing is born terminal, a booking is not undone into absence, nothing leaves terminal, a zero-request batch is refused, and any mint differing from the summed delta is refused. Each carries its own distinct reason.",
+      "text": "Refusal is stated as the complement of the edge table, not as a list: every primitive, value and before-leaf triple that is not a row of that table is refused, so a triple nobody thought of is refused by construction rather than by omission. Distinct reasons are required only where the distinction is observable.",
       "pause": 400
     }
   ],
@@ -55,7 +55,7 @@
   ],
   "r6-token-custody-and-routing": [
     {
-      "text": "Absent tokens go to the cage's own custody so a later fold can consume them without a signature; active and terminal tokens go to the output the request names.",
+      "text": "Absent tokens go to the cage's own custody so a later fold consumes them without a signature; active and terminal tokens go to the output the request names. Where the absent token's value goes when it is consumed is settled by the operator's deposit ruling.",
       "pause": 400
     }
   ],
@@ -73,7 +73,13 @@
   ],
   "r9-the-instances": [
     {
-      "text": "The open application is the smallest instantiation and is proved first. Naming is the second, with its existing statements re-stated over the new model and their meaning preserved.",
+      "text": "The open application is the smallest instantiation and is proved first. Naming is the second, and its approval policy follows the operator's ruling for all six edges. The retirement theorem is not a naming statement: it lives in the generic module and the interface supersedes it.",
+      "pause": 400
+    }
+  ],
+  "r12-the-retirement-map-for-the-generic-statements": [
+    {
+      "text": "Every one of the forty-four base declarations gets exactly one disposition: carried, renamed to a named identity, or retired with a reason. Without it an auditor cannot tell a dropped guarantee from a rename, and the page-against-manifest check passes on a manifest that quietly lost rows.",
       "pause": 400
     }
   ],
@@ -89,27 +95,33 @@
       "pause": 400
     }
   ],
-  "decisions-this-ticket-freezes": [
+  "decisions": [
     {
-      "text": "Three items the interface leaves open are settled here, each with its derivation, and each reported so the epic owner and the operator can overrule before the on-chain ticket consumes it.",
+      "text": "Three decisions. Two are now operator rulings rather than proposals, and one was accepted as this ticket proposed it. Changing any of them needs a new operator ruling.",
       "pause": 400
     }
   ],
-  "d-codec-the-three-state-leaf-codec-frozen-sibling-contract": [
+  "d-codec-the-three-state-leaf-codec-frozen-sibling-contract-accepted": [
     {
-      "text": "The leaf is one byte: zero for absent, one for active, two for terminal. It is the smallest total encoding of a three-element alphabet and admits no application payload by construction. Naming-era leaf bytes stop being valid leaves, which is the intended break.",
+      "text": "Accepted: the leaf is one byte, zero absent, one active, two terminal. Every other byte string does not decode, and no root the cage produced contains it — the cage never decodes a leaf, it hashes the value it writes.",
       "pause": 400
     }
   ],
-  "d-ada-where-the-absent-tokens-value-goes-when-it-is-consumed": [
+  "r-ada-the-absent-tokens-deposit-belongs-to-the-inserter-operator-ruling": [
     {
-      "text": "The value held with a consumed absent token is paid to the output the consuming request names. Paying the folder would pay it twice and distort the fold market; retaining it would accumulate unbounded dust in cage custody.",
+      "text": "Operator ruling, replacing this ticket's rejected proposal. The insert-absent request names a refund address, recorded in the custody datum beside the token, and both exits pay the deposit there — never to the consuming request's output, never to the folder. Otherwise whoever obtains a delete-absent approval harvests the inserter's deposit, and in the open registry every absent witness becomes a bounty.",
       "pause": 400
     }
   ],
-  "d-self-whether-the-registry-refuses-insertabsent-on-its-own-account": [
+  "d-self-whether-the-registry-refuses-insertabsent-on-its-own-account-accepted": [
     {
-      "text": "It does not. Witnessing absence is a tree change, and the interface governs it with the same sentence as every other edge, so the pinned policy decides and the model carries no special refusal.",
+      "text": "Accepted: it does not. Witnessing absence is a tree change, and the interface governs it with the same sentence as every other edge, so the pinned policy decides.",
+      "pause": 400
+    }
+  ],
+  "r-nm4-namings-rule-for-the-three-absent-edges-operator-ruling": [
+    {
+      "text": "Operator ruling completing naming's policy: anyone may witness absence, booking needs the signature of the controller who will own the record, and only the refund address the insert named may retract the witness. Carol owns the witness; nobody owns the absence.",
       "pause": 400
     }
   ],
@@ -133,6 +145,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "03bae75fdaa45641747f3a028316e707045e156d70984680e3f25eceda6b9fa1"
+    "sha256": "c3d29eb7e5ddaada4f80f27190e7b3d0fdb958a98575f1e75ba9880eda05b097"
   }
 }

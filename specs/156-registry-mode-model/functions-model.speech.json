@@ -31,18 +31,18 @@
   ],
   "naming-preserved-identities": [
     {
-      "text": "The naming statements and recovery rows keep their qualified names and their meaning. The model checker is opened to the new identities, but its discipline is retained, and weakening any part of it is a finding rather than a repair.",
+      "text": "The naming statements and recovery rows keep their names and meaning. The retirement theorem does not: it is a generic statement, superseded by the termination law, which is why every base declaration needs an explicit disposition. Naming's policy follows the operator's six-edge ruling.",
       "pause": 400
     }
   ],
   "removed": [
     {
-      "text": "The old value type, the incarnation counter, the asset scope, the reuse identity, the consumer pin, and the operation triple with its free-form update. Removal, not deprecation.",
+      "text": "Seven declarations go, including the operation triple with its free-form update and the representative policy, which is renamed — so the old name must not survive either. All seven are checked against the elaborated environment, never a source grep: a declaration left in place under a new alias passes a grep and must fail here.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "c834f169c17fbc70a16c23890a1b7cc3d103d35ac4dd6090d8a02e3a8ee43956"
+    "sha256": "5beff538ee21ce75e504b933a9d97253eefc5fadfffebe412a301e972c96c76d"
   }
 }

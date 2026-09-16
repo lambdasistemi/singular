@@ -25,7 +25,7 @@
   ],
   "custody-and-value": [
     {
-      "text": "The absent token lives in the cage's own custody so a later fold needs no signature, and its value is paid on consumption to the output the consuming request names. Cage custody holds exactly the outstanding absent tokens and their value.",
+      "text": "The absent token's custody datum carries the refund address the insert named, and both exits pay the deposit there. Cage custody holds exactly the outstanding absent tokens, each with its refund address and its value. The deposit belongs to the inserter, not to whoever ends the absence.",
       "pause": 400
     }
   ],
@@ -49,6 +49,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "0d6c964de86ca1671ed06b4ffcce8baa48d7d1b03f6f0bae724d569e60bf2788"
+    "sha256": "f06122eb2884279d50f497e8b2063e3844f9c1c3697fa145be1c73d431e4dd50"
   }
 }

@@ -65,12 +65,21 @@ and every terminal token.
 
 | token | custody | value on consumption |
 |---|---|---|
-| absent | the cage's own, so a later fold consumes it without a signature | paid to the output the consuming request names (D-ADA) |
+| absent | the cage's own, so a later fold consumes it without a signature | paid to **the refund address the `insertAbsent` request named** (R-ADA) |
 | active | the output the request names | — |
 | terminal | the output the request names | — |
 
-Invariant: cage custody holds exactly the outstanding absent tokens and their
-value — no more, no less.
+The absent token's **custody datum carries that refund address**, recorded when
+`insertAbsent` is folded. Both exits — `updateActive` and `deleteAbsent` — pay
+there, never to the consuming request's output and never to the folder.
+
+Invariant (D-CUST): cage custody holds exactly the outstanding absent tokens,
+**each with its refund address and its value** — no more, no less.
+
+The deposit belongs to the inserter, not to whoever ends the absence. Paying the
+consumer would make every absent witness a bounty in the open registry, and where
+inserter and booker differ — a successor registry, reserved spellings — there is
+no sense in which the consumer funded it.
 
 ## Edges and deltas
 

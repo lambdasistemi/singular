@@ -78,12 +78,32 @@ key: a deleted key is `Unknown` again and may be inserted again as the same key.
 
 There is no free-form `update`: the only updates are the two state moves above.
 
-### R3 — the refused combinations
+### R3 — the refused combinations, as the complement of R2
 
-The fold refuses, each with its own distinct reason: `insert Terminal` (nothing is
-born terminal); `update Absent` (a booking is not undone into absence); every edge
-out of `Terminal`; `deleteTerminal`; a batch of zero requests; and any mint under
-the pinned token policies differing from the summed delta.
+**Every `(primitive, value, before-leaf)` triple that is not a row of the R2
+table is refused.** R3 is not a list; it is the complement, and the model states
+it that way so that a triple nobody thought of is refused by construction rather
+than by omission.
+
+The named reasons the refusals carry, which is what a caller and the gate
+observe:
+
+| refused | why |
+|---|---|
+| `insert Terminal` | nothing is born terminal |
+| `update Absent` | a booking is not undone into absence; it is deleted and witnessed again |
+| `update Terminal` on `Known Absent` | nothing is terminated that was never booked |
+| `update Active` on `Known Active` | already booked; there is no free-form update |
+| any `insert` on a `Known` leaf | the key exists |
+| `delete` on `Unknown` | there is nothing to delete |
+| any edge out of `Known Terminal` | terminal admits none; `deleteTerminal` is one case of this fact, not a second fact |
+| `Read Active`, `Read Absent` | only a leaf that can no longer move may be attested (R5, and the structural guard S1 rests on) |
+| a batch of zero requests | the empty-fold rule refuses zero *requests* |
+| a mint differing from the summed delta | the cage's delta is read off the edges it folded |
+
+Distinct reasons are required where the distinction is **observable**. Two
+refusals of one underlying fact — `deleteTerminal` and "any edge out of
+`Terminal`" — are not required to carry two reasons.
 
 ### R4 — admission (interface §3)
 
@@ -105,7 +125,9 @@ is ever produced.
 
 Absent tokens are routed to the cage's own custody, so any later fold can consume
 them without a signature. Active and terminal tokens go to the output the request
-names. D-ADA below settles the value when an absent token is consumed.
+names. **R-ADA** below settles where the absent token's value goes when it is
+consumed: to the refund address the `insertAbsent` request named, recorded in the
+custody datum beside the token.
 
 ### R7 — the state configuration
 
@@ -125,10 +147,28 @@ The **open application** — a policy that certifies everything — is the small
 instantiation and is proved first; every statement in R8 holds for it. **Naming**
 is the second: the record UTxO holds the active token; `maintain` and `recover`
 never touch the trie; retirement completion is `updateTerminal`; the approval
-policy certifies `insertActive` on the controller's signature and
-`updateTerminal` on the quorum's; `deleteActive` is never certified. The existing
-naming statements (`over_terminal`, `naming_delete_refused`, `WellFormed`, the
-recovery rows) are re-stated over the new model with their meaning preserved.
+policy follows **R-NM4** for all six edges. The existing naming statements
+(`naming_delete_refused`, `WellFormed`, the recovery rows) are re-stated over the
+new model with their meaning preserved.
+
+`over_terminal` is **not** one of them: it lives in `Singular.Statements`
+(Statements.lean:142), not in the naming layer, and the interface **supersedes**
+it with T1 rather than preserving it. Because the generic module also carries
+`over_no_representative`, `resolve_over` and the `consumer` theorems, slice A's
+handback must include a **retirement map** — see R12.
+
+### R12 — the retirement map for the generic statements
+
+Slice A's handback carries, for **all 44** declarations in the base
+`lean/theorem-debt.json`, exactly one disposition each:
+
+- **carried** — same meaning, same or new identity;
+- **renamed** — to which exact identity;
+- **retired** — with the reason (`consumerPin` removed, subsumed by T1, …).
+
+Without it an auditor cannot distinguish a dropped guarantee from a rename, and
+the page-against-manifest check passes happily on a manifest that quietly lost
+rows.
 
 ### R10 — the model-bound tooling and pages (slice A)
 
@@ -152,16 +192,18 @@ new model, and the counts on the front page and in `docs/design.md` are updated
 to **what actually replays**. Every changed page's speech is redone and
 restamped.
 
-## Decisions this ticket freezes
+## Decisions
 
-The three items interface §9 leaves open, each settled with its derivation and
-each reported in the handback so the epic owner and the operator can overrule
-before #157 consumes it.
+Interface §9's three open items. Two are now **operator rulings** (A-002); one
+was accepted as this ticket proposed it. They are no longer proposals, and
+changing any of them needs a new operator ruling, not a ticket-owner decision.
 
-### D-CODEC — the three-state leaf codec (frozen sibling contract)
+### D-CODEC — the three-state leaf codec (frozen sibling contract, accepted)
 
 The leaf value is **one byte**: `0x00` Absent, `0x01` Active, `0x02` Terminal.
-Every other byte string is not a valid leaf and the cage refuses it.
+Every other byte string **does not decode, and no root the cage produced contains
+it**. The cage never decodes a leaf — it hashes the value it writes — so "the
+cage refuses it" would describe a check that does not exist.
 
 Derivation: §0 — the value slot is taken away from applications and filled with a
 fixed lifecycle vocabulary; a one-byte tag is the smallest total encoding of a
@@ -175,22 +217,26 @@ Obligations: `encode`/`decode` total and mutually inverse on valid bytes,
 injective, decidable; no byte decodes to two states; a naming-era leaf byte string
 does not decode. #157 and #152 consume this verbatim.
 
-### D-ADA — where the absent token's value goes when it is consumed
+### R-ADA — the absent token's deposit belongs to the inserter (operator ruling)
 
-On `updateActive` and `deleteAbsent`, the value held with the consumed absent
-token is paid to **the output the consuming request names** — the same
-destination rule already governing the active and terminal tokens.
+**Operator ruling, A-002. It replaces this ticket's proposed D-ADA, which is
+rejected.**
 
-Derivation: §2 makes the absent token biconditional, created on entry and consumed
-by every exit in the fold itself; #154 puts it in cage custody so a later fold
-needs no signature. Paying it to the folder would pay the folder twice (tip plus
-custody) and distort the fold market; retaining it would accumulate unbounded dust
-in cage custody. Routing it to the request's named output keeps one routing
-sentence for all three kinds, keeps cage custody equal to exactly the outstanding
-absent tokens, and makes `insertAbsent` → `updateActive` value-neutral for the
-application that funded it.
+The `insertAbsent` request names a refund address. That address is recorded in
+the custody datum beside the absent token. When the token is consumed — by
+`updateActive` or by `deleteAbsent` — the value it held is paid to **that refund
+address**: never to the consuming request's output, never to the folder.
 
-### D-SELF — whether the registry refuses `insertAbsent` on its own account
+The model must state the consequence: **cage custody holds exactly the
+outstanding absent tokens, each with its refund address and its value.**
+
+Why the ticket's proposal was wrong, recorded so it is not re-proposed: under
+D-ADA whoever obtains a `deleteAbsent` approval harvests the inserter's min-ADA,
+so in the open registry every absent witness is a bounty; and where the inserter
+and the booker differ — a successor registry, reserved spellings — the
+"value-neutral for whoever funded it" derivation is simply false.
+
+### D-SELF — whether the registry refuses `insertAbsent` on its own account (accepted)
 
 **It does not.** `insertAbsent` is admitted exactly like the other five tree
 edges: by an approval under the pinned application policy, and by nothing else.
@@ -201,6 +247,26 @@ absence is a tree change, so the application decides who may do it … with the 
 sentence that governs every other edge." A registry-level refusal would contradict
 that sentence and would remove the successor-registry and reserved-spellings
 instances of §8. The model carries **no** `insertAbsent`-specific refusal.
+
+### R-NM4 — naming's rule for the three absent edges (operator ruling)
+
+**Operator ruling, A-002.** It completes NM4, which this ticket had left
+incomplete for the absent edges.
+
+| edge | naming's approval policy certifies on |
+|---|---|
+| `insertAbsent` | **anyone** — witnessing a fact needs no consent |
+| `updateActive` | the signature of the controller who will own the record — exactly as `insertActive`; booking a witnessed-absent name is indistinguishable from booking an unknown one |
+| `deleteAbsent` | the signature of **the refund address the `insertAbsent` request named** — the inserter only, never anyone else, never nobody |
+| `insertActive` | the controller's signature |
+| `updateTerminal` | the quorum |
+| `deleteActive` | **never** |
+
+The story these rows serve: Carol owns the **witness** — only she can retract it,
+and her deposit returns to her whichever way it ends. **Nobody owns the
+absence** — anyone the policy admits may end it by booking, and the fold consumes
+Carol's token without her signature, which is exactly why it lives in cage
+custody.
 
 ## Rejection behavior
 
