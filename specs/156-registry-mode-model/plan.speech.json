@@ -59,6 +59,12 @@
       "pause": 400
     }
   ],
+  "a-starting-state-defect-this-slice-must-correct": [
+    {
+      "text": "Falsifying the gate against the base tree turned up a defect in already released work: the debt manifest carries forty-four proved declarations while the theorem page lists forty-one and claims all forty-one. Two obligations follow, and the second one matters more: the cross-check becomes permanent in the repository tooling, because nothing checks it today, which is how a three-row gap survived a release.",
+      "pause": 400
+    }
+  ],
   "invariant-rows-slice-b-163": [
     {
       "text": "Seven simulator rows: the edges and the read exposed, every illegal combination refused by name, full replay agreement, the naming profile's Over witness, counts equal to what replays, fresh speech, and a clarity record.",
@@ -79,6 +85,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "1597a633e9cc3b8ad3afaa3a1cbc87ccc24088086fa8814ec4a8450ddd3f91d0"
+    "sha256": "c82b47da8bf8bedc94f6194cce587122a01e4c21b5aa5f7818453b1ad7a6b6d2"
   }
 }

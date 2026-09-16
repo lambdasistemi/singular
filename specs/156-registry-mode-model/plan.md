@@ -156,6 +156,36 @@ may not be presented as one. For each mutant the ledger records, per mutant:
 kill as "the mutated model no longer builds". Both statements are superseded for
 these four: they are executed, and a build failure alone does not count.
 
+### A starting-state defect this slice must correct
+
+Found by falsifying gate-a against the base tree, and recorded here rather than
+absorbed silently (constitution, principle V — the rule applies to already
+merged and released work).
+
+`lean/theorem-debt.json` carries **44** proved declarations.
+`docs/theorems.md` — whose stated purpose is an *"Exact declaration
+inventory"* — has **41** table rows and asserts *"All 41 declarations are
+PROVED"*. Three proved statements appear nowhere on the page:
+
+```
+Singular.Statements.empty_fold_error
+Singular.Statements.empty_fold_never_ok
+Singular.Statements.nonempty_fold_invokes_consumer
+```
+
+This shipped in the published v0.6.1 docs. The register under-reports the
+statements that exist, and its total is wrong.
+
+Two obligations follow:
+
+| id | obligation |
+|---|---|
+| X1 | The rewritten `docs/theorems.md` equals its manifest exactly — every declaration present, the total derived rather than asserted. |
+| X2 | **The check becomes permanent.** `tools/check_model.py` gains the page-against-manifest cross-check, so the class cannot recur once this ticket's gate is gone. Nothing in the repository checks it today, which is why a three-row gap survived a release. The check must be seen to fail before it is trusted. |
+
+X2 is the finding turned into a property. A repair that only fixes the three
+rows leaves the next divergence undetected.
+
 ## Invariant rows — slice B (#163)
 
 | id | Given / When / Then | Observation | Control |

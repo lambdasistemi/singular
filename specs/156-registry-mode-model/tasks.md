@@ -45,6 +45,12 @@ proved before naming.
 - [ ] T156-18 — the four #154 mutants each break their named law, each with a
       positive control, each classified statement-kill or row-kill, none from a
       compile failure (M1–M4).
+- [ ] T156-19 — `docs/theorems.md` equals its manifest exactly, with the total
+      derived rather than asserted (X1). The base tree ships 44 manifest
+      declarations against 41 page rows.
+- [ ] T156-20 — `tools/check_model.py` gains the page-against-manifest
+      cross-check, seen to fail before it is trusted (X2), so the gap that
+      survived v0.6.1 cannot recur once this ticket's gate is gone.
 
 ## Slice B — `#163 simulator` (author `muse`, auditor Opus `lean-simulations-auditor`)
 
