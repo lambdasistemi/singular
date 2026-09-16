@@ -1,0 +1,108 @@
+{
+  "state-invariants-the-cage-keeps": [
+    {
+      "text": "State invariants the cage keeps.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 7 rows, columns invariant, statement. The rows: pins; admissibility; admission; delta; custody; destination; coverage.",
+      "pause": 400
+    }
+  ],
+  "namings-redeemers-contract-change-declared": [
+    {
+      "text": "Naming's redeemers (contract change, declared).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns purpose, constructors after this ticket. The rows: application spend; application mint; witness mint.",
+      "pause": 400
+    }
+  ],
+  "cagedatum-constructor-appended": [
+    {
+      "text": "CageDatum (constructor appended).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns index, constructor, fields. The rows: 0; 1; 2.",
+      "pause": 400
+    }
+  ],
+  "the-leaf": [
+    {
+      "text": "The leaf.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns state, byte. The rows: Absent; Active; Terminal.",
+      "pause": 400
+    },
+    {
+      "text": "Any other value bytes are refused before a proof is checked. The naming-era values — the representative name, the over marker — are not leaves.",
+      "pause": 400
+    }
+  ],
+  "token-identity": [
+    {
+      "text": "Token identity.",
+      "pause": 500
+    },
+    {
+      "text": "Under each of the three policies the asset name is the registry key. Identity is (policy, key). A key recreated after Delete(0x01) carries the same identity.",
+      "pause": 400
+    }
+  ],
+  "state-eight-fields-replaces-six": [
+    {
+      "text": "State (eight fields, replaces six).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 8 rows, columns field, role, change. The rows: root; tip; process_time; retract_time; application_policy; active_policy; absent_policy; terminal_policy.",
+      "pause": 400
+    },
+    {
+      "text": "consumer_pin is deleted. All four policies are set at genesis and preserved by every Modify.",
+      "pause": 400
+    }
+  ],
+  "operation-indices-published-read-appended": [
+    {
+      "text": "Operation (indices published; Read appended).",
+      "pause": 500
+    },
+    {
+      "text": "A table of 4 rows, columns index, constructor, fields. The rows: 0; 1; 2; 3.",
+      "pause": 400
+    }
+  ],
+  "the-approval": [
+    {
+      "text": "The approval.",
+      "pause": 500
+    },
+    {
+      "text": "Minted under application_policy, quantity 1, asset name blake2b_256(edge ‖ key ‖ owner ‖ destination); edge one byte, the C2 row index (0 insertAbsent … 5 deleteActive). Carried by the request UTxO; recomputed by the cage; not burned at fold.",
+      "pause": 400
+    }
+  ],
+  "request-field-appended": [
+    {
+      "text": "Request (field appended).",
+      "pause": 500
+    },
+    {
+      "text": "A code block reads: requestToken, requestOwner, requestKey, requestValue, tip, submitted_at, destination: (address_bytes, datum_hash)",
+      "pause": 300
+    },
+    {
+      "text": "destination names where a minted active or terminal token goes and the inline datum the receiving output must carry (datum_hash empty for none). For Insert(0x00) the address is the refund address; the token goes to custody.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "4f0628ddc0535925d93e9c9a4e3a9c309994bb469e7540d269fcbccf7d06f1c3"
+  }
+}
