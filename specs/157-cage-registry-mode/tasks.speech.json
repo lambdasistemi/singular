@@ -55,7 +55,7 @@
       "pause": 300
     },
     {
-      "text": "removed (N7). - [ ] T157-13 — Retire co-mints the terminate approval and the completion       request; completion folds Update(0x01,0x02) (N6, N8). - [ ] T157-14 — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] T157-15 — just test and just script-identity-regen in both partitions;       hashes in the handback.",
+      "text": "removed (N7). - [ ] T157-13 — Retire authorized by the committed recovery key or the       quorum, never the current control key alone; co-mints the terminate       approval and the completion request; completion folds       Update(0x01,0x02) (N6, N8). - [ ] T157-13b — the destination output of a folded booking or read carries at       least the request's value minus the tip (T6). - [ ] T157-14 — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] T157-15 — just test and just script-identity-regen in both partitions;       hashes in the handback.",
       "pause": 400
     }
   ],
@@ -85,6 +85,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "641ca91e1cb33077c332a457aa621a052f2173be5018befdc99bc4467ab40bb3"
+    "sha256": "107b14422a6cc160d95691a9c64fede360e42a80ac79e3abe34cc0e856b6cf7d"
   }
 }
