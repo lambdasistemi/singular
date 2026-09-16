@@ -38,31 +38,19 @@ GENERIC_SOURCES = [
 NAMING_IMPORT = re.compile(r'^import Singular\.Naming\w*\n?', re.M)
 
 LIFECYCLE_IDS = {
-    'LC01-cancellation-stored-refund-accepts', 'LC02-cancellation-redirect-refused',
-    'LC03-insert-attestation-cancellation-refused',
-    'LC04-folded-claim-cancellation-refused', 'LC06-cancellation-replay-refused',
-    'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
-    'LI03-second-seed-rival-registry-refused', 'LI04-substituted-registry-refused',
-    'LI05-substituted-policy-refused', 'LI06-repeated-canonical-seed-refused',
-    'LI07-substituted-representative-policy-refused',
-    'LI08-substituted-validator-script-refused',
     'LM01-maintenance-accepts', 'LM02-maintenance-unauthorized-refused',
-    'LM03-maintenance-field-tamper-refused', 'LM04-maintenance-quorum-alteration-refused',
-    'LO01-retirement-pending-visible',
-    'LO02-retirement-over-visible', 'LR01-recovery-accepts',
-    'LR02-wrong-reveal-refused', 'LR03-missing-recovery-signer-refused',
-    'LR04-recovery-replay-refused', 'LR05-old-controller-refused',
-    'LR06-forged-public-digest-refused', 'LR07-wrong-payment-key-signer-refused',
-    'LR08-missing-fresh-commitment-refused', 'LR09-representative-tamper-refused',
-    'LR10-registry-tamper-refused', 'LR11-quorum-tamper-refused',
-    'LT01-controller-retirement-accepts',
+    'LM03-maintenance-field-tamper-refused', 'LM04-root-equal-after-maintenance',
+    'LR01-recovery-accepts', 'LR02-wrong-reveal-refused',
+    'LR03-missing-recovery-signer-refused',
+    'LR05-old-controller-dead-after-recovery',
+    'LR06-forged-public-digest-refused', 'LR11-root-equal-after-recovery',
     'LT02-quorum-retirement-accepts', 'LT03-insufficient-quorum-refused',
-    'LT04-retirement-completes', 'LX01-re-registration-after-over-refused',
-    'LT05-quorum-control-takeover-refused',
-    'LT06-quorum-payment-redirection-refused', 'LT07-retirement-withdrawal-refused',
-    'LT08-wrong-retirement-custody-refused', 'LT09-retirement-replay-refused',
-    'WD01-four-field-roundtrip', 'WD02-datum-hash-refused',
-    'WD03-two-destinations-refused', 'WR01-insert-request-refund-roundtrip',
+    'LT04-retirement-completes', 'LT08-control-key-alone-refused',
+    'LI01-canonical-initialization-accepts', 'LI02-alternate-seed-refused',
+    'LI05-substituted-active-policy-refused',
+    'LI06-substituted-terminal-policy-refused',
+    'LI07-substituted-registry-refused',
+    'WD01-fixture-datum-roundtrip', 'WD02-two-destinations-refused',
 }
 
 
@@ -211,10 +199,13 @@ def main():
     corpus_envelope(corpus, sources, generic_manifest_path,
                     'statementsSha256', 'lean/Singular/Statements.lean',
                     'lean/Singular/Model.lean', 'lean/Main.lean')
-    ids = [c['case']['id'] for c in corpus['cases']] + [c['id'] for c in corpus['resolutions']]
+    ids = [c['id'] for c in corpus['cases']]
     assert len(set(ids)) == len(ids)
-    assert {f'S{i:02}' for i in range(1, 22)} <= {i[:3] for i in ids}
-    assert {f'N{i:02}' for i in range(1, 8)} <= {i[:3] for i in ids}
+    families = {i[:2] for i in ids}
+    assert {'GA', 'GR', 'GD', 'GC'} <= families, f'generic corpus families: {families}'
+    for section in ('folds', 'ada', 'codec'):
+        assert corpus[section], f'empty generic corpus section: {section}'
+    assert corpus['configRoundtrip'] is True
     check_or_compare(root / 'lean/corpus.json', json.dumps(corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'Lean corpus')
 
@@ -230,24 +221,41 @@ def main():
     assert len(set(naming_ids)) == len(naming_ids), 'duplicate naming corpus identity'
     for section in ('spellings', 'queues', 'folds', 'steps', 'resolves', 'replays'):
         assert naming_corpus[section], f'empty naming corpus section: {section}'
-    assert {'SP', 'NQ', 'NF', 'NS', 'NR', 'NRP'} <= {re.match(r'[A-Z]+', i).group(0) for i in naming_ids}
+    assert {'NQ', 'NF', 'NS', 'NRP'} <= {re.match(r'[A-Z]+', i).group(0) for i in naming_ids}
     check_or_compare(root / 'lean/naming-corpus.json', json.dumps(naming_corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'naming corpus')
 
     lifecycle_binary = args.lifecycle_binary or root / '.lake/build/bin/lifecycle-corpus'
     lifecycle_corpus = json.loads(subprocess.check_output([str(lifecycle_binary)]))
-    assert lifecycle_corpus['schema'] == 'singular-naming-lifecycle-corpus-v1'
+    assert lifecycle_corpus['schema'] == 'singular-naming-lifecycle-corpus-v2'
     lifecycle_corpus['wireTheoremManifestSha256'] = digest(wire_manifest_path.read_bytes())
     corpus_envelope(lifecycle_corpus, all_sources, lifecycle_manifest_path,
                     'lifecycleStatementsSha256', 'lean/Singular/NamingLifecycleStatements.lean',
                     'lean/Singular/NamingLifecycle.lean', 'lean/LifecycleMain.lean')
-    lifecycle_ids = [row['id'] for section in ('steps', 'resolutions', 'initializations', 'registrations', 'wire')
+    lifecycle_sections = ('steps', 'recovery', 'retirement', 'initializations', 'wire')
+    lifecycle_ids = [row['id'] for section in lifecycle_sections
                      for row in lifecycle_corpus[section]]
     assert len(lifecycle_ids) == len(set(lifecycle_ids)), 'duplicate lifecycle corpus identity'
     assert set(lifecycle_ids) == LIFECYCLE_IDS, 'exact lifecycle corpus identities differ'
     check_or_compare(root / 'lean/lifecycle-corpus.json',
                      json.dumps(lifecycle_corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'lifecycle corpus')
+
+    # X2 — the theorem page must equal the generic manifest exactly: every
+    # declaration present, no phantoms, and the stated total derived from the
+    # manifest rather than asserted. This is the check whose absence let a
+    # three-row gap survive a release.
+    page = (root / 'docs/theorems.md').read_text()
+    listed = set(re.findall(r'`(Singular\.[A-Za-z0-9_.]+)`', page))
+    assert listed == generic_names, (
+        f'theorems page != manifest; page-only: {sorted(listed - generic_names)}; '
+        f'manifest-only: {sorted(generic_names - listed)}')
+    m = re.search(r'All (\d+) declarations', page)
+    assert m, 'theorems page states no declaration total'
+    assert int(m.group(1)) == len(generic_names), (
+        f'theorems page total {m.group(1)} != manifest {len(generic_names)}')
+    print(f'X2: theorems page == generic manifest ({len(generic_names)} declarations, '
+          f'total derived)')
 
     print(f'model-check: {len(ids)} executable corpus rows; {len(naming_ids)} naming rows; '
           f'{len(lifecycle_ids)} lifecycle rows; '

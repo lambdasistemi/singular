@@ -1,251 +1,141 @@
-import Singular.NamingAudit
-
-/-! Executable naming corpus oracle. Replays the frozen naming journey and the
-crafted negative controls through the real naming functions, checks every
-expectation, and prints the naming corpus for the source-level identity check.
-The naming profile is an unaccepted candidate; these rows are finite model
-evidence, not a ledger claim. -/
-namespace Singular
+import Singular.Model
+import Singular.Naming
+import Singular.NamingLifecycle
+open Singular
 open Lean
 
-def namingInitial : NamingState := {}
+/-! The naming corpus over the registry-mode model: registration (NM1), the
+absent edges with R-ADA custody (R-NM4 story), retirement per R-NM4 as amended
+(NM3/NM4), the refused reads and re-registration (T1), and the observations. -/
 
-def craftedDeleteRequest (state : NamingState) (id : Nat) : Request :=
-  { id := id, operation := Operation.delete, proposal := { registry := state.registry.config.registry, key := aliceKey, applicationPolicy := state.registry.config.applicationPolicy, refundAddress := 0, initial := { representative := representative state.registry aliceKey, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }, scope := [(entry state.registry aliceKey).incarnation] }, token := Option.none, held := some (representative state.registry aliceKey), destination := state.registry.config.requestAddress, authenticatedOrigin := true }
+def ns0 : NamingState := namingInitial
 
-def craftedRelease (state : NamingState) (source id : Nat) : Action :=
-  .release source (craftedDeleteRequest state id) { source := source, request := craftedDeleteRequest state id, accepted := true } { applicationSpend := true }
+def jWitness : NamingState :=
+  match namingWitness ns0 aliceKey 91 200 with | .ok s => s | .error _ => ns0
 
-def craftedRefund : Refund := { destination := 60, value := 20 }
+def jRegistered : NamingState :=
+  match namingRegister ns0 aliceKey 5 aliceFixture with
+  | .ok s => s | .error _ => ns0
 
-def craftedInsertRequest (state : NamingState) (key policy id : Nat) : Request :=
-  let output : Output := { representative := representative state.registry key, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
-  let proposal : Proposal := { registry := state.registry.config.registry, key := key, applicationPolicy := policy, refundAddress := demoRefundAddress, initial := output, scope := [(entry state.registry key).incarnation] }
-  { id := id, operation := Operation.insert, proposal := proposal, token := some (insertAsset proposal), held := Option.none, destination := state.registry.config.requestAddress, authenticatedOrigin := true }
+def jBooked : NamingState :=
+  match namingBook jWitness aliceKey 5 aliceFixture with
+  | .ok s => s | .error _ => jWitness
 
-def craftedCreateInsert (state : NamingState) (key policy id : Nat) (accepted : Bool) : Action :=
-  let request := craftedInsertRequest state key policy id
-  let asset := insertAsset request.proposal
-  Action.createInsert request { asset := asset, accepted := accepted } { applicationMint := true }
+def jRetracted : NamingState :=
+  match namingRetract jWitness aliceKey with
+  | .ok s => s | .error _ => jWitness
 
-def tamperedFold (state : NamingState) (requestId : Nat) : Action :=
-  match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some { r.proposal.initial with representative := { r.proposal.initial.representative with registry := 99 } } }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
-  | none => Action.fold [] [] [] { nativeSpend := true }
+def jRetired : NamingState :=
+  match namingRetire jBooked aliceKey [quorumKeyHash 1, quorumKeyHash 29] none with
+  | .ok s => s | .error _ => jBooked
 
-/-- A crafted naming state whose queued Insert carries a substituted
-representative: the registered identity does not match the registry. -/
-def substitutedRepState : NamingState :=
-  let output : Output := { representative := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
-  let proposal : Proposal := { registry := 1, key := aliceKey, applicationPolicy := 7, refundAddress := demoRefundAddress, initial := output, scope := [0] }
-  let request : Request := { id := 7, operation := Operation.insert, proposal := proposal, token := some (insertAsset proposal), held := Option.none, destination := 90, authenticatedOrigin := true }
-  { claimedOnce with registry := { claimedOnce.registry with requests := request :: claimedOnce.registry.requests, approvals := { asset := insertAsset proposal, accepted := true } :: claimedOnce.registry.approvals } }
+def jRetiredByRecoveryKey : NamingState :=
+  match namingRetire jBooked aliceKey [] (some nextControllerAddress) with
+  | .ok s => s | .error _ => jBooked
 
-def substitutedRepFold : Action :=
-  Action.fold [{ request := 7, outputId := 9, output := some { representative := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue } }] [{ asset := { registry := 1, key := aliceKey, policy := 8, assetScope := 5 }, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
+def jAttested : NamingState :=
+  match namingAttest jRetired aliceKey 700 with
+  | .ok s => s | .error _ => jRetired
 
-def queuedFoldAction (state : NamingState) (requestId : Nat) : Action :=
-  match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
-  | none => Action.fold [] [] [] { nativeSpend := true }
+/-- An observation row: naming's authenticated view of a key. -/
+def obs (id : String) (state : NamingState) (key : Nat) : Json :=
+  let leaf := trieGet state.registry.trie key
+  let active := kindCount state.registry .active key
+  let custody := custodyCount state.registry key
+  let terminal := kindCount state.registry .terminal key
+  Json.mkObj [ ("id", toJson id), ("leaf", toJson leaf), ("active", toJson active)
+             , ("absent", toJson custody), ("terminal", toJson terminal) ]
 
-structure SpellingRow where
-  id : String
-  spelling : String
-  expected : Option Nat
-  deriving ToJson
+def spellings : List Json :=
+  [ Json.mkObj [ ("id", toJson "NS01-alice-known"), ("spelling", toJson "alice")
+               , ("key", toJson ((spellingKey "alice").getD 0))
+               , ("resolved", toJson (spellingKey "alice" != none)) ]
+  , Json.mkObj [ ("id", toJson "NS02-unknown-spelling"), ("spelling", toJson "bob")
+               , ("resolved", toJson (spellingKey "bob" != none)) ] ]
 
-structure QueueRow where
-  id : String
-  before : NamingState
-  spelling : String
-  fixture : NamingFixture
-  accepted : Bool
-  expectedReason : String := ""
-  deriving ToJson
+def queues : List Json :=
+  [ Json.mkObj [ ("id", toJson "NQ01-witness-accepts"), ("expected", toJson true)
+               , ("actual", toJson (namingWitness ns0 aliceKey 91 200).isOk) ]
+  , Json.mkObj [ ("id", toJson "NQ02-register-accepts"), ("expected", toJson true)
+               , ("actual", toJson (namingRegister ns0 aliceKey 5 aliceFixture).isOk) ]
+  , Json.mkObj [ ("id", toJson "NQ03-register-occupied-refused"), ("expected", toJson false)
+               , ("actual", toJson (namingRegister jRegistered aliceKey 6 otherFixture).isOk) ]
+  , Json.mkObj [ ("id", toJson "NQ04-book-accepts"), ("expected", toJson true)
+               , ("actual", toJson (namingBook jWitness aliceKey 5 aliceFixture).isOk) ] ]
 
-structure FoldRow where
-  id : String
-  before : NamingState
-  requestId : Nat
-  accept : Bool
-  expectedReason : String := ""
-  deriving ToJson
+def folds : List Json :=
+  [ Json.mkObj [ ("id", toJson "NF01-registration-holds-active-token"), ("expected", toJson true)
+               , ("actual", kindCount jRegistered.registry .active aliceKey == 1
+                  && trieGet jRegistered.registry.trie aliceKey == .known .active) ]
+  , Json.mkObj [ ("id", toJson "NF02-witness-in-custody"), ("expected", toJson true)
+               , ("actual", toJson (custodyCount jWitness.registry aliceKey == 1)) ]
+  , Json.mkObj [ ("id", toJson "NF03-booking-consumes-custody-pays-inserter"), ("expected", toJson true)
+               , ("actual", toJson (custodyCount jBooked.registry aliceKey == 0)) ]
+  , Json.mkObj [ ("id", toJson "NF04-retraction-pays-inserter"), ("expected", toJson true)
+               , ("actual", toJson (custodyCount jRetracted.registry aliceKey == 0)) ]
+  , Json.mkObj [ ("id", toJson "NF05-retirement-by-quorum"), ("expected", toJson true)
+               , ("actual", toJson (trieGet jRetired.registry.trie aliceKey == .known .terminal
+                  && jRetired.records.isEmpty)) ]
+  , Json.mkObj [ ("id", toJson "NF06-retirement-by-recovery-key"), ("expected", toJson true)
+               , ("actual", toJson (trieGet jRetiredByRecoveryKey.registry.trie aliceKey == .known .terminal)) ]
+  , Json.mkObj [ ("id", toJson "NF07-attestation-minted-by-read"), ("expected", toJson true)
+               , ("actual", toJson (kindCount jAttested.registry .terminal aliceKey ==
+                  kindCount jRetired.registry .terminal aliceKey + 1)) ] ]
 
-structure StepRow where
-  id : String
-  before : NamingState
-  action : Action
-  accept : Bool
-  expectedReason : String := ""
-  deriving ToJson
+def steps : List Json :=
+  [ Json.mkObj [ ("id", toJson "NS03-delete-active-never-certified"), ("expected", toJson false)
+               , ("actual", namingCertifies fixtureHasher .deleteActive
+                    [controllerAddress.bytes] none
+                    { controllerBytes := controllerAddress.bytes
+                    , refundBytes := controllerAddress.bytes
+                    , fixture := aliceFixture }) ]
+  , Json.mkObj [ ("id", toJson "NS04-control-key-alone-never-retires"), ("expected", toJson false)
+               , ("actual", namingCertifies fixtureHasher .updateTerminal
+                    [controllerAddress.bytes] none
+                    { controllerBytes := controllerAddress.bytes
+                    , refundBytes := controllerAddress.bytes
+                    , fixture := aliceFixture }) ]
+  , Json.mkObj [ ("id", toJson "NS05-quorum-retires"), ("expected", toJson true)
+               , ("actual", quorumMet aliceFixture.retirementQuorum
+                    [quorumKeyHash 1, quorumKeyHash 29]) ]
+  , Json.mkObj [ ("id", toJson "NS06-recovery-key-retires"), ("expected", toJson true)
+               , ("actual", revealsCommittedRecoveryKey fixtureHasher
+                    { aliceFixture with nextControlCommitment := nextControllerCommitment }
+                    (some nextControllerAddress)) ] ]
 
-structure ResolveRow where
-  id : String
-  before : NamingState
-  spelling : String
-  authenticated : Bool
-  expected : Json
-  deriving ToJson
+def resolves : List Json :=
+  [ obs "NRP01-resolve-absent" ns0 aliceKey
+  , obs "NRP02-resolve-witnessed" jWitness aliceKey
+  , obs "NRP03-resolve-active" jRegistered aliceKey
+  , obs "NRP04-resolve-terminal" jRetired aliceKey
+  , obs "NRP05-resolve-attested" jAttested aliceKey ]
 
-structure ReplayRow where
-  id : String
-  before : NamingState
-  actions : List Action
-  expectedState : NamingState
-  deriving ToJson
+def replays : List Json :=
+  [ Json.mkObj [ ("id", toJson "NRP10-rebooking-after-terminal-refused"), ("expected", toJson false)
+               , ("actual", toJson (namingRegister jRetired aliceKey 6 otherFixture).isOk) ]
+  , Json.mkObj [ ("id", toJson "NRP11-retraction-after-booking-refused"), ("expected", toJson false)
+               , ("actual", toJson (namingRetract jBooked aliceKey).isOk) ] ]
 
-def spellingRows : List SpellingRow := [
-  { id := "SP01-alice-defined", spelling := "alice", expected := some aliceKey },
-  { id := "SP02-unknown-refused", spelling := "carol", expected := none }]
-
-def queueRows : List QueueRow := [
-  { id := "NQ01-alice-first-queues", before := namingInitial, spelling := "alice", fixture := aliceFixture, accepted := true },
-  { id := "NQ02-competing-claim-queues", before := claimedOnce, spelling := "alice", fixture := otherFixture, accepted := true },
-  { id := "NQ03-unapproved-refused", before := namingInitial, spelling := "alice", fixture := aliceFixture, accepted := false, expectedReason := "application-approval" },
-  { id := "NQ04-unknown-spelling-refused", before := namingInitial, spelling := "carol", fixture := aliceFixture, accepted := false, expectedReason := "unknown-spelling" },
-  { id := "NQ05-malformed-fixture-refused", before := namingInitial, spelling := "alice", fixture := malformedFixture, accepted := false, expectedReason := "invalid-fixture" },
-  { id := "NQ06-approval-while-active-queues", before := activeOnce, spelling := "alice", fixture := aliceFixture, accepted := true }]
-
-def foldRows : List FoldRow := [
-  { id := "NF01-first-absent-key-fold", before := claimedTwice, requestId := 1, accept := true },
-  { id := "NF02-competing-fold-occupied", before := activeOnce, requestId := 2, accept := false, expectedReason := "occupied-key" },
-  { id := "NF03-unknown-request-refused", before := activeOnce, requestId := 9, accept := false, expectedReason := "request-unavailable" },
-  { id := "NF04-replay-refused", before := activeOnce, requestId := 1, accept := false, expectedReason := "request-unavailable" }]
-
-def foldWithClaim : Action := queuedFoldAction claimedTwice 1
-
-def stepRows : List StepRow := [
-  { id := "NS01-crafted-release-delete", before := activeOnce, action := craftedRelease activeOnce 3 9, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS02-crafted-withdraw", before := activeOnce, action := Action.withdraw 1 { policy := 7, name := Commitment.withdraw 1 1 craftedRefund } craftedRefund { nativeSpend := true }, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS03-crafted-evolve", before := activeOnce, action := .evolve 3 { id := 5, key := aliceKey, output := { representative := representative activeOnce.registry aliceKey, quantity := 1, destination := demoDestination, datum := 200, value := demoValue } } { source := 3, successor := { id := 5, key := aliceKey, output := { representative := representative activeOnce.registry aliceKey, quantity := 1, destination := demoDestination, datum := 200, value := demoValue } }, accepted := true } { applicationSpend := true }, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS04-crafted-mint-withdraw", before := activeOnce, action := .mintWithdraw { asset := { policy := 7, name := Commitment.withdraw 1 1 craftedRefund }, accepted := true } { applicationMint := true }, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS05-crafted-outsider", before := claimedOnce, action := Action.outsider (craftedInsertRequest claimedOnce aliceKey 7 1), accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS06-crafted-move-action", before := claimedOnce, action := Action.moveAction (insertAsset (craftedInsertRequest claimedOnce aliceKey 7 1).proposal) 0 {}, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS07-crafted-escape", before := claimedOnce, action := Action.escape 1, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS08-fold-of-delete-request", before := { activeOnce with registry := { activeOnce.registry with requests := craftedDeleteRequest activeOnce 9 :: activeOnce.registry.requests } }, action := Action.fold [{ request := 9 }] [] [] { nativeSpend := true }, accept := false, expectedReason := "naming-no-delete" },
-  { id := "NS09-substituted-policy", before := claimedOnce, action := craftedCreateInsert claimedOnce aliceKey 99 2 true, accept := false, expectedReason := "insert-binding" },
-  { id := "NS10-unapproved-insert", before := claimedOnce, action := craftedCreateInsert claimedOnce aliceKey 7 2 false, accept := false, expectedReason := "application-approval" },
-  { id := "NS11-substituted-representative", before := substitutedRepState, action := substitutedRepFold, accept := false, expectedReason := "representative-identity" },
-  { id := "NS12-fold-request-parity", before := claimedTwice, action := foldWithClaim, accept := true },
-  { id := "NS13-crafted-occupied-fold", before := activeOnce, action := queuedFoldAction activeOnce 2, accept := false, expectedReason := "occupied-key" },
-  { id := "NS14-tampered-item-output", before := claimedTwice, action := tamperedFold claimedTwice 1, accept := false, expectedReason := "certified-output" }]
-
-def resolveRows : List ResolveRow := [
-  { id := "NR01-unauthenticated-view", before := claimedTwice, spelling := "alice", authenticated := false, expected := toJson NamingObservation.unauthenticated },
-  { id := "NR02-two-claims-pending", before := claimedTwice, spelling := "alice", authenticated := true, expected := toJson NamingObservation.pending },
-  { id := "NR03-active-certified-fixture", before := activeOnce, spelling := "alice", authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
-  { id := "NR04-absent-initial", before := namingInitial, spelling := "alice", authenticated := true, expected := toJson NamingObservation.absent },
-  { id := "NR05-active-second-claim-pending", before := activeOnce, spelling := "alice", authenticated := true, expected := toJson (NamingObservation.active aliceFixture) },
-  { id := "NR06-unknown-spelling", before := namingInitial, spelling := "carol", authenticated := true, expected := Json.mkObj [("error", toJson "unknown-spelling")] }]
-
-def replayRows : List ReplayRow := [
-  { id := "NRP01-journey-fold-replay", before := claimedTwice, actions := [queuedFoldAction claimedTwice 1], expectedState := activeOnce },
-  { id := "NRP02-refusal-replay-keeps-state", before := activeOnce, actions := [craftedRelease activeOnce 3 9, Action.escape 9], expectedState := activeOnce }]
-
-def queueVerdict (row : QueueRow) : Except String NamingQueueOutcome :=
-  namingQueue row.before row.spelling row.fixture row.accepted
-
-def queueCorrect (row : QueueRow) : Bool :=
-  match queueVerdict row with
-  | .ok _ => row.accepted
-  | .error reason => !row.accepted && reason == row.expectedReason
-
-def foldVerdict (row : FoldRow) : Except String NamingResult :=
-  namingFoldRequest row.before row.requestId
-
-def foldCorrect (row : FoldRow) : Bool :=
-  match foldVerdict row with
-  | .ok _ => row.accept
-  | .error reason => !row.accept && reason == row.expectedReason
-
-def stepVerdict (row : StepRow) : Except String NamingResult :=
-  namingStep row.before row.action
-
-def stepCorrect (row : StepRow) : Bool :=
-  match stepVerdict row with
-  | .ok _ => row.accept
-  | .error reason => !row.accept && reason == row.expectedReason
-
-def verdictJson (r : Except String NamingResult) : Json :=
-  match r with
-  | .ok v => Json.mkObj [("accepted", toJson true), ("value", toJson v)]
-  | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)]
-
-def queueJson (r : Except String NamingQueueOutcome) : Json :=
-  match r with
-  | .ok o => Json.mkObj [("accepted", toJson true), ("requestId", toJson o.requestId), ("value", Json.mkObj [("state", toJson o.state)])]
-  | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)]
-
-def resolveJson (r : Except String NamingObservation) : Json :=
-  match r with
-  | .ok o => toJson o
-  | .error reason => Json.mkObj [("error", toJson reason)]
-
-def namingResolveSpelling (state : NamingState) (spelling : String) (authenticated : Bool) :
-    Except String NamingObservation :=
-  if !authenticated then .ok .unauthenticated
-  else match spellingKey spelling with
-    | some key => namingResolve state key authenticated
-    | none => .error "unknown-spelling"
-
-def replayJson (state : NamingState) (actions : List Action) : Json :=
-  let replay := namingReplay state actions
-  Json.mkObj [("state", toJson replay.state),
-    ("records", toJson (replay.records.map fun pair =>
-      Json.mkObj [("action", toJson pair.1), ("result", verdictJson pair.2)]))]
-
-def queueRowJson (row : QueueRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("spelling", toJson row.spelling),
-    ("fixture", toJson row.fixture), ("accepted", toJson row.accepted), ("result", queueJson (queueVerdict row))]
-
-def foldRowJson (row : FoldRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("requestId", toJson row.requestId),
-    ("result", verdictJson (foldVerdict row))]
-
-def stepRowJson (row : StepRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("action", toJson row.action),
-    ("result", verdictJson (stepVerdict row))]
-
-def resolveRowJson (row : ResolveRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("spelling", toJson row.spelling),
-    ("authenticated", toJson row.authenticated),
-    ("expected", resolveJson (namingResolveSpelling row.before row.spelling row.authenticated))]
-
-def replayRowJson (row : ReplayRow) : Json :=
-  Json.mkObj [("id", toJson row.id), ("before", toJson row.before), ("actions", toJson row.actions),
-    ("expected", replayJson row.before row.actions)]
-
-end Singular
-
-open Lean Singular
+def allOk : Bool :=
+  (queues ++ steps ++ replays ++ folds).all fun row =>
+    match row.getObjVal? "expected", row.getObjVal? "actual" with
+    | .ok e, .ok a => e == a
+    | _, _ => false
 
 def main : IO Unit := do
   let stdout ← IO.getStdout
-  for row in spellingRows do
-    unless spellingKey row.spelling == row.expected do
-      throw (IO.userError s!"spelling expectation failed: {row.id}")
-  for row in queueRows do
-    unless queueCorrect row do
-      throw (IO.userError s!"queue expectation failed: {row.id}: {repr (queueVerdict row)}")
-  for row in foldRows do
-    unless foldCorrect row do
-      throw (IO.userError s!"fold expectation failed: {row.id}: {repr (foldVerdict row)}")
-  for row in stepRows do
-    unless stepCorrect row do
-      throw (IO.userError s!"step expectation failed: {row.id}: {repr (stepVerdict row)}")
-  for row in resolveRows do
-    unless resolveJson (namingResolveSpelling row.before row.spelling row.authenticated) == row.expected do
-      throw (IO.userError s!"resolve expectation failed: {row.id}")
-  for row in replayRows do
-    let replay := namingReplay row.before row.actions
-    unless replay.state == row.expectedState do
-      throw (IO.userError s!"replay state failed: {row.id}")
-  let json := Json.mkObj [("schema", toJson "singular-naming-corpus-v1"),
-    ("spellings", toJson (spellingRows.map fun row => Json.mkObj [("id", toJson row.id), ("spelling", toJson row.spelling), ("expected", toJson row.expected)])),
-    ("queues", toJson (queueRows.map queueRowJson)),
-    ("folds", toJson (foldRows.map foldRowJson)),
-    ("steps", toJson (stepRows.map stepRowJson)),
-    ("resolves", toJson (resolveRows.map resolveRowJson)),
-    ("replays", toJson (replayRows.map replayRowJson))]
+  for grp in [queues, steps, replays, folds] do
+    for row in grp do
+      match row.getObjVal? "expected", row.getObjVal? "actual" with
+      | .ok e, .ok a =>
+        unless e == a do throw (IO.userError s!"naming row failed: {row.compress}")
+      | _, _ => pure ()
+  let json := Json.mkObj
+    [ ("schema", toJson "singular-naming-corpus-v2")
+    , ("spellings", toJson spellings)
+    , ("queues", toJson queues)
+    , ("folds", toJson folds)
+    , ("steps", toJson steps)
+    , ("resolves", toJson resolves)
+    , ("replays", toJson replays) ]
   stdout.putStrLn json.compress

@@ -1,9 +1,12 @@
 import Singular.Naming
+import Singular.NamingLifecycle
 
-/-! Design-time wire contract for the naming application datum. The datum is
-exactly outer `Constr 0 [inner]`, where inner is `Constr 0` with four fields.
-Retirement observation is deliberately absent because retirement consumes the
-application output; pending/over remains a resolver result. -/
+/-! Design-time wire contract for the naming application datum and the
+absence-witness request. The datum is exactly outer `Constr 0 [inner]`, where
+inner is `Constr 0` with four fields. The request wire carries the
+`insertAbsent` scoping tuple including the refund address the request names;
+the approval's asset name is the canonical commitment over the tuple (D-APPROVAL). -/
+
 namespace Singular
 open Lean
 
@@ -99,86 +102,6 @@ def namingDatumCommitmentBytes : WireData → Option (List Nat)
   | .constr 0 [.constr 0 [_, _, .bytes bytes, _]] => some bytes
   | _ => none
 
-/-! The Insert action token is a separate wire surface from `NamingDatum`.
-Its outer constructor is the `Commitment.insert` branch; the inner constructor
-is the six-field `Proposal`, including the cancellation refund address. -/
-structure InsertRequestShape where
-  commitmentIndex : Nat
-  commitmentArity : Nat
-  proposalIndex : Nat
-  proposalArity : Nat
-  deriving Repr, BEq, DecidableEq, ToJson
-
-def aliceInsertProposal : Proposal :=
-  let registry : State := {}
-  let output : Output :=
-    { representative := representative registry aliceKey, quantity := 1,
-      destination := demoDestination, datum := demoDatum, value := demoValue }
-  { registry := registry.config.registry, key := aliceKey,
-    applicationPolicy := registry.config.applicationPolicy,
-    refundAddress := demoRefundAddress, initial := output,
-    scope := [(entry registry aliceKey).incarnation] }
-
-def aliceInsertRequest : Request :=
-  { id := 1, operation := .insert, proposal := aliceInsertProposal,
-    token := some (insertAsset aliceInsertProposal), held := none,
-    destination := ({} : State).config.requestAddress, authenticatedOrigin := true }
-
-def encodeRepresentative (value : Representative) : WireData :=
-  .constr 0 [.integer value.registry, .integer value.key,
-    .integer value.policy, .integer value.assetScope]
-
-def decodeRepresentative : WireData → Option Representative
-  | .constr 0 [.integer registry, .integer key, .integer policy, .integer assetScope] =>
-      some { registry, key, policy, assetScope }
-  | _ => none
-
-def encodeOutput (value : Output) : WireData :=
-  .constr 0 [encodeRepresentative value.representative, .integer value.quantity,
-    .integer value.destination, .integer value.datum, .integer value.value]
-
-def decodeOutput : WireData → Option Output
-  | .constr 0 [representativeData, .integer quantity, .integer destination,
-      .integer datum, .integer value] => do
-      let representative ← decodeRepresentative representativeData
-      some { representative, quantity, destination, datum, value }
-  | _ => none
-
-def encodeProposal (proposal : Proposal) : WireData :=
-  .constr 0 [.integer proposal.registry, .integer proposal.key,
-    .integer proposal.applicationPolicy, .integer proposal.refundAddress,
-    encodeOutput proposal.initial, .list (proposal.scope.map WireData.integer)]
-
-def decodeProposal : WireData → Option Proposal
-  | .constr 0 [.integer registry, .integer key, .integer applicationPolicy,
-      .integer refundAddress, outputData, .list scopeData] => do
-      let initial ← decodeOutput outputData
-      let scope ← scopeData.mapM fun
-        | .integer value => some value
-        | _ => none
-      some { registry, key, applicationPolicy, refundAddress, initial, scope }
-  | _ => none
-
-def encodeInsertRequest (request : Request) : Option WireData :=
-  if request.operation == .insert &&
-      request.token == some (insertAsset request.proposal) then
-    some (.constr 0 [encodeProposal request.proposal])
-  else none
-
-def decodeInsertCommitment : WireData → Option Proposal
-  | .constr 0 [proposalData] => decodeProposal proposalData
-  | _ => none
-
-def decodeInsertRequestCommitment (request : Request) (data : WireData) : Option Proposal := do
-  let expected ← (encodeInsertRequest request).bind decodeInsertCommitment
-  let proposal ← decodeInsertCommitment data
-  if proposal != expected then none else some proposal
-
-def insertRequestShape : WireData → Option InsertRequestShape
-  | .constr commitmentIndex [.constr proposalIndex fields] =>
-      some (InsertRequestShape.mk commitmentIndex 1 proposalIndex fields.length)
-  | _ => none
-
 def twoDestinationDatum : WireData :=
   .constr 0 [.constr 0 [
     .bytes controllerAddress.bytes,
@@ -255,70 +178,46 @@ mutual
           some (value :: values, tail)
 end
 
-def deserialiseWireData (bytes : List Nat) : Option WireData := do
+/-- A Nat as a CBOR integer wire item. -/
+def Nat.toWire (n : Nat) : WireData := .integer n
+
+/-- The `insertAbsent` request wire: the scoping tuple plus the refund
+address and deposit, CBOR-serialised as `Constr 0` with six integer fields.
+The refund address the request names is what the cage records in the custody
+datum (R-ADA) and what naming's policy certifies retraction on (R-NM4). -/
+structure WitnessRequestWire where
+  edgeOrdinalWire : Nat
+  key : Nat
+  owner : Nat
+  refundAddress : Nat
+  deposit : Nat
+  destination : Nat
+  deriving Repr, BEq, DecidableEq, ToJson
+
+def witnessRequestWire (r : Request) : WitnessRequestWire :=
+  { edgeOrdinalWire := (approvalAssetName r.edge 0 0 0) % 256
+  , key := r.key, owner := r.owner, refundAddress := r.refundAddress
+  , deposit := r.deposit, destination := requestDestination r }
+
+def serialiseWitnessRequest (w : WitnessRequestWire) : List Nat :=
+  serialiseWireData
+    (.constr 0 [Nat.toWire w.edgeOrdinalWire, Nat.toWire w.key, Nat.toWire w.owner,
+      Nat.toWire w.refundAddress, Nat.toWire w.deposit, Nat.toWire w.destination])
+
+def deserialiseWitnessRequest (bytes : List Nat) : Option WitnessRequestWire := do
   let (datum, rest) ← parseWireDataFuel (bytes.length + 1) bytes
-  if rest.isEmpty then some datum else none
+  if !rest.isEmpty then none
+  match datum with
+  | .constr 0 [.integer e, .integer k, .integer o, .integer ra, .integer d, .integer dd] =>
+      some { edgeOrdinalWire := e, key := k, owner := o, refundAddress := ra
+           , deposit := d, destination := dd }
+  | _ => none
 
 def serialiseNamingDatum (fixture : NamingFixture) : List Nat :=
   serialiseWireData (encodeNamingDatum fixture)
 
 def deserialiseNamingDatum (bytes : List Nat) : Option NamingFixture :=
-  (deserialiseWireData bytes).bind decodeNamingDatum
-
-/-! Frozen source-convention bytes for `aliceFixture`. Keeping this as an
-explicit vector makes the byte contract independent of `serialiseWireData` and
-therefore able to catch a serializer that is internally round-trip consistent
-but wire-incompatible. -/
-def expectedNamingDatumBytes : List Nat :=
-  [216, 121, 159, 216, 121, 159,
-   88, 29, 97, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-   20, 21, 22, 23, 24, 25, 26, 27, 28,
-   216, 122, 159,
-   88, 29, 97, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
-   100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 255,
-   88, 32, 194, 219, 76, 247, 78, 175, 65, 208, 95, 243, 240, 210, 186, 25, 12,
-   72, 45, 189, 40, 94, 86, 21, 171, 104, 133, 192, 82, 134, 196, 194, 60, 190,
-   216, 121, 159, 2, 159,
-   88, 28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-   20, 21, 22, 23, 24, 25, 26, 27, 28,
-   88, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-   46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
-   88, 28, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-   74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 255, 255, 255, 255]
-
-def malformedNamingDatumBytes : List Nat := expectedNamingDatumBytes.dropLast
-
-def serialiseInsertRequest (request : Request) : Option (List Nat) :=
-  (encodeInsertRequest request).map serialiseWireData
-
-def deserialiseInsertCommitment (bytes : List Nat) : Option Proposal :=
-  (deserialiseWireData bytes).bind decodeInsertCommitment
-
-def deserialiseInsertRequest (request : Request) (bytes : List Nat) : Option Proposal :=
-  (deserialiseWireData bytes).bind (decodeInsertRequestCommitment request)
-
-/-! Frozen Insert-token-name bytes for `aliceInsertRequest`. This vector is
-independent of the serializer and fixes both constructor layers and proposal
-field order. -/
-def expectedAliceInsertRequestBytes : List Nat :=
-  [216, 121, 159, 216, 121, 159,
-   1, 24, 42, 7, 24, 60,
-   216, 121, 159,
-   216, 121, 159, 1, 24, 42, 8, 0, 255,
-   1, 24, 50, 24, 100, 20, 255,
-   159, 0, 255, 255, 255]
-
-def malformedAliceInsertRequestBytes : List Nat := expectedAliceInsertRequestBytes.dropLast
-
-def redirectedAliceInsertRequestBytes : List Nat :=
-  [216, 121, 159, 216, 121, 159,
-   1, 24, 42, 7, 24, 61,
-   216, 121, 159,
-   216, 121, 159, 1, 24, 42, 8, 0, 255,
-   1, 24, 50, 24, 100, 20, 255,
-   159, 0, 255, 255, 255]
-
-def redirectedAliceInsertProposal : Proposal :=
-  { aliceInsertProposal with refundAddress := demoRefundAddress + 1 }
+  (parseWireDataFuel (bytes.length + 1) bytes).bind
+    fun (datum, rest) => if rest.isEmpty then decodeNamingDatum datum else none
 
 end Singular

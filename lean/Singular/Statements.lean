@@ -1,361 +1,278 @@
 import Singular.Lemmas
+
+/-! The public statement surface of the registry-mode model. The eleven
+promises of the interface — P1, L1, S1, S2, S3, O1, T1, W1–W4 — and the seven
+edge inversions, the fold inversions and the read facts. Every declaration
+quantifies over states reachable from genesis by folds; over arbitrary `State`
+values the supply laws are simply false. -/
+
 namespace Singular
 namespace Statements
-/-! The public statement surface of the model. Every declaration keeps the exact text it
-was frozen with; the proofs draw on `Singular.Lemmas`. Three statements quantify over
-`Reachable s` without needing it, so the unused-variable linter is silenced for them
-rather than touching their statements. -/
 
-theorem insert_commitment_injective (p q : Proposal) :
-    insertAsset p = insertAsset q ↔ p = q := by
-  constructor
-  · intro h; simp [insertAsset] at h; exact h.2
-  · intro h; subst h; rfl
+/-- **P1** — no tree change without approval, and the pins never move. -/
+theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : Result)
+    (h : Reachable s) (hok : step s r = .ok t) (htree : r.edge ≠ .witnessTerminal) :
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.config.applicationPolicy = s.config.applicationPolicy ∧
+    t.state.config.activePolicy = s.config.activePolicy ∧
+    t.state.config.absentPolicy = s.config.absentPolicy ∧
+    t.state.config.terminalPolicy = s.config.terminalPolicy := by
+  sorry
 
-theorem action_domain_separation (p : Proposal) (reg id : Nat) (r : Refund) :
-    Commitment.insert p ≠ Commitment.withdraw reg id r := by
-  simp
+/-- **L1** — each request is spent once and in order (the fold is a step
+chain), a refusal anywhere refuses the whole batch, and no key ends the batch
+booked twice. -/
+theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Result)
+    (h : Reachable s) (hok : foldBatch s batch = .ok t) :
+    Folds s batch t ∧
+    (∀ b bs, batch = b :: bs → ∀ why, step s b = .error why → foldBatch s batch = .error why) ∧
+    (∀ key, kindCount t.state .active key ≤ 1 ∧ custodyCount t.state key ≤ 1) := by
+  sorry
 
-theorem createInsert_iff (s : State) (r : Request) (a : Approval) (w : Witnesses) (t : Result) :
-    step s (.createInsert r a w) = .ok t ↔
-    insertNative s r = true ∧ r.authenticatedOrigin = true ∧
-    a.asset = insertAsset r.proposal ∧ approved s a w = true ∧ fresh s r.id = true ∧
-    t = { state := { s with requests := r :: s.requests,       approvals := a :: s.approvals, used := r.id :: s.used } } := by
-  exact createInsert_ok s r a w t
+/-- **S1** — every terminal attestation in a reachable state is about a leaf
+that is terminal: no attestation of an Active, Absent or Unknown key exists. -/
+theorem terminal_attestation_sound (s : RegistryState) (key : Key) (out : Nat)
+    (h : Reachable s) (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
+    trieGet s.trie key = .known .terminal := by
+  sorry
 
-theorem mintWithdraw_iff (s : State) (a : Approval) (w : Witnesses) (t : Result) :
-    step s (.mintWithdraw a w) = .ok t ↔ approved s a w = true ∧
-    (∃ id refund, a.asset.name = .withdraw s.config.registry id refund) ∧
-    t = { state := { s with approvals := a :: s.approvals } } := by
-  exact mintWithdraw_ok s a w t
+/-- The provenance half of S1: a terminal token enters the ledger only through
+an admitted `witnessTerminal` step whose read was verified. -/
+theorem terminal_mint_only_by_read (s : RegistryState) (r : Request) (t : Result)
+    (hok : step s r = .ok t) (key : Key)
+    (hnew : kindCount t.state .terminal key = kindCount s .terminal key + 1) :
+    r.edge = .witnessTerminal ∧ trieGet s.trie key = .known .terminal ∧
+      s.config.root = rootOf s.trie := by
+  sorry
 
-theorem release_iff (s : State) (id : Nat) (r : Request) (e : ReleaseEvidence)
-    (w : Witnesses) (t : Result) :
-    step s (.release id r e w) = .ok t ↔
-    ∃ u, s.applications.find? (·.id == id) = some u ∧
-    w.applicationSpend = true ∧ e.accepted = true ∧ e.source = id ∧ e.request = r ∧
-    releaseNative s r = true ∧ r.authenticatedOrigin = true ∧
-    r.held = some u.output.representative ∧ u.key = r.proposal.key ∧ fresh s r.id = true ∧
-    t = { state := { (consume s id) with requests := r :: (consume s id).requests,       used := r.id :: (consume s id).used } } := by
-  exact release_ok s id r e w t
+/-- **S2** — a terminal attestation is valid in every later state: a terminal
+leaf admits no edge that moves it, and no edge burns an attestation. -/
+theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request) (t : Result)
+    (h : Reachable s) (hok : foldBatch s acts = .ok t) (key : Key) (out : Nat)
+    (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
+    { key := key, kind := .terminal, output := out } ∈ t.state.held ∧
+      trieGet t.state.trie key = .known .terminal := by
+  sorry
 
-theorem evolve_iff (s : State) (id : Nat) (u : ApplicationUTxO) (e : EvolutionEvidence)
-    (w : Witnesses) (t : Result) :
-    step s (.evolve id u e w) = .ok t ↔
-    ∃ old, s.applications.find? (·.id == id) = some old ∧
-    w.applicationSpend = true ∧ e.accepted = true ∧ e.source = id ∧ e.successor = u ∧
-    u.output.representative = old.output.representative ∧ u.output.quantity = 1 ∧
-    u.key = old.key ∧ fresh s u.id = true ∧
-    t = { state := { (consume s id) with applications := u :: (consume s id).applications,       used := u.id :: (consume s id).used } } := by
-  exact evolve_ok s id u e w t
+/-- **S3** — the biconditional supply law, unconditionally over reachable
+states: supply is 1 iff the key is in that token's state, 0 otherwise. -/
+theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : Key) :
+    (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) ∧
+    (kindCount s .active key = 0 ↔ trieGet s.trie key ≠ .known .active) ∧
+    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) ∧
+    (custodyCount s key = 0 ↔ trieGet s.trie key ≠ .known .absent) := by
+  sorry
 
-theorem outsider_iff (s : State) (r : Request) (t : Result) :
-    step s (.outsider r) = .ok t ↔ fresh s r.id = true ∧ r.held = none ∧
-    t = { state := { s with requests := { r with authenticatedOrigin := false } :: s.requests,       used := r.id :: s.used } } := by
-  exact outsider_ok s r t
+/-- **O1** — occupancy: a booking edge succeeds only on a key that is not
+taken, and books it. -/
+theorem occupancy (s : RegistryState) (r : Request) (t : Result) (h : Reachable s)
+    (hok : step s r = .ok t)
+    (hedge : r.edge = .insertActive ∨ r.edge = .updateActive) :
+    ¬ (trieGet s.trie r.key = .known .active ∨ trieGet s.trie r.key = .known .terminal) ∧
+    trieGet t.state.trie r.key = .known .active := by
+  sorry
 
-theorem withdraw_iff (s : State) (id : Nat) (a : Asset) (refund : Refund)
-    (w : Witnesses) (t : Result) :
-    step s (.withdraw id a refund w) = .ok t ↔
-    ∃ r, s.requests.find? (·.id == id) = some r ∧ w.nativeSpend = true ∧
-    r.authenticatedOrigin = true ∧ insertNative s r = true ∧
-    refund.destination = r.proposal.refundAddress ∧ recognized s a = true ∧
-    a.name = .withdraw s.config.registry id refund ∧ t = { state := consume s id } := by
-  exact withdraw_ok s id a refund w t
+/-- **O1**, converse: a booking edge on an untaken key, with a matching
+approval, succeeds. -/
+theorem occupancy_free_key_succeeds (s : RegistryState) (h : Reachable s) (key : Key)
+    (owner out : Nat) (hfree : trieGet s.trie key = .unknown)
+    (ap : Approval) (hmatch : admitsFor s.config
+      { edge := .insertActive, key := key, owner := owner, output := out } (some ap)) :
+    ∃ t, step s { edge := .insertActive, key := key, owner := owner, output := out, approval := ap } = .ok t := by
+  sorry
 
-theorem fold_iff (s : State) (items : List FoldItem) (mint : List Delta) (net : List ActionDelta)
-    (w : Witnesses) (t : Result) :
-    step s (.fold items mint net w) = .ok t ↔ w.nativeSpend = true ∧
-    foldItems s items = .ok t ∧ sameNet t.logical mint = true ∧
-    (nonzero mint = true → w.representativeMint = true) ∧
-    (actionNonzero net = true → w.applicationMint = true) ∧
-    w.consumerWithdraw = true ∧
-    items ≠ [] := by
-  exact fold_ok s items mint net w t
+/-- **T1** — termination: on a terminal key every leaf-moving edge is refused,
+forever, so the key stays terminated and is never re-booked. Supersedes the
+base `over_terminal`. -/
+theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
+    (hterm : trieGet s.trie key = .known .terminal) :
+    (∀ (r : Request), r.edge ≠ .witnessTerminal → r.key = key →
+        ∃ why, step s r = .error why) ∧
+    (∀ (acts : List Request) (t : Result), foldBatch s acts = .ok t →
+        trieGet t.state.trie key = .known .terminal) := by
+  sorry
 
-theorem empty_fold_never_ok (s : State) (mint : List Delta) (net : List ActionDelta)
-    (w : Witnesses) (t : Result) :
-    step s (.fold [] mint net w) ≠ .ok t := by
-  intro h
-  rw [fold_ok] at h
-  simp at h
+/-- **W1** — at most one active token, exactly one iff the leaf is Active. -/
+theorem active_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
+    kindCount s .active key ≤ 1 ∧
+    (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) := by
+  sorry
 
-theorem empty_fold_error (s : State) (mint : List Delta) (net : List ActionDelta)
-    (w : Witnesses) (hnative : w.nativeSpend = true) (t : Result) :
-    step s (.fold [] mint net w) = .error "empty-fold" := by
-  unfold step
-  simp [hnative, bind, Except.bind, pure, Except.pure]
+/-- **W2** — at most one absent witness, exactly one iff the leaf is Absent. -/
+theorem absent_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
+    custodyCount s key ≤ 1 ∧
+    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) := by
+  sorry
 
--- Control: an empty batch without a native witness still refuses as
--- `native-witness` (first guard unchanged). Concrete witnesses so the
--- equation holds definitionally.
-example (s : State) :
-    step s (.fold [] [] [] { applicationMint := false, applicationSpend := false, nativeSpend := false, representativeMint := false }) =
-      .error "native-witness" := rfl
+/-- **W3** — terminal attestations are plural, all true, and freely mintable
+while the leaf is terminal; none exists otherwise. -/
+theorem terminal_witness_plural (s : RegistryState) (key : Key) (h : Reachable s)
+    (hterm : trieGet s.trie key = .known .terminal) (out : Nat) :
+    (∃ t, step s (Request.mk .witnessTerminal key 0 0 0 out none
+        [(.terminal, 1)]) = .ok t ∧
+      kindCount t.state .terminal key = kindCount s .terminal key + 1) ∧
+    (∀ h ∈ s.held, h.kind = .terminal → h.key = key) ∧
+    (∀ n : Nat, ∃ (u : RegistryState), Reachable u ∧
+      kindCount u .terminal key = n ∧ trieGet u.trie key = .known .terminal) := by
+  sorry
 
--- Control: a nonempty batch without the consumer invocation witness refuses
--- as `consumer-witness` (hook mandate NOTE-013/NOTE-019). Native passes and
--- the batch is nonempty, so the consumer guard is what fires. Concrete
--- witnesses so the equation holds definitionally.
-example (s : State) :
-    step s (.fold [{ request := 0 }] [] [] { nativeSpend := true, consumerWithdraw := false }) =
-      .error "consumer-witness" := rfl
+/-- **W4** — kind exclusion: at most one kind of witness is outstanding for a
+key, so a consumer that finds one kind knows the other two do not exist. -/
+theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) :
+    (kindCount s .active key > 0 → custodyCount s key = 0 ∧ kindCount s .terminal key = 0) ∧
+    (custodyCount s key > 0 → kindCount s .active key = 0 ∧ kindCount s .terminal key = 0) ∧
+    (kindCount s .terminal key > 0 → kindCount s .active key = 0 ∧ custodyCount s key = 0) := by
+  sorry
 
-theorem moveAction_iff (s : State) (a : Asset) (n : Int) (w : Witnesses) (t : Result) :
-    step s (.moveAction a n w) = .ok t ↔ recognized s a = true ∧ n = 0 ∧
-    t = { state := s } := by
-  exact moveAction_ok s a n w t
+/-! ### Edge inversions — one per edge, exact guards and effects -/
 
-theorem escape_refused (s : State) (id : Nat) :
-    step s (.escape id) = .error "completion-only-custody" := by
-  rfl
+/-- Inversion of an admitted `insertAbsent`. -/
+theorem insert_absent_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .insertAbsent) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .unknown ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .absent) ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key (.known .absent)) ∧
+    t.state.custody =
+      { key := r.key, refundAddress := r.refundAddress, value := r.deposit } :: s.custody ∧
+    t.state.held = s.held ∧ t.mint = [(.absent, 1)] ∧ t.paid = [] := by
+  sorry
 
-theorem foldOne_insert_iff (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation = .insert) :
-    foldOne s i = .ok t ↔ r.authenticatedOrigin = true ∧ insertNative s r = true ∧
-    r.token.any (recognized s) = true ∧ (entry s r.proposal.key).value = none ∧
-    r.proposal.scope.contains (entry s r.proposal.key).incarnation = true ∧
-    r.proposal.initial.representative = representative s r.proposal.key ∧
-    i.output = some r.proposal.initial ∧ fresh s i.outputId = true ∧
-    t = { state := { (setEntry (consume s r.id) { (entry s r.proposal.key) with value := some .active }) with       applications := { id := i.outputId, key := r.proposal.key, output := r.proposal.initial } ::         (consume s r.id).applications, used := i.outputId :: s.used },       logical := [{ asset := representative s r.proposal.key, quantity := 1 }] } := by
-  exact foldOne_insert_ok s i r t hr hop
+/-- Inversion of an admitted `insertActive`. -/
+theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .insertActive) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .unknown ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .active) ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key (.known .active)) ∧
+    t.state.custody = s.custody ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.mint = [(.active, 1)] ∧ t.paid = [] := by
+  sorry
 
-theorem foldOne_terminal_iff (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation ≠ .insert) :
-    foldOne s i = .ok t ↔ r.authenticatedOrigin = true ∧ releaseNative s r = true ∧
-    r.held = some (representative s r.proposal.key) ∧
-    (entry s r.proposal.key).value = some .active ∧ i.output = none ∧
-    t = { state := setEntry (consume s r.id) { (entry s r.proposal.key) with       value := if r.operation == .update then some .over else none,       incarnation := if r.operation == .delete then (entry s r.proposal.key).incarnation + 1         else (entry s r.proposal.key).incarnation },       logical := [{ asset := representative s r.proposal.key, quantity := -1 }] } := by
-  exact foldOne_terminal_ok s i r t hr hop
+/-- Inversion of an admitted `updateActive` — booking a witnessed name; the
+consumed absent token's value is paid to the refund address its custody datum
+records (R-ADA). -/
+theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .updateActive) (c : Custody)
+    (hc : s.custody.find? (·.key == r.key) = some c) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .absent ∧ c.key = r.key ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .active) ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key (.known .active)) ∧
+    t.state.custody = s.custody.filter (·.key != r.key) ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.mint = [(.absent, -1), (.active, 1)] ∧
+    t.paid = [(c.refundAddress, c.value)] := by
+  sorry
 
-theorem sequential_fold_cons (s : State) (i : FoldItem) (is : List FoldItem) (t : Result) :
-    foldItems s (i :: is) = .ok t ↔ ∃ first rest,
-    foldOne s i = .ok first ∧ foldItems first.state is = .ok rest ∧
-    t = { state := rest.state, logical := first.logical ++ rest.logical } := by
-  exact foldItems_cons_ok s i is t
+/-- Inversion of an admitted `updateTerminal` — retirement completes here. -/
+theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .updateTerminal) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .active ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .terminal) ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key (.known .terminal)) ∧
+    t.state.custody = s.custody ∧
+    t.state.held = s.held.filter fun h => !(h.key == r.key && h.kind == .active) ∧
+    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+  sorry
 
-theorem supply_conservation (s : State) (a : Action) (t : Result)
-    (reachable : Reachable s) (success : step s a = .ok t) : WellFormed t.state := by
-  exact (inv_step (reachable_inv reachable) success).wf
+/-- Inversion of an admitted `deleteAbsent` — the witness retracts, the deposit
+returns to the inserter (R-ADA), and the key reads `Unknown` again. -/
+theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .deleteAbsent) (c : Custody)
+    (hc : s.custody.find? (·.key == r.key) = some c) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .absent ∧ c.key = r.key ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key .unknown ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key .unknown) ∧
+    t.state.custody = s.custody.filter (·.key != r.key) ∧
+    t.state.held = s.held ∧
+    t.mint = [(.absent, -1)] ∧ t.paid = [(c.refundAddress, c.value)] := by
+  sorry
 
-set_option linter.unusedVariables false in
-theorem over_terminal (s : State) (a : Action) (t : Result) (key : Nat)
-    (reachable : Reachable s) (over : (entry s key).value = some .over)
-    (success : step s a = .ok t) : (entry t.state key).value = some .over := by
-  cases a with
-  | createInsert r c w =>
-    rw [createInsert_ok] at success
-    obtain ⟨-, -, -, -, -, rfl⟩ := success
-    exact over
-  | mintWithdraw c w =>
-    rw [mintWithdraw_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | release id r e w =>
-    rw [release_ok] at success
-    obtain ⟨u, -, -, -, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | evolve id u e w =>
-    rw [evolve_ok] at success
-    obtain ⟨old, -, -, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | outsider r =>
-    rw [outsider_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | withdraw id a refund w =>
-    rw [withdraw_ok] at success
-    obtain ⟨r, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | fold items mint net w =>
-    rw [fold_ok] at success
-    exact foldItems_entry_over over success.2.1
-  | moveAction a n w =>
-    rw [moveAction_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | escape id => cases success
+/-- Inversion of an admitted `deleteActive` — the key reads `Unknown` again and
+may be inserted again as the same key. -/
+theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .deleteActive) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .active ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key .unknown ∧
+    t.state.config.root = rootOf (trieSet s.trie r.key .unknown) ∧
+    t.state.custody = s.custody ∧
+    t.state.held = s.held.filter fun h => !(h.key == r.key && h.kind == .active) ∧
+    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+  sorry
 
-theorem over_no_representative (s : State) (key : Nat) (reachable : Reachable s)
-    (over : (entry s key).value = some .over) : supply s key = 0 := by
-  have hw := (reachable_inv reachable).wf key
-  rw [over] at hw
-  simpa using hw
+/-- Inversion of an admitted `witnessTerminal` — the read: the leaf, the root
+and custody are unchanged, one attestation is minted to the named output. -/
+theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .witnessTerminal) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .terminal ∧ s.config.root = rootOf s.trie ∧
+    t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
+    t.state.held = { key := r.key, kind := .terminal, output := r.output } :: s.held ∧
+    t.mint = [(.terminal, 1)] ∧ t.paid = [] := by
+  sorry
 
-theorem pending_insert_no_representative (s : State) (r : Request) (a : Approval)
-    (w : Witnesses) (t : Result) (h : step s (.createInsert r a w) = .ok t) :
-    r.held = none ∧ t.state.entries = s.entries ∧ t.state.applications = s.applications := by
-  rw [createInsert_ok] at h
-  obtain ⟨hn, -, -, -, -, rfl⟩ := h
-  refine ⟨?_, rfl, rfl⟩
-  simp only [insertNative, Bool.and_eq_true, Option.isNone_iff_eq_none] at hn
-  exact hn.1.1.2
+/-! ### Fold and read facts -/
 
-theorem minting_requires_configured_issuer (s : State) (r : Request) (a : Approval)
-    (w : Witnesses) (t : Result) (h : step s (.createInsert r a w) = .ok t) :
-    a.asset.policy = s.config.applicationPolicy ∧ a.accepted = true ∧ w.applicationMint = true := by
-  rw [createInsert_ok] at h
-  obtain ⟨-, -, -, ha, -, -⟩ := h
-  simp only [approved, Bool.and_eq_true, beq_iff_eq] at ha
-  exact ⟨ha.2, ha.1.2, ha.1.1⟩
+/-- A zero-request batch is always refused. -/
+theorem empty_fold_error (s : RegistryState) (batch : List Request)
+    (h : batch = []) : foldBatch s batch = .error "empty-fold" := by
+  sorry
 
-theorem withdrawal_preserves_registry_supply (s : State) (id : Nat) (a : Asset)
-    (refund : Refund) (w : Witnesses) (t : Result) (reachable : Reachable s)
-    (h : step s (.withdraw id a refund w) = .ok t) :
-    t.state.entries = s.entries ∧ t.state.applications = s.applications ∧ t.logical = [] := by
-  rw [withdraw_ok] at h
-  obtain ⟨r, hr, -, -, -, -, -, -, rfl⟩ := h
-  have hid : r.id = id := by simpa using List.find?_some hr
-  subst hid
-  refine ⟨rfl, ?_, rfl⟩
-  exact (reachable_inv reachable).filter_applications (List.mem_of_find?_eq_some hr)
+/-- A fold succeeds iff every request applies in order and the claimed mint
+matches the summed delta of the folded edges. -/
+theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
+    foldBatch s (b :: bs) = .ok t ↔
+    ∃ m r, step s b = .ok m ∧ foldBatch m.state bs = .ok r ∧
+      t = { state := r.state, mint := deltaPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
+      deltaSame (deltaPlus b.claimed (bs.foldl (fun acc b => deltaPlus acc b.claimed) []))
+        (deltaPlus (delta b.edge) (bs.foldl (fun acc b => deltaPlus acc (delta b.edge)) [])) := by
+  sorry
 
-theorem exact_withdraw_scope (s : State) (id : Nat) (a : Asset) (refund : Refund)
-    (w : Witnesses) (t : Result) (h : step s (.withdraw id a refund w) = .ok t) :
-    a.name = .withdraw s.config.registry id refund := by
-  rw [withdraw_ok] at h
-  obtain ⟨r, -, -, -, -, -, -, hname, -⟩ := h
-  exact hname
+/-- A read changes nothing: the leaf, the root and custody survive an admitted
+`witnessTerminal` step unchanged. -/
+theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .witnessTerminal) (hok : step s r = .ok t) :
+    t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody := by
+  sorry
 
-theorem local_evolution_registry_unchanged (s : State) (id : Nat) (u : ApplicationUTxO)
-    (e : EvolutionEvidence) (w : Witnesses) (t : Result)
-    (h : step s (.evolve id u e w) = .ok t) :
-    t.state.entries = s.entries ∧ t.logical = [] := by
-  rw [evolve_ok] at h
-  obtain ⟨old, -, -, -, -, -, -, -, -, -, rfl⟩ := h
-  exact ⟨rfl, rfl⟩
-
-theorem release_is_operation_specific (s : State) (id : Nat) (r : Request) (e : ReleaseEvidence)
-    (w : Witnesses) (t : Result) (h : step s (.release id r e w) = .ok t) :
-    e.request.operation = r.operation ∧ e.request = r ∧ w.applicationSpend = true := by
-  rw [release_ok] at h
-  obtain ⟨u, -, hw, -, -, hreq, -⟩ := h
-  exact ⟨by rw [hreq], hreq, hw⟩
-
-set_option linter.unusedVariables false in
-theorem release_removes_application_custody (s : State) (id : Nat) (r : Request)
-    (e : ReleaseEvidence) (w : Witnesses) (t : Result) (reachable : Reachable s)
-    (h : step s (.release id r e w) = .ok t) :
-    t.state.applications.find? (·.id == id) = none := by
-  rw [release_ok] at h
-  obtain ⟨u, -, -, -, -, -, -, -, -, -, -, rfl⟩ := h
-  simp [consume, List.find?_eq_none]
-
-set_option linter.unusedVariables false in
-theorem request_single_spend (s : State) (i : FoldItem) (t : Result)
-    (reachable : Reachable s) (h : foldOne s i = .ok t) :
-    t.state.requests.find? (·.id == i.request) = none := by
-  obtain ⟨r, hr⟩ := foldOne_ok_find h
-  have hid : r.id = i.request := by simpa using List.find?_some hr
-  by_cases hop : r.operation = .insert
-  · rw [foldOne_insert_ok s i r t hr hop] at h
-    obtain ⟨-, -, -, -, -, -, -, -, rfl⟩ := h
-    simp [List.find?_eq_none, hid]
-  · rw [foldOne_terminal_ok s i r t hr hop] at h
-    obtain ⟨-, -, -, -, -, rfl⟩ := h
-    simp [List.find?_eq_none, hid]
-
-theorem approval_scope_checked (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation = .insert)
-    (h : foldOne s i = .ok t) :
-    r.proposal.scope.contains (entry s r.proposal.key).incarnation = true := by
-  rw [foldOne_insert_ok s i r t hr hop] at h
-  exact h.2.2.2.2.1
-
-theorem outsider_not_admitted (s : State) (r : Request) (t : Result)
-    (h : step s (.outsider r) = .ok t) (i : FoldItem) (hi : i.request = r.id) :
-    foldOne t.state i = .error "unauthenticated-request" := by
-  rw [outsider_ok] at h
-  obtain ⟨-, -, rfl⟩ := h
-  simp [foldOne, hi, bind, Except.bind]
-
-theorem native_witness_even_zero_net (s : State) (items : List FoldItem) (n : List ActionDelta)
-    (w : Witnesses) (t : Result) (h : step s (.fold items [] n w) = .ok t) :
-    w.nativeSpend = true ∧ sameNet t.logical [] = true := by
-  rw [fold_ok] at h
-  exact ⟨h.1, h.2.2.1⟩
-
-theorem nonzero_action_invokes_policy (s : State) (items : List FoldItem) (mint : List Delta)
-    (n : List ActionDelta) (w : Witnesses) (t : Result) (hn : actionNonzero n = true)
-    (h : step s (.fold items mint n w) = .ok t) : w.applicationMint = true := by
-  rw [fold_ok] at h
-  exact h.2.2.2.2.1 hn
-
-theorem nonempty_fold_invokes_consumer (s : State) (items : List FoldItem) (mint : List Delta)
-    (n : List ActionDelta) (w : Witnesses) (t : Result)
-    (h : step s (.fold items mint n w) = .ok t) : w.consumerWithdraw = true := by
-  rw [fold_ok] at h
-  exact h.2.2.2.2.2.1
-
-theorem existing_action_does_not_refresh_scope (s : State) (a : Asset) (w : Witnesses)
-    (t : Result) (h : step s (.moveAction a 0 w) = .ok t) : t.state = s := by
-  rw [moveAction_ok] at h
-  rw [h.2.2]
-
-theorem resolve_unauthenticated (s : State) (key : Nat) :
-    resolve s key false = .unauthenticated := by
-  rfl
-
-theorem resolve_absent (s : State) (key : Nat) (h : (entry s key).value = none) :
-    resolve s key true = .absent := by
-  simp [resolve, h]
-
-theorem resolve_over (s : State) (key : Nat) (h : (entry s key).value = some .over) :
-    resolve s key true = .retired := by
-  simp [resolve, h]
-
-theorem resolve_address_iff (s : State) (key datum : Nat) :
-    resolve s key true = .address datum ↔ (entry s key).value = some .active ∧
-    ∃ u, s.applications.find? (fun u => u.key == key &&
-      u.output.representative == representative s key && u.output.quantity == 1) = some u ∧
-      u.output.datum = datum := by
-  simp only [resolve, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-  repeat' split
-  all_goals simp [*]
-
-theorem resolve_pending_iff (s : State) (key : Nat) :
-    resolve s key true = .pending ↔ (entry s key).value = some .active ∧
-    s.applications.find? (fun u => u.key == key &&
-      u.output.representative == representative s key && u.output.quantity == 1) = none := by
-  simp only [resolve, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-  repeat' split
-  all_goals simp [*]
-
-theorem release_registry_independent (s : State) (entries : List Entry) (r : Request) :
-    releaseNative { s with entries := entries } r = releaseNative s r := by
-  rfl
-
-theorem insert_creation_registry_independent (s : State) (entries : List Entry) (r : Request) :
-    insertNative { s with entries := entries } r = insertNative s r := by
-  rfl
-
-theorem whole_release_acceptance_independent (s : State) (entries : List Entry)
-    (id : Nat) (r : Request) (e : ReleaseEvidence) (w : Witnesses) :
-    (∃ t, step { s with entries := entries } (.release id r e w) = .ok t) ↔
-    (∃ t, step s (.release id r e w) = .ok t) := by
-  rw [step_release_entries]
-  cases step s (.release id r e w) <;> simp [Except.map]
-
-theorem whole_release_refusal_independent (s : State) (entries : List Entry)
-    (id : Nat) (r : Request) (e : ReleaseEvidence) (w : Witnesses) (reason : String) :
-    step { s with entries := entries } (.release id r e w) = .error reason ↔
-    step s (.release id r e w) = .error reason := by
-  rw [step_release_entries]
-  cases step s (.release id r e w) <;> simp [Except.map]
-
-theorem whole_insert_acceptance_independent (s : State) (entries : List Entry)
-    (r : Request) (a : Approval) (w : Witnesses) :
-    (∃ t, step { s with entries := entries } (.createInsert r a w) = .ok t) ↔
-    (∃ t, step s (.createInsert r a w) = .ok t) := by
-  rw [step_createInsert_entries]
-  cases step s (.createInsert r a w) <;> simp [Except.map]
-
-theorem whole_insert_refusal_independent (s : State) (entries : List Entry)
-    (r : Request) (a : Approval) (w : Witnesses) (reason : String) :
-    step { s with entries := entries } (.createInsert r a w) = .error reason ↔
-    step s (.createInsert r a w) = .error reason := by
-  rw [step_createInsert_entries]
-  cases step s (.createInsert r a w) <;> simp [Except.map]
+/-- A read's verification is exactly the intermediate leaf being the claimed
+terminal state, against a committed root. -/
+theorem readAt_true_iff (s : RegistryState) (key : Key) :
+    readAt s 0 key .terminal = true ↔
+      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
+  sorry
 
 end Statements
 end Singular
