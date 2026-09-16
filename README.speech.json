@@ -39,8 +39,12 @@
       "pause": 400
     },
     {
-      "text": "The reading order that follows ends with the runbook for running every journey against your own preprod node.",
+      "text": "The design has a settled target: the registry interface, the registry run in registry mode with three leaf states, three kinds of witness token and one read. The pages that follow describe the executable candidate as proved and deployed, and each says what the interface changes for it.",
       "pause": 400
+    },
+    {
+      "text": "The reading order that follows ends with the runbook for running every journey against your own preprod node.",
+      "pause": 500
     }
   ],
   "design-status": [
@@ -49,12 +53,20 @@
       "pause": 400
     },
     {
+      "text": "Where the design is going. On the sixteenth of September the registry design was settled as an interface the current candidate does not yet implement. A key's leaf is unknown, or known with a state: absent, active or terminal, where today's Over is the terminal state and absence becomes witnessable. Every state change moves exactly one token kind, and a terminal key can be attested by any number of freely burnable terminal tokens minted through a folded read. The pinned consumer script is deleted and its checks move into the cage. Upstream MPFS is not generalised; the fork is kept. The interface page is the contract, and the tickets that close the gap are listed at its end.",
+      "pause": 400
+    },
+    {
       "text": "The Nix-built documentation archive is a review bundle, not a released protocol artifact. It includes the rendered site and a runnable locked workspace with model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction begins from a fresh extraction, verifies the internal checksum manifest, and runs the archive's own flake. A checkout pass does not substitute, and no tag or publication is authorized.",
       "pause": 400
+    },
+    {
+      "text": "Singular uses MPF as its authenticated registry data structure. The product it was imported from is a separate application. The implementation stack and shared-library boundaries remain unselected.",
+      "pause": 500
     }
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "517847d50424889746a565392115cd64b01f3c4c24460d5f88e1135ef608d40d"
+    "sha256": "a8880eb45b55d24919cd9e256d2aeb744129c839096b71a2d9eb332ecb082229"
   }
 }
