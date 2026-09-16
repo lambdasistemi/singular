@@ -111,3 +111,11 @@ The mint field records net quantities per asset, not one ledger action per logic
 | Implementation and shared libraries | Singular owns these application semantics; old registry code or proofs do not automatically establish them |
 
 This is an adopted design with unresolved construction details. There is no implementation, completed proof, universal application language or mandatory general-purpose validation plugin in this repository.
+
+## What the settled interface changes here
+
+The certification boundary on this page is the one the settled [registry interface](registry-interface.md) keeps: the application approves a request when the request is created, by minting an approval under its configured policy, and the fold checks only that the approval is there. The interface makes that the rule for every tree change — insert, the move to terminal, delete, and witnessing absence alike — so an application is an approval-minting policy plus its own output validators, and no script of the application's is ever present in a fold.
+
+Two of the identities in the table above change shape. The Singular representative policy becomes one of three token policies pinned beside the application policy at genesis — active, absent and terminal — each minting only inside a fold of its own cage and only in the quantity the cage requires. And the role this page leaves open, the Update/Delete request-token construction, is answered by the representative itself carrying the request, as adopted here, with no second token.
+
+One decision in the table below is resolved. Representative identity across Delete and reinsert is the same identity: a deleted key is recreated as the same key, not versioned, and an application that wants a key never to return terminates it instead of deleting it. Approval scope is per booking, which is what the replay requirement already asked for.

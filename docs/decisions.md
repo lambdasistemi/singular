@@ -53,7 +53,7 @@ The diagram separates the desired identity from the unresolved enforcement mecha
 | Configuration and canonical identity | Configuration authentication, registry/policy identity and hash dependencies | Logical authenticated configuration; no chosen script-hash-cycle solution. |
 | Action encoding and lifecycle | Canonical encoding/hash, action-asset reuse/disposal, optional terminal-request token and burn branch | Explicit action commitments and logical witness/scope checks; no selected binary schema or token economy. |
 | Withdrawal and refunds | Withdrawal approval conditions, refund economics and disposal | Exact cancellation target and declared refund requirements; application approval remains conditional. |
-| Identity across reinsertion | Representative identity and approval scope across Delete/reinsert | Scoped logical authorization and explicit representative identity; no universal incarnation allocation scheme selected. |
+| Identity across reinsertion | **Resolved 2026-09-16.** A deleted key is recreated as the same key with the same representative identity; there is no incarnation counter, and an application that wants a key never to return terminates it. | Approval scope is per booking; the model's incarnation machinery is removed by the interface tickets. |
 | Batch construction | Batch selection, limits and failure presentation | Sequential transition semantics; executable examples do not establish capacity, fairness or a skip policy. |
 | Ledger execution | Ledger transaction shapes, allocation of checks to concrete scripts and shared libraries | Executing logical witness obligations, including net minting; no proof of Cardano execution or imported registry guarantees. |
 | Naming application | Naming normalization, authorization, datum schema, resolver authentication and economics | Illustrative register/resolve/change-address stories under explicit model assumptions. |
@@ -61,3 +61,16 @@ The diagram separates the desired identity from the unresolved enforcement mecha
 ## Evidence and next stage
 
 The candidate's Lean build with its compiled axiom gate, exact proof inventory, exported finite corpus and browser checks are creator evidence. Every theorem is **PROVED** from the standard axioms. Independent audit, accepted statements and production conformance have not been commissioned as part of this delivery.
+
+## Decisions taken on 2026-09-16
+
+The settled [registry interface](registry-interface.md) took decisions this page had left open and a few it had not asked. They bind the tickets that implement the interface, not the proved candidate above.
+
+| Chosen | Alternative not selected | Why |
+| --- | --- | --- |
+| The cage in registry mode: state alphabet, token movements, read and admission native to the cage | A pinned fold-time hook or plugin enforcing the mechanics | A plugin must re-walk every batch to reinterpret the operations the cage just applied; every hazard around it exists only because the mechanics live in a second script |
+| A known-absent state with its own token | Reading the root for a non-membership proof at use time | A proof is bound to one root and goes stale on the next fold; a token in cage custody is consumed by the fold that ends the absence |
+| The read verified by the cage at its position in the batch | A read verified outside the cage | The proof is valid only against an intermediate root that exists nowhere but inside the fold |
+| Terminality as registry vocabulary | Terminality as an application claim | The cage enforces "never again" by construction; a claim can only be promised |
+| A deleted key recreated as the same key | An incarnation counter | Delete means recreation; permanence has its own edge |
+| Keep the fork; park upstream generalisation | Contribute a registry mode or plugin to MPFS now | A second project; the narrowed ask — permissionless batching and request policing — is recorded upstream, and witness minting needs a value vocabulary MPFS does not have |

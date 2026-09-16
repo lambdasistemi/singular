@@ -49,6 +49,12 @@
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "bb67953e31363ab84a6301f82c91c8b10fb79ebdc82bfe45a93f2ab97273dd43"
-  }
+    "sha256": "7b9eca68b32880500aec5da611e4c4ded41e963bb8c94610b19c328e823d784a"
+  },
+  "where-the-naming-lifecycle-is-going": [
+    {
+      "text": "Nothing on this page that the holder does changes under the settled interface: changing the destination and recovering control never touch the registry, and retirement still moves the representative into completion only custody before the fold burns it. What changes is the vocabulary and what becomes available afterwards. Over is the registry's terminal state; completion is the update to it. Once a name is terminal, anyone may submit a read of that state and receive a terminal token, the Over witness, true forever, in any number, freely burnable. That token is what a contract uses to establish that a name has ended without reading the registry: the escrow in the naming demo pays the first name on its list whose representative is live and skips a name by presenting its Over witness.",
+      "pause": 500
+    }
+  ]
 }

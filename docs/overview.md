@@ -70,3 +70,21 @@ An absent key is available for Insert. `Active` means its representative NFT is 
 Both stored values are payload-free. Application history or checkpoints needed for later application behavior must remain authenticated outside these values. No mapping of KERI close, pause or conviction to Singular operations is selected here.
 
 Continue with [the lifecycle](lifecycle.md) and [certification](certification.md).
+
+## Where the registry is going
+
+The states above are the executable candidate's. The settled [registry interface](registry-interface.md) keeps them and adds one: a key's leaf is either unknown — no leaf, the trie's non-membership proof — or known with a state, and the states are `Absent`, `Active` and `Terminal`. `Over` is the registry's terminal state under its registry-mode name; `Absent` is new, a known leaf asserting that the key is not booked, backed by a token of its own. Every edge is an MPF primitive applied to a state, and every edge moves exactly one kind of token.
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  Unknown --> Absent: insert Absent
+  Unknown --> Active: insert Active
+  Absent --> Active: update to Active
+  Active --> Terminal: update to Terminal
+  Terminal --> Terminal: read Terminal
+  Active --> Unknown: delete
+  Absent --> Unknown: delete
+```
+
+What this page's layering keeps: applications own their state and their rules, the registry owns key state and token supply, MPF owns the map. What changes is that the registry's part grows to include the absent token, the terminal tokens and the read, and that nothing application-specific runs when a batch is folded — the application supplies an approval policy and nothing else. The interface page carries the full contract and the tickets that implement it.

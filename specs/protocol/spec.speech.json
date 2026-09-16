@@ -3,6 +3,10 @@
     {
       "text": "Singular is a permissionless registry on Cardano for unique identities and independent application state, built on an authenticated MPF map and representative NFTs. This specification covers registry operations, native requests, certification and custody, and selects no language, encoding, plugin, KERI integration or library API.",
       "pause": 400
+    },
+    {
+      "text": "The map is authenticated, and the tokens it couples to transitions are witness tokens, of which the representative NFT is the first.",
+      "pause": 300
     }
   ],
   "entities-and-terminology": [
@@ -103,6 +107,12 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "eb5b838db832ae9fb0d9610690fa11c73789dd643b014a5e347fe736060e0be1"
-  }
+    "sha256": "013757d34b659e15f72ff3ba41c348ad4f1b3d9f0c322f33fc523b4b1bceeb37"
+  },
+  "resolved-on-2026-09-16": [
+    {
+      "text": "The settled registry interface resolves three rows above and changes the vocabulary of one section. Incarnation scope: a deleted key is recreated as the same key with the same representative identity, there is no incarnation counter, and approval scope is per booking. Batching: reads are requests that ride a fold with writes or alone, and a fold of only reads is a fold. Transaction shapes: the checks this specification assigns to the spending witnesses and the representative policy live in the cage run in registry mode, with no fold time application script and no plugin. Registry transitions: a key's leaf is unknown or known with a state, absent, active or terminal, where Over is the terminal state and absence is a known state with its own token.",
+      "pause": 500
+    }
+  ]
 }

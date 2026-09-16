@@ -31,6 +31,20 @@
   ],
   "_source": {
     "file": "overview.md",
-    "sha256": "6607ecf9e1d976f40eaaec76bda371bdaeb506928d867e941a984eec6c8ae698"
-  }
+    "sha256": "af8731e9554ddd434dec109b011ba79cd16f61ff031152cccecaf7e4c9668c33"
+  },
+  "where-the-registry-is-going": [
+    {
+      "text": "The states above are the executable candidate's. The settled registry interface keeps them and adds one: a key's leaf is either unknown, with no leaf, or known with a state, and the states are absent, active and terminal. Over is the terminal state under its registry mode name; absent is new, a known leaf asserting that the key is not booked, backed by a token of its own.",
+      "pause": 400
+    },
+    {
+      "text": "The state diagram shows seven edges. From unknown, inserting absent or inserting active. From absent, an update to active. From active, an update to terminal. Terminal loops to itself through a read. From active and from absent, delete returns the key to unknown.",
+      "pause": 400
+    },
+    {
+      "text": "The layering keeps: applications own their state and rules, the registry owns key state and token supply, MPF owns the map. What changes is that the registry's part grows to include the absent token, the terminal tokens and the read, and that nothing application specific runs when a batch is folded. The interface page carries the full contract.",
+      "pause": 500
+    }
+  ]
 }
