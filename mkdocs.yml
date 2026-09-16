@@ -11,7 +11,7 @@ nav:
       - Responsibilities: docs/overview.md
       - Lifecycle and custody: docs/lifecycle.md
       - Certification: docs/certification.md
-  - The registry interface: docs/registry-interface.md
+      - The registry interface: docs/registry-interface.md
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
   - Recovery and retirement: docs/recovery-retirement.md

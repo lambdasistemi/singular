@@ -7,6 +7,10 @@
     {
       "text": "That is the axis on which the prior art has to be read. A registry welded to one application is not reusable by anyone else short of forking it. MPFS is the exception and the model: application-agnostic, created by anyone, blocked only by its owner gate.",
       "pause": 400
+    },
+    {
+      "text": "The MPFS row now records that the cage has an optional staking hook, and that with the hook set every root transition still requires the owner's signature in addition to the hook.",
+      "pause": 300
     }
   ],
   "mpfs": [
@@ -16,6 +20,10 @@
     },
     {
       "text": "Four facts from the pinned source decide the comparison. Every state spend requires the owner's signature. Only one token exists, the cage state NFT. A request commits to no application policy or output. Requests are governed by time windows rather than application authorization.",
+      "pause": 400
+    },
+    {
+      "text": "At the inspected revision the state carries an owner key hash and an optional staking script. With no hook the owner must sign; with a hook set the owner must sign and the hook must be invoked as a zero lovelace withdrawal, so the delegated path is not permissionless, which upstream records as its issue seventy nine.",
       "pause": 400
     }
   ],
@@ -43,6 +51,10 @@
     {
       "text": "Each entry records what its pinned source actually checks: registry sharding and pooled minting for AdaDomains, minter-gated mints and burns for DeMi, membership preservation left to a configured hook for Distributed Set, insert-only nodes for CIP113, and identity derived from a spent output reference for Masumi.",
       "pause": 400
+    },
+    {
+      "text": "ADA Handle, on the recovery axis. A Handle is an NFT under a fixed policy, and resolution follows whichever wallet holds it; there is no controller distinct from possession. So sending the NFT is the authority change, losing the key strands the handle permanently while nothing records that it is stranded, and a theft is indistinguishable from a sale. Singular's naming application chose the other side of that trade: the controller is a datum field, control moves only to a precommitted address, and a name can be ended on purpose. That is the design decision a sellable identity forecloses.",
+      "pause": 500
     }
   ],
   "the-authenticated-map-layer": [
@@ -69,6 +81,12 @@
   ],
   "_source": {
     "file": "prior-art.md",
-    "sha256": "4a85153d4ceb7c937556096fc1828b2368c64645d0d150ab7c8914dfd2cc9cee"
-  }
+    "sha256": "ccbe8b0dd18094de6e58d5bd200d6cdfa9bef2d78802ad5f76c9d04c375c6ae3"
+  },
+  "the-reuse-decision": [
+    {
+      "text": "Taken on the sixteenth of September, with the settled registry interface. Singular keeps its local fork of the cage and runs it in registry mode: the value of every known leaf is a state, the cage refuses the illegal transitions, sums the token movements and checks them against the mint, verifies the read, and admits a request only if it carries an approval under the pinned application policy. No hook and no plugin, because a fold time script that enforces registry mechanics has to re-walk every batch, and every hazard around such a script exists only because the mechanics live in a second script. The ask of upstream that survives is narrower: permissionless batching, and request policing by a pinned approval policy.",
+      "pause": 500
+    }
+  ]
 }

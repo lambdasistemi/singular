@@ -45,7 +45,7 @@ current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
 
 ## Current ownerless integration
 
-The released interface follows the ownerless six-field state contract.
+The released interface follows the ownerless six-field state contract. The settled [registry interface](registry-interface.md) changes it: the cage in registry mode drops the consumer pin and pins three token policies beside the application policy, an eight-field state. That is a contract change for every consumer that decodes the state or builds proofs over the leaf, and it is re-baselined as such by the ticket that implements the cage; until it lands, the six-field contract below stands.
 The historical reports below retain their original transaction identities,
 measurements and limitations; they are not current execution claims.
 Coverage requires fresh receipts bound to the source and blueprint being

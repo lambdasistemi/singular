@@ -59,6 +59,12 @@
   ],
   "_source": {
     "file": "design.md",
-    "sha256": "b6219cc558964d41687408e0e5a6fa1d88defae662e878958a1b41fa8f075fd7"
-  }
+    "sha256": "69b5c07d2e0afa3ab1f3239f675b41e77418cc8f6cd9edda12dc9b31122a204b"
+  },
+  "where-the-candidate-is-going": [
+    {
+      "text": "The settled registry interface is what this candidate is being brought to. Its state alphabet is the candidate's value, active and over, with an absent state added and the terminal state named for what it is. The fold already refuses a mint that does not match the movements it folded, and the well-formedness invariant is already the active token law. The interface removes the incarnation counter, the asset scope, the identity reuse flag and the pinned consumer script, and adds the absent token, the read, and terminal tokens. The pages derived from the model, the theorem inventory, the model ledger, the mutation proposals, the simulation and the clarity record, are re-derived by the same epic rather than edited by hand; until then they describe the candidate as proved.",
+      "pause": 500
+    }
+  ]
 }

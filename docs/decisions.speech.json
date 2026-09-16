@@ -49,6 +49,10 @@
     {
       "text": "Representative identity and approval scope across reinsertion need a deployed construction. Batch selection, limits, fairness and failure presentation remain open beyond sequential semantics. Concrete transaction shapes, script responsibility and shared libraries are not established. Naming normalization, authorization, schemas, resolver authentication and economics remain illustrative.",
       "pause": 400
+    },
+    {
+      "text": "Identity across reinsertion is resolved as of the sixteenth of September: a deleted key is recreated as the same key with the same representative identity, there is no incarnation counter, and an application that wants a key never to return terminates it.",
+      "pause": 400
     }
   ],
   "evidence-and-next-stage": [
@@ -59,6 +63,16 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "e14c2f5101c80a5ca48b55e31e34f32e51ca81c1c52047cc3cad89721f9ed6b4"
-  }
+    "sha256": "f1eb8bd04636985ef58bf240b63d1e86f375e1e5eefed933798798f79d01159f"
+  },
+  "decisions-taken-on-2026-09-16": [
+    {
+      "text": "The settled registry interface took decisions this page had left open and a few it had not asked. They bind the tickets that implement the interface, not the proved candidate above.",
+      "pause": 400
+    },
+    {
+      "text": "The table lists six. The cage in registry mode, over a fold time hook or plugin, because a plugin must re-walk every batch to reinterpret the operations the cage just applied. A known absent state with its own token, over reading the root at use time, because a proof is bound to one root and goes stale on the next fold. The read verified by the cage at its position in the batch, over a read verified outside it, because the proof is valid only against an intermediate root. Terminality as registry vocabulary, over an application claim, because the cage enforces never again by construction. A deleted key recreated as the same key, over an incarnation counter, because delete means recreation. And keeping the fork while parking upstream generalisation, because it is a second project.",
+      "pause": 500
+    }
+  ]
 }

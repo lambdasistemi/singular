@@ -4,7 +4,7 @@ This specification derives from the [overview](../../docs/overview.md), [lifecyc
 
 ## Purpose and scope
 
-Singular is a permissionless registry on Cardano for unique identities and independent application state. It uses an authenticated MPF map and representative NFTs. This specification covers registry operations, native requests, certification and custody. It does not select an implementation language, a certificate encoding, a generic application plugin, a KERI integration or a shared-library API.
+Singular is a permissionless registry on Cardano for unique identities and independent application state. It uses an authenticated MPF map and witness tokens, of which the representative NFT is the first. This specification covers registry operations, native requests, certification and custody. It does not select an implementation language, a certificate encoding, a generic application plugin, a KERI integration or a shared-library API.
 
 ## Entities and terminology
 
@@ -211,5 +211,9 @@ The resolver's ledger authentication, application authorization and name normali
 | Batching | Batch selection, failure presentation and limits | Preserve sequential MPF semantics; do not assume automatic skipping of failing requests or a measured capacity advantage |
 | Transaction shapes and libraries | Concrete transaction shapes and reusable library interfaces | Assign each check to an executing witness, including net-zero batches; establish native supply/custody invariants; old registry proofs are not proof of Singular's protocol |
 | Naming profile | Illustrative naming-demo profile | Select normalization, application authorization, datum/address schema, ledger-resolution method and economics without turning them into Singular protocol rules |
+
+### Resolved on 2026-09-16
+
+The settled [registry interface](../../docs/registry-interface.md) resolves three rows above and changes the vocabulary of one section. Incarnation scope: a deleted key is recreated as the same key with the same representative identity, there is no incarnation counter, and approval scope is per booking. Batching: reads are requests that ride a fold with writes or alone, and a fold of only reads is a fold. Transaction shapes: the checks this specification assigns to "Singular spending witnesses" and the representative policy live in the cage run in registry mode, with no fold-time application script and no plugin. Registry transitions: a key's leaf is unknown or known with a state — absent, active, terminal — where `Over` is the terminal state and absence is a known state with its own token; the transition table above remains correct for the two states it names.
 
 Resolving these decisions, implementing the protocol, proving its properties and verifying its ledger behavior are subsequent work. No mandatory general-purpose application callback or KERI lifecycle mapping is introduced here.

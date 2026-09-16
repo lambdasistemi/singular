@@ -59,6 +59,28 @@
   ],
   "_source": {
     "file": "lifecycle.md",
-    "sha256": "92eea8ae54fe324d5dc3b13bd3c68f023774c5ef173c46334913cff7a83bf5cc"
-  }
+    "sha256": "b4e01fe1d48efdb0d5c8a5b608f700fc724bc0be541c4038ef0c0e97a9a1f1eb"
+  },
+  "where-the-lifecycle-is-going": [
+    {
+      "text": "The custody story above is unchanged by the settled interface: the representative is still minted on insert, still moves between successor application outputs without a registry request, and is still burned by the fold that ends the key. Three things are added around it.",
+      "pause": 400
+    },
+    {
+      "text": "A read is a request like insert or delete: it proves that a key holds a value against the root the fold has reached at that request's position, it changes nothing, and for a terminal key it entitles the requester to a terminal token. Reads ride folds with writes or alone.",
+      "pause": 400
+    },
+    {
+      "text": "An absent token witnesses a known absent key. It is created by inserting the absent state, lives in the cage's own custody so any later fold can consume it without a signature, and is consumed by the booking that ends the absence or by a delete. Terminal tokens witness a terminated key: any number, each minted by a folded read, each true forever, each freely burnable. The naming application's Over witness is one of these.",
+      "pause": 400
+    },
+    {
+      "text": "The sequence diagram shows a requester submitting a read of terminal with a tip, a folder including it in a batch, the registry verifying it against the root reached at its position and requiring one terminal token to the requester's output, with the leaf unchanged and the batch atomic.",
+      "pause": 400
+    },
+    {
+      "text": "Update keeps its meaning, the move to the terminal state, and delete keeps its meaning, the key is unknown again and may be booked afresh as the same key. What the interface removes is the pinned consumer script that today re-walks every batch; that binding becomes the cage's own check, generalised to all three token kinds.",
+      "pause": 500
+    }
+  ]
 }

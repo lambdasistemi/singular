@@ -54,6 +54,8 @@ The configured application policy ID is the authorization anchor. It mints actio
 
 Insert carries no representative NFT, can fail at folding if its key is occupied, and can be withdrawn with the required authorization. Update/Delete carry the existing representative after the application authorizes its exact release, and retain it until completion. The concrete request-token arrangement for Update/Delete remains open.
 
+The design has a settled target: [the registry interface](docs/registry-interface.md) — the registry run in registry mode, with three leaf states, three kinds of witness token and one read. The pages below describe the executable candidate as proved and deployed; each says what the interface changes for it.
+
 Read the design in order:
 
 1. [Responsibilities and terminology](docs/overview.md)
@@ -69,6 +71,8 @@ Read the design in order:
 ## Design status
 
 These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has 41 proved generic-registry declarations and 17 proved first-release naming declarations, plus a separately authored [playable simulation](docs/simulation.md). The focused checks replay 58 generic rows, 34 naming rows, and 43 lifecycle and wire rows; they test correspondence on those finite inputs rather than proving browser behavior generally. No independent audit acceptance, compiled Cardano validator, or ledger execution is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+
+**Where the design is going.** On 2026-09-16 the registry design was settled as an interface the current candidate does not yet implement: a key's leaf is unknown or known with a state — absent, active or terminal — where today's `Over` is the registry's terminal state and absence becomes witnessable; every state change moves exactly one token kind, and a terminal key can be attested by any number of freely burnable terminal tokens minted through a folded read; the pinned consumer script is deleted and its checks move into the cage; upstream MPFS is not generalised, and the fork is kept. The [interface page](docs/registry-interface.md) is the contract; the tickets that close the gap are listed at its end.
 
 The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies `artifacts/SHA256SUMS`, and runs the archive's own flake; a checkout pass does not substitute. [Build and release details](docs/building.md) give the exact commands. No tag or publication is authorized by this candidate.
 

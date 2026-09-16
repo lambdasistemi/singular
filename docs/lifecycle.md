@@ -144,3 +144,28 @@ A fold traverses requests and applies their operations to the successive authent
 One authentic representative cannot be held in two simultaneously pending Update/Delete requests for the same key. Consuming a request UTxO prevents consuming that UTxO again. These facts do not settle authorization replay across Delete followed by a fresh Insert, or all possible conflicts between different keys.
 
 See [certification and the remaining decisions](certification.md).
+
+## Where the lifecycle is going
+
+The custody story above is unchanged by the settled [registry interface](registry-interface.md): the representative is still minted into the certified output on Insert, still moves between successor application outputs without a registry request, and is still burned by the fold that ends the key. Three things are added around it.
+
+A **read** is a request like Insert or Delete: it proves that a key holds a value against the root the fold has reached at that request's position, it changes nothing, and for a terminal key it entitles the requester to a terminal token. Reads ride folds with writes or alone; a fold of only reads is a fold.
+
+An **absent token** witnesses a known-absent key. It is created by inserting the absent state, lives in the cage's own custody so that any later fold can consume it without a signature, and is consumed by the booking that ends the absence or by a delete.
+
+**Terminal tokens** witness a terminated key. Any number may exist, each minted by a folded read, each true forever because a terminal leaf never moves, each freely burnable. The naming application's Over witness — the token the escrow in the demo epic skips a name by — is one of these.
+
+```mermaid
+sequenceDiagram
+  participant Bob as Requester
+  participant Q as Read request UTxO
+  participant F as Folder (anyone)
+  participant G as Registry UTxO
+  Bob->>Q: read Terminal for a key, with a tip
+  F->>G: fold the batch, this read among the requests
+  G->>G: verify the read against the root reached at its position
+  G->>Bob: require one terminal token to the requester's output
+  Note over G: the leaf is unchanged; the batch is atomic
+```
+
+Under the interface, registry Update keeps its meaning — the move to the terminal state — and Delete keeps its meaning — the key is unknown again and may be booked afresh, as the same key. What the interface removes is the pinned consumer script that today re-walks every batch to bind representative mints to folded inserts: that binding becomes the cage's own check, generalised to all three token kinds.

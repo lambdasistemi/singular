@@ -39,6 +39,20 @@
   ],
   "_source": {
     "file": "certification.md",
-    "sha256": "5c5305c517cf623eada42c478acdc9708c6f304fd1e489f04bb57974d2c82831"
-  }
+    "sha256": "71a3da24734a6a148fcca2510aaa07f46b3f59b60f3ae77f1b7a2ba840396634"
+  },
+  "what-the-settled-interface-changes-here": [
+    {
+      "text": "The certification boundary on this page is the one the settled interface keeps: the application approves a request when the request is created, by minting an approval under its configured policy, and the fold checks only that the approval is there. The interface makes that the rule for every tree change, so an application is an approval minting policy plus its own output validators, and no script of the application's is ever present in a fold.",
+      "pause": 400
+    },
+    {
+      "text": "Two identities change shape. The representative policy becomes one of three token policies pinned beside the application policy at genesis: active, absent and terminal, each minting only inside a fold of its own cage. And the open update and delete request token construction is answered by the representative itself carrying the request, with no second token.",
+      "pause": 400
+    },
+    {
+      "text": "One decision in the table below is resolved: representative identity across delete and reinsert is the same identity. A deleted key is recreated as the same key, not versioned, and an application that wants a key never to return terminates it instead of deleting it.",
+      "pause": 500
+    }
+  ]
 }
