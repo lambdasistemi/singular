@@ -349,3 +349,16 @@ terminal tokens on a development network from the released archive. The escrow
 binds to the token policies those tickets pin, and the retirement-completion defect
 recorded on the preprod page is fixed on the completion path itself, independently
 of all of this.
+
+## Settled after the review of the first mandate
+
+The questions the interface left to Lean were answered on 2026-09-16 when the
+registry model's mandate was reviewed; they bind every ticket that follows.
+
+| question | ruling | why |
+|---|---|---|
+| where the absent token's deposit goes when it is consumed | to the refund address the `insertAbsent` request named, recorded in the custody datum beside the token — on both `updateActive` and `deleteAbsent` | paying whoever consumes it would let anyone with a `deleteAbsent` approval harvest the inserter's deposit; in an open registry every absent witness would be a bounty |
+| who may end an absence in the naming application | `insertAbsent`: anyone; `updateActive`: the controller who will own the record, exactly as `insertActive`; `deleteAbsent`: only the refund address's signature | the witnesser owns the witness and can retract it; nobody owns the absence, and a witnessed-absent name books like an unknown one |
+| the three-state leaf codec | one byte: `0x00` absent, `0x01` active, `0x02` terminal; naming-era leaf bytes do not decode | the smallest total encoding of a three-element alphabet admits no application payload by construction |
+| whether the registry refuses `insertAbsent` on its own account | it does not; the pinned policy decides, as for every other edge | a registry-level refusal would delete the successor-registry and reserved-spellings instances |
+| what one approval certifies | one `(edge, key, owner, destination)`; its asset name is the hash of that tuple, recomputed by the cage; it is not burned at fold | the folder is permissionless: without a bound destination it could route a representative to itself, without a bound datum it could create a record with a controller of its choosing |

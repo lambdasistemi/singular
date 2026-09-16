@@ -247,6 +247,20 @@
   ],
   "_source": {
     "file": "registry-interface.md",
-    "sha256": "37f492a5f21766bef5c745362f32c0f406aed50a08cd397613fb64cc1f532501"
-  }
+    "sha256": "5a5dc646a3607fd3fd206596df4590ae6be0999bf1ea643cfd67f09d0c7f9d97"
+  },
+  "settled-after-the-review-of-the-first-mandate": [
+    {
+      "text": "Settled after the review of the first mandate. The questions the interface left to Lean were answered on the sixteenth of September, when the registry model's mandate was reviewed; they bind every ticket that follows.",
+      "pause": 400
+    },
+    {
+      "text": "Five rulings. The absent token's deposit returns to the refund address the inserting request named, whichever way the absence ends, because paying the consumer would turn every absent witness into a bounty. In the naming application anyone may witness absence, the controller books a witnessed-absent name exactly as an unknown one, and only the refund address's signature may delete a witness: the witnesser owns the witness, nobody owns the absence.",
+      "pause": 400
+    },
+    {
+      "text": "The leaf codec is one byte, zero for absent, one for active, two for terminal, and naming-era leaf bytes do not decode. The registry does not refuse insert absent on its own account; the pinned policy decides. And one approval certifies one edge, key, owner and destination, named by the hash of that tuple and recomputed by the cage, so a permissionless folder can route nothing elsewhere.",
+      "pause": 500
+    }
+  ]
 }
