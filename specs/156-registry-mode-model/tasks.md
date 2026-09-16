@@ -63,6 +63,9 @@ proved before naming.
       carried, renamed to what, or retired why (R12).
 - [ ] T156-25 — every statement quantifies over `Singular.Reachable` states,
       not arbitrary `State` values (A-002 SPEC 3).
+- [ ] T156-26 — the `Singular.Oracle.*` observation surface, defined in terms of
+      the real model rather than as an independent table, so the frozen oracle
+      (gate leg A10) can evaluate the model at the ticket owner's inputs.
 
 ## Slice B — `#163 simulator` (author `muse`, auditor Opus `lean-simulations-auditor`)
 

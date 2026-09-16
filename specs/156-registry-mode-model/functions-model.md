@@ -35,6 +35,41 @@ audit bind to these exact identities.
 | `Singular.foldBatch` | `(s : RegistryState) → (batch : List Action) → Except String Result` | atomic; refuses a zero-request batch; threads the root so the k-th proof is verified against the root at position k; refuses any mint differing from the summed delta |
 | `Singular.readAt` | `(s : RegistryState) → (position : Nat) → (key : Key) → (value : State) → Bool` | verifies against the intermediate root at `position`; leaf unchanged; true only for `value = terminal` |
 
+## The oracle observation surface — required, and read-only to the author
+
+The gate's frozen oracle (leg A10) evaluates the model **at inputs the ticket
+owner fixed before any code existed** and compares to expected outputs the author
+cannot regenerate. That is what makes the gate measure correspondence instead of
+self-consistency, and it is the repair for the UNFIT verdict the blind gate audit
+returned on gate `a3`.
+
+So the model must expose these total observations. They are the contract the
+oracle reads; everything behind them is the author's to shape freely.
+
+| declaration | shape | constraint |
+|---|---|---|
+| `Singular.Oracle.Approval` | inductive: `none`, `application`, `other` | the three admission cases the oracle distinguishes |
+| `Singular.Oracle.Destination` | inductive: `cageCustody`, `requestOutput` | where a minted token goes |
+| `Singular.Oracle.RefundTarget` | inductive: `insertRefundAddress`, `requestOutput`, `folder` | the three candidate deposit destinations; only the first is correct (R-ADA), and the other two exist so a wrong answer is *expressible* and therefore detectable |
+| `Singular.Oracle.transition` | `(e : Edge) → (before : Leaf) → Option Leaf` | `none` is refusal |
+| `Singular.Oracle.delta` | `(e : Edge) → (k : TokenKind) → Int` | total: a kind the edge does not move is `0` |
+| `Singular.Oracle.encode` | `(s : State) → List UInt8` | the leaf codec, D-CODEC |
+| `Singular.Oracle.decode` | `(bytes : List UInt8) → Option State` | `none` off the three codec bytes |
+| `Singular.Oracle.admits` | `(e : Edge) → (a : Approval) → Bool` | R4 and D-SELF |
+| `Singular.Oracle.route` | `(k : TokenKind) → Destination` | R6, D7 |
+| `Singular.Oracle.refund` | `(e : Edge) → Option RefundTarget` | R-ADA: the two edges that consume an absent token pay `insertRefundAddress`; every other edge is `none` |
+
+These are **observations, not a second model.** Each must be defined in terms of
+the real model — the fold, the transition, the routing the cage performs — never
+as an independent table written to satisfy the oracle. A surface that hard-codes
+the oracle's answers while the model does something else is the exact defect the
+anti-cheat pass looks for, and obligation Y1's mutants are what catch it: mutate
+the model and the observations must move with it.
+
+The oracle itself lives **outside the repository**, in the ticket runtime root.
+Gate leg A9 refuses any diff that touches the mandate or the oracle, so the
+author cannot see the expected values, edit them, or regenerate them.
+
 ## Statements
 
 The eleven identities are fixed in `plan.md` and are repeated here as the binding

@@ -17,6 +17,12 @@
       "pause": 400
     }
   ],
+  "the-oracle-observation-surface-required-and-read-only-to-the-author": [
+    {
+      "text": "The gate's frozen oracle evaluates the model at inputs the ticket owner fixed before any code existed, and compares them to expected outputs the author cannot regenerate. That is what makes the gate measure correspondence rather than self-consistency, and it is the repair for the unfit verdict the blind gate audit returned. The model exposes ten total observations; everything behind them is the author's to shape freely. They must be defined in terms of the real model, never as an independent table written to satisfy the oracle — mutating the model must move the observations with it.",
+      "pause": 400
+    }
+  ],
   "statements": [
     {
       "text": "The eleven bound statement identities, repeated here as the binding list for the manifest and the axiom report, accompanied by one inversion per edge.",
@@ -43,6 +49,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "5beff538ee21ce75e504b933a9d97253eefc5fadfffebe412a301e972c96c76d"
+    "sha256": "0b01c87c558d0f81782d2699bb0f0f8e4c7ce1bdeb913b0bd6d647b04f8acf7d"
   }
 }
