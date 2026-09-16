@@ -1,0 +1,84 @@
+{
+  "strategy": [
+    {
+      "text": "The model is rewritten, not migrated. No partial Lean tree builds, so the model slice is indivisible; and because the simulator is a hand transcription, that slice is green on its own gate and red on the simulator by construction.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Two slices: the model with its generators, tooling and Lean-derived pages; then the simulator and its pages, transcribed from the frozen interface by a different author.",
+      "pause": 400
+    }
+  ],
+  "staffing-checked-against-the-operators-rule": [
+    {
+      "text": "The model slice is authored by GLM, the simulator slice by Muse, and every auditor is a fresh Opus seat with its own context, root, worktree and pane. Both launchers resolve in a non-interactive shell, so no escalation is needed.",
+      "pause": 400
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Lean is the behavioral authority; a proved weaker statement is the wrong contract. Nothing lands or is pushed red, and the model checker is opened to new identities without being relaxed.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-slice-a": [
+    {
+      "text": "Each row binds a Lean identity, a given-when-then, the executable observation that exhibits it, and a control able to fail for the intended reason.",
+      "pause": 400
+    }
+  ],
+  "definitions": [
+    {
+      "text": "Nine definition rows, from the alphabet and the removed vocabulary through the edges, the read, admission, the fold's refusals, and where each token and its value goes.",
+      "pause": 400
+    }
+  ],
+  "codec-frozen-sibling-contract-for-157-and-152": [
+    {
+      "text": "Three codec rows: the round trip, the refusal of every byte that is not one of the three, and the refusal of naming-era leaf bytes.",
+      "pause": 400
+    }
+  ],
+  "statements-interface-6-and-4": [
+    {
+      "text": "The eleven promises at their bound identities: policing, atomicity, soundness, permanence, synchronisation, occupancy, termination, and the four laws of the witnesses.",
+      "pause": 400
+    }
+  ],
+  "instances": [
+    {
+      "text": "The open application first, as the proof that the guarantees are unconditional in the application; then naming, whose trie-free moves must leave the root equal.",
+      "pause": 400
+    }
+  ],
+  "mutants-the-four-named-in-154": [
+    {
+      "text": "Each mutant must elaborate first, so what is measured is a semantic change and not a syntax error; the kill is either a statement whose proof no longer closes or a corpus row whose verdict flips, recorded per mutant with a positive control. A compile failure alone is not a behavioral kill.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-slice-b-163": [
+    {
+      "text": "Seven simulator rows: the edges and the read exposed, every illegal combination refused by name, full replay agreement, the naming profile's Over witness, counts equal to what replays, fresh speech, and a clarity record.",
+      "pause": 400
+    }
+  ],
+  "gates": [
+    {
+      "text": "Three frozen gates: a focused model gate that deliberately does not claim the repository green, a focused simulator gate, and the ticket gate on the combined tree, which is the only one that may.",
+      "pause": 400
+    }
+  ],
+  "evidence-required-at-acceptance": [
+    {
+      "text": "Fresh command receipts, a clean axiom report, the four mutants with their controls, regenerated corpora and pages, two independent audit reports, and green continuous integration on the one head that is ever pushed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "1597a633e9cc3b8ad3afaa3a1cbc87ccc24088086fa8814ec4a8450ddd3f91d0"
+  }
+}

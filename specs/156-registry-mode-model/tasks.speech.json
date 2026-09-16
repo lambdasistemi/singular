@@ -1,0 +1,24 @@
+{
+  "slice-a-registry-mode-model-author-glm-auditor-opus-lean-auditor": [
+    {
+      "text": "Eighteen tasks: definitions first, then the statements, the open application before naming, the regenerated corpora and manifests, the opened model checker, the three rewritten pages, and the four mutants with their controls.",
+      "pause": 400
+    }
+  ],
+  "slice-b-163-simulator-author-muse-auditor-opus-lean-simulations-auditor": [
+    {
+      "text": "Nine tasks, starting only after the model slice's audit passes: the profiles, the named refusals, replay agreement, the journeys and their limits, the clarity record, the counts, the browser checks and fresh speech.",
+      "pause": 400
+    }
+  ],
+  "gate-held-not-a-task": [
+    {
+      "text": "The gate criteria are not checkboxes. Only the ticket gate, on the combined tree, may claim the repository green.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "646e543d91ab504549e09b88bec95a8297d3113d3b58a3c967bf5b18eb834eac"
+  }
+}

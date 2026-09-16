@@ -1,0 +1,48 @@
+{
+  "model-the-alphabet-and-the-leaf": [
+    {
+      "text": "The state and leaf types, and the two codec functions, which must be total, injective and defined on exactly the three codec bytes.",
+      "pause": 400
+    }
+  ],
+  "model-the-edges": [
+    {
+      "text": "Exactly seven edges and exactly three token kinds, with the delta equal to the interface table and the transition refusing every edge out of terminal.",
+      "pause": 400
+    }
+  ],
+  "model-admission-routing-the-fold": [
+    {
+      "text": "The eight-field configuration, admission, routing, the step function whose every refusal carries a distinct reason, the atomic batch fold that threads the root through the actions, and the positional read.",
+      "pause": 400
+    }
+  ],
+  "statements": [
+    {
+      "text": "The eleven bound statement identities, repeated here as the binding list for the manifest and the axiom report, accompanied by one inversion per edge.",
+      "pause": 400
+    }
+  ],
+  "open-application": [
+    {
+      "text": "A policy that certifies every edge for every key, with one instantiation per registry promise and no naming vocabulary anywhere in it.",
+      "pause": 400
+    }
+  ],
+  "naming-preserved-identities": [
+    {
+      "text": "The naming statements and recovery rows keep their qualified names and their meaning. The model checker is opened to the new identities, but its discipline is retained, and weakening any part of it is a finding rather than a repair.",
+      "pause": 400
+    }
+  ],
+  "removed": [
+    {
+      "text": "The old value type, the incarnation counter, the asset scope, the reuse identity, the consumer pin, and the operation triple with its free-form update. Removal, not deprecation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "c834f169c17fbc70a16c23890a1b7cc3d103d35ac4dd6090d8a02e3a8ee43956"
+  }
+}
