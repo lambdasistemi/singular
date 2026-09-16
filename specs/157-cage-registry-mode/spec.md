@@ -129,7 +129,10 @@ For each consumed request the cage requires, per token moved:
   these two operations, and nothing else.
 - **active or terminal token minted** — exactly one output at the request's
   named destination, with the inline datum whose hash the request names, carrying
-  the token (D-DEST). For `Update(0x01,0x02)` the active token must be an input
+  the token (D-DEST) **and at least the request's value minus the tip**: the
+  deposit that rode the request returns to the requester as that output's
+  value. The folder earns the tip and nothing else (want-ledger R4: no folder
+  incentive exists in this version, so the deposit is returned). For `Update(0x01,0x02)` the active token must be an input
   and burned; the cage does not care where it came from — the application's
   custody does (N4).
 
@@ -189,7 +192,7 @@ name minted must equal the approval binding (D-APPROVAL). Per R-NM4:
 | `insertAbsent` | anyone; `owner` is the refund address of the request |
 | `insertActive` | the signature of `owner`, the controller who will own the record; `destination` binds the record datum |
 | `updateActive` | the same as `insertActive` |
-| `updateTerminal` | the controller's signature **or** a distinct-member quorum of the record's stored quorum, read from the record as a reference or spent input |
+| `updateTerminal` | the **committed recovery key** — the transaction reveals the preimage of the record's `next_control_commitment` and carries that key's signature, exactly as `Recover` proves it — **or** a distinct-member quorum of the record's stored quorum. The current control key alone does **not** certify termination (want-ledger R1, 2026-09-16) |
 | `deleteAbsent` | the signature of the refund address recorded in the custody datum for `key`, read as a reference input |
 | `deleteActive` | never — the arm refuses |
 
@@ -207,11 +210,14 @@ contract change for the runners' encodings, re-baselined here.
 
 ### N4 — retirement and completion
 
-`Retire` is unchanged in authorization: the controller's signature or the
-quorum moves the active token from the record into completion-only custody. The
-same transaction mints the `updateTerminal` approval (N2 — the signatures are
-present) and creates the completion request carrying it — today's co-created
-request. Completion is the fold of `Update(0x01, 0x02)`: the custody UTxO is
+`Retire` changes its controller path: it is authorized by the **committed
+recovery key** (reveal of `next_control_commitment` plus that key's signature,
+the proof `Recover` uses) or by the quorum — never by the current control key
+alone. A thief holding Alice's current key can change where the name pays until
+she recovers; they can no longer end it. The authorized transaction moves the
+active token from the record into completion-only custody, mints the
+`updateTerminal` approval (N2 — the same proof is present) and creates the
+completion request carrying it — today's co-created request. Completion is the fold of `Update(0x01, 0x02)`: the custody UTxO is
 spent, its held token is the burn the delta requires, and the record's name is
 `0x02` forever. `retirement_custody.ak` keeps its rules; `over_marker_for` and
 the naming-specific value vocabulary in `naming.ak` are deleted.
@@ -298,11 +304,25 @@ argument does not apply to them.
 
 ### D-TERMINATE — who obtains the terminate approval, and when
 
-As N4: in the `Retire` transaction, on the controller's signature or the
-quorum's — the interface's "only the controller or the quorum can obtain an
-approval for `updateTerminal`". R-NM4's row reads "the quorum" as shorthand for
-the retirement authorization naming already has (LT01 controller, LT02 quorum);
-both stand.
+As N4: in the `Retire` transaction, on the **committed recovery key's** proof or
+the quorum's signatures. Operator adjudication of want-ledger row R1
+(2026-09-16): a name must not be endable by whoever holds the current control
+key, because a key thief and Alice are indistinguishable there; the recovery
+key is the one thing the thief does not have. `LT01` (controller retirement
+accepts) is therefore **retired as a row**: the current control key alone is
+refused; the committed key accepts; `LT02`/`LT03` stand.
+
+### Known weaknesses, stated so they are read
+
+Adjudicated *wanted, and visible* (want-ledger R2 and R3):
+
+- **The quorum is fixed for the life of the name.** No action rewrites
+  `retirement_quorum` after booking; a member who is lost or hostile is
+  permanent. The only way to a new quorum is to retire and re-book.
+- **The quorum can retire the name while the controller is present.** Nothing
+  checks that Alice is gone; a threshold of members ends the name at any time.
+
+The naming docs (X2) state both in the retirement section.
 
 ## Rejection behavior
 

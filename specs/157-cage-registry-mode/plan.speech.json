@@ -127,7 +127,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 10 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: N1; N2; N3; N4; N5; N6; N7; N8; N9; N10.",
+      "text": "A table of 11 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: N1; N2; N3; N4; N5; N6; T6; N7; N8; N9; N10.",
       "pause": 400
     }
   ],
@@ -207,6 +207,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "6b26e2d7a1260e7a85ce8ceefc18556051ee593f11662eec3ccae8f5ca7f3316"
+    "sha256": "8534c3d940bcc865116d106e8049c83b0505bb00320562d11268fe50f21bbffa"
   }
 }
