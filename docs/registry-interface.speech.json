@@ -1,0 +1,252 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "Bob wants to lock funds for Alice so that only Alice can ever take them, at whatever address she is using the day she takes them, even after she has lost her key.",
+      "pause": 400
+    },
+    {
+      "text": "And so that, once her name has ended for good, the funds pass to the next name on a list instead of being stranded.",
+      "pause": 400
+    },
+    {
+      "text": "To do that, a contract has to know three things about a name without ever reading the registry's map root: that the name is booked, by whom it is currently controlled, and whether it has ended.",
+      "pause": 400
+    },
+    {
+      "text": "This page is for the people who build the registry that answers those questions with tokens rather than with proofs, and for the authors of applications on top of it, who need to know how little they must supply and how much they are guaranteed.",
+      "pause": 500
+    }
+  ],
+  "what-the-registry-is": [
+    {
+      "text": "A Merkle Patricia Forestry map is a key to value map. Singular takes the value slot away from applications and fills it with a fixed lifecycle vocabulary. That is what turns a map into a registry.",
+      "pause": 400
+    },
+    {
+      "text": "The trie answers exactly two questions: is this key unique, and where in its life is it. Nothing else can be asked of it.",
+      "pause": 400
+    },
+    {
+      "text": "Singular is that map run in registry mode: a local fork of the cage in which the cage itself knows the state alphabet, refuses the illegal transitions, checks the token movements against the mint, routes each token, verifies the read, and admits a request only if it carries an approval under the pinned application policy. Nothing application specific runs when a batch is folded.",
+      "pause": 400
+    },
+    {
+      "text": "The diagram shows four layers. The trie at the top: a key to value map folded in atomic batches by anyone. Below it the cage in registry mode: the value is a state, token movements are summed and checked, reads are verified in position, and requests need an approval token. Below that the applications, which are never present at fold time: Name Your Address, cardano keri, and the open registry, each supplying an approval policy and token policies. At the bottom the consumers, such as the escrow, which read tokens and never the root.",
+      "pause": 500
+    },
+    {
+      "text": "Two things are pinned when the registry's seed is spent and never change: the application policy that certifies requests, and the three token policies, active, absent and terminal. Application data lives in the application's own outputs, authenticated by the active token they carry.",
+      "pause": 500
+    }
+  ],
+  "a-keys-life": [
+    {
+      "text": "Two levels, one per layer. The trie knows whether a key has a leaf; the registry owns what a leaf may say.",
+      "pause": 400
+    },
+    {
+      "text": "A leaf is either unknown, meaning no leaf, or known with a state. A state is absent, active, or terminal. An unknown key is a non-membership proof; a known key is a membership proof whose value is the state. That is all the trie ever sees.",
+      "pause": 400
+    },
+    {
+      "text": "The state diagram shows the seven edges. From unknown, insert absent goes to absent and insert active goes to active. From absent, update active goes to active. From active, update terminal goes to terminal. Terminal loops to itself through witness terminal, which is a read. From active and from absent, delete returns the key to unknown.",
+      "pause": 500
+    },
+    {
+      "text": "The missing edges carry as much meaning as the present ones. Nothing is born terminal. A booking is never undone into absence; it is deleted and witnessed again. Nothing leaves terminal. Absent never goes straight to terminal.",
+      "pause": 400
+    },
+    {
+      "text": "Deleting an active key recreates it: the same key, not a new version. There is no incarnation counter. An application that wants never again has the update to terminal. Terminality is registry vocabulary; the application chooses the edge, and the cage enforces the consequence.",
+      "pause": 500
+    }
+  ],
+  "every-edge-moves-a-token": [
+    {
+      "text": "Three token kinds, named after the states they witness: absent, active, which in the naming application is the representative, and terminal, the Over witness. Every edge is a movement over them.",
+      "pause": 400
+    },
+    {
+      "text": "The table lists the seven edges with the tokens each one moves. Insert absent mints one absent token. Insert active mints one active token. Update active burns the absent token and mints the active one. Update terminal burns the active token. Delete absent burns the absent token; delete active burns the active token. Witness terminal mints one terminal token and changes nothing in the leaf.",
+      "pause": 500
+    },
+    {
+      "text": "The cage sums that column for the edges it folded and refuses any mint under the pinned token policies that differs from the sum.",
+      "pause": 400
+    },
+    {
+      "text": "Where a token may go is decided by who must be able to consume it later. An active token is consumed by edges the application certifies, so the application chooses its destination. An absent token may be consumed by a stranger's fold, so it goes to the cage's own custody, never to a wallet; otherwise absence would become a veto. A terminal token is consumed by nobody and goes wherever the requester names.",
+      "pause": 500
+    },
+    {
+      "text": "There is no free form update. With nothing to store there is nothing to change; a leaf sits unchanged from its booking to its termination.",
+      "pause": 400
+    }
+  ],
+  "reads-are-folded": [
+    {
+      "text": "A read is a request like any other. It proves that a key holds a value against the root the fold has reached at that request's position, it changes nothing, and for a terminal key it entitles the requester to a terminal token.",
+      "pause": 400
+    },
+    {
+      "text": "The sequence diagram shows Bob submitting a read of terminal for alice with a tip. A folder builds a batch that inserts bob and then reads alice, with proofs. The cage applies the insert, and the root moves; it then verifies the read against the root reached at that point, and requires one terminal token for alice to be minted to Bob's output. The leaf for alice is unchanged, and the batch is atomic.",
+      "pause": 500
+    },
+    {
+      "text": "The read is a cage action and not a check by any other script, for a structural reason. The cage threads the root through the actions of a batch, so the proof at a given position is valid only against an intermediate root that is never written anywhere. Anything outside the cage that wanted to verify it would have to re-run the fold, and would be a second authority over the root whenever it disagreed.",
+      "pause": 400
+    },
+    {
+      "text": "That is also the argument against a fold time hook of any kind. A script that re-walks the batch to reinterpret the operations the cage just applied is a second fold of the meaning, with none of the roots. The cage does both, once.",
+      "pause": 400
+    },
+    {
+      "text": "A read is ordered with the writes around it. It is permissionless to create, carries a tip, is retractable when its window closes, and is refunded if its proof fails. A fold of only reads is a fold. The cage admits a read of terminal and requires the token; it refuses a read of active or absent, so no attestation of a leaf that can still move is ever produced.",
+      "pause": 500
+    }
+  ],
+  "policing-who-may-change-the-tree": [
+    {
+      "text": "Removing the cage owner removes the only gate. In its place, every tree change must be certified by the pinned application policy. Certification is a token: the request carries an approval minted under that policy, or it is never folded.",
+      "pause": 400
+    },
+    {
+      "text": "Policing happens when the request is created, not when it is folded. The fold stays permissionless and checks only that the approval is there. So an application is a minting policy plus its own output validators, and no script of the application's is ever present in a fold.",
+      "pause": 400
+    },
+    {
+      "text": "The one read needs no certification. Witnessing absence is a tree change, so the application decides who may do it, with the same sentence that governs every other edge.",
+      "pause": 400
+    },
+    {
+      "text": "Policing and mechanics are orthogonal. Take the open application, a policy that certifies everything, and every guarantee still holds. The policy decides who may cause a tree change, and only that. It is what stops a stranger from terminating Alice's name, not what makes her representative unique.",
+      "pause": 500
+    }
+  ],
+  "the-laws-of-the-witnesses": [
+    {
+      "text": "A witness's shape is derived from the exits of the state it witnesses, never chosen. A state that can be left gets a witness created on entry and consumed by every exit, in the fold itself, one per key at a time. A state that cannot be left gets a witness that is never consumed, any number, freely burned.",
+      "pause": 400
+    },
+    {
+      "text": "The table shows the three states with how each can be left and what its witness is. Absent is left by booking or delete, and has the absent token. Active is left by termination or delete, and has the active token. Terminal is never left, and has terminal tokens, any number, never consumed.",
+      "pause": 500
+    },
+    {
+      "text": "Four statements, and they are the whole witness system.",
+      "pause": 300
+    },
+    {
+      "text": "The active witness is unique: at most one active token per key, exactly one if and only if the leaf is known and active.",
+      "pause": 400
+    },
+    {
+      "text": "The absent witness is unique: at most one absent token per key, exactly one if and only if the leaf is known and absent.",
+      "pause": 400
+    },
+    {
+      "text": "The terminal witness is plural: any number of terminal tokens per key, all true, all freely burnable, and any exists only if the leaf is known and terminal.",
+      "pause": 400
+    },
+    {
+      "text": "The three kinds exclude each other: for any key, at most one kind of witness is ever outstanding. Even one terminal token excludes both the others. A consumer that finds one kind knows the other two do not exist, without reading the state.",
+      "pause": 500
+    }
+  ],
+  "what-an-application-supplies-and-what-it-is-guaranteed": [
+    {
+      "text": "An application supplies one thing: an approval minting policy. There is no value type, because the application stores nothing in the trie, and no script at fold time, because policing is a token checked at request creation. The application proves nothing to the registry; what it proves is about its own outputs.",
+      "pause": 400
+    },
+    {
+      "text": "In return the registry proves, once, for every application, the following.",
+      "pause": 300
+    },
+    {
+      "text": "No tree change happens without an approval under the pinned policy, and the pins never change.",
+      "pause": 300
+    },
+    {
+      "text": "A key is booked at most once at a time; a batch is atomic; a request is spent once.",
+      "pause": 300
+    },
+    {
+      "text": "A terminal token is minted only by a fold that accepted a read of terminal, which holds only if the leaf was terminal; and every attestation holds in every later state, because a terminal leaf never moves.",
+      "pause": 300
+    },
+    {
+      "text": "The supply of an absent or active token for a key is one exactly when the key is in that token's state. Taken means the leaf is active or terminal, and a booking succeeds exactly when the key is not taken. A terminal leaf is never moved, so the key is never re-booked.",
+      "pause": 400
+    },
+    {
+      "text": "A consumer reads tokens and never the root. The escrow that opened this page pays the first entry on its list whose active token is live, at the destination its record names now, skips an entry by its terminal token, and never reads the map.",
+      "pause": 500
+    }
+  ],
+  "instances": [
+    {
+      "text": "Name Your Address. The record is the application output that holds the representative; maintaining the destination and rotating control never touch the trie. The approval policy mints a booking approval on the controller's signature and a termination approval on the quorum's. Retirement completion is the update to terminal; the application never certifies a delete.",
+      "pause": 400
+    },
+    {
+      "text": "cardano keri. The key state rides the checkpoint that holds the active token. A parked key is a custody output that keeps that token, not a leaf state. Conviction is the update to terminal. Their policy never certifies witnessing absence or deleting.",
+      "pause": 400
+    },
+    {
+      "text": "A successor registry, and reserved spellings: approval policies that require a reference to another registry's absent token, readable in that registry's custody without spending it. Reserving a spelling burns the absent token, and every later booking of that spelling elsewhere finds nothing to reference; earlier bookings stand.",
+      "pause": 400
+    },
+    {
+      "text": "The open registry: an approval policy that mints for anyone. A first come first served namespace with unique representatives and permanent retirement, and no application logic at all. Every guarantee holds for it; nobody is protected from anyone, which is the point.",
+      "pause": 500
+    }
+  ],
+  "decisions-and-what-they-replaced": [
+    {
+      "text": "The table lists eight decisions, each with the alternative it rejected and the reason.",
+      "pause": 300
+    },
+    {
+      "text": "The cage in registry mode was chosen over a fold time hook or plugin, because a plugin must re-walk every batch to reinterpret the operations the cage just applied, and every hazard around it exists only because the mechanics live in a second script.",
+      "pause": 400
+    },
+    {
+      "text": "The state as the value of every known leaf was chosen over a reserved marker inside an application owned value space, because the registry already owns the leaf codec.",
+      "pause": 300
+    },
+    {
+      "text": "A deleted key is recreated as the same key, rather than versioned by an incarnation counter, because delete means recreation and an application that wants never again terminates.",
+      "pause": 300
+    },
+    {
+      "text": "The read is verified by the cage at its batch position, not outside the cage, because the proof is valid only against an intermediate root that exists nowhere else.",
+      "pause": 300
+    },
+    {
+      "text": "Absent tokens live in the cage's own custody, not in a wallet, because a token a stranger's fold must consume cannot sit behind a signature.",
+      "pause": 300
+    },
+    {
+      "text": "Policing is an approval token at request creation, not an application script at fold time. Terminality is registry vocabulary, not an application claim. And generalising upstream MPFS is parked: the ask that survives, permissionless batching plus request policing, is recorded upstream, and witness minting needs a value vocabulary the upstream map does not have.",
+      "pause": 500
+    }
+  ],
+  "what-exists-today-and-what-changes": [
+    {
+      "text": "The model already carries most of this: its value is active or over, its fold already refuses a mint that does not match the movements it folded, and its well-formedness invariant is the active token law. It also carries what the interface removes, an incarnation counter, an asset scope, an identity reuse flag and a pinned consumer script, and it lacks the absent state and the read.",
+      "pause": 400
+    },
+    {
+      "text": "On chain, the consumer script is the pinned script that re-walks every batch, and the state datum has six fields; the interface deletes the script and pins three token policies beside the application policy. The naming application's leaf bytes become a three state codec, which is a change visible to every consumer that builds proofs and is stated as a contract change, not discovered.",
+      "pause": 400
+    },
+    {
+      "text": "Three tickets close the gap, in order: the Lean model in registry mode with the naming application as its first instance; the cage in registry mode replacing the consumer script; and a runner that mints terminal tokens on a development network from the released archive. The escrow binds to the token policies those tickets pin, and the retirement completion defect is fixed on the completion path itself, independently.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "registry-interface.md",
+    "sha256": "37f492a5f21766bef5c745362f32c0f406aed50a08cd397613fb64cc1f532501"
+  }
+}
