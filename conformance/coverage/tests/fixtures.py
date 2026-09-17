@@ -60,6 +60,10 @@ namespace Singular
 @[simp] theorem attributed_zero (n : Nat) : n + 0 = n := rfl
 theorem helper.dotted (n : Nat) : n = n := rfl
 theorem primed_helper' (n : Nat) : n = n := rfl
+theorem find?_filter_key_ne (n : Nat) : n = n := rfl
+@[simp]
+theorem entry_key (n : Nat) :
+    n = n := rfl
 end Singular
 """,
     "weakened_lemmas": None,  # lemmas unchanged in the statement-edit variant
@@ -86,7 +90,13 @@ NAMING_STUBS = {
 
 
 def build_base_tree(root: Path) -> None:
-    """A synthetic lean/ tree: 5 manifest-bound + 3 unclassified obligations."""
+    """A synthetic lean/ tree: 5 manifest-bound + 5 unclassified obligations.
+
+    The unclassified five carry the identifier shapes that have each defeated
+    the scanner at least once: attributed-inline, dotted, primed, `?`-carrying,
+    and attributed-across-lines. They live here rather than in the product tree
+    so the grammar guard keeps its subjects when the model changes.
+    """
     (root / "lean/Singular").mkdir(parents=True)
     (root / "lean/Singular/Statements.lean").write_text(STATEMENTS)
     for rel, text in NAMING_STUBS.items():

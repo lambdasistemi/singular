@@ -356,29 +356,30 @@ data Pair = Pair
 pair :: String -> String -> JValue -> Pair
 pair v f val = Pair{pairVector = v, pairField = f, pairVendored = val}
 
--- | Every value the vendored module pins, against the corpus row field
--- that corresponds to it. @WR01@'s redirected proposal has no corpus
--- row field of its own (the row records the redirect as
--- @redirectedBytes@ plus @presentedRefundAddress@), so it is not
--- listed: the redirect is still covered through both of those.
+-- | Every value the vendored module pins that the live corpus still
+-- publishes a field for, against that field.
+--
+-- Registry mode (#156) renamed the wire rows and dropped two of them.
+-- The vendored BYTES are unchanged — 'wd01Id' and 'wd03Id' now name
+-- the renamed rows and compare byte-for-byte as before. What is gone is
+-- the comparability of @WD02-datum-hash-refused@ and @WR01@: the
+-- attachment rule and the witness-request roundtrip became Lean
+-- statements rather than exported rows, so there is no live field to
+-- compare them against. Their bytes stay vendored and the byte-exact
+-- suite still exercises them; listing them here would compare against
+-- a row that does not exist, which is a missing row, not agreement.
+--
+-- @WR01@'s redirected proposal never had a corpus field of its own.
 vendoredPairs :: [Pair]
 vendoredPairs =
   [ pair wd01Id "expectedBytes" (byteArr wd01ExpectedBytes)
-  , pair wd01Id "malformedBytes" (byteArr wd01MalformedBytes)
   , pair wd01Id "fixture" (fixtureJson wd01Fixture)
   , pair wd01Id "shape" (datumShapeJson wd01Shape)
-  , pair wd02Id "attachment.datumHash" (attachmentHash wd02Attachment)
   , pair wd03Id "encoded" (wireDataJson wd03Encoded)
-  , pair wr01Id "expectedBytes" (byteArr wr01ExpectedBytes)
-  , pair wr01Id "malformedBytes" (byteArr wr01MalformedBytes)
-  , pair wr01Id "redirectedBytes" (byteArr wr01RedirectedBytes)
-  , pair wr01Id "proposal" (proposalJson wr01StoredProposal)
-  , pair wr01Id "shape" (requestShapeJson wr01Shape)
-  , pair wr01Id "comparisonResult" (comparisonJson wr01ComparisonResult)
-  , pair wr01Id "storedRefundAddress" (JNum wr01StoredRefundAddress)
-  , pair wr01Id "presentedRefundAddress" (JNum wr01PresentedRefundAddress)
   ]
 
+-- | Retained with 'wd02Id': the vector is still vendored and still exercised by
+-- the byte-exact suite, it is simply no longer compared against a live row.
 attachmentHash :: DatumAttachment -> JValue
 attachmentHash (AttachedDatumHash h) = byteArr h
 attachmentHash (InlineDatum _) =
@@ -549,8 +550,27 @@ data FieldOutcome
   = FieldOk String
   | FieldDiff [String]
 
+-- | The vendored vectors this check compares against a live row.
 pinnedVecIds :: [String]
-pinnedVecIds = [wd01Id, wd02Id, wd03Id, wr01Id]
+pinnedVecIds = [wd01Id, wd03Id]
+
+-- | Vendored vectors DECLARED retired from the live corpus, with the reason.
+--
+-- The adoption ruling of 2026-09-17 accepted the registry-mode inventory, in
+-- which the attachment rule and the witness-request roundtrip are Lean
+-- statements rather than exported rows. Their bytes stay vendored and the
+-- byte-exact suite still exercises them, so they are absent by decision.
+--
+-- They are listed rather than deleted for the reason this whole check exists:
+-- an id that simply vanished from both the corpus and this module would be
+-- indistinguishable from one nobody noticed. A retirement has to be written
+-- down to count as one, and anything not written down here that goes missing
+-- still fails.
+retiredVecIds :: [(String, String)]
+retiredVecIds =
+  [ (wd02Id, "attachment rule became the Lean statement inline_datum_only")
+  , (wr01Id, "roundtrip became the Lean statement witness_request_wire_roundtrip")
+  ]
 
 readInput :: FilePath -> IO String
 readInput p = do
@@ -625,17 +645,31 @@ main = do
         putStrLn ("DIVERGENT " ++ v ++ " " ++ f)
         mapM_ putStrLn ds
   let missingRows = [v | (v, Nothing) <- perVector]
-      extraRows = [i | (i, _) <- rows, i `notElem` pinnedVecIds]
+      extraRows =
+        [ i | (i, _) <- rows
+        , i `notElem` pinnedVecIds
+        , i `notElem` map fst retiredVecIds
+        ]
+  unless (null retiredVecIds) $ do
+    putStrLn "retired by the 2026-09-17 adoption (bytes kept, byte-exact suite still covers them):"
+    forM_ retiredVecIds $ \(i, why) -> do
+      case lookup i rows of
+        Nothing -> putStrLn ("  " ++ i ++ " - absent as declared: " ++ why)
+        Just _ -> putStrLn ("  " ++ i ++ " - PRESENT but declared retired")
   unless (null extraRows) $ do
     putStrLn
       "extra-row notice: the live corpus ships wire vectors the pinned release does not cover:"
     mapM_ (\i -> putStrLn ("  " ++ i)) extraRows
-  if null missingRows && okFields == totalFields && null extraRows
+  let resurrected = [i | (i, _) <- retiredVecIds, i `elem` map fst rows]
+  unless (null resurrected) $
+    putStrLn "DIVERGENT: a vector declared retired is back in the live corpus"
+  if null missingRows && okFields == totalFields && null extraRows && null resurrected
     then do
       putStrLn
         ( "no drift: " ++ show okFields ++ " comparisons identical across "
             ++ show (length pinnedVecIds)
-            ++ " pinned vectors - the vendored v0.2.0 copy and the live "
+            ++ " pinned vectors (" ++ show (length retiredVecIds)
+            ++ " retired by declaration) - the vendored v0.2.0 copy and the live "
             ++ "corpus are in agreement"
         )
       exitSuccess

@@ -5,6 +5,7 @@ plus the attributed-declaration miss this slice found."""
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -66,35 +67,61 @@ end Singular
             self.assertIn("grammar incomplete", str(ctx.exception))
 
 
-class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree at base: 196 = 113 manifest-bound + 83 unclassified.
+class TrickyNameGrammarTest(unittest.TestCase):
+    """The identifier shapes that have each defeated the scanner at least once.
 
-    Re-frozen on integrating the reviewed naming hook/empty-fold Lean
-    (four theorems: empty_fold_never_ok, empty_fold_error,
-    nonempty_fold_invokes_consumer, substituted_consumer_pin_refused;
-    fold_iff restated with items-nonempty). Prior base 192 = 109 + 83."""
+    This was asserted against the product tree until #156. That made a grammar
+    regression test depend on the model happening to contain a primed name — and
+    when registry mode retired those declarations the tree kept no primed and no
+    `?`-carrying identifier at all, so re-pointing the test at names that exist
+    today would have quietly deleted coverage for three real scanner bugs. The
+    subjects now live in the synthetic fixture tree, where the model cannot take
+    them away.
+    """
+
+    def test_tricky_names_are_found_whole(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            decls = {d.name for d in scan_tree_strict(root / "lean")}
+        for name in (
+            "Singular.helper.dotted",        # dotted
+            "Singular.primed_helper'",       # primed
+            "Singular.find?_filter_key_ne",  # '?'
+            "Singular.attributed_zero",      # @[simp]-attributed, inline
+            "Singular.entry_key",            # @[simp]-attributed, across lines
+        ):
+            self.assertIn(name, decls)
+
+    def test_the_guard_can_fail(self):
+        """A grammar that drops a shape must be caught, not merely trusted."""
+        clean = clean_source("namespace Singular\ntheorem plain (n : Nat) : n = n := rfl\nend Singular\n")
+        decls = {d.name for d in scan_text(clean, "lean/Singular/Lemmas.lean")}
+        self.assertNotIn("Singular.primed_helper'", decls)
+
+
+class RealTreeDiscoveryTest(unittest.TestCase):
+    """The frozen tree at base: 79 = 42 manifest-bound + 37 unclassified.
+
+    Re-frozen on #156's registry-mode model. The 42 are the registry's 24
+    statements plus naming's 7, its lifecycle's 6 and its wire encoding's 5; the
+    37 are the lemmas and effect equations they are proved from. Prior base
+    196 = 113 + 83, retired with the model it described — the disposition of all
+    44 base declarations is in docs/model-ledger.md (1 carried, 3 renamed,
+    40 retired), so the shrinking denominator here is the recorded retirement
+    and not an undiscovered population.
+    """
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 196, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 79, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 113)
-
-    def test_owner_reported_tricky_names_are_found_whole(self):
-        decls = {d.name for d in scan_tree_strict(REPO_ROOT / "lean")}
-        for name in (
-            "Singular.Inv.fresh_id",            # dotted (owner's earlier error)
-            "Singular.not_mem_of_nodup_append'",  # primed (owner's earlier error)
-            "Singular.find?_filter_key_ne",     # '?'
-            "Singular.requireSome_none",        # @[simp]-attributed (this slice's finding)
-            "Singular.entry_key",               # @[simp]-attributed, multi-line
-        ):
-            self.assertIn(name, decls)
+        self.assertEqual(len(statements), 42)
 
     def test_attributed_count_at_base(self):
         decls = scan_tree_strict(REPO_ROOT / "lean")
-        self.assertEqual(sum(1 for d in decls if d.attributed), 21)
+        self.assertEqual(sum(1 for d in decls if d.attributed), 3)
 
 
 if __name__ == "__main__":

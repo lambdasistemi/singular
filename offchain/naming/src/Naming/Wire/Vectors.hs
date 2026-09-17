@@ -14,6 +14,10 @@
 --     @expectedBytes@ / @malformedBytes@ / @redirectedBytes@ / fixtures
 --   * extraction: 2026-09-10, mechanically copied from
 --     the archive copy whose sha256 was verified against the value above
+--   * inventory adopted: 2026-09-17, for the registry-mode corpus of #156.
+--     Two rows were renamed and two left the corpus; NO BYTE CHANGED. The
+--     adoption is recorded per constant below and the drift check compares
+--     the same bytes against the renamed rows.
 --
 -- These are the contract's bytes. If the codec disagrees with them, the
 -- vectors are right and the codec is wrong.
@@ -65,15 +69,35 @@ import Naming.Wire
     , decodeAddress
     )
 
+-- | The corpus row ids these bytes correspond to.
+--
+-- Registry mode (#156) renamed the wire corpus. The BYTES did not move — every
+-- value below is the byte the v0.2.0 contract pinned, unchanged — so what is
+-- adopted here is the inventory, not the contract's content:
+--
+--   * @WD01-four-field-roundtrip@      -> @WD01-fixture-datum-roundtrip@
+--   * @WD03-two-destinations-refused@  -> @WD02-two-destinations-refused@
+--
+-- @WD02-datum-hash-refused@ and @WR01-insert-request-refund-roundtrip@ have no
+-- row in the registry-mode corpus: the attachment rule and the witness-request
+-- roundtrip became statements (@inline_datum_only@,
+-- @witness_request_wire_roundtrip@) rather than exported rows. Their vendored
+-- bytes stay, and the byte-exact suite keeps exercising them; they are simply
+-- no longer comparable against a live row, which 'vendoredPairs' records.
 wd01Id :: String
-wd01Id = "WD01-four-field-roundtrip"
+wd01Id = "WD01-fixture-datum-roundtrip"
 
+-- | Retired from the live corpus; see the note above. Kept for the byte-exact
+-- suite, which still covers it.
 wd02Id :: String
 wd02Id = "WD02-datum-hash-refused"
 
+-- | Carries the two-destination refusal, which the registry-mode corpus
+-- publishes under the @WD02@ number.
 wd03Id :: String
-wd03Id = "WD03-two-destinations-refused"
+wd03Id = "WD02-two-destinations-refused"
 
+-- | Retired from the live corpus; see the note above.
 wr01Id :: String
 wr01Id = "WR01-insert-request-refund-roundtrip"
 

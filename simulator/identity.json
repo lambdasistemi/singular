@@ -16,6 +16,7 @@
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
+    "formal/LifecycleMain.lean": "865492f04d1a3734a4bff349dd58d888f3cbddfeec4b7b8ee81ab198cc758bdd",
     "formal/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
     "formal/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
     "formal/Naming.lean": "18b22811bea726b4715b9c2ff5252723049482f4d7c7a81110c110b822ae99f7",
@@ -24,6 +25,7 @@
     "formal/NamingLifecycle.lean": "2d2a2908acd45d1c87d24bcfda47ae23a233f4233ac9da50475a08f9e7255b46",
     "formal/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
     "formal/NamingLifecycleStatements.lean": "fd62b60a23ff95d077ca75c03f5c2024b2c2012be8b3e6fd7ada1efe8bafc892",
+    "formal/NamingMain.lean": "ee3492304c45a5541b672a9c5b091039feaa3cde2599c8a8a3bf665181260277",
     "formal/NamingStatements.lean": "d21625cd2a888a3ee5b9f87ec6829f9723970b205db6d408491cbf0590096a6e",
     "formal/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",

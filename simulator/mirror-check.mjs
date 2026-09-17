@@ -15,10 +15,12 @@ const digest = url => createHash('sha256').update(readFileSync(url)).digest('hex
 // file added under lean/ and not mirrored must fail this, not be invisible to it.
 const canonical = new Map();
 for (const f of readdirSync(new URL('lean/Singular/', root))) canonical.set(f, new URL(`lean/Singular/${f}`, root));
-canonical.set('Main.lean', new URL('lean/Main.lean', root));
-// The library root decides what `lake build` compiles at all, so it is Lean
-// source like any other and a stale copy of it misstates the whole extent.
-canonical.set('Singular.lean', new URL('lean/Singular.lean', root));
+// Every top-level Lean source: the library root, which decides what `lake build`
+// compiles at all, and each corpus generator. Read off the directory rather than
+// named one by one — Main.lean was mirrored and LifecycleMain.lean was not, so
+// the generator that emits the wire rows could change with the mirror silent.
+for (const f of readdirSync(new URL('lean/', root)))
+  if (f.endsWith('.lean')) canonical.set(f, new URL(`lean/${f}`, root));
 for (const f of readdirSync(new URL('lean/', root)))
   if (f.endsWith('theorem-debt.json')) canonical.set(f, new URL(`lean/${f}`, root));
 
