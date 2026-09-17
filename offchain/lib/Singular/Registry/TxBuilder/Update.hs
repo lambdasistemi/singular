@@ -16,6 +16,9 @@ and per-request refund outputs.
 -}
 module Singular.Registry.TxBuilder.Update (
     updateTokenImpl,
+    RegistryDuties (..),
+    RegistryContext (..),
+    registryDuties,
 ) where
 
 import Control.Exception (SomeException, try)
@@ -47,6 +50,20 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Keys (KeyHash)
+import Cardano.Tx.Build (Guard)
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut)
+import Cardano.Ledger.Core (hashScript)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
+import PlutusCore.Data qualified as PLC
+import Singular.Registry.TxBuilder.ConnectedFold (
+    ConnectedMint (..),
+    ConnectedSpend (..),
+    RawRedeemer (..),
+ )
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
@@ -389,3 +406,215 @@ processRequest trie (_txIn, txOut) = do
         OpRead _ -> do
             mSteps <- getProofSteps trie key
             pure (fromMaybe [] mSteps)
+
+-- ---------------------------------------------------------
+-- Registry-mode obligations (#157 C5, C6, T1-T6)
+-- ---------------------------------------------------------
+
+{- | Everything an edge owes a fold beyond the trie: what must move under
+the three token policies, where the minted token has to land, which
+custody has to be spent, and who has to sign.
+
+The cage computes these from the requests it consumes (`dutiesOf`,
+`dutyOk`); this recomputes them from the same requests so a fold can be
+built that discharges them. The two are deliberately separate
+derivations — a builder that agrees with the validator by construction
+would not catch a disagreement.
+-}
+data RegistryDuties = RegistryDuties
+    { rdMints :: [ConnectedMint]
+    , rdOutputs :: [TxOut ConwayEra]
+    , rdSpends :: [ConnectedSpend]
+    , rdSigners :: [KeyHash Guard]
+    }
+
+instance Semigroup RegistryDuties where
+    a <> b =
+        RegistryDuties
+            (rdMints a <> rdMints b)
+            (rdOutputs a <> rdOutputs b)
+            (rdSpends a <> rdSpends b)
+            (rdSigners a <> rdSigners b)
+
+instance Monoid RegistryDuties where
+    mempty = RegistryDuties [] [] [] []
+
+{- | What a fold needs in hand to discharge the obligations: the three
+token policies' scripts by kind, the cage script (custody spends run it),
+the UTxOs sitting at the cage address (custody lives among them), and the
+preimages of any destination datum the bookings named — the request
+carries only the hash, and the output has to carry the datum itself.
+-}
+data RegistryContext = RegistryContext
+    { rcWitnessScripts :: Map.Map Integer (Script ConwayEra)
+    , rcCageScript :: Script ConwayEra
+    , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
+    , rcDatums :: [(ByteString, PLC.Data)]
+    }
+
+{- | The obligations this set of requests creates, or the reason they
+cannot be met. A fold whose duties cannot be built is a fold that would be
+refused on chain; failing here names why, in the builder, where it is
+cheap.
+-}
+registryDuties ::
+    CageConfig ->
+    PParams ConwayEra ->
+    OnChainTokenState ->
+    RegistryContext ->
+    [(TxIn, TxOut ConwayEra)] ->
+    Either String RegistryDuties
+registryDuties cfg pp st ctx reqUtxos =
+    mconcat <$> mapM one reqUtxos
+  where
+    net = network cfg
+    cageAddr = cageAddrFromCfg cfg net
+    tip = stateMaxFee st
+    one (_, reqOut) = do
+        req <- case extractCageDatum reqOut of
+            Just (RequestDatum r) -> Right r
+            _ -> Left "registryDuties: a request input carries no request datum"
+        let key = requestKey req
+            op = requestValue req
+            dest@(destAddr, destHash) = requestDestination req
+            Coin held = reqOut ^. coinTxOutL
+            floorAda = held - tip
+        edge <- case edgeOf op (statedBefore op) of
+            Just e -> Right e
+            Nothing ->
+                Left
+                    ( "registryDuties: "
+                        <> show op
+                        <> " on key "
+                        <> show key
+                        <> " is not one of the seven admissible edges"
+                    )
+        mints <- mintsFor edge key
+        rest <- dutiesFor edge key dest destAddr destHash floorAda
+        pure (mints <> rest)
+    mintsFor edge key =
+        fmap mconcat $
+            mapM
+                ( \(kind, quantity) -> do
+                    script <- case Map.lookup kind (rcWitnessScripts ctx) of
+                        Just s -> Right s
+                        Nothing ->
+                            Left
+                                ( "registryDuties: no witness script for kind "
+                                    <> show kind
+                                )
+                    pure
+                        mempty
+                            { rdMints =
+                                [ ConnectedMint
+                                    { cmPolicy = PolicyID (hashScript script)
+                                    , cmAssets = Map.singleton (AssetName (SBS.toShort key)) quantity
+                                    , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+                                    , cmScript = script
+                                    }
+                                ]
+                            }
+                )
+                (deltaOf edge)
+    dutiesFor edge key dest destAddr destHash floorAda
+        | edge == 0 = lockCustody key destAddr floorAda
+        | edge == 1 = deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 2 = (<>) <$> spendCustody key <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 3 = pure mempty
+        | edge == 4 = spendCustody key
+        | edge == 5 = pure mempty
+        | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
+        | otherwise = Left ("registryDuties: unknown edge " <> show edge)
+    -- C6: the absent token sits at the cage, alone, under a custody datum
+    -- naming its key and the address the deposit goes back to.
+    lockCustody key refund floorAda = do
+        let value =
+                MaryValue
+                    (Coin floorAda)
+                    (MultiAsset (Map.singleton (policyIdOf (cfgAbsentPolicy cfg)) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+            out =
+                mkBasicTxOut cageAddr value
+                    & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody key refund))
+        requireMinAda "custody" out
+        pure mempty{rdOutputs = [out]}
+    -- T1/T2: the minted token lands in exactly the output the request
+    -- named, carrying the datum whose hash the approval bound.
+    deliver policy key _dest destHash floorAda = do
+        addr <- destinationAddr
+        datum <- destinationDatum destHash
+        let value =
+                MaryValue
+                    (Coin floorAda)
+                    (MultiAsset (Map.singleton (policyIdOf policy) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+            out = case datum of
+                Nothing -> mkBasicTxOut addr value
+                Just d -> mkBasicTxOut addr value & datumTxOutL .~ mkInlineDatum d
+        requireMinAda "destination" out
+        pure mempty{rdOutputs = [out]}
+      where
+        destinationAddr = case addrFromBytes (fst _dest) of
+            Just a -> Right a
+            Nothing ->
+                Left
+                    ( "registryDuties: the request names an address this \
+                      \builder cannot decode: "
+                        <> show (fst _dest)
+                    )
+        destinationDatum h
+            | BS.null h = Right Nothing
+            | otherwise = case Prelude.lookup h (rcDatums ctx) of
+                Just d -> Right (Just d)
+                Nothing ->
+                    Left
+                        ( "registryDuties: no preimage in hand for the \
+                          \destination datum hash "
+                            <> show h
+                        )
+    -- T4/T5: the custody this edge consumes is spent, and its deposit
+    -- goes back to the address it recorded.
+    spendCustody key = do
+        (utxo, refund, owed) <- findCustody key
+        let refundAddr = case addrFromBytes refund of
+                Just a -> a
+                Nothing -> error "registryDuties: custody records an undecodable refund address"
+            out = mkBasicTxOut refundAddr (MaryValue (Coin owed) mempty)
+        requireMinAda "refund" out
+        pure
+            mempty
+                { rdSpends =
+                    [ ConnectedSpend
+                        { csUtxo = utxo
+                        , csRedeemer = RawRedeemer (toPlcData (Modify []))
+                        , csScript = rcCageScript ctx
+                        }
+                    ]
+                , rdOutputs = [out]
+                }
+    findCustody key =
+        case
+            [ (u, refund, coin)
+            | u@(_, o) <- rcCageUtxos ctx
+            , Just (AbsentCustody k refund) <- [extractCageDatum o]
+            , k == key
+            , let Coin coin = o ^. coinTxOutL
+            ]
+            of
+            [c] -> Right c
+            [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
+            _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
+    requireMinAda what out =
+        let Coin minAda = getMinCoinTxOut @ConwayEra pp out
+            Coin got = out ^. coinTxOutL
+         in if got >= minAda
+                then Right ()
+                else
+                    Left
+                        ( "registryDuties: the "
+                            <> what
+                            <> " output holds "
+                            <> show got
+                            <> " lovelace, under the "
+                            <> show minAda
+                            <> " minimum"
+                        )
+    policyIdOf = policyIdFromPin
