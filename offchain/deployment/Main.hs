@@ -81,6 +81,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
+    applyIntParam,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -98,21 +99,16 @@ import Singular.Registry.Node (
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
-    deriveConsumerBinding,
     mkCageScript,
     mkRequestScript,
     scriptFromBytes,
     scriptHashBytes,
     txInToRef,
  )
-import Singular.Registry.TxBuilder.Register (
-    registerConsumerImpl,
-    registerScriptImpl,
- )
+import Singular.Registry.TxBuilder.Register (registerScriptImpl)
 
 -- ---------------------------------------------------------
 -- Entry
@@ -166,13 +162,29 @@ requireEnv name =
 -- The compiled halves a release ships
 -- ---------------------------------------------------------
 
--- | Everything the two blueprints in this release contribute.
+{- | Everything the two blueprints in this release contribute.
+
+In registry mode (#157) the naming partition contributes one minting
+validator, @witness(kind, registry)@, and the deployment applies it three
+times — kinds 0, 1 and 2 — to obtain the absent, active and terminal
+policies. Together with the application validator's own hash those are the
+four identities the eight-field state datum pins (D-BOOT). Every one of
+them is derived here from compiled code; none is a literal.
+-}
 data Compiled = Compiled
     { cStateBytes :: SBS.ShortByteString
     , cRequestBytes :: SBS.ShortByteString
-    , cConsumerBytes :: SBS.ShortByteString
     , cAppBytes :: SBS.ShortByteString
-    , cRepAppliedBytes :: SBS.ShortByteString
+    -- ^ The application validator, unapplied: its hash IS the application
+    -- policy the registry pins.
+    , cWitnessBytes :: SBS.ShortByteString
+    -- ^ @witness(kind, registry)@, unapplied.
+    , cAbsentBytes :: SBS.ShortByteString
+    -- ^ @witness(0, registry)@, applied once the seed is known.
+    , cActiveBytes :: SBS.ShortByteString
+    -- ^ @witness(1, registry)@, applied once the seed is known.
+    , cTerminalBytes :: SBS.ShortByteString
+    -- ^ @witness(2, registry)@, applied once the seed is known.
     , cCustodyBytes :: SBS.ShortByteString
     , cStakingBytes :: SBS.ShortByteString
     }
@@ -194,50 +206,67 @@ loadCompiled = do
                     )
     stateBytes <- need "registry" mbp "state.state"
     requestBytes <- need "registry" mbp "request.request"
-    consumerBytes <- need "registry" mbp "consumer.consumer"
     appBytes <- need "naming" nbp "application.application"
-    repBytes <- need "naming" nbp "representative.representative"
+    witnessBytes <- need "naming" nbp "witness.witness"
     custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
     stakingBytes <- need "registry" mbp "staking.staking"
-    let appHash = computeScriptHash appBytes
     pure
         Compiled
             { cStateBytes = stateBytes
             , cRequestBytes = requestBytes
-            , cConsumerBytes = consumerBytes
             , cAppBytes = appBytes
-            , cRepAppliedBytes =
-                applyBytesParam (scriptHashBytes appHash) repBytes
+            , cWitnessBytes = witnessBytes
+            , -- Unbound until a seed names the registry; `bindSeed` fills
+              -- these in, and nothing may read them before it has.
+              cAbsentBytes = witnessBytes
+            , cActiveBytes = witnessBytes
+            , cTerminalBytes = witnessBytes
             , cCustodyBytes = custodyBytes
             , cStakingBytes = stakingBytes
             }
 
--- | Bind the representative only after the registry seed is known.
+{- | Bind the three token policies to the registry the seed creates.
+
+The registry identity is the state policy followed by the token name the
+seed determines — the same bytes the cage's own pins are computed from, so
+the deployment and the validator agree by construction rather than by
+transcription.
+-}
 bindSeed :: Compiled -> TxIn -> Compiled
 bindSeed c seedIn =
-    c
-        { cRepAppliedBytes =
-            applyBytesParam
-                (scriptHashBytes (computeScriptHash (cStateBytes c)) <> deriveAssetName (txInToRef seedIn))
-                (cRepAppliedBytes c)
-        }
+    let registryId =
+            scriptHashBytes (computeScriptHash (cStateBytes c))
+                <> deriveAssetName (txInToRef seedIn)
+        witnessAt kind =
+            applyBytesParam registryId (applyIntParam kind (cWitnessBytes c))
+     in c
+            { cAbsentBytes = witnessAt 0
+            , cActiveBytes = witnessAt 1
+            , cTerminalBytes = witnessAt 2
+            }
 
 bindDeployment :: Compiled -> Deployment -> IO Compiled
 bindDeployment c dep = bindSeed c <$> either failWith pure (parseOutRef (depSeedOutRef dep))
 
+-- | The hash of compiled bytes, as a policy id in the shape a pin takes.
+policyOf :: SBS.ShortByteString -> SBS.ShortByteString
+policyOf = SBS.toShort . scriptHashBytes . computeScriptHash
+
 -- | The release's compiled halves, in the shape a manifest consumes.
 partsOf :: Compiled -> CageParts
 partsOf c =
-    let ConsumerBinding{cbPin = pin, cbScriptBytes = scriptBytes} =
-            deriveConsumerBinding (cConsumerBytes c)
-     in CageParts
-            { partsStateBytes = cStateBytes c
-            , partsRequestBytes = cRequestBytes c
-            , partsRepPolicy =
-                SBS.toShort (scriptHashBytes (computeScriptHash (cRepAppliedBytes c)))
-            , partsConsumerPin = pin
-            , partsConsumerScript = scriptBytes
-            }
+    CageParts
+        { partsStateBytes = cStateBytes c
+        , partsRequestBytes = cRequestBytes c
+        , partsApplicationPolicy = policyOf (cAppBytes c)
+        , partsActivePolicy = policyOf (cActiveBytes c)
+        , partsAbsentPolicy = policyOf (cAbsentBytes c)
+        , partsTerminalPolicy = policyOf (cTerminalBytes c)
+        , -- Registry mode retired the consuming hook: no script is
+          -- withdrawn from at a fold, so there is no consumer to carry.
+          -- Empty is what the builders refuse a consuming batch on.
+          partsConsumerScript = SBS.empty
+        }
 
 -- ---------------------------------------------------------
 -- verify
@@ -264,8 +293,7 @@ verifyRegisteredDeployment sess dep compiled = do
     credentials <-
         mapM
             check
-            [ ("consumer", partsConsumerScript (partsOf compiled))
-            , ("representative", cRepAppliedBytes compiled)
+            [ ("active", cActiveBytes compiled)
             , ("custody", cCustodyBytes compiled)
             , ("staking", cStakingBytes compiled)
             ]
@@ -383,7 +411,7 @@ doDeploy = do
             pp = nsPParams sess
         txs <- newIORef []
         (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs processTime retractTime
-        registerCredentials sess prov submit cfg compiled txs
+        registerCredentials sess prov submit compiled txs
         refs <- publishAll prov submit pp cfg tok compiled txs
         bootstrap <- reverse <$> readIORef txs
         let dep =
@@ -400,9 +428,7 @@ doDeploy = do
                     , depApplicationHash =
                         hexT (scriptHashBytes (computeScriptHash (cAppBytes compiled)))
                     , depRepresentativePolicy =
-                        hexT (scriptHashBytes (computeScriptHash (cRepAppliedBytes compiled)))
-                    , depConsumerHash =
-                        hexT (SBS.fromShort (cfgConsumerPin cfg))
+                        hexT (SBS.fromShort (cfgActivePolicy cfg))
                     , depProcessTime = defaultProcessTime cfg
                     , depRetractTime = defaultRetractTime cfg
                     , depTip = let Coin c = defaultTip cfg in c
@@ -475,8 +501,7 @@ bootRegistry prov submit unbound txs processTime retractTime = do
         [] -> failWith "the funding wallet has no outputs to seed from"
         ((i, _) : _) -> pure i
     let compiled = bindSeed unbound seedIn
-        ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
-            deriveConsumerBinding (cConsumerBytes compiled)
+        parts = partsOf compiled
         cfg =
             CageConfig
                 { cageScriptBytes = cStateBytes compiled
@@ -486,11 +511,15 @@ bootRegistry prov submit unbound txs processTime retractTime = do
                 , defaultProcessTime = processTime
                 , defaultRetractTime = retractTime
                 , defaultTip = Coin 1_000_000
-                , cfgRepPolicy =
-                    SBS.toShort
-                        (scriptHashBytes (computeScriptHash (cRepAppliedBytes compiled)))
-                , cfgConsumerPin = pin
-                , cfgConsumerScript = consumerScript
+                , -- #157 D-BOOT: the four pins the boot datum carries come
+                  -- from the one derivation `partsOf` performs, so the
+                  -- manifest, the config and the state datum cannot drift
+                  -- apart.
+                  cfgApplicationPolicy = partsApplicationPolicy parts
+                , cfgActivePolicy = partsActivePolicy parts
+                , cfgAbsentPolicy = partsAbsentPolicy parts
+                , cfgTerminalPolicy = partsTerminalPolicy parts
+                , cfgConsumerScript = partsConsumerScript parts
                 , network = Testnet
                 }
     unsigned <- bootTokenImpl cfg prov funderAddr
@@ -510,35 +539,28 @@ bootRegistry prov submit unbound txs processTime retractTime = do
 
 {- | Every stake credential a run withdraws from, registered once.
 
-Four of them: the representative policy used to witness retirement, the pinned
-consumer every @Modify@ withdraws, the completion-only custody script
-the retirement rows use, and the always-true staking script that serves
+Three of them in registry mode (#157): the registry-bound active token
+policy the retirement rows witness through, the completion-only custody
+script those rows pay into, and the always-true staking script that serves
 the swapped-hook control — its withdraw arm always succeeds, so the
 ledger passes it and only the cage's own exact-credential check can
-refuse. A registry that attaches cannot register them itself (a second
-registration is refused), so a deployment missing one turns that
-runner's row into a refusal with no evidence behind it.
+refuse. The consumer credential is gone with the hook it served: a
+@Modify@ withdraws from nothing. A registry that attaches cannot register
+these itself (a second registration is refused), so a deployment missing
+one turns that runner's row into a refusal with no evidence behind it.
 -}
 registerCredentials ::
     NodeSession ->
     Cage.Provider IO ->
     Submitter IO ->
-    CageConfig ->
     Compiled ->
     IORef [Text] ->
     IO ()
-registerCredentials sess prov submit cfg compiled txs = do
-    registered <- nsScriptRegistered sess (computeScriptHash (cfgConsumerScript cfg))
-    if registered
-        then emit "credential" "consumer stake credential already registered; reused"
-        else do
-            consumerTx <- registerConsumerImpl cfg prov funderAddr
-            _ <- submitted submit txs "consumer-registration" consumerTx
-            emit "credential" "consumer stake credential registered"
+registerCredentials sess prov submit compiled txs = do
     let named name bytes = (name, scriptFromBytes name bytes)
     mapM_
         registerOne
-        [ named "representative" (cRepAppliedBytes compiled)
+        [ named "active" (cActiveBytes compiled)
         , named "naming-custody" (cCustodyBytes compiled)
         , named "staking" (cStakingBytes compiled)
         ]
@@ -553,8 +575,8 @@ registerCredentials sess prov submit cfg compiled txs = do
                 emit "credential" (name <> " stake credential registered")
 
 {- | Publish the five reference scripts every runner reads: the
-registry's state and request validators, the naming application, its
-applied representative policy, and the completion-only custody script.
+registry's state and request validators, the naming application, the
+registry-bound active token policy, and the completion-only custody script.
 
 One script per transaction, each spending the change of the last. That
 is slower than batching and it is the shape that works on a public
@@ -576,7 +598,7 @@ publishAll prov submit pp cfg tok compiled txs =
         [ ("state", mkCageScript cfg)
         , ("request", mkRequestScript cfg tok)
         , ("application", scriptFromBytes "naming-application" (cAppBytes compiled))
-        , ("representative", scriptFromBytes "representative" (cRepAppliedBytes compiled))
+        , ("active", scriptFromBytes "active" (cActiveBytes compiled))
         , ("custody", scriptFromBytes "naming-custody" (cCustodyBytes compiled))
         ]
   where

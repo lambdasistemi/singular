@@ -1,4 +1,5 @@
 use cardano/address
+use application
 use application.{Maintain, Recover, Retire}
 use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
@@ -17,6 +18,7 @@ use fixtures.{
   with_quorum,
 
 }
+use naming
 use naming.{RetirementQuorum, mpfs_state_hash, mpfs_state_policy}
 
 // ===========================================================================
@@ -686,6 +688,44 @@ fn retirement_claim_value() {
   add(record_value, rep_policy, fixtures.registry_key, 1)
 }
 
+
+/// The retirement's owner: any key the approval and its request agree on.
+const retirement_owner = member2
+
+/// #157 F-003 — a retirement books the `updateTerminal` edge, so the LT
+/// positives carry both co-created obligations: the bound approval, and
+/// the completion request that will fold `Update(0x01, 0x02)`.
+fn terminate_approval() -> ByteArray {
+  application.approval_name(
+    3,
+    fixtures.registry_key,
+    retirement_owner,
+    (#"", #""),
+  )
+}
+
+fn retirement_completion_output() -> Output {
+  Output {
+    address: address.from_script(mpfs_state_hash),
+    value: add(from_lovelace(3_000_000), app_policy, terminate_approval(), 1),
+    datum: InlineDatum(
+      naming.MRequestDatum(
+        naming.MRequest {
+          requestToken: naming.MTokenId {
+            assetName: fixtures.mock_registry_token,
+          },
+          requestOwner: retirement_owner,
+          requestKey: fixtures.registry_key,
+          requestValue: naming.MUpdate(#"01", #"02"),
+          tip: 1_000_000,
+          submitted_at: 0,
+          destination: (#"", #""),
+        },
+      ),
+    ),
+    reference_script: None,
+  }
+}
 fn retirement_custody_output(value) {
   Output {
     address: custody_address,
@@ -708,9 +748,12 @@ test lt02_quorum_retirement_accepts() {
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
       ],
-      [retirement_custody_output(retirement_claim_value())],
+      [
+        retirement_custody_output(retirement_claim_value()),
+        retirement_completion_output(),
+      ],
       [member2, member3],
-      zero,
+      add(zero, app_policy, terminate_approval(), 1),
       [],
     ),
   )

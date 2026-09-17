@@ -42,6 +42,7 @@ module Singular.Registry.Blueprint (
 
     -- * Parameter application
     applyDataParam,
+    applyIntParam,
     applyBytesParam,
     applyOutputRef,
     applyPreviousPolicies,
@@ -434,6 +435,22 @@ applyDataParam d sbs =
         serialiseUPLC applied
   where
     progVer (Program _ v _) = v
+
+
+{- | Apply an integer parameter to a UPLC script.
+
+`witness(kind, registry)` (#157 C5) takes its kind as a plain integer, and
+the deployment applies it three times. Wrapping the `Data` encoding here
+keeps the 'PlutusCore.Data' vocabulary inside this module, where the rest
+of the blueprint's encoding already lives.
+-}
+applyIntParam ::
+    -- | Encoded integer parameter
+    Integer ->
+    -- | Flat-encoded UPLC program
+    SBS.ShortByteString ->
+    SBS.ShortByteString
+applyIntParam = applyDataParam . I
 
 -- | Apply a raw bytes parameter to a UPLC script.
 applyBytesParam ::
