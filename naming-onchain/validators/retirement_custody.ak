@@ -48,9 +48,15 @@ validator retirement_custody {
     // once; lovelace flows to fees/change. No signature is required.
     // (First: the original burn check keeps its verdicts — a burn-free
     // spend refuses here exactly as before.)
-    // RED: the burn refusal is still a crash, so N8 has no named reason.
-    expect held_burned_exactly_once(claim, tx)
-    completes(claim, self, tx)
+    // #157 N8: the burn is what completion IS, so its refusal is named
+    // rather than left as a crash — a script that dies inside a library
+    // cannot tell anyone why.
+    if !held_burned_exactly_once(claim, tx) {
+      trace @"completion-burn"
+      False
+    } else {
+      completes(claim, self, tx)
+    }
   }
 
   else(_) {
