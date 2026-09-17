@@ -6,8 +6,8 @@ use cardano/address
 use cardano/assets.{PolicyId, Value, flatten, quantity_of, tokens}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Spend, Transaction}
 use naming.{
-  MUpdate, modify_action_count, mpfs_state_hash, mpfs_state_policy, mpfs_state_root,
-  mrequest, over_marker_for,
+  MUpdate, modify_action_count, mpfs_state_hash, mpfs_state_policy,
+  mpfs_state_root, mrequest,
 }
 
 /// The retirement custody script (issue #66): completion-only custody
@@ -48,7 +48,18 @@ validator retirement_custody {
     // once; lovelace flows to fees/change. No signature is required.
     // (First: the original burn check keeps its verdicts — a burn-free
     // spend refuses here exactly as before.)
+    // RED: the burn refusal is still a crash, so N8 has no named reason.
     expect held_burned_exactly_once(claim, tx)
+    completes(claim, self, tx)
+  }
+
+  else(_) {
+    fail
+  }
+}
+
+/// The rest of the completion shape, once the burn itself is right.
+fn completes(claim: Input, self: OutputReference, tx: Transaction) -> Bool {
     expect [stateIn] = filter(tx.inputs, is_spent_registry_state)
     // NOTE-029: exactly one co-created script input (the retire's
     // pending request) — none, or a confused batch of several,
@@ -61,11 +72,6 @@ validator retirement_custody {
     // for the held asset (datum, token, and value relation checked).
     expect request_binds_burn(claim, stateIn, requestIn)
     True
-  }
-
-  else(_) {
-    fail
-  }
 }
 
 /// A script input co-created with the custody output: not this spend,
@@ -103,11 +109,19 @@ fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
   let req = mrequest(reqDatum)
   expect [cageToken] = keys(tokens(stateIn.output.value, mpfs_state_hash))
   expect req.requestToken.assetName == cageToken
+  // #157 N4/N8: completion is the fold of `Update(0x01, 0x02)` — the
+  // name goes from live to over. The Over marker is gone with the
+  // naming value vocabulary; the leaf codec IS the value now.
   expect MUpdate(old, new) = req.requestValue
-  expect old == blake2b_256(req.requestKey)
+  expect old == #"01"
+  expect new == #"02"
   expect InlineDatum(stateDatum) = stateIn.output.datum
   let expectedPolicy = mpfs_state_policy(stateDatum)
-  expect new == over_marker_for(burned_of(claim, old, expectedPolicy))
+  // The asset this custody holds is the ACTIVE token of exactly this
+  // key, under the registry's own configured active policy (D-ASSET;
+  // NOTE-032: the policy is load-bearing — a same-name token under a
+  // foreign policy is a lookalike whose burn the fold never entails).
+  expect burned_of(claim, req.requestKey, expectedPolicy) == req.requestKey
   True
 }
 
@@ -115,11 +129,11 @@ fn request_binds_burn(claim: Input, stateIn: Input, requestIn: Input) -> Bool {
 /// the registry's configured representative policy (NOTE-032: policy
 /// is load-bearing — name alone admits foreign-policy lookalikes
 /// whose burn the mint authorizer never sees).
-fn burned_of(claim: Input, old: ByteArray, expectedPolicy: PolicyId) -> ByteArray {
+fn burned_of(claim: Input, key: ByteArray, expectedPolicy: PolicyId) -> ByteArray {
   expect Some(heldEntry) =
     find(held_assets(claim.output.value), fn(entry) {
       let (policy, name, _) = entry
-      policy == expectedPolicy && name == old
+      policy == expectedPolicy && name == key
     })
   let (_, burned, qty) = heldEntry
   expect qty == 1

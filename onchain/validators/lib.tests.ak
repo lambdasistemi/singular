@@ -1,7 +1,8 @@
 use aiken/fuzz
 use cardano/assets.{from_asset}
 use cardano/transaction.{OutputReference}
-use lib.{TokenId, assetName, quantity, tokenFromValue, valueFromToken}
+use lib.{assetName, quantity, tokenFromValue, valueFromToken}
+use types.{TokenId}
 
 // ============================================================================
 // assetName tests

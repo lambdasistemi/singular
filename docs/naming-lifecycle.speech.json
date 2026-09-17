@@ -1,19 +1,13 @@
 {
   "who-this-is-for": [
     {
-      "text": "This page is for a claimant who wants to cancel before folding, or a holder who wants to maintain, recover, or retire an active name. Cancellation consumes only an unfulfilled claim and copies its stored refund address. Maintenance and recovery keep the representative in application custody, while retirement moves it into completion-only custody before burning it. This remains design-time evidence, not ledger execution.",
-      "pause": 400
+      "pause": 400,
+      "text": "This page is for somebody who wants to witness that a name is free and get their deposit back, somebody who wants to book one, and somebody holding a live name who wants to change where it receives payments, recover after losing the current control key, or end it permanently. Ending a name needs the committed recovery key or the retirement quorum, and the active witness moves into completion-only custody before it burns."
     }
   ],
   "change-the-payment-destination": [
     {
       "text": "The controller may set, replace, or clear one optional payment destination. The destination is routing data, not authority. The sequence keeps the registry identity, key, representative, controller, next commitment, and quorum unchanged, and makes no registry request, mint, or burn. Wrong authority, multiple destinations, and control-field tampering are refused.",
-      "pause": 400
-    }
-  ],
-  "fold-a-pending-claim-into-an-active-name": [
-    {
-      "text": "One connected transaction advances the registry, contributes the spelling-keyed request, and folds the claim. The fold burns the single-use insert approval and mints the representative NFT under the applied representative policy. The registry key is the spelling itself. No owner signs the fold and no registry owner exists. Double folds, missing claims, unbound approvals, and misnamed representatives are refused.",
       "pause": 400
     }
   ],
@@ -25,14 +19,8 @@
   ],
   "retire-permanently": [
     {
-      "text": "Either the controller or a sufficient retirement quorum initiates retirement. The quorum is a retirement authorization, not next-controller recovery and not a death oracle. Both routes put the representative into one completion-only request. Permissionless folding burns it and moves the key to Over. Pending retirement remains distinct from Over, and withdrawal, redirection, replay, Delete, release, and re-registration are refused. Retirement prevents name-based resolution, but cannot stop a direct send to a previously saved raw Cardano address.",
-      "pause": 400
-    }
-  ],
-  "cancel-a-pending-claim": [
-    {
-      "text": "A pending claim stores its refund address inside the Insert commitment. A separate cancellation approval consumes that exact claim only when the requested refund destination equals the stored address, then copies it and leaves the name absent. Redirecting the refund, relying on Insert certification, cancelling after fold, and replaying cancellation are refused. No fee, deposit, price, bond, or refund-value schedule is inferred. Retirement-request withdrawal remains a distinct refusal.",
-      "pause": 400
+      "pause": 400,
+      "text": "Ending a name needs the committed recovery key or the retirement quorum, never the current control key alone. A thief who has taken the everyday control key and the holder themselves look identical to the chain, so if the current key could end a name the thief could end it, and recovery would arrive too late because there would be nothing left to recover. The recovery key is the one thing the thief does not have. The authorized transaction moves the active witness into completion-only custody, mints the terminating approval on the same proof, and creates the completion request beside it; anyone may then fold that request, and the name's byte becomes terminal forever. A terminal name is not a deleted name: its key stays in the map, and the one request it still admits is the read."
     }
   ],
   "consumer-and-ledger-boundary": [
@@ -49,6 +37,24 @@
   ],
   "_source": {
     "file": "naming-lifecycle.md",
-    "sha256": "56a2a031e5dec7604479e86d6db53aeb4ceb6e7c5e96ef5f1ecd3a7830955bf7"
-  }
+    "sha256": "a281c635fe83e462e4f72d2ccdfa5b01c382871c30a2c778a87c5cbea45b5944"
+  },
+  "how-a-name-moves-in-the-registry": [
+    {
+      "pause": 400,
+      "text": "A name is one key in the registry's authenticated map, and the value of that key is a single byte: zero for absent, one for active, two for terminal. Seven requests move a key and nothing else does, and each one moves a witness token — the thing a reader actually looks at, never the root. The witnesses obey four laws. A witness moves only inside a fold. The fold decides how many and where, summing the witness column of the requests it consumed so the transaction's mint must equal that sum exactly. A terminal witness is its holder's to destroy, because saying a name is over costs the registry nothing. And the asset name is the registry key, so identity is the pair of policy and key. No application script runs at fold time: naming certifies an edge in advance by minting one approval whose name binds the edge, the key, the owner and the destination, and the cage recomputes that name from the request itself."
+    }
+  ],
+  "book-a-name": [
+    {
+      "pause": 400,
+      "text": "There is no pending claim any more, so there is nothing to fold and nothing to cancel. A booking is an approval and a request. Alice mints one approval whose asset name binds the edge, the key, herself as owner, and the destination — the application's own address with the hash of the datum her record will carry. Minting it needs her signature, and that is the only signature anybody ever checks for this booking. She attaches it to a registry request and lets go. Whoever folds the batch next creates her record at the address she bound, with the datum she bound, carrying the active witness and the deposit her request rode with, less the folder's tip."
+    }
+  ],
+  "witness-that-a-name-is-free": [
+    {
+      "pause": 400,
+      "text": "Carol does not want a name; she wants to say that nobody has one. She mints an absence approval, which needs no signature from anyone, names her own address as the refund, and submits a request with a deposit. The fold puts the absent witness into the cage's own custody with the key and Carol's refund address recorded beside it. Whoever books the name afterwards spends that custody, and the fold pays Carol's deposit back to the address she named. If nobody books it, Carol takes her own witness back: that deletion is certified by the refund address the custody recorded, and by nobody else."
+    }
+  ]
 }

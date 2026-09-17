@@ -2,8 +2,8 @@ use aiken/collection/list.{find}
 use aiken/interval
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
-use lib.{TokenId, exactQuantity}
-use types.{CageDatum, Request, State, StateDatum}
+use lib.{exactQuantity}
+use types.{CageDatum, Request, State, StateDatum, TokenId}
 
 /// Read the State from a transaction input's inline datum.
 pub fn readState(input: Input) -> State {

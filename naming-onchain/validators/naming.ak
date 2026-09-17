@@ -200,7 +200,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+  #"2bfa327668a83e827985300b4b20c590b852ddd5b234162de11943a1"
 
 /// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
@@ -216,8 +216,10 @@ pub type MpfsState {
     tip: Int,
     process_time: Int,
     retract_time: Int,
-    representative_policy: PolicyId,
-    consumer_pin: ByteArray,
+    application_policy: PolicyId,
+    active_policy: PolicyId,
+    absent_policy: PolicyId,
+    terminal_policy: PolicyId,
   }
 }
 
@@ -232,7 +234,21 @@ pub type MpfsCageDatum {
 /// mirror across a module boundary.
 pub fn mpfs_state_policy(datum: Data) -> PolicyId {
   expect MpfsStateDatum(state) = datum
-  state.representative_policy
+  state.active_policy
+}
+
+/// The registry's pinned application policy — the one that certifies
+/// requests (#157 C4). Naming's own mint purpose IS that policy, so a
+/// record can check the registry it belongs to names it.
+pub fn mpfs_state_application_policy(datum: Data) -> PolicyId {
+  expect MpfsStateDatum(state) = datum
+  state.application_policy
+}
+
+/// The registry's pinned terminal policy (#157 C5).
+pub fn mpfs_state_terminal_policy(datum: Data) -> PolicyId {
+  expect MpfsStateDatum(state) = datum
+  state.terminal_policy
 }
 
 /// Decode a registry state datum to its trie root (NOTE-029): the
@@ -259,6 +275,7 @@ pub type MOperation {
   MInsert(ByteArray)
   MDelete(ByteArray)
   MUpdate(ByteArray, ByteArray)
+  MRead(ByteArray)
 }
 
 pub type MRequest {
@@ -269,6 +286,7 @@ pub type MRequest {
     requestValue: MOperation,
     tip: Int,
     submitted_at: Int,
+    destination: (ByteArray, ByteArray),
   }
 }
 
@@ -284,17 +302,6 @@ pub type MRequestDatum {
 pub fn mrequest(datum: Data) -> MRequest {
   expect MRequestDatum(request) = datum
   request
-}
-
-/// The Over marker for a burned representative (NOTE-031): the Update
-/// value a genuine retirement request writes. Constant "over" prefix
-/// (distinct from insert values, which are bare representative names)
-/// committing to the exact held asset — the completion checks the
-/// folded request moves `burned` to `over_marker_for(burned)`. The
-/// prefix is ASCII "over" (hex 6f766572), distinct from insert values
-/// (bare representative names).
-pub fn over_marker_for(burned: ByteArray) -> ByteArray {
-  concat(#"6f766572", burned)
 }
 
 /// Mirror of the registry `UpdateRedeemer` action list (NOTE-029): variant
@@ -347,14 +354,14 @@ pub fn modify_action_count(redeemer_data: Data) -> Int {
 /// representative policy and consumer pin (test fixtures). Single
 /// construction site for the mirror shape (NOTE-029: completion tests
 /// need continuations with a changed root).
-pub fn mpfs_state_datum(rep_policy: PolicyId, consumer_pin: ByteArray) -> Data {
-  mpfs_state_datum_with_root(#"00", rep_policy, consumer_pin)
+pub fn mpfs_state_datum(active_policy: PolicyId, app_policy: PolicyId) -> Data {
+  mpfs_state_datum_with_root(#"00", active_policy, app_policy)
 }
 
 pub fn mpfs_state_datum_with_root(
   root: ByteArray,
-  rep_policy: PolicyId,
-  consumer_pin: ByteArray,
+  active_policy: PolicyId,
+  app_policy: PolicyId,
 ) -> Data {
   let datum: Data =
     MpfsStateDatum(MpfsState {
@@ -362,8 +369,32 @@ pub fn mpfs_state_datum_with_root(
       tip: 0,
       process_time: 0,
       retract_time: 0,
-      representative_policy: rep_policy,
-      consumer_pin: consumer_pin,
+      application_policy: app_policy,
+      active_policy,
+      absent_policy: #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+      terminal_policy: #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
     })
   datum
+}
+
+/// Mirror of the cage's `AbsentCustody` datum (#157 D-CUSTODY, index 2 —
+/// `MpfsRequest` 0 and `MpfsStateDatum` 1 keep theirs). The application
+/// reads a custody UTxO as a REFERENCE input when it certifies a
+/// `deleteAbsent`: the refund address the cage recorded is the signature
+/// that arm requires, and reading it does not spend it.
+pub type MpfsCustodyDatum {
+  MpfsCustodyRequest
+  MpfsCustodyState
+  MpfsAbsentCustody { key: ByteArray, refund: ByteArray }
+}
+
+/// The key and refund address a custody datum records, or `None` for
+/// anything that is not one. Total: a request or state datum at the same
+/// address answers `None` rather than crashing.
+pub fn mpfs_custody(datum: Data) -> Option<(ByteArray, ByteArray)> {
+  if datum is MpfsAbsentCustody { key, refund }: MpfsCustodyDatum {
+    Some((key, refund))
+  } else {
+    None
+  }
 }
