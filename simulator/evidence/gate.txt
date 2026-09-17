@@ -1,27 +1,14 @@
 {
-  "status": "PASS finite checks only",
-  "corpus": {
-    "discovered": 58,
-    "executed": 58
-  },
-  "stories": {
-    "discovered": 32,
-    "executed": 32,
-    "trees": 8
-  },
-  "properties": {
-    "discovered": 41,
-    "executed": 41,
-    "controlled": 12,
-    "exhibitsOnly": 17,
-    "gaps": 12
-  },
-  "boundary": {
-    "discovered": 1764,
-    "executed": 1764
-  },
-  "refusals": {
-    "declared": 28,
-    "exhibited": 17
-  }
+ "corpusCases": 38,
+ "codec": 7,
+ "ada": 2,
+ "complementPairs": 28,
+ "refusedPairs": 21,
+ "storySteps": 20,
+ "controlledLaws": 7,
+ "namingRows": 24,
+ "lifecycleRows": 21,
+ "boundary": 4,
+ "model": "c951e4bd7a00"
 }
+PASS simulator: the transcription reproduces the model on every exported row

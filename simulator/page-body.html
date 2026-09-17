@@ -1,21 +1,119 @@
-<header><h1>Singular <small>A name, its address, and the NFT that carries custody</small></h1><span class="status-pill">PROVED · 41 statements, standard axioms only</span><div class="hbtns"><a href="../model/Singular/Model.lean">Formal model</a><a href="../docs/simulation/">Guide</a><a href="./lifecycle-view.html">Lifecycle journeys</a><button id="btn-theme" class="ghost">☾ theme</button><button id="btn-reset" class="ghost">Free play</button></div></header>
-<div id="hud" aria-live="polite"></div><div id="toast" role="status"></div>
-<main>
-<section class="card" id="stage"><div class="stagebar"><select id="story-picker" aria-label="Pick a story"></select><span id="story-goal" class="goal"></span></div><div id="tree-wrap"><svg id="tree" role="group" aria-label="Immutable play tree; choose a node to revisit its state"></svg></div><div id="playbar"><button id="hist-first" class="nav" aria-label="Start">⇤</button><button id="hist-prev" class="nav" aria-label="Previous">‹</button><button id="btn-play" class="nav" aria-label="Play story">▶</button><button id="hist-next" class="nav" aria-label="Next">›</button><button id="hist-last" class="nav" aria-label="End">⇥</button><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Scrub play"><span id="pos"></span></div><div id="where" aria-live="polite"></div><details id="pots"><summary>What the states and evidence mean</summary><dl><dt>Absent</dt><dd>No current registry value. A pending Insert has no representative NFT yet.</dd><dt>Active / pending</dt><dd>Active with an application UTxO resolves to its address datum. If that UTxO has released its NFT to a terminal request, resolution is pending.</dd><dt>Retired (over)</dt><dd>Update completion retires the name; the occupied registry entry remains. Delete completion instead removes its value and increments the incarnation.</dd><dt>Evidence</dt><dd>Accepted application evidence and witness flags are inputs to this logical model. This page does not execute scripts or verify signatures. Stakeholder labels grant no privilege.</dd><dt>Address and value</dt><dd>The generic stories use illustrative numeric address datums A=100 and B=200. The naming profile uses canonical binary Cardano addresses and a 32-byte commitment. Neither model constructs payments, wallet balances, or refunds.</dd></dl></details><div id="narration" aria-live="polite"></div></section>
-<section class="card" id="next-card"><h2>What can happen next <small>Continue the story, or make a move from any visited state. Every attempt preserves the existing branches.</small></h2><div id="branches"></div><div id="next-moves">
-<div class="manual-grid"><fieldset><legend>Request an application-approved Insert</legend><label>Name key <input id="key-input" type="number" min="0" step="1" value="42"></label><label>Address datum <input id="datum-input" type="number" min="0" step="1" value="100"></label><label>Approval incarnation(s) <input id="scope-input" value="0" aria-label="Approval scope, comma separated incarnations"></label><label><input id="insert-approved" type="checkbox" checked> Application approval accepted</label><button id="create-insert" data-go="createInsert" class="primary">Queue Insert</button><p>Repeat to create competing requests for the same name.</p></fieldset>
-<fieldset><legend>Application custody</legend><label>Application UTxO <select id="application-select"></select></label><label>New address datum <input id="new-datum" type="number" min="0" step="1" value="200"></label><label><input id="spend-approved" type="checkbox" checked> Exact application evidence accepted</label><button id="evolve" data-go="evolve">Change address</button><button id="release-update" data-go="release">Queue retirement (Update)</button><button id="release-delete" data-go="release">Queue Delete</button></fieldset>
-<fieldset><legend>Cancel a pending Insert</legend><label>Request <select id="withdraw-select"></select></label><label>Refund destination <input id="refund-destination" type="number" min="0" step="1" value="60"></label><label>Refund value commitment <input id="refund-value" type="number" min="0" step="1" value="20"></label><button id="mint-withdraw" data-go="mintWithdraw">Approve exact withdrawal</button><button id="withdraw" data-go="withdraw">Withdraw Insert</button><p>Approval is a separate action. Match the request and refund exactly.</p></fieldset>
-</div>
-<fieldset><legend>Compose an atomic batch</legend><p>Give selected requests a unique order. Later items see earlier effects. One failure rolls back the whole batch.</p><div id="batch-composer"></div><label><input id="native-witness" type="checkbox" checked> Native spend witness</label><label><input id="rep-witness" type="checkbox" checked> Representative mint witness</label><button id="fold-batch" data-go="fold" class="primary">Fold selected batch</button></fieldset>
-<fieldset><legend>Resolve a name</legend><label>Key <input id="resolve-key" type="number" min="0" step="1" value="42"></label><label><input id="authenticated-view" type="checkbox" checked> Authenticated ledger view</label><button id="resolve">Resolve</button><output id="resolve-output" aria-live="polite"></output></fieldset>
-</div><details id="refused-moves"><summary id="refused-summary">Try a deliberate refusal</summary><div id="refused-list"></div></details><div id="ui-error" role="alert"></div></section>
-<section class="card" id="naming-card"><h2>First-release naming profile <small>m1-naming · unaccepted candidate — a labelled engine beside, never instead of, the generic profile</small></h2><div class="manual-grid"><fieldset><legend>Choose the profile explicitly</legend><label>Profile <select id="naming-profile" aria-label="Select the naming profile"><option value="generic">generic — registry demo</option><option value="m1-naming">m1-naming — naming claims (unaccepted)</option></select></label><p>Until m1-naming is selected its controls stay inert: no engine switch happens implicitly.</p></fieldset>
-<fieldset><legend>Claim and fold the demo spelling <code>alice</code></legend><label><input id="naming-approved" type="checkbox" checked> Application approval accepted</label><button id="naming-claim" class="primary" disabled>Queue first claim</button><button id="naming-claim-competing" disabled>Queue competing claim</button><button id="naming-fold-first" disabled>Fold first pending</button><button id="naming-fold-second" disabled>Fold second pending</button><button id="naming-resolve" disabled>Resolve alice (authenticated)</button></fieldset>
-<fieldset><legend>Cancel an unfulfilled naming claim</legend><label><input id="naming-cancel-approved" type="checkbox" checked disabled> Separate cancellation approval accepted</label><label><input id="naming-refund-redirect" type="checkbox" disabled> Try redirecting the refund</label><button id="naming-withdraw" disabled>Withdraw pending claim</button><p>The claim stores its refund address when queued. Withdrawal copies that address; it cannot choose another destination.</p></fieldset>
-<fieldset><legend>Try a crafted Delete</legend><p>The naming transition accepts the generic action shape. A crafted generic Delete is refused by name.</p><button id="naming-crafted-delete" disabled>Submit crafted Delete</button></fieldset></div>
-<output id="naming-verdict" aria-live="polite"></output><pre id="naming-state">{}</pre><p>Naming observations report the four certified fixture fields — payment destination, control address, next-control commitment, retirement quorum — carried unchanged from the claim. Addresses are canonical binary base or enterprise addresses, and the next-control commitment is a 32-byte digest; <code>alice</code> is a demo fixture. Use <a href="./lifecycle-view.html">Lifecycle journeys</a> for maintenance, recovery, and retirement. Cancellation copies the refund address stored in the pending request; this finite model does not execute a ledger refund or invent fees, deposits, prices, or bonds. This profile is an unaccepted candidate.</p><h3>Naming theorem lamps <small id="naming-found"></small></h3><div id="naming-ledger" class="manual-grid"></div></section>
-<details class="card" id="scene-drawer" open><summary>NFT and UTxO custody <small>Application ↔ request custody → burn; Insert creates a representative</small></summary><svg id="scene" viewBox="0 0 1000 300" role="img" aria-label="Registry entry, application outputs, and pending request custody"></svg><div id="custody"></div><details><summary>Successive batch effects</summary><div id="batch-effects"></div></details></details>
-<section class="card" id="lamps"><h2>Theorem evidence <small id="found"></small></h2><p>Every declaration is PROVED in Lean from the standard axioms. A controlled check replays a finite exhibit of its consequent in this simulator. Exhibits-only and gaps are not passing checks; they measure this page, not the proofs.</p><div id="ledger"></div></section>
-<section class="drawers"><details class="card wide" id="numbers-drawer"><summary>Complete model state and last transaction</summary><pre id="datum"></pre><pre id="last-action"></pre></details><details class="card wide" id="act-drawer"><summary>Advanced free play: exact action JSON</summary><p>All nine model constructors are available here, including outsider, moveAction, and escape. Edit evidence, scope, identities, net quantities, and witnesses; invalid shapes and unsafe numbers are refused.</p><select id="action-kind" aria-label="Example action constructor"></select><button id="load-action">Load example</button><textarea id="action-json" rows="16" aria-label="Exact Lean action JSON"></textarea><button id="act-submit">Submit action</button></details><details class="card wide" id="about-drawer"><summary>Assumptions, formal identity, and finite evidence</summary><p>Tagged commitments abstract cryptographic hashing. Lists abstract authenticated maps and UTxOs. Application evidence is supplied. The diagnostic conforms flag is not a native issuer check. Atomic batches and configurable NFT identity reuse are model choices. Integers are accepted only in the exact safe-number domain; net arithmetic uses BigInt.</p><p>Only frozen corpus rows have observed Lean parity. Other manual and story states exercise the JavaScript transcription; no universal parity or proof follows. <a href="../docs/LEAN-CLARITY/">Read clarity limitations</a>.</p><pre id="identity"></pre><p id="corpus-status"></p></details></section>
-</main><pre id="selftest-out" hidden></pre>
+<main id="app">
+  <header class="hdr">
+    <h1>Singular · the registry, in registry mode</h1>
+    <p class="sub">A leaf is <em>Unknown</em> or <em>Known</em> one of three states.
+      Seven edges move it, each an MPFS primitive applied to a state, each a delta
+      over three token kinds. Six need an approval; the seventh is a read that
+      changes nothing.</p>
+    <div class="row">
+      <label for="profile-picker">Profile</label>
+      <select id="profile-picker">
+        <option value="generic">Generic registry</option>
+        <option value="naming">Naming — the Over witness</option>
+      </select>
+      <button id="btn-theme" type="button">Theme</button>
+      <span id="identity" class="mono"></span>
+    </div>
+  </header>
+
+  <section id="generic-profile">
+    <div class="panel">
+      <h2>A journey</h2>
+      <div class="row">
+        <label for="story-picker">Story</label>
+        <select id="story-picker"></select>
+        <button id="hist-first" type="button">⏮</button>
+        <button id="hist-prev" type="button">◀</button>
+        <button id="hist-next" type="button">▶</button>
+        <button id="hist-last" type="button">⏭</button>
+        <button id="btn-reset" type="button">Reset</button>
+      </div>
+      <p id="story-blurb" class="sub"></p>
+      <p id="narration"></p>
+      <div id="branches" class="row"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Where the key stands</h2>
+      <p id="where" class="mono"></p>
+      <table id="witness-table">
+        <thead><tr><th>witness</th><th>outstanding</th><th>shape</th></tr></thead>
+        <tbody id="witnesses"></tbody>
+      </table>
+      <p id="root" class="mono sub"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Free play — the seven edges</h2>
+      <div class="row">
+        <label for="key-input">key</label><input id="key-input" type="number" value="42">
+        <label for="owner-input">owner</label><input id="owner-input" type="number" value="42">
+        <label for="output-input">output</label><input id="output-input" type="number" value="555">
+        <label for="deposit-input">deposit</label><input id="deposit-input" type="number" value="200">
+      </div>
+      <div class="row">
+        <label for="approval-picker">approval</label>
+        <select id="approval-picker">
+          <option value="matching">matching (admitted)</option>
+          <option value="mismatched">right policy, wrong tuple</option>
+          <option value="other">another policy</option>
+          <option value="none">none at all</option>
+        </select>
+      </div>
+      <div id="edges" class="row"></div>
+      <p id="edge-result"></p>
+    </div>
+
+    <div class="panel">
+      <h2>What the cage refuses</h2>
+      <p class="sub">Refusal is the complement of the edge table. Every
+        <em>(primitive, value, before-leaf)</em> triple that is not a row of it is
+        refused, with its own reason.</p>
+      <table id="refusal-table">
+        <thead><tr><th>edge</th><th>on leaf</th><th>reason</th></tr></thead>
+        <tbody id="refusals"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>The corpus this page replays</h2>
+      <p id="corpus-status" class="mono"></p>
+      <table id="theorem-table">
+        <thead><tr><th>statement</th><th>coverage</th><th>exhibited</th><th>held</th></tr></thead>
+        <tbody id="theorems"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="naming-profile" hidden>
+    <div class="panel">
+      <h2>Naming: the Over witness</h2>
+      <p class="sub">Naming is an instance of the registry, not a second model.
+        A retired name is attested by a <em>folded read</em>: the witness is
+        plural, every copy is true, and burning them changes nothing.</p>
+      <table id="naming-journey-table">
+        <thead><tr><th>step</th><th>edge</th><th>verdict</th><th>leaf</th><th>active</th><th>absent</th><th>terminal</th></tr></thead>
+        <tbody id="naming-journey"></tbody>
+      </table>
+      <p id="naming-status" class="mono"></p>
+    </div>
+
+    <div class="panel">
+      <h2>The rest of a name's life</h2>
+      <p class="sub">A name is seeded, maintained, recovered and retired. Each
+        row below is a verdict the Lean computed and this page replayed: an
+        acceptance, or a refusal with the reason that caused it.</p>
+      <table id="lifecycle-table">
+        <thead><tr><th>what</th><th>row</th><th>outcome</th></tr></thead>
+        <tbody id="lifecycle"></tbody>
+      </table>
+      <p id="lifecycle-status" class="mono"></p>
+    </div>
+  </section>
+
+  <footer class="sub">
+    <p>This page is a transcription of the frozen Lean model, not the model. Where
+      they disagree the Lean is right and this is a defect — which is what the
+      corpus replay above is for.</p>
+  </footer>
+</main>

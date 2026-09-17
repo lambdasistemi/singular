@@ -1,32 +1,51 @@
-# Singular simulator candidate
+# simulator — the model, playable
 
-The self-contained browser artifact is `index.html`; it embeds the exact core, action builders, property code, eight generic story trees, corrected Lean corpora, theorem inventories, and formal identity. Publishing serves `index.html` and `identity.json` at `site/simulator/`; the downloadable archive also carries the replay sources, scenarios, and identity ledgers under `site/artifacts/`. Formal files are linked under the parent's canonical `site/model/` location.
+One self-contained page, built from these sources. No framework, no network, no
+server: `index.html` carries its engines, its stories and its corpora inside it.
 
-From a source checkout, run:
+| file | what it is |
+| --- | --- |
+| `core.mjs` | the registry model, transcribed from `Singular.Model` |
+| `actions.mjs` | the request shapes a reader drives it with |
+| `properties.mjs` | the laws, checked over the corpus |
+| `naming.mjs` | the naming instance: the Over witness journey, and the corpus replay |
+| `lifecycle.mjs` | the lifecycle replay — seeding, maintenance, recovery, retirement, wire |
+| `page.mjs`, `page-body.html`, `page.css`, `template-generic.js` | the page |
+| `stories.json` | five journeys, twenty steps |
+| `corpus.json` | a copy of the generated `lean/corpus.json`, embedded in the page |
+| `formal/` | every Lean source and manifest, mirrored so the page ships what it was built from |
+| `identity.json` | the sha256 of everything above that is bound |
+
+## The commands
 
 ```sh
-node simulator/build.mjs --check
-node simulator/gate.mjs
-node simulator/gate.mjs --selftest
+node simulator/mirror-check.mjs     # the shipped Lean equals the built Lean, both ways
+node simulator/build.mjs --check    # index.html is exactly what these sources build
+node simulator/gate.mjs             # replay every exported row
+node simulator/gate.mjs --selftest  # and prove the gate rejects a seeded defect
+node simulator/identity.mjs         # regenerate identity.json after the Lean moves
+node simulator/serve.mjs            # preview the built page locally
 ```
 
-From the root of an extracted documentation archive, use the archive-owned environment instead of an ambient `node` or a checkout:
+`just simulator` runs the first four. `just browser` drives the built page in a
+pinned Chromium; it serves `index.html` and returns 404 for everything else, so
+a page that grew a subresource fails rather than quietly fetching it.
 
-```sh
-sha256sum --check artifacts/SHA256SUMS
-nix run --no-write-lock-file ./artifacts/review#check
-```
+## What the numbers are
 
-The review flake and lock pin Node, Lean, and the complete source set used by the check. Nix may acquire that exact locked toolchain when it is not cached; it does not fetch model or replay inputs.
+`gate.mjs` prints what it covered rather than a bare PASS: 38 corpus cases, 7
+codec rows, 2 deposit rows, 28 complement pairs of which 21 refuse, 20 story
+steps, 7 controlled laws, 24 naming rows, 21 lifecycle rows, 4 boundary refusals.
+A denominator that shrinks is a failure, not a smaller pass.
 
-In a checkout, rebuild with `node simulator/build.mjs`. To serve locally, run `node simulator/serve.mjs` and open `http://127.0.0.1:8769/simulator/?selftest=1`. The page's self-test is finite corpus/story replay, not a proof or a replacement for the browser gate.
+## What is not here
 
-`browser-check.js` is a Playwright MCP `browser_run_code_unsafe` function; pass the file as its `filename` (or its text as `code`). It exercises real manual controls and story branches. `evidence/browser-*-receipt.json` and the supplementary receipts retain the exact tool output and code. Screenshots and browser-observed HTML hashes are retained alongside them.
+This directory does not re-implement the naming layer or its lifecycle. It
+replays the rows the Lean exported for them. The previous simulator did
+re-implement them, in about nine hundred lines, and when the Lean moved to
+registry mode every one of those lines went on describing a model that no longer
+existed while still reporting green. `mirror-check.mjs` exists so that drift is
+a failing check rather than a discovery.
 
-`formal/` contains frozen input copies for clean-clone gates. `identity.json` pins them. `coverage.json` gives one exact row per generic theorem declaration and source-derived refusal sites. The generic split is **12 controlled finite checks / 17 action exhibits only / 12 gaps** across 41 proved declarations. The naming inventory adds 17 proved declarations with **15 controlled finite checks / 2 exhibits only / 0 gaps**. **58 generic corpus rows**, **34 naming corpus rows**, **32 story steps**, **1,772 public-boundary probes**, and **43 negative controls** are checked. No universal parity or proof follows from these finite checks.
-
-`page-template.html` is the shared skill snapshot obtained with `page-template.mjs start`. Its first style block and the helpers in `template-generic.js` are retained. The second stylesheet and machine-specific page/rendering adapters are explicit. The broader generic template renderer identity and full prose-atom/guard-conjunct reconciliation are not claimed; see `docs/LEAN-CLARITY.md`.
-
-`make-stories.mjs` is an authoring generator. The gate replays the pinned `stories.json` expectations without regenerating them. Review any intentional scenario regeneration as changed expectations. These stories do not become Lean corpus rows through regeneration.
-
-The current model and simulator evidence is recorded by the candidate gate and release receipts. This is a **SIMULATOR-CANDIDATE**; publication and independent acceptance belong to the owning workflow.
+Evidence from the current tree is in `evidence/`. It is regenerated, not
+accumulated: a receipt for a page that no longer exists is not evidence.

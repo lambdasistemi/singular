@@ -1,31 +1,47 @@
 {
   "who-this-is-for": [
     {
-      "text": "This page is for a reviewer who wants to play a naming claim instead of reading a walkthrough. The first-release naming profile is an explicit, labelled, unaccepted candidate, not the generic registry demo, and no on-chain acceptance is claimed. Open the simulator and choose the m1-naming profile.",
+      "text": "Naming is an instance of the registry, not a second model: the same seven edges, the same tokens, the same refusals, with naming's own rule about who may certify what. Open the simulator and switch the profile picker to the naming profile.",
       "pause": 400
     }
   ],
   "what-you-can-do": [
     {
-      "text": "Queue the first claim for the demo spelling alice: it waits while the key stays absent, because approval reserves nothing. Separately authorize withdrawal to copy the refund address stored in that request; redirection, Insert certification alone, cancellation after fold, and replay are refused. Then queue two claims for alice, fold the first to Active, and observe the competing fold refused with occupied-key. Resolve alice to read the certified fixture, and submit a crafted Delete to see naming-no-delete.",
+      "text": "Watch the journey. The controller books alice with one insertActive, certified by the controller's signature, and the active token goes to the record. A quorum then retires it with one updateTerminal: the active token is burned and the leaf can never move again. The control key alone cannot do this — the rule is the committed recovery key revealed and signing, or a distinct-member quorum, and the control key on its own is neither.",
+      "pause": 400
+    },
+    {
+      "text": "Then a folded read mints the Over witness, which needs no approval at all: anyone may attest a retired name. Then another, because the terminal witness is plural — the attestation is a read, so both copies are true. Burn them both and the leaf is still terminal. An attestation says something that stays true whether or not you keep the token.",
+      "pause": 400
+    },
+    {
+      "text": "Below the journey, twenty-four naming rows across six sections are replayed in your browser, each a verdict the Lean computed. Below that, twenty-one lifecycle rows: seeding the consumer with its pinned policies, moving a payment destination while the registry root stays put, revealing the committed recovery key, and both retirement routes with the refusals that guard them.",
       "pause": 400
     }
   ],
   "what-you-see-when-it-is-refused": [
     {
-      "text": "Every refusal names its intended condition, and a generic exception is a defect. Cancellation refuses refund redirection, missing separate approval, an already folded claim, and replay. The remaining rows cover duplicate folding, crafted Delete, unapproved queueing, substituted representative identity, proposal misbinding, and unauthenticated resolution.",
+      "text": "Every refusal names its own condition; a generic exception is a defect. Booking a name that is already booked is already-booked. Moving a retired name, by any edge at all, is terminal-immutable. Attesting a name that is not retired names the state it found instead.",
+      "pause": 400
+    },
+    {
+      "text": "Two rows are deliberately different names. Naming defines no delete, so a delete through the naming profile is naming-no-delete. A retirement that met neither authorization route is a different failure — naming-retirement-uncertified — and must not wear delete's name. The two approval rows are the ones worth trying by hand: an approval under the right policy for a different request is refused, and so is no approval at all on any edge but the read.",
       "pause": 400
     }
   ],
   "how-the-pieces-relate": [
     {
-      "text": "The generic foundation of forty-one proved declarations stays upstream. The naming layer adds fixtures, queueing, folding, and observation with seventeen proved declarations of its own; the m1-naming engine transcribes that layer and never drives Lean from the browser. Choosing the profile is an explicit act: until m1-naming is selected its controls stay inert, and neither engine silently becomes the other.",
+      "text": "Naming does not re-implement the registry and the page does not re-implement naming. The previous simulator did re-implement it, in about nine hundred lines of JavaScript, and when the Lean moved those lines went on describing a model that no longer existed while still reporting green. What the page transcribes is the replay: every row is a verdict the Lean computed, and the page recomputes or re-checks it in front of you.",
       "pause": 400
     }
   ],
   "what-is-proved-and-what-is-checked-here": [
     {
-      "text": "Seventeen naming theorem declarations are proved in Lean from the standard axioms alone, separately from the generic forty-one. Seven record the user-facing claim contract; ten more pin transition, queue-validation, and resolution equations across the public boundary. The simulator replays a Lean-authored naming corpus of thirty-four rows and requires byte-identical verdicts, and the page's self-test replays the same corpus in the browser. Finite checks remain finite: they measure the transcription and prove nothing about acceptance.",
+      "text": "The naming instance carries seven theorem declarations, its lifecycle six and its wire encoding five — eighteen in all, each proved in Lean from the standard axioms alone and each in its own manifest with its own compiled gate, separate from the registry's twenty-four.",
+      "pause": 400
+    },
+    {
+      "text": "The naming statements are stated as characterisations rather than one-way implications: the retirement rule says exactly when retirement is certified, so a model that certified more than the rule allows fails them as surely as one that certified less. Finite checks are finite: the replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.",
       "pause": 400
     }
   ],
@@ -43,7 +59,7 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "ff9e41183e76bd650975fae6a86ee08c8ce5d896b25339616917d045d8090d51"
+    "sha256": "7ad16a8e4af173b721e108649ddba3403ae15f4512b26bd0bf5909838c13fda5"
   },
   "finding-alice": [
     {

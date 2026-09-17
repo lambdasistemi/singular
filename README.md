@@ -2,7 +2,7 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
-<a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — choose the explicit **m1-naming** profile to claim, cancel an unfulfilled claim, fold, resolve, and test refusal paths. The generic-registry profile remains available beside it, where Delete is allowed. The [simulation guide](docs/simulation.md) separates those two journeys and their finite-model limits.
+<a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The [simulation guide](docs/simulation.md) says what the page establishes and what it does not.
 
 ## Who this is for
 
@@ -10,7 +10,7 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 **A user of that application** asks it to register a key. The application approves the exact proposal — including the refund address stored in the request — and the request waits, holding no NFT, until someone folds it into the registry. Before folding, a separately authorized cancellation copies that stored refund address and leaves the name free; redirecting the refund, relying only on Insert certification, cancelling after fold, or replaying cancellation is refused. No fee, deposit, price, or bond rule is inferred.
 
-**A holder of an active name** wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The [playable naming lifecycle](docs/naming-lifecycle.md) drives claim cancellation, maintenance, recovery, and controller-or-quorum retirement through the integrated transition, while retaining an exact 43-row model/corpus/browser reconciliation. It remains an unaccepted design candidate, not an observed ledger execution.
+**A holder of an active name** wants to keep payment routing current, recover through a committed next controller, or retire the name permanently. The [naming lifecycle](docs/naming-lifecycle.md) covers destination maintenance, recovery through the committed key, and retirement by that key or by a distinct-member quorum — never by the current control key alone. Twenty-one lifecycle rows are replayed in the simulator against the Lean that computed them. It remains an unaccepted design candidate, not an observed ledger execution.
 
 **A folder** — anyone at all — collects pending requests and applies them to the registry in one transaction. There is no owner to sign, no privileged actor, and no way to fold a request that does not satisfy the protocol.
 
@@ -68,7 +68,7 @@ Read the design in order:
 
 ## Design status
 
-These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has 41 proved generic-registry declarations and 17 proved first-release naming declarations, plus a separately authored [playable simulation](docs/simulation.md). The focused checks replay 58 generic rows, 34 naming rows, and 43 lifecycle and wire rows; they test correspondence on those finite inputs rather than proving browser behavior generally. No independent audit acceptance, compiled Cardano validator, or ledger execution is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions.
+These documents record the adopted design and name the decisions still needed for a concrete protocol. The [executable design candidate](docs/design.md) has **42** proved declarations — 24 for the registry, 7 for the naming instance, 6 for its lifecycle and 5 for its wire encoding — plus a [playable simulation](docs/simulation.md) transcribed from them. The focused checks replay 38 registry rows, 24 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance, compiled Cardano validator, or ledger execution is claimed. The [coverage ledger](docs/model-ledger.md) distinguishes finite executable evidence from conditions, abstractions and omissions, and the [clarity record](docs/LEAN-CLARITY.md) states plainly how much independence that evidence has.
 
 The Nix-built documentation archive is a review bundle, not a released protocol artifact. It contains the rendered site and a runnable, locked workspace with raw model and corpus files, the naming contract, scenarios, simulator and replay sources, checkers, and exact identities. Reproduction starts from a fresh extraction, verifies `artifacts/SHA256SUMS`, and runs the archive's own flake; a checkout pass does not substitute. [Build and release details](docs/building.md) give the exact commands. No tag or publication is authorized by this candidate.
 

@@ -8,25 +8,41 @@
       "engine": "simulator/core.mjs"
     },
     {
-      "id": "m1-naming",
-      "label": "First-release naming profile — unaccepted candidate",
+      "id": "naming",
+      "label": "Naming profile — the Over witness",
       "engine": "simulator/naming.mjs"
     }
   ],
   "files": {
-    "formal/Model.lean": "91a05ebc3abc5bda41842afbd959aa6e6c46f110c9ad59d6e8bc80fc775306a8",
-    "formal/Lemmas.lean": "062d470d8abbc184521b92c52816afe6f07b5623143365710d30b0609f8aedb3",
-    "formal/Statements.lean": "f1f20fc9aeffffb3771a13a17c192baf03a4f1e0f7273a7632f5e9447d6bfefb",
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Main.lean": "2404b71735285b70dea75c14508d7e69dce4e5c0bda5b6cea241e6110970f4a6",
-    "formal/theorem-debt.json": "a57a510784992ccbd051d8f27522a8d150bb5041d2d933d8dfb3c41e2163470a",
-    "corpus.json": "471a1aa9ab66564c581c0979d5532022e4f895de13754ac46542a567d0bfff5a",
-    "formal/Naming.lean": "2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72",
-    "formal/NamingStatements.lean": "25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81"
+    "formal/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
+    "formal/LifecycleMain.lean": "865492f04d1a3734a4bff349dd58d888f3cbddfeec4b7b8ee81ab198cc758bdd",
+    "formal/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+    "formal/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+    "formal/Naming.lean": "18b22811bea726b4715b9c2ff5252723049482f4d7c7a81110c110b822ae99f7",
+    "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
+    "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
+    "formal/NamingLifecycle.lean": "2d2a2908acd45d1c87d24bcfda47ae23a233f4233ac9da50475a08f9e7255b46",
+    "formal/NamingLifecycleAudit.lean": "b84b14d91ac014a5d021a5187957c63f27fb6802ed96df5e1db40ea4a17e67ab",
+    "formal/NamingLifecycleStatements.lean": "fd62b60a23ff95d077ca75c03f5c2024b2c2012be8b3e6fd7ada1efe8bafc892",
+    "formal/NamingMain.lean": "ee3492304c45a5541b672a9c5b091039feaa3cde2599c8a8a3bf665181260277",
+    "formal/NamingStatements.lean": "d21625cd2a888a3ee5b9f87ec6829f9723970b205db6d408491cbf0590096a6e",
+    "formal/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
+    "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
+    "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
+    "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
+    "formal/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
+    "formal/lifecycle-theorem-debt.json": "3fbb2b6509683e86dfe34d0527bdfe0881b5ba8011cf80292420ae7096bc3f5e",
+    "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
+    "formal/theorem-debt.json": "dbacef0b39b90bb5590c6f6ff47a379927effc8820558c30d10b3208b3600a4e",
+    "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
+    "corpus.json": "3e973e08e159cf9d1158a98f473ce27d788285255723f67368f370b3f3e9d073"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
-  "corpusTransitions": 52,
-  "corpusResolutions": 6,
-  "theorems": 41,
-  "namingTheorems": 17
+  "corpusCases": 38,
+  "corpusFolds": 3,
+  "corpusCodec": 7,
+  "corpusAda": 2,
+  "theorems": 24,
+  "namingTheorems": 7
 }

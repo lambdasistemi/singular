@@ -1,0 +1,30 @@
+{
+  "dependency-direction": [
+    {
+      "text": "The model sits at the top, with lemmas, statements, the open application and naming below it. No naming identifier appears in the model, the lemmas or the statements, which is what makes the open application a proof that the guarantees are unconditional rather than a restatement.",
+      "pause": 400
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "The model gains the alphabet, the edges, the codec and the eight-field configuration and loses the old vocabulary; naming becomes an instance rather than a parallel model; the model checker is opened to new identities with its discipline intact; and the simulator transcribes the frozen interface.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "The open application sits beside the naming layer rather than inside it, because a module that imported naming could not demonstrate what it exists to demonstrate. The leaf codec stays in the model, because it is part of what a leaf is.",
+      "pause": 400
+    }
+  ],
+  "out-of-this-tickets-surface": [
+    {
+      "text": "The cage, the naming on-chain code, conformance, the off-chain tree, the runner and release wiring, and every documentation page not named here. Touching any of them is a question to the epic owner, not a repair.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "d6a9bcbec2bb1c1009899cf9cf067b12325b029f3896894190d66e22843d8096"
+  }
+}

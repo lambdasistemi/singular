@@ -1,0 +1,54 @@
+{
+  "model-the-alphabet-and-the-leaf": [
+    {
+      "text": "The state and leaf types, and the two codec functions, which must be total, injective and defined on exactly the three codec bytes.",
+      "pause": 400
+    }
+  ],
+  "model-the-edges": [
+    {
+      "text": "Exactly seven edges and exactly three token kinds, with the delta equal to the interface table and the transition refusing every edge out of terminal.",
+      "pause": 400
+    }
+  ],
+  "model-admission-routing-the-fold": [
+    {
+      "text": "The eight-field configuration, admission, routing, the step function whose every refusal carries a distinct reason, the atomic batch fold that threads the root through the actions, and the positional read.",
+      "pause": 400
+    }
+  ],
+  "the-oracle-observation-surface-required-and-read-only-to-the-author": [
+    {
+      "text": "The gate's frozen oracle evaluates the model at inputs the ticket owner fixed before any code existed, and compares them to expected outputs the author cannot regenerate. That is what makes the gate measure correspondence rather than self-consistency, and it is the repair for the unfit verdict the blind gate audit returned. The model exposes ten total observations; everything behind them is the author's to shape freely. They must be defined in terms of the real model, never as an independent table written to satisfy the oracle — mutating the model must move the observations with it.",
+      "pause": 400
+    }
+  ],
+  "statements": [
+    {
+      "text": "The eleven bound statement identities, repeated here as the binding list for the manifest and the axiom report, accompanied by one inversion per edge.",
+      "pause": 400
+    }
+  ],
+  "open-application": [
+    {
+      "text": "A policy that certifies every edge for every key, with one instantiation per registry promise and no naming vocabulary anywhere in it.",
+      "pause": 400
+    }
+  ],
+  "naming-preserved-identities": [
+    {
+      "text": "The naming statements and recovery rows keep their names and meaning. The retirement theorem does not: it is a generic statement, superseded by the termination law, which is why every base declaration needs an explicit disposition. Naming's policy follows the operator's six-edge ruling.",
+      "pause": 400
+    }
+  ],
+  "removed": [
+    {
+      "text": "Seven declarations go, including the operation triple with its free-form update and the representative policy, which is renamed — so the old name must not survive either. All seven are checked against the elaborated environment, never a source grep: a declaration left in place under a new alias passes a grep and must fail here.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "3ba774001351f4943610d5e710e3896988e9c447e7a5f340441c3e1d7964760f"
+  }
+}

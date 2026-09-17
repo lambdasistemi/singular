@@ -1,0 +1,102 @@
+{
+  "strategy": [
+    {
+      "text": "The model is rewritten, not migrated. No partial Lean tree builds, so the model slice is indivisible; and because the simulator is a hand transcription, that slice is green on its own gate and red on the simulator by construction.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Two slices: the model with its generators, tooling and Lean-derived pages; then the simulator and its pages, transcribed from the frozen interface by a different author.",
+      "pause": 400
+    }
+  ],
+  "staffing-checked-against-the-operators-rule": [
+    {
+      "text": "The model slice is authored by GLM, the simulator slice by Muse, and every auditor is a fresh Opus seat with its own context, root, worktree and pane. Both launchers resolve in a non-interactive shell, so no escalation is needed.",
+      "pause": 400
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Lean is the behavioral authority; a proved weaker statement is the wrong contract. Nothing lands red, but intermediate red heads on the draft branch are allowed, so an audited candidate is not stranded on one worktree for the duration of the second slice.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-slice-a": [
+    {
+      "text": "Each row binds a Lean identity, a given-when-then, the executable observation that exhibits it, and a control able to fail for the intended reason.",
+      "pause": 400
+    }
+  ],
+  "definitions": [
+    {
+      "text": "Nine definition rows, from the alphabet and the removed vocabulary through the edges, the read, admission, the fold's refusals, and where each token and its value goes.",
+      "pause": 400
+    }
+  ],
+  "codec-frozen-sibling-contract-for-157-and-152": [
+    {
+      "text": "Three codec rows: the round trip, the refusal of every byte that is not one of the three, and the refusal of naming-era leaf bytes.",
+      "pause": 400
+    }
+  ],
+  "statements-interface-6-and-4": [
+    {
+      "text": "The eleven promises at their bound identities. Every row quantifies over states reachable from genesis by folds: over an arbitrary state value the supply laws are simply false. Unconditional means no application hypothesis, never no reachability hypothesis.",
+      "pause": 400
+    }
+  ],
+  "instances": [
+    {
+      "text": "The open application first, as the proof that the guarantees are unconditional in the application; then naming, whose approval policy follows the operator's ruling for all six edges and whose trie-free moves must leave the root equal.",
+      "pause": 400
+    }
+  ],
+  "mutants-the-four-named-in-154": [
+    {
+      "text": "Each mutant must elaborate first, so what is measured is a semantic change and not a syntax error; the kill is either a statement whose proof no longer closes or a corpus row whose verdict flips, recorded per mutant with a positive control. A compile failure alone is not a behavioral kill.",
+      "pause": 400
+    }
+  ],
+  "r12-the-retirement-map-for-the-44-generic-declarations": [
+    {
+      "text": "Each of the forty-four base declarations is carried, renamed to a named identity, or retired with a reason. The retirement theorem is in the generic module and is superseded rather than preserved, so without the map a dropped guarantee is indistinguishable from a rename.",
+      "pause": 400
+    }
+  ],
+  "slice-a-audit-obligations-beyond-the-gate": [
+    {
+      "text": "Three things the gate cannot judge: the four mutants with their kill classification and positive controls; that the model checker still checks what it claims, since the author rewrites the very file one gate leg runs; and that the retirement map is complete against the base manifest.",
+      "pause": 400
+    }
+  ],
+  "a-starting-state-defect-this-slice-must-correct": [
+    {
+      "text": "Falsifying the gate against the base tree turned up a defect in already released work: the debt manifest carries forty-four proved declarations while the theorem page lists forty-one and claims all forty-one. Two obligations follow, and the second one matters more: the cross-check becomes permanent in the repository tooling, because nothing checks it today, which is how a three-row gap survived a release.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-slice-b-163": [
+    {
+      "text": "Seven simulator rows: the edges and the read exposed, every illegal combination refused by name, full replay agreement, the naming profile's Over witness, counts equal to what replays, fresh speech, and a clarity record.",
+      "pause": 400
+    }
+  ],
+  "gates": [
+    {
+      "text": "Three gates. The model gate deliberately does not claim the repository green, since the simulator is red until the second slice. The axiom class has no leg of its own because the compiled audit throws during elaboration, so a separate leg could never fail independently of the build — and a leg that cannot fail on its own is an echo, not a second opinion.",
+      "pause": 400
+    }
+  ],
+  "evidence-required-at-acceptance": [
+    {
+      "text": "Fresh command receipts, a clean axiom report, the four mutants with their controls, regenerated corpora and pages, two independent audit reports, and green continuous integration on the one head that is ever pushed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "f7ef5da55496a5abd49c7ac35001c6fd1a687b19398057157490e95da1e0b804"
+  }
+}

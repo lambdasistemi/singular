@@ -1,18 +1,30 @@
 {
-  "exact-declaration-inventory": [
+  "what-the-eleven-promises-are": [
     {
-      "text": "All forty-one declarations are proved. Every statement keeps the text and digest it was frozen with. The source-derived checker verifies exact identities and statement hashes and derives each status from the proof text. A compiled gate collects the axioms of every theorem while the library builds and fails the build if any depends on sorry or an axiom outside the standard three. Re-admitting one theorem was shown to turn the build red.",
+      "text": "The interface states eleven guarantees the registry makes for every application, and the model proves each one over states reachable from genesis by folds. Reachability is a hypothesis, not a weakening: over an arbitrary state value the supply laws are simply false. Every promise is reached through one invariant that the model proves survives each of the seven edges, which is why the statements read as consequences rather than as separate arguments.",
       "pause": 400
     }
   ],
-  "inversions-and-statement-domain": [
+  "exact-declaration-inventory": [
     {
-      "text": "All inversions are proved. The reachable-state obligations go through an invariant stronger than well-formed supply: every custody record carries the current representative of its key, and every custody identifier is recorded and unique. A general statement that terminal request custody can leave only through completion is still missing.",
+      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name.",
+      "pause": 400
+    }
+  ],
+  "how-this-register-is-kept-honest": [
+    {
+      "text": "A compiled gate runs while the library elaborates and fails the build if any theorem depends on an axiom outside the standard three, so a sorry cannot reach this page. The model checker then cross-checks the sources against the manifests, the compiled axiom report against both, and this page against the manifest. That last check exists because it was missing: before it, the page claimed forty-one declarations while the manifest held forty-four, and three proved statements appeared nowhere.",
+      "pause": 400
+    }
+  ],
+  "what-this-establishes-and-what-it-does-not": [
+    {
+      "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will — that is what the operator's rulings, the interface and the simulation are for. The model is also abstract where the chain is concrete: commitments stand for collision-free canonical commitments, and the executable consumer supplies the real hashes.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "d618578bafdd69fb1f544d0c796c1ee14fb36a2c41862a768c197a215b345a90"
+    "sha256": "c57d33a1c16b18922d685749e761f0af11fc79471efa1e64df39ddf20e506b31"
   }
 }

@@ -1,41 +1,42 @@
-# First-release naming: claim, fold, resolve
+# Naming: book a name, retire it, attest it
 
 ## Who this is for
 
-A reviewer who wants to play a naming claim in the docs rather than read a proposed walkthrough. This page is the entry point for the first-release naming profile — an explicit, labelled, **unaccepted candidate**. It is not the generic registry demo, and no on-chain acceptance is claimed anywhere on this page or in the simulator.
+A reviewer who wants to play the naming profile in the docs rather than read a
+proposed walkthrough. Naming is an **instance** of the registry, not a second
+model: the same seven edges, the same tokens, the same refusals, with naming's
+own rule about who may certify what.
 
-<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable simulator and choose the m1-naming profile</a>.
+<a href="https://lambdasistemi.github.io/singular/simulator/">Open the simulator</a>
+and switch the profile picker to *Naming — the Over witness*.
 
 ## What you can do
 
-Open the simulator, select **m1-naming** under *First-release naming profile*, then:
+**Watch the journey.** Five steps, played rather than asserted:
 
-1. **Queue the first claim** for the demo spelling `alice`. The claim waits with an application approval; the key stays absent, because approval reserves nothing.
-2. **Withdraw that pending claim.** A separate cancellation approval copies the refund address stored when the claim was queued. Redirecting it, relying on Insert certification alone, cancelling after fold, or replaying the consumed cancellation is refused.
-3. **Queue two claims** for the same spelling. Two claims for `alice` may both sit pending.
-4. **Fold the first pending claim.** The first valid absent-key fold succeeds: `alice` becomes Active, the representative is minted, and the active record carries the four certified fixture fields unchanged.
-5. **Fold the second pending claim.** It is refused with `occupied-key` — uniqueness is decided only when a certified Insert folds.
-6. **Resolve alice** with an authenticated view. The observation is `active` carrying the payment destination, control address, next-control commitment, and retirement quorum from the certified claim.
-7. **Submit a crafted Delete.** The naming transition accepts the generic action shape, so a crafted generic Delete is parsed and then refused by name: `naming-no-delete`.
+1. **The controller books `alice`.** One `insertActive`, certified by the
+   controller's signature. The active token goes to the record.
+2. **A quorum retires it.** One `updateTerminal`. The active token is burned and
+   the leaf can never move again. The control key alone cannot do this — the
+   rule is the committed recovery key revealed and signing, or a distinct-member
+   quorum, and the control key on its own is neither.
+3. **A folded read mints the Over witness.** `witnessTerminal` needs no approval
+   at all: anyone may attest a retired name.
+4. **And another.** The terminal witness is **plural**, because the attestation
+   is a read. Both copies are true.
+5. **Burn them both.** The leaf is still terminal. An attestation says something
+   that stays true whether or not you keep the token.
 
-```mermaid
-sequenceDiagram
-  participant Reviewer
-  participant Naming as m1-naming profile
-  participant Registry
-  Reviewer->>Naming: queue claim alice (first)
-  Note over Naming: approval reserves nothing; alice stays absent
-  Reviewer->>Naming: separately authorize withdrawal
-  Naming-->>Reviewer: copy stored refund address; alice stays absent
-  Reviewer->>Naming: queue claim alice (competing)
-  Reviewer->>Naming: fold the first claim
-  Naming->>Registry: Insert on absent key
-  Registry-->>Naming: Active, representative minted
-  Reviewer->>Naming: fold the competing claim
-  Naming-->>Reviewer: refused occupied-key
-  Reviewer->>Naming: resolve alice (authenticated)
-  Naming-->>Reviewer: active with certified fixture fields
-```
+**Read the replay below it.** Twenty-four naming rows across six sections —
+spellings, queues, folds, transitions, resolutions and replays — each one a
+verdict the Lean computed, recomputed in your browser. The two that carry the
+amended retirement rule are `NS04-control-key-alone-never-retires` and
+`NS05-quorum-retires`; `NF06-retirement-by-recovery-key` is the other route.
+
+**Then the lifecycle.** Twenty-one more rows: seeding the consumer with its
+pinned policies, moving a payment destination while the registry root stays put,
+revealing the committed recovery key, and both retirement routes with the
+refusals that guard them.
 
 ## Finding alice
 
@@ -73,32 +74,55 @@ Every refusal names its intended condition. A generic exception is a defect.
 
 | Attempt | Refusal you should see |
 | --- | --- |
-| Redirect a pending claim's refund | `withdraw-refund-address` |
-| Present only the original Insert certification | `withdraw-binding` |
-| Cancel a folded claim or replay a consumed cancellation | `request-unavailable`, attributed to the attempted condition |
-| Fold the duplicate after the first Insert committed | `occupied-key` |
-| Craft a Delete (or name-release, or reuse) straight at the naming transition | `naming-no-delete` |
-| Queue an Insert with the application approval rejected | `application-approval` |
-| Certified initial representative does not match the registry | `representative-identity` |
-| Proposal bound to the wrong registry or policy | `insert-binding` |
-| Resolve without an authenticated view | `unauthenticated` |
+| Book a name that is already booked | `already-booked` |
+| Book a key whose leaf is unknown, without first witnessing it | `key-unknown` |
+| Move a retired name, by any edge at all | `terminal-immutable` |
+| Attest a name that is not retired | `read-active`, `read-absent`, `read-unknown` |
+| Retract a witnessed absence whose custody entry is gone | `custody-missing` |
+| Retire with a control-key signature alone, or below quorum | `naming-retirement-uncertified` |
+| Delete an active name through the naming profile | `naming-no-delete` |
+| Present an approval under the right policy for a different request | `approval-mismatch` |
+| Present no approval on any edge but the read | `no-approval` |
+
+The last two are the ones worth trying by hand in the generic profile's free
+play. The retirement row and the delete row are deliberately **different**
+names: naming defines no delete, and a retirement that met neither authorization
+route is a different failure that must not wear delete's name.
 
 ## How the pieces relate
 
 ```mermaid
 flowchart TB
-  Generic[Generic registry model, forty-one proved declarations] --> NamingLayer[Naming layer, seventeen proved declarations]
-  NamingLayer --> NamingEngine[m1-naming engine]
-  Generic --> GenericEngine[Generic engine]
-  NamingEngine --> NamingCard[First-release naming profile card]
-  GenericEngine --> GenericCard[Generic registry cards]
+  Generic["The registry model<br/>24 proved statements"] --> NamingLayer["The naming instance<br/>7 proved statements"]
+  NamingLayer --> Lifecycle["Its lifecycle<br/>6 proved statements"]
+  NamingLayer --> Wire["Its wire datum<br/>5 proved statements"]
+  Generic --> Corpus["corpus.json"]
+  NamingLayer --> NamingCorpus["naming-corpus.json"]
+  Lifecycle --> LifecycleCorpus["lifecycle-corpus.json"]
+  Corpus --> Page["one page, replaying all three"]
+  NamingCorpus --> Page
+  LifecycleCorpus --> Page
 ```
 
-The generic foundation stays upstream. The naming layer adds fixtures, queueing, folding, and observation on top; the m1-naming engine transcribes that layer and never drives Lean from the browser. Choosing the profile is an explicit act: until **m1-naming** is selected its controls stay inert, and switching back to **generic** leaves the naming engine explicitly. Neither engine silently becomes the other.
+Naming does not re-implement the registry and the page does not re-implement
+naming. The previous simulator did re-implement it, in about nine hundred lines
+of JavaScript, and when the Lean moved those lines went on describing a model
+that no longer existed while still reporting green. What the page transcribes is
+the replay: every row is a verdict the Lean computed, and the page recomputes or
+re-checks it in front of you.
 
 ## What is proved and what is checked here
 
-The naming layer carries seventeen theorem declarations, every one PROVED in Lean from the standard axioms alone, in a separate inventory from the generic forty-one. Seven record the user-facing contract: Delete refusal, no reservation on approval, absent-key activation, occupied-key duplicate refusal, fixture preservation through the fold, unauthenticated resolve, and payment-destination distinctness. Ten more pin the transition, queue-validation, and resolution equations that expose the full public boundary. The simulator replays a Lean-authored naming corpus of thirty-four rows — spelling, queue, fold, transition, resolution, and replay cases — and requires byte-identical verdicts from the transcription. The page's own self-test replays the same corpus in the browser.
+The naming instance carries seven theorem declarations, its lifecycle six and its
+wire encoding five — eighteen in all, each **PROVED** in Lean from the standard
+axioms alone and each in its own manifest with its own compiled gate, separate
+from the registry's twenty-four. The naming statements are stated as
+characterisations rather than one-way implications: the retirement rule says
+exactly when retirement is certified, so a model that certified *more* than the
+rule allows fails them as surely as one that certified less.
+
+The page replays twenty-four naming rows and twenty-one lifecycle rows, and
+requires the verdict it computes to be the verdict the Lean exported.
 
 Finite checks are finite: the corpus replays measure the transcription on its rows; they do not prove the quantified statements, and they do not make the candidate accepted.
 
@@ -111,8 +135,8 @@ Finite checks are finite: the corpus replays measure the transcription on its ro
 | Next-control commitment | 32-byte domain-separated BLAKE2b digest — the commitment, not a revealed next address |
 | Retirement quorum | payment-key-hash members and a threshold, present as structure |
 
-Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, deposit, or refund-value rule is invented anywhere in the profile. `alice` maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the [playable lifecycle](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
+Values are finite-model fixtures, not product or economic policy, and no fee, bond, price, expiry, deposit, or refund-value rule is invented anywhere in the profile. `alice` maps to one frozen demo key. The request stores a refund address inside its Insert commitment, and cancellation can only copy that address. Continue to the [lifecycle page](naming-lifecycle.md) for destination maintenance, committed-controller recovery, and split retirement through either the controller or published quorum. Retirement-request withdrawal is a distinct refusal case. The naming proposal's generic output payload stays the generic demo constants; fixtures are first-class fields beside it, never packed into it.
 
 ## Status of this candidate
 
-The claim/fold/resolve naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review; building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.
+The naming profile is an unaccepted candidate: proven in Lean, replayed in the simulator, and playable in the browser. The Nix-built documentation archive packages its raw model, corpus, replay inputs, and exact identities for review; building that bundle is not release publication or on-chain acceptance. The live preview is bound to the pull-request head, and the served page states the candidate is unaccepted.

@@ -1,30 +1,28 @@
 {
-  "authority-and-domain": [
+  "what-the-model-is-and-what-it-abstracts": [
     {
-      "text": "Use this register to trace exact requirements and finite scenarios to modeled behavior and explicit limits. Reachable states start with an empty registry under supplied configuration and successful steps. Malformed raw states are also used in finite tests; they are not assumed reachable. Request identifiers are permanently recorded, and consumed outputs are removed. The withdrawal supply statement needs reachability to exclude malformed aliasing.",
+      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. The abstractions are named alongside what they therefore cannot show — tagged commitments stand for collision-free commitments but say nothing about a real digest, and supplied contract evidence stands for a ledger that ran the application validators but says nothing about what those validators do.",
       "pause": 400
     }
   ],
-  "requirements-and-semantic-atoms": [
+  "the-retirement-map": [
     {
-      "text": "The logical model has forty-one proved statements. A whole-transition completion-only terminal-custody statement remains missing; escape refusal and supply claims do not close that gap.",
+      "text": "The previous model had forty-four generic declarations, and registry mode replaced the alphabet, so most no longer have a subject. Every one is accounted for — one carried, three renamed, forty retired, each with its reason — because without this an auditor cannot tell a dropped guarantee from a rename, and a manifest that quietly lost rows would still satisfy every count.",
       "pause": 400
     }
   ],
-  "proposed-abstractions-and-omissions": [
+  "what-is-covered-and-what-is-not": [
     {
-      "text": "Fresh representative identity fixes the certified asset scope to one incarnation, even with a broader approval scope list. Deliberate approval reuse uses the reused-identity profile. Deployed identity and approval lifecycle construction remains open.",
-      "pause": 400
-    }
-  ],
-  "scenario-inventory": [
+      "pause": 400,
+      "text": "Covered: the seven edges and their deltas, refusal as the complement of the edge table, admission scoped to the request tuple, the leaf codec both ways, the fold and its mint check, the custody census and the deposit destination, and the eleven promises over reachable states."
+    },
     {
-      "text": "The Lean corpus has fifty-eight finite rows: fifty-two transitions and six resolver cases. Corrected issuer, exact withdrawal target and same-address outsider probes have valid controls. Fresh-identity Delete and reinsert, stale identity, wrong zero net and terminal withdrawal are exercised. These are finite examples, not proof or completeness acceptance.",
-      "pause": 400
+      "pause": 400,
+      "text": "Not covered, and named rather than left to be discovered: on-chain conformance; plurality constructed from genesis; and any quantitative mutation coverage. The simulator replays thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows and reproduces each verdict, with a mirror check binding the Lean it ships to the Lean it was built from — but that is agreement on the exported inputs, not equivalence, and the transcriber is the model's author, so it is not an independent measurement either."
     }
   ],
   "_source": {
     "file": "model-ledger.md",
-    "sha256": "2d6eec26169084b8ca4805b369d8afeb3393ff1c19502f2c4e8b92c30b4ecb01"
+    "sha256": "2e5fd81a2c8a310524b7c7ac38adade24f6f03e7e4b10ec71295796da294b69d"
   }
 }

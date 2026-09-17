@@ -20,6 +20,7 @@ model:
     python3 tools/check_model.py
 
 simulator:
+    node simulator/mirror-check.mjs
     node simulator/build.mjs --check
     node simulator/gate.mjs
     node simulator/gate.mjs --selftest

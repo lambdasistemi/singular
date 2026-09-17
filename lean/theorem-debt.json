@@ -1,266 +1,146 @@
 [
   {
-    "name": "Singular.Statements.insert_commitment_injective",
+    "name": "Singular.Statements.readAt_true_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "acc639ab7fb78912b91ded316423260606a202c8bc9097d0c0cdb1561134e45c"
+    "statementSha256": "69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916"
   },
   {
-    "name": "Singular.Statements.action_domain_separation",
+    "name": "Singular.Statements.no_tree_change_without_approval",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "cef29367c350e02e94d4b897691e8764274bc763e1c45f342f4565cf5194844c"
+    "statementSha256": "a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b"
   },
   {
-    "name": "Singular.Statements.createInsert_iff",
+    "name": "Singular.Statements.booked_at_most_once",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "66c628ab6c6190f045733f221a3ed5ae1791d56b6614f3089aa92a146c547588"
+    "statementSha256": "1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2"
   },
   {
-    "name": "Singular.Statements.mintWithdraw_iff",
+    "name": "Singular.Statements.terminal_attestation_sound",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "659faf3a5fc1ca25b31cd336cf49ca1e0af3ab0f38a773495106154376bb3438"
+    "statementSha256": "9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef"
   },
   {
-    "name": "Singular.Statements.release_iff",
+    "name": "Singular.Statements.terminal_mint_only_by_read",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "49b33cc0154a21b3396366356beab4f68bc138270c808981ab74e3a36256abd7"
+    "statementSha256": "287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639"
   },
   {
-    "name": "Singular.Statements.evolve_iff",
+    "name": "Singular.Statements.terminal_attestation_permanent",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f48dbb5f2ef278a5cc7cd83e910aa3c5a0cb89e0b5efc7303caa68caa2b2f120"
+    "statementSha256": "e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2"
   },
   {
-    "name": "Singular.Statements.outsider_iff",
+    "name": "Singular.Statements.biconditional_supply_sync",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c4ee5484925c4d51a130c544d73195fc0fc8f1526c1311ba52c3edd81a70b79b"
+    "statementSha256": "7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68"
   },
   {
-    "name": "Singular.Statements.withdraw_iff",
+    "name": "Singular.Statements.occupancy",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "0058bce1e42df4d7b1dedd884157087b657b341a16892756fd6fbfcebb49c60d"
+    "statementSha256": "f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876"
   },
   {
-    "name": "Singular.Statements.fold_iff",
+    "name": "Singular.Statements.occupancy_free_key_succeeds",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "85565658abe6612da74dfe0f91bf0864255a69650e54d645283e6ca128bc360f"
+    "statementSha256": "4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350"
   },
   {
-    "name": "Singular.Statements.empty_fold_never_ok",
+    "name": "Singular.Statements.termination",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3052cf26481621db83a2e6c5713ba84c83a082208582add1f44fec41b409652e"
+    "statementSha256": "daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027"
+  },
+  {
+    "name": "Singular.Statements.active_witness_unique",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879"
+  },
+  {
+    "name": "Singular.Statements.absent_witness_unique",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a"
+  },
+  {
+    "name": "Singular.Statements.terminal_witness_plural",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "68beea77527a148a61f7f055d065aec3d1d2c3acdb25231c5c8db851a747efff"
+  },
+  {
+    "name": "Singular.Statements.witness_kinds_exclude",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a"
+  },
+  {
+    "name": "Singular.Statements.insert_absent_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d65e823c9af112589f84fc65ef080a18d166478eb1765144682a5d9022b3f711"
+  },
+  {
+    "name": "Singular.Statements.insert_active_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1c492e72f96bd9676596c41015caffdf2bdbf4c6d79ae48c83204b81523cabf4"
+  },
+  {
+    "name": "Singular.Statements.update_active_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "4afa82ea2e3ed82bd530a2413a484a4fd32291f9e946bfe621e2309dadffa630"
+  },
+  {
+    "name": "Singular.Statements.update_terminal_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "4f7b5257414f293df032720fb952c04486160b6ad94a373782b54c62131d4683"
+  },
+  {
+    "name": "Singular.Statements.delete_absent_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c9689a174e9c746e78fff3f5ee237875bce8f9f938333fefd3b3e18a73a1088b"
+  },
+  {
+    "name": "Singular.Statements.delete_active_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9af5e32814773829e28a2db650f046f09059fe0b7f6ea0384ba2cceba2f2369b"
+  },
+  {
+    "name": "Singular.Statements.witness_terminal_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3e0bf453fa69525e78120fcc02b8130a613ae65eaa09b0020644c19362069176"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "636ad405902933476a549474d3cd6e656506d263e092ad5993baa47ea8a78c0f"
+    "statementSha256": "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
   },
   {
-    "name": "Singular.Statements.moveAction_iff",
+    "name": "Singular.Statements.fold_batch_cons",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "d75ee497b27abbff41d7e2f2e4ed1c945f551381d4de9cdc2ae4e9f1beb08589"
+    "statementSha256": "48e4c5dc2c48053d54f7e534a11432df0809f53f3eb99a8bdc51d05d0da6f3cb"
   },
   {
-    "name": "Singular.Statements.escape_refused",
+    "name": "Singular.Statements.read_changes_nothing",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "442700a69b1f5aeb6c5dfbf464b6ac7699006d4f2839e6cb630dddd3e006c908"
-  },
-  {
-    "name": "Singular.Statements.foldOne_insert_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "ebda4ebd3dedf81f497472b68a75f42f335b6746f07759f9a181d7c5ab31faba"
-  },
-  {
-    "name": "Singular.Statements.foldOne_terminal_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "2b3a1a84f9b7edba0fa0cfd9e1b01e2feef4e15907920bf17587aece09de7f49"
-  },
-  {
-    "name": "Singular.Statements.sequential_fold_cons",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "036a059420c87f319c3fb30ea7cbb0402ac46d78d7bb24672707cd5d7e556319"
-  },
-  {
-    "name": "Singular.Statements.supply_conservation",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "bee62c7b2b55eced153bab9f44e4709302712d388dffbac8524695ff49231e11"
-  },
-  {
-    "name": "Singular.Statements.over_terminal",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "27e06f051360a1f456719d02c0540fb6f8f7c06a41719cfc5bf0ee1fdc38ef0a"
-  },
-  {
-    "name": "Singular.Statements.over_no_representative",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "6958c0e472a303e62408ba9d84bb3faa5cc30a4d87beae6ec9f5caf7666eafdf"
-  },
-  {
-    "name": "Singular.Statements.pending_insert_no_representative",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "9ef17faaa9f2b361bbe0773b3afdec07c8d24acf928d3bce096cc943c184a740"
-  },
-  {
-    "name": "Singular.Statements.minting_requires_configured_issuer",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "60eb0ef6f74924fcf635dfc22ed65710b8e6762f94393e748718812aede9dbfa"
-  },
-  {
-    "name": "Singular.Statements.withdrawal_preserves_registry_supply",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "d278087ed94e0f538ccba5a04a94e1089c39774d069dc580091f2a38dd11e5b7"
-  },
-  {
-    "name": "Singular.Statements.exact_withdraw_scope",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "124546ee7fbb4379968ce1bccc7ba801c567cc09a699c52246cfdd6eb0d0499d"
-  },
-  {
-    "name": "Singular.Statements.local_evolution_registry_unchanged",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "b9301d1fa5ff7cf94d1c3b7c1b40e8386bf6be04e9e36dc543080b7b9cb0cd54"
-  },
-  {
-    "name": "Singular.Statements.release_is_operation_specific",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "643ec0b79778c3ba900aeca9063cedf21ab69e4dfc91779d0dd08d2afcd160d9"
-  },
-  {
-    "name": "Singular.Statements.release_removes_application_custody",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "9dd3fc799f072da1b92138fffb41fea7d6f588d25e7287064b5bed244fc6fbbd"
-  },
-  {
-    "name": "Singular.Statements.request_single_spend",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "ae3f74db25591349b0a826095d304480afb889b08bb342657bac4883304c2dca"
-  },
-  {
-    "name": "Singular.Statements.approval_scope_checked",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "7ec380d3b33906216bfcf9b744ceb1f9e230e3b876075121992cb574fc8b67da"
-  },
-  {
-    "name": "Singular.Statements.outsider_not_admitted",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "e8c0f448671514d014ad96351044f4aba210abdd95d32589a4306b0f980fa447"
-  },
-  {
-    "name": "Singular.Statements.native_witness_even_zero_net",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "d9ea77d84e54a54d62703fc9a00d03c722761992cc9f1ae036f01404a718135c"
-  },
-  {
-    "name": "Singular.Statements.nonzero_action_invokes_policy",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "aa81ba4d2e49f07948dcd3d24d53a9f8137d5a5abc03dac2a7f2ee9c028dec00"
-  },
-  {
-    "name": "Singular.Statements.nonempty_fold_invokes_consumer",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "50dc0559ef33505e046de9431d38631b1e3dd1f183fd39f8687aaf7c93a4d66e"
-  },
-  {
-    "name": "Singular.Statements.existing_action_does_not_refresh_scope",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "bf5af377450b8b506405e9b9a85a166d19f72fcfc52722bbb8bf9e54b7e2f15f"
-  },
-  {
-    "name": "Singular.Statements.resolve_unauthenticated",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "4c95c9efca592a49413037e25e7c63105b93eec86d3ec970e77db0d33bd86c51"
-  },
-  {
-    "name": "Singular.Statements.resolve_absent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "2205bd05ac27a0844d6628edad2b90ebebd00832c8dd6c950d639ec87c0d378b"
-  },
-  {
-    "name": "Singular.Statements.resolve_over",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "d3ad85aa68922db7bb461886a83e633ae46ddc1781ab7471d9b44af78a8b42f4"
-  },
-  {
-    "name": "Singular.Statements.resolve_address_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "73fdf86e1c1d5dd5fe8fe655b0ee0fb11640e64abc0d38469abbc7868a80d2e1"
-  },
-  {
-    "name": "Singular.Statements.resolve_pending_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "ebd55cc8e4631ab1b36e6e7c0cd345e4fec5564c7fba656000f81aed98430f78"
-  },
-  {
-    "name": "Singular.Statements.release_registry_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "65cb3e5a1c732a6f6c70c82f8a1e0129ec1f3dc42a1cfbfda4e32787290b6d08"
-  },
-  {
-    "name": "Singular.Statements.insert_creation_registry_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "7fa294756d1ad4a6181bff035caee00fe0867414e24f7558ba111dd7e0b07c32"
-  },
-  {
-    "name": "Singular.Statements.whole_release_acceptance_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "05a46a442c1c999445e8e6c59fc83a1b9db14dbd8d901fa27d9ab54ba6071440"
-  },
-  {
-    "name": "Singular.Statements.whole_release_refusal_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "7020410f873edf5239da5c1a31a8727a41b902dd2ac3d35adba1666c0b822dd4"
-  },
-  {
-    "name": "Singular.Statements.whole_insert_acceptance_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "e0c47d8e2252b5abe2b910bc7094a451f56c9eb00d2ba3c507e8d6b3b3601187"
-  },
-  {
-    "name": "Singular.Statements.whole_insert_refusal_independent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "3b025c6a01a6d1bf3dd6f86ee976a7265f02bf0dd44941896ae3e4473d30b3d1"
+    "statementSha256": "0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120"
   }
 ]

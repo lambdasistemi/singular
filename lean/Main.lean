@@ -1,167 +1,262 @@
-import Singular
-open Lean Singular
+import Singular.Model
+open Singular
+open Lean
 
-def initial : State := {}
-def nft : Representative := representative initial 42
-def outA : Output := { representative := nft, destination := 50, datum := 100, value := 20 }
-def proposal : Proposal :=
-  { registry := 1
-    key := 42
-    applicationPolicy := 7
-    refundAddress := 60
-    initial := outA
-    scope := [0] }
-def req : Request := { id := 1, operation := .insert, proposal,   token := some (insertAsset proposal), destination := 90, authenticatedOrigin := true }
-def approval : Approval := { asset := insertAsset proposal, accepted := true }
-def wm : Witnesses := { applicationMint := true }
-def ws : Witnesses := { applicationSpend := true }
-def wn : Witnesses := { nativeSpend := true, representativeMint := true, consumerWithdraw := true }
-def item : FoldItem := { request := 1, outputId := 2, output := some outA }
-def plus : List Delta := [{ asset := nft, quantity := 1 }]
-def minus : List Delta := [{ asset := nft, quantity := -1 }]
-def after (s : State) (a : Action) : State :=
-  match step s a with | .ok r => r.state | .error _ => s
-def pending := after initial (.createInsert req approval wm)
-def live := after pending (.fold [item] plus [] wn)
-def terminal (op : Operation) : Request :=
-  { req with id := 3, operation := op, token := none, held := some nft }
-def releaseAction (op : Operation) : Action :=
-  .release 2 (terminal op) { source := 2, request := terminal op, accepted := true } ws
-def deleting := after live (releaseAction .delete)
-def retiring := after live (releaseAction .update)
-def terminalItem : FoldItem := { request := 3 }
-def gone := after deleting (.fold [terminalItem] minus [] wn)
-def retired := after retiring (.fold [terminalItem] minus [] wn)
-def refund : Refund := { destination := 60, value := 20 }
-def wa : Asset := { policy := 7, name := .withdraw 1 1 refund }
-def cancellation := after pending (.mintWithdraw { asset := wa, accepted := true } wm)
-def newProposal : Proposal := { proposal with scope := [1] }
-def newReq : Request := { req with id := 4, proposal := newProposal, token := some (insertAsset newProposal) }
-def newApproval : Approval := { approval with asset := insertAsset newProposal }
-def repeatPending := after gone (.createInsert newReq newApproval wm)
-def simultaneous := after deleting (.createInsert newReq newApproval wm)
-def successor : ApplicationUTxO := { id := 5, key := 42, output := { outA with datum := 200 } }
-def evolution : Action := .evolve 2 successor { source := 2, successor, accepted := true } ws
+/-! The generic registry-mode corpus: every R2 edge accepted, the full
+complement of R2 refused with its observable reason, the codec both ways, the
+read bound to the intermediate root, custody and R-ADA value flow, the mint
+check and the zero-request rule. Expectations are authored from the mandate;
+results are computed from the model. -/
 
-def substituteProposal : Proposal := { proposal with applicationPolicy := 99 }
-def substituteReq : Request :=
-  { req with proposal := substituteProposal, token := some (insertAsset substituteProposal) }
-def substituteApproval : Approval := { approval with asset := insertAsset substituteProposal }
-def secondReq : Request := { req with id := 6 }
-def secondWa : Asset := { wa with name := .withdraw 1 6 refund }
-def twoPending := after pending (.createInsert secondReq approval wm)
-def secondCancellation := after twoPending (.mintWithdraw { asset := secondWa, accepted := true } wm)
-def outsiderBase := after pending (.mintWithdraw { asset := secondWa, accepted := true } wm)
-def outsiderPending := after outsiderBase (.outsider secondReq)
-def terminalWa : Asset := { wa with name := .withdraw 1 3 refund }
-def terminalCancellation := after deleting (.mintWithdraw { asset := terminalWa, accepted := true } wm)
-def freshInitial : State := { initial with config := { initial.config with reuseIdentity := false } }
-def freshPending := after freshInitial (.createInsert req approval wm)
-def freshLive := after freshPending (.fold [item] plus [] wn)
-def freshDeleting := after freshLive (releaseAction .delete)
-def freshGone := after freshDeleting (.fold [terminalItem] minus [] wn)
-def freshNft : Representative := representative freshGone 42
-def freshOut : Output := { outA with representative := freshNft }
-def freshProposal : Proposal := { newProposal with initial := freshOut }
-def freshReq : Request := { newReq with proposal := freshProposal, token := some (insertAsset freshProposal) }
-def freshApproval : Approval := { approval with asset := insertAsset freshProposal }
-def freshRepeatPending := after freshGone (.createInsert freshReq freshApproval wm)
-def freshSimultaneous := after freshDeleting (.createInsert freshReq freshApproval wm)
-def freshItem : FoldItem := { item with request := 4, outputId := 5, output := some freshOut }
-def freshPlus : List Delta := [{ asset := freshNft, quantity := 1 }]
-def staleProposal : Proposal := { proposal with scope := [0, 1] }
-def staleReq : Request := { newReq with proposal := staleProposal, token := some (insertAsset staleProposal) }
-def staleApproval : Approval := { approval with asset := insertAsset staleProposal }
-def stalePending := after freshGone (.createInsert staleReq staleApproval wm)
+def cfg : Config :=
+  { root := rootOf [], maxFee := 1, processTime := 2, retractTime := 3
+  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
+
+def s0 : RegistryState := { config := cfg, trie := [], custody := [], held := [] }
+
+def apFor (e : Edge) (k o d : Nat) : Option Approval :=
+  some { policy := 7, edge := e, key := k, owner := o, destination := d
+       , assetName := approvalAssetName e k o d }
+
+/-- A canonical booked key: known active, one active token at output 555. -/
+def booked (s : RegistryState) (k : Nat) : RegistryState :=
+  match step s ({ edge := .insertActive, key := k, owner := 42, output := 555
+                , approval := apFor .insertActive k 42 555 } : Request) with
+  | .ok r => r.state
+  | .error _ => s
+
+/-- A canonical witnessed-absent key: known absent, custody with refund 91 and
+value 200 named by the witness. -/
+def witnessed (s : RegistryState) (k : Nat) : RegistryState :=
+  match step s ({ edge := .insertAbsent, key := k, owner := 91, refundAddress := 91
+                , deposit := 200, approval := apFor .insertAbsent k 91 0 } : Request) with
+  | .ok r => r.state
+  | .error _ => s
+
+def req (e : Edge) (k : Nat) (owner : Nat) (out : Nat) : Request :=
+  let target : Request := { edge := e, key := k, owner := owner, output := out }
+  { edge := e, key := k, owner := owner, output := out
+  , approval := apFor e k owner (requestDestination target) }
 
 structure Case where
   id : String
   status : String := "modeled"
-  before : State
-  action : Action
-  accept : Bool
+  expectedAccept : Bool
   expectedReason : String := ""
-  deriving ToJson
+  before : RegistryState
+  action : Request
+  actual : Except String Result
 
-def cases : List Case := [
-  { id := "S03b-configured-issuer-control", before := initial, action := .createInsert req approval wm, accept := true },
-  { id := "S07c-second-pending-insert", before := pending, action := .createInsert secondReq approval wm, accept := true },
-  { id := "S07d-mint-second-withdraw", before := twoPending, action := .mintWithdraw { asset := secondWa, accepted := true } wm, accept := true },
-  { id := "S07e-valid-second-target", before := secondCancellation, action := .withdraw 6 secondWa refund { nativeSpend := true }, accept := true },
-  { id := "S11b-mint-terminal-withdraw", before := deleting, action := .mintWithdraw { asset := terminalWa, accepted := true } wm, accept := true },
-  { id := "S11c-terminal-withdraw-refused", before := terminalCancellation, action := .withdraw 3 terminalWa refund { nativeSpend := true }, accept := false, expectedReason := "withdraw-insert-only" },
-  { id := "S17c-outsider-withdraw-refused", before := outsiderPending, action := .withdraw 6 secondWa refund { nativeSpend := true }, accept := false, expectedReason := "withdraw-insert-only" },
-  { id := "S13c-fresh-insert-created", status := "proposed-fresh-identity-profile", before := freshInitial, action := .createInsert req approval wm, accept := true },
-  { id := "S13d-fresh-insert-folded", status := "proposed-fresh-identity-profile", before := freshPending, action := .fold [item] plus [] wn, accept := true },
-  { id := "S13e-fresh-delete-released", status := "proposed-fresh-identity-profile", before := freshLive, action := releaseAction .delete, accept := true },
-  { id := "S13f-fresh-delete-completed", status := "proposed-fresh-identity-profile", before := freshDeleting, action := .fold [terminalItem] minus [] wn, accept := true },
-  { id := "S13g-fresh-reinsert-created", status := "proposed-fresh-identity-profile", before := freshGone, action := .createInsert freshReq freshApproval wm, accept := true },
-  { id := "S13h-fresh-reinsert-folded", status := "proposed-fresh-identity-profile", before := freshRepeatPending, action := .fold [freshItem] freshPlus [] wn, accept := true },
-  { id := "S13i-stale-identity-created", status := "proposed-fresh-identity-profile", before := freshGone, action := .createInsert staleReq staleApproval wm, accept := true },
-  { id := "S13j-stale-identity-refused", status := "proposed-fresh-identity-profile", before := stalePending, action := .fold [{ item with request := 4, outputId := 5 }] plus [] wn, accept := false, expectedReason := "representative-identity" },
-  { id := "S21c-fresh-batch-staged", status := "proposed-fresh-identity-profile", before := freshDeleting, action := .createInsert freshReq freshApproval wm, accept := true },
-  { id := "S21d-fresh-delete-insert", status := "proposed-fresh-identity-profile", before := freshSimultaneous, action := .fold [terminalItem, freshItem] (minus ++ freshPlus) [] wn, accept := true },
-  { id := "S21e-fresh-wrong-zero-net", status := "proposed-fresh-identity-profile", before := freshSimultaneous, action := .fold [terminalItem, freshItem] [] [] wn, accept := false, expectedReason := "net-mint-mismatch" },
-  { id := "S19c-distinct-action-assets-do-not-net", status := "abstract-disposal", before := pending, action := .fold [item] plus [{ asset := approval.asset, quantity := -1 }, { asset := wa, quantity := 1 }] wn, accept := false, expectedReason := "application-mint-witness" },
-  { id := "S10b-release-varied-entry", before := { live with entries := [{ key := 42, value := some .over, incarnation := 8 }], config := { live.config with reuseIdentity := false } }, action := releaseAction .delete, accept := true },
-  { id := "S10c-insert-varied-entry", before := { initial with entries := [{ key := 42, value := some .over, incarnation := 8 }] }, action := .createInsert req approval wm, accept := true },
-  { id := "S01-approved-insert", before := pending, action := .fold [item] plus [] wn, accept := true },
-  { id := "S02-no-approval", before := initial,     action := .createInsert req { approval with accepted := false } wm,     accept := false, expectedReason := "application-approval" },
-  { id := "S03-substitute-policy", before := initial,     action := .createInsert substituteReq substituteApproval wm,     accept := false, expectedReason := "insert-binding" },
-  { id := "S04-substituted-output", before := pending,     action := .fold [{ item with output := some { outA with datum := 999 } }] plus [] wn,     accept := false, expectedReason := "certified-output" },
-  { id := "S05-competing-inserts", before := after pending (.createInsert { req with id := 6 } approval wm),     action := .fold [item, { item with request := 6, outputId := 7 }] [{ asset := nft, quantity := 2 }] [] wn,     accept := false, expectedReason := "occupied-key" },
-  { id := "S06-exact-withdraw", status := "conditional-refund-profile", before := cancellation,     action := .withdraw 1 wa refund { nativeSpend := true }, accept := true },
-  { id := "S07-insert-cannot-withdraw", before := pending,     action := .withdraw 1 approval.asset refund { nativeSpend := true },     accept := false, expectedReason := "withdraw-binding" },
-  { id := "S07b-wrong-pending-withdraw", before := secondCancellation,     action := .withdraw 1 secondWa refund { nativeSpend := true },     accept := false, expectedReason := "withdraw-binding" },
-  { id := "S08-local-evolution", status := "conditional-application-contract", before := live,     action := evolution, accept := true },
-  { id := "S09-delete-substituted-update", before := live,     action := .release 2 (terminal .update) { source := 2, request := terminal .delete, accepted := true } ws,     accept := false, expectedReason := "exact-release-authorization" },
-  { id := "S10-release-without-registry-read", before := { live with entries := [], config := { live.config with reuseIdentity := false } },     action := releaseAction .delete, accept := true },
-  { id := "S11-custody-escape", before := deleting, action := .escape 3,     accept := false, expectedReason := "completion-only-custody" },
-  { id := "S12-update-completes", before := retiring, action := .fold [terminalItem] minus [] wn, accept := true },
-  { id := "S13-delete-completes", before := deleting, action := .fold [terminalItem] minus [] wn, accept := true },
-  { id := "S13b-reinsert", before := repeatPending,     action := .fold [{ item with request := 4, outputId := 5 }] plus [] wn, accept := true },
-  { id := "S14-wrong-registry-nft", before := live,     action := .release 2 { (terminal .delete) with held := some { nft with registry := 99 } }       { source := 2, request := { (terminal .delete) with held := some { nft with registry := 99 } }, accepted := true } ws,     accept := false, expectedReason := "terminal-binding" },
-  { id := "S15-completed-replay", before := live, action := .fold [item] plus [] wn,     accept := false, expectedReason := "request-unavailable" },
-  { id := "S15b-incarnation-replay", before := after gone (.createInsert { req with id := 6 } approval wm),     action := .fold [{ item with request := 6, outputId := 7 }] plus [] wn,     accept := false, expectedReason := "approval-scope" },
-  { id := "S16-unrelated-folder", before := pending, action := .fold [item] plus [] wn, accept := true },
-  { id := "S17-outsider-output-creation", before := outsiderBase,     action := .outsider secondReq, accept := true },
-  { id := "S17b-outsider-refused", before := outsiderPending,     action := .fold [{ item with request := 6 }] plus [] wn, accept := false, expectedReason := "unauthenticated-request" },
-  { id := "S18-issuer-not-semantics", status := "conditional-application-contract-fails", before := initial,     action := .createInsert req { approval with conforms := false } wm, accept := true },
-  { id := "S19-action-burn-witness", status := "abstract-disposal", before := pending,     action := .fold [item] plus [{ asset := approval.asset, quantity := -1 }] wn, accept := false, expectedReason := "application-mint-witness" },
-  { id := "S19b-action-burn-executes", status := "abstract-disposal", before := pending,     action := .fold [item] plus [{ asset := approval.asset, quantity := -1 }] { wn with applicationMint := true }, accept := true },
-  { id := "S20-existing-action-movement", status := "abstract-token-location", before := pending,     action := .moveAction approval.asset 0 {}, accept := true },
-  { id := "S21-zero-net-delete-insert", status := "proposed-reused-identity-profile", before := simultaneous,     action := .fold [terminalItem, { item with request := 4, outputId := 5 }] [] [] { nativeSpend := true, consumerWithdraw := true }, accept := true },
-  { id := "S21b-zero-net-no-spending-witness", before := simultaneous,     action := .fold [terminalItem, { item with request := 4, outputId := 5 }] [] [] {},     accept := false, expectedReason := "native-witness" },
-  { id := "N01-register-address-A", status := "proposed-naming-profile", before := pending, action := .fold [item] plus [] wn, accept := true },
-  { id := "N02-occupied-name", before := after live (.createInsert { req with id := 6 } approval wm),     action := .fold [{ item with request := 6, outputId := 7 }] plus [] wn, accept := false, expectedReason := "occupied-key" },
-  { id := "N06-change-address-B", status := "conditional-application-contract", before := live, action := evolution, accept := true },
-  { id := "N07-unauthorized-change", before := live,     action := .evolve 2 successor { source := 2, successor, accepted := false } ws,     accept := false, expectedReason := "application-evolution-authorization" }]
+def runCase (id : String) (accept : Bool) (reason : String) (s : RegistryState)
+    (r : Request) : Case :=
+  { id := id, expectedAccept := accept, expectedReason := reason
+  , before := s, action := r, actual := step s r }
+
+def caseActualString (c : Case) : String :=
+  match c.actual with
+  | .ok _ => s!"accepted(expected={c.expectedAccept})"
+  | .error e => s!"refused:{e}(expectedAccept={c.expectedAccept},reason={c.expectedReason})"
+
+def correct (c : Case) : Bool :=
+  match c.actual with
+  | .ok _ => c.expectedAccept
+  | .error e => !c.expectedAccept && e == c.expectedReason
+
+/-- A canonical retired key: known terminal (booked then retired). -/
+def retiredState : RegistryState :=
+  match step (booked s0 42) (req .updateTerminal 42 42 555) with
+  | .ok r => r.state | .error _ => s0
+
+-- accepted edges (one per R2 row, with its delta observed in the result)
+def accInsertAbsent : Case :=
+  runCase "GA01-insert-absent-accepted" true "" (witnessed s0 7)
+    (req .insertAbsent 8 91 0)
+def accInsertActive : Case :=
+  runCase "GA02-insert-active-accepted" true "" s0 (req .insertActive 42 42 555)
+def accUpdateActive : Case :=
+  runCase "GA03-update-active-accepted" true "" (witnessed s0 42)
+    (req .updateActive 42 42 555)
+def accUpdateTerminal : Case :=
+  runCase "GA04-update-terminal-accepted" true "" (booked s0 42)
+    (req .updateTerminal 42 42 555)
+def accDeleteAbsent : Case :=
+  runCase "GA05-delete-absent-accepted" true "" (witnessed s0 42)
+    (req .deleteAbsent 42 91 0)
+def accDeleteActive : Case :=
+  runCase "GA06-delete-active-accepted" true "" (booked s0 42)
+    (req .deleteActive 42 42 0)
+def accWitnessTerminal : Case :=
+  runCase "GA07-witness-terminal-accepted" true "" retiredState
+    ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
+
+-- R3 complement refusals: every non-R2 (edge, before) pair
+def refusals : List Case :=
+  let taken := booked s0 42            -- known active
+  let retired := match step (booked s0 42) (req .updateTerminal 42 42 555) with
+    | .ok r => r.state | .error _ => taken -- known terminal
+  let absent := witnessed s0 42        -- known absent
+  [ runCase "GR01-insert-absent-on-active" false "key-exists" taken (req .insertAbsent 42 91 0)
+  , runCase "GR02-insert-active-on-active" false "key-exists" taken (req .insertActive 42 42 555)
+  , runCase "GR03-insert-absent-on-terminal" false "key-exists" retired (req .insertAbsent 42 91 0)
+  , runCase "GR04-insert-active-on-terminal" false "key-exists" retired (req .insertActive 42 42 555)
+  , runCase "GR05-insert-active-on-absent" false "key-exists" absent (req .insertActive 42 42 555)
+  , runCase "GR06-update-active-on-unknown" false "key-unknown" s0 (req .updateActive 42 42 555)
+  , runCase "GR07-update-active-on-active" false "already-booked" taken (req .updateActive 42 42 555)
+  , runCase "GR08-update-active-on-terminal" false "terminal-immutable" retired
+      (req .updateActive 42 42 555)
+  , runCase "GR09-update-terminal-on-unknown" false "key-unknown" s0 (req .updateTerminal 42 42 555)
+  , runCase "GR10-update-terminal-on-absent" false "not-booked" absent (req .updateTerminal 42 42 555)
+  , runCase "GR11-update-terminal-on-terminal" false "terminal-immutable" retired
+      (req .updateTerminal 42 42 555)
+  , runCase "GR12-delete-absent-on-unknown" false "key-unknown" s0 (req .deleteAbsent 42 91 0)
+  , runCase "GR13-delete-absent-on-active" false "not-absent" taken (req .deleteAbsent 42 91 0)
+  , runCase "GR14-delete-absent-on-terminal" false "terminal-immutable" retired
+      (req .deleteAbsent 42 91 0)
+  , runCase "GR15-delete-active-on-unknown" false "key-unknown" s0 (req .deleteActive 42 42 0)
+  , runCase "GR16-delete-active-on-absent" false "not-active" absent (req .deleteActive 42 42 0)
+  , runCase "GR17-delete-active-on-terminal" false "terminal-immutable" retired
+      (req .deleteActive 42 42 0)
+  , runCase "GR18-read-active-refused" false "read-active" taken
+      (req .witnessTerminal 42 0 700)
+  , runCase "GR19-read-absent-refused" false "read-absent" absent
+      (req .witnessTerminal 42 0 700)
+  , runCase "GR20-read-unknown-refused" false "read-unknown" s0
+      (req .witnessTerminal 42 0 700)
+  , runCase "GR21-insert-absent-no-approval" false "no-approval" s0
+      ({ edge := .insertAbsent, key := 42, owner := 91, refundAddress := 91, deposit := 200 } : Request)
+  , runCase "GR22-insert-active-other-policy" false "no-approval" s0
+      ({ edge := .insertActive, key := 42, owner := 42, output := 555, approval := some ({ policy := 8, edge := .insertActive, key := 42, owner := 42, destination := 555, assetName := approvalAssetName .insertActive 42 42 555 } : Approval) } : Request)
+  , runCase "GR23-insert-active-mismatched-tuple" false "approval-mismatch" s0
+      ({ edge := .insertActive, key := 42, owner := 42, output := 555, approval := some ({ policy := 7, edge := .insertActive, key := 43, owner := 42, destination := 555, assetName := approvalAssetName .insertActive 43 42 555 } : Approval) } : Request)]
+
+-- the read-position controls
+def readRows : List Case :=
+  [ runCase "GD01-read-terminal-accepted" true "" retiredState
+      ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
+  , runCase "GD02-read-before-establishing" false "read-unknown" s0
+      ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
+  ]
+
+-- GC: the custody census (D-CUST). An absent token lives in the cage's own
+-- custody, so the two edges that consume one are refused when it is missing
+-- even though the leaf says absent, and the census is exactly the outstanding
+-- absent tokens.
+def custodyRows : List Case :=
+  let absentNoCustody : RegistryState :=
+    { (witnessed s0 42) with custody := [] }
+  let activeNoToken : RegistryState :=
+    { (booked s0 42) with held := [] }
+  [ runCase "GC01-update-active-without-custody" false "custody-missing"
+      absentNoCustody (req .updateActive 42 42 555)
+  , runCase "GC02-delete-absent-without-custody" false "custody-missing"
+      absentNoCustody (req .deleteAbsent 42 91 0)
+  , runCase "GC03-update-active-with-custody" true "" (witnessed s0 42)
+      (req .updateActive 42 42 555)
+  , runCase "GC04-delete-absent-with-custody" true "" (witnessed s0 42)
+      (req .deleteAbsent 42 91 0)
+  , runCase "GC05-update-terminal-without-token" false "token-missing"
+      activeNoToken (req .updateTerminal 42 42 555)
+  , runCase "GC06-delete-active-without-token" false "token-missing"
+      activeNoToken (req .deleteActive 42 42 555)
+  ]
+
+-- fold-level rows: zero batch, mint mismatch, read inside batch at position
+def foldRows : List (String × Bool × String) :=
+  [ ("GF01-empty-fold-refused", false, "empty-fold")
+  , ("GF02-batch-accepted", true, "")
+  , ("GF03-mint-mismatch-refused", false, "net-mint-mismatch") ]
+
+def batchOk : Bool :=
+  match foldBatch s0
+    [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
+      , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 1)] }
+    , { edge := .updateActive, key := 5, owner := 42, output := 555
+      , approval := apFor .updateActive 5 42 555, claimed := [(.absent, -1), (.active, 1)] } ] with
+  | .ok _ => true | .error _ => false
+
+def batchEmpty : Option String :=
+  match foldBatch s0 [] with
+  | .error e => some e | .ok _ => none
+
+def batchMint : Option String :=
+  match foldBatch s0
+    [ { edge := .insertAbsent, key := 5, owner := 91, refundAddress := 91, deposit := 50
+      , approval := apFor .insertAbsent 5 91 0, claimed := [(.absent, 2)] } ] with
+  | .error e => some e | .ok _ => none
+
+-- R-ADA value flow: the inserter (91) is paid, not the consumer's output
+def adaRows : List (String × Bool × (List (Nat × Nat))) :=
+  [ ("GAda-update-active-pays-refund", true,
+      match step (witnessed s0 42) (req .updateActive 42 42 555) with
+      | .ok r => r.paid | .error _ => [])
+  , ("GAda-delete-absent-pays-refund", true,
+      match step (witnessed s0 42) (req .deleteAbsent 42 91 0) with
+      | .ok r => r.paid | .error _ => []) ]
+
+-- codec rows
+/-- Each codec row carries the bytes it decodes, so a consumer replays the row
+rather than trusting its verdict. -/
+def codecInputs : List (String × Bool × List Nat) :=
+  [ ("GC01-decode-absent", true, [0])
+  , ("GC02-decode-active", true, [1])
+  , ("GC03-decode-terminal", true, [2])
+  , ("GC04-decode-03-refused", false, [3])
+  , ("GC05-decode-empty-refused", false, [])
+  , ("GC06-decode-naming-era-refused", false, [104, 101, 108, 108, 111])
+  , ("GC07-decode-two-bytes-refused", false, [0, 1]) ]
+
+def codecRows : List (String × Bool × Option State × List Nat) :=
+  codecInputs.map fun (id, expected, bytes) =>
+    (id, expected, decodeState (bytes.map (fun n => (n.toUInt8))).toByteArray, bytes)
+
+def configRow : Bool :=
+  match (fromJson? (toJson cfg) : Except String Config) with
+  | .ok c => c == cfg
+  | .error _ => false
+
+def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
+  accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
 
 def caseJson (c : Case) : Json :=
-  let result := step c.before c.action
-  Json.mkObj [("case", toJson c), ("result", match result with
-    | .ok r => Json.mkObj [("accepted", toJson true), ("value", toJson r)]
-    | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)])]
-def correct (c : Case) : Bool := match step c.before c.action with
-  | .ok _ => c.accept | .error reason => !c.accept && reason == c.expectedReason
-
-def resolutions : List (String × State × Bool × Resolution) := [
-  ("N03-resolve-live", live, true, .address 100),
-  ("N04-resolve-pending", deleting, true, .pending),
-  ("N05-resolve-absent", gone, true, .absent),
-  ("N05b-resolve-over", retired, true, .retired),
-  ("N06b-resolve-new-address", after live evolution, true, .address 200),
-  ("N07b-forged-view", live, false, .unauthenticated)]
+  Json.mkObj [("id", toJson c.id), ("status", toJson c.status),
+    ("expectedAccept", toJson c.expectedAccept),
+    ("expectedReason", toJson c.expectedReason),
+    ("before", toJson c.before), ("action", toJson c.action),
+    ("result", match c.actual with
+      | .ok r => Json.mkObj [("accepted", toJson true), ("state", toJson r.state)]
+      | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)])]
 
 def main : IO Unit := do
   let stdout ← IO.getStdout
   for c in cases do
-    unless correct c do throw (IO.userError s!"scenario expectation failed: {c.id}: {repr (step c.before c.action)}")
-  for (id, s, authenticated, expected) in resolutions do
-    unless resolve s 42 authenticated == expected do throw (IO.userError s!"resolution failed: {id}")
-  let json := Json.mkObj [("schema", toJson "singular-logical-corpus-v1"),
-    ("cases", toJson (cases.map caseJson)),
-    ("resolutions", toJson (resolutions.map fun (id, s, authenticated, expected) =>
-      Json.mkObj [("id", toJson id), ("before", toJson s), ("key", toJson (42 : Nat)),
-        ("authenticated", toJson authenticated), ("expected", toJson expected)]))]
+    unless correct c do
+      throw (IO.userError s!"scenario expectation failed: {c.id}: {caseActualString c}")
+  unless batchOk do throw (IO.userError "GF02 batch-accepted failed")
+  unless batchEmpty == some "empty-fold" do throw (IO.userError "GF01 empty-fold failed")
+  unless batchMint == some "net-mint-mismatch" do throw (IO.userError "GF03 mint failed")
+  for (id, expectNonEmpty, paid) in adaRows do
+    let ok := if expectNonEmpty then !paid.isEmpty && paid.all (fun p => p.1 == 91) else paid.isEmpty
+    unless ok do throw (IO.userError s!"{id}: {repr paid}")
+  for (id, expectSome, res, _) in codecRows do
+    let ok := if expectSome then res.isSome else res.isNone
+    unless ok do throw (IO.userError s!"{id} failed")
+  unless configRow do throw (IO.userError "GD-config roundtrip failed")
+  unless batchEmpty.isSome && batchMint.isSome do throw (IO.userError "fold rows failed")
+  let foldJson := foldRows.map fun p =>
+    Json.mkObj [("id", p.1), ("ok", p.2.1), ("reason", p.2.2),
+      ("verified", Json.mkObj [("empty", batchEmpty == some "empty-fold"),
+        ("batch", batchOk), ("mint", batchMint == some "net-mint-mismatch")])]
+  let adaJson := adaRows.map fun p =>
+    Json.mkObj [("id", p.1), ("paidTo", toJson ((p.2.2).map (·.1)))]
+  let codecJson := codecRows.map fun p =>
+    Json.mkObj [("id", p.1), ("decodes", p.2.2.1.isSome), ("expectedDecodes", p.2.1),
+      ("bytes", toJson p.2.2.2)]
+  let json := Json.mkObj
+    [ ("schema", toJson "singular-logical-corpus-v2")
+    , ("cases", toJson (cases.map caseJson))
+    , ("folds", toJson foldJson)
+    , ("ada", toJson adaJson)
+    , ("codec", toJson codecJson)
+    , ("configRoundtrip", toJson configRow)
+    , ("model", toJson cfg) ]
   stdout.putStrLn json.compress

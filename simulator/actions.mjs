@@ -1,15 +1,47 @@
-import {initial,view,step} from './core.mjs';
-// Illustrative defaults only: key 42, application destination 50, address datum A=100/B=200.
-export const witnesses=(overrides={})=>({applicationMint:false,applicationSpend:false,nativeSpend:false,representativeMint:false,consumerWithdraw:false,...overrides});
-export function nextId(s){const n=Math.max(0,...s.used)+1;if(!Number.isSafeInteger(n))throw Error('invalid-nat/nextId');return n;}
-export function makeInsert(s,{key=42,datum=100,id=nextId(s),scope=[view(s,key).entry.incarnation],assetScope=view(s,key).representative.assetScope,refundAddress=60,accepted=true,conforms=true}={}){
- const output={representative:{...view(s,key).representative,assetScope},quantity:1,destination:50,datum,value:20};
- const proposal={registry:s.config.registry,key,applicationPolicy:s.config.applicationPolicy,refundAddress,initial:output,scope};
- const asset={policy:s.config.applicationPolicy,name:{insert:{proposal}}};
- return {createInsert:{request:{id,operation:'insert',proposal,token:asset,held:null,destination:s.config.requestAddress,authenticatedOrigin:true},approval:{asset,accepted,conforms},witness:witnesses({applicationMint:true})}};
-}
-export function makeEvolution(s,source,datum,accepted=true){const old=s.applications.find(u=>u.id===source);if(!old)throw Error('application-unavailable');const successor={...old,id:nextId(s),output:{...old.output,datum}};return {evolve:{source,successor,evidence:{source,successor,accepted,conforms:true},witness:witnesses({applicationSpend:true})}};}
-export function makeRelease(s,source,operation='update',accepted=true){const u=s.applications.find(u=>u.id===source);if(!u)throw Error('application-unavailable');const p=makeInsert(s,{key:u.key}).createInsert.request.proposal;const request={id:nextId(s),operation,proposal:p,token:null,held:u.output.representative,destination:s.config.requestAddress,authenticatedOrigin:true};return {release:{source,request,evidence:{source,request,accepted,conforms:true},witness:witnesses({applicationSpend:true})}};}
-export function makeWithdrawal(s,id,destination=60,value=20){const refund={destination,value},asset={policy:s.config.applicationPolicy,name:{withdraw:{registry:s.config.registry,request:id,refund}}};return {mint:{mintWithdraw:{approval:{asset,accepted:true,conforms:true},witness:witnesses({applicationMint:true})}},withdraw:{withdraw:{request:id,asset,refund,witness:witnesses({nativeSpend:true})}}};}
-export function makeFold(s,ids){let next=nextId(s);const items=ids.map(id=>{const r=s.requests.find(r=>r.id===id);return {request:id,outputId:r?.operation==='insert'?next++:0,output:r?.operation==='insert'?r.proposal.initial:null};});const mint=ids.flatMap(id=>{const r=s.requests.find(r=>r.id===id);return r?[{asset:r.operation==='insert'?r.proposal.initial.representative:r.held,quantity:r.operation==='insert'?1:-1}]:[];});return {fold:{items,mint,actionNet:[],witness:witnesses({nativeSpend:true,representativeMint:true,consumerWithdraw:true})}};}
-export const after=(s,a)=>{const r=step(s,a);if(!r.accepted)throw Error(r.reason);return r.value.state;};
+// Request and approval builders. An approval's asset name commits to the tuple
+// it scopes (D-APPROVAL), so a builder is the only honest way to make one: a
+// hand-written name would not match and the fold would refuse it.
+import {approvalAssetName,requestDestination} from './core.mjs';
+
+export const POLICY=7;
+
+export const request=(edge,key,opts={})=>({
+  edge,key,
+  owner:opts.owner??0,
+  refundAddress:opts.refundAddress??0,
+  deposit:opts.deposit??0,
+  output:opts.output??0,
+  approval:null,
+  claimed:opts.claimed??[]});
+
+/** An approval scoped to exactly this request. */
+export const approvalFor=(r,opts={})=>{
+  const destination=requestDestination(r);
+  return {policy:opts.policy??POLICY,edge:r.edge,key:r.key,owner:r.owner,destination,
+    assetName:opts.assetName??approvalAssetName(r.edge,r.key,r.owner,destination),
+    signatures:opts.signatures??[]};
+};
+
+/** A request carrying a matching approval: the normal case. */
+export const approved=(edge,key,opts={})=>{
+  const r=request(edge,key,opts);
+  return {...r,approval:approvalFor(r,opts)};
+};
+
+/** A request whose approval is under the correct policy but names another
+ * tuple — the case D-APPROVAL exists to refuse. */
+export const mismatched=(edge,key,opts={})=>{
+  const r=request(edge,key,opts);
+  const ap=approvalFor(r,opts);
+  return {...r,approval:{...ap,key:ap.key+1,
+    assetName:approvalAssetName(ap.edge,ap.key+1,ap.owner,ap.destination)}};
+};
+
+/** A request whose approval is under some other policy entirely. */
+export const otherPolicy=(edge,key,opts={})=>{
+  const r=request(edge,key,opts);
+  return {...r,approval:approvalFor(r,{...opts,policy:99})};
+};
+
+/** The read needs no approval at all. */
+export const read=(key,output=0)=>request('witnessTerminal',key,{output});

@@ -32,9 +32,9 @@ class GateCliTest(unittest.TestCase):
         rc = self.gate("inventory", "--report", str(report))
         self.assertEqual(rc, 0)
         payload = json.loads(report.read_text())
-        self.assertEqual(payload["inventory"]["total"], 8)
+        self.assertEqual(payload["inventory"]["total"], 10)
         self.assertEqual(payload["inventory"]["manifestBound"], 5)
-        self.assertEqual(payload["inventory"]["unclassified"], 3)
+        self.assertEqual(payload["inventory"]["unclassified"], 5)
 
     def test_ratchet_passes_when_nothing_changed(self):
         from tests.fixtures import write_record
@@ -55,7 +55,7 @@ class GateCliTest(unittest.TestCase):
         self.assertEqual(rc, 1, "strict completion must not pass a nonzero baseline")
         payload = json.loads((self.tree / "completion.json").read_text())
         self.assertEqual(payload["verdict"], "INCOMPLETE")
-        self.assertEqual(len(payload["unclassified"]), 3)
+        self.assertEqual(len(payload["unclassified"]), 5)
 
     def test_expect_incomplete_asserts_the_honest_baseline(self):
         from tests.fixtures import write_record

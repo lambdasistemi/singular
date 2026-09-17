@@ -1,0 +1,54 @@
+{
+  "the-leaf": [
+    {
+      "text": "A leaf is unknown or known with one of three states. Nothing else may occupy the value slot: no application payload, no version counter, no incarnation. The old fields are removed, not renamed.",
+      "pause": 400
+    }
+  ],
+  "the-leaf-codec-frozen-contract-d-codec": [
+    {
+      "text": "One byte per state: zero absent, one active, two terminal. Encoding is total and injective; decoding is defined on exactly those three one-byte strings and nowhere else, including the empty string and anything longer.",
+      "pause": 400
+    }
+  ],
+  "the-state-configuration-eight-fields-r7": [
+    {
+      "text": "Root, maximum fee, process time, retract time, and the four policies. The consumer pin is removed, and all eight are pinned when the seed is spent and equal before and after every fold.",
+      "pause": 400
+    }
+  ],
+  "token-kinds": [
+    {
+      "text": "Two biconditional witnesses, active and absent, each exactly one when the key is in that state and none otherwise; and the terminal witness, which is implicational, plural and freely burnable. Identity is the policy and the key.",
+      "pause": 400
+    }
+  ],
+  "custody-and-value": [
+    {
+      "text": "The absent token's custody datum carries the refund address the insert named, and both exits pay the deposit there. Cage custody holds exactly the outstanding absent tokens, each with its refund address and its value. The deposit belongs to the inserter, not to whoever ends the absence.",
+      "pause": 400
+    }
+  ],
+  "edges-and-deltas": [
+    {
+      "text": "Each edge's delta is read off the edge and nothing else; the cage sums the column for what it folded and refuses any mint that differs.",
+      "pause": 400
+    }
+  ],
+  "state-invariants": [
+    {
+      "text": "Occupancy, termination, synchronisation, atomicity, immutable pins, and reads that change no leaf and no root.",
+      "pause": 400
+    }
+  ],
+  "application-data": [
+    {
+      "text": "Nothing an application stores is in the trie. Its data lives in its own UTxO, authenticated by the active token that UTxO carries.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "f06122eb2884279d50f497e8b2063e3844f9c1c3697fa145be1c73d431e4dd50"
+  }
+}

@@ -4,7 +4,7 @@
 
 A claimant wants to cancel before a name is folded, or a holder of an active name wants to change where it receives payments, recover after losing the current control key, or retire the name permanently. Cancellation consumes only an unfulfilled claim and copies its stored refund address. The representative NFT stays with the application state while maintenance or recovery is in progress; retirement alone moves it into completion-only custody before burning it.
 
-This page accompanies the integrated executable candidate. [Open the complete playable lifecycle](https://lambdasistemi.github.io/singular/simulator/lifecycle-view.html) to follow claim cancellation into the naming profile, set, replace, or clear a destination, recover a lost controller, and retire through either authorization route. The browser surfaces replay the exact 43-row Lean-derived corpus, then drive the same public transitions. It remains a design-time model, not an observed ledger execution.
+This page accompanies the executable candidate. <a href="https://lambdasistemi.github.io/singular/simulator/">Open the simulator</a> and switch the profile to *Naming — the Over witness*: the last panel replays the lifecycle, row by row, as the Lean computed it — seeding the consumer with its pinned policies, moving a payment destination while the registry root stays put, revealing the committed recovery key, and retiring through either authorization route with the refusals that guard them. Twenty-one rows across five sections. It remains a design-time model, not an observed ledger execution.
 
 ```mermaid
 flowchart LR
@@ -119,6 +119,6 @@ The historical Cage types are evidence about encodings and precedents, not an as
 
 ## Evidence and release status
 
-The browser surfaces drive pending-claim cancellation, integrated maintenance, recovery, and both retirement routes, including their refusal cases. They keep retirement initiation separate from the permissionless completion fold and show `pending` before `retired / Over`. The reconciliation binds each of the 43 model/corpus identities to a public control or assertion. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
+The page replays maintenance, recovery and both retirement routes, including their refusal cases, and each row carries the reason that caused it — a retirement that met neither the recovery-key nor the quorum route refuses as `naming-retirement-uncertified`, not under the name reserved for delete. The replay binds all twenty-one model identities. The downloadable documentation archive carries the model, contract, scenarios, replay code and instructions, pinned toolchain inputs, and exact identity ledgers under `artifacts/` with a SHA-256 manifest.
 
 This remains an unaccepted executable design candidate. Lean proof, finite replay, source-bound contract evidence, a built archive, and a live preview are distinct from a compiled Cardano validator or observed ledger execution.

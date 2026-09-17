@@ -1,0 +1,150 @@
+{
+  "the-story": [
+    {
+      "text": "Three readers are owed something here: the owner of the on-chain ticket, who needs the definitions to be the interface; an external consumer, who needs a leaf codec and a state datum frozen; and anyone who pulls main, who should never see a commit where the model and the simulator disagree.",
+      "pause": 400
+    }
+  ],
+  "why-it-is-one-pr": [
+    {
+      "text": "A Lean-only change cannot leave main green. The simulator is a hand-written transcription of the model, not a generated artifact, and it asserts the real manifests against copies pinned by digest. Measured: unmodified the simulator gate exits zero; after a Lean-only change of the kind this ticket must make, it exits one.",
+      "pause": 400
+    }
+  ],
+  "what-the-registry-is-in-one-paragraph": [
+    {
+      "text": "The trie answers two questions and nothing else: is this key known, and where in its life is it. Seven edges move a leaf, each an MPFS primitive applied to a state, each a delta over three token kinds.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Eleven requirements, from the alphabet through to the simulator and its pages.",
+      "pause": 300
+    }
+  ],
+  "r1-the-alphabet-interface-1": [
+    {
+      "text": "Leaf and State are the only leaf vocabulary. Value, incarnation, asset scope and reuse identity are removed, not renamed, because a rename would preserve a distinction the registry does not make.",
+      "pause": 400
+    }
+  ],
+  "r2-the-seven-edges-interface-2": [
+    {
+      "text": "Seven edges, each with its primitive, its from and to states, and its token delta. There is no free-form update: the only updates are the two state moves.",
+      "pause": 400
+    }
+  ],
+  "r3-the-refused-combinations-as-the-complement-of-r2": [
+    {
+      "text": "Refusal is stated as the complement of the edge table, not as a list: every primitive, value and before-leaf triple that is not a row of that table is refused, so a triple nobody thought of is refused by construction rather than by omission. Distinct reasons are required only where the distinction is observable.",
+      "pause": 400
+    }
+  ],
+  "r4-admission-interface-3": [
+    {
+      "text": "Each of the six tree edges needs an approval token minted under the pinned application policy. The read needs none. Nothing application-specific runs at fold time.",
+      "pause": 400
+    }
+  ],
+  "r5-the-read-interface-2": [
+    {
+      "text": "A read is verified against the root at its own position in the batch, not the batch's first or last root, and it leaves the leaf unchanged. Only a terminal read is admitted, so no attestation of a leaf that can still move is ever produced.",
+      "pause": 400
+    }
+  ],
+  "r6-token-custody-and-routing": [
+    {
+      "text": "Absent tokens go to the cage's own custody so a later fold consumes them without a signature; active and terminal tokens go to the output the request names. Where the absent token's value goes when it is consumed is settled by the operator's deposit ruling.",
+      "pause": 400
+    }
+  ],
+  "r7-the-state-configuration": [
+    {
+      "text": "Eight fields. The consumer pin is gone and the representative policy becomes the active policy, joined by the absent and terminal policies.",
+      "pause": 400
+    }
+  ],
+  "r8-the-statements": [
+    {
+      "text": "Eleven statements, proved without any use of sorry, each with a given-when-then and one executable model observation.",
+      "pause": 400
+    }
+  ],
+  "r9-the-instances": [
+    {
+      "text": "The open application is the smallest instantiation and is proved first. Naming is the second, and its approval policy follows the operator's ruling for all six edges. The retirement theorem is not a naming statement: it lives in the generic module and the interface supersedes it.",
+      "pause": 400
+    }
+  ],
+  "r12-the-retirement-map-for-the-generic-statements": [
+    {
+      "text": "Every one of the forty-four base declarations gets exactly one disposition: carried, renamed to a named identity, or retired with a reason. Without it an auditor cannot tell a dropped guarantee from a rename, and the page-against-manifest check passes on a manifest that quietly lost rows.",
+      "pause": 400
+    }
+  ],
+  "r10-the-model-bound-tooling-and-pages-slice-a": [
+    {
+      "text": "The model checker and the corpus generators are opened to the new identities. The discipline stays: exact identity matching, proved only from the standard axioms, and byte-for-byte corpus regeneration.",
+      "pause": 400
+    }
+  ],
+  "r11-the-simulator-and-its-pages-slice-b-163": [
+    {
+      "text": "A separately authored transcription of the frozen interface: the seven edges and the read exposed, every illegal combination refused by name, and page counts equal to what actually replays.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Three decisions. Two are now operator rulings rather than proposals, and one was accepted as this ticket proposed it. Changing any of them needs a new operator ruling.",
+      "pause": 400
+    }
+  ],
+  "d-codec-the-three-state-leaf-codec-frozen-sibling-contract-accepted": [
+    {
+      "text": "Accepted: the leaf is one byte, zero absent, one active, two terminal. Every other byte string does not decode, and no root the cage produced contains it — the cage never decodes a leaf, it hashes the value it writes.",
+      "pause": 400
+    }
+  ],
+  "r-ada-the-absent-tokens-deposit-belongs-to-the-inserter-operator-ruling": [
+    {
+      "text": "Operator ruling, replacing this ticket's rejected proposal. The insert-absent request names a refund address, recorded in the custody datum beside the token, and both exits pay the deposit there — never to the consuming request's output, never to the folder. Otherwise whoever obtains a delete-absent approval harvests the inserter's deposit, and in the open registry every absent witness becomes a bounty.",
+      "pause": 400
+    }
+  ],
+  "d-self-whether-the-registry-refuses-insertabsent-on-its-own-account-accepted": [
+    {
+      "text": "Accepted: it does not. Witnessing absence is a tree change, and the interface governs it with the same sentence as every other edge, so the pinned policy decides.",
+      "pause": 400
+    }
+  ],
+  "r-nm4-namings-rule-for-the-three-absent-edges-operator-ruling": [
+    {
+      "text": "Operator ruling completing naming's policy: anyone may witness absence, booking needs the signature of the controller who will own the record, and only the refund address the insert named may retract the witness. Carol owns the witness; nobody owns the absence.",
+      "pause": 400
+    }
+  ],
+  "rejection-behavior": [
+    {
+      "text": "Every refusal is observable as a distinct reason rather than a silent no-op, and each has a control that can produce it.",
+      "pause": 400
+    }
+  ],
+  "observable-success": [
+    {
+      "text": "From a clean checkout, the model check and the full continuous integration both exit zero, the axiom report is clean, the four mutants each break their law, and no page or profile mentions the previous alphabet.",
+      "pause": 400
+    }
+  ],
+  "non-goals": [
+    {
+      "text": "No on-chain code, no runner, no release, no upstream work, and no hand edit of a derived page to match without re-derivation.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "f204f683493b81c9bd36e6bc9fd37d0b9b1c05777f7be1877db4a8d6bbe6276c"
+  }
+}

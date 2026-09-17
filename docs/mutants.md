@@ -1,42 +1,69 @@
-# Proposed semantic mutation ledger
+# Mutation ledger
 
-As a future audit planner, use this register to match a proposed fault to a concrete witness candidate and its intended obligation. The rows describe work still to commission; they do not report observed mutation kills.
+As someone deciding whether to trust these proofs, use this register to see that
+the model's guarantees actually constrain the model — that each law was shown to
+**fail** when the behaviour it describes is broken, rather than merely shown to
+compile when it is not.
 
-No semantic mutation campaign or independent checker-control campaign was commissioned or executed. Every row below is **PROPOSED / NOT EXECUTED**. With every statement proved, a mutant is killed only when the mutated model no longer builds the proofs; a mutant that still builds shows that the proofs never constrained the mutated definition. A later audit phase must fix the exact mutants, commands, non-vacuous witnesses and capacity before claiming coverage.
+The four mutations below are the ones the registry-mode epic names. Each was
+executed. None is a proposal.
 
-## Proposed fault atoms
+## What counts as a kill here
 
-| Atom | Mutation | Executable witness candidate | Intended obligation |
-| --- | --- | --- | --- |
-| M01 | Remove Insert absence test | S05, N02 | Unique outstanding representative |
-| M02 | Remove configured issuer binding from Insert construction | S03 with self-consistent policy99 proposal/token/approval; S03b valid issuer control | Authenticated application issuer |
-| M03 | Remove accepted approval test | S02 | Approval required at minting |
-| M04 | Ignore a committed initial output field | S04 | Exact output commitment; repeat separately per field |
-| M05 | Accept Insert token for Withdraw | S07 | Action domain separation |
-| M06 | Drop exact pending id from Withdraw binding | S07b with genuinely minted second-request Withdraw; S07e valid target control | Exact cancellation scope |
-| M07 | Drop operation equality from release evidence | S09 | Operation-specific application authorization |
-| M08 | Release terminal custody on escape | S11 | Completion-only custody |
-| M09 | Leave source application UTxO after release | S11 and later evolve attempt | No duplicate custody |
-| M10 | Fail to burn on Update/Delete | S12/S13 with net mismatch | Atomic transition/supply coupling |
-| M11 | Permit an Over transition | S12 followed by new Insert | Terminal retirement |
-| M12 | Ignore representative registry binding | S14 | Authentic registry/key NFT |
-| M13 | Retain a consumed request | S15 | Request single spend |
-| M14 | Ignore approval incarnation scope | S15b | Broader replay fence |
-| M15 | Treat outsider output as admitted | S17b/S17c at configured request address with existing approved tokens | Receiving does not validate |
-| M16 | Require native privileged actor | S16 | Permissionless submission |
-| M17 | Skip native spending on zero-net batch | S21b | Executing supply/custody witness |
-| M18 | Ignore nonzero action-policy witness | S19 | Mint-field policy execution |
-| M19 | Infer new authorization from token movement | S20 followed by out-of-scope Insert | Movement is not recertification |
-| M20 | Return pending request as application address | N04 | Resolver custody distinction |
-| M21 | Trust unauthenticated datum | N07b | Resolver authentication |
-| M22 | Ignore application evolution authorization | N07 | Conditional legal local evolution |
-| M23 | Consult registry incarnation during release construction | S10 plus registry variation | Creation independence |
-| M24 | Permit terminal request withdrawal | S11c with recognized exact-target Withdraw | Completion-only terminal custody |
-| M25 | Ignore fresh representative assetScope | S13j with multi-incarnation approval scope; S13h fresh identity control | Fresh identity binding |
-| M26 | Net distinct fresh representative identities together | S21e wrong zero net; S21d exact per-asset mint control | Per-asset supply coupling |
+A mutant is killed when a **named obligation stops holding**, not when the file
+stops compiling. Those are different events and only the first is evidence:
 
-## Coverage boundary
+- the mutated definition must **elaborate** first, so what is measured is a
+  semantic change and not a syntax error;
+- the kill must land on an obligation, not on a restatement. Mutating
+  `applyEdge` trivially breaks the effect lemmas that restate `applyEdge`, which
+  proves nothing; so each mutation carries its effect lemma with it, and the
+  failure surfaces where the *invariant* is established;
+- a **positive control** shows the same obligations hold on the unmutated tree.
 
-These are author proposals, not an exact externally accepted denominator. A proposed compound family such as M04 must be split into individual field mutations before audit accounting. No row is KILLED, AUDITED or ACCEPTED. Wire-level, hash collision, MPF authentication, real script invocation and naming-profile conformance need separate instruments after D1–D7 are resolved.
+The first run of this campaign killed all four at the effect lemmas. That was a
+near-tautological result and was discarded rather than reported.
 
-The whole-transition completion-only terminal-custody statement is missing. M08 and M24 identify distinct candidate probes; neither closes that statement-coverage obligation. Fresh identity and a fixed certified assetScope limit each proposal to one incarnation despite a broader scope list. Deliberate approval reuse belongs to the reused-identity profile, with D4 unresolved.
+The campaign mutated `Model.lean` at sha256 `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8`.
+A campaign is evidence about the exact definitions it broke, so a later model is
+a later campaign, not a carried-forward result.
+
+## The mutants
+
+| id | mutation | must break | killed at | outcome |
+| --- | --- | --- | --- | --- |
+| M1 | `insertActive` mints a **second** active token for the key | W1, and S3 for the active kind | the active-supply conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
+| M2 | `insertActive` also mints an **absent** token for the key it just made active | W2 and W4 | the custody-census conjunct of `step_ok_consistent`, `insertActive` branch | **KILLED** |
+| M3 | the read drops its terminal requirement, so an **active** key can be attested | S1 | the terminality derivation in the `witnessTerminal` branch of `step_ok_consistent` | **KILLED** |
+| M4 | `updateActive` **keeps** the custody entry, leaving the absent token outstanding | S3 and W4 | the custody-census conjunct of `step_ok_consistent`, `updateActive` branch | **KILLED** |
+
+Positive control: on the unmutated tree the statements prove, and the compiled
+axiom report carries no `sorryAx`.
+
+## Why the kills land where they do
+
+Every promise in the interface is read off one invariant — `Consistent` — which
+`step_ok_consistent` proves survives each of the seven edges. W1 and W2 are its
+supply conjuncts read one state at a time, S3 is the same fact stated as a
+biconditional, W4 follows from the supply conjuncts plus a key having one leaf,
+and S1 is its terminal-holding conjunct. So a mutation that breaks a supply law
+breaks the invariant's corresponding conjunct, and everything downstream of it
+fails with it.
+
+M3 is the one worth reading closely. Dropping the terminal requirement from the
+read does not break arithmetic; it breaks a *derivation*. The `witnessTerminal`
+branch establishes that the attested key's leaf is terminal by reading it out of
+the verified read. With the mutation the read no longer carries that fact, so the
+attestation can no longer be shown sound — which is exactly S1 failing, and
+exactly the defect the mutation describes.
+
+## Limits
+
+Four mutants are four points, not a mutation score. A campaign that enumerated
+every guard and reported a survivor census would say more, and is not what this
+is: these four were chosen because the interface names them as the failures its
+witness laws exist to prevent.
+
+A killed mutant shows the proofs constrain the mutated definition. It does not
+show the definition is the right one — that is what the operator's rulings, the
+interface and the simulation are for.

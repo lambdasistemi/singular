@@ -1,18 +1,30 @@
 {
-  "proposed-fault-atoms": [
+  "what-counts-as-a-kill-here": [
     {
-      "text": "Twenty-six proposed mutation rows identify possible faults and executable witness candidates. Corrected issuer, exact target, outsider, terminal withdrawal and fresh-identity cases refine those proposals. No mutation campaign was executed.",
+      "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence. The mutated definition must elaborate first, so what is measured is a semantic change rather than a syntax error; and the kill must land on an obligation rather than on a restatement, so each mutation carries its effect lemma with it. The first run of this campaign killed all four at the effect lemmas — a near-tautological result, discarded rather than reported. The campaign mutated the model at the exact revision recorded on the page: a campaign is evidence about the definitions it broke, so a later model is a later campaign rather than a carried-forward result.",
       "pause": 400
     }
   ],
-  "coverage-boundary": [
+  "the-mutants": [
     {
-      "text": "The rows are author proposals, not an accepted exact denominator. Compound families still need splitting. The whole-transition terminal-custody statement remains missing, and deployed identity and approval lifecycle choices remain open.",
+      "text": "Four mutations, each executed: a second active token, an absent token for a key just made active, a read that will attest an active key, and an update that leaves the absent token outstanding. All four were killed, and the positive control shows the same obligations hold on the unmutated tree.",
+      "pause": 400
+    }
+  ],
+  "why-the-kills-land-where-they-do": [
+    {
+      "text": "Every promise is read off one invariant, which the model proves survives each of the seven edges, so a mutation that breaks a supply law breaks that invariant conjunct and everything below it. The read mutation is the one worth reading closely: it breaks no arithmetic, it breaks a derivation — the attestation can no longer be shown sound, which is exactly the soundness law failing.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "Four mutants are four points, not a mutation score. A killed mutant shows the proofs constrain the mutated definition; it does not show the definition is the right one.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "mutants.md",
-    "sha256": "ae7e10320401b8aa14421a9c8da1760c2950c31dc2c812199ea3687a223a9386"
+    "sha256": "956472857ffd2e43a7955070ece08052dd8574caaba80e186ba0c32056ba9073"
   }
 }

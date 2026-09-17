@@ -17,13 +17,17 @@ from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Re-frozen on integrating the reviewed naming hook/empty-fold
-        # Lean (four theorems; see test_leanscan re-freeze note):
-        # 113 = 109 + 4, unclassified unchanged.
+        # Re-frozen on #156's registry-mode model: 79 = 42 manifest-bound + 37
+        # unclassified. The 42 are the registry's 24 statements plus naming's 7,
+        # its lifecycle's 6 and its wire encoding's 5; the 37 are the lemmas and
+        # effect equations they are proved from. The previous base was
+        # 196 = 113 + 83 and is retired with the model it described — the
+        # disposition of all 44 base declarations is in docs/model-ledger.md
+        # (1 carried, 3 renamed, 40 retired).
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 113)
-        self.assertEqual(inv.unclassified, 83)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 196)
+        self.assertEqual(inv.manifest_bound, 42)
+        self.assertEqual(inv.unclassified, 37)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 79)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
@@ -31,11 +35,11 @@ class RealInventoryTest(unittest.TestCase):
         # is the assertion. Assert a couple of exact identities too.
         inv = build_inventory(REPO_ROOT)
         by_name = inv.by_name()
-        self.assertIn("Singular.Statements.supply_conservation", by_name)
-        self.assertIn("Singular.Inv.fresh_id", by_name)
-        self.assertEqual(by_name["Singular.Inv.fresh_id"].classification, "unclassified")
+        self.assertIn("Singular.Statements.biconditional_supply_sync", by_name)
+        self.assertIn("Singular.step_ok_consistent", by_name)
+        self.assertEqual(by_name["Singular.step_ok_consistent"].classification, "unclassified")
         self.assertEqual(
-            by_name["Singular.Statements.supply_conservation"].classification,
+            by_name["Singular.Statements.biconditional_supply_sync"].classification,
             "manifest-bound",
         )
 
@@ -48,11 +52,13 @@ class FixtureInventoryTest(unittest.TestCase):
             inv = build_inventory(root)
             names = inv.by_name()
             self.assertEqual(inv.manifest_bound, 5)
-            self.assertEqual(inv.unclassified, 3)
+            self.assertEqual(inv.unclassified, 5)
             self.assertIn("Singular.Statements.greeter_iff", names)
             self.assertIn("Singular.helper.dotted", names)
             self.assertIn("Singular.primed_helper'", names)
             self.assertIn("Singular.attributed_zero", names)
+            self.assertIn("Singular.find?_filter_key_ne", names)
+            self.assertIn("Singular.entry_key", names)
 
     def test_manifest_drift_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:

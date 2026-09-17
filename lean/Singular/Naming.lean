@@ -1,20 +1,17 @@
 import Singular.Model
 
-/-! First-release naming profile on top of the generic registry model.
+/-! First-release naming profile on top of the registry-mode model.
 This is an explicit, unaccepted candidate profile: certification proves allowed
-request and initial construction only, never person identity, entitlement to a
-spelling, or ownership of a payment destination. The demo spelling table is a
-frozen finite-model fixture, not a name normalization standard, and the fixture
-values are fixtures, not product or economic policy.
+request construction only, never person identity, entitlement to a spelling, or
+ownership of a payment destination.
 
-The naming transition accepts the generic action shape. Certified Insert
-queueing and its fold follow generic registry uniqueness (`occupied-key` is
-decided only when a certified Insert folds; approval never occupies a
-spelling). The profile defines no delete, release, reuse, or maintenance
-transition: every other generic action kind is refused with `naming-no-delete`.
-Naming fixtures are first-class fields carried beside the registry; they are
-never packed into the generic `Output.datum` payload, which stays the generic
-demo payload. -/
+The record UTxO holds the active token and the trie carries only `Active`
+(NM1); `maintain` and `recover` never touch the trie (NM2); retirement
+completion is `updateTerminal` (NM3); the approval policy follows R-NM4 for all
+six edges, with `updateTerminal` certified by the committed recovery key
+revealed and signing, or by a distinct-member quorum — never by the current
+control key alone (operator ruling). Naming fixtures are first-class fields
+carried beside the registry; nothing an application stores is in the trie. -/
 namespace Singular
 open Lean
 
@@ -24,17 +21,8 @@ def demoSpellings : List (String × Nat) := [("alice", 42)]
 /-- The frozen demo key behind the `alice` spelling. -/
 def aliceKey : Nat := 42
 
-/-- Resolve a demo spelling to its registry key, or `none` when unknown.
-Unknown spellings are refused by the spelling binding, never silently mapped. -/
+/-- Resolve a demo spelling to its registry key, or `none` when unknown. -/
 def spellingKey (spelling : String) : Option Nat := demoSpellings.lookup spelling
-
-/-- Frozen generic demo payload constants reused for the naming proposal's
-generic output. They are demo fixtures inherited from the generic profile, not
-naming economics. -/
-def demoDestination : Nat := 50
-def demoDatum : Nat := 100
-def demoValue : Nat := 20
-def demoRefundAddress : Nat := 60
 
 structure RetirementQuorum where
   members : List (List Nat)
@@ -94,9 +82,7 @@ def encodeAddress (address : NamingAddress) : Option (List Nat) := do
 def credentialFromBit (bit : Nat) : NamingCredential :=
   if bit == 0 then .paymentKey else .script
 
-/-- Decode only the two frozen supported Conway forms. Callers compare the
-decoded value with the supplied value and re-encode it, excluding alternate
-encodings of one address. -/
+/-- Decode only the two frozen supported Conway forms. -/
 def decodeAddress (bytes : List Nat) : Option NamingAddress := do
   let header ← bytes.head?
   let payload := bytes.drop 1
@@ -169,6 +155,12 @@ def freshControllerCommitment : NextCommitment :=
   { digest := [21, 97, 193, 91, 73, 128, 133, 127, 176, 110, 74, 179, 92, 201, 188, 236,
     175, 9, 11, 10, 168, 189, 239, 25, 246, 51, 21, 101, 163, 51, 32, 79] }
 
+/-- A deliberately wrong commitment for addresses outside the fixture world:
+the model's stand-in for a hash over the wrong domain. -/
+def wrongDomainCommitment : NextCommitment :=
+  { digest := [102, 167, 149, 152, 220, 195, 145, 245, 46, 220, 238, 211, 46, 4, 208, 40,
+    206, 250, 110, 82, 65, 224, 146, 63, 163, 48, 134, 161, 196, 163, 28, 110] }
+
 structure NamingFixture where
   paymentDestination : Option NamingAddress
   controlAddress : NamingAddress
@@ -180,211 +172,268 @@ structure NamingFixture where
 must be absent or distinct from the control address. -/
 def wellFormedFixture (fixture : NamingFixture) : Bool :=
   paymentKeyAddress fixture.controlAddress && wellFormedCommitment fixture.nextControlCommitment &&
-  wellFormedQuorum fixture.retirementQuorum &&
-  match fixture.paymentDestination with
-  | none => true
-  | some destination => canonicalAddress destination && destination != fixture.controlAddress
+    wellFormedQuorum fixture.retirementQuorum &&
+    match fixture.paymentDestination with
+    | none => true
+    | some destination => canonicalAddress destination && destination != fixture.controlAddress
 
-/-- The frozen first-release demo fixture for `alice`. Values are finite-model
-fixtures, not product or economic policy. -/
 def aliceFixture : NamingFixture :=
   { paymentDestination := some destinationAddress, controlAddress := controllerAddress,
     nextControlCommitment := nextControllerCommitment,
     retirementQuorum := { members := [quorumKeyHash 1, quorumKeyHash 29, quorumKeyHash 57], threshold := 2 } }
 
-/-- A competing well-formed demo fixture for a second `alice` claim. -/
 def otherFixture : NamingFixture :=
   { paymentDestination := none, controlAddress := otherControllerAddress,
     nextControlCommitment := nextControllerCommitment,
     retirementQuorum := { members := [quorumKeyHash 85, quorumKeyHash 113], threshold := 2 } }
 
-/-- A malformed demo fixture: the payment destination equals the control
-address, so certification must refuse it. -/
 def malformedFixture : NamingFixture :=
   { aliceFixture with paymentDestination := some controllerAddress }
 
-/-- A queued certified Insert for a fixture spelling. Two claims may share a
-spelling; uniqueness is decided only at fold. -/
-structure NamingClaim where
-  requestId : Nat
-  spelling : String
-  key : Nat
-  fixture : NamingFixture
-  deriving Repr, BEq, DecidableEq, ToJson
-
-/-- An active naming record: the folded key, its minted representative, and the
-certified fixture carried unchanged from the claim. -/
+/-- An active naming record: the record UTxO holds the active token (NM1) and
+carries the certified fixture. `output` is the output the booking request
+named. -/
 structure NamingRecord where
-  outputId : Nat
-  key : Nat
-  representative : Representative
+  key : Key
+  output : Nat
   fixture : NamingFixture
   deriving Repr, BEq, DecidableEq, ToJson
 
 structure NamingState where
-  registry : State := {}
-  claims : List NamingClaim := []
-  records : List NamingRecord := []
-  deriving Repr, BEq, DecidableEq, ToJson
+  registry : RegistryState
+  records : List NamingRecord
+  deriving BEq, DecidableEq
 
-structure NamingResult where
-  state : NamingState
-  logical : List Delta := []
-  deriving Repr, BEq, DecidableEq, ToJson
+/-- The commitment-adapter contract at the model/cryptography boundary: the
+executable consumer supplies the BLAKE2b-256 implementation; the model fixes
+the complete preimage and output shape. -/
+abbrev RecoveryHasher := NamingAddress → NextCommitment
 
-/-- Authenticated naming observation. `active` carries the four certified
-fixture fields. A pending claim reserves nothing: it observes as `pending`. -/
-inductive NamingObservation where
-  | unauthenticated | absent | pending | retired
-  | active (fixture : NamingFixture)
+/-- The trusted commitment adapter used by the concrete Lean examples: every
+fixture address commits to `wrongDomainCommitment` unless it is the committed
+recovery key. It is not the browser implementation and makes no cryptographic
+correctness claim. -/
+def fixtureHasher : RecoveryHasher := fun address =>
+  if address == nextControllerAddress then nextControllerCommitment
+  else if address == freshControllerAddress then freshControllerCommitment
+  else wrongDomainCommitment
+
+/-- The revealed key commits exactly like the record's commitment: the key
+whose hash the record commits to, revealed and signing exactly as `Recover`
+proves it. -/
+def revealsCommittedRecoveryKey (hasher : RecoveryHasher) (fixture : NamingFixture)
+    (revealed : Option NamingAddress) : Bool :=
+  match revealed with
+  | some address => (hasher address).digest == fixture.nextControlCommitment.digest
+  | none => false
+
+/-- A distinct-member quorum: signed members deduplicated, threshold met. -/
+def quorumMet (quorum : RetirementQuorum) (signatures : List (List Nat)) : Bool :=
+  (quorum.members.filter signatures.contains).eraseDups.length >= quorum.threshold
+
+/-- A Nat rendered as a 28-byte little list; a model stand-in for an address
+rendering. -/
+def toBytes28 (n : Nat) : List Nat := n :: List.replicate 27 0
+
+/-- A Nat fallback rendering of an address (its first byte); the demo
+controller owns the key, so the context binds by fixture, not by rendering. -/
+def List.toNatFallback (bs : List Nat) : Nat := bs.headD 0
+
+/-- The naming context a certification reads: the controller who will own the
+record, the refund address the `insertAbsent` request named (read from the
+cage custody datum), and the record's fixture. -/
+structure NamingCtx where
+  controllerBytes : List Nat
+  refundBytes : List Nat
+  fixture : NamingFixture
   deriving Repr, BEq, DecidableEq
 
-instance : ToJson NamingObservation where
-  toJson
-    | .unauthenticated => Json.str "unauthenticated"
-    | .absent => Json.str "absent"
-    | .pending => Json.str "pending"
-    | .retired => Json.str "retired"
-    | .active f => Json.mkObj [("status", Json.str "active"), ("fixture", toJson f)]
+/-- Option elimination with an observable reason. -/
+def Option.toExcept (o : Option α) (why : String) : Except String α :=
+  match o with | some a => .ok a | none => .error why
 
-/-- The first fresh identifier after every identifier used so far. -/
-def freshId (s : State) : Nat := s.used.foldl max 0 + 1
-
-/-- Fold bookkeeping: move each folded claim into an active naming record,
-carrying its certified fixture fields unchanged. -/
-def migrateClaims (state : NamingState) (items : List FoldItem) (registry : State) : NamingState :=
-  { state with registry := registry, claims := state.claims.filter (fun c => !items.any (fun i => i.request == c.requestId)), records := state.records ++ items.filterMap (fun i => match state.claims.find? (fun c => c.requestId == i.request) with | some c => some { outputId := i.outputId, key := c.key, representative := representative registry c.key, fixture := c.fixture } | none => none) }
-
-/-- The naming transition. Only certified Insert queueing (`createInsert`) and
-the certified Insert fold follow the generic registry; every other generic
-action kind — release, withdrawal, evolution, withdrawal-approval minting,
-outsider requests, token movement, custody escape, and a fold of a terminal
-request — is refused with `naming-no-delete`. -/
-def namingStep (state : NamingState) (action : Action) : Except String NamingResult := do
-  match action with
-  | .createInsert r cert w =>
-    let result ← step state.registry (Action.createInsert r cert w)
-    pure { state := { state with registry := result.state }, logical := result.logical }
-  | .fold items mint net w =>
-    let terminal := items.any fun i =>
-      match state.registry.requests.find? (fun q => q.id == i.request) with
-      | some r => r.operation != Operation.insert
-      | none => false
-    if terminal then throw "naming-no-delete"
-    let result ← step state.registry (Action.fold items mint net w)
-    pure { state := migrateClaims state items result.state, logical := result.logical }
-  | _ => throw "naming-no-delete"
-
-/-- The certified Insert action a naming queue would submit: a native proposal
-for the spelling's key carrying the frozen generic demo payload, approved and
-witnessed for the application mint. -/
-def namingQueueAction (state : NamingState) (key : Nat) : Action :=
-  let output : Output :=
-    { representative := representative state.registry key, quantity := 1, destination := demoDestination, datum := demoDatum, value := demoValue }
-  let proposal : Proposal :=
-    { registry := state.registry.config.registry, key := key,
-      applicationPolicy := state.registry.config.applicationPolicy,
-      refundAddress := demoRefundAddress, initial := output,
-      scope := [(entry state.registry key).incarnation] }
-  let asset := insertAsset proposal
-  Action.createInsert { id := freshId state.registry, operation := Operation.insert, proposal := proposal, token := some asset, held := Option.none, destination := state.registry.config.requestAddress, authenticatedOrigin := true } { asset := asset, accepted := true } { applicationMint := true }
-
-structure NamingQueueOutcome where
-  requestId : Nat
-  state : NamingState
-  deriving Repr, BEq, DecidableEq, ToJson
-
-/-- Validate the three naming-specific queue guards before entering the generic
-registry transition. Keeping this boundary explicit makes each refusal branch
-independently invertible. -/
-def namingQueueValidate (spelling : String) (fixture : NamingFixture)
-    (accepted : Bool) : Except String Nat :=
-  match spellingKey spelling with
-  | none => .error "unknown-spelling"
-  | some key =>
-    if !wellFormedFixture fixture then .error "invalid-fixture"
-    else if !accepted then .error "application-approval"
-    else .ok key
-
-/-- Queue a naming claim for a spelling. Refuses an unknown spelling, a
-malformed fixture, or a rejected application approval. Two queues for the same
-spelling both accept: approval reserves nothing. -/
-def namingQueue (state : NamingState) (spelling : String) (fixture : NamingFixture)
-    (accepted : Bool) : Except String NamingQueueOutcome := do
-  let key ← namingQueueValidate spelling fixture accepted
-  let id := freshId state.registry
-  let result ← namingStep state (namingQueueAction state key)
-  pure { requestId := id, state := { result.state with claims := result.state.claims ++ [{ requestId := id, spelling := spelling, key := key, fixture := fixture }] } }
-
-/-- The certified fold action for a queued Insert request. -/
-def namingFoldAction (state : NamingState) (requestId : Nat) : Except String Action :=
-  match state.registry.requests.find? (fun q => q.id == requestId) with
-  | some r => Except.ok (Action.fold [{ request := requestId, outputId := freshId state.registry, output := some r.proposal.initial }] [{ asset := representative state.registry r.proposal.key, quantity := 1 }] [] { nativeSpend := true, representativeMint := true, consumerWithdraw := true })
-  | none => Except.error "request-unavailable"
-
-/-- Fold one queued naming claim. The first valid absent-key fold accepts; a
-later certified Insert for that key is refused with `occupied-key`. -/
-def namingFoldRequest (state : NamingState) (requestId : Nat) : Except String NamingResult := do
-  let _ ← requireSome (state.claims.find? (fun c => c.requestId == requestId)) "request-unavailable"
-  let action ← namingFoldAction state requestId
-  namingStep state action
-
-/-- Authenticated naming observation of a registry key. An Over entry is
-caller-visible as retired and is never collapsed into the transient pending
-state. -/
-def namingResolve (state : NamingState) (key : Nat) (authenticated : Bool) :
-    Except String NamingObservation :=
-  if !authenticated then .ok .unauthenticated
-  else match state.records.find? (fun r => r.key == key) with
-    | some r => .ok (.active r.fixture)
-    | none =>
-      match (entry state.registry key).value with
-      | some .over => .ok .retired
-      | some .active => .ok .pending
+/-- The naming context for a key: the record's fixture and controller when the
+key is booked; the custody datum's refund address when an absence is witnessed;
+the requester otherwise. -/
+def namingContext (state : NamingState) (key : Key) (owner : List Nat) :
+    Option NamingCtx :=
+  match state.records.find? (·.key == key) with
+  | some record =>
+      some { controllerBytes := controllerAddress.bytes, refundBytes := owner
+           , fixture := record.fixture }
+  | none =>
+      match state.registry.custody.find? (·.key == key) with
+      | some entry =>
+          some { controllerBytes := owner
+               , refundBytes := toBytes28 entry.refundAddress
+               , fixture := aliceFixture }
       | none =>
-        if state.claims.any (fun c => c.key == key) then .ok .pending
-        else .ok .absent
+          some { controllerBytes := owner, refundBytes := owner
+               , fixture := aliceFixture }
 
-structure NamingReplay where
-  state : NamingState
-  records : List (Action × Except String NamingResult)
-  deriving Repr
+/-- R-NM4 (operator ruling, as amended): what naming's approval policy
+certifies on, per edge. `insertAbsent` for anyone; `updateActive` on the
+signature of the controller who will own the record; `deleteAbsent` on the
+signature of the refund address the `insertAbsent` request named; `insertActive`
+on the controller's signature; `updateTerminal` on the committed recovery key
+revealed and signing, or a distinct-member quorum — never the current control
+key alone; `deleteActive` never. Reads need no certification. -/
+def namingCertifies (hasher : RecoveryHasher) (edge : Edge)
+    (signatures : List (List Nat)) (revealed : Option NamingAddress)
+    (context : NamingCtx) : Bool :=
+  match edge with
+  | .insertAbsent => true
+  | .insertActive => signatures.contains context.controllerBytes
+  | .updateActive => signatures.contains context.controllerBytes
+  | .deleteAbsent => signatures = [context.refundBytes]
+  | .updateTerminal =>
+      revealsCommittedRecoveryKey hasher context.fixture revealed ||
+        quorumMet context.fixture.retirementQuorum signatures
+  | .deleteActive => false
+  | .witnessTerminal => true
 
-/-- Replay generic actions through the naming transition, keeping the state and
-one verdict record per action. -/
-def namingReplay (state : NamingState) (actions : List Action) : NamingReplay :=
-  match actions with
-  | [] => { state := state, records := [] }
-  | action :: rest =>
-    let verdict := namingStep state action
-    let next := match verdict with | .ok r => r.state | .error _ => state
-    let tail := namingReplay next rest
-    { state := tail.state, records := (action, verdict) :: tail.records }
+/-- The naming pinned configuration (the eight-field datum of R7). -/
+def namingConfig : Config :=
+  { root := rootOf []
+  , maxFee := 1
+  , processTime := 2
+  , retractTime := 3
+  , applicationPolicy := 7
+  , activePolicy := 8
+  , absentPolicy := 9
+  , terminalPolicy := 10 }
 
-/-- Queue a claim for the demo spelling table, keeping the pre-state on
-refusal. Demo journey driver for the frozen trace. -/
-def namingQueueState (state : NamingState) (spelling : String) (fixture : NamingFixture) :
-    NamingState :=
-  match namingQueue state spelling fixture true with
-  | .ok outcome => outcome.state
-  | .error _ => state
+/-- The naming transition: a request is admitted only if the cage admits it
+and naming's policy certifies it (R-NM4); every uncertified request is refused
+with the naming reason for its own cause, never a single catch-all.
+`deleteActive` is never certified, so naming defines no delete. -/
+def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
+    (revealed : Option NamingAddress) : Except String Result := do
+  let context ←
+    Option.toExcept (namingContext state r.key (toBytes28 r.owner)) "naming-context"
+  let signatures := match r.approval with
+    | some ap => ap.signatures
+    | none => []
+  if !(namingCertifies hasher r.edge signatures revealed context) then
+    -- One reason per cause. Naming defines no delete, so `deleteActive` keeps
+    -- the name that says so; a retirement that met neither the recovery-key nor
+    -- the quorum route is a different failure and must not wear that name.
+    throw (match r.edge with
+      | .deleteActive => "naming-no-delete"
+      | .updateTerminal => "naming-retirement-uncertified"
+      | _ => "naming-uncertified")
+  step state.registry r
 
-/-- Fold one queued claim, keeping the pre-state on refusal. Demo journey
-driver for the frozen trace. -/
-def namingFoldState (state : NamingState) (requestId : Nat) : NamingState :=
-  match namingFoldRequest state requestId with
-  | .ok result => result.state
-  | .error _ => state
+/-- The registry the naming journeys start from. -/
+def namingInitial : NamingState :=
+  { registry := { config := namingConfig, trie := [], custody := [], held := [] }
+  , records := [] }
 
-/-- The frozen naming journey, step one: the first `alice` claim queues. -/
-def claimedOnce : NamingState := namingQueueState {} "alice" aliceFixture
+/-- A naming approval minted under the pinned application policy, scoped to the
+request's tuple and carrying the signatures its policy certified it on. -/
+def namingApproval (r : Request) (signatures : List (List Nat)) : Option Approval :=
+  some { policy := namingConfig.applicationPolicy
+       , edge := r.edge
+       , key := r.key
+       , owner := r.owner
+       , destination := requestDestination r
+       , assetName := approvalAssetName r.edge r.key r.owner (requestDestination r)
+       , signatures := signatures }
 
-/-- The frozen naming journey, step two: a competing `alice` claim also queues;
-approval still reserves nothing. -/
-def claimedTwice : NamingState := namingQueueState claimedOnce "alice" otherFixture
+/-- Witness the absence of a key: `insertAbsent`, anyone, depositing at the
+refund address the witness names (Carol). -/
+def namingWitness (state : NamingState) (key : Nat) (witness : Nat) (deposit : Nat) :
+    Except String NamingState := do
+  let r : Request :=
+    ({ edge := .insertAbsent, key := key, owner := witness, refundAddress := witness
+      , deposit := deposit } : Request)
+  let ap := namingApproval r []
+  (namingStep fixtureHasher state { r with approval := ap } none).map
+    fun result => { state with registry := result.state }
 
-/-- The frozen naming journey, step three: the first claim folds and `alice`
-becomes active carrying the certified fixture. -/
-def activeOnce : NamingState := namingFoldState claimedTwice 1
+/-- Register a fresh name: `insertActive`, the controller's signature; the
+record UTxO holds the active token and the trie carries only `Active` (NM1). -/
+def namingRegister (state : NamingState) (key : Nat) (out : Nat)
+    (fixture : NamingFixture) : Except String NamingState := do
+  let r : Request :=
+    ({ edge := .insertActive, key := key
+     , owner := List.toNatFallback controllerAddress.bytes, output := out } : Request)
+  let ap := namingApproval r [toBytes28 r.owner]
+  (namingStep fixtureHasher state { r with approval := ap } none).map
+    fun result =>
+      { state with
+        registry := result.state
+        records := { key := key, output := out, fixture := fixture } :: state.records }
+
+/-- Retract a witnessed absence: `deleteAbsent`, the refund address the
+`insertAbsent` request named — the inserter only, never anyone else (R-ADA,
+R-NM4). The deposit returns to the inserter whichever way the absence ends. -/
+def namingRetract (state : NamingState) (key : Nat) : Except String NamingState := do
+  let entry ←
+    Option.toExcept (state.registry.custody.find? (·.key == key)) "custody-missing"
+  let r : Request := ({ edge := .deleteAbsent, key := key, owner := entry.refundAddress } : Request)
+  let ap := namingApproval r [toBytes28 entry.refundAddress]
+  (namingStep fixtureHasher state { r with approval := ap } none).map
+    fun result => { state with registry := result.state }
+
+/-- Book a witnessed name: `updateActive`, the controller's signature; the fold
+consumes the absent token without the witness's signature and pays the deposit
+to the refund address its custody datum records. -/
+def namingBook (state : NamingState) (key : Nat) (out : Nat)
+    (fixture : NamingFixture) : Except String NamingState := do
+  let r : Request :=
+    ({ edge := .updateActive, key := key
+     , owner := List.toNatFallback controllerAddress.bytes, output := out } : Request)
+  let ap := namingApproval r [toBytes28 r.owner]
+  (namingStep fixtureHasher state { r with approval := ap } none).map
+    fun result =>
+      { state with
+        registry := result.state
+        records := { key := key, output := out, fixture := fixture } :: state.records }
+
+/-- Retire a record: `updateTerminal`, certified by the committed recovery key
+revealed and signing, or by a distinct-member quorum — never the current
+control key alone (NM3, R-NM4 as amended). -/
+def namingRetire (state : NamingState) (key : Nat) (signatures : List (List Nat))
+    (revealed : Option NamingAddress) : Except String NamingState := do
+  let record ←
+    Option.toExcept (state.records.find? (·.key == key)) "naming-record-unavailable"
+  let r : Request :=
+    ({ edge := .updateTerminal, key := key, owner := record.output
+     , output := record.output } : Request)
+  let ap := namingApproval r signatures
+  (namingStep fixtureHasher state { r with approval := ap } revealed).map
+    fun result =>
+      { state with registry := result.state, records := state.records.filter (·.key != key) }
+
+/-- Attest a retired name: `witnessTerminal`, anyone; the Over witness is
+minted by a folded read and freely burnable. -/
+def namingAttest (state : NamingState) (key : Nat) (out : Nat) :
+    Except String NamingState := do
+  let r : Request := ({ edge := .witnessTerminal, key := key, output := out } : Request)
+  (namingStep fixtureHasher state r none).map
+    fun result => { state with registry := result.state }
+
+/-- `WellFormed` over the naming state: the registry is consistent and every
+record's key is exactly the booked active token at the record's output. -/
+def namingWellFormed (state : NamingState) : Prop :=
+  Consistent state.registry ∧
+  ∀ record ∈ state.records,
+    kindCount state.registry .active record.key = 1 ∧
+    ∃ h ∈ state.registry.held, h.key = record.key ∧ h.kind = .active ∧
+      h.output = record.output
 
 end Singular
+
+namespace Singular.Naming
+
+/-- `WellFormed` over the naming state: the registry is consistent and every
+record's key is exactly the booked active token at the record's output. -/
+def WellFormed (state : NamingState) : Prop :=
+  Consistent state.registry ∧
+  ∀ record ∈ state.records,
+    kindCount state.registry .active record.key = 1 ∧
+    ∃ h ∈ state.registry.held, h.key = record.key ∧ h.kind = .active ∧
+      h.output = record.output
+
+end Singular.Naming
