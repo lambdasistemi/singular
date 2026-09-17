@@ -136,6 +136,7 @@ emptyRegistryContext =
         , rcCageScript = Nothing
         , rcCageUtxos = []
         , rcDatums = []
+        , rcAllowInadmissible = False
         , rcRefUtxos = []
         }
 
@@ -529,6 +530,11 @@ data RegistryContext = RegistryContext
     , rcCageScript :: Maybe (Script ConwayEra)
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
     , rcDatums :: [(ByteString, PLC.Data)]
+    , rcAllowInadmissible :: Bool
+    -- ^ Build a fold even when a request takes no admissible edge, so a
+    -- row that exists to watch the chain REFUSE one can produce the
+    -- transaction it submits. An honest builder leaves this off and
+    -- fails early, naming the request.
     , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
     -- ^ Outputs carrying the fold's scripts as reference scripts. The
     -- state validator alone is fifteen kilobytes, so a fold that
@@ -564,8 +570,13 @@ registryDuties cfg pp st ctx reqUtxos =
             dest@(destAddr, destHash) = requestDestination req
             Coin held = reqOut ^. coinTxOutL
             floorAda = held - tip
-        edge <- case edgeOf op (statedBefore op) of
-            Just e -> Right e
+        case edgeOf op (statedBefore op) of
+            Nothing
+                | rcAllowInadmissible ctx ->
+                    -- The cage will refuse this, which is the point: a row
+                    -- that exists to watch the refusal needs the
+                    -- transaction built, not withheld.
+                    approvalReturn req reqOut
             Nothing ->
                 Left
                     ( "registryDuties: "
@@ -574,10 +585,11 @@ registryDuties cfg pp st ctx reqUtxos =
                         <> show key
                         <> " is not one of the seven admissible edges"
                     )
-        mints <- mintsFor edge key
-        rest <- dutiesFor edge key dest destAddr destHash floorAda
-        back <- approvalReturn req reqOut
-        pure (mints <> rest <> back)
+            Just edge -> do
+                mints <- mintsFor edge key
+                rest <- dutiesFor edge key dest destAddr destHash floorAda
+                back <- approvalReturn req reqOut
+                pure (mints <> rest <> back)
     {- An approval is not burned at the fold (D-APPROVAL), so it has to
     land somewhere. It goes back to the owner who booked it, in an output
     of its own: left to the balancer it would settle in the folder's
