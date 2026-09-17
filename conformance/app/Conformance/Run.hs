@@ -2826,7 +2826,8 @@ data FoldSpec = FoldSpec
     , fsFee :: Maybe Integer
     -- ^ @Nothing@: the caller sizes the fee in a second pass
     , fsRefunds :: [Integer]
-    -- ^ explicit per-request refunds; @[]@: derive (bond - tip share -
+    -- ^ explicit per-request refunds, one per request, of which only the
+    -- UNPROCESSED ones are emitted; @[]@: derive (bond - tip share -
     -- fee share, first request carries the remainder)
     , fsStateOverride :: Maybe OnChainTokenState
     -- ^ datum for the new state output; @Nothing@: preserve the old
@@ -2999,11 +3000,6 @@ assembleFoldSpec env fs = do
                    in reqVal - tipAmount
                 | (_, o) <- fsReqs fs
                 ]
-    {- The refund a rejection owes, carrying back whatever the request
-    held besides ada — which is the approval that certified its edge. A
-    rejected booking is not folded, so its approval is not spent: it
-    returns to the owner with the deposit, and the transaction conserves
-    its value. -}
     {- The refunds a fold owes: one per request it does NOT process.
     A processed request's deposit goes to the carriers its edge creates and
     its approval returns through them; an unprocessed one — rejected, or
@@ -4101,14 +4097,14 @@ runCG15 env = do
 {- | CG19: Refund routing (R11_contribute_value, R11_retract_value;
 upstream cardano-mpfs-onchain#101). Two requests with unequal
 bonds (5 ada from the genesis wallet, 3 ada from a second wallet)
-are folded with the refund OUTPUTS at the correct owners in the
-correct order but the AMOUNTS crossed. The accepted candidate does
-not enforce Update-fold refund routing (state.ak sumRefunds runs
-only when Rejected actions create owner payouts): crossed and
-shortfall both accept. The held observations are the acceptances
-with their transactions; an exact-routing control accepts beside
-them. Row contract is observe-and-report; recorded held pending
-Q-002, never a pass.
+are REJECTED in phase 3, with the refund OUTPUTS at the correct
+owners in the correct order but the AMOUNTS crossed. `sumRefunds`
+runs exactly when Rejected actions create owner payouts, so this
+row is where refund routing is decided at all. Whatever the
+candidate does with the crossed pair is recorded with its
+transaction; an exact-routing control accepts beside it. Row
+contract is observe-and-report; recorded held pending Q-002, never
+a pass.
 -}
 runCG19 :: Env -> IO ()
 runCG19 env = do
@@ -4294,14 +4290,13 @@ runCG19 env = do
                 "control"
                 ( "CG19 control: correctly routed refunds accepted (tx="
                     <> txIdHex signedA
-                    <> ") — Update refund routing unenforced either way"
+                    <> ") — routing to the owners a rejection owes"
                 )
-    -- Rejected-action refund-floor control (separate instrument,
-    -- NOTE-073/181): the processed legs above cannot test rejected
-    -- floors (Update leaves the owner list empty). The generic4
-    -- processed shortfall that accepted (97c2feae) is retained as
-    -- REJECTED broken-instrument evidence: it targeted an abolished
-    -- rule and is superseded by this control, not silently dropped.
+    -- Rejected-action refund floor, as a separately named instrument
+    -- (NOTE-073/181): the legs above cross two owners' amounts against
+    -- each other, which says nothing about whether either clears the
+    -- floor it is owed. This control arms an underpayment directly — one
+    -- owner a thousand lovelace short — beside a funded counterpart.
     runCG19RejectedFloor env cage tid
 
 -- | CG19-rejected-floor control (NOTE-073/074/077/080/181, E18 disposition):
