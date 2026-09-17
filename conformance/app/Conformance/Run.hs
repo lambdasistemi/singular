@@ -2849,10 +2849,10 @@ data FoldSpec = FoldSpec
     -- ^ validity upper bound; @Nothing@: earliest request deadline
     , fsLower :: Maybe SlotNo
     , fsRefs :: [(TxIn, TxOut ConwayEra)]
-    -- ^ The cage's reference outputs, copied from it by `rowSpec`.
-    -- ^ validity lower bound; @Nothing@: no lower bound (genesis).
-    -- Phase-3 Rejected folds set a lower bound past the latest
-    -- request deadline (NOTE-073/181 rejected-floor control).
+    -- ^ The cage's reference outputs, published once at its boot and
+    -- copied here by `rowSpec`. Reading them rather than asking for them
+    -- matters: asking publishes, and five awaited publications inside a
+    -- fee loop spend the row's validity window.
     }
 
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
@@ -2866,7 +2866,8 @@ assembleFoldSpec env fs = do
     pp <- Cage.queryProtocolParams prov
     funder <- largestWalletUtxo prov
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
-    mapM_ (requireAdaOnly . snd) (fsReqs fs)
+    -- #157: a booked request carries the approval that certifies its
+    -- edge, so it is no longer ada-only.
     -- NOTE-002: the request address is shared by every request ever
     -- parked for this cage, so a fold asserts that every request it
     -- consumes carries THIS cage's token — the extent is the
@@ -2973,13 +2974,19 @@ assembleFoldSpec env fs = do
                    in reqVal - tipAmount
                 | (_, o) <- fsReqs fs
                 ]
+    {- The refund a rejection owes, carrying back whatever the request
+    held besides ada — which is the approval that certified its edge. A
+    rejected booking is not folded, so its approval is not spent: it
+    returns to the owner with the deposit, and the transaction conserves
+    its value. -}
+    refundOuts :: [Integer] -> [TxOut ConwayEra]
     refundOuts explicit =
         [ mkBasicTxOut
             ( addrFromKeyHashBytes
                 (network (fsCfg fs))
                 (extractOwnerBytes o)
             )
-            (MaryValue (Coin c) mempty)
+            (MaryValue (Coin c) (MultiAsset (rawAssets o)))
         | (c, (_, o)) <- zip explicit (fsReqs fs)
         ]
     makeStateOut oldState =
@@ -3073,8 +3080,6 @@ assembleFoldSpec env fs = do
     harnessSigners :: [KeyHash Guard]
     harnessSigners =
         [addrWitnessKeyHash (addrKeyHashBytes genesisAddr)]
-    requireAdaOnly out =
-        require "hand-build: request carries tokens" (adaOnly out)
     adaOnly out = case out ^. valueTxOutL of
         MaryValue _ (MultiAsset ma) -> Map.null ma
     requestTokenMatches out = case extractCageDatum out of
@@ -3094,7 +3099,12 @@ assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
     go n fee = do
         tx <- assembleFoldSpec env fs{fsFee = Just fee}
         pp <- Cage.queryProtocolParams (envProv env)
-        let Coin est = estimateMinFeeTx pp tx 1 0 0
+        -- Conway charges for the reference scripts a transaction reads,
+        -- by their size. Estimating against zero of them stops this loop
+        -- one fee short and the node refuses the result.
+        let refs = fsRefs fs
+        let refBytes = sum (map (refScriptSize . snd) refs)
+            Coin est = estimateMinFeeTx pp tx 1 0 refBytes
             needed = est + 50_000
         if fee >= needed || n >= (5 :: Int)
             then pure tx
@@ -3173,41 +3183,37 @@ submitExpectRefused env row verdict marker tx = do
                     <> ") — reported, not relabelled"
                 )
 
-{- | One request to a row cage: submit an insert request through the
-library builder and return the live request UTxO. The request
-address is shared by every request ever parked for this cage, so
-the match is by the row's own key — never by position or by
-"whatever is pending". The datum's tip must equal the state tip
-('mkAction' checks it) and it is: the boot pinned @defaultTip@ and
-the library request carries the same.
+{- | Book one absence on a row cage's registry (#157 A-009, D-001).
+
+The issue-70 rows used to create a bare request: no destination, no
+approval, and a value the leaf codec does not admit. A request like that is
+not a registry-mode booking at all, and a fold of it could only ever be
+refused. Every row request is now the insertAbsent edge — the one edge that
+needs no signature, because anyone may witness that a name is free — with
+the deposit's refund address as its destination and the approval that
+certifies it riding along.
+
+The key is the row's own; the value is the absent leaf, because that is
+what an absence witness says.
 -}
 rowRequestInsert :: Env -> RowCage -> ByteString -> ByteString -> IO (TxIn, TxOut ConwayEra)
-rowRequestInsert env cage key val = do
-    cfg <- pure (rcCfg cage)
+rowRequestInsert env cage key _val = do
+    let cfg = rcCfg cage
     tid <- cageTid cage
-    unsigned <-
-        requestInsertImpl cfg (envProv env) (defaultTip cfg) tid key val genesisAddr
-    _ <- submitWithGenesis (envSubmit env) unsigned
-    reqUtxos <- pendingRequests env cage
-    let mine =
-            [ u
-            | u <- reqUtxos
-            , requestKeyOf (snd u) == Just key
-            ]
-    case mine of
-        [u] -> pure u
-        other ->
-            failWith
-                ( "expected exactly one pending request for the row's key, \
-                   \found "
-                    <> show (length other)
-                )
-  where
-    requestKeyOf out = case extractCageDatum out of
-        Just (RequestDatum rq) -> Just (requestKey rq)
-        _ -> Nothing
-
--- | The state UTxO of a row cage, read from the chain.
+    dest <- edgeDestination env (OpInsert leafAbsent)
+    (reqIn, reqOut) <-
+        bookEdge
+            env
+            cfg
+            tid
+            genesisAddr
+            genesisSignKey
+            key
+            (OpInsert leafAbsent)
+            dest
+            []
+            (defaultTipCoin cfg + cgDeposit)
+    pure (reqIn, reqOut)
 cageStateUtxo :: Env -> RowCage -> IO (TxIn, TxOut ConwayEra)
 cageStateUtxo env cage = do
     tid <- cageTid cage
@@ -3394,7 +3400,6 @@ rowSpec cage tid state reqs actions root units =
 
 -- | Twice the measured units: the declared budget of a refusing
 -- fold. A cage with no measured fold yet (its rows refuse before
--- any valid fold ran) falls back to 1% of the protocol maxima: far
 -- above anything a script consumes before erroring, far below the
 -- per-purpose phase-2 ceiling, and small enough that the node's
 -- rejection payload stays inside the local channel's limits.
@@ -3570,8 +3575,29 @@ runCG09 env = do
                 , -- A rejection owes the owner input minus the tip, with no
                   -- share of the fee: the folder funds that separately.
                   fsRefunds = [reqVal - stateMaxFee oldState]
+                , -- The refusal row only has to reach its refusal; the
+                  -- control runs the fold to the end. Measured at
+                  -- (572573, 193235963), so the row's 100M cpu budget
+                  -- exhausts and the ledger reports a script failure the
+                  -- local evaluation never sees.
+                  fsUnits = ExUnits 2_000_000 600_000_000
                 }
     ctrl <- assembleFoldWithFee env ctrlSpec
+    -- Measure the control before submitting it: every purpose, with its
+    -- units or the error the ledger evaluates it to, so a refusal is read
+    -- rather than guessed at.
+    ctrlEval <- Cage.evaluateTx (envProv env) ctrl
+    mapM_
+        ( \(p, r) ->
+            emit
+                "diag"
+                ( "CG09 control "
+                    <> show p
+                    <> " => "
+                    <> either show (\(ExUnits m c) -> show (m, c)) r
+                )
+        )
+        (Map.toList ctrlEval)
     _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrl)
     emit
         "control"
