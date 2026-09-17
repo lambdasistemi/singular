@@ -1,44 +1,44 @@
 [
   {
     "name": "Singular.NamingStatements.naming_certifies_no_delete",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "21545dc78c20db852c30fa48b7fece50c77a7638c1307f3a964e2be042949704"
   },
   {
     "name": "Singular.NamingStatements.naming_delete_refused",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "c497619064de7b843deee81f3339d0629e054b29a4463a4854600b38087c7dca"
   },
   {
     "name": "Singular.NamingStatements.naming_nm4_admissions",
-    "status": "STATED",
-    "debt": "sorryAx",
-    "statementSha256": "4a624d346c20af716e1d1d2e686e387f076bd204dc8f4de08bdaf5774bca9bc2"
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9ceae1055a1f5e64cc5f6a70e0b3f602d495b38b7b386da4a9ad367d8a194eed"
   },
   {
     "name": "Singular.NamingStatements.naming_control_key_alone_never_retires",
-    "status": "STATED",
-    "debt": "sorryAx",
-    "statementSha256": "096a2db3d199abe665d2535fb085f43332600df3ce011dd5b3f7f365b013028e"
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7d28da09ae9ddefe26a63b2d38b7e8b83757d81e71a9207c9cde3d19ee027721"
   },
   {
     "name": "Singular.NamingStatements.naming_retract_only_inserter",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "8f7cded95e2061d0cf550914228bd42416d62b0e7093894d568fbf40d81484b4"
   },
   {
     "name": "Singular.NamingStatements.naming_recovery_commitment_binding",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "1851a02a41da77c79371089bdf92167669b820d40190c32846e3d954694363d1"
   },
   {
     "name": "Singular.NamingStatements.naming_wellformed_initial",
-    "status": "STATED",
-    "debt": "sorryAx",
+    "status": "PROVED",
+    "debt": "none",
     "statementSha256": "437a1a078da1100208d8b6e384ed102cd917f64b020c6d2a1286f10b300cdc9a"
   }
 ]

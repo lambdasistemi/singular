@@ -135,6 +135,23 @@ def readRows : List Case :=
       ({ edge := .witnessTerminal, key := 42, output := 700 } : Request)
   ]
 
+-- GC: the custody census (D-CUST). An absent token lives in the cage's own
+-- custody, so the two edges that consume one are refused when it is missing
+-- even though the leaf says absent, and the census is exactly the outstanding
+-- absent tokens.
+def custodyRows : List Case :=
+  let absentNoCustody : RegistryState :=
+    { (witnessed s0 42) with custody := [] }
+  [ runCase "GC01-update-active-without-custody" false "custody-missing"
+      absentNoCustody (req .updateActive 42 42 555)
+  , runCase "GC02-delete-absent-without-custody" false "custody-missing"
+      absentNoCustody (req .deleteAbsent 42 91 0)
+  , runCase "GC03-update-active-with-custody" true "" (witnessed s0 42)
+      (req .updateActive 42 42 555)
+  , runCase "GC04-delete-absent-with-custody" true "" (witnessed s0 42)
+      (req .deleteAbsent 42 91 0)
+  ]
+
 -- fold-level rows: zero batch, mint mismatch, read inside batch at position
 def foldRows : List (String × Bool × String) :=
   [ ("GF01-empty-fold-refused", false, "empty-fold")
@@ -185,7 +202,7 @@ def configRow : Bool :=
   | .error _ => false
 
 def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
-  accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows
+  accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
 
 def caseJson (c : Case) : Json :=
   Json.mkObj [("id", toJson c.id), ("status", toJson c.status),

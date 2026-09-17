@@ -14,7 +14,7 @@ namespace NamingStatements
 the profile defines no delete. -/
 theorem naming_certifies_no_delete (hasher : RecoveryHasher) (signatures : List (List Nat))
     (revealed : Option NamingAddress) (context : NamingCtx) :
-    namingCertifies hasher .deleteActive signatures revealed context = false := rfl
+    namingCertifies hasher .deleteActive signatures revealed context = false := by rfl
 
 /-- **naming_delete_refused** — a `deleteActive` request never folds through
 the naming transition, whatever the state. -/

@@ -552,6 +552,94 @@
         "reason": "read-unknown"
       },
       "status": "modeled"
+    },
+    {
+      "expectedAccept": false,
+      "expectedReason": "custody-missing",
+      "id": "GC01-update-active-without-custody",
+      "result": {
+        "accepted": false,
+        "reason": "custody-missing"
+      },
+      "status": "modeled"
+    },
+    {
+      "expectedAccept": false,
+      "expectedReason": "custody-missing",
+      "id": "GC02-delete-absent-without-custody",
+      "result": {
+        "accepted": false,
+        "reason": "custody-missing"
+      },
+      "status": "modeled"
+    },
+    {
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GC03-update-active-with-custody",
+      "result": {
+        "accepted": true,
+        "state": {
+          "custody": [],
+          "held": [
+            {
+              "key": 42,
+              "kind": "active",
+              "output": 555
+            }
+          ],
+          "keys": [
+            [
+              42,
+              {
+                "known": {
+                  "s": "active"
+                }
+              }
+            ]
+          ],
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GC04-delete-absent-with-custody",
+      "result": {
+        "accepted": true,
+        "state": {
+          "custody": [],
+          "held": [],
+          "keys": [
+            [
+              42,
+              "unknown"
+            ]
+          ],
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            123,
+            168,
+            26,
+            154
+          ]
+        }
+      },
+      "status": "modeled"
     }
   ],
   "codec": [
@@ -592,7 +680,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "0eaad361a598641a927b9bd0965de318d4f7db2c3499c71f05a2450661d907ff",
+  "corpusSourceSha256": "5bec044aaff3a15ac0a328ea3f070f093b7cb5d93e0eac5f3e0d68bbd72f5b08",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -644,17 +732,17 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "846b447858874b565af85b694a4acd915f7727f556228ae7f1ef3a88dc070b97",
-  "payloadSha256": "07d21a99fcc2c492e3a7a165c72371ff61c83db05f343daad0e30c55359dbb62",
+  "modelSha256": "ac89bfdf8f0e01b3b5da226687f2a79afc905621885585e0a5d35a3bcd0fd078",
+  "payloadSha256": "359d8b34980d6eaae76ac698c56350ff74689fe9a7f44bc1a692d7245f07d8b0",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "0eaad361a598641a927b9bd0965de318d4f7db2c3499c71f05a2450661d907ff",
+    "lean/Main.lean": "5bec044aaff3a15ac0a328ea3f070f093b7cb5d93e0eac5f3e0d68bbd72f5b08",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "e2498d0873d9c3777e0b456a38bd51e11c5c54c67529023ad30cecc439c49c78",
-    "lean/Singular/Model.lean": "846b447858874b565af85b694a4acd915f7727f556228ae7f1ef3a88dc070b97",
-    "lean/Singular/Statements.lean": "72cf31ecf3f260e549948fc22c4f721c0a63aa9429cdc926bf2ed8b4bafb9720"
+    "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
+    "lean/Singular/Model.lean": "ac89bfdf8f0e01b3b5da226687f2a79afc905621885585e0a5d35a3bcd0fd078",
+    "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
   },
-  "statementsSha256": "72cf31ecf3f260e549948fc22c4f721c0a63aa9429cdc926bf2ed8b4bafb9720",
-  "theoremManifestSha256": "39123b424130ac1fbef7baed19a75a9d96dee295de11d253c4db63edc995566c"
+  "statementsSha256": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
+  "theoremManifestSha256": "dbacef0b39b90bb5590c6f6ff47a379927effc8820558c30d10b3208b3600a4e"
 }

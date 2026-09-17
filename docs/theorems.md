@@ -1,57 +1,99 @@
 # Theorem manifest
 
-As a proof reviewer, use this register to identify exactly which statements were supplied, that each one is proved, and from which axioms. Each declaration retains its exact qualified name and statement digest so that a changed or missing obligation can be detected.
+As a proof reviewer, use this register to identify exactly which statements the
+registry-mode model supplies, that each one is proved, and from which axioms.
+Every declaration keeps its qualified name and a digest of its statement text, so
+a changed or missing obligation is detectable rather than merely unlikely.
 
-All 41 declarations are **PROVED**. The proofs are in [Statements.lean](../lean/Singular/Statements.lean) and draw on [Lemmas.lean](../lean/Singular/Lemmas.lean); the statement text of every declaration is unchanged since it was frozen, so every digest below equals the one recorded while the statements were admitted. The executable source-derived manifest is [theorem-debt.json](../lean/theorem-debt.json). The bounded parser checks exact qualified identities and normalized statement hashes, derives each status from the proof text, and rejects unlisted holes, axioms, admit and unsafe declarations. A compiled gate in [Audit.lean](../lean/Singular/Audit.lean) runs while the library builds: it collects the axioms of every theorem in the frozen module and fails the build if any lies outside `propext`, `Classical.choice` and `Quot.sound`. The model check cross-checks that compiled report against the manifest. Re-admitting one theorem turns the build red; that control was exercised before the proofs were recorded. This is an identity and axiom check, not a semantic completeness audit: the proofs establish properties of the model, not that the model is the right model.
+All 24 declarations of the registry's own statement module are **PROVED**
+from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
+nothing else. The naming instance adds 7, its lifecycle 6
+and its wire encoding 5, for **42** in total, each with its own
+manifest and its own compiled gate.
+
+## What the eleven promises are
+
+The interface states eleven guarantees the registry makes for *every*
+application, and the model proves each one over states reachable from genesis by
+folds. Reachability is a hypothesis, not a weakening: over an arbitrary `State`
+value the supply laws are simply false.
+
+```mermaid
+flowchart TD
+    G["Reachable state<br/>(genesis, closed under accepted folds)"] --> C["Consistent:<br/>root commits the map,<br/>supply laws, custody soundness"]
+    C --> S3["S3 sync<br/>W1 active unique<br/>W2 absent unique<br/>W4 kinds exclude"]
+    C --> S1["S1 soundness"]
+    S1 --> S2["S2 permanence"]
+    C --> O1["O1 occupancy"]
+    O1 --> T1["T1 termination"]
+    C --> P1["P1 policing"]
+    C --> L1["L1 atomicity"]
+    S1 --> W3["W3 plurality"]
+```
+
+Every promise is reached through one invariant — `Consistent` — that the model
+proves survives each of the seven edges. That is why the statements read as
+consequences rather than as separate arguments.
 
 ## Exact declaration inventory
 
-| Qualified declaration | Statement SHA-256 | Status |
-| --- | --- | --- |
-| `Singular.Statements.insert_commitment_injective` | `acc639ab7fb78912b91ded316423260606a202c8bc9097d0c0cdb1561134e45c` | PROVED / standard axioms |
-| `Singular.Statements.action_domain_separation` | `cef29367c350e02e94d4b897691e8764274bc763e1c45f342f4565cf5194844c` | PROVED / standard axioms |
-| `Singular.Statements.createInsert_iff` | `66c628ab6c6190f045733f221a3ed5ae1791d56b6614f3089aa92a146c547588` | PROVED / standard axioms |
-| `Singular.Statements.mintWithdraw_iff` | `659faf3a5fc1ca25b31cd336cf49ca1e0af3ab0f38a773495106154376bb3438` | PROVED / standard axioms |
-| `Singular.Statements.release_iff` | `49b33cc0154a21b3396366356beab4f68bc138270c808981ab74e3a36256abd7` | PROVED / standard axioms |
-| `Singular.Statements.evolve_iff` | `f48dbb5f2ef278a5cc7cd83e910aa3c5a0cb89e0b5efc7303caa68caa2b2f120` | PROVED / standard axioms |
-| `Singular.Statements.outsider_iff` | `c4ee5484925c4d51a130c544d73195fc0fc8f1526c1311ba52c3edd81a70b79b` | PROVED / standard axioms |
-| `Singular.Statements.withdraw_iff` | `a80f2964ecef9859907ea00a24ee69b35d84919ef555f44a5913b16ea180e1f2` | PROVED / standard axioms |
-| `Singular.Statements.fold_iff` | `0c335c6e6f3902a7b8c295112f74ccd70515cbdca4715846442828e69c3538f6` | PROVED / standard axioms |
-| `Singular.Statements.moveAction_iff` | `d75ee497b27abbff41d7e2f2e4ed1c945f551381d4de9cdc2ae4e9f1beb08589` | PROVED / standard axioms |
-| `Singular.Statements.escape_refused` | `442700a69b1f5aeb6c5dfbf464b6ac7699006d4f2839e6cb630dddd3e006c908` | PROVED / standard axioms |
-| `Singular.Statements.foldOne_insert_iff` | `ebda4ebd3dedf81f497472b68a75f42f335b6746f07759f9a181d7c5ab31faba` | PROVED / standard axioms |
-| `Singular.Statements.foldOne_terminal_iff` | `2b3a1a84f9b7edba0fa0cfd9e1b01e2feef4e15907920bf17587aece09de7f49` | PROVED / standard axioms |
-| `Singular.Statements.sequential_fold_cons` | `036a059420c87f319c3fb30ea7cbb0402ac46d78d7bb24672707cd5d7e556319` | PROVED / standard axioms |
-| `Singular.Statements.supply_conservation` | `bee62c7b2b55eced153bab9f44e4709302712d388dffbac8524695ff49231e11` | PROVED / standard axioms |
-| `Singular.Statements.over_terminal` | `27e06f051360a1f456719d02c0540fb6f8f7c06a41719cfc5bf0ee1fdc38ef0a` | PROVED / standard axioms |
-| `Singular.Statements.over_no_representative` | `6958c0e472a303e62408ba9d84bb3faa5cc30a4d87beae6ec9f5caf7666eafdf` | PROVED / standard axioms |
-| `Singular.Statements.pending_insert_no_representative` | `9ef17faaa9f2b361bbe0773b3afdec07c8d24acf928d3bce096cc943c184a740` | PROVED / standard axioms |
-| `Singular.Statements.minting_requires_configured_issuer` | `60eb0ef6f74924fcf635dfc22ed65710b8e6762f94393e748718812aede9dbfa` | PROVED / standard axioms |
-| `Singular.Statements.withdrawal_preserves_registry_supply` | `d278087ed94e0f538ccba5a04a94e1089c39774d069dc580091f2a38dd11e5b7` | PROVED / standard axioms |
-| `Singular.Statements.exact_withdraw_scope` | `124546ee7fbb4379968ce1bccc7ba801c567cc09a699c52246cfdd6eb0d0499d` | PROVED / standard axioms |
-| `Singular.Statements.local_evolution_registry_unchanged` | `b9301d1fa5ff7cf94d1c3b7c1b40e8386bf6be04e9e36dc543080b7b9cb0cd54` | PROVED / standard axioms |
-| `Singular.Statements.release_is_operation_specific` | `643ec0b79778c3ba900aeca9063cedf21ab69e4dfc91779d0dd08d2afcd160d9` | PROVED / standard axioms |
-| `Singular.Statements.release_removes_application_custody` | `9dd3fc799f072da1b92138fffb41fea7d6f588d25e7287064b5bed244fc6fbbd` | PROVED / standard axioms |
-| `Singular.Statements.request_single_spend` | `ae3f74db25591349b0a826095d304480afb889b08bb342657bac4883304c2dca` | PROVED / standard axioms |
-| `Singular.Statements.approval_scope_checked` | `7ec380d3b33906216bfcf9b744ceb1f9e230e3b876075121992cb574fc8b67da` | PROVED / standard axioms |
-| `Singular.Statements.outsider_not_admitted` | `e8c0f448671514d014ad96351044f4aba210abdd95d32589a4306b0f980fa447` | PROVED / standard axioms |
-| `Singular.Statements.native_witness_even_zero_net` | `d9ea77d84e54a54d62703fc9a00d03c722761992cc9f1ae036f01404a718135c` | PROVED / standard axioms |
-| `Singular.Statements.nonzero_action_invokes_policy` | `aa81ba4d2e49f07948dcd3d24d53a9f8137d5a5abc03dac2a7f2ee9c028dec00` | PROVED / standard axioms |
-| `Singular.Statements.existing_action_does_not_refresh_scope` | `bf5af377450b8b506405e9b9a85a166d19f72fcfc52722bbb8bf9e54b7e2f15f` | PROVED / standard axioms |
-| `Singular.Statements.resolve_unauthenticated` | `4c95c9efca592a49413037e25e7c63105b93eec86d3ec970e77db0d33bd86c51` | PROVED / standard axioms |
-| `Singular.Statements.resolve_absent` | `2205bd05ac27a0844d6628edad2b90ebebd00832c8dd6c950d639ec87c0d378b` | PROVED / standard axioms |
-| `Singular.Statements.resolve_over` | `d3ad85aa68922db7bb461886a83e633ae46ddc1781ab7471d9b44af78a8b42f4` | PROVED / standard axioms |
-| `Singular.Statements.resolve_address_iff` | `73fdf86e1c1d5dd5fe8fe655b0ee0fb11640e64abc0d38469abbc7868a80d2e1` | PROVED / standard axioms |
-| `Singular.Statements.resolve_pending_iff` | `ebd55cc8e4631ab1b36e6e7c0cd345e4fec5564c7fba656000f81aed98430f78` | PROVED / standard axioms |
-| `Singular.Statements.release_registry_independent` | `65cb3e5a1c732a6f6c70c82f8a1e0129ec1f3dc42a1cfbfda4e32787290b6d08` | PROVED / standard axioms |
-| `Singular.Statements.insert_creation_registry_independent` | `7fa294756d1ad4a6181bff035caee00fe0867414e24f7558ba111dd7e0b07c32` | PROVED / standard axioms |
-| `Singular.Statements.whole_release_acceptance_independent` | `05a46a442c1c999445e8e6c59fc83a1b9db14dbd8d901fa27d9ab54ba6071440` | PROVED / standard axioms |
-| `Singular.Statements.whole_release_refusal_independent` | `7020410f873edf5239da5c1a31a8727a41b902dd2ac3d35adba1666c0b822dd4` | PROVED / standard axioms |
-| `Singular.Statements.whole_insert_acceptance_independent` | `e0c47d8e2252b5abe2b910bc7094a451f56c9eb00d2ba3c507e8d6b3b3601187` | PROVED / standard axioms |
-| `Singular.Statements.whole_insert_refusal_independent` | `3b025c6a01a6d1bf3dd6f86ee976a7265f02bf0dd44941896ae3e4473d30b3d1` | PROVED / standard axioms |
+| Qualified declaration | What it states | Statement SHA-256 | Status |
+| --- | --- | --- | --- |
+| `Singular.Statements.absent_witness_unique` | W2 — the absent witness is unique | `968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a` | PROVED |
+| `Singular.Statements.active_witness_unique` | W1 — the active witness is unique | `76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | PROVED |
+| `Singular.Statements.biconditional_supply_sync` | S3 — sync: biconditional supply is 1 iff the key is in that token's state | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | PROVED |
+| `Singular.Statements.booked_at_most_once` | L1 — a key is booked at most once at a time; the batch is atomic; a request is spent once | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | PROVED |
+| `Singular.Statements.delete_absent_inversion` | — | `c9689a174e9c746e78fff3f5ee237875bce8f9f938333fefd3b3e18a73a1088b` | PROVED |
+| `Singular.Statements.delete_active_inversion` | — | `9af5e32814773829e28a2db650f046f09059fe0b7f6ea0384ba2cceba2f2369b` | PROVED |
+| `Singular.Statements.empty_fold_error` | — | `8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | PROVED |
+| `Singular.Statements.fold_batch_cons` | — | `48e4c5dc2c48053d54f7e534a11432df0809f53f3eb99a8bdc51d05d0da6f3cb` | PROVED |
+| `Singular.Statements.insert_absent_inversion` | — | `d65e823c9af112589f84fc65ef080a18d166478eb1765144682a5d9022b3f711` | PROVED |
+| `Singular.Statements.insert_active_inversion` | — | `1c492e72f96bd9676596c41015caffdf2bdbf4c6d79ae48c83204b81523cabf4` | PROVED |
+| `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
+| `Singular.Statements.occupancy` | O1 — a booking edge succeeds only on a key that is not taken | `f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876` | PROVED |
+| `Singular.Statements.occupancy_free_key_succeeds` | O1, converse — a booking edge on an untaken key succeeds | `4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350` | PROVED |
+| `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
+| `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
+| `Singular.Statements.terminal_attestation_permanent` | S2 — permanence: an attestation holds in every later state | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | PROVED |
+| `Singular.Statements.terminal_attestation_sound` | S1 — soundness: no attestation of an Active, Absent or Unknown key exists | `9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef` | PROVED |
+| `Singular.Statements.terminal_mint_only_by_read` | S1 — provenance: a terminal token is minted only by a folded, verified read | `287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639` | PROVED |
+| `Singular.Statements.terminal_witness_plural` | W3 — the terminal witness is plural | `68beea77527a148a61f7f055d065aec3d1d2c3acdb25231c5c8db851a747efff` | PROVED |
+| `Singular.Statements.termination` | T1 — a Terminal leaf is never moved, so the key is never re-booked | `daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027` | PROVED |
+| `Singular.Statements.update_active_inversion` | — | `4afa82ea2e3ed82bd530a2413a484a4fd32291f9e946bfe621e2309dadffa630` | PROVED |
+| `Singular.Statements.update_terminal_inversion` | — | `4f7b5257414f293df032720fb952c04486160b6ad94a373782b54c62131d4683` | PROVED |
+| `Singular.Statements.witness_kinds_exclude` | W4 — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
+| `Singular.Statements.witness_terminal_inversion` | — | `3e0bf453fa69525e78120fcc02b8130a613ae65eaa09b0020644c19362069176` | PROVED |
 
-## Inversions and statement domain
+The naming, lifecycle and wire declarations are listed in their own manifests:
+[naming-theorem-debt.json](../lean/naming-theorem-debt.json),
+[lifecycle-theorem-debt.json](../lean/lifecycle-theorem-debt.json) and
+[wire-theorem-debt.json](../lean/wire-theorem-debt.json).
 
-Public inversions cover createInsert, mintWithdraw, release, evolve, outsider, withdraw, fold, moveAction, unconditional escape refusal, Insert and terminal foldOne branches, sequential composition, and address/pending resolver branches. Fold branch inversions expose exact guards and effects rather than merely restating a success boolean. Preservation obligations use Reachable where ledger invariants are needed; exact executable inversions quantify raw inputs. All inversions are proved. The reachable-state obligations `supply_conservation`, `over_no_representative` and `withdrawal_preserves_registry_supply` go through a stronger invariant than `WellFormed`: every custody record carries the current representative of its key, and every custody identifier is recorded in `used` and unique. Three statements, `over_terminal`, `release_removes_application_custody` and `request_single_spend`, quantify a reachable state without needing it; their proofs hold for every state.
+## How this register is kept honest
 
-A whole-transition statement that terminal request custody can leave only through completion is still missing. The unconditional `escape_refused` statement and Reachable supply claims do not establish that general coverage obligation. The terminal Withdraw refusal in the finite corpus adds an executable example, not the missing theorem or a completeness result.
+A compiled gate in [Audit.lean](../lean/Singular/Audit.lean) runs while the
+library elaborates: it collects the axioms of every theorem in the frozen module
+and fails the build if any lies outside the three standard ones. Re-admitting a
+single theorem turns the build red, so a `sorry` cannot reach this page.
+
+`tools/check_model.py` then cross-checks three things that are easy to let drift
+apart: the source declarations against the manifests, the compiled axiom report
+against both, and — added by this ticket — **this page against the manifest**.
+The last one exists because it was missing: before it, the page claimed 41
+declarations while the manifest held 44, and three proved statements appeared
+nowhere. The check is set equality, and the total above is derived from the
+manifest rather than typed by hand.
+
+## What this establishes, and what it does not
+
+These proofs establish **properties of the model**. They do not establish that
+the model is the right model, and no build ever will: that is what the operator's
+rulings, the interface and the simulation are for. A theorem can also be true and
+narrower than its name, so the column above says what each one states rather than
+leaving the name to imply it.
+
+The model is abstract where the chain is concrete. Commitments stand for
+collision-free canonical commitments, the trie is a logical authenticated map,
+and an approval's asset name is a commitment over the tuple it scopes rather than
+a real BLAKE2b digest. The executable consumer supplies the real hashes; the
+model fixes the complete preimages.
