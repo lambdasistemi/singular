@@ -22,8 +22,9 @@ naming-onchain/validators
   application.ak        spend: Maintain | Retire | Recover; mint: Approve {..}
   retirement_custody.ak completion-only custody, unchanged rules
 
-conformance/            encodings and rows re-baselined against the new blueprint
-offchain/               ToData/FromData for the changed types only (the runner is #158)
+conformance/            encodings and rows re-baselined against the new blueprint; X1 executable here
+offchain/lib            ToData/FromData for the changed types, plus Config.hs and the four TxBuilder
+                        files the encodings force to compile (D-BOOT); journeys are #158
 docs/                   consumer-conformance.md; naming-lifecycle.md; naming-demo.md; recovery-retirement.md
 ```
 
@@ -43,7 +44,7 @@ token and policy ids, and on nothing at fold time.
 | `retirement_custody.ak` | Unchanged rules; the burned asset is under the active policy (`witness` kind 1). |
 | `naming.ak` | Loses `over_marker_for` and the naming leaf vocabulary; keeps the record codec and the mirror helpers, updated to the eight-field state. |
 | `conformance/` | Re-baselines CS01/CS02/CS08 and the address rows; records the contract change. |
-| `offchain/` encodings | Follow the blueprint; no runner work. |
+| `offchain/` encodings and what they force | `offchain/lib/Singular/Registry/Types.hs` follows the blueprint, and the library/runner files the new encodings force to compile under `-Werror` follow it: `Config.hs` (four derived pins, D-BOOT; `cfgConsumerPin` deleted), `TxBuilder/ConnectedFold.hs`, `TxBuilder/Reject.hs`, `TxBuilder/Update.hs`, `TxBuilder/Internal.hs`. No new journey; `offchain/journey/**` stays #158's. |
 
 ## Out of this ticket's surface
 
