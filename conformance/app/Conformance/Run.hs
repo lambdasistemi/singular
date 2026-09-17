@@ -134,10 +134,12 @@ import System.Posix.Process (getProcessID)
 import System.Process (readProcess, readProcessWithExitCode)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
+import Cardano.Ledger.Plutus.Data (Data (..), hashData)
 import Cardano.Ledger.Address (
     AccountAddress (..),
     AccountId (..),
     Addr (..),
+    serialiseAddr,
     Withdrawals (..),
  )
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
@@ -170,7 +172,6 @@ import Cardano.Ledger.Api.Tx.Body (
     withdrawalsTxBodyL,
  )
 import Cardano.Ledger.Api.Scripts.Data (
-    Data (..),
     Datum (..),
  )
 import Cardano.Ledger.Api.Tx.Out (
@@ -238,6 +239,13 @@ import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
+    leafAbsent,
+    leafActive,
+    leafTerminal,
+    approvalName,
+    edgeOf,
+    mkRequestDatumWith,
+    statedBefore,
     addrFromKeyHashBytes,
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -271,10 +279,21 @@ import Singular.Registry.TxBuilder.Request (
     requestInsertImpl,
     requestUpdateImpl,
  )
-import Singular.Registry.TxBuilder.Update (updateTokenImpl)
+import Singular.Registry.TxBuilder.Update (
+    RegistryContext (..),
+    RegistryDuties (..),
+    registryDuties,
+    updateTokenImpl,
+    updateTokenWithDuties,
+ )
+import Singular.Registry.TxBuilder.ConnectedFold (
+    ConnectedMint (..),
+    ConnectedSpend (..),
+    RawRedeemer (..),
+    generousUnits,
+ )
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -450,17 +469,32 @@ readControl = do
 -- Keys and values
 -- ---------------------------------------------------------
 
-cgKey, cgV1, cgV2, cgV3, cgV4 :: ByteString
-cgKey = "cg-row-key"
-cgV1 = "cg-value-one"
-cgV2 = "cg-value-two"
-cgV3 = "cg-value-three"
-cgV4 = "cg-value-occupied-retry"
+{- | The generic rows' keys, and the leaf states they move between.
 
+#157 admits three leaf values and nothing else, so the rows say what they
+always said — insert, update, delete, re-insert, occupied-key refusal —
+in the only vocabulary the registry has. `cgKey` runs the insert, update
+and occupied-key rows; `cgDeleteKey` runs the delete and the re-insert,
+because deleting an ACTIVE leaf is the one edge naming never certifies
+(N5) and a delete that can fold is a delete of a witnessed absence.
+-}
+cgKey, cgDeleteKey, cgV1, cgV2, cgV3, cgV4 :: ByteString
+cgKey = "cg-row-key"
+cgDeleteKey = "cg-delete-key"
+cgV1 = leafAbsent
+cgV2 = leafActive
+cgV3 = leafAbsent
+cgV4 = leafAbsent
+
+{- | The control values. A forged claim names a leaf the key does not
+hold; there is no byte outside the codec that would reach the comparison
+at all, so the forgery is a wrong LEAF, which is what a false claim about
+a registry actually looks like.
+-}
 controlKey, controlVal, forgedValue :: ByteString
 controlKey = "cg-control-key"
-controlVal = "cg-control-value"
-forgedValue = "forged-value"
+controlVal = leafAbsent
+forgedValue = leafTerminal
 
 -- ---------------------------------------------------------
 -- Session environment
@@ -485,6 +519,10 @@ data Env = Env
     -- consumer bytes) from the session's blueprint: the row cages
     -- boot from these.
     , envKeys :: IORef (Bool, ByteString)
+    , envDeleteKey :: IORef (Bool, ByteString)
+    -- ^ CG03/CG04 own their own key (D-001): the delete row acts on a
+    -- witnessed absence, which the shared key is not once CG02 has
+    -- activated it.
     -- ^ (present, current value) for cgKey
     , envValidUnits :: IORef (Integer, Integer)
     {- ^ last valid fold's measured units: the hand-built fold
@@ -918,6 +956,7 @@ runSession
         let caMode = any (`elem` caRows) rows
             legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
+        deleteKeys <- newIORef (False, "")
         validUnits <- newIORef (0, 0)
         worlds <- newIORef Map.empty
         stakeRef <- newIORef Nothing
@@ -970,6 +1009,7 @@ runSession
                             , envCodes = codes
                             , envBlueprintPath = blueprintPath
                             , envKeys = keys
+                            , envDeleteKey = deleteKeys
                             , envValidUnits = validUnits
                             , envCa = Just world
                             , envWorlds = worlds
@@ -1016,6 +1056,7 @@ runSession
                                     , envReceiptsDir = receiptsDir
                                     , envCodes = codes
                                     , envKeys = keys
+                                    , envDeleteKey = deleteKeys
                                     , envValidUnits = validUnits
                                     , envCa = Nothing
                                     , envWorlds = worlds
@@ -1055,6 +1096,7 @@ runSession
                                     , envReceiptsDir = receiptsDir
                                     , envCodes = codes
                                     , envKeys = keys
+                                    , envDeleteKey = deleteKeys
                                     , envValidUnits = validUnits
                                     , envCa = Nothing
                                     , envWorlds = worlds
@@ -2107,18 +2149,18 @@ runCG02 env = do
 -- | CG03: Delete folds; the key proves absent from the chain.
 runCG03 :: Env -> IO ()
 runCG03 env = do
-    (present, cur) <- readIORef (envKeys env)
-    require "CG03 needs the key present; run CG02 first" present
-    (preProof, preRoot) <- capturePreProof env
+    seedDeleteKey env
+    (_, cur) <- readIORef (envDeleteKey env)
+    (preProof, preRoot) <- capturePreProofKey env cgDeleteKey
     (foldTx, mem, cpu, size) <-
-        requestAndFold env "CG03" (OpDelete cur)
-    commitTm env (OpDelete cur)
+        requestAndFoldKey env "CG03" cgDeleteKey (OpDelete cur)
+    commitTmKey env cgDeleteKey (OpDelete cur)
     verifyAbsentKey
         (envCfg env)
         (envProv env)
         (envMirror env)
         (envTid env)
-        cgKey
+        cgDeleteKey
         cur
         preProof
         preRoot
@@ -2135,25 +2177,25 @@ runCG03 env = do
         (Just size)
         "node-submit"
         Nothing
-    writeIORef (envKeys env) (False, "")
+    writeIORef (envDeleteKey env) (False, "")
     emit "row" "CG03: ACCEPTED delete, key absent on chain"
 
 -- | CG04: re-Insert v3 folds; v3 reads back from the chain.
 runCG04 :: Env -> IO ()
 runCG04 env = do
-    (present, _) <- readIORef (envKeys env)
+    (present, _) <- readIORef (envDeleteKey env)
     when present $ do
-        emit "setup" "key present; deleting as setup for re-Insert"
+        emit "setup" "delete key present; deleting as setup for re-Insert"
         setupDelete env
     (foldTx, mem, cpu, size) <-
-        requestAndFold env "CG04" (OpInsert cgV3)
-    commitTm env (OpInsert cgV3)
+        requestAndFoldKey env "CG04" cgDeleteKey (OpInsert cgV3)
+    commitTmKey env cgDeleteKey (OpInsert cgV3)
     verifyPresentValue
         (envCfg env)
         (envProv env)
         (envMirror env)
         (envTid env)
-        cgKey
+        cgDeleteKey
         (claimValue env cgV3)
         forgedValue
     writeRowReceipt
@@ -2168,7 +2210,7 @@ runCG04 env = do
         (Just size)
         "node-submit"
         Nothing
-    writeIORef (envKeys env) (True, cgV3)
+    writeIORef (envDeleteKey env) (True, cgV3)
     emit "row" "CG04: ACCEPTED re-Insert, v3 reads back from chain"
 
 {- | CG05: Insert on the occupied key must be refused, attributed to
@@ -4437,30 +4479,32 @@ ensurePresentV3 env = do
 
 setupDelete :: Env -> IO ()
 setupDelete env = do
-    (present, cur) <- readIORef (envKeys env)
-    require "setup delete needs the key present" present
-    (preProof, preRoot) <- capturePreProof env
+    (present, cur) <- readIORef (envDeleteKey env)
+    require "setup delete needs the delete key present" present
+    (preProof, preRoot) <- capturePreProofKey env cgDeleteKey
     (_, _, _, _) <-
-        requestAndFold env "CG04-setup" (OpDelete cur)
-    commitTm env (OpDelete cur)
+        requestAndFoldKey env "CG04-setup" cgDeleteKey (OpDelete cur)
+    commitTmKey env cgDeleteKey (OpDelete cur)
     verifyAbsentKey
         (envCfg env)
         (envProv env)
         (envMirror env)
         (envTid env)
-        cgKey
+        cgDeleteKey
         cur
         preProof
         preRoot
         (envControl env == FalseClaim)
-    writeIORef (envKeys env) (False, "")
+    writeIORef (envDeleteKey env) (False, "")
 
 {- | Capture the pre-delete inclusion proof and chain root for the
 absence control: the proof bound to the deleted value must not
 imply the post-delete root.
 -}
-capturePreProof :: Env -> IO (MPFProof MPFHash, OnChainRoot)
-capturePreProof env = do
+
+capturePreProofKey ::
+    Env -> ByteString -> IO (MPFProof MPFHash, OnChainRoot)
+capturePreProofKey env cgKey' = do
     preRoot <-
         stateRoot
             <$> readChainState
@@ -4468,7 +4512,7 @@ capturePreProof env = do
                 (envProv env)
                 (envTid env)
     db <- readIORef (envMirror env)
-    case inclusionProofFrom db cgKey of
+    case inclusionProofFrom db cgKey' of
         Just p -> pure (p, preRoot)
         Nothing ->
             failWith
@@ -4633,41 +4677,61 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     pp <- Cage.queryProtocolParams prov
     funder <- largestWalletUtxo prov
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
-    mapM_ (requireAdaOnly . snd) reqUtxos
+    -- #157: a booked request carries its approval, so it is no longer
+    -- ADA-only; the fold checks the binding, not the emptiness.
     oldState <- extractState stateOut
     upperSlot <- foldUpperSlot prov oldState (map snd reqUtxos)
+    -- #157 C5/C6/T1-T6: the same obligations the library fold
+    -- discharges. The derivation is shared because the duties are a
+    -- protocol fact, not a builder opinion; what CL01 compares is the
+    -- two assemblies of them.
+    ctx <- registryContext env
+    duties <- case registryDuties (envCfg env) pp oldState ctx reqUtxos of
+        Right d -> pure d
+        Left err -> failWith ("hand-build: " <> err)
     -- #157 C10: there is no pinned consumer and no mandatory
     -- withdrawal left to attach.
-    assembleBody pp funder oldState upperSlot fee
+    assembleBody pp funder oldState upperSlot fee duties
   where
-    assembleBody pp funder oldState upperSlot feeAmt = do
-        let tipAmount = stateMaxFee oldState
-            nReqs = toInteger (length reqUtxos)
-            perReqFee = feeAmt `div` nReqs
-            remainder = feeAmt - perReqFee * nReqs
-        refunds <-
-            mapM
-                (makeRefund pp tipAmount perReqFee remainder)
-                (zip [0 ..] reqUtxos)
+    assembleBody pp funder oldState upperSlot feeAmt duties = do
         newStateOut <- makeStateOut oldState newRoot
-        changeOut <- makeChange pp funder feeAmt refunds
-        redeemers <- makeRedeemers stateIn funder reqUtxos proofLists units
-        scripts <- makeScripts
+        let dutyOuts = rdOutputs duties
+            custodyIns = map (fst . csUtxo) (rdSpends duties)
+            mintValue =
+                foldr
+                    (\m acc -> Map.insertWith (Map.unionWith (+)) (cmPolicy m) (cmAssets m) acc)
+                    Map.empty
+                    (rdMints duties)
+            inputs =
+                Set.fromList
+                    (stateIn : fst funder : map fst reqUtxos <> custodyIns)
+        changeOut <- makeChange pp funder feeAmt (newStateOut : dutyOuts)
+        redeemers <-
+            makeRedeemers
+                stateIn
+                funder
+                reqUtxos
+                proofLists
+                units
+                duties
+                inputs
+                mintValue
+        scripts <- makeScripts duties
         -- Harness-key signer (NOTE-046): see harnessSigners above.
         let ownerKh = addrWitnessKeyHash (addrKeyHashBytes genesisAddr)
-        let inputs =
-                Set.fromList (stateIn : fst funder : map fst reqUtxos)
             integrity = computeScriptIntegrity pp redeemers
             body =
                 mkBasicTxBody
                     & inputsTxBodyL .~ inputs
                     & outputsTxBodyL
                         .~ StrictSeq.fromList
-                            ([newStateOut] <> refunds <> [changeOut])
+                            ([newStateOut] <> dutyOuts <> [changeOut])
                     & feeTxBodyL .~ Coin feeAmt
+                    & mintTxBodyL .~ MultiAsset mintValue
                     & collateralInputsTxBodyL
                         .~ Set.singleton (fst funder)
-                    & reqSignerHashesTxBodyL .~ Set.singleton ownerKh
+                    & reqSignerHashesTxBodyL
+                        .~ Set.fromList (ownerKh : rdSigners duties)
                     & scriptIntegrityHashTxBodyL .~ integrity
                     & vldtTxBodyL
                         .~ ValidityInterval SNothing (SJust upperSlot)
@@ -4675,24 +4739,6 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
             mkBasicTx body
                 & witsTxL . scriptTxWitsL .~ scripts
                 & witsTxL . rdmrsTxWitsL .~ redeemers
-    makeRefund pp tipAmount perReqFee remainder (i, (_, reqOut)) = do
-        let Coin reqVal = reqOut ^. coinTxOutL
-            extra = if i == (0 :: Int) then remainder else 0
-            refundCoin = reqVal - tipAmount - perReqFee - extra
-            refundAddr =
-                addrFromKeyHashBytes
-                    (network (envCfg env))
-                    (extractOwnerBytes reqOut)
-            out = mkBasicTxOut refundAddr (injectRefund refundCoin)
-            Coin minAda = getMinCoinTxOut @ConwayEra pp out
-        require
-            ( "hand-build: refund under min-ADA: "
-                <> show refundCoin
-                <> " < "
-                <> show minAda
-            )
-            (refundCoin >= minAda)
-        pure out
     makeStateOut oldState newRoot' = do
         let scriptAddr = cageAddrFromCfg (envCfg env) (network (envCfg env))
             newDatum =
@@ -4717,15 +4763,17 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
             ("hand-build: change under min-ADA: " <> show change)
             (change >= minAda)
         pure out
-    makeRedeemers stateIn' funder' reqUtxos' proofLists' units' = do
-        let inputs =
-                Set.fromList (stateIn' : fst funder' : map fst reqUtxos')
-            statePurpose =
+    makeRedeemers stateIn' _funder' reqUtxos' proofLists' units' duties inputs mintValue = do
+        let statePurpose =
                 ConwaySpending (AsIx (spendingIndex stateIn' inputs))
             stateRef = txInToRef stateIn'
             actions =
                 zipWith (\_ proofs -> Update proofs) reqUtxos' proofLists'
             modRedeemer = Modify actions
+            -- #157: minting purposes are indexed by the policy's position
+            -- in the transaction's own sorted mint map.
+            mintIndex policy =
+                AsIx (fromIntegral (length (takeWhile (/= policy) (Map.keys mintValue))))
             pairs =
                 ( statePurpose
                 , (toLedgerData modRedeemer, units')
@@ -4735,27 +4783,32 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
                         )
                       | (reqIn, _) <- reqUtxos'
                       ]
-                    <> [ ( ConwayRewarding (AsIx 0)
-                         , (toLedgerData Hook, units')
+                    <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
+                         , (toLedgerData (csRedeemer sp), units')
                          )
+                       | sp <- rdSpends duties
+                       ]
+                    <> [ ( ConwayMinting (mintIndex (cmPolicy m))
+                         , (toLedgerData (cmRedeemer m), units')
+                         )
+                       | m <- rdMints duties
                        ]
         pure (Redeemers (Map.fromList pairs))
-    makeScripts = do
+    makeScripts duties = do
         let stateScript = mkCageScript (envCfg env)
             reqScript = mkRequestScript (envCfg env) (envTid env)
-            consumerScript = mkConsumerScript (envCfg env)
         pure
             ( Map.fromList
-                [ (hashScript stateScript, stateScript)
-                , (hashScript reqScript, reqScript)
-                , (hashScript consumerScript, consumerScript)
-                ]
+                ( [ (hashScript stateScript, stateScript)
+                  , (hashScript reqScript, reqScript)
+                  ]
+                    <> [ (hashScript (cmScript m), cmScript m)
+                       | m <- rdMints duties
+                       ]
+                )
             )
-    injectRefund c = MaryValue (Coin c) mempty
     adaOnly out = case out ^. valueTxOutL of
         MaryValue _ (MultiAsset ma) -> Map.null ma
-    requireAdaOnly out =
-        require "hand-build: request carries tokens" (adaOnly out)
 
 extractState :: TxOut ConwayEra -> IO OnChainTokenState
 extractState out = case extractCageDatum out of
@@ -4884,24 +4937,41 @@ the hand model drifted and the run fails before reading verdicts.
 -}
 requestAndFold ::
     Env -> String -> OnChainOperation -> IO (ConwayTx, Integer, Integer, Integer)
-requestAndFold env label op = do
+requestAndFold env label = requestAndFoldKey env label cgKey
+
+-- | `requestAndFold` on a named key: the delete and re-insert rows own
+-- their own, because their edges need a witnessed absence to act on.
+requestAndFoldKey ::
+    Env ->
+    String ->
+    ByteString ->
+    OnChainOperation ->
+    IO (ConwayTx, Integer, Integer, Integer)
+requestAndFoldKey env label key op = do
     let cfg = envCfg env
         prov = envProv env
         tid = envTid env
-        tip = defaultTip cfg
-    unsignedReq <- case op of
-        OpInsert v ->
-            requestInsertImpl cfg prov tip tid cgKey v genesisAddr
-        OpDelete v ->
-            requestDeleteImpl cfg prov tip tid cgKey v genesisAddr
-        OpUpdate o n ->
-            requestUpdateImpl cfg prov tip tid cgKey o n genesisAddr
-        -- #157: no CG row builds a read request; the registry-only
-        -- harness has no terminal leaf to read.
-        OpRead _ -> failWith "no CG row builds a read request"
-    _ <- submitWithGenesis (envSubmit env) unsignedReq
+        Coin tipVal = defaultTip cfg
+    -- #157: a tree edge is booked, not merely requested. The approval the
+    -- naming application mints certifies which edge this is, for whom, and
+    -- where it delivers; the request carries it to the fold.
+    dest <- edgeDestination env op
+    refIns <- edgeReferences env key op
+    _ <-
+        bookEdge
+            env
+            cfg
+            tid
+            genesisAddr
+            genesisSignKey
+            key
+            op
+            dest
+            refIns
+            (tipVal + cgDeposit)
+    ctx <- registryContext env
     unsignedFold <-
-        updateTokenImpl cfg prov (envTm env) tid genesisAddr
+        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
     (stateIn, handFold) <- buildValidFold env
     calibrateFold stateIn handFold unsignedFold
     emit "calibration" (label <> ": hand model matches the library fold")
@@ -4912,24 +4982,34 @@ requestAndFold env label op = do
     emitMeasure env label mem cpu size
     pure (signed, mem, cpu, size)
 
+{- | The deposit a booking rides with, over and above the tip. The fold
+returns it to the destination the request named, or locks it in the
+custody an absence creates — it is never the folder's (T6, want-ledger R4).
+-}
+cgDeposit :: Integer
+cgDeposit = 3_000_000
+
 {- | Commit a landed op to the builder trie. Speculative folds never
 commit ('withSpeculativeTrie' discards), so the caller keeps the
 trie in step or the next fold proves against a stale root.
 -}
 commitTm :: Env -> OnChainOperation -> IO ()
-commitTm env op =
+commitTm env = commitTmKey env cgKey
+
+commitTmKey :: Env -> ByteString -> OnChainOperation -> IO ()
+commitTmKey env cgKey' op =
     withTrie (envTm env) (envTid env) $ \t -> case op of
         -- #157 C3: a read commits nothing.
         OpRead _ -> pure ()
         OpInsert v -> do
-            _ <- CageTrie.insert t cgKey v
+            _ <- CageTrie.insert t cgKey' v
             pure ()
         OpDelete _ -> do
-            _ <- CageTrie.delete t cgKey
+            _ <- CageTrie.delete t cgKey'
             pure ()
         OpUpdate _ n -> do
-            _ <- CageTrie.delete t cgKey
-            _ <- CageTrie.insert t cgKey n
+            _ <- CageTrie.delete t cgKey'
+            _ <- CageTrie.insert t cgKey' n
             pure ()
 
 -- | The claimed value under test; false-claim mode binds the forgery.
@@ -6219,3 +6299,252 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             pure ()
         emit ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key)) (show (proofStepConstrs unsignedFold))
         pure (signedFold, unsignedFold)
+
+{- | Book one registry-mode edge (#157 C2, C4, D-DEST): mint the approval
+that certifies it under the registry's pinned application policy, and
+create the request that carries it.
+
+The approval's asset name IS the binding — the edge index, the key, the
+owner and the destination, hashed together — and the cage recomputes it
+from the request at fold time. A booking and a fold therefore cannot
+disagree about what was certified: a drift makes the honest fold refuse
+with `approval-binding` rather than pass quietly.
+
+Which signature or reference the naming application demands is the edge's
+own business (R-NM4): an absence witness needs none, an activation needs
+the controller, and a deletion needs the custody's refund address and the
+custody itself in view.
+-}
+bookEdge ::
+    Env ->
+    CageConfig ->
+    TokenId ->
+    Addr ->
+    SignKeyDSIGN Ed25519DSIGN ->
+    -- | Registry key
+    ByteString ->
+    OnChainOperation ->
+    -- | Destination: address bytes and datum hash
+    (ByteString, ByteString) ->
+    -- | Reference inputs the certifying arm reads (custody, for a deletion)
+    [(TxIn, TxOut ConwayEra)] ->
+    -- | Bond: the tip plus the deposit that rides to the destination
+    Integer ->
+    IO (TxIn, TxOut ConwayEra)
+bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
+    let (_, _, codes) = envCodes env
+        prov = envProv env
+    edge <- case edgeOf op (statedBefore op) of
+        Just e -> pure e
+        Nothing ->
+            failWith
+                ( "bookEdge: "
+                    <> show op
+                    <> " on key "
+                    <> show key
+                    <> " is not one of the seven admissible edges"
+                )
+    pp <- Cage.queryProtocolParams prov
+    utxos <- Cage.queryUTxOs prov payerAddr
+    (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "bookEdge: payer wallet has no UTxOs"
+        (u : _) -> pure u
+    now <- currentPosixMs
+    let Coin feeBal = feeOut ^. coinTxOutL
+        Coin tipVal = defaultTip cfg
+        fee = 900_000
+        change = feeBal - bond - fee
+        owner = addrKeyHashBytes payerAddr
+        (destAddr, destHash) = dest
+        name = approvalName edge key owner dest
+        appScript = scriptFromBytes "naming-application" (ncApplication codes)
+        appPolicy = PolicyID (hashScript appScript)
+        approval =
+            MultiAsset
+                (Map.singleton appPolicy (Map.singleton (AssetName (SBS.toShort name)) 1))
+        approveRedeemer =
+            PLC.Constr
+                0
+                [ PLC.I edge
+                , PLC.B key
+                , PLC.B owner
+                , PLC.List [PLC.B destAddr, PLC.B destHash]
+                ]
+        requestAddr = requestAddrFromCfg cfg tid (network cfg)
+        datum = mkRequestDatumWith tid payerAddr key op tipVal now dest
+        reqOut =
+            mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
+                & datumTxOutL .~ mkInlineDatum datum
+        Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
+    require
+        ("bookEdge: payer wallet too small (" <> show feeBal <> ")")
+        (change > 0)
+    require
+        ("bookEdge: bond under min-ADA: " <> show bond)
+        (bond >= minAda)
+    let redeemers =
+            Redeemers
+                ( Map.singleton
+                    (ConwayMinting (AsIx 0))
+                    (toLedgerData (RawRedeemer approveRedeemer), generousUnits)
+                )
+        integrity = computeScriptIntegrity pp redeemers
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton feeIn
+                & referenceInputsTxBodyL .~ Set.fromList (map fst refIns)
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ reqOut
+                        , mkBasicTxOut payerAddr (MaryValue (Coin change) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+                & mintTxBodyL .~ approval
+                & collateralInputsTxBodyL .~ Set.singleton feeIn
+                & reqSignerHashesTxBodyL
+                    .~ Set.singleton (addrWitnessKeyHash owner)
+                & scriptIntegrityHashTxBodyL .~ integrity
+        unsigned =
+            mkBasicTx body
+                & witsTxL . scriptTxWitsL
+                    .~ Map.singleton (hashScript appScript) appScript
+                & witsTxL . rdmrsTxWitsL .~ redeemers
+        signed = addKeyWitness payerSk unsigned
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> awaitTx
+        Rejected reason ->
+            failWith
+                ( "bookEdge refused (edge "
+                    <> show edge
+                    <> ", key "
+                    <> show key
+                    <> "): "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    emit
+        "booked"
+        ( "edge "
+            <> show edge
+            <> " on key "
+            <> show key
+            <> " certified by approval 0x"
+            <> hex name
+        )
+    pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
+
+{- | The record datum a booking's destination binds, and its hash. The
+cage checks only that the receiving output carries a datum hashing to what
+the approval bound — naming's own validators do not run at fold time — so
+the harness needs one datum it can produce on both sides and nothing more.
+-}
+recordDatum :: PLC.Data
+recordDatum = PLC.B "cg-record"
+
+recordDatumHash :: ByteString
+recordDatumHash =
+    hashToBytes (extractHash (hashData (Data recordDatum :: Data ConwayEra)))
+
+{- | Where an edge delivers (#157 D-DEST, R-NM4).
+
+An absence names the address its deposit comes back to, and no datum. An
+activation names the naming application's own address and the record datum
+it will carry — that is what `record_destination` demands of it. A deletion
+and a termination name nothing at all.
+-}
+edgeDestination :: Env -> OnChainOperation -> IO (ByteString, ByteString)
+edgeDestination env op = do
+    let (_, _, codes) = envCodes env
+        appHash = computeScriptHash (ncApplication codes)
+        appAddr = Addr (network (envCfg env)) (ScriptHashObj appHash) StakeRefNull
+    edge <- case edgeOf op (statedBefore op) of
+        Just e -> pure e
+        Nothing -> failWith ("edgeDestination: " <> show op <> " is not an edge")
+    pure $ case edge of
+        0 -> (serialiseAddr genesisAddr, BS.empty)
+        1 -> (serialiseAddr appAddr, recordDatumHash)
+        2 -> (serialiseAddr appAddr, recordDatumHash)
+        6 -> (serialiseAddr genesisAddr, BS.empty)
+        _ -> (BS.empty, BS.empty)
+
+{- | What the certifying arm needs to read. A deletion is authorised by the
+custody's own refund address, which naming reads from the custody UTxO as a
+reference input.
+-}
+edgeReferences ::
+    Env -> ByteString -> OnChainOperation -> IO [(TxIn, TxOut ConwayEra)]
+edgeReferences env key op = case edgeOf op (statedBefore op) of
+    Just 4 -> do
+        utxos <- cageUtxos env
+        case
+            [ u
+            | u@(_, o) <- utxos
+            , Just (AbsentCustody k _) <- [extractCageDatum o]
+            , k == key
+            ]
+            of
+            [u] -> pure [u]
+            _ -> failWith ("edgeReferences: no single custody UTxO for key " <> show key)
+    _ -> pure []
+
+-- | The UTxOs sitting at the cage's own address; custody lives among them.
+cageUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
+cageUtxos env =
+    Cage.queryUTxOs
+        (envProv env)
+        (cageAddrFromCfg (envCfg env) (network (envCfg env)))
+
+{- | Everything a fold of tree edges needs in hand: the three token
+policies this registry pins, the cage script custody spends run, the cage's
+own UTxOs, and the one destination datum the harness books against.
+-}
+registryContext :: Env -> IO RegistryContext
+registryContext env = do
+    let cfg = envCfg env
+        (_, _, codes) = envCodes env
+        registryId =
+            scriptHashBytes (cfgScriptHash cfg)
+                <> SBS.fromShort (assetNameBytes (unTokenId (envTid env)))
+        witnessAt kind =
+            scriptFromBytes
+                ("witness-" <> show kind)
+                ( applyBytesParam
+                    registryId
+                    (applyDataParam (PLC.I kind) (ncWitness codes))
+                )
+    utxos <- cageUtxos env
+    pure
+        RegistryContext
+            { rcWitnessScripts =
+                Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+            , rcCageScript = Just (mkCageScript cfg)
+            , rcCageUtxos = utxos
+            , rcDatums = [(recordDatumHash, recordDatum)]
+            }
+{- | CG03's own key, seeded at the absent leaf.
+
+The delete row needs a key it can actually delete: the registry certifies
+the deletion of a WITNESSED ABSENCE (edge 4) and never the deletion of an
+active name (edge 5, `never-certified`, N5). So the row books an absence on
+its own key and deletes that — the same proposition it always made, that a
+delete folds and the key then proves absent from the chain root.
+-}
+seedDeleteKey :: Env -> IO ()
+seedDeleteKey env = do
+    (present, _) <- readIORef (envDeleteKey env)
+    if present
+        then pure ()
+        else do
+            emit "setup" "delete key absent; witnessing its absence as setup"
+            (_, _, _, _) <-
+                requestAndFoldKey env "CG03-setup" cgDeleteKey (OpInsert cgV1)
+            commitTmKey env cgDeleteKey (OpInsert cgV1)
+            verifyPresentValue
+                (envCfg env)
+                (envProv env)
+                (envMirror env)
+                (envTid env)
+                cgDeleteKey
+                (claimValue env cgV1)
+                forgedValue
+            writeIORef (envDeleteKey env) (True, cgV1)

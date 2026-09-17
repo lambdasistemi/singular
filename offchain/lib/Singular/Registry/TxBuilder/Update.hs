@@ -16,6 +16,8 @@ and per-request refund outputs.
 -}
 module Singular.Registry.TxBuilder.Update (
     updateTokenImpl,
+    updateTokenWithDuties,
+    emptyRegistryContext,
     RegistryDuties (..),
     RegistryContext (..),
     registryDuties,
@@ -113,7 +115,39 @@ updateTokenImpl ::
     TokenId ->
     Addr ->
     IO ConwayTx
-updateTokenImpl cfg prov tm tid addr = do
+updateTokenImpl cfg prov tm tid addr =
+    updateTokenWithDuties cfg prov tm tid addr emptyRegistryContext
+
+{- | The context a fold of tree edges needs beyond the registry's own
+configuration: the three token policies' scripts, the cage script that
+custody spends run, and the preimages of the destination datums the
+bookings named.
+
+`emptyRegistryContext` carries none of it, which is right for a caller
+that folds only rejections — and refuses loudly, naming the missing
+script, for one that folds an edge without it.
+-}
+emptyRegistryContext :: RegistryContext
+emptyRegistryContext =
+    RegistryContext
+        { rcWitnessScripts = Map.empty
+        , rcCageScript = Nothing
+        , rcCageUtxos = []
+        , rcDatums = []
+        }
+
+{- | Fold the pending requests, discharging every obligation the edges
+they take create (#157 C5, C6, T1-T6).
+-}
+updateTokenWithDuties ::
+    CageConfig ->
+    Provider IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    RegistryContext ->
+    IO ConwayTx
+updateTokenWithDuties cfg prov tm tid addr ctx0 = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryContext cfg prov tid addr
     let (stateIn, stateOut) = stateUtxo
@@ -125,6 +159,22 @@ updateTokenImpl cfg prov tm tid addr = do
                 stateOut
                 newRoot
         requestScript = mkRequestScript cfg tid
+    -- The cage's own UTxOs are where custody sits; the caller need not
+    -- have queried them, and the cage script is this build's own.
+    cageUtxos <-
+        if null (rcCageUtxos ctx0)
+            then queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+            else pure (rcCageUtxos ctx0)
+    let ctx =
+            ctx0
+                { rcCageUtxos = cageUtxos
+                , rcCageScript = case rcCageScript ctx0 of
+                    Just s -> Just s
+                    Nothing -> Just script
+                }
+    duties <- case registryDuties cfg pp oldState ctx reqUtxos of
+        Right d -> pure d
+        Left err -> error ("updateToken: " <> err)
     upperSlot <-
         computeUpperSlot prov oldState reqUtxos
     let evalTx = mkEvalTx prov
@@ -142,12 +192,13 @@ updateTokenImpl cfg prov tm tid addr = do
                 requestScript
                 proofs
                 upperSlot
+                duties
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
-            (feeUtxo : stateUtxo : reqUtxos)
+            (feeUtxo : stateUtxo : reqUtxos <> map csUtxo (rdSpends duties))
             []
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
@@ -326,6 +377,7 @@ buildProgram ::
     Script ConwayEra ->
     [[ProofStep]] ->
     SlotNo ->
+    RegistryDuties ->
     Tx.TxBuild NoCtx Void ()
 buildProgram
     _cfg
@@ -339,7 +391,8 @@ buildProgram
     script
     requestScript
     proofs
-    upperSlot = do
+    upperSlot
+    duties = do
         let stateRef = txInToRef stateIn
         let actions = map Update proofs
         _ <- Tx.spendScript stateIn (Modify actions)
@@ -360,6 +413,19 @@ buildProgram
         -- gone. Every rule it re-walked beside the fold — request value
         -- coverage, the mint binding — is the cage's own now, checked
         -- once from the transaction's own evidence.
+        -- #157 C5/C6/T1-T6: what the edges owe. The custody an edge
+        -- consumes is spent, the tokens it moves are minted or burned
+        -- under the registry's own three policies, and the carriers it
+        -- owes — custody, destination, deposit return — are created.
+        mapM_
+            (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))
+            (rdSpends duties)
+        mapM_
+            (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
+            (rdMints duties)
+        mapM_ Tx.output (rdOutputs duties)
+        mapM_ Tx.requireSignature (rdSigners duties)
+        mapM_ Tx.attachScript (map cmScript (rdMints duties))
         Tx.attachScript script
         Tx.attachScript requestScript
         Tx.collateral (fst feeUtxo)
@@ -447,7 +513,7 @@ carries only the hash, and the output has to carry the datum itself.
 -}
 data RegistryContext = RegistryContext
     { rcWitnessScripts :: Map.Map Integer (Script ConwayEra)
-    , rcCageScript :: Script ConwayEra
+    , rcCageScript :: Maybe (Script ConwayEra)
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
     , rcDatums :: [(ByteString, PLC.Data)]
     }
@@ -574,6 +640,12 @@ registryDuties cfg pp st ctx reqUtxos =
     -- goes back to the address it recorded.
     spendCustody key = do
         (utxo, refund, owed) <- findCustody key
+        cageScript <- case rcCageScript ctx of
+            Just s -> Right s
+            Nothing ->
+                Left
+                    "registryDuties: this edge spends custody, and the \
+                    \builder was given no cage script to spend it with"
         let refundAddr = case addrFromBytes refund of
                 Just a -> a
                 Nothing -> error "registryDuties: custody records an undecodable refund address"
@@ -585,7 +657,7 @@ registryDuties cfg pp st ctx reqUtxos =
                     [ ConnectedSpend
                         { csUtxo = utxo
                         , csRedeemer = RawRedeemer (toPlcData (Modify []))
-                        , csScript = rcCageScript ctx
+                        , csScript = cageScript
                         }
                     ]
                 , rdOutputs = [out]

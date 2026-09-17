@@ -43,6 +43,7 @@ module Singular.Registry.TxBuilder.Internal (
 
     -- * Datum helpers
     mkRequestDatum,
+    mkRequestDatumWith,
     toPlcData,
     toLedgerData,
     mkInlineDatum,
@@ -431,6 +432,24 @@ mkRequestDatum ::
     Integer ->
     PLC.Data
 mkRequestDatum tid addr key op fee submittedAt =
+    mkRequestDatumWith tid addr key op fee submittedAt (BS.empty, BS.empty)
+
+{- | A request datum naming where the edge it books delivers (#157
+D-DEST). The cage reads the destination for every edge that mints an
+active or terminal token, and the approval that certifies the edge binds
+these same bytes, so the booking and the fold cannot disagree about where
+the token goes.
+-}
+mkRequestDatumWith ::
+    TokenId ->
+    Addr ->
+    ByteString ->
+    OnChainOperation ->
+    Integer ->
+    Integer ->
+    (ByteString, ByteString) ->
+    PLC.Data
+mkRequestDatumWith tid addr key op fee submittedAt destination =
     let datum =
             OnChainRequest
                 { requestToken = onChainTokenId tid
@@ -441,11 +460,7 @@ mkRequestDatum tid addr key op fee submittedAt =
                 , requestValue = op
                 , requestFee = fee
                 , requestSubmittedAt = submittedAt
-                , -- #157 D-DEST: a generic registry request names no
-                  -- destination. The cage reads this field only for the
-                  -- edges that mint an active or terminal token, and the
-                  -- runner that builds those supplies it (#158).
-                  requestDestination = (BS.empty, BS.empty)
+                , requestDestination = destination
                 }
      in toPlcData (RequestDatum datum)
 
