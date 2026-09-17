@@ -129,14 +129,13 @@ spec = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
                 Right bp ->
                     case ( extractCompiledCode "state.state" bp
                          , extractCompiledCode "request.request" bp
-                         , extractCompiledCode "consumer.consumer" bp
                          ) of
-                        (Just stateBytes, Just requestBytes, Just consumerBytes) ->
-                            fork81Spec stateBytes requestBytes consumerBytes
+                        (Just stateBytes, Just requestBytes) ->
+                            fork81Spec stateBytes requestBytes
                         _ ->
                             it "no compiled code" $
                                 expectationFailure
-                                    "state, request or consumer script not found in blueprint"
+                                    "state or request script not found in blueprint"
 
 -- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
 hex :: ByteString -> String
@@ -145,11 +144,10 @@ hex = T.unpack . TE.decodeUtf8 . Base16.encode
 fork81Spec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     Spec
-fork81Spec stateBytes requestBytes consumerBytes = do
+fork81Spec stateBytes requestBytes = do
     it "accepts the real absence insertion of C and reads it back" $
-        withBootedCage id stateBytes requestBytes consumerBytes $
+        withBootedCage id stateBytes requestBytes $
             \cfg prov submit tm tokenId -> do
                 foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
                 foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"
@@ -193,7 +191,7 @@ fork81Spec stateBytes requestBytes consumerBytes = do
                         renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
     it "refuses a second insert of the now-present key (occupied-key)" $
-        withBootedCage id stateBytes requestBytes consumerBytes $
+        withBootedCage id stateBytes requestBytes $
             \cfg prov submit tm tokenId -> do
                 foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
                 foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"

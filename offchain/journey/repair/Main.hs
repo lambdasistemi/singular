@@ -105,7 +105,6 @@ import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
@@ -113,15 +112,12 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
-    deriveConsumerBinding,
     evaluateAndBalance,
     extractCageDatum,
     findRequestUtxos,
     findStateUtxo,
     findUtxoByTxIn,
-    hookAccountAddress,
     mkCageScript,
-    mkConsumerScript,
     mkInlineDatum,
     mkRequestDatum,
     mkRequestScript,
@@ -137,7 +133,6 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     Migration (..),
     MintRedeemer (..),
     OnChainOperation (..),
@@ -147,10 +142,8 @@ import Singular.Registry.Types (
     ProofStep,
     RequestAction (Update),
     UpdateRedeemer (..),
-    stateConsumerPinBytes,
  )
 import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
@@ -215,12 +208,6 @@ runRepair blueprintPath = do
     requestBytes <- case extractCompiledCode "request.request" bp of
         Just b -> pure b
         Nothing -> failWith "request.request compiled code not found in blueprint"
-    consumerBytes <- case extractCompiledCode "consumer.consumer" bp of
-        Just b -> pure b
-        Nothing ->
-            failWith
-                "consumer.consumer compiled code not found in blueprint \
-                \(every Modify withdraws the pinned consumer)"
     emit "identity" "loaded state.state and request.request from the repair blueprint"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
@@ -237,15 +224,7 @@ runRepair blueprintPath = do
         fundFolder prov submit
         receiptRef <- newIORef []
         let record = recordRow receiptRef
-        (cfg1, tok1) <- bootRepairCage prov submit tm stateBytes requestBytes consumerBytes id
-        -- Consumer stake registration (NOTE-020 item 2), once per run:
-        -- every repair cage pins the same unparameterized consumer, so
-        -- one registration covers all cages. Funded by genesis (always
-        -- funded), witnessed by it; registration authorizes nothing.
-        -- Must precede the first Modify (R1 below).
-        regTx <- registerConsumerImpl cfg1 prov genesisAddr
-        _ <- submitWithGenesis submit regTx
-        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
+        (cfg1, tok1) <- bootRepairCage prov submit tm stateBytes requestBytes id
         r1ok <- checkPermissionlessFold prov submit tm cfg1 tok1 record
         unless r1ok $ failWith "R1 permissionless fold did not accept"
         r2ok <- checkDefectiveFoldRefused prov submit tmFresh cfg1 tok1
@@ -262,9 +241,9 @@ runRepair blueprintPath = do
         unless swOk $ failWith "ownerless Sweep control did not refuse"
         swSigOk <- checkSweepRefused prov submit cfg1 tok1 record True
         unless swSigOk $ failWith "creator-signed Sweep control did not refuse"
-        pfOk <- checkFoldProperty prov submit tm stateBytes requestBytes consumerBytes
+        pfOk <- checkFoldProperty prov submit tm stateBytes requestBytes
         unless pfOk $ failWith "P-fold generated property did not hold"
-        (cfgF, tokF, updIn, delIn, insIn) <- setupRetractBatch prov submit tm stateBytes requestBytes consumerBytes
+        (cfgF, tokF, updIn, delIn, insIn) <- setupRetractBatch prov submit tm stateBytes requestBytes
         threadDelay 12_000_000
         r4ok <- retractExpectRefuse prov submit cfgF tokF updIn "Update"
         unless r4ok $ failWith "R4 Update-retract did not refuse"
@@ -327,10 +306,9 @@ bootRepairCage ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     (CageConfig -> CageConfig) ->
     IO (CageConfig, TokenId)
-bootRepairCage prov submit tm stateBytes requestBytes consumerBytes adjust = do
+bootRepairCage prov submit tm stateBytes requestBytes adjust = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     -- Seed selection: the LARGEST wallet UTxO. The imported boot builder
     -- consumes the seed input plus one arbitrary further input and returns
@@ -341,11 +319,6 @@ bootRepairCage prov submit tm stateBytes requestBytes consumerBytes adjust = do
         [] -> failWith "bootRepairCage: genesis wallet has no UTxOs"
         (txIn, _) : _ -> pure (txInToRef txIn)
     let appliedStateBytes = stateBytes
-        ConsumerBinding
-            { cbPin = consumerPin
-            , cbScriptBytes = consumerScriptBytes
-            , cbHash = consumerHash
-            } = deriveConsumerBinding consumerBytes
         cfg0 =
             CageConfig
                 { cageScriptBytes = appliedStateBytes
@@ -355,18 +328,17 @@ bootRepairCage prov submit tm stateBytes requestBytes consumerBytes adjust = do
                 , defaultProcessTime = 30_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
-                , cfgRepPolicy = SBS.pack (replicate 28 0)
-                , cfgConsumerPin = consumerPin
-                , cfgConsumerScript = consumerScriptBytes
+                -- #157 D-BOOT: the repair rows exercise the fold's
+                -- permissionlessness and its retract window, not the
+                -- naming partition, so the four pins are placeholders.
+                , cfgApplicationPolicy = SBS.pack (replicate 28 0)
+                , cfgActivePolicy = SBS.pack (replicate 28 0)
+                , cfgAbsentPolicy = SBS.pack (replicate 28 0)
+                , cfgTerminalPolicy = SBS.pack (replicate 28 0)
+                , cfgConsumerScript = SBS.empty
                 , network = Testnet
                 }
         cfg = adjust cfg0
-    emit
-        "consumer"
-        ( "pinned exhibit consumer 0x"
-            <> BSC.unpack (Base16.encode (scriptHashBytes consumerHash))
-            <> " (unparameterized: authenticates batches from transaction evidence alone)"
-        )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
     let tok = extractTokenId cfg signedBoot
@@ -676,11 +648,10 @@ setupRetractBatch ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     IO (CageConfig, TokenId, TxIn, TxIn, TxIn)
-setupRetractBatch prov submit tm stateBytes requestBytes consumerBytes = do
+setupRetractBatch prov submit tm stateBytes requestBytes = do
     emit "R4" "withdraw-class cage: boot, setup fold, then one Update, one Delete and one Insert request"
-    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes consumerBytes fastRetractCfg
+    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes fastRetractCfg
     _ <- submitInsertFrom prov submit cfg tok "rb-key" "rb-old" genesisAddr
     setupReqs <- pendingRequests prov cfg tok
     folded <- try (permissionlessUpdateTx prov tm cfg tok genesisAddr >>= submitWithGenesis submit) :: IO (Either SomeException ConwayTx)
@@ -913,11 +884,10 @@ checkFoldProperty ::
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     IO Bool
-checkFoldProperty prov submit tm stateBytes requestBytes consumerBytes = do
+checkFoldProperty prov submit tm stateBytes requestBytes = do
     emit "P-fold" "generated .fold property: seed=79, six inserts in one permissionless fold (no owner hypothesis)"
-    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes consumerBytes id
+    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes id
     let pairs = genPairs 79 6
     submitInsertsBatch prov submit cfg tok pairs genesisAddr
     before <- pendingRequests prov cfg tok
@@ -1364,6 +1334,11 @@ processOne trie (_txIn, txOut) = do
             Just (RequestDatum r) -> r
             _ -> error "processOne: invalid request datum"
     case requestValue req of
+        -- #157 C2 row 6: a read proves the leaf and leaves the trie
+        -- exactly as it found it.
+        OpRead _ -> do
+            mSteps <- getProofSteps trie (requestKey req)
+            pure (fromMaybe [] mSteps)
         OpInsert v -> do
             _ <- insert trie (requestKey req) v
             mSteps <- getProofSteps trie (requestKey req)
@@ -1423,20 +1398,9 @@ buildPermissionlessProgram _cfg stateIn reqUtxos feeUtxo _oldState newStateOut s
     Coin _fee <- Tx.peek $ \tx ->
         let f = tx ^. bodyTxL . feeTxBodyL
          in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
-    -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
-    -- pinned in the spent state with a null redeemer — the consumer
-    -- authenticates the batch from transaction evidence alone
-    -- (request value coverage, representative-mint binding). No
-    -- operator, no manifest: coherent batches pass no matter who
-    -- submits them.
-    Tx.withdrawScript
-        ( hookAccountAddress
-            (network _cfg)
-            (stateConsumerPinBytes _oldState)
-        )
-        (Coin 0)
-        Hook
-    Tx.attachScript (mkConsumerScript _cfg)
+    -- #157: the fold withdraws from nothing. The pinned-hook
+    -- invocation (NOTE-021) went with the consumer it invoked; a
+    -- coherent batch is now authenticated by the cage itself.
     Tx.attachScript script
     Tx.attachScript requestScript
     Tx.collateral (fst feeUtxo)
