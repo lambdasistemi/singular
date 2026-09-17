@@ -428,6 +428,11 @@ mkRequestDatum tid addr key op fee submittedAt =
                 , requestValue = op
                 , requestFee = fee
                 , requestSubmittedAt = submittedAt
+                , -- #157 D-DEST: a generic registry request names no
+                  -- destination. The cage reads this field only for the
+                  -- edges that mint an active or terminal token, and the
+                  -- runner that builds those supplies it (#158).
+                  requestDestination = (BS.empty, BS.empty)
                 }
      in toPlcData (RequestDatum datum)
 
