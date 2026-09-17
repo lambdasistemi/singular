@@ -8,8 +8,8 @@ encoding from the compiled blueprint read at run time, and the
 applied hash derived in Haskell must equal the on-chain address the
 builders use. The blueprint declares: state 0 params (null —
 zero-parameter state, NOTE-060), request 2 params
-(@statePolicyId@, @cageTokenName@), staking 0 params (null),
-consumer 0 params (null).
+(@statePolicyId@, @cageTokenName@) and staking 0 params (null). The
+consumer validator is gone with #157 C10 and declares nothing.
 
 The row verifies the unapplied layer (Haskell hash of the raw
 blueprint code equals the blueprint's pinned hash), derives the
@@ -108,7 +108,7 @@ runCS06 blueprintPath receiptsDir base dirty = do
                 , receiptRejected = Nothing
                 }
     writeReceiptFile receiptsDir receipt
-    emit "row" ("CS06: ACCEPTED params state=0 request=2 staking=0 consumer=0, applied-size=" <> show appliedSize)
+    emit "row" ("CS06: ACCEPTED params state=0 request=2 staking=0, applied-size=" <> show appliedSize)
 
 -- ---------------------------------------------------------
 -- Parameter counts and schemas from the blueprint JSON
@@ -191,10 +191,9 @@ checkCounts params spoil = do
         Nothing -> failWith "CS06 gap: no staking.staking validator in blueprint"
         Just Nothing -> emit "params-staking" "count 0 (null) ok"
         Just (Just ps) -> failWith ("CS06: staking.staking has " <> show (length ps) <> " params, want 0 (null)")
-    case lookupParams params "consumer.consumer" of
-        Nothing -> failWith "CS06 gap: no consumer.consumer validator in blueprint"
-        Just Nothing -> emit "params-consumer" "count 0 (null) ok"
-        Just (Just ps) -> failWith ("CS06: consumer.consumer has " <> show (length ps) <> " params, want 0 (null)")
+    -- #157 C10: the consumer validator is deleted, so there is no
+    -- parameter declaration of its left to check. A row that kept
+    -- looking for it would report a gap that is the contract.
 
 requireParam :: [ParamInfo] -> ParamInfo -> IO ()
 requireParam ps want =

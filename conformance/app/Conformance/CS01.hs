@@ -14,9 +14,12 @@ blueprint JSON itself.
 
 If the blueprint does not declare enough to check a given type, the
 row reports precisely which type and why, rather than weakening to a
-round trip. All fourteen types are declared; there are no gaps.
-ConsumerRedeemer is encoder-only (no FromData exists): its schema,
-index and field shape are checked, explicitly not a round trip.
+round trip. Every declared type is checked; there are no gaps.
+
+#157 C10: the consumer redeemer is gone with the consumer script, so
+its encoder-only row goes with it — there is no blueprint definition
+left for it to check against, and a row that checked nothing would be
+worse than an absent one.
 
 The executing negative control (@CONFORMANCE_CONTROL=wrong-index@)
 demands index 99 for 'End': the real 'End' (index 0) must fail its
@@ -28,6 +31,7 @@ module Conformance.CS01 (
 ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
+import Control.Monad (when)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as AesonTypes
 import Data.ByteString qualified as BS
@@ -59,7 +63,6 @@ import Singular.Registry.TxBuilder.Internal (
 
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     Migration (..),
     MintRedeemer (..),
     Neighbor (..),
@@ -96,6 +99,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
         Left err -> failWith ("blueprint JSON does not parse: " <> err)
         Right (val :: Aeson.Value) -> pure (extractTitles val)
     let defs = definitions bp
+    when (control == Just "blueprint-wrong-arity") (armWrongArity defs)
     nTypes <- checkAll defs titleMap spoil
     fsize <- getFileSize blueprintPath
     nodeVer <- readNodeVersion
@@ -122,6 +126,42 @@ runCS01 blueprintPath receiptsDir base dirty = do
     writeReceiptFile receiptsDir receipt
     emit "row" ("CS01: ACCEPTED " <> show nTypes <> " types vs blueprint, size=" <> show fsize)
 
+{- | The armed control for the fixed-tuple schema (#157 D-DEST): demand
+that a THREE-element list validate against the two-element destination
+pair. It cannot, because a tuple is validated at exact arity — so the
+run exits nonzero and the row is shown able to notice a loosened
+oracle. A homogeneous `SList` rule would accept it, which is precisely
+the mistake this control exists to catch.
+-}
+armWrongArity :: Map.Map Text Schema -> IO ()
+armWrongArity defs = do
+    emit
+        "control"
+        "CS01 ARMED (blueprint-wrong-arity): demanding a three-element \
+        \list validate as the two-element destination pair"
+    schema <- case Map.lookup destinationTupleDef defs of
+        Just sc -> pure sc
+        Nothing ->
+            failWith
+                ( "CS01 control cannot arm: no "
+                    <> T.unpack destinationTupleDef
+                    <> " definition in the blueprint"
+                )
+    let tooLong = List [B "a", B "b", B "c"]
+    if validateData defs schema tooLong
+        then
+            emit
+                "control-wrong-arity"
+                "a three-element list validated as the pair"
+        else
+            failWith
+                "CS01 ARMED (blueprint-wrong-arity): the three-element \
+                \list was refused, as the contract requires"
+
+-- | The blueprint's own name for the destination pair's schema.
+destinationTupleDef :: Text
+destinationTupleDef = "Tuple<<ByteArray,ByteArray>>"
+
 -- | Check every type; spoil mode demands a wrong index for End.
 -- Returns the checked type count for the terminal (NOTE-063: the
 -- list drives execution, so the count cannot drift from it).
@@ -142,7 +182,6 @@ checkAll defs titles spoil = do
             , ("UpdateRedeemer", checkUpdateRedeemer defs spoil)
             , ("ProofStep", checkProofStep defs)
             , ("Neighbor", checkNeighbor defs)
-            , ("ConsumerRedeemer", checkConsumerRedeemer defs)
             ]
     mapM_ snd checks
     -- NOTE-046: checkOptionStake retired — the candidate blueprint
@@ -257,7 +296,7 @@ requireIndex other _ label =
 checkTokenId :: Map.Map Text Schema -> IO ()
 checkTokenId defs = do
     requireRoundTripReal sampleToken "OnChainTokenId"
-    requireSchema defs "lib/TokenId" (toD sampleToken) "OnChainTokenId"
+    requireSchema defs "types/TokenId" (toD sampleToken) "OnChainTokenId"
     requireIndex (toD sampleToken) 0 "OnChainTokenId"
 
 checkTxOutRef :: Map.Map Text Schema -> IO ()
@@ -409,28 +448,6 @@ checkNeighbor defs = do
     requireRoundTripReal sampleNeighbor "Neighbor"
     requireSchema defs "aiken/merkle_patricia_forestry/Neighbor" (toD sampleNeighbor) "Neighbor"
     requireIndex (toD sampleNeighbor) 0 "Neighbor"
-
--- | Hook encoder (NOTE-063): ToData-only coverage. No FromData
--- instance exists for ConsumerRedeemer and none is fabricated —
--- this checks the encoder (schema, index, field shape) against the
--- live blueprint plus malformed refusals, explicitly not a round
--- trip.
-checkConsumerRedeemer :: Map.Map Text Schema -> IO ()
-checkConsumerRedeemer defs = do
-    let hookD = toD Hook
-    requireSchema defs "consumer/ConsumerRedeemer" hookD "Hook"
-    requireIndex hookD 0 "Hook"
-    let badIx = Constr 1 []
-        badShape = Constr 0 [B (BS.replicate 28 1)]
-    case Map.lookup "consumer/ConsumerRedeemer" defs of
-        Nothing -> failWith "CS01 gap: no consumer/ConsumerRedeemer definition"
-        Just schema -> do
-            if validateData defs schema badIx
-                then failWith "CS01 control failed: Constr 1 validates against ConsumerRedeemer"
-                else emit "control-hook-index" "wrong Hook index correctly rejected"
-            if validateData defs schema badShape
-                then failWith "CS01 control failed: Constr 0 with fields validates against ConsumerRedeemer"
-                else emit "control-hook-shape" "Hook with fields correctly rejected"
 
 -- ---------------------------------------------------------
 -- Round trips through the real instances (mirrored decoding)
@@ -584,10 +601,10 @@ extractTitles val =
 
 checkFieldTitles :: TitleMap -> IO ()
 checkFieldTitles titles = do
-    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "representative_policy", "consumer_pin"]
-    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at"]
+    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "application_policy", "active_policy", "absent_policy", "terminal_policy"]
+    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at", "destination"]
     expectFields titles "types/Migration" "Migration" ["oldPolicy", "tokenId"]
-    expectFields titles "lib/TokenId" "TokenId" ["assetName"]
+    expectFields titles "types/TokenId" "TokenId" ["assetName"]
     expectFields titles "cardano/transaction/OutputReference" "OutputReference" ["transaction_id", "output_index"]
     expectFields titles "aiken/merkle_patricia_forestry/Neighbor" "Neighbor" ["nibble", "prefix", "root"]
     expectFields titles "aiken/merkle_patricia_forestry/ProofStep" "Branch" ["skip", "neighbors"]

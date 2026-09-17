@@ -103,8 +103,16 @@ data Schema
       SBytes
     | -- | @{"dataType": "integer"}@
       SInteger
-    | -- | @{"dataType": "list", "items": ...}@
+    | -- | @{"dataType": "list", "items": <one schema>}@ — a
+      -- homogeneous list of any length.
       SList Schema
+    | -- | @{"dataType": "list", "items": [<schema>, ...]}@ — Aiken's
+      -- FIXED TUPLE (#157 D-DEST): an ARRAY of positional item
+      -- schemas. On the wire it is a Plutus @List@ of exactly that
+      -- arity, each element of its own declared type, which is what
+      -- distinguishes it from 'SList' and why it cannot share that
+      -- case: a homogeneous rule would accept a three-element pair.
+      STuple [Schema]
     | -- | @{"anyOf": [...constructors...]}@
       SConstructors [Constructor]
     | -- | @{"$ref": "#/definitions/..."}@
@@ -170,8 +178,21 @@ instance FromJSON Schema where
                             Just "integer" ->
                                 pure SInteger
                             Just "list" -> do
-                                items <- o .: "items"
-                                pure $ SList items
+                                -- The JSON itself says which one this
+                                -- is: an ARRAY of item schemas is
+                                -- Aiken's fixed tuple, anything else is
+                                -- a homogeneous list. Branching on the
+                                -- shape rather than trying one and
+                                -- falling back keeps both cases exact —
+                                -- a malformed tuple stays an error
+                                -- instead of silently becoming a list.
+                                items <-
+                                    o .: "items" ::
+                                        Parser Aeson.Value
+                                case items of
+                                    Aeson.Array _ ->
+                                        STuple <$> parseJSON items
+                                    _ -> SList <$> parseJSON items
                             Just "constructor" -> do
                                 idx <- o .: "index"
                                 fields <-
@@ -264,6 +285,12 @@ validateData defs schema d = case (schema, d) of
     (SInteger, I _) -> True
     (SList s, List xs) ->
         all (validateData defs s) xs
+    -- A fixed tuple is a list of EXACTLY its declared arity, validated
+    -- element by element against its own position's schema. Wrong
+    -- arity and wrong element types both refuse.
+    (STuple ss, List xs) ->
+        length ss == length xs
+            && and (zipWith (validateData defs) ss xs)
     (SRef ref, _) ->
         case Map.lookup ref defs of
             Just s -> validateData defs s d

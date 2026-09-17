@@ -414,6 +414,11 @@ data Control
       -- the deployed script, which it cannot. Proves the identity
       -- layers are genuinely distinct and the check can fail.
       UnappliedAddress
+    | -- | CS01 armed (#157 D-DEST): a three-element list must validate
+      -- against the two-element destination pair, which it cannot —
+      -- the fixed tuple is checked at exact arity. Proves the schema
+      -- oracle was not loosened into a homogeneous list rule.
+      BlueprintWrongArity
     | -- | CS08 armed (#157 X1): the retired SIX-field state encoding
       -- must decode the chain's datum, which it cannot — the datum has
       -- eight fields now. Proves the round-trip row is reading the new
@@ -435,6 +440,7 @@ readControl = do
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
         Just "legacy-six-field" -> pure LegacySixField
+        Just "blueprint-wrong-arity" -> pure BlueprintWrongArity
         Just other ->
             failWith
                 ( "unknown CONFORMANCE_CONTROL value " <> other
