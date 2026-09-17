@@ -27,17 +27,17 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "4d6eed29dde44975d54c4128a0d99db18b6ec5ce124c6f38b2d5b42c",
+      "hash": "af47583cd89c7d94ff60635df09ff12b6b55b9a7e4e39b40671b39a0",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "4d6eed29dde44975d54c4128a0d99db18b6ec5ce124c6f38b2d5b42c",
+      "hash": "af47583cd89c7d94ff60635df09ff12b6b55b9a7e4e39b40671b39a0",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "4d6eed29dde44975d54c4128a0d99db18b6ec5ce124c6f38b2d5b42c",
+      "hash": "af47583cd89c7d94ff60635df09ff12b6b55b9a7e4e39b40671b39a0",
       "parameters": 0
     }
   ]

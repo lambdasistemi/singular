@@ -592,3 +592,27 @@ pub fn strayCustodyOutput(key: ByteArray, lovelace: Int) -> Output {
 pub fn cageTokenName() -> ByteArray {
   cageToken.assetName
 }
+
+/// A SECOND registry held by the same state script (#157 NOTE-004): the
+/// same address, the same policy, a different cage token. Two registries
+/// can share a script — the script hash is the policy, and the token name
+/// is what tells them apart — so a fold of this one must not authorize a
+/// custody spend belonging to the other.
+pub const foreignCageToken: TokenId =
+  TokenId { assetName: #"666f726569676e2d746f6b656e" }
+
+pub const foreignStateRef: OutputReference =
+  OutputReference { transaction_id: #"464f524549474e", output_index: 0 }
+
+pub fn foreignStateInput(root: ByteArray) -> Input {
+  Input {
+    output_reference: foreignStateRef,
+    output: Output {
+      address: cageAddress(),
+      value: from_asset(cagePolicy, foreignCageToken.assetName, 1)
+        |> merge(from_lovelace(stateLovelace)),
+      datum: InlineDatum(StateDatum(stateOf(root))),
+      reference_script: None,
+    },
+  }
+}
