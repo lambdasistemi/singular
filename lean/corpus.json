@@ -15,12 +15,84 @@
   ],
   "cases": [
     {
+      "action": {
+        "approval": {
+          "assetName": 1184765822,
+          "destination": 0,
+          "edge": "insertAbsent",
+          "key": 8,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertAbsent",
+        "key": 8,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            163,
+            84,
+            57,
+            80,
+            218,
+            145,
+            213,
+            14
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 7,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 7,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GA01-insert-absent-accepted",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              221,
+              15,
+              143,
+              148,
+              159,
+              228,
+              61,
+              117
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [
             {
               "key": 8,
@@ -34,45 +106,88 @@
             }
           ],
           "held": [],
-          "keys": [
-            [
-              8,
-              {
-                "known": {
-                  "s": "absent"
-                }
-              }
-            ],
-            [
-              7,
-              {
-                "known": {
-                  "s": "absent"
-                }
-              }
-            ]
-          ],
-          "root": [
-            221,
-            15,
-            143,
-            148,
-            159,
-            228,
-            61,
-            117
+          "trie": [
+            {
+              "key": 8,
+              "leaf": "absent"
+            },
+            {
+              "key": 7,
+              "leaf": "absent"
+            }
           ]
         }
       },
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GA02-insert-active-accepted",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              253,
+              168,
+              231,
+              64
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [],
           "held": [
             {
@@ -81,37 +196,95 @@
               "output": 555
             }
           ],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "active"
-                }
-              }
-            ]
-          ],
-          "root": [
-            26,
-            122,
-            121,
-            111,
-            253,
-            168,
-            231,
-            64
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "active"
+            }
           ]
         }
       },
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GA03-update-active-accepted",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              253,
+              168,
+              231,
+              64
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [],
           "held": [
             {
@@ -120,16 +293,43 @@
               "output": 555
             }
           ],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "active"
-                }
-              }
-            ]
-          ],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "active"
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
           "root": [
             26,
             122,
@@ -139,30 +339,262 @@
             168,
             231,
             64
-          ]
-        }
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
       },
-      "status": "modeled"
-    },
-    {
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GA04-update-terminal-accepted",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              112,
+              0,
+              168,
+              235,
+              249
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [],
           "held": [],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "terminal"
-                }
-              }
-            ]
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "terminal"
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
           ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GA05-delete-absent-accepted",
+      "result": {
+        "accepted": true,
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              123,
+              168,
+              26,
+              154
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": null
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": {
+          "assetName": 2452469620,
+          "destination": 0,
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteActive",
+        "key": 42,
+        "output": 0,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GA06-delete-active-accepted",
+      "result": {
+        "accepted": true,
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              123,
+              168,
+              26,
+              154
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": null
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": null,
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
           "root": [
             26,
             122,
@@ -172,76 +604,43 @@
             168,
             235,
             249
-          ]
-        }
-      },
-      "status": "modeled"
-    },
-    {
-      "expectedAccept": true,
-      "expectedReason": "",
-      "id": "GA05-delete-absent-accepted",
-      "result": {
-        "accepted": true,
-        "state": {
-          "custody": [],
-          "held": [],
-          "keys": [
-            [
-              42,
-              "unknown"
-            ]
           ],
-          "root": [
-            26,
-            122,
-            121,
-            111,
-            123,
-            168,
-            26,
-            154
-          ]
-        }
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
       },
-      "status": "modeled"
-    },
-    {
-      "expectedAccept": true,
-      "expectedReason": "",
-      "id": "GA06-delete-active-accepted",
-      "result": {
-        "accepted": true,
-        "state": {
-          "custody": [],
-          "held": [],
-          "keys": [
-            [
-              42,
-              "unknown"
-            ]
-          ],
-          "root": [
-            26,
-            122,
-            121,
-            111,
-            123,
-            168,
-            26,
-            154
-          ]
-        }
-      },
-      "status": "modeled"
-    },
-    {
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GA07-witness-terminal-accepted",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              112,
+              0,
+              168,
+              235,
+              249
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [],
           "held": [
             {
@@ -250,31 +649,70 @@
               "output": 700
             }
           ],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "terminal"
-                }
-              }
-            ]
-          ],
-          "root": [
-            26,
-            122,
-            121,
-            112,
-            0,
-            168,
-            235,
-            249
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "terminal"
+            }
           ]
         }
       },
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 3021472884,
+          "destination": 0,
+          "edge": "insertAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "key-exists",
       "id": "GR01-insert-absent-on-active",
@@ -285,6 +723,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "key-exists",
       "id": "GR02-insert-active-on-active",
@@ -295,6 +786,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 3021472884,
+          "destination": 0,
+          "edge": "insertAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "key-exists",
       "id": "GR03-insert-absent-on-terminal",
@@ -305,6 +843,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "key-exists",
       "id": "GR04-insert-active-on-terminal",
@@ -315,6 +900,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "key-exists",
       "id": "GR05-insert-active-on-absent",
@@ -325,6 +963,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "key-unknown",
       "id": "GR06-update-active-on-unknown",
@@ -335,6 +1015,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "already-booked",
       "id": "GR07-update-active-on-active",
@@ -345,6 +1078,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "terminal-immutable",
       "id": "GR08-update-active-on-terminal",
@@ -355,6 +1135,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "key-unknown",
       "id": "GR09-update-terminal-on-unknown",
@@ -365,6 +1187,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "not-booked",
       "id": "GR10-update-terminal-on-absent",
@@ -375,6 +1250,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "terminal-immutable",
       "id": "GR11-update-terminal-on-terminal",
@@ -385,6 +1307,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "key-unknown",
       "id": "GR12-delete-absent-on-unknown",
@@ -395,6 +1359,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "not-absent",
       "id": "GR13-delete-absent-on-active",
@@ -405,6 +1422,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "terminal-immutable",
       "id": "GR14-delete-absent-on-terminal",
@@ -415,6 +1479,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2452469620,
+          "destination": 0,
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteActive",
+        "key": 42,
+        "output": 0,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "key-unknown",
       "id": "GR15-delete-active-on-unknown",
@@ -425,6 +1531,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2452469620,
+          "destination": 0,
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteActive",
+        "key": 42,
+        "output": 0,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "not-active",
       "id": "GR16-delete-active-on-absent",
@@ -435,6 +1594,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2452469620,
+          "destination": 0,
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteActive",
+        "key": 42,
+        "output": 0,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "terminal-immutable",
       "id": "GR17-delete-active-on-terminal",
@@ -445,6 +1651,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 4133175029,
+          "destination": 700,
+          "edge": "witnessTerminal",
+          "key": 42,
+          "owner": 0,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "read-active",
       "id": "GR18-read-active-refused",
@@ -455,6 +1714,59 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 4133175029,
+          "destination": 700,
+          "edge": "witnessTerminal",
+          "key": 42,
+          "owner": 0,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "read-absent",
       "id": "GR19-read-absent-refused",
@@ -465,6 +1777,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 4133175029,
+          "destination": 700,
+          "edge": "witnessTerminal",
+          "key": 42,
+          "owner": 0,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "read-unknown",
       "id": "GR20-read-unknown-refused",
@@ -475,6 +1829,40 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": null,
+        "claimed": [],
+        "deposit": 200,
+        "edge": "insertAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 91
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "no-approval",
       "id": "GR21-insert-absent-no-approval",
@@ -485,6 +1873,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 8,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "no-approval",
       "id": "GR22-insert-active-other-policy",
@@ -495,6 +1925,48 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 1965694818,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 43,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "approval-mismatch",
       "id": "GR23-insert-active-mismatched-tuple",
@@ -505,30 +1977,24 @@
       "status": "modeled"
     },
     {
-      "expectedAccept": true,
-      "expectedReason": "",
-      "id": "GD01-read-terminal-accepted",
-      "result": {
-        "accepted": true,
-        "state": {
-          "custody": [],
-          "held": [
-            {
-              "key": 42,
-              "kind": "terminal",
-              "output": 700
-            }
-          ],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "terminal"
-                }
-              }
-            ]
-          ],
+      "action": {
+        "approval": null,
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
           "root": [
             26,
             122,
@@ -538,12 +2004,96 @@
             168,
             235,
             249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "terminal"
+          }
+        ]
+      },
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GD01-read-terminal-accepted",
+      "result": {
+        "accepted": true,
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              112,
+              0,
+              168,
+              235,
+              249
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [
+            {
+              "key": 42,
+              "kind": "terminal",
+              "output": 700
+            }
+          ],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "terminal"
+            }
           ]
         }
       },
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": null,
+        "claimed": [],
+        "deposit": 0,
+        "edge": "witnessTerminal",
+        "key": 42,
+        "output": 700,
+        "owner": 0,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
       "expectedAccept": false,
       "expectedReason": "read-unknown",
       "id": "GD02-read-before-establishing",
@@ -554,6 +2104,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "custody-missing",
       "id": "GC01-update-active-without-custody",
@@ -564,6 +2161,53 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": false,
       "expectedReason": "custody-missing",
       "id": "GC02-delete-absent-without-custody",
@@ -574,12 +2218,84 @@
       "status": "modeled"
     },
     {
+      "action": {
+        "approval": {
+          "assetName": 84686170,
+          "destination": 555,
+          "edge": "updateActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
       "expectedAccept": true,
       "expectedReason": "",
       "id": "GC03-update-active-with-custody",
       "result": {
         "accepted": true,
         "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              253,
+              168,
+              231,
+              64
+            ],
+            "terminalPolicy": 10
+          },
           "custody": [],
           "held": [
             {
@@ -588,16 +2304,134 @@
               "output": 555
             }
           ],
-          "keys": [
-            [
-              42,
-              {
-                "known": {
-                  "s": "active"
-                }
-              }
-            ]
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "active"
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": {
+          "assetName": 2709712832,
+          "destination": 0,
+          "edge": "deleteAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            254,
+            168,
+            232,
+            211
           ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 42,
+            "refundAddress": 91,
+            "value": 200
+          }
+        ],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "absent"
+          }
+        ]
+      },
+      "expectedAccept": true,
+      "expectedReason": "",
+      "id": "GC04-delete-absent-with-custody",
+      "result": {
+        "accepted": true,
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 1,
+            "processTime": 2,
+            "retractTime": 3,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              123,
+              168,
+              26,
+              154
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": null
+            }
+          ]
+        }
+      },
+      "status": "modeled"
+    },
+    {
+      "action": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
           "root": [
             26,
             122,
@@ -607,80 +2441,148 @@
             168,
             231,
             64
-          ]
-        }
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
+      "expectedAccept": false,
+      "expectedReason": "token-missing",
+      "id": "GC05-update-terminal-without-token",
+      "result": {
+        "accepted": false,
+        "reason": "token-missing"
       },
       "status": "modeled"
     },
     {
-      "expectedAccept": true,
-      "expectedReason": "",
-      "id": "GC04-delete-absent-with-custody",
-      "result": {
-        "accepted": true,
-        "state": {
-          "custody": [],
-          "held": [],
-          "keys": [
-            [
-              42,
-              "unknown"
-            ]
-          ],
+      "action": {
+        "approval": {
+          "assetName": 1831697717,
+          "destination": 555,
+          "edge": "deleteActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "deleteActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "before": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 1,
+          "processTime": 2,
+          "retractTime": 3,
           "root": [
             26,
             122,
             121,
             111,
-            123,
+            253,
             168,
-            26,
-            154
-          ]
-        }
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": [
+          {
+            "key": 42,
+            "leaf": "active"
+          }
+        ]
+      },
+      "expectedAccept": false,
+      "expectedReason": "token-missing",
+      "id": "GC06-delete-active-without-token",
+      "result": {
+        "accepted": false,
+        "reason": "token-missing"
       },
       "status": "modeled"
     }
   ],
   "codec": [
     {
+      "bytes": [
+        0
+      ],
       "decodes": true,
       "expectedDecodes": true,
       "id": "GC01-decode-absent"
     },
     {
+      "bytes": [
+        1
+      ],
       "decodes": true,
       "expectedDecodes": true,
       "id": "GC02-decode-active"
     },
     {
+      "bytes": [
+        2
+      ],
       "decodes": true,
       "expectedDecodes": true,
       "id": "GC03-decode-terminal"
     },
     {
+      "bytes": [
+        3
+      ],
       "decodes": false,
       "expectedDecodes": false,
       "id": "GC04-decode-03-refused"
     },
     {
+      "bytes": [],
       "decodes": false,
       "expectedDecodes": false,
       "id": "GC05-decode-empty-refused"
     },
     {
+      "bytes": [
+        104,
+        101,
+        108,
+        108,
+        111
+      ],
       "decodes": false,
       "expectedDecodes": false,
       "id": "GC06-decode-naming-era-refused"
     },
     {
+      "bytes": [
+        0,
+        1
+      ],
       "decodes": false,
       "expectedDecodes": false,
       "id": "GC07-decode-two-bytes-refused"
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "5bec044aaff3a15ac0a328ea3f070f093b7cb5d93e0eac5f3e0d68bbd72f5b08",
+  "corpusSourceSha256": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -732,15 +2634,15 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ac89bfdf8f0e01b3b5da226687f2a79afc905621885585e0a5d35a3bcd0fd078",
-  "payloadSha256": "359d8b34980d6eaae76ac698c56350ff74689fe9a7f44bc1a692d7245f07d8b0",
+  "modelSha256": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+  "payloadSha256": "1b12541a475c09269409ec827ba0031947690ed91e568afdea840917c12e953d",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "5bec044aaff3a15ac0a328ea3f070f093b7cb5d93e0eac5f3e0d68bbd72f5b08",
+    "lean/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
-    "lean/Singular/Model.lean": "ac89bfdf8f0e01b3b5da226687f2a79afc905621885585e0a5d35a3bcd0fd078",
+    "lean/Singular/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
     "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
   },
   "statementsSha256": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",

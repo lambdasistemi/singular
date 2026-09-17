@@ -305,8 +305,8 @@ def namingConfig : Config :=
 
 /-- The naming transition: a request is admitted only if the cage admits it
 and naming's policy certifies it (R-NM4); every uncertified request is refused
-with a naming reason, never a generic one. `deleteActive` is never certified,
-so naming defines no delete. -/
+with the naming reason for its own cause, never a single catch-all.
+`deleteActive` is never certified, so naming defines no delete. -/
 def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
     (revealed : Option NamingAddress) : Except String Result := do
   let context ←
@@ -315,7 +315,13 @@ def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
     | some ap => ap.signatures
     | none => []
   if !(namingCertifies hasher r.edge signatures revealed context) then
-    throw "naming-no-delete"
+    -- One reason per cause. Naming defines no delete, so `deleteActive` keeps
+    -- the name that says so; a retirement that met neither the recovery-key nor
+    -- the quorum route is a different failure and must not wear that name.
+    throw (match r.edge with
+      | .deleteActive => "naming-no-delete"
+      | .updateTerminal => "naming-retirement-uncertified"
+      | _ => "naming-uncertified")
   step state.registry r
 
 /-- The registry the naming journeys start from. -/

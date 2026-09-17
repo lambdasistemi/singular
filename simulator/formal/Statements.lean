@@ -1,325 +1,898 @@
 import Singular.Lemmas
+
+/-! The public statement surface of the registry-mode model. The eleven
+promises of the interface — P1, L1, S1, S2, S3, O1, T1, W1–W4 — and the seven
+edge inversions, the fold inversions and the read facts. Every declaration
+quantifies over states reachable from genesis by folds; over arbitrary `State`
+values the supply laws are simply false. -/
+
 namespace Singular
 namespace Statements
-/-! The public statement surface of the model. Every declaration keeps the exact text it
-was frozen with; the proofs draw on `Singular.Lemmas`. Three statements quantify over
-`Reachable s` without needing it, so the unused-variable linter is silenced for them
-rather than touching their statements. -/
 
-theorem insert_commitment_injective (p q : Proposal) :
-    insertAsset p = insertAsset q ↔ p = q := by
+/-- A read's verification is exactly the intermediate leaf being the claimed
+terminal state, against a committed root. -/
+theorem readAt_true_iff (s : RegistryState) (key : Key) :
+    readAt s 0 key .terminal = true ↔
+      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
+  unfold readAt
+  simp [Bool.and_eq_true]
+
+/-- **P1** — no tree change without approval, and the pins never move. -/
+theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : Result)
+    (h : Reachable s) (hok : step s r = .ok t) (htree : r.edge ≠ .witnessTerminal) :
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.config.applicationPolicy = s.config.applicationPolicy ∧
+    t.state.config.activePolicy = s.config.activePolicy ∧
+    t.state.config.absentPolicy = s.config.absentPolicy ∧
+    t.state.config.terminalPolicy = s.config.terminalPolicy := by
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+  · exact absurd hw htree
+  · have happroval : ∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+        ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+        ap.destination = requestDestination r ∧
+        ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination := by
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ <;>
+        (rw [hE] at hadm
+         simp only at hadm
+         simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+         obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+         exact ⟨ap, hap, hpol, by rw [hedge', hE], hkey', hown', hdst', hasset'⟩)
+    refine ⟨happroval, ?_, ?_, ?_, ?_⟩
+    all_goals (
+      rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ <;>
+        simp [applyEdge, hE])
+
+/-- **L1** — each request is spent once and in order (the fold is a step
+chain), a refusal anywhere refuses the whole batch, and no key ends the batch
+booked twice. -/
+theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Result)
+    (h : Reachable s) (hok : foldBatch s batch = .ok t) :
+    Folds s batch t ∧
+    (∀ b bs, batch = b :: bs → ∀ why, step s b = .error why → foldBatch s batch = .error why) ∧
+    (∀ key, kindCount t.state .active key ≤ 1 ∧ custodyCount t.state key ≤ 1) := by
+  obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
+  have hfolds : ∀ (u : RegistryState) (bs : List Request) (r : Result),
+      foldActions u bs = .ok r → Folds u bs r := by
+    intro u bs
+    induction bs generalizing u with
+    | nil =>
+      intro r hr
+      unfold foldActions at hr
+      have : emptyResult u = r := by injection hr
+      rw [← this]; exact Folds.done u
+    | cons b bs ih =>
+      intro r hr
+      unfold foldActions at hr
+      simp only [bind, Except.bind, pure, Except.pure] at hr
+      cases hs : step u b with
+      | error e => rw [hs] at hr; exact Except.noConfusion hr
+      | ok m =>
+        rw [hs] at hr
+        simp only [bind, Except.bind, pure, Except.pure] at hr
+        cases hrest : foldActions m.state bs with
+        | error e => rw [hrest] at hr; exact Except.noConfusion hr
+        | ok rr =>
+          rw [hrest] at hr
+          have hEq : combineResults m rr = r := by injection hr
+          rw [← hEq]
+          exact Folds.cons u b bs m rr hs (ih m.state rr hrest)
+  have hreach : Reachable t.state := by
+    have : ∀ (u : RegistryState) (bs : List Request) (r : Result),
+        Reachable u → foldActions u bs = .ok r → Reachable r.state := by
+      intro u bs
+      induction bs generalizing u with
+      | nil =>
+        intro r hu hr
+        unfold foldActions at hr
+        have : emptyResult u = r := by injection hr
+        rw [← this]; exact hu
+      | cons b bs ih =>
+        intro r hu hr
+        unfold foldActions at hr
+        simp only [bind, Except.bind, pure, Except.pure] at hr
+        cases hs : step u b with
+        | error e => rw [hs] at hr; exact Except.noConfusion hr
+        | ok m =>
+          rw [hs] at hr
+          simp only [bind, Except.bind, pure, Except.pure] at hr
+          cases hrest : foldActions m.state bs with
+          | error e => rw [hrest] at hr; exact Except.noConfusion hr
+          | ok rr =>
+            rw [hrest] at hr
+            have hEq : combineResults m rr = r := by injection hr
+            rw [← hEq]
+            exact ih m.state rr (Reachable.next hu hs) hrest
+    exact this s batch t h hacts
+  refine ⟨hfolds s batch t hacts, ?_, ?_⟩
+  · intro b bs hb why hstep
+    subst hb
+    unfold foldBatch
+    rw [if_neg (by simp)]
+    unfold foldActions
+    simp only [bind, Except.bind, pure, Except.pure]
+    rw [hstep]
+  · intro key
+    obtain ⟨_, _, hA2, _, hC2, _, _, _⟩ := reachable_consistent t.state hreach
+    exact ⟨hA2 key, hC2 key⟩
+
+/-- **S1** — every terminal attestation in a reachable state is about a leaf
+that is terminal: no attestation of an Active, Absent or Unknown key exists. -/
+theorem terminal_attestation_sound (s : RegistryState) (key : Key) (out : Nat)
+    (h : Reachable s) (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
+    trieGet s.trie key = .known .terminal := by
+  exact (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
+
+/-- The provenance half of S1: a terminal token enters the ledger only through
+an admitted `witnessTerminal` step whose read was verified. -/
+theorem terminal_mint_only_by_read (s : RegistryState) (r : Request) (t : Result)
+    (hok : step s r = .ok t) (key : Key)
+    (hnew : kindCount t.state .terminal key = kindCount s .terminal key + 1) :
+    r.edge = .witnessTerminal ∧ trieGet s.trie key = .known .terminal ∧
+      s.config.root = rootOf s.trie := by
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨he, hr⟩ | ⟨_, _, _, _, hcase⟩
+  · have hrd := (readAt_true_iff s r.key).mp hr
+    obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_witnessTerminal s r he
+    have hkey : r.key = key := by
+      rcases Decidable.em (r.key = key) with hEq | hne
+      · exact hEq
+      · exfalso
+        simp only [kindCount, h4, countHeld_cons] at hnew
+        rw [if_neg (by simpa using fun hc => hne (by simpa using hc))] at hnew
+        omega
+    rw [hkey] at hrd
+    exact ⟨he, hrd.2, hrd.1⟩
+  · exfalso
+    rcases hcase with ⟨he, _⟩ | ⟨he, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertAbsent s r he
+      simp only [kindCount, h4] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertActive s r he
+      simp only [kindCount, h4, countHeld_cons] at hnew
+      rw [if_neg (by simp)] at hnew; omega
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateActive s r he c hfind
+      simp only [kindCount, h4, countHeld_cons] at hnew
+      rw [if_neg (by simp)] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateTerminal s r he
+      simp only [kindCount, h4] at hnew
+      have := countHeld_filter_active_le s.held r.key .terminal key
+      simp only [kindCount] at this
+      omega
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteAbsent s r he c hfind
+      simp only [kindCount, h4] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteActive s r he
+      simp only [kindCount, h4] at hnew
+      have := countHeld_filter_active_le s.held r.key .terminal key
+      simp only [kindCount] at this
+      omega
+
+/-- **S2** — a terminal attestation is valid in every later state: a terminal
+leaf admits no edge that moves it, and no edge burns an attestation. -/
+theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request) (t : Result)
+    (h : Reachable s) (hok : foldBatch s acts = .ok t) (key : Key) (out : Nat)
+    (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
+    { key := key, kind := .terminal, output := out } ∈ t.state.held ∧
+      trieGet t.state.trie key = .known .terminal := by
+  have hterm : trieGet s.trie key = .known .terminal :=
+    (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
+  have hacts := (foldBatch_inv s acts t hok).2
+  refine ⟨?_, foldActions_preserves_terminal s acts t key hterm hacts⟩
+  clear hok
+  induction acts generalizing s t with
+  | nil =>
+    unfold foldActions at hacts
+    have : emptyResult s = t := by injection hacts
+    rw [← this]; exact hmem
+  | cons b bs ih =>
+    unfold foldActions at hacts
+    simp only [bind, Except.bind, pure, Except.pure] at hacts
+    cases hs : step s b with
+    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | ok m =>
+      rw [hs] at hacts
+      simp only [bind, Except.bind, pure, Except.pure] at hacts
+      cases hrest : foldActions m.state bs with
+      | error e => rw [hrest] at hacts; exact Except.noConfusion hacts
+      | ok rr =>
+        rw [hrest] at hacts
+        have hEq : combineResults m rr = t := by injection hacts
+        rw [← hEq]
+        exact ih m.state rr (Reachable.next h hs)
+          (step_preserves_terminal_holding s b m key out hterm hmem hs)
+          (step_preserves_terminal s b m key hterm hs) hrest
+
+/-- **S3** — the biconditional supply law, unconditionally over reachable
+states: supply is 1 iff the key is in that token's state, 0 otherwise. -/
+theorem biconditional_supply_sync (s : RegistryState) (h : Reachable s) (key : Key) :
+    (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) ∧
+    (kindCount s .active key = 0 ↔ trieGet s.trie key ≠ .known .active) ∧
+    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) ∧
+    (custodyCount s key = 0 ↔ trieGet s.trie key ≠ .known .absent) := by
+  obtain ⟨_, hA1, hA2, hC1, hC2, _, _, _⟩ := reachable_consistent s h
+  refine ⟨hA1 key, ?_, hC1 key, ?_⟩
+  · constructor
+    · intro h0 hEq
+      have := (hA1 key).mpr hEq
+      omega
+    · intro hne
+      have := hA2 key
+      have hnot1 : kindCount s .active key ≠ 1 := fun hEq => hne ((hA1 key).mp hEq)
+      omega
+  · constructor
+    · intro h0 hEq
+      have := (hC1 key).mpr hEq
+      omega
+    · intro hne
+      have := hC2 key
+      have hnot1 : custodyCount s key ≠ 1 := fun hEq => hne ((hC1 key).mp hEq)
+      omega
+
+/-- **O1** — occupancy: a booking edge succeeds only on a key that is not
+taken, and books it. -/
+theorem occupancy (s : RegistryState) (r : Request) (t : Result) (h : Reachable s)
+    (hok : step s r = .ok t)
+    (hedge : r.edge = .insertActive ∨ r.edge = .updateActive) :
+    ¬ (trieGet s.trie r.key = .known .active ∨ trieGet s.trie r.key = .known .terminal) ∧
+    trieGet t.state.trie r.key = .known .active := by
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨_, _, _, _, hcase⟩
+  · rcases hedge with hE | hE <;> (rw [hE] at hw; exact absurd hw (by decide))
+  · rcases hcase with ⟨hE, hb⟩ | ⟨hE, hb⟩ | ⟨hE, hb, hpres⟩ | ⟨hE, hb, _⟩ | ⟨hE, hb, _⟩ |
+        ⟨hE, hb, _⟩
+    · rcases hedge with h2 | h2 <;> (rw [h2] at hE; exact absurd hE (by decide))
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_insertActive s r hE
+      exact ⟨by rw [hb]; rintro (hc | hc) <;> exact absurd hc (by decide),
+        by rw [h1, trieGet_set_eq]⟩
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_updateActive s r hE c hfind
+      exact ⟨by rw [hb]; rintro (hc | hc) <;> exact absurd hc (by decide),
+        by rw [h1, trieGet_set_eq]⟩
+    all_goals (rcases hedge with h2 | h2 <;> (rw [h2] at hE; exact absurd hE (by decide)))
+
+/-- **O1**, converse: a booking edge on an untaken key, with a matching
+approval, succeeds. -/
+theorem occupancy_free_key_succeeds (s : RegistryState) (h : Reachable s) (key : Key)
+    (owner out : Nat) (hfree : trieGet s.trie key = .unknown)
+    (ap : Approval) (hmatch : admitsFor s.config
+      { edge := .insertActive, key := key, owner := owner, output := out } (some ap)) :
+    ∃ t, step s { edge := .insertActive, key := key, owner := owner, output := out, approval := ap } = .ok t := by
+  have hpol : ap.policy = s.config.applicationPolicy := by
+    unfold admitsFor at hmatch
+    simp only at hmatch
+    simp only [Bool.and_eq_true, beq_iff_eq] at hmatch
+    exact hmatch.1.1.1.1.1
+  have href : refusal s (Request.mk .insertActive key owner 0 0 out (some ap) []) = none :=
+    (refusal_none_iff s _).mpr (Or.inr ⟨ap, rfl, hpol, hmatch, Or.inr (Or.inl ⟨rfl, hfree⟩)⟩)
+  exact ⟨applyEdge s (Request.mk .insertActive key owner 0 0 out (some ap) []),
+    ok_of_refusal s _ href⟩
+
+/-- **T1** — termination: on a terminal key every leaf-moving edge is refused,
+forever, so the key stays terminated and is never re-booked. Supersedes the
+base `over_terminal`. -/
+theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
+    (hterm : trieGet s.trie key = .known .terminal) :
+    (∀ (r : Request), r.edge ≠ .witnessTerminal → r.key = key →
+        ∃ why, step s r = .error why) ∧
+    (∀ (acts : List Request) (t : Result), foldBatch s acts = .ok t →
+        trieGet t.state.trie key = .known .terminal) := by
   constructor
-  · intro h; simp [insertAsset] at h; exact h.2
-  · intro h; subst h; rfl
+  · intro r htree hkey
+    cases hr : refusal s r with
+    | some why => exact ⟨why, error_of_refusal s r why hr⟩
+    | none =>
+      exfalso
+      rcases (refusal_none_iff s r).mp hr with ⟨hw, _⟩ | ⟨_, _, _, _, hcase⟩
+      · exact htree hw
+      · rcases hcase with ⟨_, hb⟩ | ⟨_, hb⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ <;>
+          (rw [hkey, hterm] at hb; exact absurd hb (by decide))
+  · intro acts t hfold
+    exact foldActions_preserves_terminal s acts t key hterm (foldBatch_inv s acts t hfold).2
 
-theorem action_domain_separation (p : Proposal) (reg id : Nat) (r : Refund) :
-    Commitment.insert p ≠ Commitment.withdraw reg id r := by
-  simp
+/-- **W1** — at most one active token, exactly one iff the leaf is Active. -/
+theorem active_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
+    kindCount s .active key ≤ 1 ∧
+    (kindCount s .active key = 1 ↔ trieGet s.trie key = .known .active) := by
+  obtain ⟨_, hA1, hA2, _, _, _, _, _⟩ := reachable_consistent s h
+  exact ⟨hA2 key, hA1 key⟩
 
-theorem createInsert_iff (s : State) (r : Request) (a : Approval) (w : Witnesses) (t : Result) :
-    step s (.createInsert r a w) = .ok t ↔
-    insertNative s r = true ∧ r.authenticatedOrigin = true ∧
-    a.asset = insertAsset r.proposal ∧ approved s a w = true ∧ fresh s r.id = true ∧
-    t = { state := { s with requests := r :: s.requests,       approvals := a :: s.approvals, used := r.id :: s.used } } := by
-  exact createInsert_ok s r a w t
+/-- **W2** — at most one absent witness, exactly one iff the leaf is Absent. -/
+theorem absent_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
+    custodyCount s key ≤ 1 ∧
+    (custodyCount s key = 1 ↔ trieGet s.trie key = .known .absent) := by
+  obtain ⟨_, _, _, hC1, hC2, _, _, _⟩ := reachable_consistent s h
+  exact ⟨hC2 key, hC1 key⟩
 
-theorem mintWithdraw_iff (s : State) (a : Approval) (w : Witnesses) (t : Result) :
-    step s (.mintWithdraw a w) = .ok t ↔ approved s a w = true ∧
-    (∃ id refund, a.asset.name = .withdraw s.config.registry id refund) ∧
-    t = { state := { s with approvals := a :: s.approvals } } := by
-  exact mintWithdraw_ok s a w t
+/-- **W3** — terminal attestations are plural, all true, and freely mintable
+while the leaf is terminal; none exists otherwise. -/
+theorem terminal_witness_plural (s : RegistryState) (key : Key) (h : Reachable s)
+    (hterm : trieGet s.trie key = .known .terminal) (out : Nat) :
+    (∃ t, step s (Request.mk .witnessTerminal key 0 0 0 out none
+        [(.terminal, 1)]) = .ok t ∧
+      kindCount t.state .terminal key = kindCount s .terminal key + 1) ∧
+    (∀ h ∈ s.held, h.kind = .terminal → trieGet s.trie h.key = .known .terminal) ∧
+    (∀ n : Nat, ∃ (u : RegistryState), Reachable u ∧
+      kindCount u .terminal key = kindCount s .terminal key + n ∧
+      trieGet u.trie key = .known .terminal) := by
+  have hroot : s.config.root = rootOf s.trie := (reachable_consistent s h).1
+  have hmint : ∀ (u : RegistryState) (o : Nat), Reachable u → u.config.root = rootOf u.trie →
+      trieGet u.trie key = .known .terminal →
+      ∃ v, step u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) = .ok v ∧
+        Reachable v.state ∧ v.state.config = u.config ∧ v.state.trie = u.trie ∧
+        kindCount v.state .terminal key = kindCount u .terminal key + 1 := by
+    intro u o hu hru htu
+    have hr : readAt u 0 key .terminal = true := (readAt_true_iff u key).mpr ⟨hru, htu⟩
+    have href : refusal u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) = none :=
+      (refusal_none_iff u _).mpr (Or.inl ⟨rfl, hr⟩)
+    obtain ⟨h1, h2, _, h4, _, _⟩ :=
+      applyEdge_witnessTerminal u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) rfl
+    refine ⟨applyEdge u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]), ?_, ?_, h2, h1, ?_⟩
+    · exact ok_of_refusal u _ href
+    · exact Reachable.next hu (ok_of_refusal u _ href)
+    · simp [kindCount, h4, countHeld_cons]
+  refine ⟨?_, fun hh hmem hk => (reachable_consistent s h).2.2.2.2.2.1 _ hmem hk, ?_⟩
+  · obtain ⟨v, hstep, _, _, _, hcount⟩ := hmint s out h hroot hterm
+    exact ⟨v, hstep, hcount⟩
+  · intro n
+    induction n with
+    | zero => exact ⟨s, h, by simp, hterm⟩
+    | succ k ih =>
+      obtain ⟨u, hu, hcount, hleaf⟩ := ih
+      have hru : u.config.root = rootOf u.trie := (reachable_consistent u hu).1
+      obtain ⟨v, _, hv, hcfg, htrie, hvc⟩ := hmint u out hu hru hleaf
+      exact ⟨v.state, hv, by rw [hvc, hcount]; omega, by rw [htrie]; exact hleaf⟩
 
-theorem release_iff (s : State) (id : Nat) (r : Request) (e : ReleaseEvidence)
-    (w : Witnesses) (t : Result) :
-    step s (.release id r e w) = .ok t ↔
-    ∃ u, s.applications.find? (·.id == id) = some u ∧
-    w.applicationSpend = true ∧ e.accepted = true ∧ e.source = id ∧ e.request = r ∧
-    releaseNative s r = true ∧ r.authenticatedOrigin = true ∧
-    r.held = some u.output.representative ∧ u.key = r.proposal.key ∧ fresh s r.id = true ∧
-    t = { state := { (consume s id) with requests := r :: (consume s id).requests,       used := r.id :: (consume s id).used } } := by
-  exact release_ok s id r e w t
+/-- **W4** — kind exclusion: at most one kind of witness is outstanding for a
+key, so a consumer that finds one kind knows the other two do not exist. -/
+theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) :
+    (kindCount s .active key > 0 → custodyCount s key = 0 ∧ kindCount s .terminal key = 0) ∧
+    (custodyCount s key > 0 → kindCount s .active key = 0 ∧ kindCount s .terminal key = 0) ∧
+    (kindCount s .terminal key > 0 → kindCount s .active key = 0 ∧ custodyCount s key = 0) := by
+  obtain ⟨_, hA1, hA2, hC1, hC2, hTerm, _, _⟩ := reachable_consistent s h
+  have hterm_leaf : kindCount s .terminal key > 0 → trieGet s.trie key = .known .terminal := by
+    intro hpos
+    unfold kindCount at hpos
+    cases hf : (s.held.filter fun x => x.key == key && x.kind == .terminal) with
+    | nil => rw [hf] at hpos; simp at hpos
+    | cons x xs =>
+      have hx : x ∈ s.held.filter (fun x => x.key == key && x.kind == .terminal) := by
+        rw [hf]; exact List.mem_cons_self
+      have hmem := (List.mem_filter.mp hx).1
+      have hxp := (List.mem_filter.mp hx).2
+      have hxk : x.key = key := by simpa using (Bool.and_eq_true_iff.mp hxp).1
+      have hxkind : x.kind = .terminal := by simpa using (Bool.and_eq_true_iff.mp hxp).2
+      have := hTerm x hmem hxkind
+      rw [hxk] at this; exact this
+  have hactive_leaf : kindCount s .active key > 0 → trieGet s.trie key = .known .active := by
+    intro hpos
+    have h1 : kindCount s .active key = 1 := by have := hA2 key; omega
+    exact (hA1 key).mp h1
+  have hcust_leaf : custodyCount s key > 0 → trieGet s.trie key = .known .absent := by
+    intro hpos
+    have h1 : custodyCount s key = 1 := by have := hC2 key; omega
+    exact (hC1 key).mp h1
+  refine ⟨?_, ?_, ?_⟩
+  · intro hpos
+    have hl := hactive_leaf hpos
+    refine ⟨?_, ?_⟩
+    · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
+      · exact h0
+      · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
+    · rcases Nat.eq_zero_or_pos (kindCount s .terminal key) with h0 | hp
+      · exact h0
+      · have := hterm_leaf hp; rw [hl] at this; exact absurd this (by decide)
+  · intro hpos
+    have hl := hcust_leaf hpos
+    refine ⟨?_, ?_⟩
+    · rcases Nat.eq_zero_or_pos (kindCount s .active key) with h0 | hp
+      · exact h0
+      · have := hactive_leaf hp; rw [hl] at this; exact absurd this (by decide)
+    · rcases Nat.eq_zero_or_pos (kindCount s .terminal key) with h0 | hp
+      · exact h0
+      · have := hterm_leaf hp; rw [hl] at this; exact absurd this (by decide)
+  · intro hpos
+    have hl := hterm_leaf hpos
+    refine ⟨?_, ?_⟩
+    · rcases Nat.eq_zero_or_pos (kindCount s .active key) with h0 | hp
+      · exact h0
+      · have := hactive_leaf hp; rw [hl] at this; exact absurd this (by decide)
+    · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
+      · exact h0
+      · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
 
-theorem evolve_iff (s : State) (id : Nat) (u : ApplicationUTxO) (e : EvolutionEvidence)
-    (w : Witnesses) (t : Result) :
-    step s (.evolve id u e w) = .ok t ↔
-    ∃ old, s.applications.find? (·.id == id) = some old ∧
-    w.applicationSpend = true ∧ e.accepted = true ∧ e.source = id ∧ e.successor = u ∧
-    u.output.representative = old.output.representative ∧ u.output.quantity = 1 ∧
-    u.key = old.key ∧ fresh s u.id = true ∧
-    t = { state := { (consume s id) with applications := u :: (consume s id).applications,       used := u.id :: (consume s id).used } } := by
-  exact evolve_ok s id u e w t
+/-! ### Edge inversions — one per edge, exact guards and effects -/
 
-theorem outsider_iff (s : State) (r : Request) (t : Result) :
-    step s (.outsider r) = .ok t ↔ fresh s r.id = true ∧ r.held = none ∧
-    t = { state := { s with requests := { r with authenticatedOrigin := false } :: s.requests,       used := r.id :: s.used } } := by
-  exact outsider_ok s r t
+/-- Inversion of an admitted `insertAbsent`. -/
+theorem insert_absent_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .insertAbsent) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .unknown ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .absent) ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .absent)) } ∧
+    t.state.custody =
+      { key := r.key, refundAddress := r.refundAddress, value := r.deposit } :: s.custody ∧
+    t.state.held = s.held ∧ t.mint = [(.absent, 1)] ∧ t.paid = [] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_insertAbsent s r he
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hb : trieGet s.trie r.key = .unknown := by
+        rcases hcase with ⟨_, hb⟩ | ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _⟩
+        all_goals first
+          | exact hb
+          | (rw [he] at hE; exact absurd hE (by decide))
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      exact ⟨hb, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust,
+      hheld, hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inl ⟨he, hb⟩⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_insertAbsent s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, h1⟩ ⟨c2, t2, cu2, h2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 
-theorem withdraw_iff (s : State) (id : Nat) (a : Asset) (refund : Refund)
-    (w : Witnesses) (t : Result) :
-    step s (.withdraw id a refund w) = .ok t ↔
-    ∃ r, s.requests.find? (·.id == id) = some r ∧ w.nativeSpend = true ∧
-    r.authenticatedOrigin = true ∧ insertNative s r = true ∧
-    refund.destination = r.proposal.refundAddress ∧ recognized s a = true ∧
-    a.name = .withdraw s.config.registry id refund ∧ t = { state := consume s id } := by
-  exact withdraw_ok s id a refund w t
+/-- Inversion of an admitted `insertActive`. -/
+theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .insertActive) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .unknown ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .active) ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
+    t.state.custody = s.custody ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.mint = [(.active, 1)] ∧ t.paid = [] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hguard : trieGet s.trie r.key = .unknown := by
+        rcases hcase with ⟨hE, _⟩ | ⟨_, hb⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩
+        all_goals first
+          | exact hb
+          | (rw [he] at hE; exact absurd hE (by decide))
+      obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_insertActive s r he
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      refine ⟨hguard, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inl ⟨he, hb⟩)⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_insertActive s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
+/-- Inversion of an admitted `updateActive` — booking a witnessed name; the
+consumed absent token's value is paid to the refund address its custody datum
+records (R-ADA). -/
+theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .updateActive) (c : Custody)
+    (hc : s.custody.find? (·.key == r.key) = some c) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .absent ∧ c.key = r.key ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .active) ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
+    t.state.custody = s.custody.filter (·.key != r.key) ∧
+    t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
+    t.mint = [(.absent, -1), (.active, 1)] ∧
+    t.paid = [(c.refundAddress, c.value)] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hguard : trieGet s.trie r.key = .known .absent ∧ s.custody.any (·.key == r.key) = true := by
+        rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨_, hb, hpres⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩
+        all_goals first
+          | exact ⟨hb, hpres⟩
+          | (rw [he] at hE; exact absurd hE (by decide))
+      obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_updateActive s r he c hc
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      refine ⟨hguard.1, by simpa using List.find?_some hc,
+        ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, _, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have hpres : s.custody.any (·.key == r.key) = true := by
+      refine List.any_eq_true.mpr ⟨c, List.mem_of_find?_eq_some hc, ?_⟩
+      simpa using List.find?_some hc
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_updateActive s r he c hc
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
+/-- Inversion of an admitted `updateTerminal` — retirement completes here. -/
+theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .updateTerminal) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .active ∧
+    s.held.any (fun x => x.key == r.key && x.kind == .active) = true ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key (.known .terminal) ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .terminal)) } ∧
+    t.state.custody = s.custody ∧
+    t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
+    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hguard : trieGet s.trie r.key = .known .active ∧ s.held.any (fun x => x.key == r.key && x.kind == .active) = true := by
+        rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨_, hb, hpres⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩
+        all_goals first
+          | exact ⟨hb, hpres⟩
+          | (rw [he] at hE; exact absurd hE (by decide))
+      obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_updateTerminal s r he
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      refine ⟨hguard.1, hguard.2, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩)))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_updateTerminal s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
+/-- Inversion of an admitted `deleteAbsent` — the witness retracts, the deposit
+returns to the inserter (R-ADA), and the key reads `Unknown` again. -/
+theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .deleteAbsent) (c : Custody)
+    (hc : s.custody.find? (·.key == r.key) = some c) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .absent ∧ c.key = r.key ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key .unknown ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
+    t.state.custody = s.custody.filter (·.key != r.key) ∧
+    t.state.held = s.held ∧
+    t.mint = [(.absent, -1)] ∧ t.paid = [(c.refundAddress, c.value)] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hguard : trieGet s.trie r.key = .known .absent ∧ s.custody.any (·.key == r.key) = true := by
+        rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨_, hb, hpres⟩ | ⟨hE, _, _⟩
+        all_goals first
+          | exact ⟨hb, hpres⟩
+          | (rw [he] at hE; exact absurd hE (by decide))
+      obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_deleteAbsent s r he c hc
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      refine ⟨hguard.1, by simpa using List.find?_some hc,
+        ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, _, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have hpres : s.custody.any (·.key == r.key) = true := by
+      refine List.any_eq_true.mpr ⟨c, List.mem_of_find?_eq_some hc, ?_⟩
+      simpa using List.find?_some hc
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩))))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_deleteAbsent s r he c hc
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
+/-- Inversion of an admitted `deleteActive` — the key reads `Unknown` again and
+may be inserted again as the same key. -/
+theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .deleteActive) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .active ∧
+    s.held.any (fun x => x.key == r.key && x.kind == .active) = true ∧
+    (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+      ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+      ap.destination = requestDestination r ∧
+      ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
+    t.state.trie = trieSet s.trie r.key .unknown ∧
+    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
+    t.state.custody = s.custody ∧
+    t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
+    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+    · rw [he] at hw; exact absurd hw (by decide)
+    · have hguard : trieGet s.trie r.key = .known .active ∧ s.held.any (fun x => x.key == r.key && x.kind == .active) = true := by
+        rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨_, hb, hpres⟩
+        all_goals first
+          | exact ⟨hb, hpres⟩
+          | (rw [he] at hE; exact absurd hE (by decide))
+      obtain ⟨htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := applyEdge_deleteActive s r he
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      simp only [he] at hadm
+      simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+      obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+      refine ⟨hguard.1, hguard.2, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+        htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨he, hb, hpres⟩))))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_deleteActive s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
+/-- Inversion of an admitted `witnessTerminal` — the read: the leaf, the root
+and custody are unchanged, one attestation is minted to the named output. -/
+theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .witnessTerminal) :
+    step s r = .ok t ↔
+    trieGet s.trie r.key = .known .terminal ∧ s.config.root = rootOf s.trie ∧
+    t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
+    t.state.held = { key := r.key, kind := .terminal, output := r.output } :: s.held ∧
+    t.mint = [(.terminal, 1)] ∧ t.paid = [] := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := applyEdge_witnessTerminal s r he
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨_, hr⟩ | ⟨_, _, _, _, hcase⟩
+    · have := (readAt_true_iff s r.key).mp hr
+      exact ⟨this.2, this.1, h1, h2, h3, h4, h5, h6⟩
+    · rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩
+      all_goals (rw [he] at hE; exact absurd hE (by decide))
+  · rintro ⟨hterm, hroot, htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+    have hr : readAt s 0 r.key .terminal = true :=
+      (readAt_true_iff s r.key).mpr ⟨hroot, hterm⟩
+    have href : refusal s r = none := (refusal_none_iff s r).mpr (Or.inl ⟨he, hr⟩)
+    rw [ok_of_refusal s r href]
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [h2, hcfg]) (by rw [h1, htrie]) (by rw [h3, hcust]) (by rw [h4, hheld]))
+      (by rw [h5, hmint]) (by rw [h6, hpaid]))
 
-theorem fold_iff (s : State) (items : List FoldItem) (mint : List Delta) (net : List ActionDelta)
-    (w : Witnesses) (t : Result) :
-    step s (.fold items mint net w) = .ok t ↔ w.nativeSpend = true ∧
-    foldItems s items = .ok t ∧ sameNet t.logical mint = true ∧
-    (nonzero mint = true → w.representativeMint = true) ∧
-    (actionNonzero net = true → w.applicationMint = true) := by
-  exact fold_ok s items mint net w t
+/-! ### Fold and read facts -/
 
-theorem moveAction_iff (s : State) (a : Asset) (n : Int) (w : Witnesses) (t : Result) :
-    step s (.moveAction a n w) = .ok t ↔ recognized s a = true ∧ n = 0 ∧
-    t = { state := s } := by
-  exact moveAction_ok s a n w t
-
-theorem escape_refused (s : State) (id : Nat) :
-    step s (.escape id) = .error "completion-only-custody" := by
+/-- A zero-request batch is always refused. -/
+theorem empty_fold_error (s : RegistryState) (batch : List Request)
+    (h : batch = []) : foldBatch s batch = .error "empty-fold" := by
+  subst h
   rfl
 
-theorem foldOne_insert_iff (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation = .insert) :
-    foldOne s i = .ok t ↔ r.authenticatedOrigin = true ∧ insertNative s r = true ∧
-    r.token.any (recognized s) = true ∧ (entry s r.proposal.key).value = none ∧
-    r.proposal.scope.contains (entry s r.proposal.key).incarnation = true ∧
-    r.proposal.initial.representative = representative s r.proposal.key ∧
-    i.output = some r.proposal.initial ∧ fresh s i.outputId = true ∧
-    t = { state := { (setEntry (consume s r.id) { (entry s r.proposal.key) with value := some .active }) with       applications := { id := i.outputId, key := r.proposal.key, output := r.proposal.initial } ::         (consume s r.id).applications, used := i.outputId :: s.used },       logical := [{ asset := representative s r.proposal.key, quantity := 1 }] } := by
-  exact foldOne_insert_ok s i r t hr hop
+/-- A fold succeeds iff every request applies in order and the claimed mint
+matches the summed delta of the folded edges. -/
+theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
+    foldBatch s (b :: bs) = .ok t ↔
+    ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
+      t = { state := r.state, mint := deltaPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
+      deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
+        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+  constructor
+  · intro hok
+    have hacts := (foldBatch_inv s (b :: bs) t hok).2
+    have hdelta : deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
+        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+      unfold foldBatch at hok
+      rw [if_neg (by simp)] at hok
+      rw [hacts] at hok
+      simp only [bind, Except.bind, pure, Except.pure] at hok
+      split at hok
+      · assumption
+      · exact Except.noConfusion hok
+    unfold foldActions at hacts
+    simp only [bind, Except.bind, pure, Except.pure] at hacts
+    cases hs : step s b with
+    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | ok m =>
+      rw [hs] at hacts
+      simp only [bind, Except.bind, pure, Except.pure] at hacts
+      cases hr : foldActions m.state bs with
+      | error e => rw [hr] at hacts; exact Except.noConfusion hacts
+      | ok r =>
+        rw [hr] at hacts
+        have hEq : combineResults m r = t := by injection hacts
+        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta⟩
+  · rintro ⟨m, r, hs, hr, hEq, hdelta⟩
+    unfold foldBatch
+    rw [if_neg (by simp)]
+    have hacts : foldActions s (b :: bs) = .ok t := by
+      unfold foldActions
+      simp only [bind, Except.bind, pure, Except.pure]
+      rw [hs]
+      simp only [bind, Except.bind, pure, Except.pure]
+      rw [hr, hEq]
+      rfl
+    rw [hacts]
+    simp only [bind, Except.bind, pure, Except.pure]
+    split
+    · rfl
+    · rename_i hc; exact absurd hdelta hc
 
-theorem foldOne_terminal_iff (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation ≠ .insert) :
-    foldOne s i = .ok t ↔ r.authenticatedOrigin = true ∧ releaseNative s r = true ∧
-    r.held = some (representative s r.proposal.key) ∧
-    (entry s r.proposal.key).value = some .active ∧ i.output = none ∧
-    t = { state := setEntry (consume s r.id) { (entry s r.proposal.key) with       value := if r.operation == .update then some .over else none,       incarnation := if r.operation == .delete then (entry s r.proposal.key).incarnation + 1         else (entry s r.proposal.key).incarnation },       logical := [{ asset := representative s r.proposal.key, quantity := -1 }] } := by
-  exact foldOne_terminal_ok s i r t hr hop
-
-theorem sequential_fold_cons (s : State) (i : FoldItem) (is : List FoldItem) (t : Result) :
-    foldItems s (i :: is) = .ok t ↔ ∃ first rest,
-    foldOne s i = .ok first ∧ foldItems first.state is = .ok rest ∧
-    t = { state := rest.state, logical := first.logical ++ rest.logical } := by
-  exact foldItems_cons_ok s i is t
-
-theorem supply_conservation (s : State) (a : Action) (t : Result)
-    (reachable : Reachable s) (success : step s a = .ok t) : WellFormed t.state := by
-  exact (inv_step (reachable_inv reachable) success).wf
-
-set_option linter.unusedVariables false in
-theorem over_terminal (s : State) (a : Action) (t : Result) (key : Nat)
-    (reachable : Reachable s) (over : (entry s key).value = some .over)
-    (success : step s a = .ok t) : (entry t.state key).value = some .over := by
-  cases a with
-  | createInsert r c w =>
-    rw [createInsert_ok] at success
-    obtain ⟨-, -, -, -, -, rfl⟩ := success
-    exact over
-  | mintWithdraw c w =>
-    rw [mintWithdraw_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | release id r e w =>
-    rw [release_ok] at success
-    obtain ⟨u, -, -, -, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | evolve id u e w =>
-    rw [evolve_ok] at success
-    obtain ⟨old, -, -, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | outsider r =>
-    rw [outsider_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | withdraw id a refund w =>
-    rw [withdraw_ok] at success
-    obtain ⟨r, -, -, -, -, -, -, -, rfl⟩ := success
-    exact over
-  | fold items mint net w =>
-    rw [fold_ok] at success
-    exact foldItems_entry_over over success.2.1
-  | moveAction a n w =>
-    rw [moveAction_ok] at success
-    obtain ⟨-, -, rfl⟩ := success
-    exact over
-  | escape id => cases success
-
-theorem over_no_representative (s : State) (key : Nat) (reachable : Reachable s)
-    (over : (entry s key).value = some .over) : supply s key = 0 := by
-  have hw := (reachable_inv reachable).wf key
-  rw [over] at hw
-  simpa using hw
-
-theorem pending_insert_no_representative (s : State) (r : Request) (a : Approval)
-    (w : Witnesses) (t : Result) (h : step s (.createInsert r a w) = .ok t) :
-    r.held = none ∧ t.state.entries = s.entries ∧ t.state.applications = s.applications := by
-  rw [createInsert_ok] at h
-  obtain ⟨hn, -, -, -, -, rfl⟩ := h
-  refine ⟨?_, rfl, rfl⟩
-  simp only [insertNative, Bool.and_eq_true, Option.isNone_iff_eq_none] at hn
-  exact hn.1.1.2
-
-theorem minting_requires_configured_issuer (s : State) (r : Request) (a : Approval)
-    (w : Witnesses) (t : Result) (h : step s (.createInsert r a w) = .ok t) :
-    a.asset.policy = s.config.applicationPolicy ∧ a.accepted = true ∧ w.applicationMint = true := by
-  rw [createInsert_ok] at h
-  obtain ⟨-, -, -, ha, -, -⟩ := h
-  simp only [approved, Bool.and_eq_true, beq_iff_eq] at ha
-  exact ⟨ha.2, ha.1.2, ha.1.1⟩
-
-theorem withdrawal_preserves_registry_supply (s : State) (id : Nat) (a : Asset)
-    (refund : Refund) (w : Witnesses) (t : Result) (reachable : Reachable s)
-    (h : step s (.withdraw id a refund w) = .ok t) :
-    t.state.entries = s.entries ∧ t.state.applications = s.applications ∧ t.logical = [] := by
-  rw [withdraw_ok] at h
-  obtain ⟨r, hr, -, -, -, -, -, -, rfl⟩ := h
-  have hid : r.id = id := by simpa using List.find?_some hr
-  subst hid
-  refine ⟨rfl, ?_, rfl⟩
-  exact (reachable_inv reachable).filter_applications (List.mem_of_find?_eq_some hr)
-
-theorem exact_withdraw_scope (s : State) (id : Nat) (a : Asset) (refund : Refund)
-    (w : Witnesses) (t : Result) (h : step s (.withdraw id a refund w) = .ok t) :
-    a.name = .withdraw s.config.registry id refund := by
-  rw [withdraw_ok] at h
-  obtain ⟨r, -, -, -, -, -, -, hname, -⟩ := h
-  exact hname
-
-theorem local_evolution_registry_unchanged (s : State) (id : Nat) (u : ApplicationUTxO)
-    (e : EvolutionEvidence) (w : Witnesses) (t : Result)
-    (h : step s (.evolve id u e w) = .ok t) :
-    t.state.entries = s.entries ∧ t.logical = [] := by
-  rw [evolve_ok] at h
-  obtain ⟨old, -, -, -, -, -, -, -, -, -, rfl⟩ := h
-  exact ⟨rfl, rfl⟩
-
-theorem release_is_operation_specific (s : State) (id : Nat) (r : Request) (e : ReleaseEvidence)
-    (w : Witnesses) (t : Result) (h : step s (.release id r e w) = .ok t) :
-    e.request.operation = r.operation ∧ e.request = r ∧ w.applicationSpend = true := by
-  rw [release_ok] at h
-  obtain ⟨u, -, hw, -, -, hreq, -⟩ := h
-  exact ⟨by rw [hreq], hreq, hw⟩
-
-set_option linter.unusedVariables false in
-theorem release_removes_application_custody (s : State) (id : Nat) (r : Request)
-    (e : ReleaseEvidence) (w : Witnesses) (t : Result) (reachable : Reachable s)
-    (h : step s (.release id r e w) = .ok t) :
-    t.state.applications.find? (·.id == id) = none := by
-  rw [release_ok] at h
-  obtain ⟨u, -, -, -, -, -, -, -, -, -, -, rfl⟩ := h
-  simp [consume, List.find?_eq_none]
-
-set_option linter.unusedVariables false in
-theorem request_single_spend (s : State) (i : FoldItem) (t : Result)
-    (reachable : Reachable s) (h : foldOne s i = .ok t) :
-    t.state.requests.find? (·.id == i.request) = none := by
-  obtain ⟨r, hr⟩ := foldOne_ok_find h
-  have hid : r.id = i.request := by simpa using List.find?_some hr
-  by_cases hop : r.operation = .insert
-  · rw [foldOne_insert_ok s i r t hr hop] at h
-    obtain ⟨-, -, -, -, -, -, -, -, rfl⟩ := h
-    simp [List.find?_eq_none, hid]
-  · rw [foldOne_terminal_ok s i r t hr hop] at h
-    obtain ⟨-, -, -, -, -, rfl⟩ := h
-    simp [List.find?_eq_none, hid]
-
-theorem approval_scope_checked (s : State) (i : FoldItem) (r : Request) (t : Result)
-    (hr : s.requests.find? (·.id == i.request) = some r) (hop : r.operation = .insert)
-    (h : foldOne s i = .ok t) :
-    r.proposal.scope.contains (entry s r.proposal.key).incarnation = true := by
-  rw [foldOne_insert_ok s i r t hr hop] at h
-  exact h.2.2.2.2.1
-
-theorem outsider_not_admitted (s : State) (r : Request) (t : Result)
-    (h : step s (.outsider r) = .ok t) (i : FoldItem) (hi : i.request = r.id) :
-    foldOne t.state i = .error "unauthenticated-request" := by
-  rw [outsider_ok] at h
-  obtain ⟨-, -, rfl⟩ := h
-  simp [foldOne, hi, bind, Except.bind]
-
-theorem native_witness_even_zero_net (s : State) (items : List FoldItem) (n : List ActionDelta)
-    (w : Witnesses) (t : Result) (h : step s (.fold items [] n w) = .ok t) :
-    w.nativeSpend = true ∧ sameNet t.logical [] = true := by
-  rw [fold_ok] at h
-  exact ⟨h.1, h.2.2.1⟩
-
-theorem nonzero_action_invokes_policy (s : State) (items : List FoldItem) (mint : List Delta)
-    (n : List ActionDelta) (w : Witnesses) (t : Result) (hn : actionNonzero n = true)
-    (h : step s (.fold items mint n w) = .ok t) : w.applicationMint = true := by
-  rw [fold_ok] at h
-  exact h.2.2.2.2 hn
-
-theorem existing_action_does_not_refresh_scope (s : State) (a : Asset) (w : Witnesses)
-    (t : Result) (h : step s (.moveAction a 0 w) = .ok t) : t.state = s := by
-  rw [moveAction_ok] at h
-  rw [h.2.2]
-
-theorem resolve_unauthenticated (s : State) (key : Nat) :
-    resolve s key false = .unauthenticated := by
-  rfl
-
-theorem resolve_absent (s : State) (key : Nat) (h : (entry s key).value = none) :
-    resolve s key true = .absent := by
-  simp [resolve, h]
-
-theorem resolve_over (s : State) (key : Nat) (h : (entry s key).value = some .over) :
-    resolve s key true = .retired := by
-  simp [resolve, h]
-
-theorem resolve_address_iff (s : State) (key datum : Nat) :
-    resolve s key true = .address datum ↔ (entry s key).value = some .active ∧
-    ∃ u, s.applications.find? (fun u => u.key == key &&
-      u.output.representative == representative s key && u.output.quantity == 1) = some u ∧
-      u.output.datum = datum := by
-  simp only [resolve, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-  repeat' split
-  all_goals simp [*]
-
-theorem resolve_pending_iff (s : State) (key : Nat) :
-    resolve s key true = .pending ↔ (entry s key).value = some .active ∧
-    s.applications.find? (fun u => u.key == key &&
-      u.output.representative == representative s key && u.output.quantity == 1) = none := by
-  simp only [resolve, Bool.not_true, Bool.false_eq_true, ↓reduceIte]
-  repeat' split
-  all_goals simp [*]
-
-theorem release_registry_independent (s : State) (entries : List Entry) (r : Request) :
-    releaseNative { s with entries := entries } r = releaseNative s r := by
-  rfl
-
-theorem insert_creation_registry_independent (s : State) (entries : List Entry) (r : Request) :
-    insertNative { s with entries := entries } r = insertNative s r := by
-  rfl
-
-theorem whole_release_acceptance_independent (s : State) (entries : List Entry)
-    (id : Nat) (r : Request) (e : ReleaseEvidence) (w : Witnesses) :
-    (∃ t, step { s with entries := entries } (.release id r e w) = .ok t) ↔
-    (∃ t, step s (.release id r e w) = .ok t) := by
-  rw [step_release_entries]
-  cases step s (.release id r e w) <;> simp [Except.map]
-
-theorem whole_release_refusal_independent (s : State) (entries : List Entry)
-    (id : Nat) (r : Request) (e : ReleaseEvidence) (w : Witnesses) (reason : String) :
-    step { s with entries := entries } (.release id r e w) = .error reason ↔
-    step s (.release id r e w) = .error reason := by
-  rw [step_release_entries]
-  cases step s (.release id r e w) <;> simp [Except.map]
-
-theorem whole_insert_acceptance_independent (s : State) (entries : List Entry)
-    (r : Request) (a : Approval) (w : Witnesses) :
-    (∃ t, step { s with entries := entries } (.createInsert r a w) = .ok t) ↔
-    (∃ t, step s (.createInsert r a w) = .ok t) := by
-  rw [step_createInsert_entries]
-  cases step s (.createInsert r a w) <;> simp [Except.map]
-
-theorem whole_insert_refusal_independent (s : State) (entries : List Entry)
-    (r : Request) (a : Approval) (w : Witnesses) (reason : String) :
-    step { s with entries := entries } (.createInsert r a w) = .error reason ↔
-    step s (.createInsert r a w) = .error reason := by
-  rw [step_createInsert_entries]
-  cases step s (.createInsert r a w) <;> simp [Except.map]
+/-- A read changes nothing: the leaf, the root and custody survive an admitted
+`witnessTerminal` step unchanged. -/
+theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
+    (he : r.edge = .witnessTerminal) (hok : step s r = .ok t) :
+    t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody := by
+  obtain ⟨_, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  obtain ⟨h1, h2, h3, _, _, _⟩ := applyEdge_witnessTerminal s r he
+  exact ⟨h1, h2, h3⟩
 
 end Statements
 end Singular

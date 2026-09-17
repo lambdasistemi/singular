@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Singular.NamingLifecycleStatements.supported_address_roundtrips",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8264a57ceac1140412b6929a371b2c5bfa30a70801f662c884590723c55a5bf4"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.commitment_vectors_are_distinct_and_32_bytes",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "56b7cb93f4b9bc66e44535a8c12e070d1a775e9ddc18114d1d5e4f7feb433dd3"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.destination_preserves_and_refuses",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "18864912a559affb3b7c7023f9634ea10cc0fea263133bf15bcd83bab763998c"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.recovery_installs_and_refuses",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2bb0acb91411b56a1f54cd3d45c0f5630afe6f8aba29f54173e7720b05662237"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_authorization_rows",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9c54dc25fe28017812a24e8ae23f11fa01d4547dcb15bf97093a26b9881ada12"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.consumer_binding_pins_policies",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "23cdb04b62a598b4ffadc7bf3e3a6a2ba3ff59a876c95136b4c161ec3dc1f19d"
+  }
+]

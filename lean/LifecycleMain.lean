@@ -79,12 +79,12 @@ def retirementRows : List Json :=
       (toJson true)
   , row "LT03-insufficient-quorum-refused"
       (match namingRetireLifecycle lRegistered aliceKey [quorumKeyHash 1] none with
-      | .error "naming-no-delete" => true | _ => false)
-      (toJson "naming-no-delete")
+      | .error "naming-retirement-uncertified" => true | _ => false)
+      (toJson "naming-retirement-uncertified")
   , row "LT08-control-key-alone-refused"
       (match namingRetireLifecycle lRegistered aliceKey [controllerAddress.bytes] none with
-      | .error "naming-no-delete" => true | _ => false)
-      (toJson "naming-no-delete")
+      | .error "naming-retirement-uncertified" => true | _ => false)
+      (toJson "naming-retirement-uncertified")
   , row "LT04-retirement-completes"
       ((namingRetireLifecycle lRegistered aliceKey
           [quorumKeyHash 1, quorumKeyHash 29] none).isOk)

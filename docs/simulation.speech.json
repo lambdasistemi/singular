@@ -1,34 +1,54 @@
 {
-  "try-the-manual-controls": [
+  "what-you-can-do": [
     {
-      "text": "The simulator has two explicit profiles. The first-release naming profile lets you queue and cancel an unfulfilled claim, exercise each cancellation refusal, queue competing claims, fold the winner, observe the duplicate refusal, resolve the certified fixture, and try a refused Delete. The generic registry profile separately demonstrates Insert withdrawal, address evolution, retirement, Delete, and batch ordering. Neither profile silently falls back to the other.",
+      "text": "Five journeys, twenty steps between them. Book a name is the shortest: one unknown key, one fold, and the record holds the active token. Witness an absence then book it shows the other order — anyone may record that a key is unknown, the absent token waits in the cage, and booking it consumes that token and pays the deposit back to whoever funded it, not to whoever spent it.",
       "pause": 400
     },
     {
-      "text": "Naming claim cancellation requires separate approval and copies the refund address stored in the request; redirect, certification-only, post-fold, and replay attempts are refused. The playable active-name lifecycle maintains a payment destination, recovers through a committed next controller, and queues then separately completes retirement through either the controller or quorum route. Retirement request withdrawal is a separate refused attempt. The generic profile retains its own Insert withdrawal journey.",
+      "text": "Retire a name and attest it ends in the state that cannot move again, and then attests it twice, because an attestation is a read: it changes nothing, so every copy of it is equally true. Stepping back unwinds the tokens as well as the leaf, so you can watch a witness appear and disappear.",
+      "pause": 400
+    },
+    {
+      "text": "Free play gives you the seven edges and a choice of approval. The interesting one is the third: an approval minted under the registry's own pinned policy, for a real request, whose edge, key, owner and destination do not match this request. It is refused. A model that checked only the policy would admit it.",
+      "pause": 500
+    },
+    {
+      "text": "Seven primitives against four possible leaves is twenty-eight combinations. Seven are the edges; the other twenty-one are refusals, and the page lists all twenty-eight so you can see the refusals are the complement of the table rather than a separately maintained list. Each carries its own reason, because one generic failure would hide which rule stopped you.",
       "pause": 400
     }
   ],
-  "what-the-evidence-establishes": [
+  "what-the-page-proves-and-what-it-does-not": [
     {
-      "text": "This simulator candidate replays fifty-eight generic Lean rows, thirty-four naming rows, and forty-three lifecycle and wire rows. Forty-one generic declarations and seventeen naming declarations are proved from the standard axioms. The lifecycle denominator covers pending-claim cancellation, maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field datum. The generic ledger has twelve controlled checks, seventeen exhibits only, and twelve gaps; naming has fifteen controlled checks, two exhibits only, and no gaps. These are finite checks, not acceptance.",
+      "text": "Every case in the corpus carries its input — the state before and the request — not just the answer, so the page recomputes each one from scratch and compares. The header reports the count it actually reproduced against the count it was given: a page that skipped cases would show a smaller denominator, and one that skipped all of them would show zero rather than passing.",
+      "pause": 400
+    },
+    {
+      "text": "That establishes agreement on the exported inputs. It is not a proof of equivalence. The proofs are in the Lean; the page is evidence that what you are playing is the thing that was proved about, over the cases the model itself chose to export.",
+      "pause": 400
+    },
+    {
+      "text": "One caveat, stated plainly. The Lean model, the corpus generator and this transcription have the same author. Agreement between them is weaker evidence than agreement between independent implementations: a misunderstanding held while writing the model is very likely to be held again while transcribing it. The replay catches transcription slips. It cannot catch a shared misreading of the specification.",
+      "pause": 500
+    }
+  ],
+  "reproduce-the-checks": [
+    {
+      "text": "Three commands. just model compiles the Lean, regenerates the corpus and checks the compiled axioms. just simulator rebuilds the page from its sources and fails if the committed page differs, replays every row outside the browser, then seeds a defect and requires the gate to reject it — a checker that has never been seen to fail is not evidence, so the failing run is part of the passing one.",
+      "pause": 400
+    },
+    {
+      "text": "just browser loads the built page in a pinned Chromium and serves nothing but the page itself: every other request returns four-oh-four, which is how self-containment is checked rather than asserted. Twenty-five assertions, and a page error or an outbound network request fails the run.",
       "pause": 400
     }
   ],
-  "model-and-assumptions": [
+  "where-the-model-itself-is": [
     {
-      "text": "The generic model uses tagged commitments and logical lists for maps and UTxOs. Application acceptance and witnesses are supplied evidence; scripts and signatures are not verified here. Generic refund values are commitments rather than modeled payments. The naming fixture uses canonical binary Cardano addresses, a thirty-two-byte next-controller commitment, and a threshold quorum. The browser drives those shapes through the integrated lifecycle transition, but this does not establish compiled-script interoperability or ledger execution.",
-      "pause": 400
-    }
-  ],
-  "reproduce-the-focused-checks": [
-    {
-      "text": "In a source checkout, use the simulator build check, Node gate, self-test, lifecycle gate, and both browser checks. For archive evidence, first verify the internal checksum manifest, then run the check app from the archive's own locked flake. It compiles the shipped Lean model, regenerates all corpora, checks compiled axioms, verifies both public pages, replays generic, naming, lifecycle, and wire rows, and executes negative controls. The locked toolchain may be acquired when uncached, but model and replay inputs never come from a checkout or unpinned fetch. This remains review material, not a published release or ledger artifact.",
+      "text": "The page models states, leaves, tokens and approvals. It does not execute validators, check signatures, build transactions or hold funds. A deposit here is a number that must come back to the right address; on a ledger it is lovelace, and nothing on this page establishes that the compiled validator agrees with the model it was derived from.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "simulation.md",
-    "sha256": "224c42555cae5c77e8ef329bac019006303d1aea8f6412b051ae15eff4d58d79"
+    "sha256": "b5a946410611cde77a29657b1e1de6532973b199bf718af1a75a7199de85001b"
   }
 }

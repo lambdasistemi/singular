@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Singular.NamingWireStatements.naming_datum_tree_roundtrip_and_shape",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "766034abdaf323ed04f919f159b05fa21ac83a695e67719d3cc04348e99cb72d"
+  },
+  {
+    "name": "Singular.NamingWireStatements.naming_datum_serialises_byte_exact",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "85273c612df08602b00ad08d06caa3c458edc7d5ea895d3afd8b6fd61ff0a229"
+  },
+  {
+    "name": "Singular.NamingWireStatements.inline_datum_only",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "37f674ac8ba8a31ab91f742635706dda503de9f04f7e6def77e4ee761798b8b8"
+  },
+  {
+    "name": "Singular.NamingWireStatements.payment_destination_zero_or_one",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "59e5bb84401349cf663987e0dec63eab4008b55c0568011f915f2782eabb85c1"
+  },
+  {
+    "name": "Singular.NamingWireStatements.witness_request_wire_roundtrip",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "87f1195ecc95ebdd793f5cb1cdaa4da1b7cd5d1f9970b3794247c918bc15d9b2"
+  }
+]

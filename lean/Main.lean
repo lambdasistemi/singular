@@ -43,12 +43,14 @@ structure Case where
   status : String := "modeled"
   expectedAccept : Bool
   expectedReason : String := ""
+  before : RegistryState
+  action : Request
   actual : Except String Result
 
 def runCase (id : String) (accept : Bool) (reason : String) (s : RegistryState)
     (r : Request) : Case :=
   { id := id, expectedAccept := accept, expectedReason := reason
-  , actual := step s r }
+  , before := s, action := r, actual := step s r }
 
 def caseActualString (c : Case) : String :=
   match c.actual with
@@ -142,6 +144,8 @@ def readRows : List Case :=
 def custodyRows : List Case :=
   let absentNoCustody : RegistryState :=
     { (witnessed s0 42) with custody := [] }
+  let activeNoToken : RegistryState :=
+    { (booked s0 42) with held := [] }
   [ runCase "GC01-update-active-without-custody" false "custody-missing"
       absentNoCustody (req .updateActive 42 42 555)
   , runCase "GC02-delete-absent-without-custody" false "custody-missing"
@@ -150,6 +154,10 @@ def custodyRows : List Case :=
       (req .updateActive 42 42 555)
   , runCase "GC04-delete-absent-with-custody" true "" (witnessed s0 42)
       (req .deleteAbsent 42 91 0)
+  , runCase "GC05-update-terminal-without-token" false "token-missing"
+      activeNoToken (req .updateTerminal 42 42 555)
+  , runCase "GC06-delete-active-without-token" false "token-missing"
+      activeNoToken (req .deleteActive 42 42 555)
   ]
 
 -- fold-level rows: zero batch, mint mismatch, read inside batch at position
@@ -186,15 +194,20 @@ def adaRows : List (String × Bool × (List (Nat × Nat))) :=
       | .ok r => r.paid | .error _ => []) ]
 
 -- codec rows
-def codecRows : List (String × Bool × Option State) :=
-  [ ("GC01-decode-absent", true, decodeState [0].toByteArray)
-  , ("GC02-decode-active", true, decodeState [1].toByteArray)
-  , ("GC03-decode-terminal", true, decodeState [2].toByteArray)
-  , ("GC04-decode-03-refused", false, decodeState [3].toByteArray)
-  , ("GC05-decode-empty-refused" , false, decodeState [].toByteArray)
-  , ("GC06-decode-naming-era-refused" , false,
-      decodeState (ByteArray.mk #[(104 : UInt8), 101, 108, 108, 111]))
-  , ("GC07-decode-two-bytes-refused" , false, decodeState [0, 1].toByteArray) ]
+/-- Each codec row carries the bytes it decodes, so a consumer replays the row
+rather than trusting its verdict. -/
+def codecInputs : List (String × Bool × List Nat) :=
+  [ ("GC01-decode-absent", true, [0])
+  , ("GC02-decode-active", true, [1])
+  , ("GC03-decode-terminal", true, [2])
+  , ("GC04-decode-03-refused", false, [3])
+  , ("GC05-decode-empty-refused", false, [])
+  , ("GC06-decode-naming-era-refused", false, [104, 101, 108, 108, 111])
+  , ("GC07-decode-two-bytes-refused", false, [0, 1]) ]
+
+def codecRows : List (String × Bool × Option State × List Nat) :=
+  codecInputs.map fun (id, expected, bytes) =>
+    (id, expected, decodeState (bytes.map (fun n => (n.toUInt8))).toByteArray, bytes)
 
 def configRow : Bool :=
   match (fromJson? (toJson cfg) : Except String Config) with
@@ -208,6 +221,7 @@ def caseJson (c : Case) : Json :=
   Json.mkObj [("id", toJson c.id), ("status", toJson c.status),
     ("expectedAccept", toJson c.expectedAccept),
     ("expectedReason", toJson c.expectedReason),
+    ("before", toJson c.before), ("action", toJson c.action),
     ("result", match c.actual with
       | .ok r => Json.mkObj [("accepted", toJson true), ("state", toJson r.state)]
       | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)])]
@@ -223,7 +237,7 @@ def main : IO Unit := do
   for (id, expectNonEmpty, paid) in adaRows do
     let ok := if expectNonEmpty then !paid.isEmpty && paid.all (fun p => p.1 == 91) else paid.isEmpty
     unless ok do throw (IO.userError s!"{id}: {repr paid}")
-  for (id, expectSome, res) in codecRows do
+  for (id, expectSome, res, _) in codecRows do
     let ok := if expectSome then res.isSome else res.isNone
     unless ok do throw (IO.userError s!"{id} failed")
   unless configRow do throw (IO.userError "GD-config roundtrip failed")
@@ -235,7 +249,8 @@ def main : IO Unit := do
   let adaJson := adaRows.map fun p =>
     Json.mkObj [("id", p.1), ("paidTo", toJson ((p.2.2).map (·.1)))]
   let codecJson := codecRows.map fun p =>
-    Json.mkObj [("id", p.1), ("decodes", p.2.2.isSome), ("expectedDecodes", p.2.1)]
+    Json.mkObj [("id", p.1), ("decodes", p.2.2.1.isSome), ("expectedDecodes", p.2.1),
+      ("bytes", toJson p.2.2.2)]
   let json := Json.mkObj
     [ ("schema", toJson "singular-logical-corpus-v2")
     , ("cases", toJson (cases.map caseJson))

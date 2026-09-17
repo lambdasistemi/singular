@@ -97,7 +97,11 @@ Not covered, and named rather than left to be discovered:
 
 - **On-chain conformance.** Nothing here says the cage validator implements this
   model. That is the next ticket's obligation.
-- **The simulator.** Its agreement with this model is a separate slice.
+- **The simulator.** It replays 38 registry rows, 24 naming rows and 21
+  lifecycle rows and reproduces each verdict, and a mirror check binds the
+  Lean it ships to the Lean it was built from. That is agreement on the
+  exported inputs, not equivalence — and the transcriber is the model's
+  author, so it is not an independent measurement either.
 - **Plurality from genesis.** W3 states that from any reachable terminal state
   arbitrarily many attestations can be minted. It does not construct a terminal
   key with zero attestations from genesis; that is a reachability claim about a

@@ -1,89 +1,174 @@
 # Lean clarity record
 
-The simulator derives behavior from the frozen `Singular.Model` definitions, `Singular.Statements` declarations, and the corrected Lean-generated corpus. Operator story intentions supply illustrative vocabulary and outcomes to explore. They do not override the executable model.
+A proof is only worth what its statement says. This page reads the registry-mode
+model back in English — what each promise actually quantifies over, what it
+assumes, and where the reader should not take it further than it goes — so that
+"proved" can be checked against "promised" without reading Lean.
 
-## Formal identities
+The statements themselves, with their digests, are in the
+[theorem manifest](theorems.md). This page is about their **meaning**.
 
-| Artifact | SHA256 |
+## Who this is for
+
+A reviewer deciding whether the model is the right model. The build already
+answers *are these proved* — all forty-two are, from the standard axioms and
+nothing else. It cannot answer *do these say what the interface promised*, and
+that is the question this page exists to make answerable.
+
+## What is bound
+
+| Artifact | SHA-256 |
 | --- | --- |
-| Model.lean | `3bcb168f99be9ba920dd4136ee464577218bce8c96b67e877dbc87032c5fa3ce` |
-| Statements.lean | `996d668f06f474d6ea3f33e5419d8be105bec58756e50d16b62ccbdedfde0138` |
-| Main.lean | `cc1f1e8b1fc02b6fc8d1044b0d1e25f6a7d436609922832fa9a1016597595f65` |
-| Corpus | `ad85b170ccd108952f0ab958618cd32088ee66fc43000ad928aa755c4db06675` |
+| `Model.lean` | `c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8` |
+| `Lemmas.lean` | `140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209` |
+| `Statements.lean` | `f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb` |
+| `Audit.lean` | `2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b` |
+| `Main.lean` (corpus generator) | `a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567` |
+| `corpus.json` | `3e973e08e159cf9d1158a98f473ce27d788285255723f67368f370b3f3e9d073` |
 
-Changing any bound input invalidates the current evidence. The initial corpus was superseded by the corrected 58-row export; final gates consume only that corrected identity.
+Every one of these ships beside the page under `simulator/formal/`, and
+`node simulator/mirror-check.mjs` fails if the shipped copy and the built copy
+differ, in either direction. Changing any bound input invalidates this record.
 
-## Naming profile identities and limits
+## The shape the promises are made over
 
-| Artifact | SHA256 |
-| --- | --- |
-| Naming.lean | `2a3cf21ee01405f4b271982e58481393032f7f0ea14462ab65c762d21c0ddd72` |
-| NamingLemmas.lean | `b7ad0b835df60c770586237f946d75aaae1d6a563a16223d3112cfa1c57d41e9` |
-| NamingStatements.lean | `25e72eb589f8d55167b5c7e067a8f740babd7e294462e3dd3630ae4086f57c81` |
-| NamingMain.lean | `ef77ad966412651d97c79a00d746880a8239be600566ec98c31124f10393358e` |
-| Naming theorem inventory | `735a302b9a2686a135d5b0bc0d0c79ad7462defafea0603f878404032abbe158` |
-| Naming corpus | `fee9e4b772604d3587ebedd0980f8ba5e38ef17280e329f677114463e57e36ec` |
+```mermaid
+flowchart TD
+    G["genesis"] -->|"accepted fold"| S["Reachable state"]
+    S -->|"accepted fold"| S
+    S --> INV["Consistent:<br/>root commits the map ·<br/>supply laws ·<br/>custody soundness"]
+    INV --> A["what the promises are proved about"]
+    ARB["an arbitrary RegistryState value"] -.->|"not reachable"| X["supply laws are simply false here"]
+```
 
-The naming inventory contains 17 exact declarations: the original seven statements plus ten branch declarations covering three `namingStep` arms, three queue guards, and four resolve outcomes. The simulator derives 17 exact-name property rows and the composed page derives 17 lamps from that same inventory. Fifteen rows run controlled finite-consequent checks whose fabricated violating records are required to fail; the create-Insert and all-Insert fold equations are exhibits only. A finite lamp does not re-prove a quantified Lean theorem or establish reachability of every premise.
+Almost every promise is stated **over reachable states** — genesis, closed under
+accepted folds — and not over arbitrary values of the state type. This is not a
+weakening dressed up as a hypothesis: over an arbitrary state value the supply
+laws are false, because nothing stops you writing down a state with three active
+tokens for one key. Reachability is what makes them true, and it is exactly the
+property a chain enforces by only ever arriving at a state through a fold.
 
-The public JavaScript naming entry points reject extra wrapper, fixture, quorum, claim, record, and queue fields; validate every nested generic registry field; validate supported Insert/fold actions completely; reject non-array replay actions; and validate the origin even for an empty replay. Unsupported action constructors are refused at the naming boundary without interpreting their payloads. Corpus resolve rows use the exported spelling-based `namingResolve`, including an unknown-spelling refusal, rather than the private key helper. Queue acceptance snapshots the certified fixture before returning state, so later caller mutation cannot change the queued claim, folded record, or authenticated observation.
+Where a promise does **not** need reachability, it does not assume it. The seven
+inversions, the empty-batch refusal, the fold-cons equation and
+`read_changes_nothing` are proved over any state at all, because they are
+statements about what an accepted edge *did*, not about what the ledger holds.
 
-These checks establish the untyped simulator boundary and finite Lean-corpus agreement only. They do not make JavaScript validation a ledger validator, prove a real address codec, verify a signature, or turn the unaccepted naming profile into released behavior. Refusal coverage remains attributable to the named finite exhibits; it is not a claim that every possible malformed value or every quantified premise is reachable.
+## Reading the promises back
 
-## Decisions and model limits
+**No tree change without approval** (`no_tree_change_without_approval`). If a
+request is accepted and it is not the read, then an approval was present, it was
+minted under the registry's own pinned policy, its asset name is the hash of the
+edge, the key, the owner and the destination of *this* request, and the
+registry's own pins — its policy, its owner, its recovery commitment — are
+unchanged by the fold. The part worth dwelling on: a correct policy is necessary
+and **not sufficient**. An approval minted for a different key, or a different
+destination, under the very same policy, does not admit the request. A model
+that checked only the policy would be wrong in a way no amount of proving would
+reveal, which is why the tuple appears in the statement rather than in a comment.
 
-| Point | Formal pointer | Treatment |
+**Booked at most once** (`booked_at_most_once`). A batch is a fold, and the fold
+spends each request once, in order. The statement is about the *step function*,
+so a request cannot be applied twice within one batch, and a batch that fails
+anywhere produces no state at all rather than a partial one.
+
+**Soundness of attestation** (`terminal_attestation_sound`). In a reachable
+state, a terminal attestation exists for a key only if that key's leaf really is
+terminal. Its companion (`terminal_mint_only_by_read`) supplies the provenance
+half: the only edge that can bring a terminal token into existence is the read.
+Together they say the witness cannot be forged and cannot be minted by a state
+change.
+
+**Permanence** (`terminal_attestation_permanent`). What a terminal attestation
+says stays true through any later sequence of accepted folds. A terminal leaf
+has no outgoing edge, so nothing downstream can make an already-issued
+attestation false. This is the promise that lets a holder keep the witness
+rather than re-reading the chain.
+
+**The supply law** (`biconditional_supply_sync`). For every key in a reachable
+state, the count of outstanding active tokens is one exactly when the leaf is
+active and zero otherwise — a biconditional, both directions, over all keys, not
+only the key in hand. The same shape holds for the absent witness. This is the
+statement that ties the token supply to the map and makes "the token is the
+name" more than a slogan.
+
+**Occupancy and its converse** (`occupancy`, `occupancy_free_key_succeeds`). A
+booking edge succeeds only on a key that is not already taken; and on a key that
+is free, with a matching approval, it *does* succeed. The converse matters as
+much as the rule: a registry that refused everything would satisfy the first
+half perfectly.
+
+**Termination** (`termination`). On a terminal key every leaf-moving edge is
+refused. Not "should be", not "by convention" — the refusal is the complement of
+the edge table, so there is no unlisted case that quietly moves a retired name.
+
+**The four witness laws** (`active_witness_unique`, `absent_witness_unique`,
+`terminal_witness_plural`, `witness_kinds_exclude`). At most one active token
+per key, and exactly one when the leaf is active. The same for the absent
+witness. Terminal attestations, by contrast, are **plural**: any number may
+exist, each is true, and minting another changes nothing — which is the
+consequence of the attestation being a read. And the kinds exclude one another:
+a key cannot have an outstanding active token and an outstanding absent witness
+at the same time.
+
+**The seven inversions.** For each edge, a single statement saying what an
+accepted application of it did: the leaf before, the leaf after, the new root,
+the token deltas, the custody movement, the deposit destination. These are the
+statements the simulator is really transcribing, and they are the ones to read
+first when asking whether the model matches the interface, because they contain
+no reachability hypothesis to hide behind.
+
+**The deposit** (inside `update_active_inversion` and
+`delete_absent_inversion`). The two edges that consume an absent witness pay the
+deposit back to the **refund address the original request named**, not to the
+output of the consuming request and not to whoever folded it. Those two rejected
+destinations are the reason the statement pins the address rather than merely
+asserting that some payment occurred.
+
+**The read** (`read_changes_nothing`, `witness_terminal_inversion`). An accepted
+read leaves the leaf, the root and custody exactly as they were and adds one
+terminal token. It needs no approval at all — and, symmetrically, a stray
+approval does not make it refuse.
+
+**The fold** (`empty_fold_error`, `fold_batch_cons`). An empty batch is refused
+rather than accepted as a no-op. A non-empty batch succeeds exactly when its
+head applies and the rest applies to the result, which is what makes a batch
+mean the same thing as the sequence of its requests.
+
+## What the model does not say
+
+These are limits of the model, not gaps in the proofs. Each is a place where a
+reader could reasonably expect more than is there.
+
+| Point | What the model does | What it does not claim |
 | --- | --- | --- |
-| Name and address vocabulary | `Proposal.key`, `Output.datum`, `Resolution.address` | Key 42 and A=100/B=200 are illustrative numeric labels. No string-name encoding, DNS, or real address codec is inferred. |
-| Change address versus retire | `step.evolve`, `foldOne` update arm | Evolve changes the address. Update completion produces `over`; it does not update the address. The UI says “Queue retirement (Update)”. |
-| Competing Inserts | `step.createInsert`, `foldOne` occupied-key guard | Creation does not read registry occupancy. Both requests can queue; folding both in one batch refuses atomically. The successful story folds one and separately withdraws the other. |
-| Cancellation and refund | `Commitment.withdraw`, `step.withdraw`, `Result` | Cancellation requires a recognized asset bound to registry, request, and exact refund. The result consumes the request but contains no payment flow. The UI does not claim a wallet received funds. |
-| Supplied application evidence | `Approval`, `ReleaseEvidence`, `EvolutionEvidence`, `approved`, `step.release`, `step.evolve` | Accepted and witness booleans are modeled evidence, not verified scripts or signatures. No named stakeholder is granted extra privileges. |
-| Diagnostic conformity | `Approval.conforms` comment; acceptance functions | `conforms` is not consulted by native checks. The model can accept diagnostic nonconformance; the simulator preserves that behavior. |
-| Pending resolution | `resolve`, active entry with no matching application UTxO | Terminal release moves the NFT into request custody while the entry remains active. Resolution is pending until completion. |
-| Identity reuse and batches | `representative`, `foldItems`, `sameNet` | Default identity reuse allows a Delete/reinsert logical burn and mint to cancel. The batch still needs its native spend witness. Batch order is explicit and failures never skip an item. |
-| Numeric runtime boundary | Lean `Nat`/`Int`; simulator public validators | Inputs must be safe integers; all nested state/action/evidence/output fields are checked. Net sums use exact BigInt. Delete incarnation overflow is refused before returning a result. This is a simulator limit, not a Lean guard. |
-| Refusal vocabulary | Explicit error strings in `foldOne` and `step` | Model reasons retain their Lean spelling and evaluation order. `invalid-nat`, `invalid-int`, and `invalid-shape` are extra runtime boundary reasons. |
-| Seeded corpus states | `Main.cases` | Some corpus states deliberately vary registry entries and need not be reachable. Passing those rows does not instantiate a theorem requiring `Reachable`. |
-| Free play and story parity | Finite corrected corpus | Only exact before/action matches have observed Lean parity. Story outcomes and free play use the same JS engine; no new Lean trace driver was compiled. |
+| Keys and owners | integers, compared for equality | no string encoding, no address codec, no key derivation |
+| Approvals | a value carrying a policy and a tuple | no signature is checked; minting authority is assumed, not verified |
+| The deposit | a number that must arrive at a named address | not lovelace, no fee model, no minimum-UTxO arithmetic |
+| The root | a fold over the map, recomputed | not the MPFS trie's own hashing; collision resistance is assumed |
+| Retirement authority | the recovery commitment or a distinct-member quorum | the current control key alone never certifies it, and the model says so, but no signature scheme is modelled |
+| Reachability | genesis closed under accepted folds | a chain that arrives at a state by any other route is outside every promise above |
+| Validators | nothing | no compiled script, no ledger rule, no transaction is executed here |
 
-No unresolved definition was silently filled in. These are explicit boundaries of the model or of the instrument. Additional deployment semantics must be supplied by the design owner through a new frozen model.
+The last row is the important one. Everything on this page is about a model.
+Whether the deployed validator implements it is a different question with a
+different kind of evidence behind it, and this page is not that evidence.
 
-## Theorem coverage gaps
+## How much independence this record has
 
-All 41 declarations were STATED with admitted proof debt when this record was written; they have since been PROVED without changing any statement, see the [theorem inventory](theorems.md). The ledger contains 12 controlled finite consequent checks, 17 action exhibits only, and 12 gaps. Exact rows and pinned exhibit identities are in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/main/simulator/coverage.json).
+Stated plainly, because a reader cannot see it from the outside: **the model,
+the corpus generator, the simulator transcription and this readback all have the
+same author.**
 
-The following declarations have no executable nonvacuous exhibit in this candidate:
+That has a concrete consequence. A misunderstanding of the interface made while
+writing the model will be made again while transcribing it and again while
+reading it back, and none of the three will catch it — they are not independent
+measurements, they are one measurement repeated. What the internal machinery
+*does* catch is real but narrower: transcription slips (the corpus replay),
+statements that do not constrain what they appear to (the
+[mutation record](mutants.md)), unproved obligations (the compiled axiom check),
+and drift between the shipped Lean and the built Lean (the mirror check).
 
-- `Singular.Statements.insert_commitment_injective`
-- `Singular.Statements.action_domain_separation`
-- `Singular.Statements.foldOne_insert_iff`
-- `Singular.Statements.foldOne_terminal_iff`
-- `Singular.Statements.sequential_fold_cons`
-- `Singular.Statements.supply_conservation`
-- `Singular.Statements.over_terminal`
-- `Singular.Statements.over_no_representative`
-- `Singular.Statements.request_single_spend`
-- `Singular.Statements.approval_scope_checked`
-- `Singular.Statements.resolve_address_iff`
-- `Singular.Statements.resolve_pending_iff`
-
-Reachability-dependent declarations have not been converted to checks over arbitrary seeded states. The 17 exhibits-only rows identify actions relevant to their declarations, but do not implement all quantified binders or both directions of an equivalence. They are not passing properties.
-
-## Refusal coverage and reconciliation limits
-
-The source inventory discovers 28 distinct Lean refusal names and records their source line sites. Seventeen have corpus or story exhibits. The eleven remaining names are `application-unavailable`, `evolution-representative`, `movement-net-not-zero`, `not-active`, `outsider-cannot-create-representative`, `registry-binding`, `representative-witness`, `terminal-output`, `unrecognized-action`, `utxo-id-reuse`, and `withdraw-tag`.
-
-The hashed formal source, finite parity, and source-line refusal inventory do not establish complete conjunct-level coverage. This candidate does not contain a full bidirectional parser reconciling every prose atom and every guard conjunct to executed semantic evidence. That remains a named instrumentation limitation, alongside the theorem gaps above.
-
-## Template adaptation
-
-The page was started with the shared `page-template.mjs start` command and retains the exact template snapshot. Its first style block is unchanged. Shared DOM helpers and immutable tree primitives are retained verbatim in `template-generic.js`. Singular-specific panels and renderers replace checkpoint-specific controls, scenes, and value drawers. The added stylesheet is a second style block.
-
-The machine-specific renderer port also changes the template’s generic page wiring and render orchestration to use Singular’s state and evidence shapes. A full generic-renderer identity check is not claimed. No prior registry or KERI model source was imported. The retained shared template is provenance, not formal authority.
-
-## Verification boundary
-
-The focused Node evidence covers 58 generic corpus rows, 34 naming corpus rows, 32 story action steps, 41 generic theorem identities, 17 naming theorem identities and lamps, 1,772 public-boundary probes, and 43 self-falsification controls (28 generic/instrument controls plus 15 naming property mutations). The two naming equation rows remain exhibits-only. The incorrect-acceptance control preserves every genuine accepted transition and flips only refused transitions; it must fail at `S11c-terminal-withdraw-refused`.
-
-Local real-DOM evidence and exact tested asset hashes are in `simulator/evidence/` in Git. Fresh repair evidence and its invocation accounting belong to the submission receipt; this clarity page does not claim audit acceptance, publication, or release readiness.
+The check this record cannot perform on itself is the one that matters most —
+whether the statements say what the interface promised. That requires someone
+who did not write them. Treat this page as the author's best account, written to
+be falsifiable, and not as an audit.

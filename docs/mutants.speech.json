@@ -1,7 +1,7 @@
 {
   "what-counts-as-a-kill-here": [
     {
-      "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence. The mutated definition must elaborate first, so what is measured is a semantic change rather than a syntax error; and the kill must land on an obligation rather than on a restatement, so each mutation carries its effect lemma with it. The first run of this campaign killed all four at the effect lemmas — a near-tautological result, discarded rather than reported.",
+      "text": "A mutant is killed when a named obligation stops holding, not when the file stops compiling. Those are different events and only the first is evidence. The mutated definition must elaborate first, so what is measured is a semantic change rather than a syntax error; and the kill must land on an obligation rather than on a restatement, so each mutation carries its effect lemma with it. The first run of this campaign killed all four at the effect lemmas — a near-tautological result, discarded rather than reported. The campaign mutated the model at the exact revision recorded on the page: a campaign is evidence about the definitions it broke, so a later model is a later campaign rather than a carried-forward result.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "mutants.md",
-    "sha256": "8cc017e5d9405e9b7d24cf133b1f7e87a667f1093a5d818e4ce357cd6671415a"
+    "sha256": "956472857ffd2e43a7955070ece08052dd8574caaba80e186ba0c32056ba9073"
   }
 }

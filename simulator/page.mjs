@@ -1,60 +1,128 @@
-/* Singular page adapters: retain template helpers and immutable tree primitives. */
-const describeAction=a=>Object.keys(a??{})[0]??'start';
-const deepFreeze=x=>{if(x&&typeof x==='object'&&!Object.isFrozen(x)){Object.freeze(x);Object.values(x).forEach(deepFreeze);}return x;};
-const state=()=>cur().state;
-const verdictText=r=>typeof r==='string'?r:r.address?`address ${r.address.datum}`:r.error;
-function stopPlay(){if(app.playing)clearInterval(app.playing);app.playing=null;if($('btn-play'))$('btn-play').textContent='▶';}
-function goTo(id){if(!node(id))return;const old=state();for(const n of pathTo(id).slice(1))node(node(n).parent).last=n;app.cursor=id;render();animateCustody(old,state());}
-function pushAction(action,say){const record=inspect(state(),action);deepFreeze(record);const id=addChild(app.cursor,{session:deepFreeze({state:record.result.accepted?record.result.value.state:state()}),record,say:say??describeAction(action),kind:'action'});goTo(id);}
-function appendStep(parent,e,branch=null){const record=inspect(node(parent).session.state,e.action);return addChild(parent,{session:deepFreeze({state:record.result.accepted?record.result.value.state:node(parent).session.state}),record:deepFreeze(record),say:e.say,kind:'action',branch});}
-function startFresh(id=''){const story=STORIES.find(s=>s.id===id);app.story=story??null;newTree(deepFreeze({state:story?.seed??initial()}),story?.goal??'Choose a name and queue an Insert. You supply evidence; the model decides.');if(story){const trunk=[0];for(const e of story.steps)trunk.push(appendStep(trunk.at(-1),e));node(trunk.at(-1)).trunkEnd=true;for(const f of story.forks){let parent=trunk[f.at];for(const e of f.steps)parent=appendStep(parent,e,{title:f.title});}for(let i=0;i<trunk.length;i++)node(trunk[i]).last=trunk[i+1]??null;}app.cursor=0;$('story-picker').value=id;$('pots').open=false;render();}
-function renderTree(){const svg=clear($('tree'));let lanes=0;const positions=new Map();function place(id,depth,lane){positions.set(id,{x:40+depth*150,y:35+lane*65});const kids=node(id).children;kids.forEach((kid,i)=>place(kid,depth+1,i===0?lane:++lanes));}place(0,0,0);const width=Math.max(640,...[...positions.values()].map(p=>p.x+145)),height=Math.max(110,(lanes+1)*65+35);svg.setAttribute('viewBox',`0 0 ${width} ${height}`);for(const n of app.nodes){const p=positions.get(n.id);if(n.parent!==null){const q=positions.get(n.parent);svg.append(s('path',{d:`M${q.x} ${q.y} H${p.x-50} V${p.y} H${p.x}`,fill:'none',stroke:'var(--line)'}));}const yes=n.record?.result.accepted;const g=s('g',{class:'node '+(yes===false?'no':yes?'ok':'')+(n.id===app.cursor?' here':''),role:'button',tabindex:0,'aria-label':`${n.id}: ${n.say}`,onclick:()=>goTo(n.id),onkeydown:e=>{if(e.key==='Enter'||e.key===' ')goTo(n.id);},'data-node':n.id});g.append(s('circle',{cx:p.x,cy:p.y,r:15,fill:n.id===app.cursor?'var(--accent-bg)':'var(--card)',stroke:n.id===app.cursor?'var(--accent)':yes===false?'var(--bad)':'var(--ok)','stroke-width':n.id===app.cursor?4:2}),s('text',{x:p.x,y:p.y+4,'text-anchor':'middle'},n.id===0?'•':yes?'✓':'✗'),s('text',{x:p.x-20,y:p.y+34},`${n.branch?'⋔ ':''}${n.id===0?'Start':describeAction(n.record.action)}`));svg.append(g);}}
-function selectOptions(id,rows){const el=$(id),old=el.value;clear(el);for(const [v,label] of rows)el.append(h('option',{value:v},label));if(rows.some(r=>String(r[0])===old))el.value=old;}
-function render(){const current=node(app.cursor),st=state(),key=Number($('resolve-key').value||42),v=view(st,key);$('story-goal').textContent=app.story?.goal??'Free play: every attempt becomes a branch.';$('where').textContent=`Name ${key} · ${v.entry.value??'absent'} · incarnation ${v.entry.incarnation} · resolves: ${verdictText(v.resolution)} · ${st.requests.length} pending request(s)`;$('narration').textContent=`${current.say} ${current.record?(current.record.result.accepted?'✓ Accepted.':'✗ Refused: '+current.record.result.reason):''}`;renderTree();const path=currentPath();$('scrub').max=path.length-1;$('scrub').value=path.indexOf(app.cursor);$('pos').textContent=`${path.indexOf(app.cursor)} / ${path.length-1}`;clear($('branches'));for(const id of current.children){const n=node(id);$('branches').append(h('button',{class:'branch'+(nextOf(app.cursor)===id?' on':''),onclick:()=>goTo(id)},`${n.branch?'⋔ Try: '+n.branch.title:'› Continue'} — ${n.say}`));}
- selectOptions('application-select',st.applications.map(u=>[u.id,`UTxO ${u.id} · name ${u.key} · address ${u.output.datum}`]));selectOptions('withdraw-select',st.requests.filter(r=>r.operation==='insert').map(r=>[r.id,`Request ${r.id} · name ${r.proposal.key}`]));
- clear($('batch-composer'));for(const r of st.requests)$('batch-composer').append(h('label',{},h('input',{type:'checkbox','data-batch':r.id,'aria-label':`Select request ${r.id}`}),`#${r.id} ${r.operation} · name ${r.proposal.key}`,h('input',{type:'number',min:1,step:1,value:st.requests.indexOf(r)+1,'data-order':r.id,'aria-label':`Order request ${r.id}`})));
- $('datum').textContent=JSON.stringify(st,null,2);$('last-action').textContent=current.record?JSON.stringify(current.record.action,null,2):'No transaction yet.';renderScene();clear($('batch-effects'));for(const [i,t] of (current.record?.trajectory??[]).entries())$('batch-effects').append(h('pre',{},`Item ${i+1} · request ${t.item.request} · ${current.record.committed?'committed atomically':'tentative; whole batch rolled back'}\n`+JSON.stringify({entries:t.result.state.entries,applications:t.result.state.applications.map(u=>u.id),requests:t.result.state.requests.map(r=>r.id),logical:t.result.logical},null,2)));
- const record=current.record??{};const reports=theoremReport(THEOREMS,record);const collected=new Set(pathTo(app.cursor).flatMap(id=>node(id).record?theoremReport(THEOREMS,node(id).record).filter(r=>r.exhibited).map(r=>r.name):[]));$('found').textContent=`${collected.size} of ${THEOREMS.length} declarations exhibited on this branch`;
- clear($('ledger'));for(const r of reports){const short=r.name.split('.').at(-1);$('ledger').append(h('details',{class:`thm ${r.holds===false?'broken':r.holds===true?'lit':'gap'}`,'data-id':r.name},h('summary',{},`${collected.has(r.name)?'★ ':''}${short} · ${r.exhibited?r.coverage:'not exhibited here'}`),h('p',{},r.name),h('p',{},r.status),h('p',{},r.notes)));}
- clear($('refused-list'));const escape={escape:{request:st.requests[0]?.id??0}};$('refused-list').append(h('button',{onclick:()=>pushAction(escape,'Try escaping native request custody')},'Try escape → completion-only-custody'));$('ui-error').textContent='';
- const matching=current.record&&CORPUS.cases.find(r=>equal(r.case.before,current.record.before)&&equal(r.case.action,current.record.action));$('corpus-status').textContent=current.record?(matching?'The Lean’s own verdict on this exact state and move agrees.':'The Lean was not asked about this exact state and move. Free-play transcription only.'):'Frozen corpus: 52 transitions and 6 resolutions; finite evidence only.';
+// The page. Every verdict shown here comes from the transcribed engine running
+// in the reader's browser — nothing is pre-rendered, so what you see is what the
+// model does, or a defect in this transcription.
+
+const PROFILE={generic:'generic-profile',naming:'naming-profile'};
+let state=initial(),story=null,cursor=0,prefix=[];
+
+const witnessShape={active:'biconditional',absent:'biconditional',terminal:'implicational'};
+
+function showWhere(){
+  const key=Number($('key-input').value||42);
+  const leaf=trieGet(state.trie,key),w=witnesses(state,key);
+  $('where').textContent=`key ${key} · leaf ${leafName(leaf)} · active ${w.active} · absent ${w.absent} · terminal ${w.terminal}`;
+  rows($('witnesses'),KINDS.map(k=>({k,n:w[k]})),d=>[d.k,d.n,witnessShape[d.k]]);
+  $('root').textContent='root '+state.config.root.join(' ');
 }
-function renderScene(){const st=state(),svg=clear($('scene'));const boxes=[{x:20,title:'Registry',lines:st.entries.map(e=>`${e.key}: ${e.value??'absent'} · incarnation ${e.incarnation}`)},{x:355,title:'Application custody',lines:st.applications.map(u=>`NFT ${u.output.representative.key} @ UTxO ${u.id} → address ${u.output.datum}`)},{x:690,title:'Request custody',lines:st.requests.map(r=>`#${r.id} ${r.operation}: ${r.held?'NFT '+r.held.key:'approval token; no NFT'}`)}];for(const b of boxes){const g=s('g',{'data-obj':b.title});g.append(s('rect',{x:b.x,y:30,width:285,height:215,rx:12,fill:'var(--card)',stroke:'var(--line)'}),s('text',{x:b.x+15,y:58,'font-weight':700},b.title));for(const [i,line] of (b.lines.length?b.lines:['Empty']).entries())g.append(s('text',{x:b.x+15,y:88+i*24},line));svg.append(g);}svg.append(s('g',{id:'fx'}));clear($('custody'));for(const u of st.applications)$('custody').append(h('div',{class:'custody-card'},`Application UTxO ${u.id}: representative ${canonical(u.output.representative)}, quantity ${u.output.quantity}; destination ${u.output.destination}, address datum ${u.output.datum}, value ${u.output.value}`));for(const r of st.requests)$('custody').append(h('div',{class:'custody-card'},`Request UTxO ${r.id}: ${r.operation}; ${r.held?'holds representative '+canonical(r.held):'no representative'}; destination ${r.destination}; origin ${r.authenticatedOrigin?'authenticated':'unauthenticated'}`));}
-function animateCustody(before,after){if(equal(before,after))return;const fx=$('fx');if(!fx)return;const from=before.applications.length>after.applications.length?495:830,to=after.applications.length>before.applications.length?495:830;const token=s('circle',{cx:from,cy:260,r:12,class:'flow-token'});fx.append(token);const start=nowMs();function tick(t){const progress=Math.min(1,(t-start)/600);token.setAttribute('cx',from+(to-from)*progress);if(progress<1&&t>start)raf(tick);else token.remove();}raf(tick);}
-function guard(fn){return()=>{try{fn();}catch(e){$('ui-error').textContent=e.message;}};}
-const num=id=>{const text=$(id).value;if(!/^\d+$/.test(text))throw Error(`invalid-nat/${id}`);const n=Number(text);if(!Number.isSafeInteger(n))throw Error(`invalid-nat/${id}`);return n;};
-const selectedSource=()=>{if(!$('application-select').value)throw Error('application-unavailable');return num('application-select');};
-const withdrawal=()=>{if(!$('withdraw-select').value)throw Error('request-unavailable');return makeWithdrawal(state(),num('withdraw-select'),num('refund-destination'),num('refund-value'));};
-function wire(){
- $('story-picker').onchange=()=>startFresh($('story-picker').value);$('btn-reset').onclick=()=>startFresh();$('btn-theme').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';};
- $('hist-first').onclick=()=>goTo(0);$('hist-prev').onclick=()=>goTo(node(app.cursor).parent??0);$('hist-next').onclick=()=>{const n=nextOf(app.cursor);if(n!==null)goTo(n);};$('hist-last').onclick=()=>goTo(leafNodeOf(app.cursor));$('scrub').oninput=()=>goTo(currentPath()[Number($('scrub').value)]);
- $('btn-play').onclick=()=>{if(app.playing){stopPlay();return;}if(nextOf(app.cursor)===null)goTo(0);$('btn-play').textContent='❚❚';app.playing=setInterval(()=>{const n=nextOf(app.cursor);if(n===null){stopPlay();return;}goTo(n);if(nextOf(app.cursor)===null)stopPlay();},900);};
- $('create-insert').onclick=guard(()=>{const parts=$('scope-input').value.split(',').map(x=>x.trim());if(parts.some(x=>!/^\d+$/.test(x)))throw Error('invalid-nat/scope');pushAction(makeInsert(state(),{key:num('key-input'),datum:num('datum-input'),scope:parts.map(Number),accepted:$('insert-approved').checked}),'Queue an Insert');});
- $('evolve').onclick=guard(()=>pushAction(makeEvolution(state(),selectedSource(),num('new-datum'),$('spend-approved').checked),'Change the application address'));
- for(const [id,operation] of [['release-update','update'],['release-delete','delete']])$(id).onclick=guard(()=>pushAction(makeRelease(state(),selectedSource(),operation,$('spend-approved').checked),`Queue ${operation==='update'?'retirement':'Delete'}; NFT moves into request custody`));
- $('mint-withdraw').onclick=guard(()=>pushAction(withdrawal().mint,'Approve an exact withdrawal'));$('withdraw').onclick=guard(()=>pushAction(withdrawal().withdraw,'Withdraw the pending Insert'));
- $('fold-batch').onclick=guard(()=>{const selected=[...document.querySelectorAll('[data-batch]:checked')].map(el=>({id:Number(el.dataset.batch),order:numFrom(document.querySelector(`[data-order="${el.dataset.batch}"]`).value)}));if(new Set(selected.map(x=>x.order)).size!==selected.length)throw Error('Choose distinct batch positions');const a=makeFold(state(),selected.sort((a,b)=>a.order-b.order).map(x=>x.id));a.fold.witness.nativeSpend=$('native-witness').checked;a.fold.witness.representativeMint=$('rep-witness').checked;pushAction(a,'Fold the selected atomic batch');});
- $('resolve').onclick=guard(()=>{$('resolve-output').textContent=verdictText(resolve(state(),num('resolve-key'),$('authenticated-view').checked));});
- $('load-action').onclick=()=>{const k=$('action-kind').value;const example=CORPUS.cases.find(r=>r.case.action[k]);$('action-json').value=JSON.stringify(example.case.action,null,2);};$('act-submit').onclick=guard(()=>pushAction(JSON.parse($('action-json').value),'Submit the exact action'));
+
+function renderRefusals(){
+  const key=999,data=[];
+  for(const edge of EDGES)for(const leaf of [null,'absent','active','terminal']){
+    let s=initial();
+    s={...s,trie:leaf===null?[]:[{key,leaf}],config:{...s.config,root:rootOf(leaf===null?[]:[{key,leaf}])}};
+    if(leaf==='absent')s={...s,custody:[{key,refundAddress:91,value:200}]};
+    if(leaf==='active')s={...s,held:[{key,kind:'active',output:555}]};
+    const r=step(s,approved(edge,key,{owner:42,output:555,refundAddress:91,deposit:200}));
+    data.push({edge,leaf:leafName(leaf),reason:r.accepted?'— admitted —':r.reason});
+  }
+  rows($('refusals'),data,d=>[d.edge,d.leaf,d.reason]);
 }
-function numFrom(text){if(!/^\d+$/.test(text)||!Number.isSafeInteger(Number(text)))throw Error('invalid-nat/batch-order');return Number(text);}
-/* ---- naming profile (m1-naming · unaccepted candidate) ---- */
-const NAMING_FIXTURE=structuredClone(aliceFixture);
-const NAMING_OTHER=structuredClone(otherFixture);
-const naming={engine:null,state:null,pending:[],lastRequest:null,lastCancellation:null};
-const namingActive=()=>$('naming-profile').value==='m1-naming';
-const namingSay=text=>{$('naming-verdict').textContent=text;};
-const namingReports=namingPropertyReport(NAMINGTHEOREMS,NAMINGCORPUS);
-const namingRender=()=>{$('naming-state').textContent=JSON.stringify(naming.state??{},null,2);$('naming-found').textContent=`${namingReports.length} exact declarations`;clear($('naming-ledger'));for(const report of namingReports){const short=report.name.split('.').at(-1);$('naming-ledger').append(h('details',{class:`thm ${report.holds===false?'broken':report.holds===true?'lit':'gap'}`,'data-naming-theorem':report.name},h('summary',{},`${report.holds===true?'● ':''}${short} · ${report.coverage}`),h('p',{},report.name),h('p',{},report.status),h('p',{},report.notes)));}};
-function namingWire(){
- $('naming-profile').onchange=()=>{const on=namingActive();for(const id of ['naming-claim','naming-claim-competing','naming-fold-first','naming-fold-second','naming-resolve','naming-crafted-delete','naming-cancel-approved','naming-refund-redirect','naming-withdraw'])$(id).disabled=!on;if(on){naming.engine=selectProfile('m1-naming').engine;naming.state=namingInitial();naming.pending=[];naming.lastRequest=null;naming.lastCancellation=null;$('naming-cancel-approved').checked=true;$('naming-refund-redirect').checked=false;namingSay('m1-naming selected — unaccepted candidate. Queue the first claim for alice.');namingRender();}else{namingSay('Generic profile active; the naming engine was left explicitly. No implicit fallback exists.');$('naming-state').textContent='{}';}};
- $('naming-claim').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_FIXTURE,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);naming.lastRequest=r.requestId;namingSay(`✓ Claim #${r.requestId} queued. Approval reserves nothing: alice is still absent.`);}namingRender();});
- $('naming-claim-competing').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const r=queueClaim(naming.state,{spelling:'alice',fixture:NAMING_OTHER,accepted:$('naming-approved').checked});if(!r.accepted){namingSay('✗ Refused: '+r.reason);}else{naming.state=r.value.state;naming.pending.push(r.requestId);naming.lastRequest=r.requestId;namingSay(`✓ Competing claim #${r.requestId} queued. Two claims for alice may both wait.`);}namingRender();});
- const fold=which=>guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const id=which==='first'?naming.pending[0]:naming.pending.at(-1);if(id===undefined)throw Error('request-unavailable');const r=foldRequest(naming.state,id);if(!r.accepted){namingSay(`✗ Fold #${id} refused: ${r.reason} — uniqueness is decided only at fold.`);}else{naming.state=r.value.state;naming.pending=naming.pending.filter(x=>x!==id);namingSay(`✓ Folded #${id}: alice is Active carrying the certified fixture fields, unchanged.`);}namingRender();});
- $('naming-fold-first').onclick=fold('first');$('naming-fold-second').onclick=fold('second');
- $('naming-resolve').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const o=namingResolve(naming.state,'alice',true);namingSay('Resolve alice → '+(typeof o==='string'?o:o.status==='active'?'active, fixture '+JSON.stringify(o.fixture):JSON.stringify(o)));});
- $('naming-withdraw').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const id=naming.pending[0]??naming.lastRequest;if(id===null)throw Error('request-unavailable');const refundAddress=demoRefundAddress+($('naming-refund-redirect').checked?1:0);const withdrawal=makeWithdrawal(naming.state.registry,id,refundAddress,0);let registry=naming.state.registry;if($('naming-cancel-approved').checked){const approval=step(registry,withdrawal.mint);if(!approval.accepted)throw Error(approval.reason);registry=approval.value.state;}const verdict=step(registry,withdrawal.withdraw);if(verdict.accepted){naming.state={...naming.state,registry:verdict.value.state,claims:naming.state.claims.filter(claim=>claim.requestId!==id)};naming.pending=naming.pending.filter(requestId=>requestId!==id);naming.lastCancellation=id;namingSay(`✓ LC01-cancellation-stored-refund-accepts: claim #${id} withdrawn; copied stored refund address ${refundAddress}; alice remains absent.`);}else{const row=verdict.reason==='withdraw-refund-address'?'LC02-cancellation-redirect-refused':verdict.reason==='withdraw-binding'?'LC03-insert-attestation-cancellation-refused':naming.lastCancellation===id?'LC06-cancellation-replay-refused':naming.state.records.some(record=>record.key===aliceKey)?'LC04-folded-claim-cancellation-refused':'claim-cancellation-refused';namingSay(`✗ ${row}: ${verdict.reason}.`);}namingRender();});
- $('naming-crafted-delete').onclick=guard(()=>{if(!namingActive())throw Error('select the m1-naming profile first');const source=naming.state.registry.applications[0]?.id;if(source===undefined)throw Error('naming-active-utxo-absent');const crafted=makeRelease(naming.state.registry,source,'delete',true);const v=namingStep(naming.state,crafted);namingSay(v.accepted?'✓ accepted — this would be a defect':'✗ Refused: '+v.reason+' — the naming profile defines no delete, release or reuse.');});
+
+function narrate(text){$('narration').textContent=text;}
+
+function loadStory(id){
+  story=STORIES.find(s=>s.id===id)||STORIES[0];
+  $('story-picker').value=story.id;
+  $('story-blurb').textContent=story.blurb;
+  cursor=0;replayTo(0);
 }
-function runSelftest(){const receipt=checkCorpus(CORPUS);const namingReceipt=checkNamingCorpus(NAMINGCORPUS);if(namingReports.length!==NAMINGTHEOREMS.length||namingReports.some(row=>row.holds===false))throw Error('naming theorem lamps');let rows=0;for(const story of STORIES){let st=story.seed;const prefix=[st];for(const e of story.steps){const r=step(st,e.action);if(!equal(r,e.expect))throw Error('story/'+story.id);if(r.accepted)st=r.value.state;prefix.push(st);rows++;}for(const fork of story.forks){let fs=prefix[fork.at];for(const e of fork.steps){const r=step(fs,e.action);if(!equal(r,e.expect))throw Error('fork/'+story.id);if(r.accepted)fs=r.value.state;rows++;}}}if(!rows)throw Error('zero stories');const msg=`PASS finite corpus ${receipt.executed}/${receipt.discovered}; story steps ${rows}; theorem identities ${THEOREMS.length}; naming rows ${namingReceipt.executed}; naming theorem lamps ${namingReports.length}; admitted proofs`;document.title='PASS · Singular simulator';$('selftest-out').hidden=false;$('selftest-out').textContent=msg;return msg;}
-selectOptions('story-picker',[['','Free play'],...STORIES.map(s=>[s.id,s.title])]);selectOptions('action-kind',[...new Set(CORPUS.cases.map(r=>Object.keys(r.case.action)[0]))].map(k=>[k,k]));$('identity').textContent=JSON.stringify(IDENTITY,null,2);wire();namingWire();startFresh(new URLSearchParams(location.search).get('story')??STORIES[0].id);window.singular={app,step,resolve,inspect,startFresh,pushAction,goTo,runSelftest,state};if(new URLSearchParams(location.search).has('selftest'))runSelftest();
+
+function replayTo(n){
+  state=initial();prefix=[state];
+  for(let i=0;i<n&&i<story.steps.length;i++){
+    const r=step(state,story.steps[i].request);
+    if(r.accepted)state=r.value.state;
+    prefix.push(state);
+  }
+  cursor=n;
+  const e=n===0?null:story.steps[n-1];
+  narrate(e?`${e.what} → ${e.expect==='accept'?'admitted':'refused: '+e.expect}`
+           :`${story.title}. Press ▶ to fold the first request.`);
+  renderBranches();showWhere();
+}
+
+function renderBranches(){
+  const forks=(story.forks||[]).filter(f=>f.at===cursor);
+  $('branches').innerHTML=forks.map((f,i)=>button(f.steps[0].what,`data-fork="${i}"`)).join('');
+  $('branches').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{
+    const f=forks[i];let s=state;
+    for(const e of f.steps){const r=step(s,e.request);
+      narrate(`${e.what} → ${r.accepted?'admitted':'refused: '+r.reason}`);
+      if(r.accepted)s=r.value.state;}
+    state=s;showWhere();
+  });
+}
+
+function buildEdgeButtons(){
+  $('edges').innerHTML=EDGES.map(e=>button(e,`id="edge-${e}"`)).join('');
+  for(const edge of EDGES)$('edge-'+edge).onclick=()=>{
+    const key=Number($('key-input').value||42),owner=Number($('owner-input').value||42);
+    const output=Number($('output-input').value||555),deposit=Number($('deposit-input').value||0);
+    const kind=$('approval-picker').value;
+    const opts={owner,output,deposit,refundAddress:owner};
+    const req=edge==='witnessTerminal'?read(key,output)
+      :kind==='matching'?approved(edge,key,opts)
+      :kind==='mismatched'?mismatched(edge,key,opts)
+      :kind==='other'?otherPolicy(edge,key,opts)
+      :request(edge,key,opts);
+    const r=step(state,req);
+    $('edge-result').textContent=`${edge} → ${r.accepted?'admitted':'refused: '+r.reason}`;
+    if(r.accepted)state=r.value.state;
+    showWhere();
+  };
+}
+
+function renderCorpusAndTheorems(){
+  let agree=0;
+  for(const row of CORPUS.cases){
+    const r=step(row.before,row.action);
+    const got=r.accepted?'accept':r.reason;
+    const want=row.expectedAccept?'accept':row.expectedReason;
+    if(got===want)agree++;
+  }
+  $('corpus-status').textContent=
+    `${agree}/${CORPUS.cases.length} Lean corpus rows reproduced in your browser · model ${CORPUS.modelSha256.slice(0,12)}`;
+  const report=theoremReport(THEOREMS,CORPUS);
+  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.exhibited,d.held]);
+}
+
+function renderNaming(){
+  const j=overWitnessJourney();
+  rows($('naming-journey'),j.steps,d=>[d.what,d.edge,d.accepted?'admitted':'refused: '+d.reason,
+    leafName(d.leaf),d.witnesses.active,d.witnesses.absent,d.witnesses.terminal]);
+  const c=checkNamingCorpus(NAMINGCORPUS);
+  $('naming-status').textContent=
+    `${c.executed}/${c.discovered} naming corpus rows across ${c.sections} sections replayed`;
+  const l=checkLifecycleCorpus(LIFECYCLECORPUS);
+  rows($('lifecycle'),l.rows,d=>[LIFECYCLE_TITLES[d.section],d.id,lifecycleReason(d)]);
+  $('lifecycle-status').textContent=
+    `${l.executed}/${l.discovered} lifecycle rows across ${l.sections} sections replayed`;
+}
+
+function boot(){
+  $('story-picker').innerHTML=STORIES.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
+  loadStory(STORIES[0].id);
+  $('story-picker').onchange=e=>loadStory(e.target.value);
+  $('hist-first').onclick=()=>replayTo(0);
+  $('hist-prev').onclick=()=>replayTo(Math.max(0,cursor-1));
+  $('hist-next').onclick=()=>replayTo(Math.min(story.steps.length,cursor+1));
+  $('hist-last').onclick=()=>replayTo(story.steps.length);
+  $('btn-reset').onclick=()=>{state=initial();narrate('Reset to genesis.');showWhere();};
+  $('btn-theme').onclick=()=>document.documentElement.classList.toggle('dark');
+  $('profile-picker').onchange=e=>{
+    for(const [k,id] of Object.entries(PROFILE))$(id).hidden=(k!==e.target.value);};
+  $('key-input').onchange=showWhere;
+  $('identity').textContent=`${IDENTITY.theorems} statements · ${IDENTITY.corpusCases} corpus rows`;
+  buildEdgeButtons();renderRefusals();renderCorpusAndTheorems();renderNaming();showWhere();
+}
+boot();

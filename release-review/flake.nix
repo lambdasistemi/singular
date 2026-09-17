@@ -30,18 +30,7 @@
               node simulator/build.mjs --check > page-build-check.txt
               node simulator/gate.mjs > replay-check.txt
               node simulator/gate.mjs --selftest > replay-selftest.txt
-              node simulator/lifecycle-gate.mjs > lifecycle-replay-check.txt
-              grep -F '"dynamicAddresses":24' lifecycle-replay-check.txt
-              node --input-type=module <<'NODE'
-              import assert from 'node:assert/strict';
-              import {readFileSync} from 'node:fs';
-              import {lifecycleCorpusIdentities} from './simulator/lifecycle.mjs';
-              const lines = readFileSync('lifecycle-replay-check.txt', 'utf8').trim().split('\n');
-              const receipt = JSON.parse(lines.at(-1));
-              assert.deepEqual([...receipt.leanReplay.identities].sort(), [...lifecycleCorpusIdentities].sort());
-              assert.equal(receipt.leanReplay.discovered, lifecycleCorpusIdentities.length);
-              assert.equal(receipt.leanReplay.executed, lifecycleCorpusIdentities.length);
-              NODE
+              node simulator/mirror-check.mjs > mirror-check.txt
               runHook postBuild
             '';
             installPhase = ''

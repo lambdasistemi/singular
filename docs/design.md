@@ -4,7 +4,7 @@ As an application designer, follow a registration from an approved request into 
 
 <a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable Singular simulator</a> — the live generic-registry simulator, where Delete is allowed — or follow the [simulation walkthrough](simulation.md).
 
-This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 41 theorem and inversion declarations are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
+This is a **creation candidate**: the logical Lean model and separately authored browser simulation make the design executable. All 42 theorem and inversion declarations — 24 for the registry, 7 for the naming instance, 6 for its lifecycle and 5 for its wire encoding — are **PROVED** from the standard axioms, and the build refuses any statement that is admitted again. Proofs establish properties of the model; they do not by themselves accept the design.
 
 ## Story: register and use an application output
 

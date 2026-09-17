@@ -254,10 +254,22 @@ structure RegistryState where
   held : List Holding
   deriving BEq, DecidableEq
 
+/-- A leaf as the consumer sees it: `null` for `Unknown`, the state's name for
+`Known`. The simulator reads exactly this. -/
+def leafJson (l : Leaf) : Json :=
+  match l with
+  | .unknown => Json.null
+  | .known .absent => "absent"
+  | .known .active => "active"
+  | .known .terminal => "terminal"
+
+/-- The state serialises COMPLETELY — the whole config, not only its root — so a
+corpus row is a replayable input and not merely a picture of an output. -/
 instance : ToJson RegistryState where
   toJson s := Json.mkObj
-    [ ("root", toJson s.config.root)
-    , ("keys", toJson (s.trie.map fun p => (p.1, p.2)))
+    [ ("config", toJson s.config)
+    , ("trie", Json.arr ((s.trie.map fun p =>
+        Json.mkObj [("key", toJson p.1), ("leaf", leafJson p.2)]).toArray))
     , ("custody", toJson s.custody)
     , ("held", toJson s.held) ]
 
@@ -280,7 +292,7 @@ canonical commitment over the scoping tuple. The executable consumer supplies
 the real hash; the model fixes the complete preimage and binds the name to the
 tuple it commits to. -/
 def approvalAssetName (e : Edge) (key owner destination : Nat) : Nat :=
-  (fnv1a [edgeOrdinal e, key.toUInt8, owner.toUInt8, destination.toUInt8]).toNat
+  ((fnv1a [edgeOrdinal e, key.toUInt8, owner.toUInt8, destination.toUInt8]) &&& 0xFFFFFFFF).toNat
 
 /-- An approval scoped by the tuple `(edge, key, owner, destination)` (D-APPROVAL,
 #157's frozen contract). Its asset name is the canonical commitment over its
@@ -313,6 +325,17 @@ structure Request where
   approval : Option Approval := none
   claimed : List (TokenKind × Int) := []
   deriving Repr, BEq, DecidableEq
+
+/-- A request serialises completely too, so a corpus row carries the exact input
+the fold was given. -/
+instance : ToJson Request where
+  toJson r := Json.mkObj
+    [ ("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
+    , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
+    , ("output", toJson r.output)
+    , ("approval", match r.approval with | none => Json.null | some a => toJson a)
+    , ("claimed", Json.arr ((r.claimed.map fun d =>
+        Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
 
 /-- The destination a request names: the cage-custody sentinel `0` for
 `insertAbsent`, whose token goes to the cage; otherwise the output the request

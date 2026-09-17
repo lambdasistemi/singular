@@ -45,7 +45,11 @@
   ],
   "design-status": [
     {
-      "text": "The link at the top opens the simulator. Choose the explicit first-release naming profile to claim, cancel before folding, fold, resolve, and try refusal paths; the generic registry profile remains beside it. The candidate has forty-one proved generic declarations and seventeen proved naming declarations. Its focused checks replay fifty-eight generic rows, thirty-four naming rows, and forty-three lifecycle and wire rows. That is finite correspondence evidence, not independent acceptance, a compiled Cardano validator, or ledger execution.",
+      "text": "The link at the top opens the simulator. Book a name, witness an absence and book it, retire a name and attest it, or drive the seven edges by hand and watch each refusal arrive by name. The candidate has forty-two proved declarations: twenty-four for the registry, seven for the naming instance, six for its lifecycle and five for its wire encoding.",
+      "pause": 400
+    },
+    {
+      "text": "Its focused checks replay thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows. That is finite correspondence evidence on those inputs, not independent acceptance, a compiled Cardano validator, or ledger execution. The clarity record states plainly how much independence that evidence has, given that the model and its transcription share an author.",
       "pause": 400
     },
     {
@@ -55,6 +59,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "517847d50424889746a565392115cd64b01f3c4c24460d5f88e1135ef608d40d"
+    "sha256": "2e48d2594ce024f08cd46b238377d202c584e226b2e67d1a52009713b48dd19d"
   }
 }

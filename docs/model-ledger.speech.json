@@ -13,12 +13,16 @@
   ],
   "what-is-covered-and-what-is-not": [
     {
-      "text": "Covered: the seven edges and their deltas, refusal as the complement of the edge table, admission scoped to the request tuple, the leaf codec both ways, the fold and its mint check, the custody census and the deposit destination, and the eleven promises over reachable states. Not covered, and named rather than left to be discovered: on-chain conformance, the simulator, plurality constructed from genesis, and any quantitative mutation coverage.",
-      "pause": 400
+      "pause": 400,
+      "text": "Covered: the seven edges and their deltas, refusal as the complement of the edge table, admission scoped to the request tuple, the leaf codec both ways, the fold and its mint check, the custody census and the deposit destination, and the eleven promises over reachable states."
+    },
+    {
+      "pause": 400,
+      "text": "Not covered, and named rather than left to be discovered: on-chain conformance; plurality constructed from genesis; and any quantitative mutation coverage. The simulator replays thirty-eight registry rows, twenty-four naming rows and twenty-one lifecycle rows and reproduces each verdict, with a mirror check binding the Lean it ships to the Lean it was built from — but that is agreement on the exported inputs, not equivalence, and the transcriber is the model's author, so it is not an independent measurement either."
     }
   ],
   "_source": {
     "file": "model-ledger.md",
-    "sha256": "3917d1cae72ddbd3fc41e908499ac6e87110653bc123e1b17353f42f80b87c74"
+    "sha256": "2e5fd81a2c8a310524b7c7ac38adade24f6f03e7e4b10ec71295796da294b69d"
   }
 }

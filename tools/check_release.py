@@ -75,10 +75,10 @@ with tarfile.open(archive / filename) as bundle:
         "artifacts/review/simulator/build.mjs",
         "artifacts/review/simulator/gate.mjs",
         "artifacts/review/simulator/index.html",
-        "artifacts/review/simulator/lifecycle-view.html",
-        "artifacts/review/simulator/lifecycle-journeys.mjs",
         "artifacts/review/simulator/lifecycle.mjs",
-        "artifacts/review/simulator/naming-wire.mjs",
+        "artifacts/review/simulator/naming.mjs",
+        "artifacts/review/simulator/core.mjs",
+        "artifacts/review/simulator/mirror-check.mjs",
         "artifacts/review/tools/axioms.lean",
         "artifacts/review/tools/check_model.py",
         "artifacts/SHA256SUMS",
@@ -100,7 +100,6 @@ with tarfile.open(archive / filename) as bundle:
         "model/lifecycle-theorem-debt.json",
         "model/wire-theorem-debt.json",
         "simulator/identity.json",
-        "simulator/lifecycle-corpus.json",
     })
     expected_lines = []
     payloads = read_all_forward(bundle, expected_paths)

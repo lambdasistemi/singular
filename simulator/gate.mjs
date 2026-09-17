@@ -1,84 +1,226 @@
+// The simulator gate. It answers one question: does this transcription do what
+// the frozen Lean model does, on every row the model exported?
+//
+// A denominator is reported for everything it executes, because a replay that
+// silently skipped rows would pass just as quietly as one that ran them.
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
-import {step,resolve,inspect,replay,checkCorpus,equal,initial,view} from './core.mjs';
-import {checks,theoremReport,corpusRecords} from './properties.mjs';
-import {aliceFixture,checkNamingCorpus,selectProfile,namingPropertyReport,namingChecks,namingInitial,queueClaim,namingResolve,namingReplay,namingStep} from './naming.mjs';
-const root=new URL('./',import.meta.url),read=p=>readFileSync(new URL(p,root),'utf8'),json=p=>JSON.parse(read(p));
-const corpus=json('corpus.json'),stories=json('stories.json'),ledger=json('formal/theorem-debt.json'),identity=json('identity.json');
-const namingLedger=json('../lean/naming-theorem-debt.json'),namingCorpus=json('../lean/naming-corpus.json');
+import {step,foldBatch,equal,initial,trieGet,witnesses,decodeState,encodeState,
+        delta,deltaSame,rootOf,readAt,EDGES,KINDS,STATES} from './core.mjs';
+import {approved,read,mismatched,otherPolicy,request} from './actions.mjs';
+import {theoremReport,checks} from './properties.mjs';
+import {checkNamingCorpus,overWitnessJourney,NAMING_SECTIONS} from './naming.mjs';
+import {checkLifecycleCorpus,LIFECYCLE_SECTIONS} from './lifecycle.mjs';
+
+const root=new URL('./',import.meta.url);
+const read_=p=>readFileSync(new URL(p,root),'utf8');
+const json=p=>JSON.parse(read_(p));
 const hash=s=>createHash('sha256').update(s).digest('hex');
-// Two differentiated statement sources, each with its own prefix; never one list.
-const names=[...read('formal/Statements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.Statements.'+m[1]);
-const namingNames=[...read('formal/NamingStatements.lean').matchAll(/^theorem (\w+)/gm)].map(m=>'Singular.NamingStatements.'+m[1]);
-function identityGate(rows=ledger,expected=names,kind='generic'){assert(expected.length>0,kind==='naming'?'zero naming theorem declarations':'zero theorem declarations');assert.deepEqual(rows.map(r=>r.name).sort(),[...expected].sort(),kind==='naming'?'naming theorem identity':'theorem identity');assert.equal(new Set(rows.map(r=>r.name)).size,rows.length,kind==='naming'?'duplicate naming theorem identity':'duplicate theorem identity');}
-identityGate();assert.equal(names.length,identity.theorems,'theorem denominator');
-identityGate(namingLedger,namingNames,'naming');assert.equal(namingNames.length,identity.namingTheorems,'naming theorem denominator');
-const namingReceipt=checkNamingCorpus(namingCorpus);
-const namingProperties=namingPropertyReport(namingLedger,namingCorpus);
-assert.equal(namingProperties.length,namingNames.length,'naming property denominator');
-for(const row of namingProperties)if(row.coverage==='controlled-check')assert.equal(row.holds,true,'naming property/'+row.name.split('.').at(-1));
-assert.equal(selectProfile('generic').id,'generic','profile selection');assert.equal(selectProfile('m1-naming').id,'m1-naming','profile selection');
-for(const [p,expected] of Object.entries(identity.files))assert.equal(hash(read(p)),expected,'identity/'+p);
-assert.equal(corpus.cases.length,identity.corpusTransitions,'transition denominator');assert.equal(corpus.resolutions.length,identity.corpusResolutions,'resolution denominator');
-const receipt=checkCorpus(corpus);const records=corpusRecords(corpus);
-let storyExecuted=0,storyDiscovered=0;const finalResolutions={register:{address:{datum:100}},compete:{address:{datum:100}},cancel:'absent',address:{address:{datum:200}},retire:'retired',delete:'absent',batch:{address:{datum:200}},forged:'absent'};
-for(const story of stories){assert(story.steps.length>0,'zero story');storyDiscovered+=story.steps.length+story.forks.reduce((n,f)=>n+f.steps.length,0);let s=story.seed;const prefix=[s];const run=e=>{const rec=inspect(s,e.action);assert.deepEqual(rec.result,e.expect,'story/'+story.id);records.push({...rec,id:`story/${story.id}/${storyExecuted}`});if(rec.result.accepted)s=rec.result.value.state;storyExecuted++;};for(const e of story.steps){run(e);prefix.push(s);}assert.deepEqual(resolve(s,42,true),finalResolutions[story.id],'story outcome/'+story.id);for(const f of story.forks){assert(Number.isInteger(f.at)&&prefix[f.at],'fork attachment');s=prefix[f.at];for(const e of f.steps)run(e);}}
-assert(storyDiscovered>0);assert.equal(storyExecuted,storyDiscovered,'story denominator');
-const propertyCoverage=[];let propertyExecuted=0;
-for(const declaration of ledger){const short=declaration.name.split('.').at(-1),checker=checks[short];const rows=records.map(record=>({record,row:theoremReport(ledger,record).find(x=>x.name===declaration.name)}));for(const x of rows){assert.deepEqual(x.row.by,[declaration.name],'property identity');if(x.row.exhibited&&checker)assert.equal(x.row.holds,true,'property/'+short);}const exhibits=rows.filter(x=>x.row.exhibited);if(checker)assert(exhibits.length>0,'property exhibit/'+short);propertyCoverage.push({name:declaration.name,status:`${declaration.status} / ${declaration.debt}`,coverage:checker?'controlled-check':exhibits.length?'exhibits-only':'gap',exhibits:exhibits.map(x=>x.record.id),notes:checker?'Finite consequent checks only; the quantified statement is proved in Lean.':exhibits.length?'Action exhibit; the quantified statement is proved in Lean, not checked here.':'No executable nonvacuous exhibit; the quantified statement is proved in Lean.'});propertyExecuted++;}
-assert.equal(propertyExecuted,names.length,'property denominator');
-const page=read('index.html'),script=page.match(/<script>\n([\s\S]*)\n<\/script>/)[1];new vm.Script(script);
-const inlined=script.slice(0,script.indexOf('const SVGNS ='))+'\nglobalThis.engine={step,resolve,checkCorpus,theoremReport};';const context=vm.createContext({});new vm.Script(inlined).runInContext(context);assert.deepEqual(JSON.parse(JSON.stringify(context.engine.checkCorpus(corpus))),receipt,'inlined corpus');
-const firstStyle=page.match(/<style>\n([\s\S]*?)<\/style>/)[1];assert.equal(firstStyle,read('page-template.html').match(/<style>\n([\s\S]*?)<\/style>/)[1],'template stylesheet');
-// Validate every numeric leaf of actual exported values through public entrypoints.
-const numericPaths=(x,p=[])=>typeof x==='number'?[p]:x&&typeof x==='object'?Object.entries(x).flatMap(([k,v])=>numericPaths(v,[...p,k])):[];
-const change=(x,path,value)=>{const copy=structuredClone(x);let n=copy;for(const k of path.slice(0,-1))n=n[k];n[path.at(-1)]=value;return copy;};
-const base=corpus.cases.find(r=>r.result.accepted&&r.case.before.applications.length).case;
-let boundaryDiscovered=0,boundaryExecuted=0;
-for(const path of numericPaths(base.before)){for(const value of [-1,0.5,Number.MAX_SAFE_INTEGER+1,NaN,Infinity]){boundaryDiscovered+=4;const bad=change(base.before,path,value);assert.match(step(bad,base.action).reason,/^invalid-nat\//,'step boundary');boundaryExecuted++;assert.match(resolve(bad,42,true).error,/^invalid-nat\//,'resolve boundary');boundaryExecuted++;assert.throws(()=>replay(bad,[]),/invalid-nat\//,'replay boundary');boundaryExecuted++;assert.throws(()=>view(bad,42),/invalid-nat\//,'view boundary');boundaryExecuted++;}}
-for(const row of corpus.cases){for(const path of numericPaths(row.case.action)){boundaryDiscovered++;const bad=change(row.case.action,path,Number.MAX_SAFE_INTEGER+1);assert.match(step(row.case.before,bad).reason,/^invalid-(nat|int)\//,'action boundary');boundaryExecuted++;}}
-assert.equal(boundaryExecuted,boundaryDiscovered,'boundary denominator');assert(boundaryExecuted>0);
-assert.match(step({...initial(),extra:0},{escape:{request:0}}).reason,/invalid-shape/,'complete shape');assert.match(step(initial(),{escape:{request:0},outsider:{}}).reason,/invalid-shape/,'constructor shape');
-const namingFixture=structuredClone(aliceFixture);
-const namingBase=namingInitial();
-assert.match(queueClaim(namingBase,{spelling:'alice',fixture:{...namingFixture,extra:0},accepted:true}).reason,/invalid-fixture/,'naming exact fixture shape');boundaryDiscovered++;boundaryExecuted++;
-assert.match(queueClaim(namingBase,{spelling:'alice',fixture:namingFixture,accepted:true,extra:0}).reason,/invalid-shape\/naming.queue/,'naming exact queue shape');boundaryDiscovered++;boundaryExecuted++;
-assert.match(namingResolve({...namingBase,extra:0},'alice',true).error,/invalid-shape\/naming.state/,'naming exact state shape');boundaryDiscovered++;boundaryExecuted++;
-const namingBadNat=structuredClone(namingBase);namingBadNat.registry.config.registry=-1;
-assert.match(namingResolve(namingBadNat,'alice',true).error,/invalid-nat\/state.config.registry/,'naming nested registry domain');boundaryDiscovered++;boundaryExecuted++;
-assert.throws(()=>namingReplay(namingBadNat,[]),/invalid-nat\/state.config.registry/,'naming replay validates empty origin');boundaryDiscovered++;boundaryExecuted++;
-assert.throws(()=>namingReplay(namingBase,{}),/invalid-shape\/naming.actions/,'naming replay action array');boundaryDiscovered++;boundaryExecuted++;
-const namingBadAction=structuredClone(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').action);namingBadAction.fold.extra={};assert.match(namingStep(namingCorpus.steps.find(row=>row.id==='NS12-fold-request-parity').before,namingBadAction).reason,/invalid-shape\/actions/,'naming exact supported action shape');boundaryDiscovered++;boundaryExecuted++;
-const callerFixture=structuredClone(namingFixture);const queuedSnapshot=queueClaim(namingBase,{spelling:'alice',fixture:callerFixture,accepted:true});assert.equal(queuedSnapshot.accepted,true,'naming fixture snapshot setup');callerFixture.nextControlCommitment.digest[0]^=1;assert.notEqual(queuedSnapshot.value.state.claims[0].fixture.nextControlCommitment.digest[0],callerFixture.nextControlCommitment.digest[0],'naming fixture snapshot');boundaryDiscovered++;boundaryExecuted++;
-assert.equal(boundaryExecuted,boundaryDiscovered,'extended boundary denominator');
-const deleting=structuredClone(corpus.cases.find(r=>r.case.id==='S13-delete-completes'));deleting.case.before.entries[0].incarnation=Number.MAX_SAFE_INTEGER;assert.match(step(deleting.case.before,deleting.case.action).reason,/invalid-nat\/result.entries.incarnation/,'successor overflow');
-const model=read('formal/Model.lean');const refusalSites=[...model.matchAll(/(?:throw|requireSome[^\n]*)\s+"([\w-]+)"/g)].map(m=>({reason:m[1],line:model.slice(0,m.index).split('\n').length}));const refusals=[...new Set(refusalSites.map(x=>x.reason))].sort();const observedRefusals=[...new Set(records.filter(r=>r.result&&!r.result.accepted).map(r=>r.result.reason))].sort();const coverage={sourceRefusals:refusals.map(reason=>({reason,sites:refusalSites.filter(x=>x.reason===reason),exhibits:records.filter(r=>r.result?.reason===reason).map(r=>r.id),status:observedRefusals.includes(reason)?'exhibited':'gap'})),actions:[...new Set(corpus.cases.map(r=>Object.keys(r.case.action)[0]))].sort(),properties:propertyCoverage};
-const controls=[];
-function killed(name,fn,expected){let error;try{fn();}catch(e){error=e;}assert(error,`surviving-control/${name}`);assert.match(error.message,expected,`wrong-reason/${name}`);controls.push({name,observed:error.message.split('\n')[0],expected:String(expected)});}
-if(process.argv.includes('--selftest')){
- killed('core-refuse-everything',()=>checkCorpus(corpus,()=>({accepted:false,reason:'fault'})),/corpus\//);
- const firstRefused=corpus.cases.find(row=>!row.result.accepted).case.id;
- killed('core-accept-everything',()=>checkCorpus(corpus,(s,a)=>{const actual=step(s,a);return actual.accepted?actual:{accepted:true,value:{state:s,logical:[]}};}),new RegExp('corpus/'+firstRefused));
- const drift=structuredClone(corpus);drift.cases[0].result.reason='fault';killed('corpus-result-drift',()=>checkCorpus(drift),/corpus\//);
- killed('zero-corpus',()=>checkCorpus({...corpus,cases:[]}),/zero corpus/);
- killed('identity-drop',()=>identityGate(ledger.slice(1)),/theorem identity/);
- killed('identity-rename',()=>identityGate(ledger.map((r,i)=>i? r:{...r,name:'Singular.Statements.fake'})),/theorem identity/);
- killed('identity-zero',()=>identityGate([],[]),/zero theorem declarations/);
- killed('naming-identity-drop',()=>identityGate(namingLedger.slice(1),namingNames,'naming'),/naming theorem identity/);
- killed('naming-identity-rename',()=>identityGate(namingLedger.map((r,i)=>i?r:{...r,name:'Singular.NamingStatements.fake'}),namingNames,'naming'),/naming theorem identity/);
- killed('naming-identity-zero',()=>identityGate([],[],'naming'),/zero naming theorem declarations/);
- const namingDrift=structuredClone(namingCorpus);namingDrift.queues[0].result.requestId=namingDrift.queues[0].result.requestId+1;killed('naming-corpus-drift',()=>checkNamingCorpus(namingDrift),/naming-corpus\//);
- const namingSuppressed=0;killed('naming-corpus-suppressed',()=>assert(namingSuppressed===namingCorpus.spellings.length+namingCorpus.queues.length+namingCorpus.folds.length+namingCorpus.steps.length+namingCorpus.resolves.length+namingCorpus.replays.length,'naming corpus denominator'),/naming corpus denominator/);
- const namingZero=structuredClone(namingCorpus);namingZero.steps=[];killed('naming-corpus-zero',()=>checkNamingCorpus(namingZero),/zero naming corpus/);
- const bad=structuredClone(corpus);const accepted=bad.cases.find(r=>r.result.accepted);accepted.result.value.state.config.registry=Number.MAX_SAFE_INTEGER+1;killed('corpus-output-domain',()=>checkCorpus(bad),/invalid-nat\/corpus.result/);
- const suppressed=records.slice(0,0);killed('property-execution-suppressed',()=>assert(suppressed.length===records.length,'property execution denominator'),/property execution denominator/);
- for(const [short,c] of Object.entries(checks)){const source=records.find(c.on);assert(source,'missing control exhibit/'+short);const fabricated=structuredClone(source);c.fault(fabricated);assert(c.on(fabricated),'control lost antecedent/'+short);killed('property-'+short,()=>assert(c.test(fabricated),'property/'+short),new RegExp('property/'+short));}
- for(const [short,c] of Object.entries(namingChecks)){if(typeof c.fault!=='function')continue;const fabricated=structuredClone(namingCorpus);c.fault(fabricated);assert(c.on(fabricated),'naming control lost exhibit/'+short);killed('naming-property-'+short,()=>assert(c.test(fabricated),'naming property/'+short),new RegExp('naming property/'+short));}
- killed('control-suppression',()=>assert.equal(0,Object.keys(checks).length,'control denominator'),/control denominator/);
- assert.equal(controls.length,28+Object.values(namingChecks).filter(c=>typeof c.fault==='function').length,'control denominator');
- console.log(JSON.stringify({controlsDiscovered:controls.length,controlsExecuted:controls.length,controls},null,2));
+
+const identity=json('identity.json');
+const corpus=json('corpus.json');
+const stories=json('stories.json');
+const theorems=json('formal/theorem-debt.json');
+const namingCorpus=json('../lean/naming-corpus.json');
+const namingTheorems=json('../lean/naming-theorem-debt.json');
+const lifecycleCorpus=json('../lean/lifecycle-corpus.json');
+const selftest=process.argv.includes('--selftest');
+
+// ---- 1. identity: the frozen inputs are the ones this page was built from ----
+for(const [p,expected] of Object.entries(identity.files))
+  assert.equal(hash(read_(p)),expected,'identity/'+p);
+assert.equal(hash(read_('page-template.html')),identity.templateSha256,'template identity');
+assert.equal(theorems.length,identity.theorems,'theorem denominator');
+assert.equal(namingTheorems.length,identity.namingTheorems,'naming theorem denominator');
+assert.equal(corpus.cases.length,identity.corpusCases,'corpus denominator');
+
+// the simulator's copy of the corpus must BE the Lean corpus, not a cousin
+assert.equal(hash(read_('corpus.json')),hash(readFileSync(new URL('../lean/corpus.json',root),'utf8')),
+  'simulator corpus is not the Lean corpus');
+
+// ---- 2. the transcription reproduces the model on every exported row --------
+let discovered=0,executed=0;
+for(const row of corpus.cases){
+  discovered++;
+  const r=step(row.before,row.action);
+  const got=r.accepted?'accept':r.reason;
+  const want=row.expectedAccept?'accept':row.expectedReason;
+  assert.equal(got,want,`corpus verdict/${row.id}`);
+  if(r.accepted)assert.ok(equal(r.value.state,row.result.state),`corpus state/${row.id}`);
+  executed++;
 }
-if(process.argv.includes('--report')){writeFileSync(new URL('coverage.json',root),JSON.stringify(coverage,null,2)+'\n');}
-console.log(JSON.stringify({status:'PASS finite checks only',corpus:receipt,stories:{discovered:storyDiscovered,executed:storyExecuted,trees:stories.length},properties:{discovered:names.length,executed:propertyExecuted,controlled:propertyCoverage.filter(r=>r.coverage==='controlled-check').length,exhibitsOnly:propertyCoverage.filter(r=>r.coverage==='exhibits-only').length,gaps:propertyCoverage.filter(r=>r.coverage==='gap').length},namingProperties:{discovered:namingProperties.length,executed:namingProperties.length,controlled:namingProperties.filter(r=>r.coverage==='controlled-check').length,exhibitsOnly:namingProperties.filter(r=>r.coverage==='exhibits-only').length,gaps:namingProperties.filter(r=>r.coverage==='gap').length},boundary:{discovered:boundaryDiscovered,executed:boundaryExecuted},refusals:{declared:refusals.length,exhibited:refusals.filter(x=>observedRefusals.includes(x)).length}},null,2));
+assert.equal(executed,discovered,'case denominator');
+assert.ok(executed>0,'zero corpus');
+
+// codec rows, both directions, including bytes that must not decode
+let codecRun=0;
+for(const row of corpus.codec){
+  const decodes=decodeState(row.bytes??[])!==null;
+  assert.equal(decodes,row.expectedDecodes,`codec/${row.id}`);
+  codecRun++;
+}
+assert.equal(codecRun,corpus.codec.length,'codec denominator');
+for(const s of STATES)assert.equal(decodeState(encodeState(s)),s,`codec roundtrip/${s}`);
+
+// the deposit goes to the address the insert named (R-ADA)
+let adaRun=0;
+for(const row of corpus.ada){
+  const s={...initial(),trie:[{key:5,leaf:'absent'}],custody:[{key:5,refundAddress:91,value:100}]};
+  s.config={...s.config,root:rootOf(s.trie)};
+  const edge=row.id.includes('update-active')?'updateActive':'deleteAbsent';
+  const r=step(s,approved(edge,5,{owner:91,output:99,refundAddress:91}));
+  assert.ok(r.accepted,`ada/${row.id}`);
+  assert.deepEqual(r.value.paid.map(p=>p.destination),row.paidTo,`ada destination/${row.id}`);
+  adaRun++;
+}
+assert.equal(adaRun,corpus.ada.length,'ada denominator');
+
+// ---- 3. every refusal the model names, refused BY NAME ---------------------
+const REQUIRED_REFUSALS=['read-unknown','read-absent','read-active','key-exists','key-unknown',
+  'already-booked','not-booked','not-active','terminal-immutable','no-approval',
+  'approval-mismatch','custody-missing','token-missing','empty-fold','net-mint-mismatch'];
+const seen=new Set();
+for(const row of corpus.cases)if(!row.expectedAccept)seen.add(row.expectedReason);
+for(const row of corpus.folds)if(!row.ok)seen.add(row.reason);
+seen.add(step(initial(),mismatched('insertActive',42,{owner:42,output:555})).reason);
+for(const why of REQUIRED_REFUSALS)assert.ok(seen.has(why),`refusal never exercised: ${why}`);
+
+// every (edge, leaf) pair outside the edge table is refused — the complement
+let pairs=0,refusedPairs=0;
+for(const edge of EDGES)for(const leaf of [null,...STATES]){
+  const key=7;let s=initial();
+  const trie=leaf===null?[]:[{key,leaf}];
+  s={...s,trie,config:{...s.config,root:rootOf(trie)},
+     custody:leaf==='absent'?[{key,refundAddress:91,value:200}]:[],
+     held:leaf==='active'?[{key,kind:'active',output:555}]:[]};
+  const r=step(s,approved(edge,key,{owner:42,output:555,refundAddress:91,deposit:200}));
+  pairs++;
+  const inTable=({insertAbsent:'unknown',insertActive:'unknown',updateActive:'absent',
+    updateTerminal:'active',deleteAbsent:'absent',deleteActive:'active',
+    witnessTerminal:'terminal'})[edge]===(leaf===null?'unknown':leaf);
+  if(inTable)assert.ok(r.accepted,`edge table row refused: ${edge}/${leaf}`);
+  else{assert.ok(!r.accepted,`outside the table but admitted: ${edge}/${leaf}`);
+       assert.ok(r.reason.length>0,'refusal without a reason');refusedPairs++;}
+}
+assert.equal(pairs,EDGES.length*4,'complement denominator');
+assert.equal(refusedPairs,pairs-EDGES.length,'every edge has exactly one admitting leaf');
+
+// ---- 4. the fold: atomicity, the empty batch, the mint check ---------------
+assert.equal(foldBatch(initial(),[]).reason,'empty-fold','empty batch');
+{
+ const a=approved('insertActive',1,{owner:42,output:555,claimed:[{kind:'active',quantity:1}]});
+ const b=approved('insertActive',2,{owner:42,output:555,claimed:[{kind:'active',quantity:1}]});
+ assert.ok(foldBatch(initial(),[a,b]).accepted,'two-request batch');
+ const wrong={...b,claimed:[{kind:'active',quantity:5}]};
+ assert.equal(foldBatch(initial(),[a,wrong]).reason,'net-mint-mismatch','mint check');
+ const bad=approved('updateTerminal',9,{owner:42,output:555});
+ const r=foldBatch(initial(),[a,bad]);
+ assert.ok(!r.accepted,'a refusal refuses the whole batch');
+}
+
+// ---- 5. stories: every step and fork agrees with the engine ----------------
+let storyDiscovered=0,storyExecuted=0;
+for(const story of stories){
+  assert.ok(story.steps.length>0,`empty story ${story.id}`);
+  let s=initial();const prefix=[s];
+  const run=e=>{storyDiscovered++;const r=step(s,e.request);
+    assert.equal(r.accepted?'accept':r.reason,e.expect,`story/${story.id}/${e.what}`);
+    if(r.accepted)s=r.value.state;storyExecuted++;};
+  for(const e of story.steps){run(e);prefix.push(s);}
+  for(const f of story.forks||[]){s=prefix[f.at];for(const e of f.steps)run(e);}
+}
+assert.equal(storyExecuted,storyDiscovered,'story denominator');
+assert.ok(storyExecuted>0,'zero stories');
+
+// ---- 6. the laws, checked on every accepted row ----------------------------
+const report=theoremReport(theorems,corpus);
+assert.equal(report.length,theorems.length,'theorem report denominator');
+let checked=0;
+for(const row of report)if(row.coverage==='controlled-check'){
+  assert.ok(row.exhibited>0,`law never exhibited: ${row.name}`);
+  assert.equal(row.held,row.exhibited,`law violated on a corpus row: ${row.name}`);
+  checked++;
+}
+assert.ok(checked>=7,`too few controlled laws: ${checked}`);
+
+// ---- 7. naming ------------------------------------------------------------
+const namingReceipt=checkNamingCorpus(namingCorpus);
+assert.equal(namingReceipt.sections,NAMING_SECTIONS.length,'naming sections');
+{
+ const j=overWitnessJourney();
+ assert.ok(j.steps.every(s=>s.accepted),'the Over witness journey must complete');
+ assert.equal(j.steps[2].witnesses.terminal,1,'a folded read mints one Over witness');
+ assert.equal(j.steps[3].witnesses.terminal,2,'the terminal witness is plural');
+ assert.equal(j.steps[4].witnesses.terminal,0,'the witnesses burn');
+ assert.equal(j.steps[4].leaf,'terminal','burning changes no leaf');
+}
+
+// ---- 7b. the naming lifecycle ---------------------------------------------
+const lifecycleReceipt=checkLifecycleCorpus(lifecycleCorpus);
+assert.equal(lifecycleReceipt.sections,LIFECYCLE_SECTIONS.length,'lifecycle sections');
+// The two rows the amended retirement rule turns on must be present BY ID: a
+// corpus that quietly dropped them would still replay, and would still pass a
+// check that only counted rows.
+for(const id of ['LT03-insufficient-quorum-refused','LT08-control-key-alone-refused',
+                 'LT02-quorum-retirement-accepts','LR11-root-equal-after-recovery'])
+  assert.ok(lifecycleReceipt.rows.some(r=>r.id===id),`lifecycle row missing: ${id}`);
+// and they must refuse for retirement's own reason, not for naming's no-delete
+for(const id of ['LT03-insufficient-quorum-refused','LT08-control-key-alone-refused'])
+  assert.equal(lifecycleReceipt.rows.find(r=>r.id===id).detail,'naming-retirement-uncertified',
+    `${id} must carry retirement's own refusal reason`);
+
+// ---- 8. boundary: the engine refuses what is not a state -------------------
+let boundary=0;
+for(const bad of [{...initial(),trie:[{key:-1,leaf:null}]},
+                  {...initial(),trie:[{key:1.5,leaf:null}]},
+                  {...initial(),held:[{key:1,kind:'nonsense',output:0}]},
+                  {...initial(),extra:1}]){
+  const r=step(bad,approved('insertActive',1,{owner:42,output:555}));
+  assert.ok(!r.accepted&&/^invalid-/.test(r.reason),'boundary refusal');
+  boundary++;
+}
+assert.equal(boundary,4,'boundary denominator');
+
+// ---- 9. the built page carries this exact engine ---------------------------
+{
+ const page=read_('index.html');
+ const script=page.match(/<script>\n([\s\S]*)\n<\/script>/)[1];
+ new vm.Script(script);                       // it parses
+ assert.ok(script.includes('const STORIES='),'page carries the stories');
+ assert.ok(script.includes(`"modelSha256": "${corpus.modelSha256}"`)||script.includes(corpus.modelSha256),
+   'page carries this corpus');
+}
+
+// ---- selftest: the gate can fail ------------------------------------------
+if(selftest){
+  const mustThrow=(what,f)=>{let threw=false;try{f()}catch{threw=true}
+    assert.ok(threw,`SELFTEST: ${what} did not fail`);};
+  mustThrow('a corrupted corpus verdict',()=>{
+    const row={...corpus.cases.find(c=>c.expectedAccept),expectedReason:'nonsense',expectedAccept:false};
+    const r=step(row.before,row.action);
+    assert.equal(r.accepted?'accept':r.reason,row.expectedReason);});
+  mustThrow('a law violated',()=>{
+    const s={...initial(),held:[{key:1,kind:'active',output:1},{key:1,kind:'active',output:2}]};
+    assert.ok(checks.active_witness_unique(s,{key:1},s));});
+  mustThrow('an admitted triple outside the table',()=>{
+    const s={...initial(),trie:[{key:7,leaf:'terminal'}]};
+    assert.ok(step(s,approved('deleteActive',7,{owner:42,output:555})).accepted);});
+  mustThrow('a story whose expectation is wrong',()=>{
+    assert.equal(step(initial(),read(42,700)).reason,'read-active');});
+  mustThrow('a lifecycle corpus section emptied',()=>{
+    checkLifecycleCorpus({...lifecycleCorpus,retirement:[]});});
+  mustThrow('a lifecycle row that did not hold',()=>{
+    checkLifecycleCorpus({...lifecycleCorpus,
+      wire:lifecycleCorpus.wire.map(r=>({...r,ok:false}))});});
+  console.log('PASS selftest: the gate fails when it should');
+}
+
+console.log(JSON.stringify({
+  corpusCases:executed,codec:codecRun,ada:adaRun,
+  complementPairs:pairs,refusedPairs,
+  storySteps:storyExecuted,controlledLaws:checked,
+  namingRows:namingReceipt.executed,lifecycleRows:lifecycleReceipt.executed,boundary,
+  model:corpus.modelSha256.slice(0,12)},null,1));
+console.log('PASS simulator: the transcription reproduces the model on every exported row');

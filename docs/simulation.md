@@ -1,65 +1,132 @@
-# Simulation candidate
+# Play the simulation
 
-<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable Singular simulator</a>. Choose **m1-naming** for the bounded first-release naming journey, or leave **generic** selected for the registry demonstration where Delete and authorized Insert withdrawal are allowed. The profiles are labelled and neither silently falls back to the other.
+<a href="https://lambdasistemi.github.io/singular/simulator/">Open the playable
+Singular simulator</a>. It is one self-contained page: no framework, no network,
+no server. Everything it computes it computes in front of you.
 
-Register a name, explore competing requests, cancel an Insert, change its address, retire it, or delete and reinsert it in a batch. Choose a story, advance with **›**, or press **▶** to play to its outcome. Click any tree node to revisit its state. A new manual attempt creates another branch without removing the previous play.
+The page is a **transcription** of the frozen Lean model into JavaScript, so
+that a reader can play what the proofs are about. Where the two disagree the
+Lean is right and the page is a defect — which is exactly what the corpus replay
+on the page is for.
 
-For the naming journey, select **m1-naming** and queue a claim for `alice`. The cancellation controls show that a separate approval must copy the refund address stored in the request; redirect, Insert-certification-only, post-fold, and replay attempts are refused. Reset the profile, queue two claims, fold the first, then fold the second to observe `occupied-key`. Resolve the active record to inspect its certified fixture, and submit the crafted Delete to observe `naming-no-delete`. Then open the [playable naming lifecycle](naming-lifecycle.md) to maintain the payment destination, recover through the committed next controller, or queue and separately complete retirement through the controller or quorum route. Retirement-request withdrawal remains a distinct refused attempt.
+## What you can do
 
-## Try the manual controls
+**Follow a journey.** Five stories, twenty steps between them. *Book a name* is
+the shortest: one unknown key, one fold, the record holds the active token.
+*Witness an absence, then book it* shows the other order — anyone may record
+that a key is unknown, the absent token waits in the cage, and booking it
+consumes that token and pays the deposit back to whoever funded it, not to
+whoever spent it. *Retire a name and attest it* ends in the state that cannot
+move again, and then attests it twice, because an attestation is a read: it
+changes nothing, so every copy of it is equally true. *What the cage refuses*
+walks four attempts that are turned away, each with its own reason. *Delete
+recreates the key* deletes a booked name and books it again — the same key, not
+a second incarnation, because the registry has no version counter to advance.
 
-1. In **Free play**, leave name key **42** and address datum **100**, then press **Queue Insert**. Change the datum to **200** and queue a second Insert for the same key.
-2. Select the first request in the batch composer and press **Fold selected batch**. Name 42 now resolves to address 100. The competing request remains pending.
-3. Select that pending Insert under cancellation. Press **Withdraw Insert** before approval to see its refusal. Then press **Approve exact withdrawal** and **Withdraw Insert**, using the same request and refund fields.
-4. Select the application UTxO. Turn application evidence off and try **Change address** to see the refusal. Restore the evidence and change the datum to 200.
-5. Press **Queue retirement (Update)** or **Queue Delete**. Resolve the name while its NFT is in request custody: the result is **pending**. Select the terminal request and fold it. Update ends at **retired**; Delete ends at **absent**.
+Step with ⏮ ◀ ▶ ⏭. Stepping back unwinds the tokens as well as the leaf, so you
+can watch a witness appear and disappear. Where a story reaches a point that
+admits more than one continuation, the branches are offered and taking one does
+not destroy the other.
 
-The **Delete and reinsert in a batch** story supplies an Insert approved for the next incarnation. Its ordered batch applies Delete first, then Insert. Inspect **Successive batch effects** for each accumulator state. The logical burn and mint cancel for the default reusable NFT identity. A failure rolls back the whole selected batch; tentative intermediate effects are labelled accordingly.
+**Try it yourself.** Free play gives you the seven edges, a key, an owner, an
+output and a deposit, and a choice of approval: matching, *right policy but
+wrong tuple*, another policy, or none at all. The third and fourth are
+obviously refused. The second is the interesting one — an approval minted under
+the registry's own pinned policy, for a real request, that does not match
+*this* request's edge, key, owner and destination. It is refused, and a model
+that checked only the policy would admit it.
 
-The **Advanced free play** drawer exposes exact action JSON for every modeled action constructor. Examples come from the frozen corpus; they can intentionally fail when the current state differs. Edit witnesses, evidence, scope, asset identities, and net quantities there. Numeric inputs outside the exact JavaScript integer domain are refused. The resolver can also be queried with an unauthenticated view.
+**Read what is refused, by name.** Seven primitives against four possible
+leaves is twenty-eight combinations. Seven of them are the edges; the other
+twenty-one are refusals, and the page lists all twenty-eight so you can see that
+the refusals are the *complement* of the table rather than a separately
+maintained list. Each carries its own reason — `key-exists`, `key-unknown`,
+`already-booked`, `not-booked`, `not-active`, `not-absent`,
+`terminal-immutable`, `read-unknown`, `read-absent`, `read-active` — because a
+single generic failure would hide which rule stopped you.
 
-## What the evidence establishes
+**See the naming instance.** Switch the profile to *Naming — the Over witness*.
+Naming is an instance of the registry, not a second model: a retired name is
+attested by a folded read, the witness is plural, and burning every copy leaves
+the leaf exactly where it was.
 
-This is a **SIMULATOR-CANDIDATE**. The generic model has **41** Lean theorem declarations and the naming layer has **17**; all are **PROVED** from the standard axioms. The simulator's finite checks measure transcriptions of those models, not the proofs; no acceptance is claimed.
+## What the page proves, and what it does not
 
-The focused gate replays **58 frozen generic Lean rows** — 52 transitions and 6 resolutions — plus **34 frozen naming rows** and **43 lifecycle and wire rows**. The lifecycle denominator covers pending-claim cancellation, maintenance, recovery, retirement, resolution, initialization, re-registration, and the exact four-field wire datum. The eight generic story trees contain **32 action steps**, including refusal forks. Story and manual steps outside the exact corpus input set exercise a transcription only; they do not acquire Lean parity by resemblance to a corpus row.
-
-The generic theorem ledger has **12 controlled finite checks**, **17 action exhibits only**, and **12 explicit gaps**. The naming ledger has **15 controlled finite checks**, **2 exhibits only**, and **0 gaps**. Each controlled check has a fabricated intended-result failure. An action exhibit does not check its full quantified theorem. The page displays these distinctions; it does not turn unexhibited rows into passing lamps.
-
-The Node gate also exercises **1,772 public-boundary probes** and **43 negative controls**. The source-derived generic refusal inventory currently exhibits **17 of 28 distinct model reasons**. Missing reason exhibits and generic theorem gaps remain in the [clarity record](LEAN-CLARITY.md), with exact names in the repository’s [coverage ledger](https://github.com/lambdasistemi/singular/blob/main/simulator/coverage.json).
-
-## Model and assumptions
-
-<a href="../lean/Singular/Model.lean">Frozen executable model</a> · <a href="../lean/Singular/Statements.lean">Theorem statements</a> · <a href="../lean/corpus.json">Lean-generated corpus</a>.
-
-The generic model uses tagged terms for collision-free commitments and lists for authenticated logical maps and UTxO sets. Application acceptance and witness flags are supplied evidence. This page does not execute validators, verify signatures, or model wallet balances. Refund values are commitments; no refund-payment result exists in the modeled transition output. The naming fixture uses canonical binary Cardano address shapes, a 32-byte next-controller commitment, and a published threshold quorum. The browser exercises those shapes through the integrated lifecycle transition, but that design-time execution does not claim compiled-script interoperability or a ledger transaction.
-
-Address evolution and retirement are different operations: `evolve` changes the application output without changing the registry; `update` completes retirement to `over`. The model’s `conforms` diagnostic does not enforce application semantics. Read the [clarity record](LEAN-CLARITY.md) before treating an observed outcome as a deployment guarantee.
-
-## Reproduce the focused checks
-
-From a source checkout:
-
-```sh
-node simulator/build.mjs --check
-node simulator/gate.mjs
-node simulator/gate.mjs --selftest
-node simulator/lifecycle-gate.mjs
-nix run .#browser-check
-nix run .#lifecycle-browser-check
+```mermaid
+flowchart LR
+    L["Lean model<br/>42 proved statements"] -->|generates| C["corpus.json<br/>38 replayable cases"]
+    L -->|transcribed by hand| J["core.mjs"]
+    C --> R{"replay in your browser"}
+    J --> R
+    R -->|"38 of 38 agree"| OK["the transcription<br/>matches on these inputs"]
+    R -.->|"any disagreement"| BUG["a defect in the page"]
 ```
 
-From the root of a freshly extracted documentation archive:
+Every case in the corpus carries its **input** — the state before and the
+request — not just the answer, so the page recomputes each one from scratch and
+compares. The header line on the page reports the count it actually reproduced
+against the count it was given; a page that silently skipped cases would show a
+smaller denominator, and one that skipped all of them would show zero rather
+than passing.
+
+That establishes agreement **on the exported inputs**. It is not a proof of
+equivalence: a transcription can agree on every corpus row and still diverge on
+the next one. The proofs are in the Lean; the page is evidence that what you are
+playing is the thing that was proved about, over the cases the model itself
+chose to export.
+
+**One caveat a reader should have, stated plainly.** The Lean model, the corpus
+generator and this transcription were written by the same author. Agreement
+between them is therefore weaker evidence than agreement between independent
+implementations would be: a misunderstanding held while writing the model is
+very likely to be held again while transcribing it. The corpus replay catches
+transcription slips, which is what it is for. It cannot catch a shared
+misreading of the specification. The independent check on that is the audit of
+the Lean statements against the interface, not this page.
+
+## Reproduce the checks
+
+From a source checkout, inside the development shell:
 
 ```sh
-sha256sum --check artifacts/SHA256SUMS
-nix run --no-write-lock-file ./artifacts/review#check
+just model        # compile the Lean, regenerate the corpus, check the axioms
+just simulator    # rebuild the page, replay every row, then prove the gate can fail
+just browser      # drive the built page in a pinned Chromium
 ```
 
-The first command verifies every shipped review input. The second uses the archive's own flake and lock to compile the shipped Lean model, regenerate and compare both corpora, check compiled axioms, rebuild the standalone page in check mode, replay the generic and naming rows, and execute the negative controls. Nix may acquire the exact locked toolchain when it is not cached; no model, scenario, simulator, or checker input comes from a checkout or an unpinned fetch.
+`just simulator` runs three commands. `node simulator/build.mjs --check`
+rebuilds the standalone page from its sources and fails if the committed
+`index.html` differs, so the page you play is the page in the repository.
+`node simulator/gate.mjs` replays the corpus outside the browser and reports
+what it covered:
 
-`node simulator/build.mjs` deterministically rebuilds the standalone HTML. The page embeds its engines, actions, stories, corpora, and theorem inventories; it has no framework, CDN, or runtime asset dependency. Publishing stages `index.html` and `identity.json` under `site/simulator/`.
+```json
+{ "corpusCases": 38, "codec": 7, "ada": 2, "complementPairs": 28,
+  "refusedPairs": 21, "storySteps": 20, "controlledLaws": 7,
+  "namingRows": 24, "boundary": 4 }
+```
 
-Build the versioned review bundle with `nix build .#docs-release` and check its packaging with `nix run .#release-check`. Then extract the actual archive into a fresh directory and run the archive commands above: a checkout-relative pass does not establish archive reproduction. The archive includes the rendered site and a complete runnable review tree under `artifacts/review/`; `artifacts/SHA256SUMS` binds every review input plus the separately served corpus and identity files. The outer `SHA256SUMS` authenticates the archive itself. A locally built bundle is reproducible review material; it is not a published release, validator, or ledger artifact.
+`node simulator/gate.mjs --selftest` then seeds a defect and requires the gate
+to reject it. A checker that has never been seen to fail is not evidence, so the
+failing run is part of the passing one.
 
-Local browser verification exercises competing generic Inserts, separate generic withdrawal authorization, address evolution and refusal, pending and retired resolution, forged-view refusal, the naming claim/fold/resolve journey and its duplicate/Delete refusals, story branches, both themes, and a 390-pixel viewport. This local browser evidence is separate from deployed-byte/browser checks. The pinned Nix runner supplies Chromium; exact commands and retained historical evidence are described in the repository. A browser pass does not establish ledger execution.
+`just browser` loads the built page in Chromium, serves nothing but
+`index.html` — every other request returns 404, which is how the page's
+self-containment is checked rather than asserted — plays the journeys, drives
+free play including the wrong-tuple approval, reads the refusal table and
+verifies the naming journey. Twenty-five assertions, and a page error or an
+outbound network request fails the run.
+
+## Where the model itself is
+
+<a href="../lean/Singular/Model.lean">The executable model</a> ·
+<a href="../lean/Singular/Statements.lean">the statements</a> ·
+<a href="../lean/corpus.json">the generated corpus</a> ·
+[what each statement says](theorems.md) ·
+[how the model was read back](LEAN-CLARITY.md).
+
+The page models states, leaves, tokens and approvals. It does not execute
+validators, check signatures, build transactions or hold funds. A deposit in
+the simulator is a number that must come back to the right address; on a ledger
+it is lovelace, and nothing here establishes that the compiled validator agrees
+with the model it was derived from.
