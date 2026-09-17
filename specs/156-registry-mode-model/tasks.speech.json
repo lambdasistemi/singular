@@ -17,8 +17,14 @@
       "pause": 400
     }
   ],
+  "forward-repair-after-merge": [
+    {
+      "text": "One forward repair task keeps the registry rename rewrite extent aligned with its residual gate for Lean and HTML files, with controls in both directions.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "db03d9b5e625e9c54e5dd87624ba2b997f5635f40d06dcc807e0040ab02d1446"
+    "sha256": "9235543b3867ad53339f8ecb169de9732681a49cf496375bf71e75c252c2be68"
   }
 }
