@@ -211,10 +211,18 @@
 
         # The row runner, wrapped so it brings the locked cardano-node
         # on its own PATH like the offchain journey runners, with the
-        # devnet genesis defaulting to the offchain sources carried in
-        # the synthesized root (E2E_GENESIS_DIR still overrides). The
-        # blueprint comes from the caller at run time
-        # (REGISTRY_BLUEPRINT); no store path is baked in.
+        # devnet genesis defaulting to this suite's own copy
+        # (E2E_GENESIS_DIR still overrides). The blueprint comes from the
+        # caller at run time (REGISTRY_BLUEPRINT); no store path is baked
+        # in.
+        #
+        # The copy differs from offchain/e2e-test/genesis in one field:
+        # shelley epochLength, 500 slots raised to 20000. At 0.1s a slot
+        # the original gives a two-epoch conversion horizon of a hundred
+        # seconds, and a ten-row registry-mode session — which books an
+        # approval and folds an edge per row, each its own transaction —
+        # runs past it and cannot convert a deadline to a slot. Every
+        # other file and parameter is byte-identical.
         conformance = pkgs.runCommand "conformance" {
           buildInputs = [ pkgs.makeWrapper ];
           meta = (components.exes.conformance.meta or { }) // {
@@ -224,7 +232,7 @@
           mkdir -p $out/bin
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
             --prefix PATH : ${cardanoNode}/bin \
-            --set-default E2E_GENESIS_DIR ${src}/offchain/e2e-test/genesis \
+            --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
             --set-default NAMING_BLUEPRINT ${naming-blueprint}
         '';
 
