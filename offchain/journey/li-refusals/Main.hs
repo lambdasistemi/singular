@@ -161,6 +161,7 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
+    applyIntParam,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -344,8 +345,8 @@ runMode mode registryPath namingPath = do
             "application.application compiled code not found in the naming blueprint"
     reprBytes <-
         orFail
-            (extractCompiledCode "representative.representative.mint" namingBp)
-            "representative.representative.mint compiled code not found in the naming blueprint"
+            (extractCompiledCode "witness.witness.mint" namingBp)
+            "witness.witness.mint compiled code not found in the naming blueprint"
     si <- readScriptIdentity =<< identityPathFromEnv
     namingSi <- readNamingIdentity =<< namingIdentityPathFromEnv
     gDir <- genesisDir
@@ -392,7 +393,7 @@ runMode mode registryPath namingPath = do
             appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
             reprAppliedBytes =
                 applyBytesParam (registryAssetId (scriptHashBytes appliedHash) (deriveAssetName (worldCanonicalRef world))) $
-                    applyBytesParam (scriptHashBytes appHash) reprBytes
+                    applyIntParam 1 reprBytes
             reprAppliedHash = computeScriptHash reprAppliedBytes
             reprAppliedHex = hex (scriptHashBytes reprAppliedHash)
             reprUnappliedHex = hex (scriptHashBytes (computeScriptHash reprBytes))
@@ -434,12 +435,19 @@ runMode mode registryPath namingPath = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
-                    , cfgRepPolicy = SBS.pack (replicate 28 0)
-                    , cfgConsumerPin = SBS.pack (replicate 28 0)
-                    -- NOTE-020: compile-only placeholder (this journey
-                    -- submits no Modify: bootstrap/refusal rows only).
-                    -- Any future Modify path must pin a bound consumer and
-                    -- register it first (see register/recovery/retirement).
+                    -- NOTE-020 / #157 D-BOOT: compile-only placeholders.
+                    -- This journey submits no `Modify` (bootstrap and
+                    -- refusal rows only), so nothing reads the four pins
+                    -- the state datum carries. Any future `Modify` path
+                    -- must derive all four from the two partitions' script
+                    -- identities for the registry it boots — the
+                    -- application validator's own hash and
+                    -- `witness(kind, registry)` at kinds 0, 1 and 2 (see
+                    -- register/recovery/retirement).
+                    , cfgApplicationPolicy = SBS.pack (replicate 28 0)
+                    , cfgActivePolicy = SBS.pack (replicate 28 0)
+                    , cfgAbsentPolicy = SBS.pack (replicate 28 0)
+                    , cfgTerminalPolicy = SBS.pack (replicate 28 0)
                     , cfgConsumerScript = SBS.empty
                     , network = Testnet
                     }
@@ -1812,9 +1820,9 @@ checkPinnedApplication ni appHex = do
 -- this run's raw representative code.
 checkPinnedRepresentative :: NamingIdentity -> String -> IO ()
 checkPinnedRepresentative ni unappliedHex = do
-    let pins = pinsUnder ni "representative.representative.mint"
+    let pins = pinsUnder ni "witness.witness.mint"
     unless (length pins >= 1) $
-        failWith "identity: no representative.representative.mint pin in the naming manifest"
+        failWith "identity: no witness.witness.mint pin in the naming manifest"
     unless (all (== T.pack unappliedHex) pins) $
         failWith $
             "identity: the naming manifest pins "

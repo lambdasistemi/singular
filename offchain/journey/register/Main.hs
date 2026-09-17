@@ -167,6 +167,7 @@ import Cardano.Ledger.TxIn (TxId (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
+    applyIntParam,
     extractCompiledCode,
     loadBlueprint,
  )
@@ -229,8 +230,6 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
-    deriveConsumerBinding,
-    ConsumerBinding (..),
     extractCageDatum,
     failedWitnessHash,
     findStateUtxo,
@@ -239,7 +238,6 @@ import Singular.Registry.TxBuilder.Internal (
     mkCageScript,
     mkInlineDatum,
     mkRequestScript,
-    pinScriptHash,
     requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
@@ -249,7 +247,7 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Request (requestInsertImpl)
 import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
+import Singular.Registry.TxBuilder.Register (registerScriptImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
     OnChainOperation (..),
@@ -458,11 +456,11 @@ runMode mode namingPath registryPath = do
             failWith
                 "application.application compiled code not found in the \
                 \naming blueprint"
-    repBytes <- case extractCompiledCode "representative.representative" nbp of
+    repBytes <- case extractCompiledCode "witness.witness" nbp of
         Just bytes -> pure bytes
         Nothing ->
             failWith
-                "representative.representative compiled code not found in \
+                "witness.witness compiled code not found in \
                 \the naming blueprint"
     attackerBytes <- case extractCompiledCode "e001_attacker.e001_attacker" nbp of
         Just bytes -> pure bytes
@@ -482,12 +480,6 @@ runMode mode namingPath registryPath = do
         Nothing ->
             failWith
                 "request.request compiled code not found in the registry blueprint"
-    consumerBytes <- case extractCompiledCode "consumer.consumer" mbp of
-        Just bytes -> pure bytes
-        Nothing ->
-            failWith
-                "consumer.consumer compiled code not found in the registry \
-                \blueprint (every Modify withdraws the pinned consumer)"
     stakingBytes <- case extractCompiledCode "staking.staking" mbp of
         Just bytes -> pure bytes
         Nothing ->
@@ -519,9 +511,26 @@ runMode mode namingPath registryPath = do
             appPolicy = PolicyID appHash
             repUnappliedHex =
                 hex (scriptHashBytes (computeScriptHash repBytes))
+            -- #157 C5/D-BOOT: one witness validator, applied three times
+            -- to THIS registry identity, gives the absent, active and
+            -- terminal policies. The active one took over the
+            -- representative's role, and keeps its spelling below.
+            registryId =
+                registryAssetId
+                    (scriptHashBytes (computeScriptHash stateBytes))
+                    (deriveAssetName seedRef)
+            witnessAt kind =
+                SBS.toShort
+                    ( scriptHashBytes
+                        ( computeScriptHash
+                            (applyBytesParam registryId (applyIntParam kind repBytes))
+                        )
+                    )
+            absentPolicyPin = witnessAt 0
+            activePolicyPin = witnessAt 1
+            terminalPolicyPin = witnessAt 2
             repAppliedBytes =
-                applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) (deriveAssetName seedRef)) $
-                    applyBytesParam (scriptHashBytes appHash) repBytes
+                applyBytesParam registryId (applyIntParam 1 repBytes)
             repAppliedHash = computeScriptHash repAppliedBytes
             repAppliedHex = hex (scriptHashBytes repAppliedHash)
             repAppliedPolicy = PolicyID repAppliedHash
@@ -537,7 +546,6 @@ runMode mode namingPath registryPath = do
         checkPinnedNamingApplication appHex
         checkPinnedRepresentative repUnappliedHex
         checkPinnedRegistryState stateUnappliedHex
-        checkPinnedConsumer (hex (scriptHashBytes (computeScriptHash consumerBytes)))
         emit
             "identity"
             ( "naming application 0x"
@@ -601,16 +609,15 @@ runMode mode namingPath registryPath = do
         -- the one a deployment manifest records (issue #102). Nothing
         -- below distinguishes the two; only how they are acquired does.
         let cageParts =
-                let ConsumerBinding{cbPin = pin, cbScriptBytes = consumerScript} =
-                        deriveConsumerBinding consumerBytes
-                 in CageParts
-                        { partsStateBytes = stateBytes
-                        , partsRequestBytes = requestBytes
-                        , partsRepPolicy =
-                            SBS.toShort (scriptHashBytes repAppliedHash)
-                        , partsConsumerPin = pin
-                        , partsConsumerScript = consumerScript
-                        }
+                CageParts
+                    { partsStateBytes = stateBytes
+                    , partsRequestBytes = requestBytes
+                    , partsApplicationPolicy = SBS.toShort (scriptHashBytes appHash)
+                    , partsActivePolicy = activePolicyPin
+                    , partsAbsentPolicy = absentPolicyPin
+                    , partsTerminalPolicy = terminalPolicyPin
+                    , partsConsumerScript = SBS.empty
+                    }
         attached <- forM mDeployment $ \path -> do
             dep <- readDeployment path
             att <- attach prov dep cageParts
@@ -629,7 +636,7 @@ runMode mode namingPath registryPath = do
         writeEvidenceMeta evDir candidate worktreeDirty (sourceName source) namingPath registryPath appHex repAppliedHex appliedStateHex
         (cfg, tok) <- case attached of
             Nothing ->
-                bootCage seedRef prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes repAppliedHash)) consumerBytes evDir evNext
+                bootCage seedRef prov submit tm appliedStateBytes requestBytes (SBS.toShort (scriptHashBytes appHash)) activePolicyPin absentPolicyPin terminalPolicyPin evDir evNext
             Just (path, att) -> do
                 emit
                     "attached"
@@ -654,23 +661,10 @@ runMode mode namingPath registryPath = do
             Just _ ->
                 emit
                     "attached"
-                    "the consumer and custody stake credentials were \
+                    "the stake credentials were \
                     \registered when the deployment was made; a run that \
                     \attaches registers nothing"
             Nothing -> do
-                consumerRegistered <- scriptStakeRegistered (pinScriptHash (SBS.fromShort (cfgConsumerPin cfg)))
-                if consumerRegistered
-                    then emit "consumer" "consumer stake credential already registered; reused"
-                    else do
-                        unsignedReg <- registerConsumerImpl cfg prov genesisAddr
-                        let signedReg = addKeyWitness genesisSignKey unsignedReg
-                        regResult <- submitRetainAt evDir evNext submit "consumer-registration" signedReg
-                        case regResult of
-                            Submitted _ -> pure ()
-                            Rejected reason ->
-                                failWith ("consumer-registration: rejected: " <> show reason)
-                        _ <- waitConfirmationTx signedReg (txIdHex signedReg <> " (consumer-registration)")
-                        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
                 let stakingScript = scriptFromBytes "staking" stakingBytes
                 stakingRegistered <- scriptStakeRegistered (hashScript stakingScript)
                 if stakingRegistered
@@ -1059,16 +1053,13 @@ bootCage ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
     FilePath ->
     IORef Int ->
     IO (CageConfig, TokenId)
-bootCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes evDir evNext = do
-    let ConsumerBinding
-            { cbPin = consumerPin
-            , cbScriptBytes = consumerScriptBytes
-            , cbHash = consumerHash
-            } = deriveConsumerBinding consumerBytes
-        cfg =
+bootCage seedRef prov submit tm stateBytes requestBytes appPin activePin absentPin terminalPin evDir evNext = do
+    let cfg =
             CageConfig
                 { cageScriptBytes = stateBytes
                 , requestScriptBytes = requestBytes
@@ -1077,19 +1068,13 @@ bootCage seedRef prov submit tm stateBytes requestBytes repPolicy consumerBytes 
                 , defaultProcessTime = 120_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
-                , cfgRepPolicy = repPolicy
-                , cfgConsumerPin = consumerPin
-                , cfgConsumerScript = consumerScriptBytes
+                , cfgApplicationPolicy = appPin
+                , cfgActivePolicy = activePin
+                , cfgAbsentPolicy = absentPin
+                , cfgTerminalPolicy = terminalPin
+                , cfgConsumerScript = SBS.empty
                 , network = Testnet
                 }
-    emit
-        "consumer"
-        ( "pinned exhibit consumer 0x"
-            <> hex (scriptHashBytes consumerHash)
-            <> " (unparameterized: authenticates batches from transaction \
-               \evidence alone; stake credential registered below before \
-               \the first Modify)"
-        )
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let signedBoot = addKeyWitness genesisSignKey unsignedBoot
     result <- submitRetainAt evDir evNext submit "cage-boot" signedBoot
@@ -1973,8 +1958,10 @@ refusalScriptHex env operation =
                 ( scriptHashBytes
                     (hashScript (mkRequestScript (envCfg env) (envTok env)))
                 )
-          else if operation == "consumer" then
-            hex (SBS.fromShort (cfgConsumerPin (envCfg env)))
+          else if operation == "hook" then
+            -- #157: the consumer hook is retired; the staking script is
+            -- the only withdrawal credential these rows still carry.
+            hex (scriptHashBytes (hashScript (envStakingScript env)))
           else
             hex (scriptHashBytes (envStateHash env))
         )
@@ -2367,10 +2354,10 @@ stripHookWithdrawal env tx =
         remainingRdmrs = case tx ^. witsTxL . rdmrsTxWitsL of
             Redeemers m ->
                 Redeemers (Map.delete (ConwayRewarding (AsIx 0)) m)
-        remainingScripts = case tx ^. witsTxL . scriptTxWitsL of
-            scripts -> Map.delete consumerHash scripts
-        consumerHash =
-            pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
+        -- #157: with the hook retired there is no consumer script in
+        -- the witness set to remove; stripping the withdrawal is the
+        -- whole mutation.
+        remainingScripts = tx ^. witsTxL . scriptTxWitsL
      in stripped
             & bodyTxL . scriptIntegrityHashTxBodyL
                 .~ computeScriptIntegrity
@@ -2405,9 +2392,7 @@ swapHookCredential env tx =
                 Map.insert
                     stakingHash
                     (envStakingScript env)
-                    (Map.delete consumerHash scripts)
-        consumerHash =
-            pinScriptHash (SBS.fromShort (cfgConsumerPin (envCfg env)))
+                    scripts
      in swapped
 
 {- | Rewrite the state output's consumer pin (28 0xdd bytes): every
@@ -2426,7 +2411,7 @@ alterStatePin tx =
                             ( toPlcData
                                 ( StateDatum
                                     ( st
-                                        { stateConsumerPin =
+                                        { stateAppPolicy =
                                             BuiltinByteString
                                                 (BS.replicate 28 0xdd)
                                         }
@@ -4347,9 +4332,9 @@ checkPinnedRepresentative unappliedHex = do
         fromMaybe "../naming-onchain/script-identity.json"
             <$> lookupEnv "NAMING_SCRIPT_IDENTITY"
     manifest <- readIdentityManifest path
-    let pins = pinsUnder manifest "representative.representative.mint"
+    let pins = pinsUnder manifest "witness.witness.mint"
     unless (length pins >= 1) $
-        failWith "identity: no representative.representative.mint pin"
+        failWith "identity: no witness.witness.mint pin"
     unless (all (== T.pack unappliedHex) pins) $
         failWith
             ( "identity: the naming manifest pins unapplied representative \
@@ -4376,22 +4361,6 @@ checkPinnedRegistryState unappliedHex = do
                 <> unappliedHex
             )
 
-checkPinnedConsumer :: String -> IO ()
-checkPinnedConsumer unappliedHex = do
-    path <-
-        fromMaybe "../onchain/script-identity.json"
-            <$> lookupEnv "REGISTRY_SCRIPT_IDENTITY"
-    manifest <- readIdentityManifest path
-    let pins = pinsUnder manifest "consumer.consumer"
-    unless (length pins >= 1) $
-        failWith "identity: no consumer.consumer pin in the registry manifest"
-    unless (all (== T.pack unappliedHex) pins) $
-        failWith
-            ( "identity: the registry manifest pins unapplied consumer hash(es) "
-                <> show pins
-                <> " but this run's blueprint code hashes to 0x"
-                <> unappliedHex
-            )
 
 -- ---------------------------------------------------------
 -- Receipt
