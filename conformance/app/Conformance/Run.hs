@@ -975,6 +975,11 @@ runSession
                     -- CA session: publish the canonical seed by a
                     -- designation split, then CA01 boots from it.
                     -- No cage is booted here: the boot IS row CA01.
+                    --
+                    -- The wallet is swept BEFORE the designation. After it,
+                    -- the canonical seed is an ordinary ada-only output and
+                    -- a sweep would spend the very one the config pins.
+                    consolidateWallet prov submit
                     (seedTxIn, _) <- designateSplit prov submit "canonical"
                     let seedRef = txInToRef seedTxIn
                         cfg = cageCfg stateBytes requestBytes namingCodes seedRef
@@ -1292,7 +1297,10 @@ adaptProvider p =
 
 runRow :: Env -> String -> String -> IO ()
 runRow env marker row = do
-    consolidateFunding env
+    -- A CA row boots from the seed the session designated, so its wallet
+    -- is left exactly as the designation left it. Every other row wants
+    -- one ada-only output to fund from.
+    unless (take 2 row == "CA") (consolidateFunding env)
     runRowIn env marker row
 
 runRowIn :: Env -> String -> String -> IO ()
@@ -6873,8 +6881,13 @@ Reference outputs are left alone: they are what the folds resolve their
 scripts through.
 -}
 consolidateFunding :: Env -> IO ()
-consolidateFunding env = do
-    let prov = envProv env
+consolidateFunding env = consolidateWallet (envProv env) (envSubmit env)
+
+-- | The sweep, before there is an `Env` to carry: a CA session designates
+-- its canonical seed during construction, and a sweep after that would
+-- spend the very output CA01 boots from.
+consolidateWallet :: Cage.Provider IO -> Submitter IO -> IO ()
+consolidateWallet prov submit = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     let spendable = filter (not . carriesRefScript . snd) utxos
         dirty = filter (not . adaOnlyOut . snd) spendable
@@ -6912,7 +6925,7 @@ consolidateFunding env = do
             require
                 ("consolidateFunding: wallet too small: " <> show fundingAda)
                 (fundingAda > 5_000_000)
-            result <- submitTxResilient (envSubmit env) signed
+            result <- submitTxResilient submit signed
             case result of
                 Submitted _ -> do
                     awaitTx
