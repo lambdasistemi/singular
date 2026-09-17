@@ -10,6 +10,60 @@ own rule about who may certify what.
 <a href="https://lambdasistemi.github.io/singular/simulator/">Open the simulator</a>
 and switch the profile picker to *Naming — the Over witness*.
 
+## How a name moves in the registry
+
+Naming is an instance of the registry, not a layer bolted beside it. A name is
+one key in the registry's authenticated map, and the value of that key is a
+single byte:
+
+| state | byte | what it says |
+| --- | --- | --- |
+| Absent | `0x00` | somebody has witnessed that this name is free, and put up a deposit to say so |
+| Active | `0x01` | the name is booked and live |
+| Terminal | `0x02` | the name is over, forever |
+
+Seven requests move a key, and nothing else does. Each one moves a witness
+token, and the witness is what a reader looks at — never the root:
+
+| request | before | after | witness moved |
+| --- | --- | --- | --- |
+| insert absent | no key | Absent | one absent witness minted into the cage's own custody |
+| insert active | no key | Active | one active witness minted to the booker |
+| update absent to active | Absent | Active | the absent witness burned, an active witness minted |
+| update active to terminal | Active | Terminal | the active witness burned |
+| delete absent | Absent | no key | the absent witness burned, the deposit returned |
+| delete active | Active | no key | the active witness burned |
+| read terminal | Terminal | Terminal | one terminal witness minted, the key untouched |
+
+Every other shape is refused before any proof is checked, and each refusal
+carries one trace label naming its own reason.
+
+The witnesses obey four laws:
+
+1. **A witness moves only inside a fold.** A mint or a burn under the absent,
+   active or terminal policy is accepted only in a transaction that spends the
+   registry's state token and folds it.
+2. **The fold decides how many, and where.** It sums the witness column of the
+   requests it consumed, and the transaction's mint under the three policies
+   must equal that sum exactly — asset by asset, quantity by quantity. Nothing
+   else may move under them.
+3. **A terminal witness is its holder's to destroy.** It says a name is over,
+   forever; burning your own copy costs the registry nothing, so that burn
+   alone needs no fold.
+4. **The asset name is the registry key.** Identity is the pair of policy and
+   key, so a name recreated after a delete carries the same identity again.
+
+One edge carries a rule of its own: ending a name needs the committed recovery key or the retirement quorum, and never the current control key alone.
+
+**No application script at fold time.** The naming validator is not
+executed by a fold at all. What it does instead is certify an edge in advance:
+it mints one approval whose asset name binds the edge, the key, the owner and
+the destination, the requester attaches that approval to their request, and the
+cage recomputes the name from the request itself and refuses anything that does
+not match. A folder is permissionless and can therefore be anyone, which is
+exactly why the destination is bound: without it a folder could route your name
+to itself.
+
 ## What you can do
 
 **Watch the journey.** Five steps, played rather than asserted:
@@ -40,33 +94,49 @@ refusals that guard them.
 
 ## Finding alice
 
-Given the registry's representative policy id, alice's NFT is that policy plus `blake2b_256("alice")`. Hash the spelling bytes without a newline; no controller, registry token, prefix or incarnation enters the asset name. `register-rows` prints the same command and checks the actual mint against its result:
+The asset name IS the registry key. Given the registry's active policy id,
+alice's witness is that policy plus the raw bytes of `alice` — no hash, no
+controller, no registry token, no prefix and no incarnation enters it:
 
 ```sh
-printf %s alice | b2sum -l 256
-# e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c
+printf %s alice | xxd -p
+# 616c696365
 ```
 
-To find the live UTxO on preprod, substitute the published representative policy id and query [Koios Asset UTxOs](https://api.koios.rest/#post-/asset_utxos):
+To find the live UTxO on preprod, substitute the published active policy id and query [Koios Asset UTxOs](https://api.koios.rest/#post-/asset_utxos):
 
 ```sh
-policy_id='<published representative policy id>'
-asset_name=$(printf %s alice | b2sum -l 256 | cut -d ' ' -f1)
+policy_id='<published active policy id>'
+asset_name=$(printf %s alice | xxd -p)
 jq -n --arg p "$policy_id" --arg n "$asset_name" \
   '{_asset_list:[[$p,$n]],_extended:true}' |
   curl --fail-with-body -sS https://preprod.koios.rest/api/v1/asset_utxos \
     -H 'Content-Type: application/json' --data-binary @-
 ```
 
-The holding address and inline datum identify the active record or pending retirement custody. No trie or creation-controller lookup is needed to locate a live NFT. If `asset_utxos` is empty, query [the same asset's mint/burn history](https://api.koios.rest/#get-/asset_history):
+The holding address and inline datum identify the live record or the
+completion-only custody a pending ending put it in. No trie lookup and no
+creation-controller lookup is needed to locate a live witness.
+
+The three policies share that one convention, so the same query answers three
+different questions about the same name. A witness under the absent policy says
+somebody has staked a deposit on the name being free. A witness under the active
+policy says the name is booked, and its holding output is the record. A witness
+under the terminal policy says the name is over — anyone may ask for one by
+folding a read, and nobody can ever make the name live again.
 
 ```sh
-curl --fail-with-body -sS --get https://preprod.koios.rest/api/v1/asset_history \
-  --data-urlencode "_asset_policy=$policy_id" \
-  --data-urlencode "_asset_name=$asset_name"
+# the same asset name, asked of each policy in turn
+for policy in "$absent_policy" "$active_policy" "$terminal_policy"; do
+  jq -n --arg p "$policy" --arg n "$asset_name" \
+    '{_asset_list:[[$p,$n]],_extended:true}' |
+    curl --fail-with-body -sS https://preprod.koios.rest/api/v1/asset_utxos \
+      -H 'Content-Type: application/json' --data-binary @-
+done
 ```
 
-Minted once and burned once means permanent **Over**; never minted means **unclaimed**. This is the only place history is needed: the asset's own mint/burn history, not the trie's.
+This is the whole reader protocol: presence of a token, never the root and
+never a history walk.
 
 ## What you see when it is refused
 

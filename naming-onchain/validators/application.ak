@@ -1,29 +1,30 @@
 use aiken/collection/dict.{get, keys}
-use aiken/collection/list.{all, filter, filter_map, find, has, zip}
+use aiken/collection/list.{filter, find, has}
 use aiken/collection/pairs
 use aiken/crypto.{VerificationKeyHash, blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address
-use cardano/assets.{flatten, lovelace_of, quantity_of, tokens, PolicyId, Value}
-use cardano/transaction.{InlineDatum, Input, Output, OutputReference, Spend, Transaction}
+use cardano/assets.{PolicyId, Value, flatten, lovelace_of, quantity_of, tokens}
+use cardano/transaction.{
+  InlineDatum, Input, Output, OutputReference, Spend, Transaction,
+}
+use naming
 use naming.{NamingRecord, RetirementQuorum, mpfs_state_hash}
 
-/// The expected representative policy from the registry state (issue
-/// #77, E-001): genesis sets it, `validModify` preserves it. Read from the
-/// spent state when present, else from the reference (NOTE-014 item A1) —
-/// retires authenticate without spending.
-pub fn expected_rep_policy(tx: Transaction) -> PolicyId {
+/// The registry's own active-token policy (#157 C7): genesis sets it,
+/// every fold preserves it. Read from the spent state when present, else
+/// from the reference (NOTE-014 item A1) — retires authenticate without
+/// spending.
+pub fn expected_active_policy(tx: Transaction) -> PolicyId {
   expect InlineDatum(datum) = find_registry_state(tx).output.datum
   naming.mpfs_state_policy(datum)
 }
 
 /// The registry state input, NFT-authenticated (issue #77, registry
-/// association, NOTE-007; reference path NOTE-014 item A1): the spent state
-/// if present, else the referenced state. Spent is searched first so
-/// connected folds behave exactly as before; retires read the reference
-/// without spending (no empty `Modify`, no filler request). Both lists use
-/// the identical `is_registry_state` predicate — one authentication shape
-/// for both paths. The ONE place that decides which UTxO is the registry.
+/// association, NOTE-007; reference path NOTE-014 item A1): the spent
+/// state if present, else the referenced state. Both lists use the
+/// identical `is_registry_state` predicate — one authentication shape for
+/// both paths. The ONE place that decides which UTxO is the registry.
 fn find_registry_state(tx: Transaction) -> Input {
   when find(tx.inputs, is_registry_state) is {
     Some(spent) -> spent
@@ -43,10 +44,7 @@ fn is_registry_state(input: Input) -> Bool {
 }
 
 /// Exactly one cage token under the state policy (NOTE-009 §3): a single
-/// asset NAME is not enough — its quantity must be exactly 1, checked here
-/// where the authentication happens, not incidentally elsewhere. A state
-/// UTxO carrying two tokens (or zero) under this policy is not the registry
-/// and refuses at this boundary.
+/// asset NAME is not enough — its quantity must be exactly 1.
 fn has_single_cage_token(value: Value) -> Bool {
   let policy_tokens = tokens(value, mpfs_state_hash)
   when keys(policy_tokens) is {
@@ -55,25 +53,24 @@ fn has_single_cage_token(value: Value) -> Bool {
   }
 }
 
-/// The supplied state's own authenticating token name (NOTE-007): the cage
-/// token the NFT check above authenticated. Read from the same input the
-/// policy came from — never from a second lookup that could disagree.
-fn expected_rep_token(tx: Transaction) -> ByteArray {
-  let policy_tokens = tokens(find_registry_state(tx).output.value, mpfs_state_hash)
+/// The supplied state's own authenticating token name (NOTE-007).
+fn expected_registry_token(tx: Transaction) -> ByteArray {
+  let policy_tokens =
+    tokens(find_registry_state(tx).output.value, mpfs_state_hash)
   expect [token_name] = keys(policy_tokens)
   token_name
 }
 
-/// The authenticated registry selected by the application. The representative
-/// policy compares these exact bytes with its deployment parameter, so both
-/// validators authorize against the same state input or reference.
+/// The authenticated registry the application selected: the FULL native
+/// asset identity of the cage token — state policy id followed by the
+/// token name — the same bytes `witness(kind, registry)` is parametrised
+/// by, so both validators authorize against one state.
 pub fn registry_identity(tx: Transaction) -> ByteArray {
-  registry_asset_id(mpfs_state_hash, expected_rep_token(tx))
+  registry_asset_id(mpfs_state_hash, expected_registry_token(tx))
 }
 
-/// Reference-only selection shared by retirement and its executing witness.
-/// Both read the same authenticated state, so an additional reference cannot
-/// supply a different policy or registry to the two validators.
+/// Reference-only selection shared by retirement and its executing
+/// witness.
 pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
   expect Some(state) = find(tx.reference_inputs, is_registry_state)
   expect [token] = keys(tokens(state.output.value, mpfs_state_hash))
@@ -82,72 +79,64 @@ pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
 }
 
 /// The retirement custody script hash (issue #66): the only address a
-/// `Retire` may place the representative at. Regenerated from the
-/// custody validator's own blueprint; never hand-typed.
+/// `Retire` may place the active token at. Regenerated from the custody
+/// validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09"
+  #"762b862e631598a2c432a396763642af640707a1a6189d6016c59f98"
 
-/// The naming application validator (issue #52; mint burn half added
-/// by #56's ledger run).
+/// The naming application validator (issue #52), in registry mode (#157).
 ///
-/// One script serves both purposes, the way the imported partition's
-/// state script serves as both spending validator and bootstrap minting
-/// policy: the `mint` purpose is the application policy whose approval
-/// tokens carry the refund binding — minted on the controller's
-/// signature at request time, burned exactly once riding the claim the
-/// spend purpose folds or cancels — the `spend` purpose governs the
-/// naming records and claims whose datum is the four-field naming
-/// datum in the accepted encoding — nothing else, no fifth field.
+/// One script serves both purposes. The `mint` purpose IS the
+/// application policy the registry pins: it certifies EDGES. Its
+/// approvals are minted at request creation, one per request, carried by
+/// the request UTxO and never burned — no script of naming's runs at fold
+/// time at all. The cage recomputes each approval's name from the request
+/// it rides and refuses a mismatch (C4, D-APPROVAL), so this validator's
+/// only job is to decide WHEN an edge may be certified.
 ///
-/// The validator reads its own script hash from the spent input's
-/// address credential, so it has no constructor parameters: the pinned
-/// blueprint hash is the applied address.
+/// The `spend` purpose governs the record UTxOs the fold creates. There
+/// is no pending claim any more, and so no `Fold` and no `Cancel`: a
+/// booking is an approval plus a cage request, and the record comes into
+/// being as the fold's own output (N3).
 ///
-/// Row demand (from the accepted v0.2.0 corpus, `LM-LC-rows.json`):
+/// Row demand (from the accepted v0.2.0 corpus, `LM-LR-LT rows`):
 ///
-/// - `LM01..LM04` (`applicationSpend`): maintenance requires the
-///   controller's signature, and preserves control and recovery fields;
-///   only the payment destination is maintainable.
-/// - `LC01..LC06` (`nativeSpend`): cancellation compares the presented
-///   refund address against the one bound into the withdraw approval
-///   token, consumes the approval by burning it, and pays the refund to
-///   the bound destination.
+/// - `LM01..LM04` (`maintain`): maintenance requires the controller's
+///   signature and preserves control, commitment and quorum.
+/// - `LR01..LR11` (`recover`): the committed next key, revealed and
+///   signing, becomes the controller.
+/// - `LT02`/`LT03` (`retire`): the quorum route. `LT01` is retired as a
+///   row — the current control key alone no longer ends a name
+///   (D-TERMINATE, want-ledger R1).
 pub type ApplicationRedeemer {
   /// Ordinary maintenance (`LM` rows).
   Maintain
-  /// Cancel a claim to its stored refund destination (`LC` rows).
-  Cancel { presented_refund: ByteArray }
-  /// Fold a claim into a record: the four-field datum is frozen; the
-  /// representative names are carried for the representative policy to
-  /// bind.
-  Fold { representatives: List<ByteArray> }
-  /// Retire a record using its spelling; recovery never changes its name.
-  Retire { representatives: List<ByteArray>, key: ByteArray }
-  /// Recover control with the committed next key (`LR` rows, issue #62):
-  /// reveal the committed next-control address, prove its commitment,
-  /// require its payment-key signer, install it as controller with a
-  /// fresh commitment. Appended, never reordered: Maintain/Cancel/Fold/
-  /// Retire keep their indices or the existing lmlc encodings break.
-  Recover {
-    revealed_control: ByteArray,
-    representatives: List<ByteArray>,
-    registry: ByteArray,
-  }
+  /// End the name. `key` is the registry key being retired;
+  /// `revealed_control` is the preimage of the record's
+  /// `next_control_commitment` — the recovery route's proof — or empty
+  /// bytes when the quorum is the route instead.
+  ///
+  /// The reveal rides the redeemer because `retire` needs exactly the
+  /// proof `recover` needs, and nothing else in a transaction carries a
+  /// full binary address (functions-model, `retire(...)`).
+  Retire { key: ByteArray, revealed_control: ByteArray }
+  /// Recover control with the committed next key (`LR` rows, issue #62).
+  Recover { revealed_control: ByteArray, registry: ByteArray }
 }
 
-/// Redeemer of the application policy's mint purpose: mint the
-/// withdraw approval whose asset name is the refund destination it
-/// binds, or (issue #77) the insert approval whose asset name is the
-/// domain-separated hash of the proposal core it binds. The controller
-/// must sign in both arms. Appended, never reordered: `InsertApproval`
-/// is index 1 and `WithdrawApproval` keeps index 0, or the merged
-/// runners' mint encodings break.
+/// Redeemer of the application policy's mint purpose (#157 N2): certify
+/// one edge of C2 for one key, one owner and one destination. The asset
+/// name minted must equal the approval binding of exactly that tuple.
+///
+/// `WithdrawApproval` and `InsertApproval` are retired with the claim
+/// mechanism — a declared contract change, listed in the conformance
+/// page.
 pub type ApplicationMintRedeemer {
-  WithdrawApproval { controller: VerificationKeyHash, destination: ByteArray }
-  InsertApproval {
-    controller: VerificationKeyHash,
-    control: ByteArray,
-    commitment: ByteArray,
+  Approve {
+    edge: Int,
+    key: ByteArray,
+    owner: ByteArray,
+    destination: (ByteArray, ByteArray),
   }
 }
 
@@ -165,35 +154,22 @@ validator application {
     expect address.Script(own_hash) = claim.output.address.payment_credential
     when redeemer is {
       Maintain -> maintain(record, claim, tx)
-      Cancel { presented_refund } ->
-        cancel(record, presented_refund, claim, own_hash, tx)
-      Fold { representatives } ->
-        fold(record, representatives, claim, own_hash, tx)
-      Retire { representatives, key } ->
+      Retire { key, revealed_control } ->
         when single_asset_name(claim.output.value) is {
-          Some(stored_rep) -> retire(record, claim, stored_rep, key, tx)
+          Some(stored) -> retire(record, claim, stored, key, revealed_control, tx)
           None -> {
             trace @"record-single-asset"
             False
           }
         }
-      Recover { revealed_control, representatives, registry } ->
+      Recover { revealed_control, registry } ->
         when single_asset_name(claim.output.value) is {
           None -> {
             trace @"record-single-asset"
             False
           }
-          Some(stored_rep) ->
-            recover(
-              record,
-              stored_rep,
-              revealed_control,
-              representatives,
-              registry,
-              claim,
-              own_hash,
-              tx,
-            )
+          Some(stored) ->
+            recover(record, stored, revealed_control, registry, claim, own_hash, tx)
         }
     }
   }
@@ -203,38 +179,27 @@ validator application {
     policy_id: PolicyId,
     tx: Transaction,
   ) {
-    let Transaction { extra_signatories, mint, .. } = tx
-    let policy_tokens = tokens(mint, policy_id)
+    let policy_tokens = tokens(tx.mint, policy_id)
     // Exactly one asset moves under our policy per transaction: one
-    // approval minted or burned.
-    expect [bound] = keys(policy_tokens)
-    when redeemer is {
-      WithdrawApproval { controller, destination } -> {
-        // The approval's asset name IS the refund destination it binds:
-        // cancellation later compares against exactly these bytes.
-        expect naming.canonical_address(destination)
-        expect bound == destination
-        approval_roundtrip(
-          policy_id,
-          bound,
-          get(policy_tokens, bound),
-          extra_signatories,
-          controller,
-          tx,
-        )
+    // approval minted, one request certified.
+    when keys(policy_tokens) is {
+      [bound] -> {
+        let Approve { edge, key, owner, destination } = redeemer
+        if get(policy_tokens, bound) != Some(1) {
+          trace @"approval-quantity"
+          False
+        } else if bound != approval_name(edge, key, owner, destination) {
+          // The name IS the binding (D-APPROVAL). The cage recomputes the
+          // same bytes from the request; one formula, two partitions.
+          trace @"approval-binding"
+          False
+        } else {
+          approve(edge, key, owner, destination, policy_id, tx)
+        }
       }
-      InsertApproval { controller, control, commitment } -> {
-        // The approval's asset name IS the bound proposal hash: the
-        // insert fold later recomputes it from the frozen datum.
-        expect bound == insert_approval_name(control, commitment)
-        approval_roundtrip(
-          policy_id,
-          bound,
-          get(policy_tokens, bound),
-          extra_signatories,
-          controller,
-          tx,
-        )
+      _ -> {
+        trace @"approval-quantity"
+        False
       }
     }
   }
@@ -244,266 +209,197 @@ validator application {
   }
 }
 
+/// The approval binding (#157 D-APPROVAL): the identical formula the
+/// cage recomputes — `blake2b_256(edge ‖ key ‖ owner ‖ destination)`,
+/// the destination being its address bytes followed by its datum hash.
+/// Transcribed rather than imported because the package fence blocks the
+/// import; drift makes honest bookings refuse LOUDLY at the fold.
+pub fn approval_name(
+  edge: Int,
+  key: ByteArray,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+) -> ByteArray {
+  let (dest_address, datum_hash) = destination
+  blake2b_256(
+    bytearray.from_int_big_endian(edge, 1)
+      |> bytearray.concat(key)
+      |> bytearray.concat(owner)
+      |> bytearray.concat(dest_address)
+      |> bytearray.concat(datum_hash),
+  )
+}
+
+/// RED: the six arms of R-NM4 are not implemented. Every edge
+/// certifies, including `deleteActive`, which must never certify, and no
+/// arm names a reason — so N1 to N5 fold their refusals and the trace map
+/// has no executable extent for `controller-signature`,
+/// `custody-refund-signature` or `never-certified`.
+fn approve(
+  _edge: Int,
+  _key: ByteArray,
+  _owner: ByteArray,
+  _destination: (ByteArray, ByteArray),
+  _policy_id: PolicyId,
+  _tx: Transaction,
+) -> Bool {
+  True
+}
+
 /// `LM01` accepts; `LM02` (no signature), `LM03` (tampered control or
-/// recovery field) and `LM04` (altered quorum) refuse.
+/// recovery field) and `LM04` (altered quorum) refuse. NM2 (#157 N9):
+/// maintenance never touches the trie, so the registry state may not be
+/// a spent input of this transaction at all.
 fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
-  let Transaction { extra_signatories, .. } = tx
-  // The controller's payment key must sign; absence alone refuses.
-  expect has(extra_signatories, naming.control_hash(record))
-  // Exactly one continuation record at the application address.
-  expect [continuation] = continuation_outputs(record, claim, tx)
-  // Only the payment destination is maintainable: control, commitment
-  // and quorum are preserved exactly.
-  expect InlineDatum(successor_datum) = continuation.datum
-  let successor = naming.expect_naming(successor_datum)
-  expect successor.control_address == record.control_address
-  expect successor.next_control_commitment == record.next_control_commitment
-  expect successor.retirement_quorum == record.retirement_quorum
-  // The record's value — including its representative — is preserved.
-  value_preserved(claim.output.value, continuation.value)
+  // RED: nothing stops maintenance from spending the registry state.
+  if False {
+    False
+  } else {
+    let Transaction { extra_signatories, .. } = tx
+    // The controller's payment key must sign; absence alone refuses.
+    expect has(extra_signatories, naming.control_hash(record))
+    // Exactly one continuation record at the application address.
+    expect [continuation] = continuation_outputs(record, claim, tx)
+    // Only the payment destination is maintainable: control, commitment
+    // and quorum are preserved exactly.
+    expect InlineDatum(successor_datum) = continuation.datum
+    let successor = naming.expect_naming(successor_datum)
+    expect successor.control_address == record.control_address
+    expect successor.next_control_commitment == record.next_control_commitment
+    expect successor.retirement_quorum == record.retirement_quorum
+    // The record's value — including its active token — is preserved.
+    value_preserved(claim.output.value, continuation.value)
+  }
+}
+
+/// The domain-separated commitment over a full binary address, exactly as
+/// the accepted corpus computes it. Shared by `recover` and `retire`:
+/// termination needs the proof recovery needs, and nothing weaker.
+fn next_control_commitment(revealed_control: ByteArray) -> ByteArray {
+  blake2b_256(
+    bytearray.concat(
+      bytearray.concat(
+        bytearray.from_string(@"singular/naming/next-control/v1"),
+        #"00",
+      ),
+      revealed_control,
+    ),
+  )
+}
+
+/// Does this reveal prove the record's committed next-control key, and
+/// does that key sign? The one proof `Recover` uses (#157 D-TERMINATE).
+fn recovery_proved(
+  record: NamingRecord,
+  revealed_control: ByteArray,
+  extra_signatories: List<VerificationKeyHash>,
+) -> Bool {
+  when naming.decode_address(revealed_control) is {
+    Some(shape) ->
+      shape.payment_key && next_control_commitment(revealed_control) == record.next_control_commitment && has(
+        extra_signatories,
+        shape.payment_hash,
+      )
+    None -> False
+  }
 }
 
 /// `LR01` accepts; `LR02`/`LR04`/`LR06` (commitment), `LR03`/`LR07`
-/// (required signer), `LR08` (fresh commitment), `LR09` (representative),
+/// (required signer), `LR08` (fresh commitment), `LR09` (active token),
 /// `LR10` (registry) and `LR11` (field preservation) refuse — in the
-/// accepted `recoverController` order, so each refusal is attributable:
-/// a transaction violating two conditions is refused for the one its row
-/// names. Each negative row is a single-defect mutant of the accepted one.
-///
-/// Ledger realisation (issues #62, #77): the record carries exactly one
-/// representative token under the representative policy, minted by the
-/// insert fold that created the record; the redeemer claims
-/// it (`representatives`) and the registry binding (`registry`); the
-/// validator refuses when the claim disagrees with what the consumed
-/// record actually carries — its address (`own_hash`) and its token —
-/// making `LR09`/`LR10` real refusals rather than contrived ones. The
-/// successor carries the record's value, representative included:
-/// recovery moves control, never assets. The naming datum keeps exactly
-/// four fields; no fifth field, no new datum shape.
+/// accepted `recoverController` order, so each refusal is attributable.
 fn recover(
   record: NamingRecord,
-  stored_rep: ByteArray,
+  stored: ByteArray,
   revealed_control: ByteArray,
-  representatives: List<ByteArray>,
   registry: ByteArray,
   claim: Input,
   own_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
-  let Transaction { extra_signatories, .. } = tx
-  // The registry binding is the application validator's own hash, read
-  // from the spent input's address — the claim must name it (`LR10`).
-  expect registry == own_hash
-  // The claim must name exactly the representative the consumed record
-  // carries (`LR09`): a single non-ADA asset — the representative the
-  // insert fold minted under the representative policy (issue #77; the
-  // application-policy stand-in is gone) — so the
-  // single-representative shape holds whatever policy carries it.
-  expect representatives == [stored_rep]
-  // The reveal is a canonical payment-key address (`recovery-payment-key`:
-  // no row, but the order is load-bearing for attribution).
-  expect Some(shape) = naming.decode_address(revealed_control)
-  expect shape.payment_key
-  let revealed_hash = shape.payment_hash
-  // Domain-separated commitment over the whole binary address including
-  // header and network (`recovery-hash-shape` is vacuous — blake2b-256 is
-  // always 32 bytes — but the order mirrors the model).
-  let computed =
-    blake2b_256(
-      bytearray.concat(
-        bytearray.concat(
-          bytearray.from_string(@"singular/naming/next-control/v1"),
-          #"00",
-        ),
-        revealed_control,
-      ),
-    )
-  expect bytearray.length(computed) == 32
-  // The reveal's commitment equals the stored next-control commitment
-  // (`LR02`, `LR04`, `LR06` — including the forged-digest row that passes
-  // iff the domain separation is dropped).
-  expect computed == record.next_control_commitment
-  // The reveal's payment key is among the required signers (`LR03`,
-  // `LR07`). The old controller need not — and for `LR01` must not — sign:
-  // required signers are exactly the reveal's key (checked by the runner).
-  expect has(extra_signatories, revealed_hash)
-  // Exactly one continuation at the application address; its control is
-  // exactly the reveal, and its payment destination and quorum are
-  // unchanged (`LR11`).
-  expect [continuation] = continuation_outputs(record, claim, tx)
-  expect InlineDatum(successor_datum) = continuation.datum
-  let successor = naming.expect_naming(successor_datum)
-  expect successor.control_address == revealed_control
-  expect successor.payment_destination == record.payment_destination
-  expect successor.retirement_quorum == record.retirement_quorum
-  // The successor's commitment is 32 bytes and differs from the consumed
-  // one (`LR08`): the consumed commitment cannot be replayed.
-  expect bytearray.length(successor.next_control_commitment) == 32
-  expect successor.next_control_commitment != record.next_control_commitment
-  // The successor datum is well formed (`invalid-fixture`: no row, but the
-  // order closes the transition — expect_naming already enforced it, so
-  // this names the reason rather than re-checking it).
-  expect naming.well_formed(successor)
-  value_preserved(claim.output.value, continuation.value)
-}
-
-/// `LC01` accepts; `LC02` (redirect), `LC03` (no withdraw approval),
-/// `LC04`/`LC06` (fold/replay: the approval is already consumed) refuse.
-fn cancel(
-  record: NamingRecord,
-  presented_refund: ByteArray,
-  claim: Input,
-  own_hash: ByteArray,
-  tx: Transaction,
-) -> Bool {
-  let Transaction { mint, outputs, fee, .. } = tx
-  // The withdraw approval rides the claim under our own policy; its
-  // asset name is the stored refund destination. No token, no
-  // cancellation (`LC03`).
-  let claim_tokens = tokens(claim.output.value, own_hash)
-  expect [stored_refund] = keys(claim_tokens)
-  // The presented refund address must be the stored one (`LC02`).
-  expect presented_refund == stored_refund
-  // The approval is consumed: burned exactly once, and nothing else
-  // moves under our policy.
-  expect [burned] = keys(tokens(mint, own_hash))
-  expect burned == stored_refund
-  expect quantity_of(mint, own_hash, stored_refund) == -1
-  // The claim dies here: no continuation record.
-  expect [] = continuation_outputs(record, claim, tx)
-  // The refund pays the claim's lovelace to the stored destination: at
-  // least one output goes there, and every output that does pays at
-  // least what the claim held (net of fee).
-  let owed = lovelace_of(claim.output.value) - fee
-  let refund_credential = naming.payment_credential(stored_refund)
-  let refund_outputs =
-    filter(
-      outputs,
-      fn(output) { output.address.payment_credential == refund_credential },
-    )
-  expect refund_outputs != []
-  expect all(refund_outputs, fn(output) { lovelace_of(output.value) >= owed })
-  True
-}
-
-/// A fold turns a claim into a record: the four-field datum is frozen
-/// exactly as the claim carried it, the claim's value moves into the
-/// record, and the withdraw approval is consumed — burned exactly once,
-/// the way the application policy burns on fold or on cancellation.
-/// A folded claim therefore cannot be cancelled afterwards (`LC04`),
-/// and a cancelled approval cannot authorize a replay (`LC06`).
-fn fold(
-  record: NamingRecord,
-  representatives: List<ByteArray>,
-  claim: Input,
-  own_hash: ByteArray,
-  tx: Transaction,
-) -> Bool {
-  let Transaction { mint, .. } = tx
-  // Exactly one approval rides the claim under our own policy —
-  // withdraw or insert. No token, no fold.
-  expect Some(approval) = single_asset_name(claim.output.value)
-  // The approval is consumed: burned exactly once, and nothing else
-  // moves under our policy.
-  expect [burned] = keys(tokens(mint, own_hash))
-  expect burned == approval
-  expect quantity_of(mint, own_hash, approval) == -1
-  expect [continuation] = continuation_outputs(record, claim, tx)
-  expect InlineDatum(successor_datum) = continuation.datum
-  expect naming.is_same_record(successor_datum, record)
-  // The record inherits the claim's value minus the consumed approval.
-  expect value_preserved_except(
-    claim.output.value,
-    continuation.value,
-    own_hash,
-  )
-  when representatives is {
-    [] -> {
-      // The withdraw-approval fold (`LC`/`LM` rows): the consumed
-      // approval is the canonical-shaped refund binding, never an
-      // insert hash.
-      expect naming.canonical_address(approval)
-      True
-    }
-    _ -> {
-      // The insert fold (`Singular.foldOne` `.insert`): the consumed
-      // approval binds this exact datum — recomputed, never trusted
-      // from the redeemer.
-      expect approval
-        == insert_approval_name(
-          record.control_address,
-          record.next_control_commitment,
-        )
-      expect [name] = representatives
-      expect name == representative_name(folded_request_key(tx, name))
-      // `representative-policy` (issue #77, E-001): the moved
-      // representative's policy is the registry's own configuration — the
-      // spent state's expected policy, genesis-set and `Modify`-preserved.
-      // A foreign-policy fake carries the right name under the wrong
-      // policy and refuses here. Certified output, mint and value thirds:
-      // the fold mints exactly once under the expected policy, and the
-      // record carries each named representative exactly once under it.
-      let expected = expected_rep_policy(tx)
-      expect
-        all(representatives, fn(name) {
-          quantity_of(mint, expected, name) == 1
-        })
-      if non_ada_assets(continuation.value) == [(expected, name, 1)] {
-        True
-      } else {
-        trace @"record-single-asset"
-        False
-      }
-    }
+  if False {
+    False
+  } else {
+    let Transaction { extra_signatories, .. } = tx
+    // The registry binding is the application validator's own hash, read
+    // from the spent input's address — the claim must name it (`LR10`).
+    expect registry == own_hash
+    // The record carries exactly one non-ADA asset: the active token the
+    // fold minted for it (`LR09`).
+    expect stored != #""
+    // The reveal is a canonical payment-key address, its commitment is
+    // the stored one, and its key signs (`LR02`-`LR07`).
+    expect Some(shape) = naming.decode_address(revealed_control)
+    expect shape.payment_key
+    expect bytearray.length(next_control_commitment(revealed_control)) == 32
+    expect next_control_commitment(revealed_control) == record.next_control_commitment
+    expect has(extra_signatories, shape.payment_hash)
+    // Exactly one continuation at the application address; its control is
+    // exactly the reveal, and its destination and quorum are unchanged
+    // (`LR11`).
+    expect [continuation] = continuation_outputs(record, claim, tx)
+    expect InlineDatum(successor_datum) = continuation.datum
+    let successor = naming.expect_naming(successor_datum)
+    expect successor.control_address == revealed_control
+    expect successor.payment_destination == record.payment_destination
+    expect successor.retirement_quorum == record.retirement_quorum
+    // The successor's commitment is 32 bytes and differs from the
+    // consumed one (`LR08`): the consumed commitment cannot be replayed.
+    expect bytearray.length(successor.next_control_commitment) == 32
+    expect successor.next_control_commitment != record.next_control_commitment
+    expect naming.well_formed(successor)
+    value_preserved(claim.output.value, continuation.value)
   }
 }
 
-/// A retire consumes the record into completion-only custody (issue
-/// #66, `beginRetirement` without the registry request layer): authorized by
-/// the controller or by a distinct-member quorum threshold
-/// (`retirement-authorization`), the representative lands at the custody
-/// script (`retirement-request`), and the record does not continue.
+/// A retire consumes the record into completion-only custody (issue #66),
+/// and in registry mode it also co-creates the completion request that
+/// will fold `Update(0x01, 0x02)` (#157 N4).
 ///
-/// `LT05`/`LT06` are not retirements: they are `maintain` actions refused
-/// on `controller-signature` by the existing path.
+/// **Who may end a name (D-TERMINATE, want-ledger R1, 2026-09-16).** The
+/// committed recovery key — revealed and signing, the proof `Recover`
+/// uses — or a distinct-member quorum. The CURRENT control key alone does
+/// not: a thief holding Alice's current key can change where her name
+/// pays until she recovers, but they cannot end it, because the recovery
+/// key is the one thing they do not have. `LT01` is retired as a row.
 fn retire(
   record: NamingRecord,
   claim: Input,
-  stored_rep: ByteArray,
+  stored: ByteArray,
   key: ByteArray,
+  revealed_control: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
-  // Authorization by exactly one of two routes: the control address's
-  // payment key signs, or at least `threshold` distinct stored quorum
-  // members sign (`eraseDups` is load-bearing — one member signing twice
-  // does not reach a threshold of two).
-  expect
-    controller_authorized(record, extra_signatories)
-      || quorum_authorized(record, extra_signatories)
-  // Custody: the record carries a single representative (issue #77: the
-  // insert fold minted it under the representative policy); exactly
-  // that asset, under the registry's expected policy (issue #77, E-001),
-  // lands at the custody script address. `representative-policy` refuses
-  // foreign-policy fakes. The representative moves, it does not burn here
-  // (completion burns it later) — so no mint rides a retire.
-  let (_, expected) = referenced_registry(tx)
-  expect pairs.get_first(tx.withdrawals, address.Script(expected)) != None
-  expect stored_rep == representative_name(key)
-  expect quantity_of(claim.output.value, expected, stored_rep) == 1
-  expect
-    filter(
+  // RED: the current control key still ends a name, exactly as it did
+  // before the rule changed, and no refusal here is named — so the row that
+  // must now refuse is folded, and `retire-needs-recovery-key` has no
+  // executable extent.
+  let _unused = revealed_control
+  if !has(extra_signatories, naming.control_hash(record)) && !quorum_authorized(
+    record,
+    extra_signatories,
+  ) {
+    False
+  } else {
+    let (_, expected) = referenced_registry(tx)
+    // The record carries the active token of exactly this key (D-ASSET:
+    // under each token policy the asset name IS the registry key), and
+    // exactly that asset lands at the custody script.
+    if stored != key || quantity_of(claim.output.value, expected, stored) != 1 {
+      trace @"retirement-token"
+      False
+    } else if filter(
       outputs,
       fn(output) {
-        output.address.payment_credential
-          == address.Script(retirement_custody_hash)
-          && quantity_of(output.value, expected, stored_rep) == 1
+        output.address.payment_credential == address.Script(
+          retirement_custody_hash,
+        ) && quantity_of(output.value, expected, stored) == 1
       },
-    ) != []
-  // The record does not continue anywhere in the transaction.
-  expect
-    [] =
-    filter(
+    ) == [] {
+      trace @"retirement-request"
+      False
+    } else if filter(
       outputs,
       fn(output) {
         when output.datum is {
@@ -511,16 +407,14 @@ fn retire(
           _ -> False
         }
       },
-    )
-  True
-}
-
-/// The control address's payment key is among the required signers.
-fn controller_authorized(
-  record: NamingRecord,
-  extra_signatories: List<VerificationKeyHash>,
-) -> Bool {
-  has(extra_signatories, naming.control_hash(record))
+    ) != [] {
+      // The record does not continue anywhere in the transaction.
+      trace @"retirement-continuation"
+      False
+    } else {
+      True
+    }
+  }
 }
 
 /// At least `threshold` distinct members of the stored retirement quorum
@@ -530,135 +424,39 @@ fn quorum_authorized(
   extra_signatories: List<VerificationKeyHash>,
 ) -> Bool {
   let RetirementQuorum { threshold, members } = record.retirement_quorum
-  let signed =
-    filter(members, fn(member) { has(extra_signatories, member) })
+  let signed = filter(members, fn(member) { has(extra_signatories, member) })
   threshold > 0 && naming.distinct_count(signed) >= threshold
-}
-
-/// The insert-approval name bound at mint and recomputed at fold:
-/// `BLAKE2b-256("singular/naming/insert-approval/v1" || 0x00 ||
-/// control address || next-control commitment)`. The shape mirrors the
-/// next-control commitment; 32 bytes, so never a canonical address and
-/// never confusable with a withdraw approval.
-fn insert_approval_name(control: ByteArray, commitment: ByteArray) -> ByteArray {
-  blake2b_256(
-    bytearray.concat(
-      bytearray.concat(
-        bytearray.concat(
-          bytearray.from_string(@"singular/naming/insert-approval/v1"),
-          #"00",
-        ),
-        control,
-      ),
-      commitment,
-    ),
-  )
 }
 
 /// The registry asset identity (NOTE-007): the FULL native asset identity
 /// of the cage token — state policy id plus cage token name — as the raw
-/// component bytes in that order (the same bytes the ledger pairs in every
-/// `Value`). Not a textual hex concatenation: fixed 28-byte policy prefix
-/// keeps the parse unambiguous for hashing purposes, mirroring how
-/// `insert_approval_name` domain-separates raw fields. The ONE place the
-/// identity bytes are formed for the policy parameter and recovery binding.
-fn registry_asset_id(state_policy_bytes: ByteArray, token_name: ByteArray) -> ByteArray {
+/// component bytes in that order.
+fn registry_asset_id(
+  state_policy_bytes: ByteArray,
+  token_name: ByteArray,
+) -> ByteArray {
   expect bytearray.length(state_policy_bytes) == 28
   bytearray.concat(state_policy_bytes, token_name)
 }
 
-/// Spelling bytes are the entire preimage. The applied policy scopes registry.
-fn representative_name(key: ByteArray) -> ByteArray {
-  blake2b_256(key)
-}
-
-/// Follow the same request order as the native Modify. Only a processed Insert
-/// storing this representative supplies its key; a rejected request cannot.
-fn folded_request_key(tx: Transaction, name: ByteArray) -> ByteArray {
-  let state = find_registry_state(tx)
-  let token = expected_rep_token(tx)
-  expect Some(redeemer) = pairs.get_first(tx.redeemers, Spend(state.output_reference))
-  expect naming.MirrorModify(actions): naming.MirrorRedeemer = redeemer
-  let requests = filter_map(tx.inputs, fn(input) {
-    when input.output.datum is {
-      InlineDatum(datum) ->
-        if datum is naming.MRequestDatum(request): naming.MRequestDatum {
-          if request.requestToken.assetName == token { Some(request) } else { None }
-        } else { None }
-      _ -> None
-    }
-  })
-  let matching = filter_map(zip(requests, actions), fn(pair) {
-    let (request, action) = pair
-    when (request.requestValue, action) is {
-      (naming.MInsert(value), naming.MAUpdate(_)) ->
-        if value == name { Some(request.requestKey) } else { None }
-      _ -> None
-    }
-  })
-  expect [key] = matching
-  key
-}
-
 fn non_ada_assets(value: Value) -> List<(PolicyId, ByteArray, Int)> {
-  filter(flatten(value), fn(entry) {
-    let (policy, _, _) = entry
-    policy != #""
-  })
+  filter(
+    flatten(value),
+    fn(entry) {
+      let (policy, _, _) = entry
+      policy != #""
+    },
+  )
 }
 
-/// Claims carry an approval; folded records carry a representative.
-/// Malformed cardinality is reported by the caller before reading the name.
+/// A record carries exactly one non-ADA asset: its active token.
+/// Malformed cardinality is reported by the caller before reading the
+/// name.
 fn single_asset_name(value: Value) -> Option<ByteArray> {
   when non_ada_assets(value) is {
     [(_, name, _)] -> Some(name)
     _ -> None
   }
-}
-
-/// The shared mint/burn roundtrip both approval arms ride: a fresh
-/// approval mints exactly once on the controller's signature; the burn
-/// the spend purpose itself demands at Fold and Cancel burns exactly
-/// once, riding the claim the spend purpose consumes with it.
-fn approval_roundtrip(
-  policy_id: PolicyId,
-  bound: ByteArray,
-  minted: Option<Int>,
-  extra_signatories: List<VerificationKeyHash>,
-  controller: VerificationKeyHash,
-  tx: Transaction,
-) -> Bool {
-  when minted is {
-    // Minting a fresh approval: exactly one, on the controller's
-    // signature.
-    Some(1) -> has(extra_signatories, controller)
-    // The burn the spend purpose itself demands at Fold and Cancel:
-    // exactly -1, and the burned approval must ride exactly one live
-    // input at the application validator's own address.
-    Some(-1) -> burn_rides_claim(policy_id, bound, tx)
-    _ -> False
-  }
-}
-
-/// The burn half of Fold/Cancel: the approval being burned must ride
-/// exactly one live input at the application validator's own address —
-/// the claim or record the spend purpose consumes with it. Without a
-/// claim carrying the approval, the burn cannot happen at all.
-fn burn_rides_claim(
-  policy_id: PolicyId,
-  bound: ByteArray,
-  tx: Transaction,
-) -> Bool {
-  let own_credential = address.Script(policy_id)
-  expect [claim] =
-    filter(
-      tx.inputs,
-      fn(input) {
-        input.output.address.payment_credential == own_credential
-          && quantity_of(input.output.value, policy_id, bound) == 1
-      },
-    )
-  True
 }
 
 /// The outputs at the application address — the candidate continuations
@@ -676,26 +474,12 @@ fn continuation_outputs(
   )
 }
 
-/// Every non-ADA asset of the previous value is present in the next at
-/// the same quantity — except assets under `exempt` (the policy whose
-/// token the transition consumes) — and the lovelace does not decrease.
-fn value_preserved_except(
-  previous: Value,
-  next: Value,
-  exempt: PolicyId,
-) -> Bool {
-  lovelace_of(next) >= lovelace_of(previous)
-    && all(flatten(previous), fn(entry) {
-      let (policy_id, asset_name, quantity) = entry
-      policy_id == exempt
-        || quantity_of(next, policy_id, asset_name) >= quantity
-    })
-}
-
-/// Non-ADA policy, name and quantity are identical; ADA may only increase.
+/// Non-ADA policy, name and quantity are identical; ADA may only
+/// increase.
 fn value_preserved(previous: Value, next: Value) -> Bool {
-  if lovelace_of(next) >= lovelace_of(previous)
-    && non_ada_assets(next) == non_ada_assets(previous) {
+  if lovelace_of(next) >= lovelace_of(previous) && non_ada_assets(next) == non_ada_assets(
+    previous,
+  ) {
     True
   } else {
     trace @"record-value-preservation"
