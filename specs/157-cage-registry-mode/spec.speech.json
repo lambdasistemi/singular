@@ -237,7 +237,11 @@
       "pause": 400
     },
     {
-      "text": "The executable half of X1 stays in #157. The encoding change forces exactly five runner/library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs — and those are in this ticket's surface as \"what the encodings force to compile\"; journey work stays #158's.",
+      "text": "The executable half of X1 stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 Q-003) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\"; journey work stays #158's.",
+      "pause": 400
+    },
+    {
+      "text": "The carrier: CageParts carries the four derived identities — applicationPolicy, activePolicy, absentPolicy, terminalPolicy, each computed as above — and drops the legacy repPolicy and consumerPin fields; cageConfigFor maps them one-to-one onto the four cfg* pins. No alias of a removed field survives. The consumer-registration builder in TxBuilder/Register.hs, which constructs the C10 withdrawal, is deleted with its public surface: there is no consumer script to register, and a function that registers nothing is a trap for the next reader.",
       "pause": 400
     }
   ],
@@ -411,6 +415,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "4a9544027f87c3cd54f380b06a45c3d29fe0bda7dc281520219eb41a80bafdcd"
+    "sha256": "2ad9ef44df7a5bf32b3b82ef4959e665338da0d86868bcd4085a2974e75bfe49"
   }
 }
