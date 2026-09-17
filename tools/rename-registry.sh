@@ -72,6 +72,7 @@ scan_files() {
   git ls-files -z \
     -- '*.hs' '*.cabal' 'cabal.project' '*/cabal.project' '*.nix' '*.md' \
        '*.json' '*.ak' '*.yml' '*.yaml' '*.toml' '*justfile' '*.sh' '*.py' \
+       '*.lean' '*.html' \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \
     ':!conformance/coverage/evaluation/evidence' \

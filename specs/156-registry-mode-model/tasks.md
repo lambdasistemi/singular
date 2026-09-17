@@ -98,7 +98,7 @@ on the simulator by construction, and is never pushed in that state.
 
 ## Forward repair after merge
 
-- [ ] T156-27 — keep the registry rename rewrite extent aligned with its final
+- [x] T156-27 — keep the registry rename rewrite extent aligned with its final
       residual gate for tracked Lean and HTML files; permanent controls prove
       both extensions are rewritten and both remain detectable when a residual
       is seeded.
