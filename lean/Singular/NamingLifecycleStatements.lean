@@ -11,7 +11,7 @@ theorem supported_address_roundtrips :
     decodeAddress nextControllerAddress.bytes = some nextControllerAddress ∧
     encodeAddress nextControllerAddress = some nextControllerAddress.bytes ∧
     paymentKeyAddress nextControllerAddress = true := by
-  sorry
+  refine ⟨by rfl, by rfl, by rfl⟩
 
 theorem commitment_vectors_are_distinct_and_32_bytes :
     nextControllerCommitment.digest.length = 32 ∧
@@ -19,7 +19,7 @@ theorem commitment_vectors_are_distinct_and_32_bytes :
     wrongDomainCommitment.digest.length = 32 ∧
     nextControllerCommitment != freshControllerCommitment ∧
     nextControllerCommitment != wrongDomainCommitment := by
-  sorry
+  refine ⟨by rfl, by rfl, by rfl, by rfl, by rfl⟩
 
 /-- **NM2** — maintenance preserves the untouched control fields and refuses
 an unauthorized signature. -/
@@ -31,16 +31,15 @@ theorem destination_preserves_and_refuses :
     maintainDestination activeOnce aliceKey
       { aliceFixture with controlAddress := otherControllerAddress }
       [controllerAddress] = .error "destination-field-preservation" := by
-  sorry
+  refine ⟨by rfl, by rfl, by rfl⟩
 
-where
 theorem recovery_installs_and_refuses :
     (recoverController fixtureHasher activeOnce aliceKey nextControllerAddress
       recoveredFixture [nextControllerAddress]).isOk = true ∧
     recoverController fixtureHasher activeOnce aliceKey freshControllerAddress
       recoveredFixture [freshControllerAddress] =
       .error "recovery-commitment" := by
-  sorry
+  refine ⟨by rfl, by rfl⟩
 
 /-- **NM3 / R-NM4** — retirement by quorum or by the committed recovery key
 accepts; below quorum without the recovery key refuses. -/
@@ -53,7 +52,7 @@ theorem retirement_authorization_rows :
       .error "naming-no-delete" ∧
     namingRetireLifecycle activeOnce aliceKey
       [controllerAddress.bytes] none = .error "naming-no-delete" := by
-  sorry
+  refine ⟨by rfl, by rfl, by rfl, by rfl⟩
 
 /-- **LI** — the consumer binding pins the datum's policies; substitutions are
 refused. -/
@@ -63,6 +62,6 @@ theorem consumer_binding_pins_policies :
       { canonicalInitialization with activePolicy := 99 } = .error "active-policy" ∧
     initializeConsumer namingConsumerBinding
       { canonicalInitialization with registry := 2 } = .error "registry-authenticity" := by
-  sorry
+  refine ⟨by rfl, by rfl, by rfl⟩
 
 end Singular.NamingLifecycleStatements
