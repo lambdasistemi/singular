@@ -3726,7 +3726,7 @@ runCG10 env = do
         submitExpectAccepted env (addKeyWitness genesisSignKey handFresh)
     let size = txSizeBytes signed
     emitMeasure env "CG10-control" mem cpu size
-    rowCommit env cage "cg10-key-c" (OpInsert "cg10-value-c")
+    rowCommit env cage "cg10-key-c" (OpInsert leafAbsent)
     emit
         "control"
         "CG10 control: the same request folded against the live root \
@@ -3816,7 +3816,7 @@ runCG11 env = do
     signedC <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
     let sizeC = txSizeBytes signedC
     emitMeasure env "CG11-control" memC cpuC sizeC
-    rowCommit env cage "cg11-key" (OpInsert "cg11-value")
+    rowCommit env cage "cg11-key" (OpInsert leafAbsent)
     emit
         "control"
         ( "CG11 control: nonempty fold accepted (tx="
@@ -3945,13 +3945,16 @@ runCG12 env = do
                 rootD
                 units)
                 { fsCollateral = Just pot3
+                , -- The refusal rows only reach their refusal; this one runs
+                  -- the fold to the end, minting and locking custody.
+                  fsUnits = ExUnits 2_000_000 800_000_000
                 }
     exactTx <- assembleFoldWithFee env exactSpec
     (memD, cpuD) <- measureUnits env exactTx
     signedD <- submitExpectAccepted env (addKeyWitness genesisSignKey exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "CG12-exact" memD cpuD sizeD
-    rowCommit env cage "cg12-key-d" (OpInsert "cg12-value-d")
+    rowCommit env cage "cg12-key-d" (OpInsert leafAbsent)
     emit
         "control"
         ( "CG12 control: exact 1:1 fold accepted (tx="
@@ -4129,23 +4132,34 @@ runCG19 env = do
     tid <- cageTid cage
     (sk2, addr2) <- secondWallet env
     let Coin tip = defaultTip cfg
+    -- #157 A-009: both bookings are edges, each binding the address its
+    -- own payer gets the deposit back at, and the bonds stay unequal so
+    -- the row still has two different amounts to cross.
+    destA <- edgeDestinationFor env genesisAddr (OpInsert leafAbsent)
     reqA <-
-        paddedRequest
+        bookEdge
             env
-            cage
+            cfg
+            tid
             genesisAddr
             genesisSignKey
             "cg19-key-a"
-            "cg19-value-a"
+            (OpInsert leafAbsent)
+            destA
+            []
             5_000_000
+    destB <- edgeDestinationFor env addr2 (OpInsert leafAbsent)
     reqB <-
-        paddedRequest
+        bookEdge
             env
-            cage
+            cfg
+            tid
             addr2
             sk2
             "cg19-key-b"
-            "cg19-value-b"
+            (OpInsert leafAbsent)
+            destB
+            []
             3_000_000
     let sorted = sortOn fst [reqA, reqB]
     (stepsSorted, newRoot) <- speculativeApplyAll env cage tid sorted
@@ -4190,7 +4204,7 @@ runCG19 env = do
             emitMeasure env "CG19-crossed" mem cpu size
             mapM_
                 (\(k, v) -> rowCommit env cage k (OpInsert v))
-                [("cg19-key-a", "cg19-value-a"), ("cg19-key-b", "cg19-value-b")]
+                [("cg19-key-a", leafAbsent), ("cg19-key-b", leafAbsent)]
             writeRowReceipt
                 env
                 "CG19"
@@ -4272,7 +4286,7 @@ runCG19 env = do
             emitMeasure env "CG19-routed" memA cpuA sizeA
             mapM_
                 (\(k, v) -> rowCommit env cage k (OpInsert v))
-                [("cg19-key-a", "cg19-value-a"), ("cg19-key-b", "cg19-value-b")]
+                [("cg19-key-a", leafAbsent), ("cg19-key-b", leafAbsent)]
             emit
                 "control"
                 ( "CG19 control: correctly routed refunds accepted (tx="
@@ -6614,7 +6628,13 @@ it will carry — that is what `record_destination` demands of it. A deletion
 and a termination name nothing at all.
 -}
 edgeDestination :: Env -> OnChainOperation -> IO (ByteString, ByteString)
-edgeDestination env op = do
+edgeDestination env = edgeDestinationFor env genesisAddr
+
+-- | `edgeDestination` for a named payer: an absence binds the address its
+-- deposit comes back to, and that is the payer's own.
+edgeDestinationFor ::
+    Env -> Addr -> OnChainOperation -> IO (ByteString, ByteString)
+edgeDestinationFor env payerAddr op = do
     let (_, _, codes) = envCodes env
         appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network (envCfg env)) (ScriptHashObj appHash) StakeRefNull
@@ -6622,10 +6642,10 @@ edgeDestination env op = do
         Just e -> pure e
         Nothing -> failWith ("edgeDestination: " <> show op <> " is not an edge")
     pure $ case edge of
-        0 -> (serialiseAddr genesisAddr, BS.empty)
+        0 -> (serialiseAddr payerAddr, BS.empty)
         1 -> (serialiseAddr appAddr, recordDatumHash)
         2 -> (serialiseAddr appAddr, recordDatumHash)
-        6 -> (serialiseAddr genesisAddr, BS.empty)
+        6 -> (serialiseAddr payerAddr, BS.empty)
         _ -> (BS.empty, BS.empty)
 
 {- | What the certifying arm needs to read. A deletion is authorised by the
