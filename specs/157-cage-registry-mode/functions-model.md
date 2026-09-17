@@ -51,6 +51,13 @@ constraints. No bodies.
 | `MpfsState`, `mpfs_state_datum*` | eight fields |
 | `mrequest`, `MOperation` | `Read` and `destination` |
 
+## `offchain/lib/Singular/Registry/Config.hs`
+
+| declaration | shape | constraint |
+|---|---|---|
+| `CageConfig` | gains `cfgApplicationPolicy`, `cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy`; loses `cfgConsumerPin` | each derived from the partitions' `script-identity.json` given the registry identity (D-BOOT); never a literal |
+| `bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState` | the eight-field boot datum | the four pins from the config; CS08 round-trips them |
+
 ## Removed
 
 `consumer.ak` and `consumer.tests.ak`; `representative.ak` and its tests

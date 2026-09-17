@@ -227,6 +227,20 @@
       "pause": 400
     }
   ],
+  "d-boot-where-the-four-pinned-policy-ids-come-from-at-genesis": [
+    {
+      "text": "D-BOOT — where the four pinned policy ids come from at genesis.",
+      "pause": 500
+    },
+    {
+      "text": "Ruling on ticket-157's Q-002 (2026-09-17). The runner's CageConfig carries the four pins the eight-field datum needs — cfgApplicationPolicy, cfgActivePolicy, cfgAbsentPolicy, cfgTerminalPolicy — and cfgConsumerPin is deleted. None is typed by hand: each is derived from the two partitions' script-identity.json given the registry identity the boot transaction is about to create — the application policy is the naming application script's applied hash; the three witness policies are witness(kind, registry) applied for kind 0, 1, 2 (N1). The conformance rows CS01/CS02/CS08 assert that the derivation round-trips through the boot datum. A placeholder id, or a retained removed field, is a contract change and is refused as a finding.",
+      "pause": 400
+    },
+    {
+      "text": "The executable half of X1 stays in #157. The encoding change forces exactly five runner/library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs — and those are in this ticket's surface as \"what the encodings force to compile\"; journey work stays #158's.",
+      "pause": 400
+    }
+  ],
   "c8-request-value-coverage-moves-into-the-cage": [
     {
       "text": "C8 — request value coverage moves into the cage.",
@@ -397,6 +411,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "e70ef61c7c8953b877c86ea6a7dc898907b7a112ca0079d2040b3b8f294bbe01"
+    "sha256": "4a9544027f87c3cd54f380b06a45c3d29fe0bda7dc281520219eb41a80bafdcd"
   }
 }

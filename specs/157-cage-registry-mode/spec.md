@@ -312,6 +312,25 @@ key is the one thing the thief does not have. `LT01` (controller retirement
 accepts) is therefore **retired as a row**: the current control key alone is
 refused; the committed key accepts; `LT02`/`LT03` stand.
 
+### D-BOOT — where the four pinned policy ids come from at genesis
+
+Ruling on ticket-157's Q-002 (2026-09-17). The runner's `CageConfig` carries
+the four pins the eight-field datum needs — `cfgApplicationPolicy`,
+`cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy` — and `cfgConsumerPin`
+is deleted. None is typed by hand: each is **derived** from the two partitions'
+`script-identity.json` given the registry identity the boot transaction is about
+to create — the application policy is the naming application script's applied
+hash; the three witness policies are `witness(kind, registry)` applied for
+`kind` 0, 1, 2 (N1). The conformance rows CS01/CS02/CS08 assert that the
+derivation round-trips through the boot datum. A placeholder id, or a retained
+removed field, is a contract change and is refused as a finding.
+
+The executable half of X1 stays in #157. The encoding change forces exactly five
+runner/library files to follow under `-Werror` — `Config.hs`,
+`TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs` — and those are in this
+ticket's surface as "what the encodings force to compile"; journey work stays
+#158's.
+
 ### Known weaknesses, stated so they are read
 
 Adjudicated *wanted, and visible* (want-ledger R2 and R3):
