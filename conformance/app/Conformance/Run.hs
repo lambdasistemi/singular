@@ -261,7 +261,6 @@ import Singular.Registry.TxBuilder.Internal (
     findRequestUtxos,
     findStateUtxo,
     mkCageScript,
-    mkConsumerScript,
     mkInlineDatum,
     mkRequestDatum,
     mkRequestScript,
@@ -570,6 +569,11 @@ data RowCage = RowCage
     { rcCfg :: CageConfig
     , rcTid :: IORef (Maybe TokenId)
     , rcUnits :: IORef (Integer, Integer)
+    , rcRefs :: [(TxIn, TxOut ConwayEra)]
+    -- ^ This cage's reference outputs, published once at boot. Folds
+    -- resolve every purpose through them, and publishing is five awaited
+    -- submissions — far too many to spend inside a request's phase-1
+    -- window, so it happens before any request of this cage exists.
     }
 
 {- | The staking validator's kit (CG14/CG15): the blueprint's
@@ -2250,7 +2254,8 @@ runCG05 env marker = do
     -- the occupied-key property).
     tidRef05 <- newIORef (Just tid)
     unitsRef05 <- newIORef (0, 0)
-    let cage05 = RowCage cfg tidRef05 unitsRef05
+    sessionRefs <- sessionRefUtxos env
+    let cage05 = RowCage cfg tidRef05 unitsRef05 sessionRefs
     _ <-
         paddedRequest env cage05 genesisAddr genesisSignKey cgKey cgV4 5_000_000
     emit "row" "CG05: occupied insert requested; folding must refuse"
@@ -2434,6 +2439,10 @@ controlFreshCage env = do
     -- registry — its own token, its own request script and its own three
     -- token policies — so it gets its own reference outputs and its own
     -- approval, and the fold discharges the duties the edge creates.
+    --
+    -- The references go up FIRST. Publishing five scripts is five awaited
+    -- submissions, and a request booked before them would spend its
+    -- phase-1 window waiting for them.
     refs <- cageRefUtxos env cfg tid
     dest <- edgeDestination env (OpInsert controlVal)
     _ <-
@@ -2541,7 +2550,11 @@ ensureRowCage env name processMs retractMs = do
     bootOnce = do
         let (stateBytes, requestBytes, namingCodes) = envCodes env
             prov = envProv env
-        (seedTxIn, _) <- largestWalletUtxo prov
+        -- Sweep, then carve: seeding from the largest output would strand
+        -- the funding in the cage and leave the change to fund and
+        -- collateralise the boot.
+        consolidateFunding env
+        seedTxIn <- carveSeed env
         let cfg =
                 cageCfgWith
                     stateBytes
@@ -2556,7 +2569,9 @@ ensureRowCage env name processMs retractMs = do
         createTrie (envTm env) tid
         tidRef <- newIORef (Just tid)
         unitsRef <- newIORef (0, 0)
-        let w = RowCage cfg tidRef unitsRef
+        published <- cageRefUtxos env cfg tid
+
+        let w = RowCage cfg tidRef unitsRef published
         emit
             "cage"
             ( name
@@ -2833,6 +2848,8 @@ data FoldSpec = FoldSpec
     , fsUpper :: Maybe SlotNo
     -- ^ validity upper bound; @Nothing@: earliest request deadline
     , fsLower :: Maybe SlotNo
+    , fsRefs :: [(TxIn, TxOut ConwayEra)]
+    -- ^ The cage's reference outputs, copied from it by `rowSpec`.
     -- ^ validity lower bound; @Nothing@: no lower bound (genesis).
     -- Phase-3 Rejected folds set a lower bound past the latest
     -- request deadline (NOTE-073/181 rejected-floor control).
@@ -2840,6 +2857,10 @@ data FoldSpec = FoldSpec
 
 assembleFoldSpec :: Env -> FoldSpec -> IO ConwayTx
 assembleFoldSpec env fs = do
+    -- Every purpose resolves through the cage's reference outputs, which
+    -- went up at its boot: a fold that attached the state validator
+    -- instead would be refused for size before any script could speak.
+    let refs = fsRefs fs
     let prov = envProv env
 
     pp <- Cage.queryProtocolParams prov
@@ -2902,7 +2923,7 @@ assembleFoldSpec env fs = do
         Just s -> pure (makeStateOutOverride s)
     changeOut <- makeChange pp funder feeAmt refunds
     redeemers <- makeRedeemers fs funder
-    scripts <- makeScripts fs
+    scripts <- makeScripts fs refs
     let signers = case fsSigners fs of
             Nothing -> harnessSigners
             Just ss -> ss
@@ -2921,6 +2942,8 @@ assembleFoldSpec env fs = do
                 & collateralInputsTxBodyL
                     .~ Set.singleton (fromMaybe (fst funder) (fsCollateral fs))
                 & reqSignerHashesTxBodyL .~ Set.fromList signers
+                & referenceInputsTxBodyL
+                    .~ Set.fromList (map fst refs)
                 & scriptIntegrityHashTxBodyL .~ integrity
                 & vldtTxBodyL
                     .~ ValidityInterval
@@ -3017,10 +3040,10 @@ assembleFoldSpec env fs = do
                     : requestPairs
                     <> hookPairs
         pure (Redeemers (Map.fromList pairs))
-    makeScripts fs' = do
+    makeScripts fs' refs = do
         let stateScript = mkCageScript (fsCfg fs')
             reqScript = mkRequestScript (fsCfg fs') (fsTid fs')
-            consumerScript = mkConsumerScript (fsCfg fs')
+
             stakeScript = case fsWithdrawal fs' of
                 Nothing -> []
                 Just (_, s) -> [(hashScript s, s)]
@@ -3033,9 +3056,10 @@ assembleFoldSpec env fs = do
                 ]
         pure
             ( Map.fromList
-                ( (hashScript stateScript, stateScript)
-                    : (hashScript consumerScript, consumerScript)
-                    : requestScripts
+                ( [ (hashScript stateScript, stateScript)
+                  | null refs
+                  ]
+                    <> (if null refs then requestScripts else [])
                     <> stakeScript
                 )
             )
@@ -3365,6 +3389,7 @@ rowSpec cage tid state reqs actions root units =
         , fsCollateral = Nothing
         , fsUpper = Nothing
         , fsLower = Nothing
+        , fsRefs = rcRefs cage
         }
 
 -- | Twice the measured units: the declared budget of a refusing
@@ -3519,11 +3544,35 @@ runCG09 env = do
             <> "(R9_reject_needs_rejectable)"
         )
     submitExpectRefused env "CG09" AgreesWithModel (stateMarkerOf cfg) hand
-    -- Control: the library reject, built only inside phase 3 so its
-    -- lower-bound slot conversion stays inside the horizon.
+    -- Control: the SAME request and the SAME Rejected action, rebuilt
+    -- with phase-3 bounds once the retract window has passed. The hand
+    -- model is used rather than the library reject for the reason CG07
+    -- already uses it: the library attaches the state validator, and
+    -- fifteen kilobytes of it does not fit in a transaction.
     sleepUntilMs env (submittedAt + 30_000 + 5_000 + 500)
-    libReject <- rejectRequestsImpl cfg prov tid genesisAddr
-    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey libReject)
+    nowCtrl <- currentPosixMs
+    -- The lower bound must fall AFTER the retract window closes, or the
+    -- request script reads the fold as neither phase 1 nor rejectable.
+    lower <-
+        trySlots
+            prov
+            [ submittedAt + 30_000 + 5_000 + 400
+            , submittedAt + 30_000 + 5_000 + 200
+            , submittedAt + 30_000 + 5_000 + 100
+            ]
+    upperCtrl <- trySlots prov [nowCtrl + 2_000, nowCtrl + 1_500, nowCtrl + 1_000]
+    let Coin reqVal = reqOut ^. coinTxOutL
+        ctrlSpec =
+            spec
+                { fsLower = Just lower
+                , fsUpper = Just upperCtrl
+                , fsCollateral = Nothing
+                , -- A rejection owes the owner input minus the tip, with no
+                  -- share of the fee: the folder funds that separately.
+                  fsRefunds = [reqVal - stateMaxFee oldState]
+                }
+    ctrl <- assembleFoldWithFee env ctrlSpec
+    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrl)
     emit
         "control"
         "CG09 control: the same request rejected in phase 3 is \
@@ -6581,60 +6630,6 @@ seedDeleteKey env = do
                 forgedValue
             writeIORef (envDeleteKey env) (True, cgV1)
 
-{- | Publish one script as a reference output, once per session.
-
-The state validator alone is fifteen kilobytes: a fold that attaches it,
-the request script and a token policy does not fit in a transaction. The
-same outputs serve every fold the session builds, so this happens once and
-the references are carried in the environment.
--}
-publishRefScript :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
-publishRefScript env script = do
-    let prov = envProv env
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov genesisAddr
-    fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "publishRefScript: the funding wallet has no output"
-        (u : _) -> pure u
-    let probe =
-            mkBasicTxOut genesisAddr (MaryValue (Coin 0) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        Coin minCoin = getMinCoinTxOut @ConwayEra pp probe
-        refCoin = minCoin + 1_000_000
-        refOut =
-            mkBasicTxOut genesisAddr (MaryValue (Coin refCoin) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        fee = 1_000_000
-        Coin inCoin = snd fund ^. coinTxOutL
-        changeCoin = inCoin - fee - refCoin
-    require
-        ( "publishRefScript: funding output holds "
-            <> show inCoin
-            <> ", which does not cover a reference output of "
-            <> show refCoin
-            <> " plus fees"
-        )
-        (changeCoin > 1_000_000)
-    let body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton (fst fund)
-                & outputsTxBodyL
-                    .~ StrictSeq.fromList
-                        [ refOut
-                        , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
-                        ]
-                & feeTxBodyL .~ Coin fee
-        signed = addKeyWitness genesisSignKey (mkBasicTx body)
-    result <- submitTxResilient (envSubmit env) signed
-    case result of
-        Submitted _ -> awaitTx
-        Rejected reason ->
-            failWith
-                ( "publishRefScript refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
-                )
-    pure (TxIn (txIdTx signed) (TxIx 0), refOut)
-
 {- | The session's reference outputs, published on first use: the cage,
 the request validator and the three token policies.
 -}
@@ -6780,36 +6775,54 @@ consolidateFunding :: Env -> IO ()
 consolidateFunding env = do
     let prov = envProv env
     utxos <- Cage.queryUTxOs prov genesisAddr
-    let spendable = filter (adaOnlyOut . snd) utxos
-
-    -- One output leaves a builder that picks collateral without weighing
-    -- it no choice but the right one. The devnet's era horizon is short,
-    -- so this waits a second rather than the usual five.
-    if length spendable < 2
+    let spendable = filter (not . carriesRefScript . snd) utxos
+        dirty = filter (not . adaOnlyOut . snd) spendable
+        clean = filter (adaOnlyOut . snd) spendable
+    if length spendable < 2 && null dirty
         then pure ()
         else do
+            pp <- Cage.queryProtocolParams prov
             let total = sum [outCoin o | (_, o) <- spendable]
+                assets =
+                    foldr
+                        (\(_, o) acc -> mergeAssets acc (rawAssets o))
+                        Map.empty
+                        dirty
                 fee = 1_000_000
+                atticProbe c =
+                    mkBasicTxOut atticAddr (MaryValue (Coin c) (MultiAsset assets))
+                Coin atticFirst = getMinCoinTxOut @ConwayEra pp (atticProbe 0)
+                atticAda =
+                    if Map.null assets
+                        then 0
+                        else
+                            let Coin c = getMinCoinTxOut @ConwayEra pp (atticProbe atticFirst)
+                             in c
+                fundingAda = total - fee - atticAda
+                outs =
+                    mkBasicTxOut genesisAddr (MaryValue (Coin fundingAda) mempty)
+                        : [atticProbe atticAda | not (Map.null assets)]
                 body =
                     mkBasicTxBody
                         & inputsTxBodyL .~ Set.fromList (map fst spendable)
-                        & outputsTxBodyL
-                            .~ StrictSeq.fromList
-                                [ mkBasicTxOut
-                                    genesisAddr
-                                    (MaryValue (Coin (total - fee)) mempty)
-                                ]
+                        & outputsTxBodyL .~ StrictSeq.fromList outs
                         & feeTxBodyL .~ Coin fee
                 signed = addKeyWitness genesisSignKey (mkBasicTx body)
+            require
+                ("consolidateFunding: wallet too small: " <> show fundingAda)
+                (fundingAda > 5_000_000)
             result <- submitTxResilient (envSubmit env) signed
             case result of
                 Submitted _ -> do
-                    threadDelay 1_000_000
+                    awaitTx
                     emit
                         "funding"
-                        ( show (length spendable)
-                            <> " ada-only outputs swept into one of "
-                            <> show (total - fee)
+                        ( show (length clean)
+                            <> " ada-only and "
+                            <> show (length dirty)
+                            <> " approval-bearing outputs swept; funding is one \
+                               \output of "
+                            <> show fundingAda
                             <> " lovelace"
                         )
                 Rejected reason ->
@@ -6818,6 +6831,29 @@ consolidateFunding env = do
                             <> T.unpack (TE.decodeUtf8Lenient reason)
                         )
 
+{- | Where spent approvals go.
+
+A fold returns the approval it consumed to the booker, which in this
+harness is the funding wallet, and the library builders pick their extra
+input and their collateral by position: one small token-bearing output is
+enough to make a boot unfundable. The harness moves them aside. Nothing
+reads them again — an approval is spent evidence, and the rows assert
+nothing about where it rests.
+-}
+atticAddr :: Addr
+atticAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0xaa)
+
+carriesRefScript :: TxOut ConwayEra -> Bool
+carriesRefScript out = case out ^. referenceScriptTxOutL of
+    SNothing -> False
+    SJust _ -> True
+
+
+mergeAssets ::
+    Map.Map PolicyID (Map.Map AssetName Integer) ->
+    Map.Map PolicyID (Map.Map AssetName Integer) ->
+    Map.Map PolicyID (Map.Map AssetName Integer)
+mergeAssets = Map.unionWith (Map.unionWith (+))
 {- | Carve a small ada-only output to seed a cage with.
 
 A boot consumes its seed, so seeding from the largest output strands the
@@ -6847,7 +6883,7 @@ carveSeed env = do
         signed = addKeyWitness genesisSignKey (mkBasicTx body)
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Submitted _ -> threadDelay 1_000_000
+        Submitted _ -> awaitTx
         Rejected reason ->
             failWith
                 ( "carveSeed refused: "
@@ -6863,3 +6899,62 @@ cageUtxosOf env cfg =
 -- | The tip a cage charges, as a plain integer.
 defaultTipCoin :: CageConfig -> Integer
 defaultTipCoin cfg = case defaultTip cfg of Coin c -> c
+
+-- | The multi-asset an output carries, in the ledger's own shape.
+rawAssets :: TxOut ConwayEra -> Map.Map PolicyID (Map.Map AssetName Integer)
+rawAssets out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) -> m
+{- | Publish one script as a reference output, once per session.
+
+The state validator alone is fifteen kilobytes: a fold that attaches it,
+the request script and a token policy does not fit in a transaction. The
+same outputs serve every fold the session builds, so this happens once and
+the references are carried in the environment.
+-}
+publishRefScript :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
+publishRefScript env script = do
+    let prov = envProv env
+    pp <- Cage.queryProtocolParams prov
+    utxos <- Cage.queryUTxOs prov genesisAddr
+    fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "publishRefScript: the funding wallet has no output"
+        (u : _) -> pure u
+    let probe =
+            mkBasicTxOut genesisAddr (MaryValue (Coin 0) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        Coin minCoin = getMinCoinTxOut @ConwayEra pp probe
+        refCoin = minCoin + 1_000_000
+        refOut =
+            mkBasicTxOut genesisAddr (MaryValue (Coin refCoin) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        fee = 1_000_000
+        Coin inCoin = snd fund ^. coinTxOutL
+        changeCoin = inCoin - fee - refCoin
+    require
+        ( "publishRefScript: funding output holds "
+            <> show inCoin
+            <> ", which does not cover a reference output of "
+            <> show refCoin
+            <> " plus fees"
+        )
+        (changeCoin > 1_000_000)
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton (fst fund)
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ refOut
+                        , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+        signed = addKeyWitness genesisSignKey (mkBasicTx body)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> awaitTx
+        Rejected reason ->
+            failWith
+                ( "publishRefScript refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+
