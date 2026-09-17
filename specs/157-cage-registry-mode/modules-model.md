@@ -44,7 +44,7 @@ token and policy ids, and on nothing at fold time.
 | `retirement_custody.ak` | Unchanged rules; the burned asset is under the active policy (`witness` kind 1). |
 | `naming.ak` | Loses `over_marker_for` and the naming leaf vocabulary; keeps the record codec and the mirror helpers, updated to the eight-field state. |
 | `conformance/` | Re-baselines CS01/CS02/CS08 and the address rows; records the contract change. |
-| `offchain/` encodings and what they force | `offchain/lib/Singular/Registry/Types.hs` follows the blueprint, and the library/runner files the new encodings force to compile under `-Werror` follow it: `Config.hs` (four derived pins, D-BOOT; `cfgConsumerPin` deleted), `TxBuilder/ConnectedFold.hs`, `TxBuilder/Reject.hs`, `TxBuilder/Update.hs`, `TxBuilder/Internal.hs`, `Deployment.hs` (`CageParts` carries the four derived identities, legacy fields dropped), `TxBuilder/Register.hs` (consumer registration deleted). No new journey; `offchain/journey/**` stays #158's. |
+| `offchain/` encodings and what they force | `offchain/lib/Singular/Registry/Types.hs` follows the blueprint, and the library/runner files the new encodings force to compile under `-Werror` follow it: `Config.hs` (four derived pins, D-BOOT; `cfgConsumerPin` deleted), `TxBuilder/ConnectedFold.hs`, `TxBuilder/Reject.hs`, `TxBuilder/Update.hs`, `TxBuilder/Internal.hs`, `Deployment.hs` (`CageParts` carries the four derived identities, legacy fields dropped), `TxBuilder/Register.hs` (consumer registration deleted), `Blueprint.hs` (fixed-tuple schema `STuple [Schema]` for D-DEST's pair; `SList` unchanged; arity and element types still enforced). No new journey; `offchain/journey/**` stays #158's. |
 
 ## Out of this ticket's surface
 

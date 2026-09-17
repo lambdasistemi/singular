@@ -21,6 +21,10 @@
     {
       "text": "Why: the folder is permissionless. Without a bound destination a folder could route Alice's representative to itself; without a bound datum it could create her record with a controller of its choosing.",
       "pause": 400
+    },
+    {
+      "text": "Encoding (amendment of 2026-09-17, ticket-157 Q-005): the pair is Aiken's fixed tuple — on the wire a two-element Plutus List, in the blueprint {\"dataType\":\"list\",\"items\":[ByteArray, ByteArray]} with an array of item schemas. The shared loader offchain/lib/Singular/Registry/Blueprint.hs gains a fixed-tuple schema (STuple [Schema]): it parses the array form and validates a list of exactly that arity, element by element. The homogeneous SList case is unchanged, and the schema oracle is not weakened — a three-element list, or a two-element list of the wrong types, still fails. Blueprint.hs is the eighth library file in this ticket's surface.",
+      "pause": 400
     }
   ],
   "c10-deletions": [
@@ -415,6 +419,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "2ad9ef44df7a5bf32b3b82ef4959e665338da0d86868bcd4085a2974e75bfe49"
+    "sha256": "c246b1b6315e5310430fd8d88814ebb75f25c836a2c277ffb130d991659214f3"
   }
 }
