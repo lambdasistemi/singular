@@ -5,17 +5,17 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "0e774273acb846e3c04f3377bb2ba95b84582211b9a60fa78d708f41",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "0e774273acb846e3c04f3377bb2ba95b84582211b9a60fa78d708f41",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "0e774273acb846e3c04f3377bb2ba95b84582211b9a60fa78d708f41",
       "parameters": 0
     },
     {
@@ -29,29 +29,24 @@
       "parameters": 0
     },
     {
-      "title": "representative.representative.mint",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
-      "title": "representative.representative.withdraw",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
-      "title": "representative.representative.else",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
       "title": "retirement_custody.retirement_custody.spend",
-      "hash": "89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09",
+      "hash": "762b862e631598a2c432a396763642af640707a1a6189d6016c59f98",
       "parameters": 0
     },
     {
       "title": "retirement_custody.retirement_custody.else",
-      "hash": "89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09",
+      "hash": "762b862e631598a2c432a396763642af640707a1a6189d6016c59f98",
       "parameters": 0
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "d784fc7e0fba9da68326db759155116397438ede1603e27390e69219",
+      "parameters": 2
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "d784fc7e0fba9da68326db759155116397438ede1603e27390e69219",
+      "parameters": 2
     }
   ]
 }

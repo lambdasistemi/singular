@@ -100,16 +100,24 @@ fn validateRetract(
   // A `Read` carries no custody argument at all, so it retracts exactly
   // as an insert does, and is the only new retractable class. Owner sig,
   // phase-2 window and state-token binding below are retained.
-  // RED: the read is NOT retractable yet, and no refusal here is named.
-  expect when requestValue is {
-    Insert(_) -> True
-    _ -> False
+  let retractable =
+    when requestValue is {
+      Insert(_) -> True
+      Read(_) -> True
+      _ -> False
+    }
+  if !retractable {
+    trace @"withdraw-insert-only"
+    False
+  } else if !has(extra_signatories, requestOwner) {
+    trace @"retract-owner"
+    False
+  } else {
+    let stateInput = inputOrReferenceByRef(stateRef, tx)
+    expect carriesStateToken(statePolicyId, cageToken, stateInput)
+    let State { root: _root, tip: _tip, process_time, retract_time, .. } =
+      readState(stateInput)
+    expect in_phase2(validity_range, submitted_at, process_time, retract_time)
+    True
   }
-  expect has(extra_signatories, requestOwner)
-  let stateInput = inputOrReferenceByRef(stateRef, tx)
-  expect carriesStateToken(statePolicyId, cageToken, stateInput)
-  let State { root: _root, tip: _tip, process_time, retract_time, .. } =
-    readState(stateInput)
-  expect in_phase2(validity_range, submitted_at, process_time, retract_time)
-  True
 }
