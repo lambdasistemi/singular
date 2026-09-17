@@ -325,11 +325,21 @@ hash; the three witness policies are `witness(kind, registry)` applied for
 derivation round-trips through the boot datum. A placeholder id, or a retained
 removed field, is a contract change and is refused as a finding.
 
-The executable half of X1 stays in #157. The encoding change forces exactly five
-runner/library files to follow under `-Werror` — `Config.hs`,
-`TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs` — and those are in this
-ticket's surface as "what the encodings force to compile"; journey work stays
-#158's.
+The executable half of X1 stays in #157. The encoding change forces exactly
+seven library files to follow under `-Werror` — `Config.hs`,
+`TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs`, and (amendment of
+2026-09-17, ticket-157 Q-003) `Deployment.hs` and `TxBuilder/Register.hs` —
+and those are in this ticket's surface as "what the encodings force to
+compile"; journey work stays #158's.
+
+The carrier: **`CageParts` carries the four derived identities** —
+`applicationPolicy`, `activePolicy`, `absentPolicy`, `terminalPolicy`, each
+computed as above — **and drops the legacy `repPolicy` and `consumerPin`
+fields**; `cageConfigFor` maps them one-to-one onto the four `cfg*` pins. No
+alias of a removed field survives. The consumer-registration builder in
+`TxBuilder/Register.hs`, which constructs the C10 withdrawal, is **deleted**
+with its public surface: there is no consumer script to register, and a
+function that registers nothing is a trap for the next reader.
 
 ### Known weaknesses, stated so they are read
 
