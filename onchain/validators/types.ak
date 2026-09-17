@@ -1,8 +1,26 @@
 use aiken/crypto.{VerificationKeyHash}
 use aiken/merkle_patricia_forestry.{Proof}
-use cardano/assets.{PolicyId}
+use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference}
-use lib.{TokenId}
+
+/// A unique identifier for a token, consisting of just the asset name.
+///
+/// The policy ID is provided separately in functions that need it,
+/// allowing the same TokenId to be used across different contexts.
+///
+/// ## Why Only AssetName
+/// In the cage system, the policy ID is always the cage script's own
+/// hash (since it's a combined minting+spending validator). By storing
+/// only the asset name, we avoid carrying redundant policy ID references
+/// through the datum structures. The asset name alone uniquely identifies
+/// a caged token within the cage script's namespace.
+///
+/// ## Derivation
+/// The asset name is derived from an OutputReference via `assetName()`.
+/// It is the SHA2-256 hash of (transaction_id ++ output_index_as_2_bytes).
+pub type TokenId {
+  assetName: AssetName,
+}
 
 /// Core type definitions for the MPF Cage validator.
 ///
@@ -200,25 +218,30 @@ pub type State {
   /// Duration (in milliseconds) of Phase 2 — the requester retract window.
   /// Set at mint time; enforced immutable across Modify/Reject operations.
   retract_time: Int,
-  /// The expected representative minting policy (issue #77, E-001 repair):
-  /// `Singular.representativePolicy` refined on chain. Set at bootstrap from
-  /// the honest applied representative policy; preserved immutable across
-  /// every `Modify` (a fold altering it refuses). The naming application
-  /// validator reads this field from the spent state and requires the moved
-  /// representative's policy to equal it — foreign-policy fakes refuse with
-  /// `representative-policy`. Appended, never reordered: the first four
-  /// fields keep their indices.
-  representative_policy: PolicyId,
-  /// The pinned consumer script hash (NOTE-013/NOTE-019, sixth field):
-  /// `Singular.consumerPin` refined on chain. Selected at bootstrap — any
-  /// 28-byte script hash (permissionless boot chooses its consumer; only
-  /// the width is checked at mint) — preserved immutable across every
-  /// `Modify` (a fold altering it refuses). Every `Modify` that consumes
-  /// at least one request must withdraw this exact script (presence of the
-  /// exact withdrawal credential forces ledger execution of the consumer:
-  /// a caller-declared flag or datum is not an invocation). Appended,
-  /// never reordered: the first five fields keep their indices.
-  consumer_pin: ByteArray,
+  /// The application policy that certifies requests (#157 C4/C7). A
+  /// request whose operation changes the trie is folded only if its UTxO
+  /// carries exactly one asset under this policy at quantity 1, whose
+  /// asset name is the approval binding of that request
+  /// (`lib.approvalName`, D-APPROVAL). No application script runs at fold
+  /// time: the approval is evidence the application already certified the
+  /// edge, and the cage recomputes its name rather than trusting it.
+  /// Set at genesis, preserved by every `Modify`.
+  application_policy: PolicyId,
+  /// The policy that mints the ACTIVE token (#157 C5/C7, renamed from
+  /// `representative_policy`): the live registration's witness. Under it
+  /// the asset name is the registry key itself (D-ASSET).
+  /// Set at genesis, preserved by every `Modify`.
+  active_policy: PolicyId,
+  /// The policy that mints the ABSENT token (#157 C5/C7): the witness
+  /// that a key is known-absent, held in the cage's own custody beside
+  /// the inserter's refund address (D-CUSTODY).
+  /// Set at genesis, preserved by every `Modify`.
+  absent_policy: PolicyId,
+  /// The policy that mints the TERMINAL token (#157 C5/C7): the witness
+  /// that a key is over, forever. Minted by a `Read(0x02)` at the read's
+  /// position in the fold; freely burnable by its holder (W3).
+  /// Set at genesis, preserved by every `Modify`.
+  terminal_policy: PolicyId,
 }
 
 /// Operations that can be performed on the MPF.
@@ -262,6 +285,15 @@ pub type Operation {
   /// current value (old_value), second is the new value (new_value).
   /// Both must be correct for the proof to verify.
   Update(ByteArray, ByteArray)
+  /// Read an existing key's value, leaving it unchanged (#157 C1/C3;
+  /// `Read` is appended at index 3 — the published indices 0/1/2 never
+  /// move). The ByteArray is the expected current value; only `0x02`
+  /// (Terminal) is admitted (C2), and the fold verifies it with the
+  /// existing verifier at the read's own position in the batch, so the
+  /// proof is checked against the intermediate root there. A read
+  /// carries no approval (C4), mints `+1 terminal` (C5) and is
+  /// retractable by its owner in phase 2 (C9, D-RETRACT).
+  Read(ByteArray)
 }
 
 /// A request to modify a caged token's MPF.
@@ -323,6 +355,21 @@ pub type Request {
   /// Used for time-gated phase enforcement: Phase 1 (oracle-only),
   /// Phase 2 (requester retract), Phase 3 (oracle reject/cleanup).
   submitted_at: Int,
+  /// Where this request's minted token goes, and the inline datum the
+  /// receiving output must carry (#157 D-DEST; appended last, so the
+  /// published field order never moves): the binary address bytes and
+  /// the BLAKE2b-256 hash of the receiving output's inline datum (empty
+  /// for a datum-less output).
+  ///
+  /// The folder is permissionless. Without a bound destination a folder
+  /// could route Alice's active token to itself; without a bound datum
+  /// it could create her record with a controller of its own choosing.
+  /// The cage requires exactly one output matching both and carrying
+  /// the minted token, holding at least this request's value minus the
+  /// tip (C6, T6). For `Insert(0x00)` the token goes to the cage's own
+  /// custody instead and the first component is the refund address
+  /// (D-CUSTODY); for `Read` it is where the terminal token goes.
+  destination: (ByteArray, ByteArray),
 }
 
 /// Datum for UTxOs locked at the cage script address.
@@ -358,4 +405,18 @@ pub type CageDatum {
   RequestDatum(Request)
   /// The current state of a caged token
   StateDatum(State)
+  /// The cage's own custody of an absent token (#157 D-CUSTODY;
+  /// appended at index 2, so `RequestDatum` 0 and `StateDatum` 1 never
+  /// move). A fold of `Insert(0x00)` mints the absent token and locks
+  /// it here, at the cage's own address, beside the key it witnesses
+  /// and the address the inserter named for their refund. Its lovelace
+  /// is the request's residual after the tip — the min-ADA that R-ADA
+  /// returns.
+  ///
+  /// The cage's spending path for it is exactly one shape: spent in a
+  /// `Modify` that consumes a request for this key with
+  /// `Update(0x00, 0x01)` or `Delete(0x00)`, paying its lovelace to an
+  /// output at `refund`. Whoever books the name later, the deposit goes
+  /// back to whoever witnessed the absence.
+  AbsentCustody { key: ByteArray, refund: ByteArray }
 }

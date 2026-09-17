@@ -1,6 +1,7 @@
 use aiken/fuzz
 use cardano/assets.{from_asset}
-use lib.{TokenId, quantity, tokenFromValue, valueFromToken}
+use lib.{quantity, tokenFromValue, valueFromToken}
+use types.{TokenId}
 
 /// Token handling property tests (fuzz) — mirror Lean theorems in MpfsCage/Lib.lean.
 ///

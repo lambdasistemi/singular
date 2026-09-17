@@ -1,9 +1,15 @@
+use aiken/cbor
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{delete, find}
-use aiken/crypto.{Hash, Sha2_256, sha2_256}
+use aiken/crypto.{Hash, Sha2_256, blake2b_256, sha2_256}
+use aiken/primitive/bytearray
 use aiken/primitive/bytearray.{concat, from_int_big_endian}
-use cardano/assets.{AssetName, PolicyId, Value, from_asset, policies, tokens}
-use cardano/transaction.{Input, Output, OutputReference}
+use cardano/address.{Address, Credential, Inline, Script, VerificationKey}
+use cardano/assets.{PolicyId, Value, from_asset, policies, tokens}
+use cardano/transaction.{
+  Datum, InlineDatum, Input, NoDatum, Output, OutputReference,
+}
+use types.{Delete, Insert, Operation, Read, TokenId, Update}
 
 /// Helper functions for token handling in the MPF Cage validator.
 ///
@@ -46,24 +52,6 @@ use cardano/transaction.{Input, Output, OutputReference}
 /// - `tokenFromValue` returns None for multi-policy values
 /// - `tokenFromValue` returns None for multi-asset-name values under one policy
 /// - `quantity` returns None when the policy or asset name is absent
-/// A unique identifier for a token, consisting of just the asset name.
-///
-/// The policy ID is provided separately in functions that need it,
-/// allowing the same TokenId to be used across different contexts.
-///
-/// ## Why Only AssetName
-/// In the cage system, the policy ID is always the cage script's own
-/// hash (since it's a combined minting+spending validator). By storing
-/// only the asset name, we avoid carrying redundant policy ID references
-/// through the datum structures. The asset name alone uniquely identifies
-/// a caged token within the cage script's namespace.
-///
-/// ## Derivation
-/// The asset name is derived from an OutputReference via `assetName()`.
-/// It is the SHA2-256 hash of (transaction_id ++ output_index_as_2_bytes).
-pub type TokenId {
-  assetName: AssetName,
-}
 
 /// Get the quantity of a specific token in a value.
 ///
@@ -272,5 +260,294 @@ pub fn extractTokenFromInputs(what: OutputReference, inputs: List<Input>) {
         _ -> None
       }
     _ -> None
+  }
+}
+
+// ============================================================================
+// Registry mode (#157): the leaf codec, the seven edges, the approval name
+// and destination matching
+// ============================================================================
+//
+// These are the pure helpers the cage and its tests share. Every one of
+// them is total: it answers for every input rather than crashing, so the
+// cage can name its own reason for a refusal instead of dying inside a
+// library. `state.ak` is the only caller that turns a `None` here into a
+// traced refusal.
+
+/// The Absent leaf byte (#157 D-CODEC).
+pub const leafAbsent: ByteArray = #"00"
+
+/// The Active leaf byte.
+pub const leafActive: ByteArray = #"01"
+
+/// The Terminal leaf byte.
+pub const leafTerminal: ByteArray = #"02"
+
+/// The C2 row index of each admitted edge. The six tree edges are `0..5`
+/// in the order D-APPROVAL fixes (`0` insertAbsent … `5` deleteActive),
+/// so the edge byte of an approval name is this index; the read is `6`
+/// and never appears in an approval, because a read needs none (C4).
+pub const edgeInsertAbsent: Int = 0
+
+pub const edgeInsertActive: Int = 1
+
+pub const edgeUpdateActive: Int = 2
+
+pub const edgeUpdateTerminal: Int = 3
+
+pub const edgeDeleteAbsent: Int = 4
+
+pub const edgeDeleteActive: Int = 5
+
+pub const edgeWitnessTerminal: Int = 6
+
+/// The three token kinds, in the order the state pins their policies.
+pub const kindAbsent: Int = 0
+
+pub const kindActive: Int = 1
+
+pub const kindTerminal: Int = 2
+
+/// The leaf codec (#157 C1, D-CODEC): the value of every known leaf is
+/// exactly one byte — `0x00` Absent, `0x01` Active, `0x02` Terminal.
+/// Total, and the ONLY codec: a request whose value bytes are anything
+/// else has no leaf at all and is refused `leaf-codec` before any proof
+/// is checked. The naming-era values — a representative name, the `over`
+/// marker — are not leaves and decode to `None` here.
+pub fn decodeState(bytes: ByteArray) -> Option<Int> {
+  if bytes == leafAbsent {
+    Some(kindAbsent)
+  } else if bytes == leafActive {
+    Some(kindActive)
+  } else if bytes == leafTerminal {
+    Some(kindTerminal)
+  } else {
+    None
+  }
+}
+
+/// The before-leaf a request states for itself: `None` for an insert
+/// (which claims the key is absent from the trie, and whose proof is
+/// what establishes that), the stated old value for every other
+/// operation. The proof, not this function, ties the claim to the trie.
+pub fn statedBefore(op: Operation) -> Option<ByteArray> {
+  when op is {
+    Insert(_) -> None
+    Delete(value) -> Some(value)
+    Update(old, _) -> Some(old)
+    Read(value) -> Some(value)
+  }
+}
+
+/// The C2 row index of `(operation, before-leaf)`, or `None` for every
+/// shape the cage refuses (#157 C2). `before` is the DECODED before-leaf
+/// — `statedBefore` piped through `decodeState` — so a non-codec byte
+/// never reaches here; `state.ak` refuses it first with its own reason.
+///
+/// The seven rows, and nothing else:
+///
+/// | request            | before | after  | edge |
+/// |--------------------|--------|--------|------|
+/// | `Insert(0x00)`     | none   | `0x00` | 0    |
+/// | `Insert(0x01)`     | none   | `0x01` | 1    |
+/// | `Update(0x00,0x01)`| `0x00` | `0x01` | 2    |
+/// | `Update(0x01,0x02)`| `0x01` | `0x02` | 3    |
+/// | `Delete(0x00)`     | `0x00` | none   | 4    |
+/// | `Delete(0x01)`     | `0x01` | none   | 5    |
+/// | `Read(0x02)`       | `0x02` | `0x02` | 6    |
+pub fn edgeOf(op: Operation, before: Option<Int>) -> Option<Int> {
+  when op is {
+    Insert(value) ->
+      when (before, decodeState(value)) is {
+        (None, Some(kind)) ->
+          if kind == kindAbsent {
+            Some(edgeInsertAbsent)
+          } else if kind == kindActive {
+            Some(edgeInsertActive)
+          } else {
+            None
+          }
+        _ -> None
+      }
+    Update(_, new) ->
+      when (before, decodeState(new)) is {
+        (Some(from), Some(to)) ->
+          if from == kindAbsent && to == kindActive {
+            Some(edgeUpdateActive)
+          } else if from == kindActive && to == kindTerminal {
+            Some(edgeUpdateTerminal)
+          } else {
+            None
+          }
+        _ -> None
+      }
+    Delete(_) ->
+      when before is {
+        Some(kind) ->
+          if kind == kindAbsent {
+            Some(edgeDeleteAbsent)
+          } else if kind == kindActive {
+            Some(edgeDeleteActive)
+          } else {
+            None
+          }
+        None -> None
+      }
+    Read(_) ->
+      when before is {
+        Some(kind) ->
+          if kind == kindTerminal {
+            Some(edgeWitnessTerminal)
+          } else {
+            None
+          }
+        None -> None
+      }
+  }
+}
+
+/// The token column of C2, read off the edge and nothing else (#157 C5):
+/// `(kind, quantity)` pairs the fold sums per key and the mint must then
+/// equal exactly. An unknown edge moves nothing.
+pub fn deltaOf(edge: Int) -> List<(Int, Int)> {
+  if edge == edgeInsertAbsent {
+    [(kindAbsent, 1)]
+  } else if edge == edgeInsertActive {
+    [(kindActive, 1)]
+  } else if edge == edgeUpdateActive {
+    [(kindAbsent, -1), (kindActive, 1)]
+  } else if edge == edgeUpdateTerminal {
+    [(kindActive, -1)]
+  } else if edge == edgeDeleteAbsent {
+    [(kindAbsent, -1)]
+  } else if edge == edgeDeleteActive {
+    [(kindActive, -1)]
+  } else if edge == edgeWitnessTerminal {
+    [(kindTerminal, 1)]
+  } else {
+    []
+  }
+}
+
+/// The approval binding (#157 D-APPROVAL):
+/// `blake2b_256(edge ‖ key ‖ owner ‖ destination)`, where `edge` is one
+/// byte (the C2 row index), `key` the registry key, `owner` the request
+/// owner's credential bytes and `destination` the D-DEST bytes — its
+/// address followed by its datum hash, both exactly as the request
+/// carries them.
+///
+/// One approval certifies one `(edge, key, owner, destination)`. The cage
+/// recomputes this name from the request and refuses a mismatch, so an
+/// approval minted for a different owner, edge, key or destination
+/// cannot be spent here; reuse by the same owner for the same tuple is
+/// the same authority and is harmless. Shared with naming's mint arm,
+/// which computes the identical bytes from its redeemer — one formula,
+/// two partitions, so drift makes honest batches refuse loudly.
+pub fn approvalName(
+  edge: Int,
+  key: ByteArray,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+) -> ByteArray {
+  let (address, datumHash) = destination
+  blake2b_256(
+    from_int_big_endian(edge, 1)
+      |> concat(key)
+      |> concat(owner)
+      |> concat(address)
+      |> concat(datumHash),
+  )
+}
+
+/// Decode the binary address bytes a request names into the ledger's own
+/// `Address` (#157 D-DEST). Header kinds 6-7 are enterprise addresses
+/// (header plus a 28-byte payment hash), kinds 0-3 are base addresses
+/// (header, 28-byte payment hash, 28-byte stake hash); everything else —
+/// pointer addresses, reward addresses, a wrong length — is refused.
+/// Any network nibble is accepted, exactly as naming's own codec does.
+///
+/// Both credentials are recovered, so a destination binds the stake part
+/// too: a folder cannot deliver Alice's token to her payment credential
+/// under its own staking key.
+pub fn decodeAddress(bytes: ByteArray) -> Option<Address> {
+  let size = bytearray.length(bytes)
+  if size < 1 {
+    None
+  } else {
+    let kind = bytearray.at(bytes, 0) / 16
+    if (kind == 6 || kind == 7) && size == 29 {
+      Some(
+        Address {
+          payment_credential: credentialOf(kind == 6, bytearray.slice(bytes, 1, 28)),
+          stake_credential: None,
+        },
+      )
+    } else if kind < 4 && size == 57 {
+      Some(
+        Address {
+          payment_credential: credentialOf(
+            kind == 0 || kind == 2,
+            bytearray.slice(bytes, 1, 28),
+          ),
+          stake_credential: Some(
+            Inline(
+              credentialOf(kind == 0 || kind == 1, bytearray.slice(bytes, 29, 56)),
+            ),
+          ),
+        },
+      )
+    } else {
+      None
+    }
+  }
+}
+
+fn credentialOf(isKey: Bool, hash: ByteArray) -> Credential {
+  if isKey {
+    VerificationKey(hash)
+  } else {
+    Script(hash)
+  }
+}
+
+/// Does this output sit at the destination the request named, carrying
+/// the inline datum it named (#157 D-DEST)? Address equality is over the
+/// whole address, payment and stake credential alike; datum equality is
+/// over the BLAKE2b-256 of the serialised inline datum, with an empty
+/// hash meaning the output must carry no datum at all.
+///
+/// Total: an undecodable destination matches nothing, so a request that
+/// names nonsense cannot be folded rather than folding anywhere.
+pub fn destinationMatches(
+  destination: (ByteArray, ByteArray),
+  out: Output,
+) -> Bool {
+  let (address, datumHash) = destination
+  when decodeAddress(address) is {
+    Some(expected) -> expected == out.address && datumMatches(datumHash, out.datum)
+    None -> False
+  }
+}
+
+/// The datum half of `destinationMatches`, split out so the custody and
+/// record checks can reuse it.
+pub fn datumMatches(datumHash: ByteArray, datum: Datum) -> Bool {
+  if datumHash == #"" {
+    datum == NoDatum
+  } else {
+    when datum is {
+      InlineDatum(inline) -> blake2b_256(cbor.serialise(inline)) == datumHash
+      _ -> False
+    }
+  }
+}
+
+/// Does an output pay this destination address at all, whatever it
+/// carries? The refund leg of custody (#157 C6, R-ADA) binds the address
+/// and the lovelace, never the datum.
+pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
+  when decodeAddress(address) is {
+    Some(expected) -> expected == out.address
+    None -> False
   }
 }
