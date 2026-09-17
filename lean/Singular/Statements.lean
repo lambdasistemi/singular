@@ -57,7 +57,70 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
     Folds s batch t ∧
     (∀ b bs, batch = b :: bs → ∀ why, step s b = .error why → foldBatch s batch = .error why) ∧
     (∀ key, kindCount t.state .active key ≤ 1 ∧ custodyCount t.state key ≤ 1) := by
-  sorry
+  obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
+  have hfolds : ∀ (u : RegistryState) (bs : List Request) (r : Result),
+      foldActions u bs = .ok r → Folds u bs r := by
+    intro u bs
+    induction bs generalizing u with
+    | nil =>
+      intro r hr
+      unfold foldActions at hr
+      have : emptyResult u = r := by injection hr
+      rw [← this]; exact Folds.done u
+    | cons b bs ih =>
+      intro r hr
+      unfold foldActions at hr
+      simp only [bind, Except.bind, pure, Except.pure] at hr
+      cases hs : step u b with
+      | error e => rw [hs] at hr; exact Except.noConfusion hr
+      | ok m =>
+        rw [hs] at hr
+        simp only [bind, Except.bind, pure, Except.pure] at hr
+        cases hrest : foldActions m.state bs with
+        | error e => rw [hrest] at hr; exact Except.noConfusion hr
+        | ok rr =>
+          rw [hrest] at hr
+          have hEq : combineResults m rr = r := by injection hr
+          rw [← hEq]
+          exact Folds.cons u b bs m rr hs (ih m.state rr hrest)
+  have hreach : Reachable t.state := by
+    have : ∀ (u : RegistryState) (bs : List Request) (r : Result),
+        Reachable u → foldActions u bs = .ok r → Reachable r.state := by
+      intro u bs
+      induction bs generalizing u with
+      | nil =>
+        intro r hu hr
+        unfold foldActions at hr
+        have : emptyResult u = r := by injection hr
+        rw [← this]; exact hu
+      | cons b bs ih =>
+        intro r hu hr
+        unfold foldActions at hr
+        simp only [bind, Except.bind, pure, Except.pure] at hr
+        cases hs : step u b with
+        | error e => rw [hs] at hr; exact Except.noConfusion hr
+        | ok m =>
+          rw [hs] at hr
+          simp only [bind, Except.bind, pure, Except.pure] at hr
+          cases hrest : foldActions m.state bs with
+          | error e => rw [hrest] at hr; exact Except.noConfusion hr
+          | ok rr =>
+            rw [hrest] at hr
+            have hEq : combineResults m rr = r := by injection hr
+            rw [← hEq]
+            exact ih m.state rr (Reachable.next hu hs) hrest
+    exact this s batch t h hacts
+  refine ⟨hfolds s batch t hacts, ?_, ?_⟩
+  · intro b bs hb why hstep
+    subst hb
+    unfold foldBatch
+    rw [if_neg (by simp)]
+    unfold foldActions
+    simp only [bind, Except.bind, pure, Except.pure]
+    rw [hstep]
+  · intro key
+    obtain ⟨_, _, hA2, _, hC2, _, _, _⟩ := reachable_consistent t.state hreach
+    exact ⟨hA2 key, hC2 key⟩
 
 /-- **S1** — every terminal attestation in a reachable state is about a leaf
 that is terminal: no attestation of an Active, Absent or Unknown key exists. -/
@@ -776,11 +839,50 @@ theorem empty_fold_error (s : RegistryState) (batch : List Request)
 matches the summed delta of the folded edges. -/
 theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
     foldBatch s (b :: bs) = .ok t ↔
-    ∃ m r, step s b = .ok m ∧ foldBatch m.state bs = .ok r ∧
+    ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
       t = { state := r.state, mint := deltaPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
-      deltaSame (deltaPlus b.claimed (bs.foldl (fun acc b => deltaPlus acc b.claimed) []))
-        (deltaPlus (delta b.edge) (bs.foldl (fun acc b => deltaPlus acc (delta b.edge)) [])) := by
-  sorry
+      deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
+        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+  constructor
+  · intro hok
+    have hacts := (foldBatch_inv s (b :: bs) t hok).2
+    have hdelta : deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
+        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+      unfold foldBatch at hok
+      rw [if_neg (by simp)] at hok
+      rw [hacts] at hok
+      simp only [bind, Except.bind, pure, Except.pure] at hok
+      split at hok
+      · assumption
+      · exact Except.noConfusion hok
+    unfold foldActions at hacts
+    simp only [bind, Except.bind, pure, Except.pure] at hacts
+    cases hs : step s b with
+    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | ok m =>
+      rw [hs] at hacts
+      simp only [bind, Except.bind, pure, Except.pure] at hacts
+      cases hr : foldActions m.state bs with
+      | error e => rw [hr] at hacts; exact Except.noConfusion hacts
+      | ok r =>
+        rw [hr] at hacts
+        have hEq : combineResults m r = t := by injection hacts
+        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta⟩
+  · rintro ⟨m, r, hs, hr, hEq, hdelta⟩
+    unfold foldBatch
+    rw [if_neg (by simp)]
+    have hacts : foldActions s (b :: bs) = .ok t := by
+      unfold foldActions
+      simp only [bind, Except.bind, pure, Except.pure]
+      rw [hs]
+      simp only [bind, Except.bind, pure, Except.pure]
+      rw [hr, hEq]
+      rfl
+    rw [hacts]
+    simp only [bind, Except.bind, pure, Except.pure]
+    split
+    · rfl
+    · rename_i hc; exact absurd hdelta hc
 
 /-- A read changes nothing: the leaf, the root and custody survive an admitted
 `witnessTerminal` step unchanged. -/
