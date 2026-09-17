@@ -135,7 +135,7 @@ fails to compile".
 | N7 | N3 fold-created record | Given an `insertActive` fold; when the record output at the application address carries the bound datum and exactly the active token; then accepted (cage T1). Given a record with a second asset; refused `record-single-asset`. | Accepting and refusing tests | — |
 | N8 | N4 completion | Given completion-only custody holding the active token for `k` and its co-created `Update(0x01,0x02)` request; when folded; then custody is spent, the token burned, the leaf `0x02`. | Accepting test (LT rows ported) | A completion whose burn is not the held token refuses (existing `held_burned_exactly_once`) |
 | N9 | NM2 | Given a live record; when `Maintain` or `Recover` runs; then the registry state is not an input and the root is unchanged. | Existing LM/LR rows, re-run | A `Maintain` that spends the state refuses |
-| N10 | #156 T1 | Given a `0x02` leaf; when any request for `k` is folded; then refused (C2). | Rows for each operation on `0x02` | — |
+| N10 | #156 T1 | Given a `0x02` leaf; when any **tree-changing** request for `k` is folded — `Insert`, `Update`, `Delete` with any value — then refused (C2, `edge-from-terminal`). `Read(0x02)` for `k` is **accepted** and mints `+1 terminal` (C2, C3, G5, M3): T1 is stated for every edge but `witnessTerminal`. | Rows for each tree-changing operation on `0x02`; one accepting `Read(0x02)` row | Admitting any tree-changing operation on `0x02` turns its row accepting; refusing the read turns G5 red |
 
 ## Invariant rows — consumers and docs
 
