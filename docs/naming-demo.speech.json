@@ -59,12 +59,18 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "7ad16a8e4af173b721e108649ddba3403ae15f4512b26bd0bf5909838c13fda5"
+    "sha256": "7e38f6fff606156512aa41b1cd4ce3c985451b6ec66d4481e5bcd1a671fc1cd8"
   },
   "finding-alice": [
     {
-      "text": "To find alice, take the registry's representative policy identifier and hash the spelling bytes with BLAKE2b two hundred and fifty-six, without a newline. The page shows the exact command also printed by register rows, plus a Koios query for the live UTxO. The holding address and datum distinguish an active record from retirement custody. If the UTxO result is empty, query the same asset's mint and burn history: minted once and burned once means permanent Over; never minted means unclaimed. This is the only place history is needed, and it is the asset's history, not the trie's.",
-      "pause": 400
+      "pause": 400,
+      "text": "The asset name is the registry key. Given the registry's active policy id, alice's witness is that policy plus the raw bytes of the word alice — no hash, no controller, no prefix and no incarnation enters it. Query Koios for that policy and asset name, and the holding address and inline datum identify the live record or the completion-only custody a pending ending put it in. The three policies share the one convention, so the same query answers three questions about the same name: an absent witness says somebody has staked a deposit on the name being free, an active witness says it is booked, and a terminal witness says it is over. That is the whole reader protocol: presence of a token, never the root and never a history walk."
+    }
+  ],
+  "how-a-name-moves-in-the-registry": [
+    {
+      "pause": 400,
+      "text": "A name is one key in the registry's authenticated map, and the value of that key is a single byte: zero for absent, one for active, two for terminal. Seven requests move a key and nothing else does, and each one moves a witness token — the thing a reader actually looks at, never the root. The witnesses obey four laws. A witness moves only inside a fold. The fold decides how many and where, summing the witness column of the requests it consumed so the transaction's mint must equal that sum exactly. A terminal witness is its holder's to destroy, because saying a name is over costs the registry nothing. And the asset name is the registry key, so identity is the pair of policy and key. No application script runs at fold time: naming certifies an edge in advance by minting one approval whose name binds the edge, the key, the owner and the destination, and the cage recomputes that name from the request itself."
     }
   ]
 }
