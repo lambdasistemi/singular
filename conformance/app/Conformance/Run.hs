@@ -262,7 +262,6 @@ import Singular.Registry.TxBuilder.Internal (
     findStateUtxo,
     mkCageScript,
     mkInlineDatum,
-    mkRequestDatum,
     mkRequestScript,
     onChainTokenId,
     requestAddrFromCfg,
@@ -2912,27 +2911,22 @@ assembleFoldSpec env fs = do
                         <> show nReqs
                         <> " requests"
                     )
-    -- Every refund output must clear min-ADA on its own: a shortfall
-    -- here is a harness bug, never a row verdict.
+    -- Every refund output must clear min-ADA on its own, counting the
+    -- approval it carries back: a shortfall here is a harness bug, never
+    -- a row verdict.
     mapM_
-        (\(c, (_, o)) -> do
-            let out =
-                    mkBasicTxOut
-                        ( addrFromKeyHashBytes
-                            (network (fsCfg fs))
-                            (extractOwnerBytes o)
-                        )
-                        (MaryValue (Coin c) mempty)
-                Coin minAda = getMinCoinTxOut @ConwayEra pp out
+        ( \out -> do
+            let Coin minAda = getMinCoinTxOut @ConwayEra pp out
+                Coin c = out ^. coinTxOutL
             require
-                ( "hand-build: refund under min-ADA: " <> show c
-                )
-                (c >= minAda))
-        (zip refunds (fsReqs fs))
+                ("hand-build: refund under min-ADA: " <> show c)
+                (c >= minAda)
+        )
+        (refundOuts refunds)
     newStateOut <- case fsStateOverride fs of
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
-    changeOut <- makeChange pp funder feeAmt refunds duties
+    changeOut <- makeChange pp funder feeAmt (map outCoin (refundOuts refunds)) duties
     redeemers <- makeRedeemers fs funder duties
     scripts <- makeScripts fs refs duties
     let signers = case fsSigners fs of
@@ -2940,7 +2934,10 @@ assembleFoldSpec env fs = do
             Just ss -> ss
         inputs =
             Set.fromList
-                ( fst (fsState fs) : fst funder : map fst (fsReqs fs)
+                ( fst (fsState fs)
+                    : fst funder
+                    : map fst (fsReqs fs)
+                        <> map (fst . csUtxo) (rdSpends duties)
                 )
         integrity = computeScriptIntegrity pp redeemers
         body =
@@ -2969,7 +2966,8 @@ assembleFoldSpec env fs = do
                         )
                 & collateralInputsTxBodyL
                     .~ Set.singleton (fromMaybe (fst funder) (fsCollateral fs))
-                & reqSignerHashesTxBodyL .~ Set.fromList signers
+                & reqSignerHashesTxBodyL
+                    .~ Set.fromList (signers <> rdSigners duties)
                 & referenceInputsTxBodyL
                     .~ Set.fromList (map fst refs)
                 & scriptIntegrityHashTxBodyL .~ integrity
@@ -3006,6 +3004,11 @@ assembleFoldSpec env fs = do
     rejected booking is not folded, so its approval is not spent: it
     returns to the owner with the deposit, and the transaction conserves
     its value. -}
+    {- The refunds a fold owes: one per request it does NOT process.
+    A processed request's deposit goes to the carriers its edge creates and
+    its approval returns through them; an unprocessed one — rejected, or
+    left unmatched by a deficit of actions — owes its owner the deposit and
+    the approval that certified it, which was never spent. -}
     refundOuts :: [Integer] -> [TxOut ConwayEra]
     refundOuts explicit =
         [ mkBasicTxOut
@@ -3013,10 +3016,10 @@ assembleFoldSpec env fs = do
                 (network (fsCfg fs))
                 (extractOwnerBytes o)
             )
-            (MaryValue (Coin c) (MultiAsset assetsBack))
+            (MaryValue (Coin c) (MultiAsset (rawAssets o)))
         | (c, ((_, o), isProcessed)) <-
-            zip explicit (zip (fsReqs fs) (foldSpecProcessed fs <> repeat True))
-        , let assetsBack = if isProcessed then Map.empty else rawAssets o
+            zip explicit (zip (fsReqs fs) (foldSpecProcessed fs <> repeat False))
+        , not isProcessed
         ]
     makeStateOut oldState =
         let scriptAddr = cageAddrFromCfg (fsCfg fs) (network (fsCfg fs))
@@ -3039,11 +3042,18 @@ assembleFoldSpec env fs = do
     makeChange pp funder' feeAmt refunds duties = do
         let reqCoins = [outCoin o | (_, o) <- fsReqs fs]
             funderCoin = outCoin (snd funder')
-            -- The carriers an edge owes take the deposit that rode its
-            -- request; what is left over is change.
+            -- Custody an edge consumes is an input too, and the carriers it
+            -- owes take the deposit that rode its request; what is left
+            -- over is change.
+            custodyCoins = [outCoin o | sp <- rdSpends duties, let (_, o) = csUtxo sp]
             dutyCoins = map outCoin (rdOutputs duties)
             change =
-                sum reqCoins + funderCoin - sum refunds - sum dutyCoins - feeAmt
+                sum reqCoins
+                    + funderCoin
+                    + sum custodyCoins
+                    - sum refunds
+                    - sum dutyCoins
+                    - feeAmt
             out = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
             Coin minAda = getMinCoinTxOut @ConwayEra pp out
         require
@@ -3052,9 +3062,15 @@ assembleFoldSpec env fs = do
         pure out
     makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> RegistryDuties -> IO (Redeemers ConwayEra)
     makeRedeemers fs' funder' duties = do
+        -- The same input set the body builds, custody included: a spending
+        -- index is a position in it, and two different sets give two
+        -- different positions.
         let inputs =
                 Set.fromList
-                    ( fst (fsState fs') : fst funder' : map fst (fsReqs fs')
+                    ( fst (fsState fs')
+                        : fst funder'
+                        : map fst (fsReqs fs')
+                            <> map (fst . csUtxo) (rdSpends duties)
                     )
             statePurpose =
                 ConwaySpending (AsIx (spendingIndex (fst (fsState fs')) inputs))
@@ -3087,6 +3103,11 @@ assembleFoldSpec env fs = do
                     : requestPairs
                     <> hookPairs
                     <> mintPairs
+                    <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
+                         , (toLedgerData (csRedeemer sp), units)
+                         )
+                       | sp <- rdSpends duties
+                       ]
         pure (Redeemers (Map.fromList pairs))
     makeScripts fs' refs duties = do
         let stateScript = mkCageScript (fsCfg fs')
@@ -3333,11 +3354,13 @@ rowCommit env cage key op = do
         -- #157 C3: a read commits nothing.
         OpRead _ -> pure ()
 
-{- | Submit a padded hand-built request: a plain payment with an
-inline 'RequestDatum' at the request address (creating an output
-executes nothing — CA05's finding), locked at an explicit bond so
-CG19's crossed refunds have unequal bonds to cross. Signed by the
-payer (genesis or the second wallet).
+{- | Book one absence on a row cage at an explicit bond (#157 A-009).
+
+The bond is the caller's, because CG19 needs two different ones to cross
+and CG05 needs one large enough to carry its own refusal. What was a bare
+payment carrying a request datum is now a booking: the edge is certified,
+the destination names where the deposit comes back, and the approval rides
+the request to the fold.
 -}
 paddedRequest ::
     Env ->
@@ -3348,59 +3371,21 @@ paddedRequest ::
     ByteString ->
     Integer ->
     IO (TxIn, TxOut ConwayEra)
-paddedRequest env cage payerAddr payerSk key val bond = do
+paddedRequest env cage payerAddr payerSk key _val bond = do
     let cfg = rcCfg cage
     tid <- cageTid cage
-    pp <- Cage.queryProtocolParams (envProv env)
-    utxos <- Cage.queryUTxOs (envProv env) payerAddr
-    (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "paddedRequest: payer wallet has no UTxOs"
-        (u : _) -> pure u
-    now <- currentPosixMs
-    let Coin feeBal = feeOut ^. coinTxOutL
-        Coin tipVal = defaultTip cfg
-        fee = 300_000
-        change = feeBal - bond - fee
-    require
-        ("paddedRequest: payer wallet too small (" <> show feeBal <> ")")
-        (change > 0)
-    let requestAddr = requestAddrFromCfg cfg tid (network cfg)
-        datum =
-            mkRequestDatum
-                tid
-                payerAddr
-                key
-                (OpInsert val)
-                (tipVal)
-                now
-        reqOut =
-            mkBasicTxOut requestAddr (MaryValue (Coin bond) mempty)
-                & datumTxOutL .~ mkInlineDatum datum
-        Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
-    require
-        ( "paddedRequest: bond under min-ADA: " <> show bond
-        )
-        (bond >= minAda)
-    let body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton feeIn
-                & outputsTxBodyL
-                    .~ StrictSeq.fromList
-                        [ reqOut
-                        , mkBasicTxOut payerAddr (MaryValue (Coin change) mempty)
-                        ]
-                & feeTxBodyL .~ Coin fee
-        signed = addKeyWitness payerSk (mkBasicTx body)
-    result <- submitTxResilient (envSubmit env) signed
-    case result of
-        Submitted _ -> awaitTx
-        Rejected reason ->
-            failWith
-                ( "paddedRequest refused: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
-                )
-    pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
-
+    dest <- edgeDestinationFor env payerAddr (OpInsert leafAbsent)
+    bookEdge
+        env
+        cfg
+        tid
+        payerAddr
+        payerSk
+        key
+        (OpInsert leafAbsent)
+        dest
+        []
+        bond
 {- | Request datum's (key, value) and submitted-at, read from a
 live request UTxO.
 -}
@@ -4162,7 +4147,24 @@ runCG19 env = do
             []
             3_000_000
     let sorted = sortOn fst [reqA, reqB]
-    (stepsSorted, newRoot) <- speculativeApplyAll env cage tid sorted
+    -- D-001: this row folds REJECTIONS, so the trie does not move and no
+    -- edge duty arises. What it exercises is where the refunds a rejection
+    -- owes actually go.
+    state <- cageStateUtxo env cage
+    liveState <- extractState (snd state)
+    let newRoot = Root (unOnChainRoot (stateRoot liveState))
+    -- A rejection is only rejectable once every request's retract window
+    -- has closed, so the fold waits for the last of them and declares a
+    -- lower bound past it.
+    let submittedAts =
+            [ submitted
+            | (_, o) <- sorted
+            , let (_, submitted) = requestDatumOf o
+            ]
+        deadline =
+            maximum submittedAts
+                + stateProcessTime liveState
+                + stateRetractTime liveState
     (firstSorted, secondSorted) <- case sorted of
         [a, b] -> pure (a, b)
         _ -> failWith "CG19: expected exactly two requests"
@@ -4172,7 +4174,8 @@ runCG19 env = do
         (c1, c2) = case reverse honest of
             [x, y] -> (x, y)
             _ -> error "CG19: two requests yield two crossed refunds"
-    state <- cageStateUtxo env cage
+    waitPhase3 deadline
+    lowerSlot <- Cage.posixMsCeilSlot (envProv env) (deadline + 1000)
     pot <- collateralPot env
     units <- declaredSpec env cage
     let crossedSpec =
@@ -4181,11 +4184,12 @@ runCG19 env = do
                 tid
                 state
                 sorted
-                (map Update stepsSorted)
+                [CageTypes.Rejected, CageTypes.Rejected]
                 newRoot
                 units)
                 { fsRefunds = [c1, c2]
                 , fsCollateral = Just pot
+                , fsLower = Just lowerSlot
                 }
     hand <- assembleFoldWithFee env crossedSpec
     -- Candidate-bound observation (NOTE-108, E18 disposition): the
@@ -4202,9 +4206,6 @@ runCG19 env = do
             (mem, cpu) <- measureUnits env hand
             let size = txSizeBytes signedCrossed
             emitMeasure env "CG19-crossed" mem cpu size
-            mapM_
-                (\(k, v) -> rowCommit env cage k (OpInsert v))
-                [("cg19-key-a", leafAbsent), ("cg19-key-b", leafAbsent)]
             writeRowReceipt
                 env
                 "CG19"
@@ -4274,19 +4275,21 @@ runCG19 env = do
                         tid
                         state
                         sorted
-                        (map Update stepsSorted)
+                        [CageTypes.Rejected, CageTypes.Rejected]
                         newRoot
                         units)
                         { fsCollateral = Just potA
+                        , fsRefunds = honest
+                        , fsLower = Just lowerSlot
+                        , -- The refusal leg only reaches its refusal; this
+                          -- one runs the fold to the end.
+                          fsUnits = ExUnits 2_000_000 800_000_000
                         }
             acceptTx <- assembleFoldWithFee env acceptSpec
             (memA, cpuA) <- measureUnits env acceptTx
             signedA <- submitExpectAccepted env (addKeyWitness genesisSignKey acceptTx)
             let sizeA = txSizeBytes signedA
             emitMeasure env "CG19-routed" memA cpuA sizeA
-            mapM_
-                (\(k, v) -> rowCommit env cage k (OpInsert v))
-                [("cg19-key-a", leafAbsent), ("cg19-key-b", leafAbsent)]
             emit
                 "control"
                 ( "CG19 control: correctly routed refunds accepted (tx="
