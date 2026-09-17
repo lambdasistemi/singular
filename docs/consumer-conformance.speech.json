@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "c1079a4e8d25eeda3f4272b9168f39453789537223ceb631df64cae616624b14"
+    "sha256": "8415d58f1bfaaad85b28175cd5d54bcaf7b764131d2e284ba96a56bb7716ae05"
   },
   "historical-execution-reports": [
     {
@@ -159,20 +159,6 @@
       "pause": 400
     }
   ],
-  "current-ownerless-integration": [
-    {
-      "text": "The current state has six fields: root, maximum fee, process time, retract time, representative policy and consumer pin. The state has zero parameters; the request keeps two ordered parameters. Address derivation compares the production result with the actual chain address, and an extra application must fail the same comparison. This is an off-chain identity check.",
-      "pause": 400
-    },
-    {
-      "text": "Spending and minting constructor rows remain partial where End, Sweep, Burning and Migrating lack complete witnesses. Each residual stays inside its receipt. Missing accounting is incomplete, and free refusal text earns no constructor credit. The generic observation rows stay held. The diagram connects bound execution receipts to complete evidence, partial constructors or held requirements; both partial and held outcomes retain strict completion debt.",
-      "pause": 400
-    },
-    {
-      "text": "The inventory retains forty-two rows and forty-one owned. The protected population stays one hundred ninety-six, with both implementation layers and all recorded debt. Fork correspondence and Blaster work remain with epic eighteen. The connected naming release does not close those obligations.",
-      "pause": 400
-    }
-  ],
   "current-replay-commands": [
     {
       "text": "Build the current blueprint and use a fresh receipt directory outside the tracked tree for each session. Run ten generic rows, five canonical identity rows, then five serialization devnet rows and two local checks. Superseded rows remain in the inventory but are not runtime commands.",
@@ -181,6 +167,54 @@
     {
       "text": "The generic session must end with exactly the three held rows, the identity session must succeed, and the serialization session must show its two partial rows. A nonzero exit alone proves nothing: inspect exact identities, source binding, verdicts, residuals and controls. An armed control must reach its intended assertion; an ordinary partial exit is not a control failure.",
       "pause": 400
+    }
+  ],
+  "the-registry-mode-contract-change": [
+    {
+      "pause": 400,
+      "text": "This is a contract change, declared here rather than discovered by a consumer through a failing decode. Anything that reads Singular's datums or builds its redeemers changes with it."
+    }
+  ],
+  "the-state-datum-six-fields-become-eight": [
+    {
+      "pause": 400,
+      "text": "The state datum goes from six fields to eight. Root, max fee, process time and retract time keep their places. The consumer pin is deleted with the pinned consumer script it named, and the mandatory withdrawal that script required is deleted with it. The representative policy is renamed the active policy and keeps its meaning. Three pins are new: the application policy that certifies requests, and the absent and terminal token policies. A decoder that reads field four as the representative policy now reads the application policy, and a decoder that reads six fields refuses an eight-field datum — both intended, and both exercised, because the state round-trip row round-trips all four derived pins through a boot datum while its armed control demands the old six-field encoding and fails. None of the four is a literal: each is derived from the two partitions' script identity files for the registry identity a boot creates."
+    }
+  ],
+  "the-operation-a-fourth-constructor": [
+    {
+      "pause": 400,
+      "text": "The operation type gains a fourth constructor, read, at index three. The three published indices do not move. A read leaves its key exactly where it is, and on chain only the terminal codec byte is admitted for it."
+    }
+  ],
+  "the-request-a-destination": [
+    {
+      "pause": 400,
+      "text": "The request gains one field, appended last: a destination, which is the binary address bytes the minted token must land at together with the hash of the inline datum that output must carry. An empty datum hash means a datum-less output, and a request that mints nothing names no destination."
+    }
+  ],
+  "the-cage-datum-a-third-constructor": [
+    {
+      "pause": 400,
+      "text": "The cage datum gains a third constructor at index two: absent custody, carrying the registry key it witnesses and the refund address recorded beside it. The two published constructors do not move."
+    }
+  ],
+  "redeemers-that-are-gone": [
+    {
+      "pause": 400,
+      "text": "The naming application's spend redeemer becomes maintain, retire and recover; fold and cancel are removed with the pending-claim lifecycle they served. Its mint redeemer becomes a single approve, binding an edge, a key, an owner and a destination; the withdraw and insert approvals are removed. The representative policy is retired in favour of one parametrised witness policy, instantiated three times."
+    }
+  ],
+  "what-a-reader-should-do": [
+    {
+      "pause": 400,
+      "text": "Read tokens, never the root. An active witness under the active policy, at the asset name equal to the registry key, is a live registration; a terminal witness is a name that is over. The asset name is the key itself — there is no hashed representative name any more."
+    }
+  ],
+  "current-registry-mode-integration": [
+    {
+      "pause": 400,
+      "text": "The released interface follows the eight-field registry-mode state contract. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed, and a build or a green check of expected debt grants no coverage."
     }
   ]
 }

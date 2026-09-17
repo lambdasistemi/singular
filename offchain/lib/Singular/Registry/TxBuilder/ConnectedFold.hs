@@ -75,7 +75,6 @@ import Singular.Registry.Trie (
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -83,7 +82,6 @@ import Singular.Registry.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
-    stateConsumerPinBytes,
  )
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
@@ -253,6 +251,11 @@ processRequest trie (_txIn, txOut) = do
             _ <- Singular.Registry.Trie.delete trie (requestKey req)
             _ <- insert trie (requestKey req) v
             pure (fromMaybe [] mSteps)
+        -- #157 C3: a read leaves the leaf exactly where it is, so the
+        -- builder walks the proof for it and changes nothing.
+        OpRead _ -> do
+            mSteps <- getProofSteps trie (requestKey req)
+            pure (fromMaybe [] mSteps)
 
 -- | Extract old state, build the new state output and the cage script.
 prepareState ::
@@ -359,20 +362,10 @@ buildProgram
             let f = tx ^. bodyTxL . feeTxBodyL
              in if f > Coin 0 then Tx.Ok f else Tx.Iterate f
         mapM_ Tx.output extraOutputs
-        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
-        -- pinned in the spent state with a null redeemer — the consumer
-        -- authenticates the batch from transaction evidence alone
-        -- (request value coverage, representative-mint binding). No
-        -- operator, no manifest: coherent batches pass no matter who
-        -- submits them.
-        Tx.withdrawScript
-            ( hookAccountAddress
-                (network _cfg)
-                (stateConsumerPinBytes _oldState)
-            )
-            (Coin 0)
-            Hook
-        Tx.attachScript (mkConsumerScript _cfg)
+        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- gone. Every rule it re-walked beside the fold — request value
+        -- coverage, the mint binding — is the cage's own now, checked
+        -- once from the transaction's own evidence.
         -- Scripts arrive by witness or by reference, never both: with
         -- reference UTxOs every purpose resolves through them (connected
         -- folds carry four scripts and would otherwise breach the max tx
