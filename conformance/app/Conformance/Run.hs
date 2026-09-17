@@ -175,6 +175,7 @@ import Cardano.Ledger.Api.Scripts.Data (
     Datum (..),
  )
 import Cardano.Ledger.Api.Tx.Out (
+    referenceScriptTxOutL,
     addrTxOutL,
     coinTxOutL,
     datumTxOutL,
@@ -520,6 +521,7 @@ data Env = Env
     -- boot from these.
     , envKeys :: IORef (Bool, ByteString)
     , envDeleteKey :: IORef (Bool, ByteString)
+    , envRefs :: IORef (Maybe [(TxIn, TxOut ConwayEra)])
     -- ^ CG03/CG04 own their own key (D-001): the delete row acts on a
     -- witnessed absence, which the shared key is not once CG02 has
     -- activated it.
@@ -957,6 +959,7 @@ runSession
             legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
         deleteKeys <- newIORef (False, "")
+        refsRef <- newIORef Nothing
         validUnits <- newIORef (0, 0)
         worlds <- newIORef Map.empty
         stakeRef <- newIORef Nothing
@@ -1010,6 +1013,7 @@ runSession
                             , envBlueprintPath = blueprintPath
                             , envKeys = keys
                             , envDeleteKey = deleteKeys
+                            , envRefs = refsRef
                             , envValidUnits = validUnits
                             , envCa = Just world
                             , envWorlds = worlds
@@ -1057,6 +1061,7 @@ runSession
                                     , envCodes = codes
                                     , envKeys = keys
                                     , envDeleteKey = deleteKeys
+                                    , envRefs = refsRef
                                     , envValidUnits = validUnits
                                     , envCa = Nothing
                                     , envWorlds = worlds
@@ -1097,6 +1102,7 @@ runSession
                                     , envCodes = codes
                                     , envKeys = keys
                                     , envDeleteKey = deleteKeys
+                                    , envRefs = refsRef
                                     , envValidUnits = validUnits
                                     , envCa = Nothing
                                     , envWorlds = worlds
@@ -1259,8 +1265,12 @@ dust after a session of folds.
 largestWalletUtxo :: Cage.Provider IO -> IO (TxIn, TxOut ConwayEra)
 largestWalletUtxo prov = do
     utxos <- Cage.queryUTxOs prov genesisAddr
-    case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "genesis wallet has no UTxOs; cannot pick a seed"
+    -- #157: a spent approval is not burned at the fold, so it returns to
+    -- the funder and rides in the wallet. Fee and collateral inputs are
+    -- taken from an ada-only output, which is what the ledger requires of
+    -- collateral and what the hand model asserts of its funder.
+    case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
+        [] -> failWith "genesis wallet has no ada-only UTxO; cannot fund"
         u : _ -> pure u
 
 adaptProvider :: N2C.Provider IO -> Cage.Provider IO
@@ -4955,6 +4965,7 @@ requestAndFoldKey env label key op = do
     -- #157: a tree edge is booked, not merely requested. The approval the
     -- naming application mints certifies which edge this is, for whom, and
     -- where it delivers; the request carries it to the fold.
+    _ <- sessionRefUtxos env
     dest <- edgeDestination env op
     refIns <- edgeReferences env key op
     _ <-
@@ -6349,10 +6360,19 @@ bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
         [] -> failWith "bookEdge: payer wallet has no UTxOs"
         (u : _) -> pure u
+    -- A spent approval is not burned at the fold, so it comes back to the
+    -- funder and rides in the wallet from then on. The booking carries
+    -- whatever its input holds through to its own change, and collateral
+    -- is taken from an ada-only output, which is all the ledger accepts.
+    collateralIn <- case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
+        [] -> failWith "bookEdge: payer wallet has no ada-only output for collateral"
+        ((i, _) : _) -> pure i
     now <- currentPosixMs
-    let Coin feeBal = feeOut ^. coinTxOutL
+    let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
         Coin tipVal = defaultTip cfg
-        fee = 900_000
+        -- The booking runs the application's mint arm, and the fee it
+        -- owes scales with the budget declared for it.
+        fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
         (destAddr, destHash) = dest
@@ -6396,11 +6416,11 @@ bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
                         [ reqOut
-                        , mkBasicTxOut payerAddr (MaryValue (Coin change) mempty)
+                        , mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
                         ]
                 & feeTxBodyL .~ Coin fee
                 & mintTxBodyL .~ approval
-                & collateralInputsTxBodyL .~ Set.singleton feeIn
+                & collateralInputsTxBodyL .~ Set.singleton collateralIn
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
                 & scriptIntegrityHashTxBodyL .~ integrity
@@ -6500,6 +6520,7 @@ own UTxOs, and the one destination datum the harness books against.
 -}
 registryContext :: Env -> IO RegistryContext
 registryContext env = do
+    refs <- sessionRefUtxos env
     let cfg = envCfg env
         (_, _, codes) = envCodes env
         registryId =
@@ -6520,6 +6541,7 @@ registryContext env = do
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
+            , rcRefUtxos = refs
             }
 {- | CG03's own key, seeded at the absent leaf.
 
@@ -6548,3 +6570,105 @@ seedDeleteKey env = do
                 (claimValue env cgV1)
                 forgedValue
             writeIORef (envDeleteKey env) (True, cgV1)
+
+{- | Publish one script as a reference output, once per session.
+
+The state validator alone is fifteen kilobytes: a fold that attaches it,
+the request script and a token policy does not fit in a transaction. The
+same outputs serve every fold the session builds, so this happens once and
+the references are carried in the environment.
+-}
+publishRefScript :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
+publishRefScript env script = do
+    let prov = envProv env
+    pp <- Cage.queryProtocolParams prov
+    utxos <- Cage.queryUTxOs prov genesisAddr
+    fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> failWith "publishRefScript: the funding wallet has no output"
+        (u : _) -> pure u
+    let probe =
+            mkBasicTxOut genesisAddr (MaryValue (Coin 0) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        Coin minCoin = getMinCoinTxOut @ConwayEra pp probe
+        refCoin = minCoin + 1_000_000
+        refOut =
+            mkBasicTxOut genesisAddr (MaryValue (Coin refCoin) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        fee = 1_000_000
+        Coin inCoin = snd fund ^. coinTxOutL
+        changeCoin = inCoin - fee - refCoin
+    require
+        ( "publishRefScript: funding output holds "
+            <> show inCoin
+            <> ", which does not cover a reference output of "
+            <> show refCoin
+            <> " plus fees"
+        )
+        (changeCoin > 1_000_000)
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton (fst fund)
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ refOut
+                        , mkBasicTxOut genesisAddr (MaryValue (Coin changeCoin) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+        signed = addKeyWitness genesisSignKey (mkBasicTx body)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> awaitTx
+        Rejected reason ->
+            failWith
+                ( "publishRefScript refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+
+{- | The session's reference outputs, published on first use: the cage,
+the request validator and the three token policies.
+-}
+sessionRefUtxos :: Env -> IO [(TxIn, TxOut ConwayEra)]
+sessionRefUtxos env = do
+    cached <- readIORef (envRefs env)
+    case cached of
+        Just refs -> pure refs
+        Nothing -> do
+            let cfg = envCfg env
+                (_, _, codes) = envCodes env
+                registryId =
+                    scriptHashBytes (cfgScriptHash cfg)
+                        <> SBS.fromShort (assetNameBytes (unTokenId (envTid env)))
+                witnessAt kind =
+                    scriptFromBytes
+                        ("witness-" <> show kind)
+                        ( applyBytesParam
+                            registryId
+                            (applyDataParam (PLC.I kind) (ncWitness codes))
+                        )
+            refs <-
+                mapM
+                    (publishRefScript env)
+                    ( [ mkCageScript cfg
+                      , mkRequestScript cfg (envTid env)
+                      ]
+                        <> map witnessAt [0, 1, 2]
+                    )
+            emit
+                "references"
+                ( show (length refs)
+                    <> " scripts published as reference outputs; folds resolve \
+                       \every purpose through them"
+                )
+            writeIORef (envRefs env) (Just refs)
+            pure refs
+
+{- | Can this output fund a transaction? It must hold ada and nothing
+else, because it doubles as collateral, and it must not be one of the
+published reference outputs, because a transaction may not both spend an
+output and reference it.
+-}
+adaOnlyOut :: TxOut ConwayEra -> Bool
+adaOnlyOut out =
+    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
+        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)

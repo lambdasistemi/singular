@@ -55,7 +55,8 @@ import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Keys (KeyHash)
 import Cardano.Tx.Build (Guard)
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
-import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut)
+import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut, referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Core (hashScript)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -90,6 +91,7 @@ import Singular.Registry.Trie (
     TrieManager (..),
  )
 import Singular.Registry.TxBuilder.Internal
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainOperation (..),
@@ -134,6 +136,7 @@ emptyRegistryContext =
         , rcCageScript = Nothing
         , rcCageUtxos = []
         , rcDatums = []
+        , rcRefUtxos = []
         }
 
 {- | Fold the pending requests, discharging every obligation the edges
@@ -193,13 +196,14 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
                 proofs
                 upperSlot
                 duties
+                (rcRefUtxos ctx)
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
             (feeUtxo : stateUtxo : reqUtxos <> map csUtxo (rdSpends duties))
-            []
+            (rcRefUtxos ctx)
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
@@ -247,10 +251,13 @@ queryContext cfg prov tid addr = do
         error "updateToken: no pending requests"
     pp <- queryProtocolParams prov
     walletUtxos <- queryUTxOs prov addr
+    -- #157: an approval is not burned at the fold, so it returns to the
+    -- funder and rides in the wallet from then on. The fee input doubles
+    -- as collateral, and collateral must be ada-only.
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
-        walletUtxos of
-        [] -> error "updateToken: no UTxOs"
+        (filter (adaOnlyOutput . snd) walletUtxos) of
+        [] -> error "updateToken: no ada-only UTxO to fund the fold"
         (u : _) -> pure u
     pure (stateUtxo, reqUtxos, feeUtxo, pp)
 
@@ -378,6 +385,7 @@ buildProgram ::
     [[ProofStep]] ->
     SlotNo ->
     RegistryDuties ->
+    [(TxIn, TxOut ConwayEra)] ->
     Tx.TxBuild NoCtx Void ()
 buildProgram
     _cfg
@@ -392,7 +400,8 @@ buildProgram
     requestScript
     proofs
     upperSlot
-    duties = do
+    duties
+    refUtxos = do
         let stateRef = txInToRef stateIn
         let actions = map Update proofs
         _ <- Tx.spendScript stateIn (Modify actions)
@@ -425,9 +434,13 @@ buildProgram
             (rdMints duties)
         mapM_ Tx.output (rdOutputs duties)
         mapM_ Tx.requireSignature (rdSigners duties)
-        mapM_ Tx.attachScript (map cmScript (rdMints duties))
-        Tx.attachScript script
-        Tx.attachScript requestScript
+        if null refUtxos
+            then do
+                Tx.attachScript script
+                Tx.attachScript requestScript
+                mapM_ (Tx.attachScript . csScript) (rdSpends duties)
+                mapM_ (Tx.attachScript . cmScript) (rdMints duties)
+            else mapM_ (Tx.reference . fst) refUtxos
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
 
@@ -516,6 +529,12 @@ data RegistryContext = RegistryContext
     , rcCageScript :: Maybe (Script ConwayEra)
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
     , rcDatums :: [(ByteString, PLC.Data)]
+    , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
+    -- ^ Outputs carrying the fold's scripts as reference scripts. The
+    -- state validator alone is fifteen kilobytes, so a fold that
+    -- attaches it, the request script and a token policy does not fit
+    -- in a transaction; with references every purpose resolves through
+    -- them instead.
     }
 
 {- | The obligations this set of requests creates, or the reason they
@@ -557,7 +576,35 @@ registryDuties cfg pp st ctx reqUtxos =
                     )
         mints <- mintsFor edge key
         rest <- dutiesFor edge key dest destAddr destHash floorAda
-        pure (mints <> rest)
+        back <- approvalReturn req reqOut
+        pure (mints <> rest <> back)
+    {- An approval is not burned at the fold (D-APPROVAL), so it has to
+    land somewhere. It goes back to the owner who booked it, in an output
+    of its own: left to the balancer it would settle in the folder's
+    change, and the folder's wallet would stop being able to fund a fold
+    at all, because collateral must be ada-only. -}
+    approvalReturn :: OnChainRequest -> TxOut ConwayEra -> Either String RegistryDuties
+    approvalReturn req reqOut = do
+        let BuiltinByteString owner = requestOwner req
+            carried =
+                case reqOut ^. valueTxOutL of
+                    MaryValue _ (MultiAsset m) ->
+                        Map.filterWithKey
+                            (\p _ -> p == policyIdFromPin (cfgApplicationPolicy cfg))
+                            m
+        if Map.null carried
+            then pure mempty
+            else do
+                addr <- case addrFromBytes owner of
+                    Just a -> Right a
+                    Nothing -> Right (addrFromKeyHashBytes net owner)
+                -- The minimum depends on the serialised size, and the coin
+                -- field is part of it, so the empty probe understates it.
+                -- One more pass at the answer it gives converges.
+                let at c = mkBasicTxOut addr (MaryValue (Coin c) (MultiAsset carried))
+                    Coin first = getMinCoinTxOut @ConwayEra pp (at 0)
+                    Coin settled = getMinCoinTxOut @ConwayEra pp (at first)
+                pure mempty{rdOutputs = [at settled]}
     mintsFor edge key =
         fmap mconcat $
             mapM
@@ -690,3 +737,13 @@ registryDuties cfg pp st ctx reqUtxos =
                             <> " minimum"
                         )
     policyIdOf = policyIdFromPin
+
+{- | Can this output fund a fold? It must hold ada and nothing else,
+because it doubles as collateral, and it must not be one of the published
+reference outputs, because a transaction may not both spend an output and
+reference it.
+-}
+adaOnlyOutput :: TxOut ConwayEra -> Bool
+adaOnlyOutput out =
+    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
+        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
