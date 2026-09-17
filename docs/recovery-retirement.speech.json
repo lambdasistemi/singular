@@ -2,19 +2,19 @@
   "how-retirement-ends-a-name": [
     {
       "pause": 400,
-      "text": "Run the retirement rows on a real devnet with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. The diagram shows the lifecycle: an active record retires by controller or quorum into completion-only custody, and anyone completes it permissionlessly, burning the representative while the key stays occupied. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker. Both must fail after executing rows."
+      "text": "Ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, because a thief holding the everyday key and the holder are indistinguishable to the chain. The recovery route is the same proof recovery itself uses: reveal the preimage of the stored commitment and sign with that address's payment key. Run the ending rows against a real devnet node with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker, and both must fail after executing rows."
     }
   ],
   "limits-and-next-steps": [
     {
       "pause": 400,
-      "text": "The representative is a real NFT minted under the applied policy and burned exactly once at completion. Custody is spent only by permissionless completion; withdrawal without burn, burn without transition, mismatched pairings, and re-registration after Over all refuse, each with its reason named."
+      "text": "The active witness is a real token minted under the registry's pinned active policy by the fold, and burned exactly once at completion. Custody is spent only by permissionless completion; withdrawal without burn, burn without transition, mismatched pairings and re-registration after the name is terminal all refuse, each with its reason named. There is no quorum rotation, no takeover and no death oracle: the chain verifies authority, not death."
     }
   ],
   "what-the-retirement-run-observes": [
     {
       "pause": 400,
-      "text": "Each accepted route proves custody from the chain: the representative is observed at the custody script and the record is observed gone. The over name additionally recovers first, retires through its recovered controller, and completes with empty required signers and one fresh fee witness. Refusals name their script and purpose, including a stored quorum that duplicates one member to bind the distinctness the model demands. The replay is refused by the ledger itself."
+      "text": "Each accepted route proves custody from the chain: after a recovery-key ending and after a quorum ending, the active witness is observed at the custody script and the consumed record is observed gone. Completion is permissionless, with empty required signers and one fresh fee witness. The refusals are single-defect mutants of those accepts, and the first of them is the row this version deliberately retires: a transaction authorized by the current control key alone. A row one distinct signature short of the threshold is refused, and a stored quorum that names one member twice binds the distinctness the model demands. Maintenance carrying quorum signatures and no controller signature is refused on the controller signature: the quorum can end a name and cannot steer it."
     }
   ],
   "what-the-run-observes": [
@@ -32,11 +32,23 @@
   "who-this-is-for": [
     {
       "pause": 400,
-      "text": "This page is for a holder who lost the everyday control key but committed to a next controller in advance, and for a holder — or the registration quorum — who wants to end a name permanently into completion-only custody. You spend the record with the committed address or the quorum alone, and the chain hands over control or ends the name."
+      "text": "This page is for a holder of a live name who has lost the everyday control key and planned ahead by committing to a next controller in advance, and for a holder who wants to end a name permanently — together with the quorum fixed at registration that can end it without them. Ending a name needs the committed recovery key or that quorum; the everyday control key alone cannot do it. Either route moves the active witness into completion-only custody, a script with no withdrawal path, and neither route can be turned into a takeover or a payment redirection."
     }
   ],
   "_source": {
     "file": "recovery-retirement.md",
-    "sha256": "029021b75c21c2b8b0fecf80a7e2690cb7330aac9f7824d37f6fc0cdcd246bf2"
-  }
+    "sha256": "43bf1826f5a205978a03a2f09c8606232478aeb9e8ae0ba6b533c60fd6ba38ed"
+  },
+  "how-a-name-moves-in-the-registry": [
+    {
+      "pause": 400,
+      "text": "A name is one key in the registry's authenticated map, and the value of that key is a single byte: zero for absent, one for active, two for terminal. Seven requests move a key and nothing else does, and each one moves a witness token — the thing a reader actually looks at, never the root. The witnesses obey four laws. A witness moves only inside a fold. The fold decides how many and where, summing the witness column of the requests it consumed so the transaction's mint must equal that sum exactly. A terminal witness is its holder's to destroy, because saying a name is over costs the registry nothing. And the asset name is the registry key, so identity is the pair of policy and key. No application script runs at fold time: naming certifies an edge in advance by minting one approval whose name binds the edge, the key, the owner and the destination, and the cage recomputes that name from the request itself."
+    }
+  ],
+  "what-the-quorum-cannot-fix": [
+    {
+      "pause": 400,
+      "text": "Two weaknesses of the quorum are deliberate in this version, and stated so that anybody choosing one knows what they are choosing. The quorum is fixed for the life of the name: no action rewrites it after booking, so a member who loses their key or turns hostile is a permanent member, and the only route to a different quorum is to end the name and book it again. And the quorum can end the name while the controller is present: nothing checks that the holder is gone, so a threshold of members can end a live name at any moment and the holder's own key cannot stop them. The quorum is an ending authority, not a death oracle and not an inheritance mechanism."
+    }
+  ]
 }
