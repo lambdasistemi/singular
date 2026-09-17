@@ -95,3 +95,10 @@ Starts only after slice A's audit passes and its interface is frozen.
 are the gates' criteria, not checkboxes. Only the ticket gate, on the combined
 tree, may claim the repository green — slice A is green on its own gate and red
 on the simulator by construction, and is never pushed in that state.
+
+## Forward repair after merge
+
+- [ ] T156-27 — keep the registry rename rewrite extent aligned with its final
+      residual gate for tracked Lean and HTML files; permanent controls prove
+      both extensions are rewritten and both remain detectable when a residual
+      is seeded.
