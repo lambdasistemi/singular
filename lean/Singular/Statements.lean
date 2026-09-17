@@ -319,7 +319,33 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
       obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
       refine ⟨hguard, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
         htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · sorry
+  · rintro ⟨hb, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inl ⟨he, hb⟩)⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_insertActive s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `updateActive` — booking a witnessed name; the
 consumed absent token's value is paid to the refund address its custody datum
 records (R-ADA). -/
@@ -358,12 +384,42 @@ theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
       refine ⟨hguard.1, by simpa using List.find?_some hc,
         ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
         htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · sorry
+  · rintro ⟨hb, _, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have hpres : s.custody.any (·.key == r.key) = true := by
+      refine List.any_eq_true.mpr ⟨c, List.mem_of_find?_eq_some hc, ?_⟩
+      simpa using List.find?_some hc
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_updateActive s r he c hc
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `updateTerminal` — retirement completes here. -/
 theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
     (he : r.edge = .updateTerminal) :
     step s r = .ok t ↔
     trieGet s.trie r.key = .known .active ∧
+    s.held.any (fun x => x.key == r.key && x.kind == .active) = true ∧
     (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
       ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
       ap.destination = requestDestination r ∧
@@ -390,9 +446,35 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
       simp only [he] at hadm
       simp only [Bool.and_eq_true, beq_iff_eq] at hadm
       obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
-      refine ⟨hguard.1, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+      refine ⟨hguard.1, hguard.2, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
         htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · sorry
+  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩)))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_updateTerminal s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `deleteAbsent` — the witness retracts, the deposit
 returns to the inserter (R-ADA), and the key reads `Unknown` again. -/
 theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
@@ -429,13 +511,43 @@ theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
       refine ⟨hguard.1, by simpa using List.find?_some hc,
         ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
         htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · sorry
+  · rintro ⟨hb, _, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have hpres : s.custody.any (·.key == r.key) = true := by
+      refine List.any_eq_true.mpr ⟨c, List.mem_of_find?_eq_some hc, ?_⟩
+      simpa using List.find?_some hc
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨he, hb, hpres⟩))))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_deleteAbsent s r he c hc
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `deleteActive` — the key reads `Unknown` again and
 may be inserted again as the same key. -/
 theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
     (he : r.edge = .deleteActive) :
     step s r = .ok t ↔
     trieGet s.trie r.key = .known .active ∧
+    s.held.any (fun x => x.key == r.key && x.kind == .active) = true ∧
     (∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
       ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
       ap.destination = requestDestination r ∧
@@ -462,9 +574,35 @@ theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
       simp only [he] at hadm
       simp only [Bool.and_eq_true, beq_iff_eq] at hadm
       obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
-      refine ⟨hguard.1, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
+      refine ⟨hguard.1, hguard.2, ⟨ap, hap, hpol, by rw [hedge', he], hkey', hown', hdst', hasset'⟩,
         htrie, hcfg, hcust, hheld, hmint, hpaid⟩
-  · sorry
+  · rintro ⟨hb, hpres, ⟨ap, hap, hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust, hheld,
+      hmint, hpaid⟩
+    have hadm : admitsFor s.config r r.approval = true := by
+      unfold admitsFor
+      rw [hap]
+      simp only [he]
+      simp only [Bool.and_eq_true, beq_iff_eq]
+      refine ⟨⟨⟨⟨⟨hpol, ?_⟩, hkey⟩, hown⟩, hdst⟩, hasset⟩
+      rw [hedge, he]
+    have href : refusal s r = none :=
+      (refusal_none_iff s r).mpr (Or.inr ⟨ap, hap, hpol, hadm, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨he, hb, hpres⟩))))⟩)
+    rw [ok_of_refusal s r href]
+    obtain ⟨htrie', hcfg', hcust', hheld', hmint', hpaid'⟩ := applyEdge_deleteActive s r he
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [hcfg', hcfg]) (by rw [htrie', htrie])
+        (by rw [hcust', hcust]) (by rw [hheld', hheld]))
+      (by rw [hmint', hmint]) (by rw [hpaid', hpaid]))
 /-- Inversion of an admitted `witnessTerminal` — the read: the leaf, the root
 and custody are unchanged, one attestation is minted to the named output. -/
 theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
