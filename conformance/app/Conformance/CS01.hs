@@ -178,6 +178,7 @@ sampleRequest =
         , requestValue = OpInsert "cs01-value"
         , requestFee = 1000000
         , requestSubmittedAt = 1234567890
+        , requestDestination = ("cs01-address", "cs01-datum-hash")
         }
 
 sampleState :: OnChainTokenState
@@ -187,18 +188,20 @@ sampleState =
         , stateMaxFee = 1000000
         , stateProcessTime = 30000
         , stateRetractTime = 30000
-        , stateRepPolicy = BuiltinByteString (BS.replicate 28 8)
-        , stateConsumerPin = BuiltinByteString (BS.replicate 28 9)
+        , stateAppPolicy = BuiltinByteString (BS.replicate 28 6)
+        , stateActivePolicy = BuiltinByteString (BS.replicate 28 8)
+        , stateAbsentPolicy = BuiltinByteString (BS.replicate 28 9)
+        , stateTerminalPolicy = BuiltinByteString (BS.replicate 28 10)
         }
 
--- | Second round-trip sample varying the representative policy
--- (NOTE-046: the old stake None/Some variation has no subject —
--- the state carries no stake script. Single-variable difference
--- keeps the pair discriminating).
+-- | Second round-trip sample varying one pin (NOTE-046: the old stake
+-- None/Some variation has no subject — the state carries no stake
+-- script). A single-variable difference keeps the pair discriminating,
+-- and the pin it varies is the one #157 C7 renamed the active policy.
 sampleStateAltPolicy :: OnChainTokenState
 sampleStateAltPolicy =
     sampleState
-        { stateRepPolicy = BuiltinByteString (BS.replicate 28 7)
+        { stateActivePolicy = BuiltinByteString (BS.replicate 28 7)
         }
 
 sampleMigration :: Migration
@@ -276,15 +279,21 @@ checkOperation defs = do
     let ins = OpInsert "v1"
         del = OpDelete "v1"
         upd = OpUpdate "old" "new"
+        rd = OpRead "\x02"
     requireRoundTripReal ins "OpInsert"
     requireRoundTripReal del "OpDelete"
     requireRoundTripReal upd "OpUpdate"
+    requireRoundTripReal rd "OpRead"
     requireSchema defs "types/Operation" (toD ins) "OpInsert"
     requireSchema defs "types/Operation" (toD del) "OpDelete"
     requireSchema defs "types/Operation" (toD upd) "OpUpdate"
+    requireSchema defs "types/Operation" (toD rd) "OpRead"
     requireIndex (toD ins) 0 "OpInsert"
     requireIndex (toD del) 1 "OpDelete"
     requireIndex (toD upd) 2 "OpUpdate"
+    -- #157 C1: the read is APPENDED at index 3; the three published
+    -- indices do not move, and this row is what says so.
+    requireIndex (toD rd) 3 "OpRead"
 
 checkRequest :: Map.Map Text Schema -> IO ()
 checkRequest defs = do
@@ -304,12 +313,17 @@ checkCageDatum :: Map.Map Text Schema -> IO ()
 checkCageDatum defs = do
     let req = RequestDatum sampleRequest
         st = StateDatum sampleState
+        custody = AbsentCustody "cs01-key" "cs01-refund"
     requireRoundTripReal req "RequestDatum"
     requireRoundTripReal st "StateDatum"
+    requireRoundTripReal custody "AbsentCustody"
     requireSchema defs "types/CageDatum" (toD req) "RequestDatum"
     requireSchema defs "types/CageDatum" (toD st) "StateDatum"
+    requireSchema defs "types/CageDatum" (toD custody) "AbsentCustody"
     requireIndex (toD req) 0 "RequestDatum"
     requireIndex (toD st) 1 "StateDatum"
+    -- #157 D-CUSTODY: appended at index 2; 0 and 1 do not move.
+    requireIndex (toD custody) 2 "AbsentCustody"
 
 checkMintRedeemer :: Map.Map Text Schema -> IO ()
 checkMintRedeemer defs = do
@@ -456,25 +470,30 @@ instance RealFromData OnChainOperation where
     realFromData (Constr 0 [B v]) = Just (OpInsert v)
     realFromData (Constr 1 [B v]) = Just (OpDelete v)
     realFromData (Constr 2 [B o, B n]) = Just (OpUpdate o n)
+    realFromData (Constr 3 [B v]) = Just (OpRead v)
     realFromData _ = Nothing
 
 instance RealFromData OnChainRequest where
-    realFromData (Constr 0 [tok, B own, B k, val, I fee, I sub]) = do
-        tk <- realFromData tok :: Maybe OnChainTokenId
-        vv <- realFromData val :: Maybe OnChainOperation
-        Just
-            OnChainRequest
-                { requestToken = tk
-                , requestOwner = BuiltinByteString own
-                , requestKey = k
-                , requestValue = vv
-                , requestFee = fee
-                , requestSubmittedAt = sub
-                }
+    realFromData
+        (Constr 0 [tok, B own, B k, val, I fee, I sub, List [B da, B dh]]) = do
+            tk <- realFromData tok :: Maybe OnChainTokenId
+            vv <- realFromData val :: Maybe OnChainOperation
+            Just
+                OnChainRequest
+                    { requestToken = tk
+                    , requestOwner = BuiltinByteString own
+                    , requestKey = k
+                    , requestValue = vv
+                    , requestFee = fee
+                    , requestSubmittedAt = sub
+                    , -- #157 D-DEST: appended last, and a two-element list
+                      -- exactly as Aiken encodes a tuple.
+                      requestDestination = (da, dh)
+                    }
     realFromData _ = Nothing
 
 instance RealFromData OnChainTokenState where
-    realFromData (Constr 0 [r, I mf, I pt, I rt, B rp, B cp]) = do
+    realFromData (Constr 0 [r, I mf, I pt, I rt, B ap, B cp, B bp, B tp]) = do
         rt' <- realFromData r :: Maybe OnChainRoot
         Just
             OnChainTokenState
@@ -482,14 +501,17 @@ instance RealFromData OnChainTokenState where
                 , stateMaxFee = mf
                 , stateProcessTime = pt
                 , stateRetractTime = rt
-                , stateRepPolicy = BuiltinByteString rp
-                , stateConsumerPin = BuiltinByteString cp
+                , stateAppPolicy = BuiltinByteString ap
+                , stateActivePolicy = BuiltinByteString cp
+                , stateAbsentPolicy = BuiltinByteString bp
+                , stateTerminalPolicy = BuiltinByteString tp
                 }
     realFromData _ = Nothing
 
 instance RealFromData CageDatum where
     realFromData (Constr 0 [d]) = RequestDatum <$> realFromData d
     realFromData (Constr 1 [d]) = StateDatum <$> realFromData d
+    realFromData (Constr 2 [B k, B refund]) = Just (AbsentCustody k refund)
     realFromData _ = Nothing
 
 instance RealFromData Migration where

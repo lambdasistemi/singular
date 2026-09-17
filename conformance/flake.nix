@@ -83,6 +83,63 @@
         '';
 
         # -------------------------------------------------------
+        # The naming blueprint (#157 D-BOOT)
+        # -------------------------------------------------------
+        # The four pins the eight-field boot datum carries are DERIVED,
+        # never typed: the application policy is the naming application
+        # script's own hash, and the three token policies are
+        # `witness(kind, registry)` applied at kinds 0, 1 and 2. Both
+        # need the naming partition's compiled code, so the harness
+        # builds that partition's blueprint here and hands the runner its
+        # store path — the same way it already hands it the devnet
+        # genesis. No new flake input, so the copied lock still resolves.
+        namingSrc = ../naming-onchain;
+
+        aikenStdlib = pkgs.fetchFromGitHub {
+          owner = "aiken-lang";
+          repo = "stdlib";
+          rev = "v2.2.0";
+          hash = "sha256-BDaM+JdswlPasHsI03rLl4OR7u5HsbAd3/VFaoiDTh4=";
+        };
+
+        aikenFuzz = pkgs.fetchFromGitHub {
+          owner = "aiken-lang";
+          repo = "fuzz";
+          rev = "v2.1.1";
+          hash = "sha256-oMHBJ/rIPov/1vB9u608ofXQighRq7DLar+hGrOYqTw=";
+        };
+
+        aikenPackagesToml = pkgs.writeText "packages.toml" ''
+          [[packages]]
+          name = "aiken-lang/stdlib"
+          version = "v2.2.0"
+          source = "github"
+
+          [[packages]]
+          name = "aiken-lang/fuzz"
+          version = "v2.1.1"
+          source = "github"
+        '';
+
+        naming-blueprint = pkgs.stdenv.mkDerivation {
+          pname = "singular-naming-plutus-blueprint";
+          version = "0.1.0";
+          src = pkgs.lib.cleanSource namingSrc;
+          nativeBuildInputs = [ pkgs.aiken ];
+          buildPhase = ''
+            mkdir -p build/packages
+            cp ${aikenPackagesToml} build/packages/packages.toml
+            cp -r ${aikenStdlib} build/packages/aiken-lang-stdlib
+            cp -r ${aikenFuzz} build/packages/aiken-lang-fuzz
+            chmod -R u+w build/packages
+            aiken build --trace-filter user-defined --trace-level verbose
+          '';
+          installPhase = ''
+            cp plutus.json $out
+          '';
+        };
+
+        # -------------------------------------------------------
         # Coverage gate root (issue #80)
         # -------------------------------------------------------
         # Separate from `src` above so the coverage gate's inputs — the
@@ -167,13 +224,17 @@
           mkdir -p $out/bin
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
             --prefix PATH : ${cardanoNode}/bin \
-            --set-default E2E_GENESIS_DIR ${src}/offchain/e2e-test/genesis
+            --set-default E2E_GENESIS_DIR ${src}/offchain/e2e-test/genesis \
+            --set-default NAMING_BLUEPRINT ${naming-blueprint}
         '';
 
       in
       {
         packages = {
           inherit conformance;
+          # #157 D-BOOT: the naming partition's blueprint, so the four
+          # pins are derived rather than typed.
+          inherit naming-blueprint;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet run consumes the
           # locked identity instead of re-resolving a remote tag.

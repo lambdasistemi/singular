@@ -7,23 +7,22 @@ Module      : Singular.Registry.TxBuilder.Register
 Description : Consumer stake-credential registration transaction
 License     : Apache-2.0
 
-Registers the bound consumer's script stake credential so later
-@Modify@ batches can withdraw it (NOTE-020 item 2). A withdrawal from
-an unregistered credential fails on ledger for the wrong reason — this
-transaction establishes the registration/withdrawal route up front, once
-per cage, funded by the operator.
+Registers a script stake credential so a later withdrawal from it does
+not fail on ledger for the wrong reason.
 
-No registry owner, no stake bypass: registration only makes the pinned
-consumer's credential withdrawable; it authorizes nothing by itself.
+#157 C10: the consumer-registration builder is DELETED with the pinned
+consumer it registered. There is no consumer script to register and no
+mandatory withdrawal left to make possible, and a function that
+registers nothing would be a trap for the next reader. What remains is
+the generic credential registration the exhibit controls use directly;
+it authorizes nothing by itself.
 -}
 module Singular.Registry.TxBuilder.Register (
-    registerConsumerImpl,
     registerScriptImpl,
 ) where
 
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL, referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
@@ -40,12 +39,8 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Address (Addr)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
-import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Provider (Provider (..))
-import Singular.Registry.TxBuilder.Internal (
-    pinScriptHash,
- )
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -73,22 +68,6 @@ mkEvalTx prov tx = do
                 Right eu -> Right eu
             )
             r
-
-{- | Build the consumer-registration transaction: funds from the
-operator's wallet, one stake-registration certificate for the pinned
-consumer script hash, change back to the operator. Call once per cage
-after boot, before the first @Modify@.
--}
-registerConsumerImpl ::
-    CageConfig ->
-    Provider IO ->
-    Addr ->
-    IO ConwayTx
-registerConsumerImpl cfg prov fundAddr =
-    registerScriptImpl
-        prov
-        fundAddr
-        (pinScriptHash (SBS.fromShort (cfgConsumerPin cfg)))
 
 {- | Register any script stake credential (the consumer pin above is
 the common case; exhibit controls register further credentials the
