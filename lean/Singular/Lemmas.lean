@@ -127,6 +127,13 @@ theorem countHeld_filter_active_zero (held : List Holding) (a : Key) :
     (by intro x hx; simpa using hx)
   rw [hnone]; simp
 
+/-- Filtering never increases a census: the twice-filtered list is a sublist. -/
+theorem countHeld_filter_active_le (held : List Holding) (a : Key) (kk : TokenKind) (key : Key) :
+    ((held.filter fun x => !(x.key == a && x.kind == .active)).filter
+        fun x => x.key == key && x.kind == kk).length ≤
+      (held.filter fun x => x.key == key && x.kind == kk).length :=
+  (List.Sublist.filter _ (List.filter_sublist)).length_le
+
 /-- Consing a custody entry changes the census only at the consed key. -/
 theorem countCustody_cons (custody : List Custody) (c : Custody) (key : Key) :
     ((c :: custody).filter (·.key == key)).length =

@@ -73,7 +73,44 @@ theorem terminal_mint_only_by_read (s : RegistryState) (r : Request) (t : Result
     (hnew : kindCount t.state .terminal key = kindCount s .terminal key + 1) :
     r.edge = .witnessTerminal ∧ trieGet s.trie key = .known .terminal ∧
       s.config.root = rootOf s.trie := by
-  sorry
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨he, hr⟩ | ⟨_, _, _, _, hcase⟩
+  · have hrd := (readAt_true_iff s r.key).mp hr
+    obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_witnessTerminal s r he
+    have hkey : r.key = key := by
+      rcases Decidable.em (r.key = key) with hEq | hne
+      · exact hEq
+      · exfalso
+        simp only [kindCount, h4, countHeld_cons] at hnew
+        rw [if_neg (by simpa using fun hc => hne (by simpa using hc))] at hnew
+        omega
+    rw [hkey] at hrd
+    exact ⟨he, hrd.2, hrd.1⟩
+  · exfalso
+    rcases hcase with ⟨he, _⟩ | ⟨he, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertAbsent s r he
+      simp only [kindCount, h4] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertActive s r he
+      simp only [kindCount, h4, countHeld_cons] at hnew
+      rw [if_neg (by simp)] at hnew; omega
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateActive s r he c hfind
+      simp only [kindCount, h4, countHeld_cons] at hnew
+      rw [if_neg (by simp)] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateTerminal s r he
+      simp only [kindCount, h4] at hnew
+      have := countHeld_filter_active_le s.held r.key .terminal key
+      simp only [kindCount] at this
+      omega
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteAbsent s r he c hfind
+      simp only [kindCount, h4] at hnew; omega
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteActive s r he
+      simp only [kindCount, h4] at hnew
+      have := countHeld_filter_active_le s.held r.key .terminal key
+      simp only [kindCount] at this
+      omega
 
 /-- **S2** — a terminal attestation is valid in every later state: a terminal
 leaf admits no edge that moves it, and no edge burns an attestation. -/
@@ -166,7 +203,15 @@ theorem occupancy_free_key_succeeds (s : RegistryState) (h : Reachable s) (key :
     (ap : Approval) (hmatch : admitsFor s.config
       { edge := .insertActive, key := key, owner := owner, output := out } (some ap)) :
     ∃ t, step s { edge := .insertActive, key := key, owner := owner, output := out, approval := ap } = .ok t := by
-  sorry
+  have hpol : ap.policy = s.config.applicationPolicy := by
+    unfold admitsFor at hmatch
+    simp only at hmatch
+    simp only [Bool.and_eq_true, beq_iff_eq] at hmatch
+    exact hmatch.1.1.1.1.1
+  have href : refusal s (Request.mk .insertActive key owner 0 0 out (some ap) []) = none :=
+    (refusal_none_iff s _).mpr (Or.inr ⟨ap, rfl, hpol, hmatch, Or.inr (Or.inl ⟨rfl, hfree⟩)⟩)
+  exact ⟨applyEdge s (Request.mk .insertActive key owner 0 0 out (some ap) []),
+    ok_of_refusal s _ href⟩
 
 /-- **T1** — termination: on a terminal key every leaf-moving edge is refused,
 forever, so the key stays terminated and is never re-booked. Supersedes the
