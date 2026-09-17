@@ -74,6 +74,40 @@ inductive TokenKind where
   | active | absent | terminal
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
+/-! The derived `BEq` instances above are structural but not registered as
+lawful, so `==` on a *variable* of these types does not reduce to `=` in a
+proof. These instances supply that, and nothing else: they add no behaviour,
+only the fact that the decidable equality the model already derives agrees with
+propositional equality. -/
+
+instance : LawfulBEq State where
+  eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
+  rfl {a} := by cases a <;> rfl
+
+instance : LawfulBEq Leaf where
+  eq_of_beq {a b} h := by
+    cases a with
+    | unknown =>
+      cases b with
+      | unknown => rfl
+      | known y => cases y <;> exact absurd h (by decide)
+    | known x =>
+      cases b with
+      | unknown => cases x <;> exact absurd h (by decide)
+      | known y => cases x <;> cases y <;> first | rfl | exact absurd h (by decide)
+  rfl {a} := by
+    cases a with
+    | unknown => rfl
+    | known x => cases x <;> rfl
+
+instance : LawfulBEq Edge where
+  eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
+  rfl {a} := by cases a <;> rfl
+
+instance : LawfulBEq TokenKind where
+  eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
+  rfl {a} := by cases a <;> rfl
+
 /-- The R2 table: each edge's delta, read off the edge and nothing else. -/
 def delta (e : Edge) : List (TokenKind × Int) :=
   match e with

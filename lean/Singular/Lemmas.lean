@@ -99,6 +99,34 @@ theorem countHeld_filter_out (held : List Holding) (a : Key) (kk : TokenKind) (k
       exact show (x.key != a) = true by rw [hx1]; simpa using h)
   rw [hcongr]
 
+/-- Removing one key's active token preserves every other key's census. The
+predicate differs from `countHeld_filter_out`'s: this is the filter the
+`updateTerminal` and `deleteActive` rows actually apply. -/
+theorem countHeld_filter_active_out (held : List Holding) (a : Key) (kk : TokenKind) (key : Key)
+    (h : key ≠ a) :
+    ((held.filter fun x => !(x.key == a && x.kind == .active)).filter
+        fun x => x.key == key && x.kind == kk).length =
+      (held.filter fun x => x.key == key && x.kind == kk).length := by
+  have hcongr : (held.filter fun x => !(x.key == a && x.kind == .active)).filter
+      (fun x => x.key == key && x.kind == kk) =
+      held.filter (fun x => x.key == key && x.kind == kk) :=
+    filter_filter_congr _ _ _ (by
+      intro x hx
+      have hx1 : x.key = key := by
+        simpa using (Bool.and_eq_true_iff.mp hx).1
+      simp [hx1, h])
+  rw [hcongr]
+
+/-- Nothing of a key survives the active-token filter at that key. -/
+theorem countHeld_filter_active_zero (held : List Holding) (a : Key) :
+    ((held.filter fun x => !(x.key == a && x.kind == .active)).filter
+        fun x => x.key == a && x.kind == .active).length = 0 := by
+  have hnone := filter_filter_none (held : List Holding)
+    (fun x => !(x.key == a && x.kind == .active))
+    (fun x => x.key == a && x.kind == .active)
+    (by intro x hx; simpa using hx)
+  rw [hnone]; simp
+
 /-- Consing a custody entry changes the census only at the consed key. -/
 theorem countCustody_cons (custody : List Custody) (c : Custody) (key : Key) :
     ((c :: custody).filter (·.key == key)).length =
@@ -341,13 +369,437 @@ theorem refusal_none_iff (s : RegistryState) (a : Action) : refusal s a = none �
          s.custody.any (·.key == a.key) = true) ∨
        (a.edge = .deleteActive ∧ trieGet s.trie a.key = .known .active ∧
          s.held.any (fun x => x.key == a.key && x.kind == .active) = true))) := by
-  sorry
+  cases hb : trieGet s.trie a.key <;>
+    (try (rename_i st; cases st)) <;>
+    cases hE : a.edge <;> cases hap : a.approval <;>
+    cases hcu : s.custody.any (·.key == a.key) <;>
+    cases hac : s.held.any (fun x => x.key == a.key && x.kind == .active) <;>
+    simp +decide [refusal, hE, hb, hap, admitsFor, hcu, hac] <;>
+    grind
 
 /-- Consistency survives every accepted step. -/
 
 theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
     (hc : Consistent s) (h : step s a = .ok t) : Consistent t.state := by
-  sorry
+  obtain ⟨href, ht⟩ := step_eq_ok s a t h
+  subst ht
+  obtain ⟨hroot, hA1, hA2, hC1, hC2, hTerm, hCleaf, hCuniq⟩ := hc
+  rcases (refusal_none_iff s a).mp href with ⟨he, hr⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+  · -- witnessTerminal: only a terminal holding is added.
+    obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_witnessTerminal s a he
+    have hterm : trieGet s.trie a.key = .known .terminal := by
+      unfold readAt at hr
+      simp only [Bool.and_eq_true, beq_iff_eq] at hr
+      exact hr.1.2
+    refine ⟨by rw [hcfg, htrie]; exact hroot, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · intro key
+      rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+        simp only [kindCount, hheld, countHeld_cons]; simp, htrie]
+      exact hA1 key
+    · intro key
+      rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+        simp only [kindCount, hheld, countHeld_cons]; simp]
+      exact hA2 key
+    · intro key; rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+        simp [custodyCount, hcust], htrie]; exact hC1 key
+    · intro key; rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+        simp [custodyCount, hcust]]; exact hC2 key
+    · intro hh hmem hk
+      rw [htrie]
+      rw [hheld] at hmem
+      rcases List.mem_cons.mp hmem with rfl | hmem'
+      · exact hterm
+      · exact hTerm hh hmem' hk
+    · intro c hmem; rw [htrie]; rw [hcust] at hmem; exact hCleaf c hmem
+    · intro c₁ h1 c₂ h2 hk; rw [hcust] at h1 h2; exact hCuniq c₁ h1 c₂ h2 hk
+  · rcases hcase with ⟨he, hb⟩ | ⟨he, hb⟩ | ⟨he, hb, hcu⟩ | ⟨he, hb, hac⟩ |
+        ⟨he, hb, hcu⟩ | ⟨he, hb, hac⟩
+    · -- insertAbsent: Unknown → Known Absent, +1 absent token in cage custody
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_insertAbsent s a he
+      have hcz : custodyCount s a.key = 0 := by
+        have hne : custodyCount s a.key ≠ 1 := fun hEq => by
+          rw [(hC1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
+        have := hC2 a.key; omega
+      have hnotin : ∀ c ∈ s.custody, c.key ≠ a.key := by
+        intro c hmem hEq
+        have := hCleaf c hmem
+        rw [hEq, hb] at this; exact Leaf.noConfusion this
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+          simp [kindCount, hheld]]
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq]
+          constructor
+          · intro hEq; rw [(hA1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hA1 key
+      · intro key
+        rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+          simp [kindCount, hheld]]
+        exact hA2 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show custodyCount (applyEdge s a).state a.key = custodyCount s a.key + 1 from by
+              simp [custodyCount, hcust, countCustody_cons]]
+          simp [hcz]
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show custodyCount (applyEdge s a).state key = custodyCount s key from by
+              simp [custodyCount, hcust, countCustody_cons,
+                show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hC1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show custodyCount (applyEdge s a).state a.key = custodyCount s a.key + 1 from by
+            simp [custodyCount, hcust, countCustody_cons]]
+          omega
+        · rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+            simp [custodyCount, hcust, countCustody_cons,
+              show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        have hne : hh.key ≠ a.key := by
+          intro hEq
+          have := hTerm hh hmem hk
+          rw [hEq, hb] at this; exact Leaf.noConfusion this
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hTerm hh hmem hk
+      · intro c hmem
+        rw [hcust] at hmem
+        rcases List.mem_cons.mp hmem with rfl | hmem'
+        · rw [htrie, trieGet_set_eq]
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ (hnotin c hmem')]
+          exact hCleaf c hmem'
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        rcases List.mem_cons.mp h1 with rfl | h1' <;> rcases List.mem_cons.mp h2 with rfl | h2'
+        · rfl
+        · exact absurd hk.symm (hnotin c₂ h2')
+        · exact absurd hk (hnotin c₁ h1')
+        · exact hCuniq c₁ h1' c₂ h2' hk
+    · -- insertActive: Unknown → Known Active, +1 active token at the output
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_insertActive s a he
+      have haz : kindCount s .active a.key = 0 := by
+        have hne : kindCount s .active a.key ≠ 1 := fun hEq => by
+          rw [(hA1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
+        have := hA2 a.key; omega
+      have hnotin : ∀ c ∈ s.custody, c.key ≠ a.key := by
+        intro c hmem hEq
+        have := hCleaf c hmem
+        rw [hEq, hb] at this; exact Leaf.noConfusion this
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show kindCount (applyEdge s a).state .active a.key = kindCount s .active a.key + 1 from by
+              simp [kindCount, hheld, countHeld_cons]]
+          simp [haz]
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+              simp [kindCount, hheld, countHeld_cons,
+                show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hA1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show kindCount (applyEdge s a).state .active a.key = kindCount s .active a.key + 1 from by
+            simp [kindCount, hheld, countHeld_cons]]
+          omega
+        · rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+            simp [kindCount, hheld, countHeld_cons,
+              show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hA2 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq]
+          constructor
+          · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact Leaf.noConfusion hb
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        rcases List.mem_cons.mp hmem with rfl | hmem'
+        · exact absurd hk (by simp)
+        · have hne : hh.key ≠ a.key := by
+            intro hEq
+            have := hTerm hh hmem' hk
+            rw [hEq, hb] at this; exact Leaf.noConfusion this
+          rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+          exact hTerm hh hmem' hk
+      · intro c hmem
+        rw [hcust] at hmem
+        rw [htrie, trieGet_set_of_ne _ _ _ _ (hnotin c hmem)]
+        exact hCleaf c hmem
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        exact hCuniq c₁ h1 c₂ h2 hk
+    · -- updateActive: Known Absent → Known Active; the absent token is consumed
+      obtain ⟨c, hfind, hckey⟩ := custody_entry_of_present s a.key hcu
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_updateActive s a he c hfind
+      have haz : kindCount s .active a.key = 0 := by
+        have hne : kindCount s .active a.key ≠ 1 := fun hEq => by
+          rw [(hA1 a.key).mp hEq] at hb; exact absurd hb (by decide)
+        have := hA2 a.key; omega
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show kindCount (applyEdge s a).state .active a.key = kindCount s .active a.key + 1 from by
+              simp [kindCount, hheld, countHeld_cons]]
+          simp [haz]
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+              simp [kindCount, hheld, countHeld_cons,
+                show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hA1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show kindCount (applyEdge s a).state .active a.key = kindCount s .active a.key + 1 from by
+            simp [kindCount, hheld, countHeld_cons]]
+          omega
+        · rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+            simp [kindCount, hheld, countHeld_cons,
+              show (a.key == key) = false from by simpa using fun hh => hk hh.symm]]
+          exact hA2 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show custodyCount (applyEdge s a).state a.key = 0 from by
+              simp [custodyCount, hcust, countCustody_filter_zero]]
+          constructor
+          · intro hEq; exact absurd hEq (by decide)
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show custodyCount (applyEdge s a).state key = custodyCount s key from by
+              simpa [custodyCount, hcust] using countCustody_filter_out s.custody a.key key hk]
+          exact hC1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show custodyCount (applyEdge s a).state a.key = 0 from by
+            simp [custodyCount, hcust, countCustody_filter_zero]]
+          omega
+        · rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+            simpa [custodyCount, hcust] using countCustody_filter_out s.custody a.key key hk]
+          exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        rcases List.mem_cons.mp hmem with rfl | hmem'
+        · exact absurd hk (by simp)
+        · have hne : hh.key ≠ a.key := by
+            intro hEq
+            have := hTerm hh hmem' hk
+            rw [hEq, hb] at this; exact absurd this (by decide)
+          rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+          exact hTerm hh hmem' hk
+      · intro c' hmem
+        rw [hcust] at hmem
+        have hne : c'.key ≠ a.key := by
+          intro hEq
+          have := (List.mem_filter.mp hmem).2
+          rw [hEq] at this; simp at this
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hCleaf c' (List.mem_filter.mp hmem).1
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        exact hCuniq c₁ (List.mem_filter.mp h1).1 c₂ (List.mem_filter.mp h2).1 hk
+    · -- updateTerminal: the active token is consumed; custody is untouched
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_updateTerminal s a he
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show kindCount (applyEdge s a).state .active a.key = 0 from by
+              simpa [kindCount, hheld] using countHeld_filter_active_zero s.held a.key]
+          constructor
+          · intro hEq; exact absurd hEq (by decide)
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+              simpa [kindCount, hheld] using
+                countHeld_filter_active_out s.held a.key .active key hk]
+          exact hA1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show kindCount (applyEdge s a).state .active a.key = 0 from by
+            simpa [kindCount, hheld] using countHeld_filter_active_zero s.held a.key]
+          omega
+        · rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+            simpa [kindCount, hheld] using
+              countHeld_filter_active_out s.held a.key .active key hk]
+          exact hA2 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq]
+          constructor
+          · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact absurd hb (by decide)
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        have hmem' := (List.mem_filter.mp hmem).1
+        have hne : hh.key ≠ a.key := by
+          intro hEq
+          have := hTerm hh hmem' hk
+          rw [hEq, hb] at this; exact absurd this (by decide)
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hTerm hh hmem' hk
+      · intro c hmem
+        rw [hcust] at hmem
+        have hne : c.key ≠ a.key := by
+          intro hEq
+          have := hCleaf c hmem
+          rw [hEq, hb] at this; exact absurd this (by decide)
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hCleaf c hmem
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        exact hCuniq c₁ h1 c₂ h2 hk
+    · -- deleteAbsent: Known Absent → Unknown; the absent token is consumed
+      obtain ⟨c, hfind, hckey⟩ := custody_entry_of_present s a.key hcu
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_deleteAbsent s a he c hfind
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+          simp [kindCount, hheld]]
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq]
+          constructor
+          · intro hEq; rw [(hA1 a.key).mp hEq] at hb; exact absurd hb (by decide)
+          · intro hEq; exact Leaf.noConfusion hEq
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hA1 key
+      · intro key
+        rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+          simp [kindCount, hheld]]
+        exact hA2 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show custodyCount (applyEdge s a).state a.key = 0 from by
+              simp [custodyCount, hcust, countCustody_filter_zero]]
+          constructor
+          · intro hEq; exact absurd hEq (by decide)
+          · intro hEq; exact Leaf.noConfusion hEq
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show custodyCount (applyEdge s a).state key = custodyCount s key from by
+              simpa [custodyCount, hcust] using countCustody_filter_out s.custody a.key key hk]
+          exact hC1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show custodyCount (applyEdge s a).state a.key = 0 from by
+            simp [custodyCount, hcust, countCustody_filter_zero]]
+          omega
+        · rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+            simpa [custodyCount, hcust] using countCustody_filter_out s.custody a.key key hk]
+          exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        have hne : hh.key ≠ a.key := by
+          intro hEq
+          have := hTerm hh hmem hk
+          rw [hEq, hb] at this; exact absurd this (by decide)
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hTerm hh hmem hk
+      · intro c' hmem
+        rw [hcust] at hmem
+        have hne : c'.key ≠ a.key := by
+          intro hEq
+          have := (List.mem_filter.mp hmem).2
+          rw [hEq] at this; simp at this
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hCleaf c' (List.mem_filter.mp hmem).1
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        exact hCuniq c₁ (List.mem_filter.mp h1).1 c₂ (List.mem_filter.mp h2).1 hk
+    · -- deleteActive: the active token is consumed; custody is untouched
+      obtain ⟨htrie, hcfg, hcust, hheld, _, _⟩ := applyEdge_deleteActive s a he
+      refine ⟨by rw [hcfg, htrie], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq,
+            show kindCount (applyEdge s a).state .active a.key = 0 from by
+              simpa [kindCount, hheld] using countHeld_filter_active_zero s.held a.key]
+          constructor
+          · intro hEq; exact absurd hEq (by decide)
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+            show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+              simpa [kindCount, hheld] using
+                countHeld_filter_active_out s.held a.key .active key hk]
+          exact hA1 key
+      · intro key
+        by_cases hk : key = a.key
+        · subst hk
+          rw [show kindCount (applyEdge s a).state .active a.key = 0 from by
+            simpa [kindCount, hheld] using countHeld_filter_active_zero s.held a.key]
+          omega
+        · rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
+            simpa [kindCount, hheld] using
+              countHeld_filter_active_out s.held a.key .active key hk]
+          exact hA2 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        by_cases hk : key = a.key
+        · subst hk
+          rw [htrie, trieGet_set_eq]
+          constructor
+          · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact absurd hb (by decide)
+          · intro hEq; exact absurd hEq (by decide)
+        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
+      · intro key
+        rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
+          simp [custodyCount, hcust]]
+        exact hC2 key
+      · intro hh hmem hk
+        rw [hheld] at hmem
+        have hmem' := (List.mem_filter.mp hmem).1
+        have hne : hh.key ≠ a.key := by
+          intro hEq
+          have := hTerm hh hmem' hk
+          rw [hEq, hb] at this; exact absurd this (by decide)
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hTerm hh hmem' hk
+      · intro c hmem
+        rw [hcust] at hmem
+        have hne : c.key ≠ a.key := by
+          intro hEq
+          have := hCleaf c hmem
+          rw [hEq, hb] at this; exact absurd this (by decide)
+        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        exact hCleaf c hmem
+      · intro c₁ h1 c₂ h2 hk
+        rw [hcust] at h1 h2
+        exact hCuniq c₁ h1 c₂ h2 hk
 
 theorem reachable_consistent (s : RegistryState) (h : Reachable s) : Consistent s := by
   induction h with
