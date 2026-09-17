@@ -38,7 +38,7 @@ module Singular.Registry.Types (
     Neighbor (..),
 
     -- * State helpers
-    stateRepPolicyBytes,
+    stateActivePolicyBytes,
     stateAppPolicyBytes,
     stateAbsentPolicyBytes,
     stateTerminalPolicyBytes,
@@ -330,10 +330,10 @@ data Neighbor = Neighbor
 
 -- | The active-token policy as plain bytes (issue #77 E-001, renamed by
 -- #157 C7): unwraps the `BuiltinByteString` for hex comparison in
--- verifiers. The name is kept because this IS the field the
--- representative policy became.
-stateRepPolicyBytes :: OnChainTokenState -> ByteString
-stateRepPolicyBytes st = case stateActivePolicy st of
+-- verifiers. Named for the field it reads — no alias of the
+-- representative policy survives.
+stateActivePolicyBytes :: OnChainTokenState -> ByteString
+stateActivePolicyBytes st = case stateActivePolicy st of
     BuiltinByteString bs -> bs
 
 -- | The application policy as plain bytes (#157 C4).

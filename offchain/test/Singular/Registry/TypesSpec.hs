@@ -59,6 +59,7 @@ genOperation =
         [ OpInsert <$> genBS
         , OpDelete <$> genBS
         , OpUpdate <$> genBS <*> genBS
+        , OpRead <$> genBS
         ]
 
 genNeighbor :: Gen Neighbor
@@ -92,6 +93,11 @@ genRequest =
         <*> genOperation
         <*> genNonNeg
         <*> genNonNeg
+        <*> genDestination
+
+-- | The destination a request names (#157 D-DEST).
+genDestination :: Gen (BS.ByteString, BS.ByteString)
+genDestination = (,) <$> genBS <*> genBS
 
 genTokenState :: Gen OnChainTokenState
 genTokenState =
@@ -102,12 +108,15 @@ genTokenState =
         <*> genNonNeg
         <*> genBBS28
         <*> genBBS28
+        <*> genBBS28
+        <*> genBBS28
 
 genCageDatum :: Gen CageDatum
 genCageDatum =
     oneof
         [ RequestDatum <$> genRequest
         , StateDatum <$> genTokenState
+        , AbsentCustody <$> genBS <*> genBS
         ]
 
 genMigration :: Gen Migration
@@ -203,6 +212,11 @@ spec = do
             property $
                 forAll (OpUpdate <$> genBS <*> genBS) $
                     \x -> constrIndex x === 2
+        -- #157 C1: the read is APPENDED; 0, 1 and 2 do not move.
+        it "OpRead uses constructor 3" $
+            property $
+                forAll (OpRead <$> genBS) $
+                    \x -> constrIndex x === 3
 
     describe "Neighbor" $ do
         it "roundtrips via ToData/FromData" $
@@ -248,7 +262,7 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genTokenState roundtrips
-        it "encodes the ownerless six-field state in Aiken field order" $ do
+        it "encodes the eight-field state in Aiken field order" $ do
             let state =
                     OnChainTokenState
                         { stateRoot =
@@ -257,12 +271,18 @@ spec = do
                         , stateMaxFee = 2000000
                         , stateProcessTime = 300000
                         , stateRetractTime = 600000
-                        , stateRepPolicy =
+                        , stateAppPolicy =
+                            BuiltinByteString $
+                                BS.replicate 28 0xa9
+                        , stateActivePolicy =
                             BuiltinByteString $
                                 BS.replicate 28 0xaa
-                        , stateConsumerPin =
+                        , stateAbsentPolicy =
                             BuiltinByteString $
-                                BS.replicate 28 0xcc
+                                BS.replicate 28 0xb0
+                        , stateTerminalPolicy =
+                            BuiltinByteString $
+                                BS.replicate 28 0xc0
                         }
                 BuiltinData datum = toBuiltinData state
             datum
@@ -272,8 +292,10 @@ spec = do
                     , I 2000000
                     , I 300000
                     , I 600000
+                    , B $ BS.replicate 28 0xa9
                     , B $ BS.replicate 28 0xaa
-                    , B $ BS.replicate 28 0xcc
+                    , B $ BS.replicate 28 0xb0
+                    , B $ BS.replicate 28 0xc0
                     ]
 
     describe "CageDatum" $ do

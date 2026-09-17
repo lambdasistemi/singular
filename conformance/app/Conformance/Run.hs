@@ -108,7 +108,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (intercalate, isInfixOf, sortOn)
+import Data.List (intercalate, isInfixOf, sortOn, nub)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust)
 import Data.Ord (Down (..))
@@ -213,6 +213,8 @@ import MPF.Proof.Insertion (MPFProof (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyDataParam,
     applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
@@ -236,7 +238,6 @@ import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
     addrFromKeyHashBytes,
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -245,12 +246,10 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
-    deriveConsumerBinding,
     extractCageDatum,
     extractOwnerBytes,
     findRequestUtxos,
     findStateUtxo,
-    hookAccountAddress,
     mkCageScript,
     mkConsumerScript,
     mkInlineDatum,
@@ -265,9 +264,6 @@ import Singular.Registry.TxBuilder.Internal (
     toPlcData,
     trySlots,
     txInToRef,
- )
-import Singular.Registry.TxBuilder.Register (
-    registerScriptImpl,
  )
 import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
 import Singular.Registry.TxBuilder.Request (
@@ -287,7 +283,6 @@ import Singular.Registry.Types (
     ProofStep (..),
     RequestAction (Update),
     UpdateRedeemer (..),
-    stateConsumerPinBytes,
  )
 import Singular.Registry.Node (
     checkFunding,
@@ -419,6 +414,11 @@ data Control
       -- the deployed script, which it cannot. Proves the identity
       -- layers are genuinely distinct and the check can fail.
       UnappliedAddress
+    | -- | CS08 armed (#157 X1): the retired SIX-field state encoding
+      -- must decode the chain's datum, which it cannot — the datum has
+      -- eight fields now. Proves the round-trip row is reading the new
+      -- contract and would notice a regression to the old one.
+      LegacySixField
     deriving stock (Eq, Show)
 
 readControl :: IO Control
@@ -434,6 +434,7 @@ readControl = do
         Just "missing-witness" -> pure MissingWitness
         Just "naive-authenticator" -> pure NaiveAuthenticator
         Just "unapplied-address" -> pure UnappliedAddress
+        Just "legacy-six-field" -> pure LegacySixField
         Just other ->
             failWith
                 ( "unknown CONFORMANCE_CONTROL value " <> other
@@ -473,7 +474,7 @@ data Env = Env
     , envBlueprint :: String
     , envBlueprintPath :: FilePath
     , envReceiptsDir :: FilePath
-    , envCodes :: (SBS.ShortByteString, SBS.ShortByteString, SBS.ShortByteString)
+    , envCodes :: (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
     -- ^ (unapplied state bytes, unapplied request bytes, unapplied
     -- consumer bytes) from the session's blueprint: the row cages
     -- boot from these.
@@ -624,7 +625,7 @@ runRows rawRows receiptsDir = do
             ("rows in no partition: " <> unwords unpartitioned)
     mapM_ (runLocalRow blueprintPath receiptsDir base dirty) localRows
     unless (null devnetRows) $ do
-        (stateBytes, requestBytes, consumerBytes) <- loadCodes blueprintPath
+        (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
         devnetGenesis >>= mapM_ checkGenesis
         nodeVer <- readNodeVersion
         emit "node" nodeVer
@@ -637,7 +638,7 @@ runRows rawRows receiptsDir = do
                     runSession
                         caDevnet
                         control
-                        (stateBytes, requestBytes, consumerBytes)
+                        (stateBytes, requestBytes, namingCodes)
                         blueprintPath
                         nodeVer
                         base
@@ -650,7 +651,7 @@ runRows rawRows receiptsDir = do
                     runSession
                         cgDevnet
                         control
-                        (stateBytes, requestBytes, consumerBytes)
+                        (stateBytes, requestBytes, namingCodes)
                         blueprintPath
                         nodeVer
                         base
@@ -665,7 +666,7 @@ runRows rawRows receiptsDir = do
                         control
                         stateBytes
                         requestBytes
-                        consumerBytes
+                        namingCodes
                         nodeVer
                         base
                         dirty
@@ -711,47 +712,62 @@ requireEnv name = do
 
 loadCodes ::
     FilePath ->
-    IO (SBS.ShortByteString, SBS.ShortByteString, SBS.ShortByteString)
+    IO (SBS.ShortByteString, SBS.ShortByteString, NamingCodes)
 loadCodes path = do
     ebp <- loadBlueprint path
     bp <- case ebp of
         Left err -> failWith ("blueprint does not parse: " <> err)
         Right bp -> pure bp
+    codes <- loadNamingCodes
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
-         , extractCompiledCode "consumer.consumer" bp
          ) of
-        (Just stateBytes, Just requestBytes, Just consumerBytes) -> do
-            checkConsumerPin consumerBytes
-            pure (stateBytes, requestBytes, consumerBytes)
+        (Just stateBytes, Just requestBytes) ->
+            pure (stateBytes, requestBytes, codes)
         _ ->
             failWith
-                "blueprint has no state.state/request.request/consumer.consumer code \
-                \(every Modify withdraws the pinned consumer)"
+                "blueprint has no state.state/request.request code"
 
--- | Cross-check the session consumer against the pinned manifest
--- (NOTE-049): the pin in the boot datum and the hook witness every
--- consuming Modify attaches must be the candidate's real consumer —
--- a zero pin or empty script would compile and then fail closed in
--- the TxBuilder guards, so this refuses at load, not at first fold.
-checkConsumerPin :: SBS.ShortByteString -> IO ()
-checkConsumerPin consumerBytes = do
-    let hHex = hex (scriptHashBytes (computeScriptHash consumerBytes))
-    manifest <- readScriptManifest
-    case pinsUnder "consumer.consumer" manifest of
-        [] ->
+{- | The naming partition's compiled code (#157 D-BOOT). The four pins
+the eight-field boot datum carries are DERIVED from it for the registry
+identity each boot creates — never typed, never a placeholder — so the
+harness needs the code itself, not a recorded hash: the application
+validator declares no parameters, but `witness(kind, registry)` declares
+two, and an applied hash cannot be recovered from an unapplied one.
+-}
+data NamingCodes = NamingCodes
+    { ncApplication :: SBS.ShortByteString
+    , ncWitness :: SBS.ShortByteString
+    }
+
+loadNamingCodes :: IO NamingCodes
+loadNamingCodes = do
+    path <- requireEnv "NAMING_BLUEPRINT"
+    ebp <- loadBlueprint path
+    bp <- case ebp of
+        Left err -> failWith ("naming blueprint does not parse: " <> err)
+        Right bp -> pure bp
+    case ( extractCompiledCode "application.application" bp
+         , extractCompiledCode "witness.witness" bp
+         ) of
+        (Just appCode, Just witnessCode) -> do
+            checkNamingPins appCode witnessCode
+            pure NamingCodes { ncApplication = appCode, ncWitness = witnessCode }
+        _ ->
             failWith
-                "the script manifest pins no consumer.consumer entry"
-        pins ->
-            require
-                ( "the consumer pin disagrees with this run's \
-                  \blueprint: "
-                    <> show pins
-                    <> " vs 0x"
-                    <> hHex
-                )
-                (all ((== T.pack hHex) . fst) pins)
-    emit "consumer" ("pinned consumer 0x" <> hHex)
+                "naming blueprint has no application.application/witness.witness \
+                \code (the four pins are derived from them)"
+
+{- | Cross-check this run's naming code against the naming partition's
+committed manifest, at load rather than at first boot: a derivation from
+the wrong code would produce four plausible-looking ids and fail much
+later, somewhere else.
+-}
+checkNamingPins :: SBS.ShortByteString -> SBS.ShortByteString -> IO ()
+checkNamingPins appCode witnessCode = do
+    let appHex = hex (scriptHashBytes (computeScriptHash appCode))
+        witnessHex = hex (scriptHashBytes (computeScriptHash witnessCode))
+    emit "naming" ("application 0x" <> appHex <> " witness 0x" <> witnessHex)
 
 {- | The wallet every actor of this run is funded from. On the factory
 devnet it is the genesis UTxO key, as it always was; in external-node
@@ -851,40 +867,10 @@ bracketTmpDir action = do
 -- Session
 -- ---------------------------------------------------------
 
--- | Register the session consumer's stake credential (NOTE-065
--- follow-up): hook withdrawals refuse with
--- WithdrawalsNotInRewardsCERTS on an unregistered credential. Once
--- per fresh devnet, before any row folds; the credential persists
--- for the session. A refusal here fails the session (no folds can
--- run without it).
-registerSessionConsumer :: Cage.Provider IO -> Submitter IO -> SBS.ShortByteString -> IO ()
-registerSessionConsumer prov submit consumerBytes = do
-    let credHash = computeScriptHash consumerBytes
-        credHex = hex (scriptHashBytes credHash)
-    unsignedReg <-
-        registerScriptImpl prov genesisAddr credHash
-    result <- submitTx submit (addKeyWitness genesisSignKey unsignedReg)
-    case result of
-        Submitted txid ->
-            awaitTx
-                >> emit
-                    "consumer"
-                    ( "consumer stake credential 0x"
-                        <> credHex
-                        <> " registered tx="
-                        <> txInHex txid
-                        <> "; hook withdrawals are live"
-                    )
-        Rejected reason ->
-            failWith
-                ( "consumer-registration rejected: "
-                    <> T.unpack (TE.decodeUtf8Lenient reason)
-                )
-
 runSession ::
     [String] ->
     Control ->
-    (SBS.ShortByteString, SBS.ShortByteString, SBS.ShortByteString) ->
+    (SBS.ShortByteString, SBS.ShortByteString, NamingCodes) ->
     FilePath ->
     String ->
     String ->
@@ -895,7 +881,7 @@ runSession ::
 runSession
     rows
     control
-    codes@(stateBytes, requestBytes, consumerBytes)
+    codes@(stateBytes, requestBytes, namingCodes)
     blueprintPath
     nodeVer
     base
@@ -923,7 +909,6 @@ runSession
         tm <- mkPureTrieManager
         mirror <- newMirror
         _ <- Cage.queryProtocolParams prov
-        registerSessionConsumer prov submit consumerBytes
         let caMode = any (`elem` caRows) rows
             legacyCg = any (`elem` cgRows) rows
         keys <- newIORef (False, "")
@@ -941,7 +926,7 @@ runSession
                     -- No cage is booted here: the boot IS row CA01.
                     (seedTxIn, _) <- designateSplit prov submit "canonical"
                     let seedRef = txInToRef seedTxIn
-                        cfg = cageCfg stateBytes requestBytes consumerBytes seedRef
+                        cfg = cageCfg stateBytes requestBytes namingCodes seedRef
                     caTid <- newIORef Nothing
                     caSnap <- newIORef Nothing
                     caBootTx <- newIORef Nothing
@@ -1007,7 +992,7 @@ runSession
                             -- the record's shape.
                             (seedTxIn, _) <- largestWalletUtxo prov
                             let placeholderCfg =
-                                    cageCfg stateBytes requestBytes consumerBytes (txInToRef seedTxIn)
+                                    cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
                             pure
                                 ( Env
                                     { envCfg = placeholderCfg
@@ -1039,7 +1024,7 @@ runSession
                                 )
                         else do
                             (seedTxIn, _) <- largestWalletUtxo prov
-                            let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedTxIn)
+                            let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
                                 marker' = case control of
                                     WrongReason -> wrongReasonMarker
                                     _ -> hex (scriptHashBytes (cfgScriptHash cfg))
@@ -2439,14 +2424,14 @@ ensureRowCage env name processMs retractMs = do
                 | otherwise -> throwIO e
     bootOnce :: IO RowCage
     bootOnce = do
-        let (stateBytes, requestBytes, consumerBytes) = envCodes env
+        let (stateBytes, requestBytes, namingCodes) = envCodes env
             prov = envProv env
         (seedTxIn, _) <- largestWalletUtxo prov
         let cfg =
                 cageCfgWith
                     stateBytes
                     requestBytes
-                    consumerBytes
+                    namingCodes
                     (txInToRef seedTxIn)
                     processMs
                     retractMs
@@ -2756,14 +2741,6 @@ assembleFoldSpec env fs = do
     oldState <- case extractCageDatum (snd (fsState fs)) of
         Just (StateDatum s) -> pure s
         _ -> failWith "hand-build: state output has no StateDatum"
-    -- Pinned-hook account (NOTE-057/108): the consumer withdrawal is
-    -- mandatory on every consuming Modify — a refusal obtained
-    -- without it is a wrong-reason result. The pin comes from the
-    -- SPENT state (what the validator checks), never the config.
-    let consumerAcct =
-            hookAccountAddress
-                (network (fsCfg fs))
-                (stateConsumerPinBytes oldState)
     -- A near-now upper bound: the tx is submitted immediately after
     -- assembly, and a slot 30s+ ahead lands past the node's ledger
     -- translation horizon (epoch-safe-zone) and fails phase 1.
@@ -2809,7 +2786,7 @@ assembleFoldSpec env fs = do
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
     changeOut <- makeChange pp funder feeAmt refunds
-    redeemers <- makeRedeemers fs funder consumerAcct
+    redeemers <- makeRedeemers fs funder
     scripts <- makeScripts fs
     let signers = case fsSigners fs of
             Nothing -> harnessSigners
@@ -2834,15 +2811,15 @@ assembleFoldSpec env fs = do
                     .~ ValidityInterval
                         (maybe SNothing SJust (fsLower fs))
                         (SJust upperSlot)
+        -- #157 C10: no consumer withdrawal rides a fold any more; only a
+        -- row that asks for its own stake withdrawal carries one.
         withWd =
             body & withdrawalsTxBodyL
                 .~ Withdrawals
                     ( Map.fromList
-                        ( (consumerAcct, Coin 0)
-                            : [ (stakeAcct, Coin 0)
-                              | Just (stakeAcct, _) <- [fsWithdrawal fs]
-                              ]
-                        )
+                        [ (stakeAcct, Coin 0)
+                        | Just (stakeAcct, _) <- [fsWithdrawal fs]
+                        ]
                     )
     pure $
         mkBasicTx withWd
@@ -2896,8 +2873,8 @@ assembleFoldSpec env fs = do
             ("hand-build: change under min-ADA: " <> show change)
             (change >= minAda)
         pure out
-    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> AccountAddress -> IO (Redeemers ConwayEra)
-    makeRedeemers fs' funder' consumerAcct' = do
+    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> IO (Redeemers ConwayEra)
+    makeRedeemers fs' funder' = do
         let inputs =
                 Set.fromList
                     ( fst (fsState fs') : fst funder' : map fst (fsReqs fs')
@@ -2911,18 +2888,13 @@ assembleFoldSpec env fs = do
                   )
                 | (reqIn, _) <- fsReqs fs'
                 ]
+            -- #157 C10: the consumer rewarding purpose is gone; a row that
+            -- asks for its own stake withdrawal is the only one left.
             hookPairs = case fsWithdrawal fs' of
-                Nothing ->
-                    [ ( ConwayRewarding (AsIx 0)
-                      , (toLedgerData Hook, units)
-                      )
+                Nothing -> []
+                Just _ ->
+                    [ (ConwayRewarding (AsIx 0), (toLedgerData (0 :: Integer), units))
                     ]
-                Just (stakeAcct, _) ->
-                    let (cIx, sIx) =
-                            if consumerAcct' < stakeAcct then (0, 1) else (1, 0)
-                     in [ (ConwayRewarding (AsIx cIx), (toLedgerData Hook, units))
-                        , (ConwayRewarding (AsIx sIx), (toLedgerData (0 :: Integer), units))
-                        ]
             pairs =
                 ( statePurpose
                 , (toLedgerData (Modify (fsActions fs')), units)
@@ -3149,6 +3121,9 @@ speculativeApplyAll env _cage tid reqs =
                 _ <- CageTrie.delete trie key
                 _ <- CageTrie.insert trie key v
                 pure (fromMaybe [] m)
+            -- #157 C3: a read proves its key and leaves it alone.
+            OpRead _ ->
+                fromMaybe [] <$> CageTrie.getProofSteps trie key
         pure steps
 
 -- | Commit a landed op to a row cage's trie.
@@ -3166,6 +3141,8 @@ rowCommit env cage key op = do
             _ <- CageTrie.delete t key
             _ <- CageTrie.insert t key n
             pure ()
+        -- #157 C3: a read commits nothing.
+        OpRead _ -> pure ()
 
 {- | Submit a padded hand-built request: a plain payment with an
 inline 'RequestDatum' at the request address (creating an output
@@ -4216,7 +4193,9 @@ runCG19RejectedFloor env cage tid = do
     -- attribution plus structured fields; raw node rejection stays
     -- in runtime evidence. Readability-bounded like row receipts.
     base <- requireBase
-    let hookHex = hex (SBS.fromShort (cfgConsumerPin cfg))
+    -- #157 C10: the receipt records the application policy the registry
+    -- pins, not the consumer hash it no longer has.
+    let hookHex = hex (SBS.fromShort (cfgApplicationPolicy cfg))
         underHashes = map T.pack (refusalScriptHashes underReason)
         orderedReqs =
             [ object
@@ -4312,6 +4291,10 @@ rowRequestAndFold env cage label key _val op = do
             requestDeleteImpl cfg prov (defaultTip cfg) tid key v genesisAddr
         OpUpdate o n ->
             requestUpdateImpl cfg prov (defaultTip cfg) tid key o n genesisAddr
+        -- #157: no CG row builds a read request; the registry-only
+        -- harness has no terminal leaf to read.
+        OpRead _ ->
+            failWith "no CG row builds a read request"
     _ <- submitWithGenesis (envSubmit env) unsignedReq
     unsignedFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
     state@(stateIn, _) <- cageStateUtxo env cage
@@ -4612,6 +4595,8 @@ validProofs env reqUtxos =
                 mSteps <- CageTrie.getProofSteps trie cgKey
                 _ <- CageTrie.delete trie cgKey
                 pure (fromMaybe [] mSteps)
+            -- #157 C3: a read proves its key and leaves it alone.
+            OpRead _ -> fromMaybe [] <$> CageTrie.getProofSteps trie cgKey
             OpUpdate _ v -> do
                 mSteps <- CageTrie.getProofSteps trie cgKey
                 _ <- CageTrie.delete trie cgKey
@@ -4645,15 +4630,11 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     mapM_ (requireAdaOnly . snd) reqUtxos
     oldState <- extractState stateOut
     upperSlot <- foldUpperSlot prov oldState (map snd reqUtxos)
-    -- Pinned-hook account (NOTE-057/108): mandatory consumer
-    -- withdrawal, same Update.hs shape as the fog builder.
-    let consumerAcct =
-            hookAccountAddress
-                (network (envCfg env))
-                (stateConsumerPinBytes oldState)
-    assembleBody pp funder oldState upperSlot fee consumerAcct
+    -- #157 C10: there is no pinned consumer and no mandatory
+    -- withdrawal left to attach.
+    assembleBody pp funder oldState upperSlot fee
   where
-    assembleBody pp funder oldState upperSlot feeAmt consumerAcct = do
+    assembleBody pp funder oldState upperSlot feeAmt = do
         let tipAmount = stateMaxFee oldState
             nReqs = toInteger (length reqUtxos)
             perReqFee = feeAmt `div` nReqs
@@ -4684,8 +4665,6 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
                     & scriptIntegrityHashTxBodyL .~ integrity
                     & vldtTxBodyL
                         .~ ValidityInterval SNothing (SJust upperSlot)
-                    & withdrawalsTxBodyL
-                        .~ Withdrawals (Map.singleton consumerAcct (Coin 0))
         pure $
             mkBasicTx body
                 & witsTxL . scriptTxWitsL .~ scripts
@@ -4911,6 +4890,9 @@ requestAndFold env label op = do
             requestDeleteImpl cfg prov tip tid cgKey v genesisAddr
         OpUpdate o n ->
             requestUpdateImpl cfg prov tip tid cgKey o n genesisAddr
+        -- #157: no CG row builds a read request; the registry-only
+        -- harness has no terminal leaf to read.
+        OpRead _ -> failWith "no CG row builds a read request"
     _ <- submitWithGenesis (envSubmit env) unsignedReq
     unsignedFold <-
         updateTokenImpl cfg prov (envTm env) tid genesisAddr
@@ -4931,6 +4913,8 @@ trie in step or the next fold proves against a stale root.
 commitTm :: Env -> OnChainOperation -> IO ()
 commitTm env op =
     withTrie (envTm env) (envTid env) $ \t -> case op of
+        -- #157 C3: a read commits nothing.
+        OpRead _ -> pure ()
         OpInsert v -> do
             _ <- CageTrie.insert t cgKey v
             pure ()
@@ -5099,30 +5083,44 @@ recordHold env row holdId leanSays consumerSays = do
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes consumerBytes seed =
-    cageCfgWith stateBytes requestBytes consumerBytes seed 30_000 30_000
+cageCfg stateBytes requestBytes namingCodes seed =
+    cageCfgWith stateBytes requestBytes namingCodes seed 30_000 30_000
 
 -- | 'cageCfg' with the row-owned phase windows.
 cageCfgWith ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     OnChainTxOutRef ->
     -- | process window (ms)
     Integer ->
     -- | retract window (ms)
     Integer ->
     CageConfig
-cageCfgWith stateBytes requestBytes consumerBytes seed processMs retractMs =
+cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
     -- Zero-parameter state (NOTE-060): the current state() validator
     -- takes no parameters — deploy its bytes directly. Applying a
     -- previous-policies list supplies List[] where the runtime
     -- expects a constructor (unConstrData failure at boot).
     let cfgScriptHashValue = computeScriptHash stateBytes
-        binding = deriveConsumerBinding consumerBytes
+        -- #157 D-BOOT: the four pins for THIS registry identity —
+        -- the state policy plus the token name the seed determines —
+        -- derived from the naming partition's own compiled code.
+        registryId =
+            scriptHashBytes cfgScriptHashValue <> deriveAssetName seed
+        witnessPolicy kind =
+            SBS.toShort
+                ( scriptHashBytes
+                    ( computeScriptHash
+                        ( applyBytesParam
+                            registryId
+                            (applyDataParam (PLC.I kind) (ncWitness namingCodes))
+                        )
+                    )
+                )
      in CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes
@@ -5139,9 +5137,13 @@ cageCfgWith stateBytes requestBytes consumerBytes seed processMs retractMs =
             -- (NOTE-049): state.validModify always requires the
             -- exact pinned withdrawal, and the builders refuse an
             -- empty script — zeros would fail closed at first fold.
-            , cfgRepPolicy = SBS.pack (replicate 28 0)
-            , cfgConsumerPin = cbPin binding
-            , cfgConsumerScript = cbScriptBytes binding
+            , cfgApplicationPolicy =
+                SBS.toShort
+                    (scriptHashBytes (computeScriptHash (ncApplication namingCodes)))
+            , cfgAbsentPolicy = witnessPolicy 0
+            , cfgActivePolicy = witnessPolicy 1
+            , cfgTerminalPolicy = witnessPolicy 2
+            , cfgConsumerScript = SBS.empty
             , network = Testnet
             }
 
@@ -5176,14 +5178,14 @@ runCSSession ::
     Control ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
     FilePath ->
     FilePath ->
     IO ()
-runCSSession rows control stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir sock = do
+runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir sock = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     nodeThread <-
@@ -5210,8 +5212,7 @@ runCSSession rows control stateBytes requestBytes consumerBytes nodeVer base dir
                     (scriptHashBytes (computeScriptHash requestBytes))
     _ <- Cage.queryProtocolParams prov
     checkFunding prov funderAddr defaultFundingFloor
-    registerSessionConsumer prov submit consumerBytes
-    mapM_ (runCSRow prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr) rows
+    mapM_ (runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr) rows
     cancel nodeThread
     emit
         "complete"
@@ -5256,7 +5257,7 @@ runCSRow ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5265,13 +5266,13 @@ runCSRow ::
     String ->
     String ->
     IO ()
-runCSRow prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
-    "CS02" -> runCS02 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS03" -> runCS03 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS04" -> runCS04 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS05" -> runCS05 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS07" -> runCS07 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
-    "CS08" -> runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr
+runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr row = case row of
+    "CS02" -> runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS03" -> runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS04" -> runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS05" -> runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS07" -> runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
+    "CS08" -> runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr
     _ -> failWith ("CS row not yet implemented: " <> row)
 
 -- | CS02: datum bytes constructed in Haskell and submitted are read
@@ -5281,7 +5282,7 @@ runCS02 ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5289,9 +5290,9 @@ runCS02 ::
     Control ->
     String ->
     IO ()
-runCS02 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     (seedTxIn, _) <- largestWalletUtxo prov
-    let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedTxIn)
+    let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     let submittedStateDatum = findStateDatum unsignedBoot
     (mem, cpu) <- measureUnitsProv prov unsignedBoot
@@ -5455,15 +5456,20 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptVenue = venue
             }
 
--- | CS08: OnChainTokenState's actual six fields survive the chain
--- round trip, with the representative policy varied Base versus
--- AltRepPolicy (NOTE-046: no stake script exists to vary).
+{- | CS08 (#157 X1): the eight fields of `OnChainTokenState` survive a
+chain round trip, with the ACTIVE policy varied Base versus Alt
+(NOTE-046: no stake script exists to vary; #157 C7 renamed the field
+this row always varied). The four pinned policies are the ones D-BOOT
+derives — the application policy from the naming application script and
+the three token policies from `witness(kind, registry)` applied — so
+this row is also what says the derivation reaches the chain intact.
+-}
 runCS08 ::
     Cage.Provider IO ->
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5471,21 +5477,21 @@ runCS08 ::
     Control ->
     String ->
     IO ()
-runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
-    -- Base cage (registry-only zero representative policy; REAL pinned
-    -- consumer from the session binding).
+runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
+    -- Base cage: all four pins derived for its own registry identity.
     (seedBase, _) <- largestWalletUtxo prov
-    let cfgBase = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedBase)
+    let cfgBase = cageCfg stateBytes requestBytes namingCodes (txInToRef seedBase)
     unsignedBootBase <- bootTokenImpl cfgBase prov genesisAddr
     (mem1, cpu1) <- measureUnitsProv prov unsignedBootBase
     signedBootBase <- submitWithGenesis submit unsignedBootBase
     tidBase <- extractTokenId cfgBase signedBootBase
     observedBase <- readChainState cfgBase prov tidBase
     expectedBase <- expectedStateFromTx unsignedBootBase
-    -- AltRepPolicy cage (representative policy varied, pin held).
+    -- Alt cage: one variable moves, the active policy, so the pair
+    -- discriminates on exactly that field.
     (seedAlt, _) <- largestWalletUtxo prov
-    let cfgAlt0 = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedAlt)
-        cfgAlt = cfgAlt0 { cfgRepPolicy = SBS.pack (replicate 28 7) }
+    let cfgAlt0 = cageCfg stateBytes requestBytes namingCodes (txInToRef seedAlt)
+        cfgAlt = cfgAlt0{cfgActivePolicy = SBS.pack (replicate 28 7)}
     unsignedBootAlt <- bootTokenImpl cfgAlt prov genesisAddr
     (mem2, cpu2) <- measureUnitsProv prov unsignedBootAlt
     signedBootAlt <- submitWithGenesis submit unsignedBootAlt
@@ -5496,8 +5502,19 @@ runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
         FalseDatum -> do
             emit "control" "false-datum armed: demanding Base==Alt"
             require
-                ("CS08: Base and Alt states unexpectedly match (control)")
+                "CS08: Base and Alt states unexpectedly match (control)"
                 (observedBase == observedAlt)
+        LegacySixField -> do
+            emit
+                "control"
+                "CS08 ARMED (legacy-six-field): demanding the retired \
+                \six-field state encoding of the chain's own datum"
+            require
+                ( "CS08: the chain state encodes "
+                    <> show (stateDatumArity observedBase)
+                    <> " fields, not the six the retired contract had"
+                )
+                (stateDatumArity observedBase == 6)
         _ -> do
             require
                 ("CS08: Base state fields differ: expected " <> show expectedBase <> " vs chain " <> show observedBase)
@@ -5505,7 +5522,7 @@ runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
             require
                 ("CS08: Alt state fields differ: expected " <> show expectedAlt <> " vs chain " <> show observedAlt)
                 (expectedAlt == observedAlt)
-            -- All six fields each, explicitly, against the boot tx.
+            -- The eight fields, each explicitly, against the boot tx.
             require "CS08: Base root mismatch" (stateRoot observedBase == stateRoot expectedBase)
             require "CS08: Alt root mismatch" (stateRoot observedAlt == stateRoot expectedAlt)
             require "CS08: Base tip mismatch" (stateMaxFee observedBase == stateMaxFee expectedBase)
@@ -5514,19 +5531,58 @@ runCS08 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
             require "CS08: Alt processTime mismatch" (stateProcessTime observedAlt == stateProcessTime expectedAlt)
             require "CS08: Base retractTime mismatch" (stateRetractTime observedBase == stateRetractTime expectedBase)
             require "CS08: Alt retractTime mismatch" (stateRetractTime observedAlt == stateRetractTime expectedAlt)
-            require "CS08: Base repPolicy mismatch" (stateRepPolicy observedBase == stateRepPolicy expectedBase)
-            require "CS08: Alt repPolicy mismatch" (stateRepPolicy observedAlt == stateRepPolicy expectedAlt)
-            require "CS08: Base consumerPin mismatch" (stateConsumerPin observedBase == stateConsumerPin expectedBase)
-            require "CS08: Alt consumerPin mismatch" (stateConsumerPin observedAlt == stateConsumerPin expectedAlt)
-            -- The varied field discriminates; the held field is stable.
-            require "CS08: Base and Alt repPolicy unexpectedly match" (stateRepPolicy observedBase /= stateRepPolicy observedAlt)
-            require "CS08: consumerPin moved between cages" (stateConsumerPin observedBase == stateConsumerPin observedAlt)
+            require "CS08: Base applicationPolicy mismatch" (stateAppPolicy observedBase == stateAppPolicy expectedBase)
+            require "CS08: Alt applicationPolicy mismatch" (stateAppPolicy observedAlt == stateAppPolicy expectedAlt)
+            require "CS08: Base activePolicy mismatch" (stateActivePolicy observedBase == stateActivePolicy expectedBase)
+            require "CS08: Alt activePolicy mismatch" (stateActivePolicy observedAlt == stateActivePolicy expectedAlt)
+            require "CS08: Base absentPolicy mismatch" (stateAbsentPolicy observedBase == stateAbsentPolicy expectedBase)
+            require "CS08: Alt absentPolicy mismatch" (stateAbsentPolicy observedAlt == stateAbsentPolicy expectedAlt)
+            require "CS08: Base terminalPolicy mismatch" (stateTerminalPolicy observedBase == stateTerminalPolicy expectedBase)
+            require "CS08: Alt terminalPolicy mismatch" (stateTerminalPolicy observedAlt == stateTerminalPolicy expectedAlt)
+            -- The varied field discriminates; the held fields are stable.
+            require
+                "CS08: Base and Alt activePolicy unexpectedly match"
+                (stateActivePolicy observedBase /= stateActivePolicy observedAlt)
+            require
+                "CS08: applicationPolicy moved between cages"
+                (stateAppPolicy observedBase == stateAppPolicy observedAlt)
+            -- D-BOOT: the pins are DERIVED. A placeholder would be all
+            -- zeroes, and the three token policies are three distinct
+            -- applications of one script, so they cannot coincide.
+            require
+                "CS08: a pinned policy is a placeholder (28 zero bytes)"
+                ( all
+                    (/= BuiltinByteString (BS.replicate 28 0))
+                    [ stateAppPolicy observedBase
+                    , stateActivePolicy observedBase
+                    , stateAbsentPolicy observedBase
+                    , stateTerminalPolicy observedBase
+                    ]
+                )
+            require
+                "CS08: the three derived token policies are not distinct"
+                ( let ps =
+                        [ stateActivePolicy observedBase
+                        , stateAbsentPolicy observedBase
+                        , stateTerminalPolicy observedBase
+                        ]
+                   in length (nub ps) == 3
+                )
     let mem = max mem1 mem2
         cpu = max cpu1 cpu2
         size = max (txSizeBytes signedBootBase) (txSizeBytes signedBootAlt)
     emitMeasureProv prov "CS08" mem cpu size
     writeCSReceipt receiptsDir "CS08" Accepted AgreesWithModel [txIdHex signedBootBase, txIdHex signedBootAlt] Nothing Nothing (Just mem) (Just cpu) (Just size) "node-submit" base dirty nodeVer blueprintIdStr Nothing
-    emit "row" "CS08: ACCEPTED six fields survive (Base+AltRepPolicy)"
+    emit "row" "CS08: ACCEPTED eight fields survive (Base+AltActivePolicy)"
+
+{- | How many fields the state datum actually encodes. The retired
+contract had six; #157 C7 made it eight, and the armed control demands
+the old arity so the row is shown able to notice a regression.
+-}
+stateDatumArity :: OnChainTokenState -> Int
+stateDatumArity st = case toPlcData st of
+    PLC.Constr _ fields -> length fields
+    _ -> -1
 
 expectedStateFromTx :: ConwayTx -> IO OnChainTokenState
 expectedStateFromTx tx =
@@ -5595,7 +5651,7 @@ runCS07 ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5603,10 +5659,10 @@ runCS07 ::
     Control ->
     String ->
     IO ()
-runCS07 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
-    let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seed)
+    let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
@@ -5693,7 +5749,7 @@ runCS03 ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5701,10 +5757,10 @@ runCS03 ::
     Control ->
     String ->
     IO ()
-runCS03 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seedA, _) <- largestWalletUtxo prov
-    let cfgA = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedA)
+    let cfgA = cageCfg stateBytes requestBytes namingCodes (txInToRef seedA)
     unsignedBootA <- bootTokenImpl cfgA prov genesisAddr
     (memBootA, cpuBootA) <- measureUnitsProv prov unsignedBootA
     signedBootA <- submitWithGenesis submit unsignedBootA
@@ -5733,7 +5789,7 @@ runCS03 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
         _ <- CageTrie.insert t cs03KeyA cs03ValA
         pure ()
     (seedB, _) <- largestWalletUtxo prov
-    let cfgB = fastRetractCfgLocal (cageCfg stateBytes requestBytes consumerBytes (txInToRef seedB))
+    let cfgB = fastRetractCfgLocal (cageCfg stateBytes requestBytes namingCodes (txInToRef seedB))
     unsignedBootB <- bootTokenImpl cfgB prov genesisAddr
     (memBootB, cpuBootB) <- measureUnitsProv prov unsignedBootB
     signedBootB <- submitWithGenesis submit unsignedBootB
@@ -5816,7 +5872,7 @@ runCS04 ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5824,10 +5880,10 @@ runCS04 ::
     Control ->
     String ->
     IO ()
-runCS04 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
-    let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seed)
+    let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
@@ -5870,7 +5926,7 @@ runCS04 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
                 ("CS04 FINDING: wrong-index fold accepted (txid " <> txInHex txid <> ") — reported, not relabelled")
     -- Control: fresh cage accepts a valid fold (refusal discriminates).
     (seedC, _) <- largestWalletUtxo prov
-    let cfgC = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedC)
+    let cfgC = cageCfg stateBytes requestBytes namingCodes (txInToRef seedC)
     unsignedBootC <- bootTokenImpl cfgC prov genesisAddr
     signedBootC <- submitWithGenesis submit unsignedBootC
     tidC <- extractTokenId cfgC signedBootC
@@ -5943,7 +5999,7 @@ runCS05 ::
     Submitter IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     String ->
     String ->
     Bool ->
@@ -5951,10 +6007,10 @@ runCS05 ::
     Control ->
     String ->
     IO ()
-runCS05 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty receiptsDir control blueprintIdStr = do
+runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr = do
     tm <- mkPureTrieManager
     (seedC, _) <- largestWalletUtxo prov
-    let cfgC = cageCfg stateBytes requestBytes consumerBytes (txInToRef seedC)
+    let cfgC = cageCfg stateBytes requestBytes namingCodes (txInToRef seedC)
     unsignedBootC <- bootTokenImpl cfgC prov genesisAddr
     (memBoot, cpuBoot) <- measureUnitsProv prov unsignedBootC
     signedBootC <- submitWithGenesis submit unsignedBootC
@@ -5979,7 +6035,7 @@ runCS05 prov submit stateBytes requestBytes consumerBytes nodeVer base dirty rec
         _ <- CageTrie.insert t "cs05-update-key" "cs05-update-val"
         pure ()
     (seedD, _) <- largestWalletUtxo prov
-    let cfgD = fastRejectCfgLocal (cageCfg stateBytes requestBytes consumerBytes (txInToRef seedD))
+    let cfgD = fastRejectCfgLocal (cageCfg stateBytes requestBytes namingCodes (txInToRef seedD))
     unsignedBootD <- bootTokenImpl cfgD prov genesisAddr
     signedBootD <- submitWithGenesis submit unsignedBootD
     tidD <- extractTokenId cfgD signedBootD
@@ -6059,7 +6115,7 @@ not a row; shapes and verdicts are the evidence.
 runForkProbe :: IO ()
 runForkProbe = do
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
-    (stateBytes, requestBytes, consumerBytes) <- loadCodes blueprintPath
+    (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
     devnetGenesis >>= mapM_ checkGenesis
     nodeVer <- readNodeVersion
     emit "node" nodeVer
@@ -6067,10 +6123,10 @@ runForkProbe = do
     emit "base" base
     bracketTmpDir $ do
         withNodeSocket $ \sock ->
-            runForkProbeSession stateBytes requestBytes consumerBytes sock
+            runForkProbeSession stateBytes requestBytes namingCodes sock
 
-runForkProbeSession :: SBS.ShortByteString -> SBS.ShortByteString -> SBS.ShortByteString -> FilePath -> IO ()
-runForkProbeSession stateBytes requestBytes consumerBytes sock = do
+runForkProbeSession :: SBS.ShortByteString -> SBS.ShortByteString -> NamingCodes -> FilePath -> IO ()
+runForkProbeSession stateBytes requestBytes namingCodes sock = do
     lsqCh <- newLSQChannel 16
     ltxsCh <- newLTxSChannel 16
     nodeThread <-
@@ -6091,7 +6147,7 @@ runForkProbeSession stateBytes requestBytes consumerBytes sock = do
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
-    let cfg = cageCfg stateBytes requestBytes consumerBytes (txInToRef seed)
+    let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
