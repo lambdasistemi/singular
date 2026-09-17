@@ -382,22 +382,81 @@ fn custodyOutput() -> Output {
   }
 }
 
+/// The approval a retirement must mint: the `updateTerminal` edge bound
+/// to this key, the completion request's owner, and no destination.
+fn terminateApproval() -> assets.Value {
+  add(zero, appPolicy, approvalOf(3, registryKey, controllerKey, noDestination()), 1)
+}
+
+/// The completion request the retirement must co-create: at the cage's
+/// own address, folding `Update(0x01, 0x02)` for this key, carrying the
+/// approval that certifies it.
+fn completionRequestOutput() -> Output {
+  Output {
+    address: address.from_script(naming.mpfs_state_hash),
+    value: add(from_lovelace(3_000_000), appPolicy, approvalOf(3, registryKey, controllerKey, noDestination()), 1),
+    datum: InlineDatum(
+      naming.MRequestDatum(
+        naming.MRequest {
+          requestToken: naming.MTokenId { assetName: fixtures.mock_registry_token },
+          requestOwner: controllerKey,
+          requestKey: registryKey,
+          requestValue: naming.MUpdate(#"01", #"02"),
+          tip: 1_000_000,
+          submitted_at: 0,
+          destination: (#"", #""),
+        },
+      ),
+    ),
+    reference_script: None,
+  }
+}
+
 fn retireTx(signers: List<ByteArray>, value: assets.Value) -> Transaction {
+  retireTxWith(signers, value, True, True)
+}
+
+/// The retirement transaction, with either co-created obligation
+/// withheld so a row can isolate it.
+fn retireTxWith(
+  signers: List<ByteArray>,
+  value: assets.Value,
+  withApproval: Bool,
+  withRequest: Bool,
+) -> Transaction {
   Transaction {
     ..transaction.placeholder,
     inputs: [recordInput(value)],
     reference_inputs: [fixtures.state_input()],
-    outputs: [custodyOutput()],
+    outputs: if withRequest {
+      [custodyOutput(), completionRequestOutput()]
+    } else {
+      [custodyOutput()]
+    },
+    mint: if withApproval {
+      terminateApproval()
+    } else {
+      zero
+    },
     extra_signatories: signers,
   }
 }
 
 fn retireWith(reveal: ByteArray, signers: List<ByteArray>) -> Bool {
+  retireShaped(reveal, signers, True, True)
+}
+
+fn retireShaped(
+  reveal: ByteArray,
+  signers: List<ByteArray>,
+  withApproval: Bool,
+  withRequest: Bool,
+) -> Bool {
   application.application.spend(
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: reveal },
     fixtures.self_ref,
-    retireTx(signers, recordValue()),
+    retireTxWith(signers, recordValue(), withApproval, withRequest),
   )
 }
 
@@ -430,6 +489,62 @@ test t157_n6_retire_with_the_control_key_alone_refuses() fail {
 /// nothing (`LR02`'s shape, at the retirement boundary).
 test t157_n6_retire_with_a_wrong_reveal_refuses() fail {
   retireWith(fixtures.altered_control, [recoveryKey])
+}
+
+/// F-003, the audit's counterexample: authority plus a custody output,
+/// with no `updateTerminal` approval minted. Retirement is not a
+/// two-step promise — the transaction that ends a name mints the
+/// approval that completes it, or it is not that transaction.
+test t157_n6_retire_without_approval_mint_refuses() fail {
+  retireShaped(recoveryReveal, [recoveryKey], False, True)
+}
+
+/// F-003, the other half: the approval minted with no completion
+/// request to carry it. An approval nobody can spend certifies nothing.
+test t157_n6_retire_without_completion_request_refuses() fail {
+  retireShaped(recoveryReveal, [recoveryKey], True, False)
+}
+
+/// F-002, the audit's counterexample: a permissive FOREIGN script input
+/// carrying a `Retire`-shaped redeemer. Scanning redeemers for a shape
+/// proves nothing about who was retired — the governing input has to be
+/// the record itself, at the application's own address, carrying this
+/// key's active token.
+test t157_n6_foreign_script_retire_spoof_refuses() fail {
+  let spoofRedeemer: Data = Retire { key: registryKey, revealed_control: #"" }
+  let spoofRef =
+    OutputReference { transaction_id: #"53504f4f46", output_index: 0 }
+  certify(
+    3,
+    registryKey,
+    controllerKey,
+    noDestination(),
+    Transaction {
+      ..mintTx(
+        3,
+        registryKey,
+        controllerKey,
+        noDestination(),
+        [recoveryKey],
+        [
+          Input {
+            output_reference: spoofRef,
+            output: Output {
+              address: address.from_script(
+                #"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+              ),
+              value: from_lovelace(2_000_000),
+              datum: NoDatum,
+              reference_script: None,
+            },
+          },
+        ],
+        [fixtures.state_input()],
+        [],
+      ),
+      redeemers: [Pair(Spend(spoofRef), spoofRedeemer)],
+    },
+  )
 }
 
 /// The terminate approval cannot be minted on its own: the transaction
