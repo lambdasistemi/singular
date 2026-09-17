@@ -191,9 +191,10 @@ data Deployment = Deployment
     , depApplicationHash :: Text
     -- ^ Naming application validator hash
     , depRepresentativePolicy :: Text
-    -- ^ Applied representative minting policy
-    , depConsumerHash :: Text
-    -- ^ Pinned consumer hash the state datum carries
+    -- ^ The registry-bound ACTIVE token policy: `witness(1, registry)`
+    -- applied (#157 C5/C7). Renamed from the representative policy it
+    -- became; the manifest key keeps its spelling so existing manifests
+    -- and the attach check still read it.
     , depProcessTime :: Integer
     -- ^ Phase-1 window (ms) the registry was booted with
     , depRetractTime :: Integer

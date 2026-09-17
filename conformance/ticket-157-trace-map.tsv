@@ -91,3 +91,7 @@ naming-onchain	t157_p1_active_mint_outside_a_fold_refuses	no-fold	Model.I-W1-min
 naming-onchain	t157_p1_terminal_mint_outside_a_fold_refuses	no-fold	Model.I-W1-mint-witness
 naming-onchain	t157_p2_absent_burn_without_a_fold_refuses	no-fold	Model.I-W1-mint-witness
 naming-onchain	t157_p2_active_burn_without_a_fold_refuses	no-fold	Model.I-W1-mint-witness
+onchain	t157_t5_request_without_authenticated_state_modify_refuses	custody-spend	Model.custody-spend-path
+naming-onchain	t157_n6_foreign_script_retire_spoof_refuses	retire-required	naming-retirement-uncertified
+naming-onchain	t157_n6_retire_without_approval_mint_refuses	retirement-approval-missing	naming-retirement-uncertified
+naming-onchain	t157_n6_retire_without_completion_request_refuses	retirement-request-missing	naming-retirement-uncertified

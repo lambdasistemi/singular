@@ -82,7 +82,7 @@ pub fn referenced_registry(tx: Transaction) -> (ByteArray, PolicyId) {
 /// `Retire` may place the active token at. Regenerated from the custody
 /// validator's own blueprint; never hand-typed.
 pub const retirement_custody_hash =
-  #"762b862e631598a2c432a396763642af640707a1a6189d6016c59f98"
+  #"972116cd14d9247b5d7127b620addf1aa99e19c4c8f3819f63d47bc4"
 
 /// The naming application validator (issue #52), in registry mode (#157).
 ///
@@ -156,7 +156,16 @@ validator application {
       Maintain -> maintain(record, claim, tx)
       Retire { key, revealed_control } ->
         when single_asset_name(claim.output.value) is {
-          Some(stored) -> retire(record, claim, stored, key, revealed_control, tx)
+          Some(stored) ->
+            retire(
+              record,
+              claim,
+              stored,
+              key,
+              revealed_control,
+              own_hash,
+              tx,
+            )
           None -> {
             trace @"record-single-asset"
             False
@@ -279,7 +288,7 @@ fn approve(
     if destination != (#"", #"") {
       trace @"termination-names-no-destination"
       False
-    } else if !retire_present(key, tx) {
+    } else if !retire_present(key, policy_id, tx) {
       trace @"retire-required"
       False
     } else {
@@ -332,22 +341,85 @@ fn record_destination(
   }
 }
 
-/// A `Retire` for this key is being executed in this transaction.
-fn retire_present(key: ByteArray, tx: Transaction) -> Bool {
-  find(
-    tx.inputs,
-    fn(input) {
-      when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
-        Some(data) ->
-          if data is Retire { key: retired, revealed_control: _ }: ApplicationRedeemer {
-            retired == key
-          } else {
-            False
-          }
-        None -> False
+/// A `Retire` for this key is being executed in this transaction, BY THIS
+/// APPLICATION, on the real record of this key (#157 F-002).
+///
+/// A redeemer alone proves nothing: any script permissive enough to
+/// accept a `Retire`-shaped redeemer would otherwise certify the
+/// termination of a name it has never governed. So the governing input is
+/// authenticated three ways before its redeemer is read — it sits at this
+/// validator's OWN address (the spend and mint purposes are one script,
+/// so the policy id IS the script hash), its datum decodes as a naming
+/// record, and it holds exactly one active token named `key` under the
+/// policy the AUTHENTICATED registry state pins. That last one is what
+/// binds the certification to a registry: the active policy is not a
+/// literal, it is read from the NFT-authenticated state this transaction
+/// carries.
+fn retire_present(key: ByteArray, policy_id: PolicyId, tx: Transaction) -> Bool {
+  when active_policy(tx) is {
+    None -> False
+    Some(active) ->
+      find(
+        tx.inputs,
+        fn(input) {
+          governs_key(input, key, policy_id, active) && spent_retiring(
+            input,
+            key,
+            tx,
+          )
+        },
+      ) != None
+  }
+}
+
+/// This input is this application's own record UTxO for `key`, holding
+/// the registry's active token for that key.
+fn governs_key(
+  input: Input,
+  key: ByteArray,
+  policy_id: PolicyId,
+  active: PolicyId,
+) -> Bool {
+  input.output.address.payment_credential == address.Script(policy_id) && (
+    when input.output.datum is {
+      InlineDatum(datum) -> naming.is_naming_datum(datum)
+      _ -> False
+    }
+  ) && quantity_of(input.output.value, active, key) == 1
+}
+
+/// That input is being spent with a `Retire` naming this key.
+fn spent_retiring(input: Input, key: ByteArray, tx: Transaction) -> Bool {
+  when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
+    Some(data) ->
+      if data is Retire { key: retired, revealed_control: _ }: ApplicationRedeemer {
+        retired == key
+      } else {
+        False
       }
-    },
-  ) != None
+    None -> False
+  }
+}
+
+/// The registry's active-token policy, TOTAL: `None` when this
+/// transaction carries no authenticated registry state at all, so a
+/// hostile shape refuses with one named trace instead of crashing.
+fn active_policy(tx: Transaction) -> Option<PolicyId> {
+  when find(tx.inputs, is_registry_state) is {
+    Some(spent) -> state_policy_of(spent)
+    None ->
+      when find(tx.reference_inputs, is_registry_state) is {
+        Some(referenced) -> state_policy_of(referenced)
+        None -> None
+      }
+  }
+}
+
+fn state_policy_of(input: Input) -> Option<PolicyId> {
+  when input.output.datum is {
+    InlineDatum(datum) -> Some(naming.mpfs_state_policy(datum))
+    _ -> None
+  }
 }
 
 /// The custody UTxO for this key, read as a reference input, records a
@@ -528,6 +600,7 @@ fn retire(
   stored: ByteArray,
   key: ByteArray,
   revealed_control: ByteArray,
+  own_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
@@ -568,8 +641,73 @@ fn retire(
       trace @"retirement-continuation"
       False
     } else {
-      True
+      // #157 F-003 — the two obligations a retirement CO-CREATES. Ending
+      // a name is a tree edge, so it is not finished by moving the token
+      // to custody: the same transaction must book the `updateTerminal`
+      // edge against the registry, or the record is destroyed while the
+      // trie still says the name is live. Both halves are required here,
+      // and the approval is checked against the request that carries it,
+      // so neither can be satisfied by a stray token.
+      when retirement_completion(key, own_hash, tx) is {
+        None -> {
+          trace @"retirement-request-missing"
+          False
+        }
+        Some(bound) ->
+          if quantity_of(tx.mint, own_hash, bound) != 1 {
+            trace @"retirement-approval-missing"
+            False
+          } else {
+            True
+          }
+      }
     }
+  }
+}
+
+/// The completion request this retirement creates: exactly one output at
+/// the cage, whose datum is a request for `key` folding `Update(0x01,
+/// 0x02)` — live to over — and which CARRIES the terminate approval bound
+/// to its own owner. Answers that approval's name, so the caller can
+/// require the matching mint. `None` when the obligation is unmet.
+fn retirement_completion(
+  key: ByteArray,
+  own_hash: ByteArray,
+  tx: Transaction,
+) -> Option<ByteArray> {
+  when
+    filter(
+      tx.outputs,
+      fn(output) {
+        output.address.payment_credential == address.Script(mpfs_state_hash) && completion_owner_of(
+          output,
+          key,
+        ) != None
+      },
+    )
+  is {
+    [request] ->
+      when completion_owner_of(request, key) is {
+        Some(owner) -> {
+          // The terminate edge names no destination (R-NM4 row 3), so the
+          // binding is over the key and its owner alone.
+          let bound = approval_name(3, key, owner, (#"", #""))
+          if quantity_of(request.value, own_hash, bound) == 1 {
+            Some(bound)
+          } else {
+            None
+          }
+        }
+        None -> None
+      }
+    _ -> None
+  }
+}
+
+fn completion_owner_of(output: Output, key: ByteArray) -> Option<ByteArray> {
+  when output.datum is {
+    InlineDatum(datum) -> naming.completion_request_owner(datum, key)
+    _ -> None
   }
 }
 

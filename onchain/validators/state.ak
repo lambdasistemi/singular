@@ -1,4 +1,5 @@
 use aiken/collection/dict
+use aiken/collection/pairs
 use aiken/collection/list
 use aiken/collection/list.{filter, find, foldl, head}
 use aiken/crypto.{VerificationKeyHash}
@@ -10,6 +11,7 @@ use cardano/address.{Address}
 use cardano/assets
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of, quantity_of}
 use cardano/transaction.{
+  Spend,
   Datum, InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
 use lib.{
@@ -903,7 +905,13 @@ fn validCustodySpend(
   self: Input,
   tx: Transaction,
 ) -> Bool {
-  if filter(
+  if !foldAuthenticated(self.output.address, tx) {
+    // The fold itself, authenticated: the registry's own state token,
+    // at the cage's own address, SPENT with `Modify`. Without it a
+    // request-shaped neighbour would be enough, and custody would be
+    // spendable outside the fold that is supposed to consume it.
+    traceFalse(@"custody-spend")
+  } else if filter(
     tx.inputs,
     fn(i) {
       i.output.address == self.output.address && consumesAbsent(i.output.datum, key)
@@ -914,6 +922,55 @@ fn validCustodySpend(
     traceFalse(@"custody-spend")
   } else {
     True
+  }
+}
+
+/// Is this transaction a fold of the registry this custody belongs to?
+/// Exactly one input at the cage's own address carries a state datum and
+/// exactly one token under the cage's own policy, and that input is spent
+/// with `Modify`. The state validator then runs and judges the batch; a
+/// redeemer label alone would be a caller's claim, but the ledger cannot
+/// let this input be spent without executing the script that owns it.
+fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Bool {
+  when
+    filter(
+      tx.inputs,
+      fn(i) { i.output.address == cageAddress && carriesState(i) },
+    )
+  is {
+    [stateIn] ->
+      when pairs.get_first(tx.redeemers, Spend(stateIn.output_reference)) is {
+        Some(data) ->
+          if data is Modify(_): UpdateRedeemer {
+            True
+          } else {
+            False
+          }
+        None -> False
+      }
+    _ -> False
+  }
+}
+
+/// A state UTxO: a state datum and exactly one token under the policy of
+/// the script that holds it.
+fn carriesState(input: Input) -> Bool {
+  when input.output.datum is {
+    InlineDatum(datum) ->
+      if datum is StateDatum(_): CageDatum {
+        when input.output.address.payment_credential is {
+          address.Script(policyId) ->
+            when tokenFromPolicy(policyId, input.output.value) is {
+              Some(token) ->
+                exactQuantity(policyId, input.output.value, token, 1)
+              None -> False
+            }
+          _ -> False
+        }
+      } else {
+        False
+      }
+    _ -> False
   }
 }
 

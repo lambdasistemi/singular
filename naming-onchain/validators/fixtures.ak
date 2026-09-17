@@ -83,7 +83,7 @@ pub const registry_key = #"616c696365"
 /// `application.retirement_custody_hash` — the address a `Retire` may
 /// place the record's active token at.
 pub const custody_hash =
-  #"762b862e631598a2c432a396763642af640707a1a6189d6016c59f98"
+  #"972116cd14d9247b5d7127b620addf1aa99e19c4c8f3819f63d47bc4"
 
 pub const custody_address = address.from_script(custody_hash)
 

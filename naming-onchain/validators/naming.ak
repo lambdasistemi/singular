@@ -200,7 +200,7 @@ pub fn distinct_count(members: List<ByteArray>) -> Int {
 /// Lives here (not in the application validator) so both the validator and
 /// test fixtures share one source with no library→validator import edge.
 pub const mpfs_state_hash =
-  #"2bfa327668a83e827985300b4b20c590b852ddd5b234162de11943a1"
+  #"4d6eed29dde44975d54c4128a0d99db18b6ec5ce124c6f38b2d5b42c"
 
 /// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
@@ -394,6 +394,40 @@ pub type MpfsCustodyDatum {
 pub fn mpfs_custody(datum: Data) -> Option<(ByteArray, ByteArray)> {
   if datum is MpfsAbsentCustody { key, refund }: MpfsCustodyDatum {
     Some((key, refund))
+  } else {
+    None
+  }
+}
+
+/// Does this raw datum decode as the naming record envelope at all
+/// (#157 F-002)? Total: anything else answers `False` rather than
+/// crashing, so a caller can use it to AUTHENTICATE an input instead of
+/// trusting that one exists.
+pub fn is_naming_datum(datum: Data) -> Bool {
+  if datum is NamingDatum(_): NamingEnvelope {
+    True
+  } else {
+    False
+  }
+}
+
+/// The owner of the completion request a retirement co-creates (#157
+/// N4/F-003), if this datum is one: a request for `key` folding
+/// `Update(0x01, 0x02)` — live to over. `None` for anything else, so the
+/// caller can require the obligation rather than assume it.
+pub fn completion_request_owner(
+  datum: Data,
+  key: ByteArray,
+) -> Option<ByteArray> {
+  if datum is MRequestDatum(request): MRequestDatum {
+    if request.requestKey == key && ( when request.requestValue is {
+      MUpdate(old, new) -> old == #"01" && new == #"02"
+      _ -> False
+    } ) {
+      Some(request.requestOwner)
+    } else {
+      None
+    }
   } else {
     None
   }
