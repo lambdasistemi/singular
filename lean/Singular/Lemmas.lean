@@ -180,7 +180,7 @@ theorem error_of_refusal (s : RegistryState) (a : Action) (why : String)
 /-- Effects of an admitted `insertAbsent`. -/
 theorem applyEdge_insertAbsent (s : RegistryState) (a : Action) (he : a.edge = .insertAbsent) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .absent) ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key (.known .absent)) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .absent)) } ∧
     (applyEdge s a).state.custody =
       { key := a.key, refundAddress := a.refundAddress, value := a.deposit } :: s.custody ∧
     (applyEdge s a).state.held = s.held ∧
@@ -190,7 +190,7 @@ theorem applyEdge_insertAbsent (s : RegistryState) (a : Action) (he : a.edge = .
 /-- Effects of an admitted `insertActive`. -/
 theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .insertActive) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .active) ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key (.known .active)) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .active)) } ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .active, output := a.output } :: s.held ∧
@@ -201,7 +201,7 @@ theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .
 theorem applyEdge_updateActive (s : RegistryState) (a : Action) (he : a.edge = .updateActive)
     (c : Custody) (hc : s.custody.find? (·.key == a.key) = some c) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .active) ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key (.known .active)) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .active)) } ∧
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .active, output := a.output } :: s.held ∧
@@ -212,15 +212,15 @@ theorem applyEdge_updateActive (s : RegistryState) (a : Action) (he : a.edge = .
 /-- Effects of an admitted `updateTerminal`. -/
 theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge = .updateTerminal) :
     (applyEdge s a).state.trie = trieSet s.trie a.key (.known .terminal) ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key (.known .terminal)) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key (.known .terminal)) } ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
     (applyEdge s a).mint = [(.active, -1)] ∧ (applyEdge s a).paid = [] := by
   have h1 : (applyEdge s a).state.trie = trieSet s.trie a.key (.known .terminal) := by
     simp only [applyEdge, he]
-  have h2 : (applyEdge s a).state.config.root =
-      rootOf (trieSet s.trie a.key (.known .terminal)) := by
+  have h2 : (applyEdge s a).state.config =
+      { s.config with root := rootOf (trieSet s.trie a.key (.known .terminal)) } := by
     simp only [applyEdge, he]
   have h3 : (applyEdge s a).state.custody = s.custody := by
     simp only [applyEdge, he]
@@ -235,7 +235,7 @@ theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge =
 theorem applyEdge_deleteAbsent (s : RegistryState) (a : Action) (he : a.edge = .deleteAbsent)
     (c : Custody) (hc : s.custody.find? (·.key == a.key) = some c) :
     (applyEdge s a).state.trie = trieSet s.trie a.key .unknown ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key .unknown) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key .unknown) } ∧
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held = s.held ∧
     (applyEdge s a).mint = [(.absent, -1)] ∧
@@ -245,15 +245,15 @@ theorem applyEdge_deleteAbsent (s : RegistryState) (a : Action) (he : a.edge = .
 /-- Effects of an admitted `deleteActive`. -/
 theorem applyEdge_deleteActive (s : RegistryState) (a : Action) (he : a.edge = .deleteActive) :
     (applyEdge s a).state.trie = trieSet s.trie a.key .unknown ∧
-    (applyEdge s a).state.config.root = rootOf (trieSet s.trie a.key .unknown) ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key .unknown) } ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
     (applyEdge s a).mint = [(.active, -1)] ∧ (applyEdge s a).paid = [] := by
   have h1 : (applyEdge s a).state.trie = trieSet s.trie a.key .unknown := by
     simp only [applyEdge, he]
-  have h2 : (applyEdge s a).state.config.root =
-      rootOf (trieSet s.trie a.key .unknown) := by
+  have h2 : (applyEdge s a).state.config =
+      { s.config with root := rootOf (trieSet s.trie a.key .unknown) } := by
     simp only [applyEdge, he]
   have h3 : (applyEdge s a).state.custody = s.custody := by
     simp only [applyEdge, he]
