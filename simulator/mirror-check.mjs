@@ -16,6 +16,9 @@ const digest = url => createHash('sha256').update(readFileSync(url)).digest('hex
 const canonical = new Map();
 for (const f of readdirSync(new URL('lean/Singular/', root))) canonical.set(f, new URL(`lean/Singular/${f}`, root));
 canonical.set('Main.lean', new URL('lean/Main.lean', root));
+// The library root decides what `lake build` compiles at all, so it is Lean
+// source like any other and a stale copy of it misstates the whole extent.
+canonical.set('Singular.lean', new URL('lean/Singular.lean', root));
 for (const f of readdirSync(new URL('lean/', root)))
   if (f.endsWith('theorem-debt.json')) canonical.set(f, new URL(`lean/${f}`, root));
 

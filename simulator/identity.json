@@ -28,6 +28,7 @@
     "formal/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
+    "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "formal/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
     "formal/lifecycle-theorem-debt.json": "3fbb2b6509683e86dfe34d0527bdfe0881b5ba8011cf80292420ae7096bc3f5e",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",

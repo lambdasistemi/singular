@@ -134,6 +134,33 @@ def check_or_compare(target, encoded, export, label):
         assert target.read_text() == encoded, f'{label} identity drift'
 
 
+def unreachable_modules(root):
+    """Modules on disk that `lake build` will never build.
+
+    The library root is the only entry point lake follows, so a module nobody
+    imports is never compiled — and a stale `.olean` from an earlier build makes
+    that invisible to every local check, including one that elaborates a file
+    importing it. `Singular.NamingAudit` sat unreachable this way: the naming
+    axiom gate was in the tree, passing locally, and absent from a clean build.
+    The extent is read off the directory, never listed here.
+    """
+    seen, pending = set(), ['Singular']
+    while pending:
+        module = pending.pop()
+        if module in seen:
+            continue
+        seen.add(module)
+        source = root / 'lean' / (module.replace('.', '/') + '.lean')
+        if not source.exists():
+            continue
+        for line in source.read_text(encoding='utf-8').splitlines():
+            if line.startswith('import Singular'):
+                pending.append(line.split()[1])
+    on_disk = {'Singular.' + f.stem for f in sorted((root / 'lean/Singular').glob('*.lean'))}
+    assert on_disk, 'EMPTY EXTENT: no modules discovered under lean/Singular'
+    return sorted(on_disk - seen)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, default=Path.cwd())
@@ -184,6 +211,10 @@ def main():
     check_records(naming_records, report, 'naming-check')
     check_records(lifecycle_records, report, 'lifecycle-check')
     check_records(wire_records, report, 'wire-check')
+
+    orphans = unreachable_modules(root)
+    assert not orphans, f'modules lake will never build: {orphans}'
+    print(f'reachability: every module under lean/Singular is reachable from the library root')
 
     binary = args.binary or root / '.lake/build/bin/singular-corpus'
     corpus = json.loads(subprocess.check_output([str(binary)]))
