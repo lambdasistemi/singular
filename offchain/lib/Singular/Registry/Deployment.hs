@@ -137,7 +137,7 @@ import Singular.Registry.TxBuilder.Internal (
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainTokenState (..),
-    stateRepPolicyBytes,
+    stateActivePolicyBytes,
  )
 
 -- ---------------------------------------------------------
@@ -301,8 +301,16 @@ manifest can never be used to smuggle in a different validator.
 data CageParts = CageParts
     { partsStateBytes :: SBS.ShortByteString
     , partsRequestBytes :: SBS.ShortByteString
-    , partsRepPolicy :: SBS.ShortByteString
-    , partsConsumerPin :: SBS.ShortByteString
+    , partsApplicationPolicy :: SBS.ShortByteString
+    -- ^ The application policy the registry pins (#157 D-BOOT): the
+    -- naming application script's applied hash for this registry
+    -- identity, read from the partitions' `script-identity.json`.
+    , partsActivePolicy :: SBS.ShortByteString
+    -- ^ The active-token policy: `witness(1, registry)` applied.
+    , partsAbsentPolicy :: SBS.ShortByteString
+    -- ^ The absent-token policy: `witness(0, registry)` applied.
+    , partsTerminalPolicy :: SBS.ShortByteString
+    -- ^ The terminal-token policy: `witness(2, registry)` applied.
     , partsConsumerScript :: SBS.ShortByteString
     }
 
@@ -318,8 +326,10 @@ registry whose validator this code does not implement.
 cageConfigFor :: Deployment -> CageParts -> Either String CageConfig
 cageConfigFor dep parts = do
     seedIn <- parseOutRef (depSeedOutRef dep)
-    if T.pack (hex (SBS.fromShort (partsRepPolicy parts))) /= depRepresentativePolicy dep
-        then Left "this release's registry-bound representative policy differs from the deployment"
+    -- The manifest keeps its own vocabulary for the pin it recorded; the
+    -- field it names is the one #157 C7 renamed the active policy.
+    if T.pack (hex (SBS.fromShort (partsActivePolicy parts))) /= depRepresentativePolicy dep
+        then Left "this release's registry-bound active policy differs from the deployment"
         else pure ()
     let stateHash = computeScriptHash (partsStateBytes parts)
         stateHex = T.pack (hex (scriptHashBytes stateHash))
@@ -342,8 +352,10 @@ cageConfigFor dep parts = do
                     , defaultProcessTime = depProcessTime dep
                     , defaultRetractTime = depRetractTime dep
                     , defaultTip = Coin (depTip dep)
-                    , cfgRepPolicy = partsRepPolicy parts
-                    , cfgConsumerPin = partsConsumerPin parts
+                    , cfgApplicationPolicy = partsApplicationPolicy parts
+                    , cfgActivePolicy = partsActivePolicy parts
+                    , cfgAbsentPolicy = partsAbsentPolicy parts
+                    , cfgTerminalPolicy = partsTerminalPolicy parts
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }
@@ -395,7 +407,7 @@ verifyDeployment prov dep parts = do
     (stateIn, stateOut) <- resolveStateUtxo prov cfg tok
     stateLive <- case extractCageDatum stateOut of
         Just (StateDatum st)
-            | stateRepPolicyBytes st == SBS.fromShort (partsRepPolicy parts) -> pure st
+            | stateActivePolicyBytes st == SBS.fromShort (partsActivePolicy parts) -> pure st
         _ -> die "the live registry state does not configure this registry-bound representative policy"
     unless
         ( stateProcessTime stateLive == depProcessTime dep
