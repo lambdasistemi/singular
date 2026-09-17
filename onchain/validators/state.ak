@@ -914,15 +914,15 @@ fn validCustodySpend(
       // spendable outside the fold that is supposed to consume it.
       traceFalse(@"custody-spend")
     Some(cageToken) ->
+      // The request this custody rides on, found by what BINDS it — its
+      // key and this registry.s own cage token — and not by where it
+      // sits. A deployed request lives at the request validator.s own
+      // address, not the cage.s, so an address test here would refuse
+      // every honest fold on chain while passing fixtures that happen to
+      // place requests beside the state.
       if filter(
         tx.inputs,
-        fn(i) {
-          i.output.address == self.output.address && consumesAbsent(
-            i.output.datum,
-            key,
-            cageToken,
-          )
-        },
+        fn(i) { consumesAbsent(i.output.datum, key, cageToken) },
       ) == [] {
         traceFalse(@"custody-spend")
       } else if !paysAddressSomewhere(refund, self, tx) {

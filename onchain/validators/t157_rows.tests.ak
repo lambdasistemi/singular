@@ -1611,3 +1611,36 @@ test t157_t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
     },
   )
 }
+
+/// The deployed shape: the request a custody spend rides on sits at the
+/// REQUEST validator's address, not the cage's. What binds it to this
+/// custody is its key and this registry's own cage token, both of which
+/// the datum carries — so the fold accepts, and the rule cannot be
+/// satisfied by a neighbour that merely shares an address.
+test t157_t5_request_at_the_request_script_accepts() {
+  let modify: Data = Modify([UpdateAction([])])
+  state.state.spend(
+    Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),
+    Modify([]),
+    fx.custodyRef(0),
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: fx.phase1(),
+      inputs: [
+        fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit),
+        fx.stateInput(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+        fx.deployedRequestInput(
+          0,
+          fx.keyA,
+          Update(fx.absentLeaf, fx.activeLeaf),
+          fx.bookerKey,
+          fx.bookingDestination(),
+          zero,
+          fx.requestValue,
+        ),
+      ],
+      outputs: [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+      redeemers: [Pair(Spend(fx.stateRef), modify)],
+    },
+  )
+}

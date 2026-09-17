@@ -616,3 +616,36 @@ pub fn foreignStateInput(root: ByteArray) -> Input {
     },
   }
 }
+
+/// The request validator's own address: where a deployed request UTxO
+/// actually sits (#157 T5). It is NOT the cage's address — the request
+/// script is parametrised by the state policy and the cage token, and
+/// hashes to something else entirely — so a custody rule that compared
+/// addresses would refuse every honest fold on chain.
+pub const requestPolicy: ByteArray = "request_id"
+
+pub fn requestAddress() -> address.Address {
+  address.from_script(requestPolicy)
+}
+
+/// A request UTxO at the request validator's address, which is where the
+/// offchain builders put it.
+pub fn deployedRequestInput(
+  index: Int,
+  key: ByteArray,
+  operation: Operation,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+  carried: Value,
+  lovelace: Int,
+) -> Input {
+  Input {
+    output_reference: requestRef(index),
+    output: Output {
+      address: requestAddress(),
+      value: merge(from_lovelace(lovelace), carried),
+      datum: InlineDatum(requestDatum(key, operation, owner, destination)),
+      reference_script: None,
+    },
+  }
+}
