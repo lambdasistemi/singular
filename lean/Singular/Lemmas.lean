@@ -801,6 +801,116 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
         rw [hcust] at h1 h2
         exact hCuniq c₁ h1 c₂ h2 hk
 
+/-- A terminal leaf survives any admitted step: every edge that would move it is
+refused, and the read does not touch the trie. -/
+theorem step_preserves_terminal (s : RegistryState) (a : Action) (t : Result) (key : Key)
+    (hterm : trieGet s.trie key = .known .terminal) (hok : step s a = .ok t) :
+    trieGet t.state.trie key = .known .terminal := by
+  obtain ⟨href, ht⟩ := step_eq_ok s a t hok
+  subst ht
+  rcases (refusal_none_iff s a).mp href with ⟨he, _⟩ | ⟨_, _, _, _, hcase⟩
+  · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_witnessTerminal s a he
+    rw [h1]; exact hterm
+  · have hne : a.key ≠ key := by
+      rcases hcase with ⟨_, hb⟩ | ⟨_, hb⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ <;>
+        (intro hEq; rw [hEq, hterm] at hb; exact absurd hb (by decide))
+    rcases hcase with ⟨he, _⟩ | ⟨he, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_insertAbsent s a he
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_insertActive s a he
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s a.key hpres
+      obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_updateActive s a he c hfind
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_updateTerminal s a he
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s a.key hpres
+      obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_deleteAbsent s a he c hfind
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_deleteActive s a he
+      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+
+/-- An admitted step never removes a holding it did not consume; a terminal
+attestation is never consumed by any edge. -/
+theorem step_preserves_terminal_holding (s : RegistryState) (a : Action) (t : Result)
+    (key : Key) (out : Nat) (hterm : trieGet s.trie key = .known .terminal)
+    (hmem : { key := key, kind := .terminal, output := out } ∈ s.held)
+    (hok : step s a = .ok t) :
+    { key := key, kind := .terminal, output := out } ∈ t.state.held := by
+  obtain ⟨href, ht⟩ := step_eq_ok s a t hok
+  subst ht
+  rcases (refusal_none_iff s a).mp href with ⟨he, _⟩ | ⟨_, _, _, _, hcase⟩
+  · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_witnessTerminal s a he
+    rw [h4]; exact List.mem_cons_of_mem _ hmem
+  · have hne : a.key ≠ key := by
+      rcases hcase with ⟨_, hb⟩ | ⟨_, hb⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ <;>
+        (intro hEq; rw [hEq, hterm] at hb; exact absurd hb (by decide))
+    rcases hcase with ⟨he, _⟩ | ⟨he, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩ | ⟨he, _, hpres⟩ | ⟨he, _, _⟩
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertAbsent s a he
+      rw [h4]; exact hmem
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_insertActive s a he
+      rw [h4]; exact List.mem_cons_of_mem _ hmem
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s a.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateActive s a he c hfind
+      rw [h4]; exact List.mem_cons_of_mem _ hmem
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_updateTerminal s a he
+      rw [h4]
+      exact List.mem_filter.mpr ⟨hmem, by simp⟩
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s a.key hpres
+      obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteAbsent s a he c hfind
+      rw [h4]; exact hmem
+    · obtain ⟨_, _, _, h4, _, _⟩ := applyEdge_deleteActive s a he
+      rw [h4]
+      exact List.mem_filter.mpr ⟨hmem, by simp⟩
+
+/-- `foldBatch` succeeds exactly when the batch is nonempty and every request
+applies in order; the mint check does not change the resulting state. -/
+theorem foldBatch_inv (s : RegistryState) (batch : List Action) (t : Result)
+    (h : foldBatch s batch = .ok t) :
+    batch ≠ [] ∧ foldActions s batch = .ok t := by
+  have hne : batch ≠ [] := by
+    intro hc; subst hc
+    exact Except.noConfusion (show Except.error "empty-fold" = Except.ok t from h)
+  refine ⟨hne, ?_⟩
+  unfold foldBatch at h
+  rw [if_neg (by simpa using hne)] at h
+  cases hf : foldActions s batch with
+  | error e => rw [hf] at h; exact Except.noConfusion h
+  | ok r =>
+    rw [hf] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    split at h
+    · have hrt : r = t := by injection h
+      exact congrArg Except.ok hrt
+    · exact Except.noConfusion h
+
+/-- A terminal leaf survives a whole fold. -/
+theorem foldActions_preserves_terminal (s : RegistryState) (batch : List Action) (t : Result)
+    (key : Key) (hterm : trieGet s.trie key = .known .terminal)
+    (h : foldActions s batch = .ok t) : trieGet t.state.trie key = .known .terminal := by
+  induction batch generalizing s t with
+  | nil =>
+    unfold foldActions at h
+    have : emptyResult s = t := by injection h
+    rw [← this]; exact hterm
+  | cons b bs ih =>
+    unfold foldActions at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    cases hs : step s b with
+    | error e => rw [hs] at h; exact Except.noConfusion h
+    | ok m =>
+      rw [hs] at h
+      simp only [bind, Except.bind, pure, Except.pure] at h
+      cases hr : foldActions m.state bs with
+      | error e => rw [hr] at h; exact Except.noConfusion h
+      | ok r =>
+        rw [hr] at h
+        simp only [bind, Except.bind, pure, Except.pure] at h
+        have hEq : combineResults m r = t := by injection h
+        have h1 := step_preserves_terminal s b m key hterm hs
+        rw [← hEq]
+        exact ih m.state r h1 hr
+
 theorem reachable_consistent (s : RegistryState) (h : Reachable s) : Consistent s := by
   induction h with
   | initial c =>

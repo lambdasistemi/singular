@@ -74,7 +74,33 @@ theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request)
     (hmem : { key := key, kind := .terminal, output := out } ∈ s.held) :
     { key := key, kind := .terminal, output := out } ∈ t.state.held ∧
       trieGet t.state.trie key = .known .terminal := by
-  sorry
+  have hterm : trieGet s.trie key = .known .terminal :=
+    (reachable_consistent s h).2.2.2.2.2.1 _ hmem rfl
+  have hacts := (foldBatch_inv s acts t hok).2
+  refine ⟨?_, foldActions_preserves_terminal s acts t key hterm hacts⟩
+  clear hok
+  induction acts generalizing s t with
+  | nil =>
+    unfold foldActions at hacts
+    have : emptyResult s = t := by injection hacts
+    rw [← this]; exact hmem
+  | cons b bs ih =>
+    unfold foldActions at hacts
+    simp only [bind, Except.bind, pure, Except.pure] at hacts
+    cases hs : step s b with
+    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | ok m =>
+      rw [hs] at hacts
+      simp only [bind, Except.bind, pure, Except.pure] at hacts
+      cases hrest : foldActions m.state bs with
+      | error e => rw [hrest] at hacts; exact Except.noConfusion hacts
+      | ok rr =>
+        rw [hrest] at hacts
+        have hEq : combineResults m rr = t := by injection hacts
+        rw [← hEq]
+        exact ih m.state rr (Reachable.next h hs)
+          (step_preserves_terminal_holding s b m key out hterm hmem hs)
+          (step_preserves_terminal s b m key hterm hs) hrest
 
 /-- **S3** — the biconditional supply law, unconditionally over reachable
 states: supply is 1 iff the key is in that token's state, 0 otherwise. -/
@@ -109,7 +135,21 @@ theorem occupancy (s : RegistryState) (r : Request) (t : Result) (h : Reachable 
     (hedge : r.edge = .insertActive ∨ r.edge = .updateActive) :
     ¬ (trieGet s.trie r.key = .known .active ∨ trieGet s.trie r.key = .known .terminal) ∧
     trieGet t.state.trie r.key = .known .active := by
-  sorry
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨_, _, _, _, hcase⟩
+  · rcases hedge with hE | hE <;> (rw [hE] at hw; exact absurd hw (by decide))
+  · rcases hcase with ⟨hE, hb⟩ | ⟨hE, hb⟩ | ⟨hE, hb, hpres⟩ | ⟨hE, hb, _⟩ | ⟨hE, hb, _⟩ |
+        ⟨hE, hb, _⟩
+    · rcases hedge with h2 | h2 <;> (rw [h2] at hE; exact absurd hE (by decide))
+    · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_insertActive s r hE
+      exact ⟨by rw [hb]; rintro (hc | hc) <;> exact absurd hc (by decide),
+        by rw [h1, trieGet_set_eq]⟩
+    · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s r.key hpres
+      obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_updateActive s r hE c hfind
+      exact ⟨by rw [hb]; rintro (hc | hc) <;> exact absurd hc (by decide),
+        by rw [h1, trieGet_set_eq]⟩
+    all_goals (rcases hedge with h2 | h2 <;> (rw [h2] at hE; exact absurd hE (by decide)))
 
 /-- **O1**, converse: a booking edge on an untaken key, with a matching
 approval, succeeds. -/
@@ -129,7 +169,18 @@ theorem termination (s : RegistryState) (key : Key) (h : Reachable s)
         ∃ why, step s r = .error why) ∧
     (∀ (acts : List Request) (t : Result), foldBatch s acts = .ok t →
         trieGet t.state.trie key = .known .terminal) := by
-  sorry
+  constructor
+  · intro r htree hkey
+    cases hr : refusal s r with
+    | some why => exact ⟨why, error_of_refusal s r why hr⟩
+    | none =>
+      exfalso
+      rcases (refusal_none_iff s r).mp hr with ⟨hw, _⟩ | ⟨_, _, _, _, hcase⟩
+      · exact htree hw
+      · rcases hcase with ⟨_, hb⟩ | ⟨_, hb⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ | ⟨_, hb, _⟩ <;>
+          (rw [hkey, hterm] at hb; exact absurd hb (by decide))
+  · intro acts t hfold
+    exact foldActions_preserves_terminal s acts t key hterm (foldBatch_inv s acts t hfold).2
 
 /-- **W1** — at most one active token, exactly one iff the leaf is Active. -/
 theorem active_witness_unique (s : RegistryState) (h : Reachable s) (key : Key) :
