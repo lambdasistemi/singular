@@ -9,6 +9,14 @@ values the supply laws are simply false. -/
 namespace Singular
 namespace Statements
 
+/-- A read's verification is exactly the intermediate leaf being the claimed
+terminal state, against a committed root. -/
+theorem readAt_true_iff (s : RegistryState) (key : Key) :
+    readAt s 0 key .terminal = true ↔
+      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
+  unfold readAt
+  simp [Bool.and_eq_true]
+
 /-- **P1** — no tree change without approval, and the pins never move. -/
 theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : Result)
     (h : Reachable s) (hok : step s r = .ok t) (htree : r.edge ≠ .witnessTerminal) :
@@ -203,10 +211,37 @@ theorem terminal_witness_plural (s : RegistryState) (key : Key) (h : Reachable s
     (∃ t, step s (Request.mk .witnessTerminal key 0 0 0 out none
         [(.terminal, 1)]) = .ok t ∧
       kindCount t.state .terminal key = kindCount s .terminal key + 1) ∧
-    (∀ h ∈ s.held, h.kind = .terminal → h.key = key) ∧
+    (∀ h ∈ s.held, h.kind = .terminal → trieGet s.trie h.key = .known .terminal) ∧
     (∀ n : Nat, ∃ (u : RegistryState), Reachable u ∧
-      kindCount u .terminal key = n ∧ trieGet u.trie key = .known .terminal) := by
-  sorry
+      kindCount u .terminal key = kindCount s .terminal key + n ∧
+      trieGet u.trie key = .known .terminal) := by
+  have hroot : s.config.root = rootOf s.trie := (reachable_consistent s h).1
+  have hmint : ∀ (u : RegistryState) (o : Nat), Reachable u → u.config.root = rootOf u.trie →
+      trieGet u.trie key = .known .terminal →
+      ∃ v, step u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) = .ok v ∧
+        Reachable v.state ∧ v.state.config = u.config ∧ v.state.trie = u.trie ∧
+        kindCount v.state .terminal key = kindCount u .terminal key + 1 := by
+    intro u o hu hru htu
+    have hr : readAt u 0 key .terminal = true := (readAt_true_iff u key).mpr ⟨hru, htu⟩
+    have href : refusal u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) = none :=
+      (refusal_none_iff u _).mpr (Or.inl ⟨rfl, hr⟩)
+    obtain ⟨h1, h2, _, h4, _, _⟩ :=
+      applyEdge_witnessTerminal u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]) rfl
+    refine ⟨applyEdge u (Request.mk .witnessTerminal key 0 0 0 o none [(.terminal, 1)]), ?_, ?_, h2, h1, ?_⟩
+    · exact ok_of_refusal u _ href
+    · exact Reachable.next hu (ok_of_refusal u _ href)
+    · simp [kindCount, h4, countHeld_cons]
+  refine ⟨?_, fun hh hmem hk => (reachable_consistent s h).2.2.2.2.2.1 _ hmem hk, ?_⟩
+  · obtain ⟨v, hstep, _, _, _, hcount⟩ := hmint s out h hroot hterm
+    exact ⟨v, hstep, hcount⟩
+  · intro n
+    induction n with
+    | zero => exact ⟨s, h, by simp, hterm⟩
+    | succ k ih =>
+      obtain ⟨u, hu, hcount, hleaf⟩ := ih
+      have hru : u.config.root = rootOf u.trie := (reachable_consistent u hu).1
+      obtain ⟨v, _, hv, hcfg, htrie, hvc⟩ := hmint u out hu hru hleaf
+      exact ⟨v.state, hv, by rw [hvc, hcount]; omega, by rw [htrie]; exact hleaf⟩
 
 /-- **W4** — kind exclusion: at most one kind of witness is outstanding for a
 key, so a consumer that finds one kind knows the other two do not exist. -/
@@ -265,14 +300,6 @@ theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) 
     · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
       · exact h0
       · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
-
-/-- A read's verification is exactly the intermediate leaf being the claimed
-terminal state, against a committed root. -/
-theorem readAt_true_iff (s : RegistryState) (key : Key) :
-    readAt s 0 key .terminal = true ↔
-      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
-  unfold readAt
-  simp [Bool.and_eq_true]
 
 /-! ### Edge inversions — one per edge, exact guards and effects -/
 
