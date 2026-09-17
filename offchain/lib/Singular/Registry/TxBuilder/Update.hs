@@ -176,7 +176,7 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
                     Just s -> Just s
                     Nothing -> Just script
                 }
-    duties <- case registryDuties cfg pp oldState ctx reqUtxos of
+    duties <- case registryDuties cfg pp oldState ctx reqUtxos (map (const True) reqUtxos) of
         Right d -> pure d
         Left err -> error ("updateToken: " <> err)
     upperSlot <-
@@ -554,14 +554,20 @@ registryDuties ::
     OnChainTokenState ->
     RegistryContext ->
     [(TxIn, TxOut ConwayEra)] ->
+    -- | Whether each request is PROCESSED by this fold. A rejected
+    -- request takes no edge: it owes its owner a refund, and the
+    -- approval that certified it was never spent.
+    [Bool] ->
     Either String RegistryDuties
-registryDuties cfg pp st ctx reqUtxos =
-    mconcat <$> mapM one reqUtxos
+registryDuties cfg pp st ctx reqUtxos processed =
+    mconcat <$> mapM one (zip reqUtxos (processed <> repeat True))
   where
     net = network cfg
     cageAddr = cageAddrFromCfg cfg net
     tip = stateMaxFee st
-    one (_, reqOut) = do
+    one (_, isProcessed)
+        | not isProcessed = Right mempty
+    one ((_, reqOut), _) = do
         req <- case extractCageDatum reqOut of
             Just (RequestDatum r) -> Right r
             _ -> Left "registryDuties: a request input carries no request datum"

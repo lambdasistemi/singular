@@ -276,7 +276,6 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
 import Singular.Registry.TxBuilder.Request (
-    requestDeleteImpl,
     requestInsertImpl,
     requestUpdateImpl,
  )
@@ -2861,6 +2860,7 @@ assembleFoldSpec env fs = do
     -- went up at its boot: a fold that attached the state validator
     -- instead would be refused for size before any script could speak.
     let refs = fsRefs fs
+    ctx <- foldSpecContext env fs
     let prov = envProv env
 
     pp <- Cage.queryProtocolParams prov
@@ -2878,6 +2878,16 @@ assembleFoldSpec env fs = do
     oldState <- case extractCageDatum (snd (fsState fs)) of
         Just (StateDatum s) -> pure s
         _ -> failWith "hand-build: state output has no StateDatum"
+    duties <-
+        case registryDuties
+            (fsCfg fs)
+            pp
+            oldState
+            ctx
+            (fsReqs fs)
+            (foldSpecProcessed fs) of
+            Right d -> pure d
+            Left err -> failWith ("hand-build: " <> err)
     -- A near-now upper bound: the tx is submitted immediately after
     -- assembly, and a slot 30s+ ahead lands past the node's ledger
     -- translation horizon (epoch-safe-zone) and fails phase 1.
@@ -2922,9 +2932,9 @@ assembleFoldSpec env fs = do
     newStateOut <- case fsStateOverride fs of
         Nothing -> pure (makeStateOut oldState)
         Just s -> pure (makeStateOutOverride s)
-    changeOut <- makeChange pp funder feeAmt refunds
-    redeemers <- makeRedeemers fs funder
-    scripts <- makeScripts fs refs
+    changeOut <- makeChange pp funder feeAmt refunds duties
+    redeemers <- makeRedeemers fs funder duties
+    scripts <- makeScripts fs refs duties
     let signers = case fsSigners fs of
             Nothing -> harnessSigners
             Just ss -> ss
@@ -2938,8 +2948,25 @@ assembleFoldSpec env fs = do
                 & inputsTxBodyL .~ inputs
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
-                        (newStateOut : refundOuts refunds <> [changeOut])
+                        ( newStateOut
+                            : rdOutputs duties
+                            <> refundOuts refunds
+                            <> [changeOut]
+                        )
                 & feeTxBodyL .~ Coin feeAmt
+                & mintTxBodyL
+                    .~ MultiAsset
+                        ( foldr
+                            ( \m acc ->
+                                Map.insertWith
+                                    (Map.unionWith (+))
+                                    (cmPolicy m)
+                                    (cmAssets m)
+                                    acc
+                            )
+                            Map.empty
+                            (rdMints duties)
+                        )
                 & collateralInputsTxBodyL
                     .~ Set.singleton (fromMaybe (fst funder) (fsCollateral fs))
                 & reqSignerHashesTxBodyL .~ Set.fromList signers
@@ -2986,8 +3013,10 @@ assembleFoldSpec env fs = do
                 (network (fsCfg fs))
                 (extractOwnerBytes o)
             )
-            (MaryValue (Coin c) (MultiAsset (rawAssets o)))
-        | (c, (_, o)) <- zip explicit (fsReqs fs)
+            (MaryValue (Coin c) (MultiAsset assetsBack))
+        | (c, ((_, o), isProcessed)) <-
+            zip explicit (zip (fsReqs fs) (foldSpecProcessed fs <> repeat True))
+        , let assetsBack = if isProcessed then Map.empty else rawAssets o
         ]
     makeStateOut oldState =
         let scriptAddr = cageAddrFromCfg (fsCfg fs) (network (fsCfg fs))
@@ -3007,19 +3036,22 @@ assembleFoldSpec env fs = do
                 scriptAddr
                 (snd (fsState fs) ^. valueTxOutL)
                 & datumTxOutL .~ mkInlineDatum (toPlcData newDatum)
-    makeChange pp funder' feeAmt refunds = do
+    makeChange pp funder' feeAmt refunds duties = do
         let reqCoins = [outCoin o | (_, o) <- fsReqs fs]
             funderCoin = outCoin (snd funder')
+            -- The carriers an edge owes take the deposit that rode its
+            -- request; what is left over is change.
+            dutyCoins = map outCoin (rdOutputs duties)
             change =
-                sum reqCoins + funderCoin - sum refunds - feeAmt
+                sum reqCoins + funderCoin - sum refunds - sum dutyCoins - feeAmt
             out = mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
             Coin minAda = getMinCoinTxOut @ConwayEra pp out
         require
             ("hand-build: change under min-ADA: " <> show change)
             (change >= minAda)
         pure out
-    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> IO (Redeemers ConwayEra)
-    makeRedeemers fs' funder' = do
+    makeRedeemers :: FoldSpec -> (TxIn, TxOut ConwayEra) -> RegistryDuties -> IO (Redeemers ConwayEra)
+    makeRedeemers fs' funder' duties = do
         let inputs =
                 Set.fromList
                     ( fst (fsState fs') : fst funder' : map fst (fsReqs fs')
@@ -3040,14 +3072,23 @@ assembleFoldSpec env fs = do
                 Just _ ->
                     [ (ConwayRewarding (AsIx 0), (toLedgerData (0 :: Integer), units))
                     ]
+            -- #157: the token policies this fold moves tokens under.
+            mintPolicies = map cmPolicy (rdMints duties)
+            mintIndex p =
+                AsIx (fromIntegral (length (takeWhile (/= p) (Map.keys (Map.fromList [(q, ()) | q <- mintPolicies])))))
+            mintPairs =
+                [ (ConwayMinting (mintIndex (cmPolicy m)), (toLedgerData (cmRedeemer m), units))
+                | m <- rdMints duties
+                ]
             pairs =
                 ( statePurpose
                 , (toLedgerData (Modify (fsActions fs')), units)
                 )
                     : requestPairs
                     <> hookPairs
+                    <> mintPairs
         pure (Redeemers (Map.fromList pairs))
-    makeScripts fs' refs = do
+    makeScripts fs' refs duties = do
         let stateScript = mkCageScript (fsCfg fs')
             reqScript = mkRequestScript (fsCfg fs') (fsTid fs')
 
@@ -3068,6 +3109,10 @@ assembleFoldSpec env fs = do
                   ]
                     <> (if null refs then requestScripts else [])
                     <> stakeScript
+                    <> [ (hashScript (cmScript m), cmScript m)
+                       | m <- rdMints duties
+                       , null refs
+                       ]
                 )
             )
     -- Harness-key signers (NOTE-046): every hand-built fold carries
@@ -3102,8 +3147,7 @@ assembleFoldWithFee env fs = go (0 :: Int) 1_500_000
         -- Conway charges for the reference scripts a transaction reads,
         -- by their size. Estimating against zero of them stops this loop
         -- one fee short and the node refuses the result.
-        let refs = fsRefs fs
-        let refBytes = sum (map (refScriptSize . snd) refs)
+        let refBytes = sum (map (refScriptSize . snd) (fsRefs fs))
             Coin est = estimateMinFeeTx pp tx 1 0 refBytes
             needed = est + 50_000
         if fee >= needed || n >= (5 :: Int)
@@ -3473,10 +3517,12 @@ runCG07 env = do
         Coin estFee = estimateMinFeeTx pp draft 1 0 0
         fee = estFee + 50_000
         refundCoin = reqVal - fee
+        -- A retracted booking is not folded, so the approval that
+        -- certified its edge comes back with the deposit.
         refundOut =
             mkBasicTxOut
                 (addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut))
-                (MaryValue (Coin refundCoin) mempty)
+                (MaryValue (Coin refundCoin) (MultiAsset (rawAssets reqOut)))
         Coin minAda = getMinCoinTxOut @ConwayEra pp refundOut
     require
         "CG07 hand retract: refund under min-ADA"
@@ -3622,7 +3668,7 @@ runCG10 env = do
     -- The stale claims: k-c's insertion proof against the pre-fold
     -- (empty) root, captured before any fold advances it.
     (staleSteps, staleRoot) <-
-        speculativeInsert env cage tid "cg10-key-c" "cg10-value-c"
+        speculativeInsert env cage tid "cg10-key-c" leafAbsent
     _ <-
         rowRequestAndFold
             env
@@ -3656,9 +3702,11 @@ runCG10 env = do
     submitExpectRefused env "CG10" AgreesWithModel (stateMarkerOf cfg) staleTx
     -- Control: the same request folded against the live root, the
     -- hand shape calibrated against the library fold.
-    libFold <- updateTokenImpl cfg (envProv env) (envTm env) tid genesisAddr
+    ctxLive <- rowRegistryContext env cage tid
+    libFold <-
+        updateTokenWithDuties cfg (envProv env) (envTm env) tid genesisAddr ctxLive
     (freshSteps, freshRoot) <-
-        speculativeInsert env cage tid "cg10-key-c" "cg10-value-c"
+        speculativeInsert env cage tid "cg10-key-c" leafAbsent
     let freshSpec =
             (rowSpec
                 cage
@@ -3749,7 +3797,7 @@ runCG11 env = do
         rowRequestInsert env cage "cg11-key" "cg11-value"
     stateC <- cageStateUtxo env cage
     (stepsC, rootC) <-
-        speculativeInsert env cage tid "cg11-key" "cg11-value"
+        speculativeInsert env cage tid "cg11-key" leafAbsent
     potC <- collateralPot env
     unitsC <- declaredSpec env cage
     let ctrlSpec =
@@ -3795,7 +3843,7 @@ runCG12 env = do
     req <-
         rowRequestInsert env cage "cg12-key" "cg12-value"
     (steps12, root12) <-
-        speculativeInsert env cage tid "cg12-key" "cg12-value"
+        speculativeInsert env cage tid "cg12-key" leafAbsent
     state <- cageStateUtxo env cage
     pot <- collateralPot env
     units <- declaredSpec env cage
@@ -3885,7 +3933,7 @@ runCG12 env = do
         rowRequestInsert env cage "cg12-key-d" "cg12-value-d"
     state3 <- cageStateUtxo env cage
     (stepsD, rootD) <-
-        speculativeInsert env cage tid "cg12-key-d" "cg12-value-d"
+        speculativeInsert env cage tid "cg12-key-d" leafAbsent
     pot3 <- collateralPot env
     let exactSpec =
             (rowSpec
@@ -3974,7 +4022,7 @@ runCG14 env = do
     -- Control: the withdrawal present, the owner declaration absent.
     reqB <- rowRequestInsert env cage "cg14-key-b" "cg14-value-b"
     (stepsB, rootB) <-
-        speculativeInsert env cage tid "cg14-key-b" "cg14-value-b"
+        speculativeInsert env cage tid "cg14-key-b" leafAbsent
     state <- cageStateUtxo env cage
     pot <- collateralPot env
     units <- declaredSpec env cage
@@ -4023,7 +4071,7 @@ runCG15 env = do
     req <-
         rowRequestInsert env cage "cg15-key" "cg15-value"
     (steps15, root15) <-
-        speculativeInsert env cage tid "cg15-key" "cg15-value"
+        speculativeInsert env cage tid "cg15-key" leafAbsent
     state <- cageStateUtxo env cage
     pot <- collateralPot env
     units <- declaredSpec env cage
@@ -4470,23 +4518,29 @@ rowRequestAndFold ::
     ByteString ->
     OnChainOperation ->
     IO (ConwayTx, Integer, Integer, Integer)
-rowRequestAndFold env cage label key _val op = do
+rowRequestAndFold env cage label key _val _op = do
     let cfg = rcCfg cage
         prov = envProv env
     tid <- cageTid cage
-    unsignedReq <- case op of
-        OpInsert v ->
-            requestInsertImpl cfg prov (defaultTip cfg) tid key v genesisAddr
-        OpDelete v ->
-            requestDeleteImpl cfg prov (defaultTip cfg) tid key v genesisAddr
-        OpUpdate o n ->
-            requestUpdateImpl cfg prov (defaultTip cfg) tid key o n genesisAddr
-        -- #157: no CG row builds a read request; the registry-only
-        -- harness has no terminal leaf to read.
-        OpRead _ ->
-            failWith "no CG row builds a read request"
-    _ <- submitWithGenesis (envSubmit env) unsignedReq
-    unsignedFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    -- #157 A-009: the row books an edge. The absence witness is the one
+    -- edge that needs no signature, and it is what every issue-70 row
+    -- asks of the trie.
+    dest <- edgeDestination env (OpInsert leafAbsent)
+    _ <-
+        bookEdge
+            env
+            cfg
+            tid
+            genesisAddr
+            genesisSignKey
+            key
+            (OpInsert leafAbsent)
+            dest
+            []
+            (defaultTipCoin cfg + cgDeposit)
+    ctx <- rowRegistryContext env cage tid
+    unsignedFold <-
+        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
     state@(stateIn, _) <- cageStateUtxo env cage
     reqUtxos <- pendingRequests env cage
     (handProofs, handRoot) <- speculativeApplyAll env cage tid reqUtxos
@@ -4511,7 +4565,10 @@ rowRequestAndFold env cage label key _val op = do
     signed <- submitWithGenesis (envSubmit env) unsignedFold
     let size = txSizeBytes signed
     emitMeasure env label mem cpu size
-    rowCommit env cage key op
+    -- Commit what was FOLDED, which is the absence this row booked: the
+    -- caller.s value never reached the chain, and a trie holding it
+    -- would prove against a root the chain does not have.
+    rowCommit env cage key (OpInsert leafAbsent)
     pure (signed, mem, cpu, size)
 
 -- | Every pending request UTxO of a row cage, in tx-input order.
@@ -4767,7 +4824,7 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
     -- two assemblies of them.
     ctx0 <- registryContext env
     let ctx = ctx0 {rcAllowInadmissible = True}
-    duties <- case registryDuties (envCfg env) pp oldState ctx reqUtxos of
+    duties <- case registryDuties (envCfg env) pp oldState ctx reqUtxos (map (const True) reqUtxos) of
         Right d -> pure d
         Left err -> failWith ("hand-build: " <> err)
     -- #157 C10: there is no pinned consumer and no mandatory
@@ -6984,3 +7041,71 @@ publishRefScript env script = do
                 )
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
+
+{- | The duties context for a row cage: its own three token policies, the
+cage script its custody spends run, its UTxOs, the one destination datum
+the harness books against, and the reference outputs published at its boot.
+-}
+rowRegistryContext :: Env -> RowCage -> TokenId -> IO RegistryContext
+rowRegistryContext env cage tid = do
+    let cfg = rcCfg cage
+        (_, _, codes) = envCodes env
+        registryId =
+            scriptHashBytes (cfgScriptHash cfg)
+                <> SBS.fromShort (assetNameBytes (unTokenId tid))
+        witnessAt kind =
+            scriptFromBytes
+                ("witness-" <> show kind)
+                ( applyBytesParam
+                    registryId
+                    (applyDataParam (PLC.I kind) (ncWitness codes))
+                )
+    utxos <- cageUtxosOf env cfg
+    pure
+        RegistryContext
+            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+            , rcCageScript = Just (mkCageScript cfg)
+            , rcCageUtxos = utxos
+            , rcDatums = [(recordDatumHash, recordDatum)]
+            , rcAllowInadmissible = False
+            , rcRefUtxos = rcRefs cage
+            }
+
+{- | The duties context for a fold spec, from its own cage configuration
+and the reference outputs it carries.
+-}
+foldSpecContext :: Env -> FoldSpec -> IO RegistryContext
+foldSpecContext env fs = do
+    let cfg = fsCfg fs
+        (_, _, codes) = envCodes env
+        registryId =
+            scriptHashBytes (cfgScriptHash cfg)
+                <> SBS.fromShort (assetNameBytes (unTokenId (fsTid fs)))
+        witnessAt kind =
+            scriptFromBytes
+                ("witness-" <> show kind)
+                ( applyBytesParam
+                    registryId
+                    (applyDataParam (PLC.I kind) (ncWitness codes))
+                )
+    utxos <- cageUtxosOf env cfg
+    pure
+        RegistryContext
+            { rcWitnessScripts = Map.fromList [(k, witnessAt k) | k <- [0, 1, 2]]
+            , rcCageScript = Just (mkCageScript cfg)
+            , rcCageUtxos = utxos
+            , rcDatums = [(recordDatumHash, recordDatum)]
+            , -- A refusal row exists to watch the chain refuse a fold the
+              -- builder cannot discharge duties for; it must still be built.
+              rcAllowInadmissible = True
+            , rcRefUtxos = fsRefs fs
+            }
+
+-- | Which of a fold's requests it PROCESSES, as opposed to rejects.
+foldSpecProcessed :: FoldSpec -> [Bool]
+foldSpecProcessed fs =
+    [ case a of
+        CageTypes.Rejected -> False
+        _ -> True
+    | a <- fsActions fs
+    ]
