@@ -560,7 +560,9 @@ registryDuties ::
     [Bool] ->
     Either String RegistryDuties
 registryDuties cfg pp st ctx reqUtxos processed =
-    mconcat <$> mapM one (zip reqUtxos (processed <> repeat True))
+    -- Unmatched requests are NOT processed: a deficit fold has more
+    -- requests than actions, and the tail of it takes no edge.
+    mconcat <$> mapM one (zip reqUtxos (processed <> repeat False))
   where
     net = network cfg
     cageAddr = cageAddrFromCfg cfg net
