@@ -230,20 +230,175 @@ pub fn approval_name(
   )
 }
 
-/// RED: the six arms of R-NM4 are not implemented. Every edge
-/// certifies, including `deleteActive`, which must never certify, and no
-/// arm names a reason — so N1 to N5 fold their refusals and the trace map
-/// has no executable extent for `controller-signature`,
-/// `custody-refund-signature` or `never-certified`.
+/// The six arms of R-NM4 (#157 N2). Edge indices are the C2 row indices:
+/// `0` insertAbsent, `1` insertActive, `2` updateActive, `3`
+/// updateTerminal, `4` deleteAbsent, `5` deleteActive.
 fn approve(
-  _edge: Int,
-  _key: ByteArray,
-  _owner: ByteArray,
-  _destination: (ByteArray, ByteArray),
-  _policy_id: PolicyId,
-  _tx: Transaction,
+  edge: Int,
+  key: ByteArray,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+  policy_id: PolicyId,
+  tx: Transaction,
 ) -> Bool {
-  True
+  let (dest_address, datum_hash) = destination
+  if edge == 0 {
+    // insertAbsent — anyone may witness that a name is free. What the
+    // approval binds is where the deposit goes back to: `owner` is the
+    // refund address's payment key, and the request's destination names
+    // that address. No signature: Carol needs nobody's permission to say
+    // a name is unclaimed, and she alone can retract it later.
+    if datum_hash != #"" {
+      trace @"absence-names-no-datum"
+      False
+    } else if !refund_binds(dest_address, owner) {
+      trace @"absence-refund-binding"
+      False
+    } else {
+      True
+    }
+  } else if edge == 1 || edge == 2 {
+    // insertActive / updateActive — the controller who will own the
+    // record signs, and the destination binds the record datum, so the
+    // folder cannot create Alice's record with a controller of its own
+    // choosing (D-DEST).
+    if !has(tx.extra_signatories, owner) {
+      trace @"controller-signature"
+      False
+    } else if !record_destination(dest_address, datum_hash, policy_id) {
+      trace @"record-destination"
+      False
+    } else {
+      True
+    }
+  } else if edge == 3 {
+    // updateTerminal — the same transaction must be the `Retire` that
+    // proves the committed recovery key or the quorum. The proof is
+    // checked once, by `retire`; this arm requires its presence, so a
+    // terminate approval cannot be minted on its own.
+    if destination != (#"", #"") {
+      trace @"termination-names-no-destination"
+      False
+    } else if !retire_present(key, tx) {
+      trace @"retire-required"
+      False
+    } else {
+      True
+    }
+  } else if edge == 4 {
+    // deleteAbsent — the refund address the cage recorded in custody for
+    // this key signs. The custody UTxO is read as a REFERENCE input: the
+    // fold spends it, this arm only reads what it says.
+    if destination != (#"", #"") {
+      trace @"deletion-names-no-destination"
+      False
+    } else if !custody_refund_signs(key, owner, tx) {
+      trace @"custody-refund-signature"
+      False
+    } else {
+      True
+    }
+  } else {
+    // deleteActive — never certified. A live registration does not
+    // return to absence; it ends (`updateTerminal`) or it is deleted by
+    // nobody.
+    trace @"never-certified"
+    False
+  }
+}
+
+/// The refund address is canonical, pays a key, and that key is the
+/// `owner` the approval binds.
+fn refund_binds(dest_address: ByteArray, owner: ByteArray) -> Bool {
+  when naming.decode_address(dest_address) is {
+    Some(shape) -> shape.payment_key && shape.payment_hash == owner
+    None -> False
+  }
+}
+
+/// The destination of a booking is the application's own address, and it
+/// names a well-formed (32-byte) datum hash.
+fn record_destination(
+  dest_address: ByteArray,
+  datum_hash: ByteArray,
+  policy_id: PolicyId,
+) -> Bool {
+  when naming.decode_address(dest_address) is {
+    Some(shape) ->
+      !shape.payment_key && shape.payment_hash == policy_id && bytearray.length(
+        datum_hash,
+      ) == 32
+    None -> False
+  }
+}
+
+/// A `Retire` for this key is being executed in this transaction.
+fn retire_present(key: ByteArray, tx: Transaction) -> Bool {
+  find(
+    tx.inputs,
+    fn(input) {
+      when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
+        Some(data) ->
+          if data is Retire { key: retired, revealed_control: _ }: ApplicationRedeemer {
+            retired == key
+          } else {
+            False
+          }
+        None -> False
+      }
+    },
+  ) != None
+}
+
+/// The custody UTxO for this key, read as a reference input, records a
+/// refund address whose payment key is `owner` — and `owner` signs.
+fn custody_refund_signs(
+  key: ByteArray,
+  owner: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  when
+    find(
+      tx.reference_inputs,
+      fn(input) {
+        is_cage_address(input) && custody_key_of(input) == Some(key)
+      },
+    )
+  is {
+    Some(custody) ->
+      when custody_refund_of(custody) is {
+        Some(refund) ->
+          refund_binds(refund, owner) && has(tx.extra_signatories, owner)
+        None -> False
+      }
+    None -> False
+  }
+}
+
+fn is_cage_address(input: Input) -> Bool {
+  input.output.address.payment_credential == address.Script(mpfs_state_hash)
+}
+
+fn custody_key_of(input: Input) -> Option<ByteArray> {
+  when input.output.datum is {
+    InlineDatum(datum) ->
+      when naming.mpfs_custody(datum) is {
+        Some((key, _)) -> Some(key)
+        None -> None
+      }
+    _ -> None
+  }
+}
+
+fn custody_refund_of(input: Input) -> Option<ByteArray> {
+  when input.output.datum is {
+    InlineDatum(datum) ->
+      when naming.mpfs_custody(datum) is {
+        Some((_, refund)) -> Some(refund)
+        None -> None
+      }
+    _ -> None
+  }
 }
 
 /// `LM01` accepts; `LM02` (no signature), `LM03` (tampered control or
@@ -251,8 +406,8 @@ fn approve(
 /// maintenance never touches the trie, so the registry state may not be
 /// a spent input of this transaction at all.
 fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
-  // RED: nothing stops maintenance from spending the registry state.
-  if False {
+  if registry_is_spent(tx) {
+    trace @"no-registry-spend"
     False
   } else {
     let Transaction { extra_signatories, .. } = tx
@@ -270,6 +425,10 @@ fn maintain(record: NamingRecord, claim: Input, tx: Transaction) -> Bool {
     // The record's value — including its active token — is preserved.
     value_preserved(claim.output.value, continuation.value)
   }
+}
+
+fn registry_is_spent(tx: Transaction) -> Bool {
+  find(tx.inputs, is_registry_state) != None
 }
 
 /// The domain-separated commitment over a full binary address, exactly as
@@ -317,7 +476,8 @@ fn recover(
   own_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
-  if False {
+  if registry_is_spent(tx) {
+    trace @"no-registry-spend"
     False
   } else {
     let Transaction { extra_signatories, .. } = tx
@@ -371,15 +531,11 @@ fn retire(
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
-  // RED: the current control key still ends a name, exactly as it did
-  // before the rule changed, and no refusal here is named — so the row that
-  // must now refuse is folded, and `retire-needs-recovery-key` has no
-  // executable extent.
-  let _unused = revealed_control
-  if !has(extra_signatories, naming.control_hash(record)) && !quorum_authorized(
+  if !recovery_proved(record, revealed_control, extra_signatories) && !quorum_authorized(
     record,
     extra_signatories,
   ) {
+    trace @"retire-needs-recovery-key"
     False
   } else {
     let (_, expected) = referenced_registry(tx)
