@@ -2,13 +2,13 @@ use aiken/collection/list.{has}
 use aiken/collection/pairs
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference, Spend, Transaction}
-use lib.{TokenId}
 use shared.{
   carriesStateToken, in_phase1, in_phase2, inputByRef, inputOrReferenceByRef,
   is_rejectable, readState,
 }
 use types.{
-  CageDatum, Contribute, Insert, Modify, Request, RequestDatum, Retract, State, Sweep,
+  CageDatum, Contribute, Insert, Modify, Read, Request, RequestDatum, Retract, State,
+  Sweep, TokenId,
   UpdateRedeemer,
 }
 
@@ -92,11 +92,15 @@ fn validateRetract(
     request
   let Transaction { extra_signatories, validity_range, .. } = tx
   expect requestToken == cageToken
-  // Insert-only retraction (issue #79, Defect 2): Lean `step .withdraw`
-  // throws `withdraw-insert-only` for any non-insert request, and
-  // `step .escape` throws `completion-only-custody`. An Update (retirement)
-  // or Delete request must NOT be retractable. Owner sig, phase-2 window
-  // and state-token binding below are retained.
+  // Insert-and-read retraction (issue #79 Defect 2; #157 C9, D-RETRACT):
+  // Lean `step .withdraw` throws `withdraw-insert-only` for any request
+  // that is neither, and `step .escape` throws
+  // `completion-only-custody`. An Update (retirement) or Delete request
+  // must NOT be retractable — the completion-only custody binds them.
+  // A `Read` carries no custody argument at all, so it retracts exactly
+  // as an insert does, and is the only new retractable class. Owner sig,
+  // phase-2 window and state-token binding below are retained.
+  // RED: the read is NOT retractable yet, and no refusal here is named.
   expect when requestValue is {
     Insert(_) -> True
     _ -> False
@@ -104,7 +108,8 @@ fn validateRetract(
   expect has(extra_signatories, requestOwner)
   let stateInput = inputOrReferenceByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)
-  let State { root: _root, tip: _tip, process_time, retract_time, .. } = readState(stateInput)
+  let State { root: _root, tip: _tip, process_time, retract_time, .. } =
+    readState(stateInput)
   expect in_phase2(validity_range, submitted_at, process_time, retract_time)
   True
 }

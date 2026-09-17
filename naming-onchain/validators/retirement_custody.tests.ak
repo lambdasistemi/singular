@@ -3,12 +3,12 @@ use cardano/address
 use cardano/assets.{add, zero}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output, OutputReference, Spend}
 use fixtures.{
-  app_address, app_policy, consumer_pin, controller, mock_registry_token, record_value,
-  rep_policy, representative_name, self_ref, state_datum, state_input, state_ref,
+  app_address, app_policy, controller, mock_registry_token, record_value,
+  rep_policy, registry_key, self_ref, state_datum, state_input, state_ref,
 }
 use naming.{
   MARejected, MAUpdate, MInsert, MLeaf, MRequest, MRequestDatum, MTokenId,
-  MUpdate, MirrorEnd, MirrorModify, mpfs_state_datum_with_root, mpfs_state_hash, over_marker_for,
+  MUpdate, MirrorEnd, MirrorModify, mpfs_state_datum_with_root, mpfs_state_hash,
 }
 
 /// Completion-only custody (issue #66): the representative it holds is
@@ -34,20 +34,20 @@ fn custody_tx(inputs, mint) {
 /// A co-created request input (NOTE-029): any script input from the
 /// same creator transaction as the custody output. Carries the exact
 /// pending Update the retire queued (NOTE-031): this registry's token
-/// moving the held representative to its Over marker.
+/// moving the held active token from live (`0x01`) to over (`0x02`).
 fn request_datum() {
   MRequestDatum(
     MRequest {
       requestToken: MTokenId { assetName: mock_registry_token },
       requestOwner: controller,
-      requestKey: "alice",
-      requestValue:
-        MUpdate(
-          representative_name,
-          over_marker_for(representative_name),
-        ),
+      requestKey: registry_key,
+      // #157 N4/N8: completion folds `Update(0x01, 0x02)` — the leaf
+      // codec IS the value now, and the Over marker is gone with the
+      // naming value vocabulary.
+      requestValue: MUpdate(#"01", #"02"),
       tip: 1000000,
       submitted_at: 0,
+      destination: (#"", #""),
     },
   )
 }
@@ -92,7 +92,7 @@ fn state_output_new() {
     value: state_input().output.value,
     datum:
       InlineDatum(
-        mpfs_state_datum_with_root(#"01", rep_policy, consumer_pin),
+        mpfs_state_datum_with_root(#"01", rep_policy, app_policy),
       ),
     reference_script: None,
   }
@@ -142,11 +142,11 @@ fn custody_completion_tx(inputs, outputs, mint, redeemers) {
 }
 
 fn held_value() {
-  add(record_value, rep_policy, fixtures.representative_name, 1)
+  add(record_value, rep_policy, fixtures.registry_key, 1)
 }
 
 fn burn_held() {
-  add(zero, rep_policy, fixtures.representative_name, -1)
+  add(zero, rep_policy, fixtures.registry_key, -1)
 }
 
 /// Completion burns the held representative exactly once, with no
@@ -285,6 +285,7 @@ fn request_datum_with(value) {
       requestValue: value,
       tip: 1000000,
       submitted_at: 0,
+      destination: (#"", #""),
     },
   )
 }
@@ -314,13 +315,10 @@ test custody_foreign_token_refuses() fail {
         requestToken: MTokenId { assetName: #"ffff" },
         requestOwner: controller,
         requestKey: "alice",
-        requestValue:
-          MUpdate(
-            representative_name,
-            over_marker_for(representative_name),
-          ),
+        requestValue: MUpdate(#"01", #"02"),
         tip: 1000000,
         submitted_at: 0,
+        destination: (#"", #""),
       },
     )
   retirement_custody.retirement_custody.spend(
@@ -347,7 +345,7 @@ test custody_non_update_value_refuses() fail {
       [
         custody_input(held_value()),
         state_input(),
-        request_input_with(request_datum_with(MInsert(representative_name))),
+        request_input_with(request_datum_with(MInsert(#"01"))),
       ],
       [state_output_new()],
       burn_held(),
@@ -369,7 +367,7 @@ test custody_wrong_old_value_refuses() fail {
         state_input(),
         request_input_with(
           request_datum_with(
-            MUpdate(#"ffff", over_marker_for(representative_name)),
+            MUpdate(#"ffff", #"02"),
           ),
         ),
       ],
@@ -391,7 +389,7 @@ test custody_wrong_new_value_refuses() fail {
       [
         custody_input(held_value()),
         state_input(),
-        request_input_with(request_datum_with(MUpdate(representative_name, #"ffff"))),
+        request_input_with(request_datum_with(MUpdate(#"01", #"ffff"))),
       ],
       [state_output_new()],
       burn_held(),
@@ -410,9 +408,9 @@ test custody_wrong_new_value_refuses() fail {
 /// policy.
 test custody_foreign_policy_lookalike_refuses() fail {
   let foreign_held =
-    add(zero, #"666f726569676e2d706f6c696379", representative_name, 1)
+    add(zero, #"666f726569676e2d706f6c696379", registry_key, 1)
   let foreign_burn =
-    add(zero, #"666f726569676e2d706f6c696379", representative_name, -1)
+    add(zero, #"666f726569676e2d706f6c696379", registry_key, -1)
   retirement_custody.retirement_custody.spend(
     None,
     #"00",
@@ -440,7 +438,7 @@ test custody_without_burn_refuses() fail {
 /// once.
 test custody_double_burn_refuses() fail {
   let double =
-    add(burn_held(), app_policy, fixtures.representative_name, -1)
+    add(burn_held(), app_policy, fixtures.registry_key, -1)
   retirement_custody.retirement_custody.spend(
     None,
     #"00",
@@ -449,19 +447,58 @@ test custody_double_burn_refuses() fail {
   )
 }
 
-/// The correct old/new values and burn cannot conceal a different spelling.
+/// The correct old/new values and burn cannot conceal a different key.
 test custody_wrong_spelling_refuses() fail {
   let datum: Data = MRequestDatum(MRequest {
     requestToken: MTokenId { assetName: fixtures.mock_registry_token },
     requestOwner: #"abcd", requestKey: "bob",
-    requestValue: MUpdate(representative_name, over_marker_for(representative_name)),
-    tip: 1000000, submitted_at: 0,
+    requestValue: MUpdate(#"01", #"02"),
+    tip: 1000000, submitted_at: 0, destination: (#"", #""),
   })
   retirement_custody.retirement_custody.spend(
     None, #"00", self_ref,
     custody_completion_tx(
       [custody_input(held_value()), state_input(), request_input_with(datum)],
       [state_output_new()], burn_held(), modify_singleton(),
+    ),
+  )
+}
+
+// ============================================================================
+// N8 — completion (#157 Gate S)
+// ============================================================================
+
+/// Completion is the fold of `Update(0x01, 0x02)`: the completion-only
+/// custody is spent, the active token it holds is exactly the burn the
+/// delta requires, and the name's leaf is `0x02` forever. Nobody signs —
+/// the retirement already decided; completion only executes it.
+test t157_n8_completion_folds_the_terminal_update_accepts() {
+  retirement_custody.retirement_custody.spend(
+    None,
+    #"00",
+    self_ref,
+    custody_completion_tx(
+      [custody_input(held_value()), state_input(), request_input()],
+      [state_output_new()],
+      burn_held(),
+      modify_singleton(),
+    ),
+  )
+}
+
+/// A completion whose burn is not the asset the custody holds is not
+/// this completion: the held token would survive a transition that says
+/// it died.
+test t157_n8_completion_burning_another_token_refuses() fail {
+  retirement_custody.retirement_custody.spend(
+    None,
+    #"00",
+    self_ref,
+    custody_completion_tx(
+      [custody_input(held_value()), state_input(), request_input()],
+      [state_output_new()],
+      add(zero, rep_policy, #"6e6f742d7468652d6b6579", -1),
+      modify_singleton(),
     ),
   )
 }
