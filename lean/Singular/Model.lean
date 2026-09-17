@@ -80,6 +80,19 @@ proof. These instances supply that, and nothing else: they add no behaviour,
 only the fact that the decidable equality the model already derives agrees with
 propositional equality. -/
 
+/-- `ByteArray`'s derived `BEq` is not registered as lawful in core either, and
+the root is a `ByteArray`, so a proof about `config.root == rootOf trie` needs
+this to reduce to an equation. -/
+instance : LawfulBEq ByteArray where
+  eq_of_beq {a b} h := by
+    cases a; cases b
+    simp only [BEq.beq, ByteArray.instBEq.beq] at h
+    exact congrArg ByteArray.mk (eq_of_beq h)
+  rfl {a} := by
+    cases a
+    simp only [BEq.beq, ByteArray.instBEq.beq]
+    exact beq_self_eq_true (α := Array UInt8) _
+
 instance : LawfulBEq State where
   eq_of_beq {a b} h := by cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
   rfl {a} := by cases a <;> rfl

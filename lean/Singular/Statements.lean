@@ -20,7 +20,26 @@ theorem no_tree_change_without_approval (s : RegistryState) (r : Request) (t : R
     t.state.config.activePolicy = s.config.activePolicy ∧
     t.state.config.absentPolicy = s.config.absentPolicy ∧
     t.state.config.terminalPolicy = s.config.terminalPolicy := by
-  sorry
+  obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  rcases (refusal_none_iff s r).mp href with ⟨hw, _⟩ | ⟨ap, hap, hpol, hadm, hcase⟩
+  · exact absurd hw htree
+  · have happroval : ∃ ap, r.approval = some ap ∧ ap.policy = s.config.applicationPolicy ∧
+        ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
+        ap.destination = requestDestination r ∧
+        ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination := by
+      unfold admitsFor at hadm
+      rw [hap] at hadm
+      rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ <;>
+        (rw [hE] at hadm
+         simp only at hadm
+         simp only [Bool.and_eq_true, beq_iff_eq] at hadm
+         obtain ⟨⟨⟨⟨⟨_, hedge'⟩, hkey'⟩, hown'⟩, hdst'⟩, hasset'⟩ := hadm
+         exact ⟨ap, hap, hpol, by rw [hedge', hE], hkey', hown', hdst', hasset'⟩)
+    refine ⟨happroval, ?_, ?_, ?_, ?_⟩
+    all_goals (
+      rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ <;>
+        simp [applyEdge, hE])
 
 /-- **L1** — each request is spent once and in order (the fold is a step
 chain), a refusal anywhere refuses the whole batch, and no key ends the batch
@@ -195,6 +214,14 @@ theorem witness_kinds_exclude (s : RegistryState) (h : Reachable s) (key : Key) 
     · rcases Nat.eq_zero_or_pos (custodyCount s key) with h0 | hp
       · exact h0
       · have := hcust_leaf hp; rw [hl] at this; exact absurd this (by decide)
+
+/-- A read's verification is exactly the intermediate leaf being the claimed
+terminal state, against a committed root. -/
+theorem readAt_true_iff (s : RegistryState) (key : Key) :
+    readAt s 0 key .terminal = true ↔
+      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
+  unfold readAt
+  simp [Bool.and_eq_true]
 
 /-! ### Edge inversions — one per edge, exact guards and effects -/
 
@@ -447,14 +474,42 @@ theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result
     t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .terminal, output := r.output } :: s.held ∧
     t.mint = [(.terminal, 1)] ∧ t.paid = [] := by
-  sorry
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := applyEdge_witnessTerminal s r he
+  constructor
+  · intro hok
+    obtain ⟨href, ht⟩ := step_eq_ok s r t hok
+    subst ht
+    rcases (refusal_none_iff s r).mp href with ⟨_, hr⟩ | ⟨_, _, _, _, hcase⟩
+    · have := (readAt_true_iff s r.key).mp hr
+      exact ⟨this.2, this.1, h1, h2, h3, h4, h5, h6⟩
+    · rcases hcase with ⟨hE, _⟩ | ⟨hE, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩ | ⟨hE, _, _⟩
+      all_goals (rw [he] at hE; exact absurd hE (by decide))
+  · rintro ⟨hterm, hroot, htrie, hcfg, hcust, hheld, hmint, hpaid⟩
+    have hr : readAt s 0 r.key .terminal = true :=
+      (readAt_true_iff s r.key).mpr ⟨hroot, hterm⟩
+    have href : refusal s r = none := (refusal_none_iff s r).mpr (Or.inl ⟨he, hr⟩)
+    rw [ok_of_refusal s r href]
+    have hSt : ∀ (x y : RegistryState), x.config = y.config → x.trie = y.trie →
+        x.custody = y.custody → x.held = y.held → x = y := by
+      intro ⟨c1, t1, cu1, hh1⟩ ⟨c2, t2, cu2, hh2⟩ e1 e2 e3 e4
+      simp only at e1 e2 e3 e4
+      subst e1; subst e2; subst e3; subst e4; rfl
+    have hRes : ∀ (x y : Result), x.state = y.state → x.mint = y.mint → x.paid = y.paid →
+        x = y := by
+      intro ⟨s1, m1, p1⟩ ⟨s2, m2, p2⟩ e1 e2 e3
+      simp only at e1 e2 e3
+      subst e1; subst e2; subst e3; rfl
+    exact congrArg Except.ok (hRes _ _
+      (hSt _ _ (by rw [h2, hcfg]) (by rw [h1, htrie]) (by rw [h3, hcust]) (by rw [h4, hheld]))
+      (by rw [h5, hmint]) (by rw [h6, hpaid]))
 
 /-! ### Fold and read facts -/
 
 /-- A zero-request batch is always refused. -/
 theorem empty_fold_error (s : RegistryState) (batch : List Request)
     (h : batch = []) : foldBatch s batch = .error "empty-fold" := by
-  sorry
+  subst h
+  rfl
 
 /-- A fold succeeds iff every request applies in order and the claimed mint
 matches the summed delta of the folded edges. -/
@@ -471,14 +526,10 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
 theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
     (he : r.edge = .witnessTerminal) (hok : step s r = .ok t) :
     t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody := by
-  sorry
-
-/-- A read's verification is exactly the intermediate leaf being the claimed
-terminal state, against a committed root. -/
-theorem readAt_true_iff (s : RegistryState) (key : Key) :
-    readAt s 0 key .terminal = true ↔
-      s.config.root = rootOf s.trie ∧ trieGet s.trie key = .known .terminal := by
-  sorry
+  obtain ⟨_, ht⟩ := step_eq_ok s r t hok
+  subst ht
+  obtain ⟨h1, h2, h3, _, _, _⟩ := applyEdge_witnessTerminal s r he
+  exact ⟨h1, h2, h3⟩
 
 end Statements
 end Singular
