@@ -59,6 +59,16 @@
       "pause": 400
     }
   ],
+  "offchainlibsingularregistryconfighs": [
+    {
+      "text": "offchain/lib/Singular/Registry/Config.hs.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 2 rows, columns declaration, shape, constraint. The rows: CageConfig; bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState.",
+      "pause": 400
+    }
+  ],
   "removed": [
     {
       "text": "Removed.",
@@ -71,6 +81,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "6b56ff08756c892b21f9ab1a4afa1a026357d4db168892848eb8a61853d49d6b"
+    "sha256": "5079385169ab668b0f407e90d60d19220be71626cde2a2096bd6c1df7b8e17b1"
   }
 }

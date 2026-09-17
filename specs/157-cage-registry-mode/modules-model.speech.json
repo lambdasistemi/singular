@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "A table of 10 rows, columns module, responsibility after this ticket. The rows: types.ak; lib.ak; state.ak; request.ak; witness.ak; application.ak; retirement_custody.ak; naming.ak; conformance/; offchain/ encodings.",
+      "text": "A table of 10 rows, columns module, responsibility after this ticket. The rows: types.ak; lib.ak; state.ak; request.ak; witness.ak; application.ak; retirement_custody.ak; naming.ak; conformance/; offchain/ encodings and what they force.",
       "pause": 400
     }
   ],
@@ -35,6 +35,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "f1c40706708f857b15fdad105906022c27011cbe3aa5d8c2fd06cd1c54e38982"
+    "sha256": "354e4846254c0ac0f9006a1c2bbf61b2ccd76b9f74f2ce1d3968c99aa24bfb3e"
   }
 }
