@@ -894,79 +894,105 @@ fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
 // ----------------------------------------------------------------------------
 
 /// The cage's own spending path for a custody UTxO: spent in a `Modify`
-/// that consumes a request for ITS key with `Update(0x00, 0x01)` or
-/// `Delete(0x00)`, and nothing else. A plain spend, a fold for another
-/// key, and a fold whose request for this key is a read all refuse here.
-/// The refund leg is the fold's duty (`refund`), checked by `validModify`
-/// on the same transaction.
+/// of THIS registry that consumes a request for ITS key with
+/// `Update(0x00, 0x01)` or `Delete(0x00)`, and nothing else. A plain
+/// spend, a fold for another key, a fold whose request for this key is a
+/// read, and a fold of another registry sharing the state script all
+/// refuse here. The refund leg is the fold's duty (`refund`), checked by
+/// `validModify` on the same transaction.
 fn validCustodySpend(
   key: ByteArray,
   refund: ByteArray,
   self: Input,
   tx: Transaction,
 ) -> Bool {
-  if !foldAuthenticated(self.output.address, tx) {
-    // The fold itself, authenticated: the registry's own state token,
-    // at the cage's own address, SPENT with `Modify`. Without it a
-    // request-shaped neighbour would be enough, and custody would be
-    // spendable outside the fold that is supposed to consume it.
-    traceFalse(@"custody-spend")
-  } else if filter(
-    tx.inputs,
-    fn(i) {
-      i.output.address == self.output.address && consumesAbsent(i.output.datum, key)
-    },
-  ) == [] {
-    traceFalse(@"custody-spend")
-  } else if !paysAddressSomewhere(refund, self, tx) {
-    traceFalse(@"custody-spend")
-  } else {
-    True
+  when foldAuthenticated(self.output.address, tx) is {
+    None ->
+      // The fold itself, authenticated: the registry's own state token,
+      // at the cage's own address, SPENT with `Modify`. Without it a
+      // request-shaped neighbour would be enough, and custody would be
+      // spendable outside the fold that is supposed to consume it.
+      traceFalse(@"custody-spend")
+    Some(cageToken) ->
+      if filter(
+        tx.inputs,
+        fn(i) {
+          i.output.address == self.output.address && consumesAbsent(
+            i.output.datum,
+            key,
+            cageToken,
+          )
+        },
+      ) == [] {
+        traceFalse(@"custody-spend")
+      } else if !paysAddressSomewhere(refund, self, tx) {
+        traceFalse(@"custody-spend")
+      } else {
+        True
+      }
   }
 }
 
-/// Is this transaction a fold of the registry this custody belongs to?
-/// Exactly one input at the cage's own address carries a state datum and
-/// exactly one token under the cage's own policy, and that input is spent
-/// with `Modify`. The state validator then runs and judges the batch; a
-/// redeemer label alone would be a caller's claim, but the ledger cannot
-/// let this input be spent without executing the script that owns it.
-fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Bool {
+/// Is this transaction a fold of the registry this custody belongs to,
+/// and if so, which registry (#157 F-001, NOTE-004)?
+///
+/// Exactly one input at the cage's OWN address, carrying the state datum,
+/// SPENT with `Modify` — and the answer is that state's own cage token.
+/// The `Modify` is not a label a caller can assert: the ledger cannot let
+/// such an input be spent without executing this very validator on it,
+/// and `validModify` then proves the state token, the preserved pins, the
+/// new root and the minted deltas. Answering the token, rather than a
+/// bare yes, is what stops one registry's fold from authorizing another's
+/// custody when both are held by this same script: the caller must then
+/// show a request bound to the very registry whose fold it rode in on.
+fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Option<TokenId> {
   when
     filter(
       tx.inputs,
-      fn(i) { i.output.address == cageAddress && carriesState(i) },
+      fn(i) {
+        i.output.address == cageAddress && holdsState(i.output.datum) && spentModifying(
+          i.output_reference,
+          tx,
+        )
+      },
     )
   is {
     [stateIn] ->
-      when pairs.get_first(tx.redeemers, Spend(stateIn.output_reference)) is {
-        Some(data) ->
-          if data is Modify(_): UpdateRedeemer {
-            True
-          } else {
-            False
-          }
-        None -> False
+      when cageAddress.payment_credential is {
+        address.Script(policyId) ->
+          tokenFromPolicy(policyId, stateIn.output.value)
+        _ -> None
       }
-    _ -> False
+    _ -> None
   }
 }
 
-/// A state UTxO: a state datum and exactly one token under the policy of
-/// the script that holds it.
-fn carriesState(input: Input) -> Bool {
-  when input.output.datum is {
-    InlineDatum(datum) ->
-      if datum is StateDatum(_): CageDatum {
-        when input.output.address.payment_credential is {
-          address.Script(policyId) ->
-            when tokenFromPolicy(policyId, input.output.value) is {
-              Some(token) ->
-                exactQuantity(policyId, input.output.value, token, 1)
-              None -> False
-            }
-          _ -> False
-        }
+/// `CageDatum`'s constructor tags, with the payloads left as `Data`
+/// (#157 F-001). Which arm a neighbouring UTxO carries is all this needs
+/// to know, and deciding it on the tag costs a fraction of decoding the
+/// eight-field state a second time.
+type DatumTag {
+  RequestTag(Data)
+  StateTag(Data)
+  CustodyTag(Data, Data)
+}
+
+/// `UpdateRedeemer`'s constructor tags, likewise: the real redeemer
+/// carries the batch's whole MPF proofs, and this asks only which arm it
+/// is.
+type RedeemerTag {
+  EndTag
+  ContributeTag(Data)
+  ModifyTag(Data)
+  RetractTag(Data)
+  SweepTag(Data)
+}
+
+fn holdsState(datum: Datum) -> Bool {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is StateTag(_): DatumTag {
+        True
       } else {
         False
       }
@@ -974,13 +1000,34 @@ fn carriesState(input: Input) -> Bool {
   }
 }
 
-/// A request datum for this key whose operation consumes the absent
-/// token: `Update(0x00, 0x01)` or `Delete(0x00)`.
-fn consumesAbsent(datum: Datum, key: ByteArray) -> Bool {
+fn spentModifying(reference: OutputReference, tx: Transaction) -> Bool {
+  when pairs.get_first(tx.redeemers, Spend(reference)) is {
+    Some(data) ->
+      if data is ModifyTag(_): RedeemerTag {
+        True
+      } else {
+        False
+      }
+    None -> False
+  }
+}
+
+/// A request datum of THIS registry, for this key, whose operation
+/// consumes the absent token: `Update(0x00, 0x01)` or `Delete(0x00)`.
+///
+/// The `requestToken` binding (NOTE-004) is what makes the authenticated
+/// fold above conclusive rather than circumstantial: `validModify`
+/// processes only the requests naming its own cage token, so a request
+/// carrying this token is one that fold must have processed. Without it a
+/// second registry on the same script could lend its `Modify` to a
+/// request it will never touch.
+fn consumesAbsent(datum: Datum, key: ByteArray, cageToken: TokenId) -> Bool {
   when datum is {
     InlineDatum(inline) ->
       if inline is RequestDatum(request): CageDatum {
-        request.requestKey == key && when request.requestValue is {
+        request.requestKey == key && request.requestToken == cageToken && when
+          request.requestValue
+        is {
           Update(old, new) ->
             decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
               kindActive,

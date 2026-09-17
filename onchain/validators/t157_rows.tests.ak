@@ -1586,3 +1586,28 @@ test t157_v2_read_retracted_by_a_stranger_refuses() fail {
 test t157_v2_update_retract_refuses() fail {
   retract(Update(fx.activeLeaf, fx.terminalLeaf), fx.bookerKey)
 }
+
+/// NOTE-004: two registries share the state script. The neighbour being
+/// folded here is the OTHER one — authenticated, carrying its own state
+/// token, genuinely spent with `Modify` — and the request for this key is
+/// bound to the registry whose custody this is. That fold will never
+/// process this request, so its redeemer must not authorize the spend.
+test t157_t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
+  let modify: Data = Modify([UpdateAction([])])
+  state.state.spend(
+    Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),
+    Modify([]),
+    fx.custodyRef(0),
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: fx.phase1(),
+      inputs: [
+        fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit),
+        fx.foreignStateInput(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+        consumingRequest(fx.keyA, Update(fx.absentLeaf, fx.activeLeaf)),
+      ],
+      outputs: [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+      redeemers: [Pair(Spend(fx.foreignStateRef), modify)],
+    },
+  )
+}
