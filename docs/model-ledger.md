@@ -1,116 +1,106 @@
-# Executable logical model ledger
+# Model ledger
 
-As a model reviewer, use this register to locate the exact requirement or finite scenario behind a behavior you observe, and check its conditions and omissions. The lookup identifiers below preserve links to executable evidence; the [design stories](design.md) explain the same behavior as a journey.
+As a reviewer deciding how far to trust this model, use this page to see what it
+covers, what it deliberately abstracts, and — because this revision replaced the
+model wholesale — what happened to every guarantee the previous one made.
 
-This is a **CANDIDATE at MODEL + PROOFS stage**. The executable Lean machine is `Singular.step` in [the model source](../lean/Singular/Model.lean). Its finite corpus executes accepted and refused cases. Every theorem is PROVED from the standard axioms without changing its statement; there is no audit verdict or acceptance claim.
+This is a **candidate at model-and-proofs stage**. The executable machine is
+`Singular.step` in [the model source](../lean/Singular/Model.lean). Every
+declaration is proved from the standard axioms; there is no audit verdict and no
+acceptance claim here.
 
-## Authority and domain
+## What the model is, and what it abstracts
 
-The current protocol specification is the behavioral baseline. Its direct application-issued Insert and Withdraw action assets supersede early separate-native-policy prose. The authoritative transition function handles staged request construction, application release and evolution, outsider output creation, withdrawal, atomic selected folds, existing action movement and custody escape refusal. `foldOne` implements the three registry operations; `foldItems` applies them sequentially.
+The trie answers two questions and nothing else: is this key known, and where in
+its life is it. Applications store nothing in the leaf. Seven edges move a leaf,
+each an MPFS primitive applied to a state, each a delta over three token kinds.
 
-`Reachable` starts at an empty registry under a supplied configuration and closes over successful `step` executions. Supply, terminality and custody preservation claims quantify that ledger domain. Raw states can also be supplied for malformed-input tests; they are not all reachable. In particular UTxO-id uniqueness in raw state is not assumed by the executable parser. Successful request creation permanently records ids in `used`, and consumption removes the corresponding output. The withdrawal supply theorem assumes Reachable to exclude malformed aliasing of request and application ids.
+Deliberate abstractions, each of which a reader should hold against every claim
+below:
 
-## Requirements and semantic atoms
-
-| Requirement | Executable decision and effect | Status and limits |
+| abstraction | what it stands for | what it therefore cannot show |
 | --- | --- | --- |
-| R1 | `foldOne`: absent→Active/+1; Active→Over/−1; Active→absent/−1; payload-free `Value`; `supply` counts both custody forms | Modeled; conservation and terminality PROVED |
-| R2 | `insertNative`, `releaseNative`, `approved`, `recognized`; creation differs from later consumption; outsider output retains unauthenticated origin | Modeled with authenticated logical provenance/configuration abstraction; no physical receiving-validator execution |
-| R3 | `Commitment.insert Proposal`, configured policy, `Approval.accepted`, exact initial Output; no current absence check at creation | Conditional on supplied application contract evidence; conformance bit is diagnostic and never inferred from issuer recognition |
-| R4 | pending Insert holds no representative; absence/output/scope checked at fold; separate Withdraw commitment binds exact id and Refund | Modeled under explicit logical refund parameters; economics/disposal abstract |
-| R5 | release evidence binds source and entire selected request; application spending witness; source NFT moves into request | Conditional on supplied legal-release evidence; request creation reads config and application NFT, not mutable registry entries |
-| R6 | release removes application UTxO; escape always refused; completion consumes request and burns coupled NFT | Modeled; supply and single-spend guarantees PROVED; whole-transition completion-only terminal-custody statement missing |
-| R7 | sequential `foldItems`; actor identity absent from Action; explicit output fields | Modeled atomic selected-batch profile; no automatic skipping, arbitrary semantic callback, capacity or fairness claim |
-| R8 | permanent used ids; exact request consumption; explicit list of allowed incarnations; configurable asset reuse | Modeled proposed scope profile, not selected certificate encoding/lifecycle |
-| R9 | witness fields checked at mint/release/consume; per-asset net quantity equality and nonzero policy checks | Modeled logical witness assignment; concrete ledger script partition remains abstract |
+| tagged commitments | collision-free canonical commitments | that a real BLAKE2b digest is collision-free |
+| the trie as a list | an authenticated map whose root is derived from its content | the MPF proof mechanics, or proof size |
+| the approval asset name | `blake2b_256(edge ‖ key ‖ owner ‖ destination)` | that the real hash binds the tuple |
+| supplied contract evidence | a ledger that ran the application's own validators | that those validators do what they claim |
+| atomic selected batch | a fold that never skips a failure | anything about batch construction or ordering policy |
 
-Output requirements are concrete fields: representative identity, quantity one, destination, datum and value. They are not a universal transaction-predicate language. `authenticatedOrigin` and approval records are logical provenance supplied by the modeled creating transactions, not a spendable boolean asserted by an outsider.
+## The retirement map
 
-## Proposed abstractions and omissions
+The previous model had **44** generic declarations. Registry mode
+replaced the alphabet, so most of them no longer have a subject. Every one is
+accounted for here — **1 carried**, **3 renamed**,
+**40 retired** — because without this an auditor cannot tell a dropped
+guarantee from a rename, and a manifest that quietly lost rows would still
+satisfy every count.
 
-| Decision | Proposed abstraction | Not modeled or established |
+| base declaration | disposition | reason |
 | --- | --- | --- |
-| D1 | Authenticated Config and logical map entries; semantic policy roles may share Nat identifiers | Hash dependencies, physical MPF proofs, configuration authentication on Cardano |
-| D2 | Collision-free tagged Commitment terms; persisted logical approval records; action movement is zero-net with unchanged authorization | Hash/serialization, token UTxO location/value conservation, disposal/reuse protocol, optional terminal-request token, application burn branch |
-| D3 | Explicit Refund destination and value committed to exact Insert UTxO; supplied Withdraw approval | Deposits, refund economics, cancellation policy conditions or real outputs on ledger |
-| D4 | Scope is an explicit finite list of allowed incarnation numbers; Delete increments incarnation; `reuseIdentity` selects reused or fresh representative naming | Concrete incarnation fence and deployed identity construction |
-| D5 | Caller supplies a selected list; the modeled transaction accepts all sequential steps or refuses atomically | Batch builder, automatic omission/skipping, failure UI, limits, capacity |
-| D6 | Logical executing witness flags; native spending required even when net representative mint is zero | Compiled scripts, real transaction contexts, bypass protection outside this closed action algebra, shared library APIs |
-| D7 | Nat key/address datum, authenticated logical view, address/pending/absent/retired resolution | Normalization, signature/ownership policy, schema, indexer/ledger authentication implementation, deployment and economics |
+| `insert_commitment_injective` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the D-APPROVAL tuple commitment, bound by `no_tree_change_without_approval` |
+| `action_domain_separation` | **retired** | the Insert/Withdraw commitment pair is gone; approval identity is now the D-APPROVAL tuple commitment, bound by `no_tree_change_without_approval` |
+| `createInsert_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `mintWithdraw_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `release_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `evolve_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `outsider_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `withdraw_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `fold_iff` | **retired** | the three-operation fold is replaced by the seven edges; their inversions are the seven `*_inversion` statements |
+| `empty_fold_never_ok` | **retired** | subsumed by `empty_fold_error`, which gives the exact refusal rather than only its impossibility |
+| `empty_fold_error` | **carried** | same name, same meaning: a zero-request batch is refused |
+| `moveAction_iff` | **retired** | the free-form action algebra is gone. The registry has seven edges and no `release`, `evolve`, `outsider`, `withdraw` or `moveAction`; their inversions are superseded by the seven edge inversions |
+| `escape_refused` | **retired** | the `escape` action no longer exists |
+| `foldOne_insert_iff` | **retired** | the three-operation fold is replaced by the seven edges; their inversions are the seven `*_inversion` statements |
+| `foldOne_terminal_iff` | **retired** | the three-operation fold is replaced by the seven edges; their inversions are the seven `*_inversion` statements |
+| `sequential_fold_cons` | **renamed** | `fold_batch_cons` — the cons inversion, restated over `foldActions` because `foldBatch` refuses an empty tail |
+| `supply_conservation` | **retired** | superseded by S3 `biconditional_supply_sync` with W1 and W2, which state the supply law as a biconditional rather than as conservation across one step |
+| `over_terminal` | **retired** | superseded by T1 `termination`. It is a generic statement, not a naming one, and T1 states the stronger fact: a terminal leaf admits no edge at all, so the key is never re-booked |
+| `over_no_representative` | **retired** | superseded by W4 `witness_kinds_exclude`: a terminal key carries no active token because the three kinds exclude each other |
+| `pending_insert_no_representative` | **retired** | there is no pending state: `insertActive` books in one fold, and O1 `occupancy` states when it may |
+| `minting_requires_configured_issuer` | **renamed** | `no_tree_change_without_approval` (P1), which additionally pins the four policies across the fold |
+| `withdrawal_preserves_registry_supply` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by R-ADA in the corpus and by the custody conjunct of the invariant |
+| `exact_withdraw_scope` | **retired** | there is no withdrawal edge; refunds are the absent token's deposit, bound by R-ADA in the corpus and by the custody conjunct of the invariant |
+| `local_evolution_registry_unchanged` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
+| `release_is_operation_specific` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
+| `release_removes_application_custody` | **retired** | `release` and `evolve` are application-side moves that never touch the trie; NM2 states that as root equality for naming's `maintain` and `recover` |
+| `request_single_spend` | **retired** | the incarnation and approval-scope machinery is gone (R1); a request is spent once as part of L1 `booked_at_most_once` |
+| `approval_scope_checked` | **retired** | the incarnation and approval-scope machinery is gone (R1); a request is spent once as part of L1 `booked_at_most_once` |
+| `outsider_not_admitted` | **renamed** | `no_tree_change_without_approval` (P1): an unapproved request is not folded, now stated for every tree edge at once |
+| `native_witness_even_zero_net` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `nonzero_action_invokes_policy` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `nonempty_fold_invokes_consumer` | **retired** | the consumer hook is gone (R7, `consumerPin` removed); the mint check is the cage's own summed delta, exercised by the corpus fold rows |
+| `existing_action_does_not_refresh_scope` | **retired** | asset-scope reuse is gone with `assetScope` and `incarnation` (R1) |
+| `resolve_unauthenticated` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `resolve_absent` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `resolve_over` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `resolve_address_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `resolve_pending_iff` | **retired** | the `Resolution` vocabulary is gone. A consumer reads tokens, never the root (interface §7), so what replaced it is W1–W4 plus the leaf itself |
+| `release_registry_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
+| `insert_creation_registry_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
+| `whole_release_acceptance_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
+| `whole_release_refusal_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
+| `whole_insert_acceptance_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
+| `whole_insert_refusal_independent` | **retired** | registry-independence of the old action algebra; the registry-mode equivalent is that the guarantees hold for every application unconditionally, which is what the open-application instance demonstrates |
 
-A deliberately nonconforming configured application can approve a structurally recognized Insert in S18. That is an executed demonstration of the trust boundary, not a native rejection claim. The source `conforms` field records this diagnostic; no correctness theorem connects arbitrary application code to it. Applications needing fresh fold-time observations are outside demonstrated coverage.
+The registry-mode statements that replace them are listed in
+[the theorem manifest](theorems.md).
 
-With fresh representative identity (`reuseIdentity = false`), the certified initial output fixes one `assetScope`. A proposal therefore fits one incarnation even when its approval scope list contains several incarnations. Deliberately reusable approval across incarnations is represented by the reused-identity profile; fresh identity requires a newly certified output. D4 remains open: these executable profiles do not select a deployed identity or certificate lifecycle.
+## What is covered, and what is not
 
-Completion-only terminal custody remains a statement-coverage gap across the whole transition function. The proved escape refusal and Reachable supply statements do not replace that general theorem. The corpus separately exercises terminal Withdraw refusal, with a recognized, exact-target Withdraw approval, while preserving all 41 declarations unchanged.
+Covered: the seven edges and their deltas; the complement of the edge table as
+refusals with distinct reasons; admission by an approval scoped to the request's
+tuple; the leaf codec both ways; the fold's atomicity, zero-request refusal and
+mint check; the custody census and the deposit's destination; and the eleven
+promises over states reachable from genesis.
 
-## Scenario inventory
+Not covered, and named rather than left to be discovered:
 
-The checked [corpus](../lean/corpus.json) carries the exact model, statements, corpus-source and theorem-manifest SHA-256 identities. Each transition row records input state, action, independently declared accepted/refused expectation, exact refusal reason where applicable, and Lean-computed result. Resolver rows record input state, authentication flag and expected result. `tools/check_model.py` verifies source identities and byte-for-byte regeneration; this is finite behavior evidence, not exhaustive verification.
-
-| Corpus identity | Explicit status | Expected outcome |
-| --- | --- | --- |
-| S03b-configured-issuer-control | modeled | Accepted |
-| S07c-second-pending-insert | modeled | Accepted |
-| S07d-mint-second-withdraw | modeled | Accepted |
-| S07e-valid-second-target | modeled | Accepted |
-| S11b-mint-terminal-withdraw | modeled | Accepted |
-| S11c-terminal-withdraw-refused | modeled | Refused: withdraw-insert-only |
-| S17c-outsider-withdraw-refused | modeled | Refused: withdraw-insert-only |
-| S13c-fresh-insert-created | proposed-fresh-identity-profile | Accepted |
-| S13d-fresh-insert-folded | proposed-fresh-identity-profile | Accepted |
-| S13e-fresh-delete-released | proposed-fresh-identity-profile | Accepted |
-| S13f-fresh-delete-completed | proposed-fresh-identity-profile | Accepted |
-| S13g-fresh-reinsert-created | proposed-fresh-identity-profile | Accepted |
-| S13h-fresh-reinsert-folded | proposed-fresh-identity-profile | Accepted |
-| S13i-stale-identity-created | proposed-fresh-identity-profile | Accepted |
-| S13j-stale-identity-refused | proposed-fresh-identity-profile | Refused: representative-identity |
-| S21c-fresh-batch-staged | proposed-fresh-identity-profile | Accepted |
-| S21d-fresh-delete-insert | proposed-fresh-identity-profile | Accepted |
-| S21e-fresh-wrong-zero-net | proposed-fresh-identity-profile | Refused: net-mint-mismatch |
-| S19c-distinct-action-assets-do-not-net | abstract-disposal | Refused: application-mint-witness |
-| S10b-release-varied-entry | modeled | Accepted |
-| S10c-insert-varied-entry | modeled | Accepted |
-| S01-approved-insert | modeled | Accepted |
-| S02-no-approval | modeled | Refused: application-approval |
-| S03-substitute-policy | modeled | Refused: insert-binding |
-| S04-substituted-output | modeled | Refused: certified-output |
-| S05-competing-inserts | modeled | Refused: occupied-key |
-| S06-exact-withdraw | conditional-refund-profile | Accepted |
-| S07-insert-cannot-withdraw | modeled | Refused: withdraw-binding |
-| S07b-wrong-pending-withdraw | modeled | Refused: withdraw-binding |
-| S08-local-evolution | conditional-application-contract | Accepted |
-| S09-delete-substituted-update | modeled | Refused: exact-release-authorization |
-| S10-release-without-registry-read | modeled | Accepted |
-| S11-custody-escape | modeled | Refused: completion-only-custody |
-| S12-update-completes | modeled | Accepted |
-| S13-delete-completes | modeled | Accepted |
-| S13b-reinsert | modeled | Accepted |
-| S14-wrong-registry-nft | modeled | Refused: terminal-binding |
-| S15-completed-replay | modeled | Refused: request-unavailable |
-| S15b-incarnation-replay | modeled | Refused: approval-scope |
-| S16-unrelated-folder | modeled | Accepted |
-| S17-outsider-output-creation | modeled | Accepted |
-| S17b-outsider-refused | modeled | Refused: unauthenticated-request |
-| S18-issuer-not-semantics | conditional-application-contract-fails | Accepted |
-| S19-action-burn-witness | abstract-disposal | Refused: application-mint-witness |
-| S19b-action-burn-executes | abstract-disposal | Accepted |
-| S20-existing-action-movement | abstract-token-location | Accepted |
-| S21-zero-net-delete-insert | proposed-reused-identity-profile | Accepted |
-| S21b-zero-net-no-spending-witness | modeled | Refused: native-witness |
-| N01-register-address-A | proposed-naming-profile | Accepted |
-| N02-occupied-name | modeled | Refused: occupied-key |
-| N06-change-address-B | conditional-application-contract | Accepted |
-| N07-unauthorized-change | modeled | Refused: application-evolution-authorization |
-| N03-resolve-live | Proposed naming profile; authenticated logical view | `{"address": {"datum": 100}}` |
-| N04-resolve-pending | Proposed naming profile; authenticated logical view | `"pending"` |
-| N05-resolve-absent | Proposed naming profile; authenticated logical view | `"absent"` |
-| N05b-resolve-over | Proposed naming profile; authenticated logical view | `"retired"` |
-| N06b-resolve-new-address | Proposed naming profile; authenticated logical view | `{"address": {"datum": 200}}` |
-| N07b-forged-view | Proposed naming profile; authenticated logical view | `"unauthenticated"` |
-
-There are 58 finite rows: 52 transition cases and 6 resolver cases. S10 and S10b hold configuration/application custody fixed while varying mutable registry entries; S10c additionally demonstrates Insert staging under an occupied/retired raw registry view. These raw-state cases test independence, not reachability. Whole-step acceptance and exact refusal independence are separately PROVED. Per-action-asset quantities net only identical assets: S19c refuses opposite changes to distinct names without the application mint witness.
-
-S03 binds proposal, token and approval consistently to substitute issuer99 while configuration remains issuer7; S03b accepts the configured issuer. S07c–S07e create a second pending Insert, mint its recognized Withdraw and accept the correct target, while S07b refuses that same approval against the first request. S17 places an outsider at the configured request address90 carrying an existing approved Insert-shaped token; its origin remains unauthenticated and both fold and withdrawal are refused.
-
-S11b–S11c mint an exact-target terminal Withdraw approval and refuse its use against Delete custody. S13c–S13h execute fresh-identity Insert, release, Delete completion and reinsert with the new representative. S13i–S13j show that a multi-incarnation scope does not refresh the old certified identity. S21c–S21e stage fresh reinsert beside Delete, accept the distinct old burn and new mint, and refuse a claimed zero net. All earlier scenario identities remain present; these finite controls do not establish exhaustive coverage or an executed mutation campaign.
+- **On-chain conformance.** Nothing here says the cage validator implements this
+  model. That is the next ticket's obligation.
+- **The simulator.** Its agreement with this model is a separate slice.
+- **Plurality from genesis.** W3 states that from any reachable terminal state
+  arbitrarily many attestations can be minted. It does not construct a terminal
+  key with zero attestations from genesis; that is a reachability claim about a
+  fresh key and is not proved here.
+- **Quantitative mutation coverage.** Four mutants are executed
+  ([the mutation ledger](mutants.md)); there is no survivor census.
