@@ -284,6 +284,16 @@ Why: the folder is permissionless. Without a bound destination a folder could
 route Alice's representative to itself; without a bound datum it could create
 her record with a controller of its choosing.
 
+Encoding (amendment of 2026-09-17, ticket-157 Q-005): the pair is Aiken's
+fixed tuple — on the wire a two-element Plutus `List`, in the blueprint
+`{"dataType":"list","items":[ByteArray, ByteArray]}` with an **array** of item
+schemas. The shared loader `offchain/lib/Singular/Registry/Blueprint.hs` gains
+a fixed-tuple schema (`STuple [Schema]`): it parses the array form and
+validates a list of exactly that arity, element by element. The homogeneous
+`SList` case is unchanged, and the schema oracle is not weakened — a
+three-element list, or a two-element list of the wrong types, still fails.
+`Blueprint.hs` is the eighth library file in this ticket's surface.
+
 ### D-CUSTODY — the absent token's home
 
 `CageDatum` gains a third constructor, appended: `AbsentCustody { key, refund }`.
