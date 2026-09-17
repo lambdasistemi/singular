@@ -4,6 +4,7 @@ use aiken/merkle_patricia_forestry.{Proof}
 use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
+  Spend,
   InlineDatum, Input, NoDatum, Output, Transaction,
 }
 use lib
@@ -1371,12 +1372,18 @@ test t157_t4_custody_left_unspent_refuses() fail {
 // T5 — the cage's own spending path for a custody UTxO
 // ============================================================================
 
-fn spendCustody(
+/// Spend a custody UTxO. `fold` supplies the authenticated registry
+/// state input and the `Modify` redeemer that make the transaction a
+/// fold at all; a row that leaves them out is asking whether custody
+/// can be spent outside one.
+fn spendCustodyIn(
   key: ByteArray,
   refund: ByteArray,
+  fold: Bool,
   otherInputs: List<Input>,
   outputs: List<Output>,
 ) -> Bool {
+  let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
     Some(types.AbsentCustody { key, refund }),
     Modify([]),
@@ -1385,12 +1392,34 @@ fn spendCustody(
       ..transaction.placeholder,
       validity_range: fx.phase1(),
       inputs: list.concat(
-        [fx.custodyInput(0, key, refund, fx.deposit)],
+        list.concat(
+          [fx.custodyInput(0, key, refund, fx.deposit)],
+          if fold {
+            [fx.stateInput(fx.oneLeaf(fx.keyA, fx.absentLeaf))]
+          } else {
+            []
+          },
+        ),
         otherInputs,
       ),
       outputs,
+      redeemers: if fold {
+        [Pair(Spend(fx.stateRef), modify)]
+      } else {
+        []
+      },
     },
   )
+}
+
+/// The ordinary shape: custody spent inside a real fold.
+fn spendCustody(
+  key: ByteArray,
+  refund: ByteArray,
+  otherInputs: List<Input>,
+  outputs: List<Output>,
+) -> Bool {
+  spendCustodyIn(key, refund, True, otherInputs, outputs)
 }
 
 fn consumingRequest(key: ByteArray, operation: Operation) -> Input {
@@ -1428,6 +1457,21 @@ test t157_t5_fold_whose_request_is_a_read_refuses() fail {
     fx.keyA,
     fx.inserterAddress,
     [consumingRequest(fx.keyA, Read(fx.terminalLeaf))],
+    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+  )
+}
+
+/// F-001, the audit's counterexample: a request-shaped neighbour at the
+/// cage's own address, with the refund paid, and NO authenticated
+/// registry state input and no `Modify` at all. Co-presence with
+/// something request-shaped is not a fold, and custody is spendable
+/// only inside the fold that consumes it.
+test t157_t5_request_without_authenticated_state_modify_refuses() fail {
+  spendCustodyIn(
+    fx.keyA,
+    fx.inserterAddress,
+    False,
+    [consumingRequest(fx.keyA, Update(fx.absentLeaf, fx.activeLeaf))],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
   )
 }
