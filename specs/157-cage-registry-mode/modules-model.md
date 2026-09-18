@@ -24,7 +24,7 @@ naming-onchain/validators
 
 conformance/            encodings and rows re-baselined against the new blueprint; X1 executable here
 offchain/lib            ToData/FromData for the changed types, plus Config.hs and the four TxBuilder
-                        files the encodings force to compile (D-BOOT); journeys are #158
+                        files the encodings force to compile (D-BOOT); journeys are re-cut in #172 under #174
 docs/                   consumer-conformance.md; naming-lifecycle.md; naming-demo.md; recovery-retirement.md
 ```
 
@@ -45,10 +45,10 @@ token and policy ids, and on nothing at fold time.
 | `naming.ak` | Loses `over_marker_for` and the naming leaf vocabulary; keeps the record codec and the mirror helpers, updated to the eight-field state. |
 | `conformance/` | Re-baselines CS01/CS02/CS08 and the address rows; records the contract change. |
 | `offchain/` encodings and what they force | `offchain/lib/Singular/Registry/Types.hs` follows the blueprint, and the library/runner files the new encodings force to compile under `-Werror` follow it: `Config.hs` (four derived pins, D-BOOT; `cfgConsumerPin` deleted), `TxBuilder/ConnectedFold.hs`, `TxBuilder/Reject.hs`, `TxBuilder/Update.hs`, `TxBuilder/Internal.hs`, `Deployment.hs` (`CageParts` carries the four derived identities, legacy fields dropped), `TxBuilder/Register.hs` (consumer registration deleted), `Blueprint.hs` (fixed-tuple schema `STuple [Schema]` for D-DEST's pair; `SList` unchanged; arity and element types still enforced). |
-| `offchain/journey/**` existing journeys and their CI jobs | Re-cut to the registry-mode contract (X3): boot with four pins, approval + destination requests, fold-created record, recovery-key retirement; retired rows mapped in the README, never stubbed. No new journey — `witness-rows` is #158's. |
+| `offchain/journey/**` existing journeys and their CI jobs | Out of scope; re-cut in #172 under #174. Their six CI job blocks are retired here under D6 with seven surfaces mapped, never stubbed. No journey is authored here. |
 
 ## Out of this ticket's surface
 
-`lean/**` (#156, frozen), `simulator/**` (#163), `offchain/journey/**` and the
-release archive (#158), the escrow (#152), the CLI (#139), `docs/preprod*`
+`lean/**` (#156, frozen), `simulator/**` (#163), `offchain/journey/**` (#172
+under #174) and the release archive (#158), the escrow (#152), the CLI (#139), `docs/preprod*`
 (#153), the interface page (#159). Touching any is a Q to the epic owner.

@@ -29,12 +29,12 @@
       "pause": 500
     },
     {
-      "text": "lean/ (#156, frozen), simulator/ (#163), offchain/journey/* and the release archive (#158), the escrow (#152), the CLI (#139), docs/preprod (#153), the interface page (#159). Touching any is a Q to the epic owner.",
+      "text": "lean/ (#156, frozen), simulator/ (#163), offchain/journey/* (#172 under #174) and the release archive (#158), the escrow (#152), the CLI (#139), docs/preprod (#153), the interface page (#159). Touching any is a Q to the epic owner.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "69ae81c2668bc96976d548ebc4b95ceca05b2bddc7a471fa65523d68eda84c72"
+    "sha256": "f6cdd1e45ecabe901ab31d00160c001ae8c96744b114ec5591eb08dfd44d2329"
   }
 }

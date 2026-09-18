@@ -392,4 +392,6 @@ contract change.
 The runner and the release archive (#158). The escrow (#152). The CLI (#139).
 The completion stranding defect (#130). Upstream MPFS. The Lean model (#156).
 The interface page (#159). The NYA journeys and their CI jobs (#172, epic
-#174); retirement completion at the request validator (#175).
+#174); retirement completion at the request validator, including the pending
+request's home and token binding in `application.ak` and `naming.ak` against
+the merged Lean (#175).

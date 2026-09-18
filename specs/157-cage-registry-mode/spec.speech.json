@@ -291,7 +291,7 @@
       "pause": 500
     },
     {
-      "text": "The runner and the release archive (#158). The escrow (#152). The CLI (#139). The completion stranding defect (#130). Upstream MPFS. The Lean model (#156). The interface page (#159). The NYA journeys and their CI jobs (#172, epic #174); retirement completion at the request validator (#175).",
+      "text": "The runner and the release archive (#158). The escrow (#152). The CLI (#139). The completion stranding defect (#130). Upstream MPFS. The Lean model (#156). The interface page (#159). The NYA journeys and their CI jobs (#172, epic #174); retirement completion at the request validator, including the pending request's home and token binding in application.ak and naming.ak against the merged Lean (#175).",
       "pause": 400
     }
   ],
@@ -429,6 +429,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "ad68f95bf0e1ea2669d4eacee160b3000f06d1033864bc42b15cac32bfa6c2ba"
+    "sha256": "79260431176167ae76294e45f3a5b46a04bbf28d265a8ed97f731807d7b0daa8"
   }
 }
