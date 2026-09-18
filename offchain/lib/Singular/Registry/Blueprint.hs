@@ -31,6 +31,10 @@ module Singular.Registry.Blueprint (
     -- * Loading
     loadBlueprint,
 
+    -- * The naming partition's compiled code
+    NamingCodes (..),
+    loadNamingCodesFromEnv,
+
     -- * Validation
     validateData,
 
@@ -49,6 +53,7 @@ module Singular.Registry.Blueprint (
     applyRequestParams,
 ) where
 
+import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (
     FromJSON (..),
     withObject,
@@ -77,6 +82,7 @@ import PlutusTx.Builtins.Internal (
     BuiltinData (..),
  )
 import PlutusTx.IsData.Class (ToData (..))
+import System.Environment (lookupEnv)
 import UntypedPlutusCore (
     Program (..),
     applyProgram,
@@ -104,15 +110,17 @@ data Schema
       SBytes
     | -- | @{"dataType": "integer"}@
       SInteger
-    | -- | @{"dataType": "list", "items": <one schema>}@ — a
-      -- homogeneous list of any length.
+    | {- | @{"dataType": "list", "items": <one schema>}@ — a
+      homogeneous list of any length.
+      -}
       SList Schema
-    | -- | @{"dataType": "list", "items": [<schema>, ...]}@ — Aiken's
-      -- FIXED TUPLE (#157 D-DEST): an ARRAY of positional item
-      -- schemas. On the wire it is a Plutus @List@ of exactly that
-      -- arity, each element of its own declared type, which is what
-      -- distinguishes it from 'SList' and why it cannot share that
-      -- case: a homogeneous rule would accept a three-element pair.
+    | {- | @{"dataType": "list", "items": [<schema>, ...]}@ — Aiken's
+      FIXED TUPLE (#157 D-DEST): an ARRAY of positional item
+      schemas. On the wire it is a Plutus @List@ of exactly that
+      arity, each element of its own declared type, which is what
+      distinguishes it from 'SList' and why it cannot share that
+      case: a homogeneous rule would accept a three-element pair.
+      -}
       STuple [Schema]
     | -- | @{"anyOf": [...constructors...]}@
       SConstructors [Constructor]
@@ -436,7 +444,6 @@ applyDataParam d sbs =
   where
     progVer (Program _ v _) = v
 
-
 {- | Apply an integer parameter to a UPLC script.
 
 `witness(kind, registry)` (#157 C5) takes its kind as a plain integer, and
@@ -510,3 +517,42 @@ applyRequestParams ::
 applyRequestParams statePolicyId (OnChainTokenId (BuiltinByteString token)) sbs =
     applyBytesParam token $
         applyBytesParam statePolicyId sbs
+
+{- | The naming partition's compiled code: the application whose mint arm
+certifies an edge, and the witness policy the three token kinds are
+derived from.
+
+The four policy pins of a registry are derived from these two, so every
+consumer of the application — the conformance rows, the devnet E2E and the
+bounded journey — binds to one source and moves together.
+-}
+data NamingCodes = NamingCodes
+    { ncApplication :: SBS.ShortByteString
+    , ncWitness :: SBS.ShortByteString
+    }
+
+{- | Read the naming blueprint @NAMING_BLUEPRINT@ names and extract the
+two compiled codes the pins derive from.
+-}
+loadNamingCodesFromEnv :: IO NamingCodes
+loadNamingCodesFromEnv = do
+    mPath <- lookupEnv "NAMING_BLUEPRINT"
+    path <- case mPath of
+        Just p | not (null p) -> pure p
+        _ -> die "NAMING_BLUEPRINT is not set"
+    ebp <- loadBlueprint path
+    bp <- case ebp of
+        Left err -> die ("naming blueprint does not parse: " <> err)
+        Right bp -> pure bp
+    case ( extractCompiledCode "application.application" bp
+         , extractCompiledCode "witness.witness" bp
+         ) of
+        (Just appCode, Just witnessCode) ->
+            pure NamingCodes{ncApplication = appCode, ncWitness = witnessCode}
+        _ ->
+            die
+                "naming blueprint has no application.application/witness.witness \
+                \code (the four pins are derived from them)"
+  where
+    die :: String -> IO a
+    die = throwIO . ErrorCall

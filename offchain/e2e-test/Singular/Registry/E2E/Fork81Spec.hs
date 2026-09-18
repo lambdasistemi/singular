@@ -22,76 +22,81 @@ import Data.IORef (newIORef, readIORef)
 import System.Environment (lookupEnv)
 import Test.Hspec
 
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Node.Client.E2E.Setup (
+    genesisAddr,
+ )
+import Data.ByteString.Base16 qualified as Base16
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Singular.Registry.Blueprint (
     extractCompiledCode,
     loadBlueprint,
  )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    evalScriptHash,
-    extractCageDatum,
-    scriptHashBytes,
- )
 import Singular.Registry.Ledger (
     Root (..),
  )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Update (
-    updateTokenImpl,
+import Singular.Registry.TxBuilder.Internal (
+    cageAddrFromCfg,
+    evalScriptHash,
+    extractCageDatum,
+    leafAbsent,
+    scriptHashBytes,
  )
-import Data.ByteString.Base16 qualified as Base16
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Singular.Registry.TxBuilder.Update (
+    updateTokenWithDuties,
+ )
 import Singular.Registry.Types (
     CageDatum (..),
+    OnChainOperation (..),
     OnChainRoot (..),
     OnChainTokenState (..),
  )
-import Cardano.Node.Client.E2E.Setup (
-    genesisAddr,
- )
 
 import Singular.Registry.E2E.CageSpec (
-    submitInsertRequest,
+    bookEdge,
+    publishCageRefs,
+    registryContextFor,
     submitWithGenesis,
     withBootedCage,
  )
+
 -- mts pieces for the independent read-back recompute
 import Data.ByteString.Short qualified as SBS
 
-import MPF.Backend.Pure
-    ( emptyMPFInMemoryDB
-    , runMPFPure
-    , runMPFPureTransaction
-    )
-import MPF.Backend.Standalone
-    ( MPFStandalone (..)
-    , MPFStandaloneCodecs (..)
-    )
-import MPF.Hashes
-    ( MPFHash
-    , isoMPFHash
-    , mkMPFHash
-    , mpfHashing
-    , renderMPFHash
-    )
-import MPF.Interface
-    ( FromHexKV (..)
-    , HexKey
-    , byteStringToHexKey
-    , hexKeyPrism
-    )
-import MPF.Proof.Insertion
-    ( foldMPFProof
-    , mkMPFInclusionProof
-    )
+import MPF.Backend.Pure (
+    emptyMPFInMemoryDB,
+    runMPFPure,
+    runMPFPureTransaction,
+ )
+import MPF.Backend.Standalone (
+    MPFStandalone (..),
+    MPFStandaloneCodecs (..),
+ )
+import MPF.Hashes (
+    MPFHash,
+    isoMPFHash,
+    mkMPFHash,
+    mpfHashing,
+    renderMPFHash,
+ )
+import MPF.Interface (
+    FromHexKV (..),
+    HexKey,
+    byteStringToHexKey,
+    hexKeyPrism,
+ )
+import MPF.Proof.Insertion (
+    foldMPFProof,
+    mkMPFInclusionProof,
+ )
 
 import Singular.Registry.Trie (
-    Trie (..)
-    , TrieManager (..)
-    )
+    Trie (..),
+    TrieManager (..),
+ )
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
 codecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
@@ -149,11 +154,12 @@ fork81Spec stateBytes requestBytes = do
     it "accepts the real absence insertion of C and reads it back" $
         withBootedCage id stateBytes requestBytes $
             \cfg prov submit tm tokenId -> do
-                foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
-                foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"
+                refs <- publishCageRefs cfg prov submit tokenId
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-A"
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-B1294"
                 -- The previously-refused fold (CS07): its proof's sole step
                 -- is a root-level Fork with skip > 0.
-                foldInsert cfg prov submit tm tokenId "cs07-fork-C11" "vc"
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-C11"
                 -- Read back from chain: the state datum root must equal an
                 -- independent {A,B,C} recompute, and an inclusion proof for
                 -- C built from the independent trie must fold to the chain
@@ -168,9 +174,9 @@ fork81Spec stateBytes requestBytes = do
                     _ -> error "fork81: expected exactly one state UTxO"
                 ref <- newIORef emptyMPFInMemoryDB
                 let trie = mkPureTrieFromRef ref
-                _ <- insert trie "cs07-fork-A" "va"
-                _ <- insert trie "cs07-fork-B1294" "vb"
-                _ <- insert trie "cs07-fork-C11" "vc"
+                _ <- insert trie "cs07-fork-A" leafAbsent
+                _ <- insert trie "cs07-fork-B1294" leafAbsent
+                _ <- insert trie "cs07-fork-C11" leafAbsent
                 recomputed <- getRoot trie
                 unRoot recomputed `shouldBe` chainRoot
                 db <- readIORef ref
@@ -193,18 +199,23 @@ fork81Spec stateBytes requestBytes = do
     it "refuses a second insert of the now-present key (occupied-key)" $
         withBootedCage id stateBytes requestBytes $
             \cfg prov submit tm tokenId -> do
-                foldInsert cfg prov submit tm tokenId "cs07-fork-A" "va"
-                foldInsert cfg prov submit tm tokenId "cs07-fork-B1294" "vb"
-                foldInsert cfg prov submit tm tokenId "cs07-fork-C11" "vc"
+                refs <- publishCageRefs cfg prov submit tokenId
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-A"
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-B1294"
+                foldInsert cfg prov submit tm tokenId refs "cs07-fork-C11"
+                -- The edge table cannot see the trie: an insert is edge 0
+                -- whether or not the key is present, so this books and the
+                -- CAGE refuses it, which is the refusal under test.
                 _ <-
-                    submitInsertRequest
+                    bookEdge
                         cfg
                         prov
                         submit
                         tokenId
                         "cs07-fork-C11"
-                        "vc2"
-                res <- try (updateTokenImpl cfg prov tm tokenId genesisAddr)
+                        (OpInsert leafAbsent)
+                ctx <- registryContextFor cfg prov tokenId refs
+                res <- try (updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx)
                 case res of
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"
@@ -240,18 +251,18 @@ fork81Spec stateBytes requestBytes = do
                                 evalScriptHash msg `shouldBe` Just expectedStateHex
                             Nothing ->
                                 expectationFailure
-                                    ( "unexpected exception: " <> show e
-                                    )
+                                    ("unexpected exception: " <> show e)
   where
     -- The speculative session inside updateTokenImpl starts from the
     -- manager's committed trie and is discarded; the production caller
     -- mirrors each landed fold into the committed trie. Without this,
     -- every fold would re-prove against the boot state (fold 2 would
     -- submit an empty proof and fail).
-    foldInsert cfg prov submit tm tokenId k v = do
-        _ <- submitInsertRequest cfg prov submit tokenId k v
-        unsigned <- updateTokenImpl cfg prov tm tokenId genesisAddr
+    foldInsert cfg prov submit tm tokenId refs k = do
+        _ <- bookEdge cfg prov submit tokenId k (OpInsert leafAbsent)
+        ctx <- registryContextFor cfg prov tokenId refs
+        unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
         _ <- submitWithGenesis submit unsigned
         withTrie tm tokenId $ \t -> do
-            _ <- insert t k v
+            _ <- insert t k leafAbsent
             pure ()

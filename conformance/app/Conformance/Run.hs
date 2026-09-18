@@ -216,12 +216,14 @@ import MPF.Proof.Insertion (MPFProof (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    NamingCodes (..),
     applyBytesParam,
     applyDataParam,
     applyPreviousPolicies,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
+    loadNamingCodesFromEnv,
  )
 import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.Config (CageConfig (..))
@@ -784,28 +786,11 @@ harness needs the code itself, not a recorded hash: the application
 validator declares no parameters, but `witness(kind, registry)` declares
 two, and an applied hash cannot be recovered from an unapplied one.
 -}
-data NamingCodes = NamingCodes
-    { ncApplication :: SBS.ShortByteString
-    , ncWitness :: SBS.ShortByteString
-    }
-
 loadNamingCodes :: IO NamingCodes
 loadNamingCodes = do
-    path <- requireEnv "NAMING_BLUEPRINT"
-    ebp <- loadBlueprint path
-    bp <- case ebp of
-        Left err -> failWith ("naming blueprint does not parse: " <> err)
-        Right bp -> pure bp
-    case ( extractCompiledCode "application.application" bp
-         , extractCompiledCode "witness.witness" bp
-         ) of
-        (Just appCode, Just witnessCode) -> do
-            checkNamingPins appCode witnessCode
-            pure NamingCodes { ncApplication = appCode, ncWitness = witnessCode }
-        _ ->
-            failWith
-                "naming blueprint has no application.application/witness.witness \
-                \code (the four pins are derived from them)"
+    codes <- loadNamingCodesFromEnv
+    checkNamingPins (ncApplication codes) (ncWitness codes)
+    pure codes
 
 {- | Cross-check this run's naming code against the naming partition's
 committed manifest, at load rather than at first boot: a derivation from

@@ -306,7 +306,8 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#cage-tests-e2e
   journey:
     name: The bounded registry journey, narrated end to end
     needs: blueprint
@@ -344,4 +345,5 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#journey

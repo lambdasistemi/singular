@@ -86,6 +86,7 @@ library
     Singular.Registry.Trie.Pure
     Singular.Registry.Trie.PureManager
     Singular.Registry.TxBuilder.Boot
+    Singular.Registry.TxBuilder.Edges
     Singular.Registry.TxBuilder.Internal
     Singular.Registry.TxBuilder.Register
     Singular.Registry.TxBuilder.Reject
