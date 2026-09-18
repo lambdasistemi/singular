@@ -55,37 +55,25 @@
   ],
   "strategy": [
     {
-      "text": "Strategy.",
-      "pause": 500
-    },
-    {
-      "text": "Order is fixed by dependency, not preference:",
+      "text": "First align the types and codec, then the generic cage and its token policies. Delete the consumer withdrawal requirement together with its script.",
       "pause": 400
     },
     {
-      "text": "Types and codec first — State eight fields, Operation.Read,.",
-      "pause": 300
-    },
-    {
-      "text": "Request.destination, CageDatum.AbsentCustody, the codec bytes — so the    blueprint, the Haskell encodings and the conformance rows can be regenerated    once and every later slice compiles against them. 2. The cage — C2 admissibility, C3 read, C4 admission, C5 delta, C6    destinations and custody, C8 coverage; consumer.ak deleted in the same    commit as the withdrawal requirement, never one without the other. 3. The token policies — witness(kind, registry); representative.ak    retired. 4. Naming — the approval arms, the fold-created record, retirement's    co-minted terminate approval; naming.ak loses its value vocabulary. 5. Conformance and docs — re-baseline, then the naming pages.",
+      "text": "For naming, derive the ordinary request-validator identity from the same registry and apply its hash as an immutable application parameter. Then align approval arms, fold-created records and retirement's co-created request. Conformance and documentation follow.",
       "pause": 400
     },
     {
-      "text": "Nothing is pushed red to main; intermediate red heads on this draft branch are permitted (A-002). The PR is stacked on #156's branch and targets it; it is re-targeted to main when #156 merges.",
+      "text": "Nothing red may merge to main. Intermediate draft-branch failures are not acceptance.",
       "pause": 400
     }
   ],
   "constraints": [
     {
-      "text": "Constraints.",
-      "pause": 500
+      "text": "The revision-bound Lean model and its refusal reasons govern the implementation. Each Aiken refusal trace maps to one model reason, with executable rows and controls. The read uses the existing MPF update verifier; published constructor indices are preserved and new ones appended.",
+      "pause": 400
     },
     {
-      "text": "The frozen #156 Lean and its refusal reasons are the vocabulary; an Aiken.",
-      "pause": 300
-    },
-    {
-      "text": "trace label maps to exactly one Lean reason, and the mapping is a table in the   handback. - No new proof code enters the cage: the read uses mpf.update(root, key,   proof, v, v). - Constructor indices already published are kept; new constructors are   appended (Read 3, AbsentCustody 2, destination last field). Removed   constructors (Fold, Cancel, WithdrawApproval, InsertApproval) are a   declared contract change, listed in the conformance page. - just test in both partitions must contain, for every refusal row, a test   whose name carries the row id and whose failure is the named trace. - Script identities are regenerated (just script-identity-regen) and the   hashes recorded in the handback; docs/preprod.md is not touched (the   deployed instance is the old contract until #153).",
+      "text": "Regenerate script identities and record their hashes without changing the preproduction deployment claim. Derive the identity tuple in order: parameterless cage and seed-derived token, applied request validator, applied naming application, then genesis pins. No redeemer chooses the request hash, and the cage gains no RequestDatum spending arm.",
       "pause": 400
     }
   ],
@@ -123,11 +111,15 @@
   ],
   "invariant-rows-naming": [
     {
-      "text": "Invariant rows — naming.",
-      "pause": 500
+      "text": "The naming rows cover signature-bound booking approvals, open absent insertion, refund-authorized absent deletion and refused active deletion. They retain the record's single-asset invariant and maintain/recover behavior.",
+      "pause": 400
     },
     {
-      "text": "A table of 11 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: N1; N2; N3; N4; N5; N6; T6; N7; N8; N9; N10.",
+      "text": "Retirement accepts the recovery key or quorum but never the current key alone, and leaves an active leaf with the actual produced request at the bound validator. Completion consumes that request through Contribute together with state Modify and custody, burns the active token and writes terminal.",
+      "pause": 400
+    },
+    {
+      "text": "Wrong validator, wrong registry token, missing approval and mismatched approval each refuse beside the connected positive story. A manually seeded completion request is not evidence. Folded booking and read destinations receive the request value minus its tip; terminal permits reads but no tree-changing edge.",
       "pause": 400
     }
   ],
@@ -207,6 +199,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b86897f5cd6668f1dd0870d6834d93521c49dc0595a9eceeea986f96a0a661cc"
+    "sha256": "3446ecb6da644742ff186d26db376591c002981d6facaa9a4bc6fa3d594dd929"
   }
 }

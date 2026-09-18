@@ -21,11 +21,11 @@
   ],
   "cagedatum-constructor-appended": [
     {
-      "text": "CageDatum (constructor appended).",
-      "pause": 500
+      "text": "The cage datum keeps RequestDatum at index zero and StateDatum at index one, and appends AbsentCustody at index two with key and refund fields.",
+      "pause": 400
     },
     {
-      "text": "A table of 3 rows, columns index, constructor, fields. The rows: 0; 1; 2.",
+      "text": "RequestDatum is spent through Contribute at the ordinary request validator. The cage state validator gains no RequestDatum spending arm.",
       "pause": 400
     }
   ],
@@ -89,20 +89,26 @@
   ],
   "request-field-appended": [
     {
-      "text": "Request (field appended).",
-      "pause": 500
+      "text": "The request appends a destination address and inline-datum hash to its existing fields. A minted active or terminal token must arrive there. For an absent insertion, the address instead names the refund recipient.",
+      "pause": 400
     },
     {
-      "text": "A code block reads: requestToken, requestOwner, requestKey, requestValue, tip, submitted_at, destination: (address_bytes, datum_hash)",
-      "pause": 300
-    },
-    {
-      "text": "destination names where a minted active or terminal token goes and the inline datum the receiving output must carry (datum_hash empty for none). For Insert(0x00) the address is the refund address; the token goes to custody.",
+      "text": "A retirement completion request carries the same registry's seed-derived cage token and lives at its ordinary request validator, applied to that token and state policy. The validator identity is not chosen in a request or redeemer.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "4f0628ddc0535925d93e9c9a4e3a9c309994bb469e7540d269fcbccf7d06f1c3"
-  }
+    "sha256": "bc549d1ecfc2ef7c088b17b804938735c125cac21d99569bc6cca89ad983a758"
+  },
+  "naming-application-parameters-and-pending-retirement": [
+    {
+      "text": "The naming application has an immutable applied request-validator hash. Derive the cage token from an existing seed output reference, apply the ordinary request validator to that token and the parameterless state policy, then apply the naming application. Genesis pins the resulting application policy.",
+      "pause": 400
+    },
+    {
+      "text": "Retirement records the validator hash, same-registry request token and approved active-to-terminal request, and moves the active token into completion custody while the leaf remains active. Completion validates and consumes that stored request, removes the active holding and writes terminal.",
+      "pause": 400
+    }
+  ]
 }

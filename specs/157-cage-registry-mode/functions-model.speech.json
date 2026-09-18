@@ -21,11 +21,7 @@
   ],
   "onchainvalidatorsrequestak": [
     {
-      "text": "onchain/validators/request.ak.",
-      "pause": 500
-    },
-    {
-      "text": "A table of 1 rows, columns declaration, change. The rows: validateRetract.",
+      "text": "The request validator admits Read beside Insert for retraction. Its Contribute path remains the spending path for the produced retirement completion request, contributing that active-to-terminal update to the same transaction's state Modify.",
       "pause": 400
     }
   ],
@@ -41,11 +37,15 @@
   ],
   "naming-onchainvalidatorsapplicationak": [
     {
-      "text": "naming-onchain/validators/application.ak.",
-      "pause": 500
+      "text": "The application validator takes an immutable request-validator hash derived for the same state policy and cage token. It is never selected by the redeemer. Spending uses Maintain, Retire or Recover; minting uses Approve to certify one bound edge.",
+      "pause": 400
     },
     {
-      "text": "A table of 4 rows, columns declaration, shape, constraint. The rows: ApplicationRedeemer; ApplicationMintRedeemer; approve(edge, key, owner, destination, tx) -> Bool; retire(record, custody_out, key, revealed_control, tx).",
+      "text": "Booking approvals require the controller's signature and bind the well-formed record destination. Absent insertion is open; absent deletion requires the recorded refund key; active deletion is never certified.",
+      "pause": 400
+    },
+    {
+      "text": "Retirement requires the committed recovery key or a distinct-member quorum. The same transaction mints the bound approval, moves the active token to custody, and produces the completion request at the applied ordinary request validator with the same registry token. The leaf remains active. Wrong identity, token, reveal or approval refuses beside a valid positive control.",
       "pause": 400
     }
   ],
@@ -61,11 +61,11 @@
   ],
   "offchainlibsingularregistryconfighs": [
     {
-      "text": "offchain/lib/Singular/Registry/Config.hs.",
-      "pause": 500
+      "text": "CageConfig carries four derived policy pins and drops the consumer pin. BootStateFromCfg transfers those pins to the eight-field boot datum, checked by serialization round trips.",
+      "pause": 400
     },
     {
-      "text": "A table of 2 rows, columns declaration, shape, constraint. The rows: CageConfig; bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState.",
+      "text": "Deployment derives and verifies one ordered identity tuple: the parameterless state script and seed output reference determine the cage token; those determine the applied request validator; its hash determines the applied naming application and policy. No policy pin is typed by hand.",
       "pause": 400
     }
   ],
@@ -81,6 +81,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "5079385169ab668b0f407e90d60d19220be71626cde2a2096bd6c1df7b8e17b1"
+    "sha256": "bdca00cb892d4147ea41c3d89905a9e6021d62d31ed9c2507d9f9402eae26515"
   }
 }

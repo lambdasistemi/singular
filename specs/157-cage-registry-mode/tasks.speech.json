@@ -43,33 +43,21 @@
   ],
   "naming": [
     {
-      "text": "Naming.",
-      "pause": 500
+      "text": "The open naming tasks cover six approval arms, the fold-created record and removal of the claim lifecycle.",
+      "pause": 400
     },
     {
-      "text": "[ ] T157-11 — Approve arm for the six edges per R-NM4 (N1–N5)..",
-      "pause": 300
+      "text": "Retirement must prove the recovery key or quorum, co-mint approval and create the request at the immutable same-registry request-validator identity while leaving the leaf active. Completion must consume that actual request through Contribute with state Modify and custody before writing terminal.",
+      "pause": 400
     },
     {
-      "text": "[ ] T157-12 — the fold-created record; Fold/Cancel/claim lifecycle.",
-      "pause": 300
-    },
-    {
-      "text": "removed (N7). - [ ] T157-13 — Retire authorized by the committed recovery key or the       quorum, never the current control key alone; co-mints the terminate       approval and the completion request; completion folds       Update(0x01,0x02) (N6, N8). - [ ] T157-13b — the destination output of a folded booking or read carries at       least the request's value minus the tip (T6). - [ ] T157-14 — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] T157-15 — just test and just script-identity-regen in both partitions;       hashes in the handback.",
+      "text": "Wrong validator, wrong token, missing approval and mismatched approval need executable refusals and positive controls. No cage RequestDatum arm is added. Remaining tasks preserve destination value, rerun Maintain and Recover, remove the old vocabulary and regenerate both script identities.",
       "pause": 400
     }
   ],
   "consumers-and-docs": [
     {
-      "text": "Consumers and docs.",
-      "pause": 500
-    },
-    {
-      "text": "[ ] T157-16 — conformance re-baselined; contract change stated with old and.",
-      "pause": 300
-    },
-    {
-      "text": "new fields side by side (X1). - [ ] T157-17 — the three naming docs updated; speech restamped;       just check-presentation green (X2). - [ ] T157-18 — the trace-label table Aiken trace → Lean reason, total.",
+      "text": "Conformance must state the contract change and derive and verify cage and token, then request validator, then naming application and policy. Update the naming pages and their speech, pass presentation checks, and provide a total Aiken-trace to Lean-reason table.",
       "pause": 400
     }
   ],
@@ -85,6 +73,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "107b14422a6cc160d95691a9c64fede360e42a80ac79e3abe34cc0e856b6cf7d"
+    "sha256": "0b882cfeee5c38852598ee3918d6d8be614433c877027cb18abadf310e2a20a6"
   }
 }

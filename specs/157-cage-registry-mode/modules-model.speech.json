@@ -1,40 +1,40 @@
 {
   "dependency-direction": [
     {
-      "text": "Dependency direction.",
-      "pause": 500
+      "text": "The generic cage owns the codec, admission, read, token delta, custody, destinations and value coverage. It depends on no naming-specific script and has no RequestDatum spending arm. The ordinary request validator owns Contribute and Retract.",
+      "pause": 400
     },
     {
-      "text": "A code block reads: onchain/validators types.ak        State (8), Operation (+Read), Request (+destination), CageDatum (+AbsentCustody) lib.ak          codec helpers: decodeState, approvalName, destinationMatches state.ak        the cage: admissibility, read, admission, delta, custody, coverage request.ak      Contribu…",
-      "pause": 300
+      "text": "Naming owns its record, approval policy, three witness-policy instances and completion-only custody. Its application is parameterized by the ordinary request-validator hash derived for the same registry. No naming application script runs at fold time.",
+      "pause": 400
     },
     {
-      "text": "The cage depends on nothing of naming's. Naming depends on the cage's state token and policy ids, and on nothing at fold time.",
+      "text": "Conformance, off-chain identity derivation and existing journey consumers follow these contracts; new journeys remain separate work.",
       "pause": 400
     }
   ],
   "changed-responsibilities": [
     {
-      "text": "Changed responsibilities.",
-      "pause": 500
+      "text": "Types and helpers define the eight-field state, Read operation, destination and absent-custody datum. State enforces the registry laws; the request validator remains the completion request's home. Consumer and representative scripts are retired.",
+      "pause": 400
     },
     {
-      "text": "A table of 11 rows, columns module, responsibility after this ticket. The rows: types.ak; lib.ak; state.ak; request.ak; witness.ak; application.ak; retirement_custody.ak; naming.ak; conformance/; offchain/ encodings and what they force; offchain/journey/** existing journeys and their CI jobs.",
+      "text": "The naming application certifies approvals and its own record moves. Retirement creates the bound request without writing terminal; custody permits completion only. Deployment derives the state, cage token, request validator and naming application as one checked identity tuple carried by CageParts.",
+      "pause": 400
+    },
+    {
+      "text": "Conformance and the existing journeys follow the new identities and encodings. Superseded rows are explicitly mapped, never silently stubbed; a new witness journey is outside this ticket.",
       "pause": 400
     }
   ],
   "out-of-this-tickets-surface": [
     {
-      "text": "Out of this ticket's surface.",
-      "pause": 500
-    },
-    {
-      "text": "lean/ (#156, frozen), simulator/ (#163), offchain/journey/* and the release archive (#158), the escrow (#152), the CLI (#139), docs/preprod (#153), the interface page (#159). Touching any is a Q to the epic owner.",
+      "text": "The bounded request-home model repair is already supplied by the epic. Other Lean, simulator work, new journeys and the release archive, escrow, CLI, preproduction pages and interface page remain outside this ticket. Existing journeys follow the explicit amendment above.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "69ae81c2668bc96976d548ebc4b95ceca05b2bddc7a471fa65523d68eda84c72"
+    "sha256": "71eb363244159b311750452fb96eb26240aba7cdac7662cc07cf73b282478f74"
   }
 }

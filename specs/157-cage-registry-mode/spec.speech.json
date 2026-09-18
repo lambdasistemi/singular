@@ -241,6 +241,10 @@
       "pause": 400
     },
     {
+      "text": "The dependency order is acyclic: the parameterless cage script and seed-derived cage token determine the applied request-validator hash; that immutable hash determines the applied naming application and policy; genesis pins it. Deployment verifies this tuple together. Changing the cage's parameterlessness or token derivation is a model and deployment-identity change.",
+      "pause": 400
+    },
+    {
       "text": "The executable half of X1 stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 Q-003) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\"; journey work stays #158's.",
       "pause": 400
     },
@@ -287,11 +291,11 @@
   ],
   "non-goals": [
     {
-      "text": "Non-goals.",
-      "pause": 500
+      "text": "New runner and archive work, escrow, CLI, upstream MPFS and the interface page remain separate. Existing journeys are covered by the explicit amendment.",
+      "pause": 400
     },
     {
-      "text": "The runner and the release archive (#158). The escrow (#152). The CLI (#139). The completion stranding defect (#130). Upstream MPFS. The Lean model (#156). The interface page (#159).",
+      "text": "This ticket does not migrate existing deployments. Adding the naming application's parameter changes its address and policy; derive new identities rather than claim compatibility.",
       "pause": 400
     }
   ],
@@ -325,11 +329,19 @@
   ],
   "n4-retirement-and-completion": [
     {
-      "text": "N4 — retirement and completion.",
-      "pause": 500
+      "text": "Retirement requires the committed recovery key, revealed and signed as in recovery, or a distinct-member quorum. The current control key alone cannot end the name.",
+      "pause": 400
     },
     {
-      "text": "Retire changes its controller path: it is authorized by the committed recovery key (reveal of next_control_commitment plus that key's signature, the proof Recover uses) or by the quorum — never by the current control key alone. A thief holding Alice's current key can change where the name pays until she recovers; they can no longer end it. The authorized transaction moves the active token from the record into completion-only custody, mints the updateTerminal approval (N2 — the same proof is present) and creates the completion request carrying it — today's co-created request. Completion is the fold of Update(0x01, 0x02): the custody UTxO is spent, its held token is the burn the delta requires, and the record's name is 0x02 forever. retirement_custody.ak keeps its rules; over_marker_for and the naming-specific value vocabulary in naming.ak are deleted.",
+      "text": "The authorized transaction moves the active token into completion-only custody, mints the bound active-to-terminal approval, and produces the completion request at the ordinary parameterized request validator, never the cage address. The naming application carries that applied validator hash immutably, derived from the same state policy and seed-derived cage token. The request carries that registry token.",
+      "pause": 400
+    },
+    {
+      "text": "Retirement removes the naming record but leaves the registry leaf active. Completion consumes the exact produced request through Contribute, together with state Modify and custody, burns the active token and only then writes terminal. The cage gains no RequestDatum spending arm.",
+      "pause": 400
+    },
+    {
+      "text": "Executable controls refuse a wrong applied validator, wrong registry token, missing approval or mismatched approval beside the connected positive completion. A manually seeded request does not prove this lifecycle. Custody rules remain, while the old naming-specific leaf vocabulary is removed.",
       "pause": 400
     }
   ],
@@ -429,6 +441,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "2a6c42f936c22c3bc3a5b88b56fc8af5a5cd9ba3de1a8ead8408b4220f64e5eb"
+    "sha256": "4730e89a7e1af6cea33bfed241b671e1da019779f64e7875efd7fd463c4c2b22"
   }
 }
