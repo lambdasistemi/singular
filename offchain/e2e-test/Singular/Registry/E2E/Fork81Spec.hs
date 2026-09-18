@@ -40,8 +40,10 @@ import Singular.Registry.Ledger (
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
+    cagePolicyIdFromCfg,
     evalScriptHash,
     extractCageDatum,
+    findStateUtxo,
     leafAbsent,
     scriptHashBytes,
  )
@@ -164,14 +166,19 @@ fork81Spec stateBytes requestBytes = do
                 -- independent {A,B,C} recompute, and an inclusion proof for
                 -- C built from the independent trie must fold to the chain
                 -- root (C provably present with value vc).
+                -- The cage address also holds the custody each absence
+                -- insertion created (#157 C6), so the state UTxO is the
+                -- one carrying the registry policy token, not the only one.
                 let stateAddr = cageAddrFromCfg cfg Testnet
                 stateUtxos <- Cage.queryUTxOs prov stateAddr
-                chainRoot <- case stateUtxos of
-                    [(_, out)] -> case extractCageDatum out of
-                        Just (StateDatum st) ->
-                            pure (unOnChainRoot (stateRoot st))
-                        _ -> error "fork81: state UTxO datum missing"
-                    _ -> error "fork81: expected exactly one state UTxO"
+                chainRoot <-
+                    case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId stateUtxos of
+                        Just (_, out) -> case extractCageDatum out of
+                            Just (StateDatum st) ->
+                                pure (unOnChainRoot (stateRoot st))
+                            _ -> error "fork81: state UTxO datum missing"
+                        Nothing ->
+                            error "fork81: no state UTxO carrying the policy token"
                 ref <- newIORef emptyMPFInMemoryDB
                 let trie = mkPureTrieFromRef ref
                 _ <- insert trie "cs07-fork-A" leafAbsent
