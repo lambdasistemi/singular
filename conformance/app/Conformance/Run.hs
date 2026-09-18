@@ -5773,9 +5773,10 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
 chain round trip, with the ACTIVE policy varied Base versus Alt
 (NOTE-046: no stake script exists to vary; #157 C7 renamed the field
 this row always varied). The four pinned policies are the ones D-BOOT
-derives — the application policy from the naming application script and
-the three token policies from `witness(kind, registry)` applied — so
-this row is also what says the derivation reaches the chain intact.
+derives — NYA applied to this registry's ordinary request-validator
+hash, and the three token policies from `witness(kind, registry)`
+applied — so this row is also what says the derivation reaches the
+chain intact.
 -}
 runCS08 ::
     Cage.Provider IO ->
@@ -5852,13 +5853,15 @@ runCS08 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
             require "CS08: Alt absentPolicy mismatch" (stateAbsentPolicy observedAlt == stateAbsentPolicy expectedAlt)
             require "CS08: Base terminalPolicy mismatch" (stateTerminalPolicy observedBase == stateTerminalPolicy expectedBase)
             require "CS08: Alt terminalPolicy mismatch" (stateTerminalPolicy observedAlt == stateTerminalPolicy expectedAlt)
-            -- The varied field discriminates; the held fields are stable.
+            -- The varied field discriminates. Application policy is
+            -- NYA applied to each registry's request hash, so two
+            -- seeds produce two policies; it is not a shared pin.
             require
                 "CS08: Base and Alt activePolicy unexpectedly match"
                 (stateActivePolicy observedBase /= stateActivePolicy observedAlt)
             require
-                "CS08: applicationPolicy moved between cages"
-                (stateAppPolicy observedBase == stateAppPolicy observedAlt)
+                "CS08: applicationPolicy unexpectedly identical across registries"
+                (stateAppPolicy observedBase /= stateAppPolicy observedAlt)
             -- D-BOOT: the pins are DERIVED. A placeholder would be all
             -- zeroes, and the three token policies are three distinct
             -- applications of one script, so they cannot coincide.
