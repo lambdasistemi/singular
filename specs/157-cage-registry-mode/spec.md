@@ -238,11 +238,14 @@ the four #154 mutants executed at Aiken level (plan).
 
 ### X1 — conformance re-baselined
 
-CS01, CS02, CS08 and the address-derivation rows are re-cut against the
+CS01, CS02 and CS06 are #157's serialization rows, re-cut against the
 eight-field datum, the `Read` operation, the destination field, the
-`AbsentCustody` datum and the new blueprint hashes. `docs/consumer-conformance.md`
-states it as a contract change with the old and new field lists side by side.
-CG19 is re-cut against the interface's routing (no hook): expected refused,
+`AbsentCustody` datum and the new blueprint hashes. CS03, CS04, CS05, CS07 and
+CS08 are re-cut per edge: #173 owns CS04, CS07 and CS08; #177/#179 own CS03
+and CS05 — issue #154 re-cut 2026-09-18; none is stubbed. The
+address-derivation rows remain in #157. `docs/consumer-conformance.md` states
+the contract change with the old and new field lists side by side. CG19 is
+re-cut against the interface's routing (no hook): expected refused,
 `held-q002`.
 
 ### X3 — the existing journeys are NYA's (amendment of 2026-09-18, epic owner r3)

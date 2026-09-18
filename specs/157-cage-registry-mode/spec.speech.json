@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "CS01, CS02, CS08 and the address-derivation rows are re-cut against the eight-field datum, the Read operation, the destination field, the AbsentCustody datum and the new blueprint hashes. docs/consumer-conformance.md states it as a contract change with the old and new field lists side by side. CG19 is re-cut against the interface's routing, with no hook: expected refused, held-q002.",
+      "text": "CS01, CS02 and CS06 are #157's serialization rows, re-cut against the eight-field datum, the Read operation, the destination field, the AbsentCustody datum and the new blueprint hashes. CS03, CS04, CS05, CS07 and CS08 are re-cut per edge: #173 owns CS04, CS07 and CS08; #177/#179 own CS03 and CS05 — issue #154 re-cut 2026-09-18; none is stubbed. The address-derivation rows remain in #157. docs/consumer-conformance.md states the contract change with the old and new field lists side by side. CG19 is re-cut against the interface's routing, with no hook: expected refused, held-q002.",
       "pause": 400
     }
   ],
@@ -429,6 +429,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "0d3fcf854b5b251e663eaa4318d6ff298920f65f2d7921ee4ea763e867c36a0c"
+    "sha256": "f629dc6d60ce408d7dcbd3a2be7c70e28c611cf0a0ead9a9076ee1f2dced82a8"
   }
 }
