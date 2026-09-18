@@ -42,7 +42,7 @@ chain holds after each. Exposed as `nix run .#witness-rows`; wrapped like
 | id | row | expected |
 |---|---|---|
 | WR01 | register `alice`: `insertActive` with the controller's approval, record created by the fold | accept; active token `(active_policy, key)` at the record |
-| WR02 | retire by the controller and complete: `Update(0x01,0x02)` folded from completion-only custody | accept; active token burned; leaf `0x02` (proved by WR03) |
+| WR02 | retire with the committed recovery key (reveal + signature) and complete: `Update(0x01,0x02)` folded from completion-only custody | accept; active token burned; leaf `0x02` (proved by WR03); a sub-row shows the current control key alone refused |
 | WR03 | first `Read(0x02)` for `alice`, destination Bob's address | accept; terminal token at Bob's output |
 | WR04 | second `Read(0x02)` for `alice`, destination Carol's address | accept; a second terminal token, same policy and name |
 | WR05 | `Read(0x01)` on a live name (`bob`, registered in the setup) | **refuse** — cage, `read-non-terminal` |
