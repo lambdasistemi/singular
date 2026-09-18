@@ -291,7 +291,7 @@
   ],
   "non-goals": [
     {
-      "text": "New runner and archive work, escrow, CLI, upstream MPFS and the interface page remain separate. Existing journeys are covered by the explicit amendment.",
+      "text": "New runner and archive work, escrow, CLI, the completion stranding defect tracked as issue 130, upstream MPFS and the interface page remain separate. Existing journeys are covered by the explicit amendment.",
       "pause": 400
     },
     {
@@ -441,6 +441,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "4730e89a7e1af6cea33bfed241b671e1da019779f64e7875efd7fd463c4c2b22"
+    "sha256": "004b9f0acc487d7ad7ab11d72654f528900666c69c227c8b373fa8be6cad4436"
   }
 }
