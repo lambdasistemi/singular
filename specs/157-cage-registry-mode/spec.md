@@ -242,6 +242,8 @@ CS01, CS02, CS08 and the address-derivation rows are re-cut against the
 eight-field datum, the `Read` operation, the destination field, the
 `AbsentCustody` datum and the new blueprint hashes. `docs/consumer-conformance.md`
 states it as a contract change with the old and new field lists side by side.
+CG19 is re-cut against the interface's routing (no hook): expected refused,
+`held-q002`.
 
 ### X3 — the existing journeys are NYA's (amendment of 2026-09-18, epic owner r3)
 
@@ -350,7 +352,8 @@ seven library files to follow under `-Werror` — `Config.hs`,
 `TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs`, and (amendment of
 2026-09-17, ticket-157 Q-003) `Deployment.hs` and `TxBuilder/Register.hs` —
 and those are in this ticket's surface as "what the encodings force to
-compile"; journey work stays #158's.
+compile". The bounded registry journey is adapted in #157; the seven NYA
+journeys remain #172's under #174.
 
 The carrier: **`CageParts` carries the four derived identities** —
 `applicationPolicy`, `activePolicy`, `absentPolicy`, `terminalPolicy`, each

@@ -24,7 +24,8 @@ naming-onchain/validators
 
 conformance/            encodings and rows re-baselined against the new blueprint; X1 executable here
 offchain/lib            ToData/FromData for the changed types, plus Config.hs and the four TxBuilder
-                        files the encodings force to compile (D-BOOT); journeys are re-cut in #172 under #174
+                        files the encodings force to compile (D-BOOT)
+offchain/journey/Main.hs bounded registry journey, adapted here; seven NYA journeys re-cut in #172 under #174
 docs/                   consumer-conformance.md; naming-lifecycle.md; naming-demo.md; recovery-retirement.md
 ```
 
@@ -45,10 +46,12 @@ token and policy ids, and on nothing at fold time.
 | `naming.ak` | Loses `over_marker_for` and the naming leaf vocabulary; keeps the record codec and the mirror helpers, updated to the eight-field state. |
 | `conformance/` | Re-baselines CS01/CS02/CS08 and the address rows; records the contract change. |
 | `offchain/` encodings and what they force | `offchain/lib/Singular/Registry/Types.hs` follows the blueprint, and the library/runner files the new encodings force to compile under `-Werror` follow it: `Config.hs` (four derived pins, D-BOOT; `cfgConsumerPin` deleted), `TxBuilder/ConnectedFold.hs`, `TxBuilder/Reject.hs`, `TxBuilder/Update.hs`, `TxBuilder/Internal.hs`, `Deployment.hs` (`CageParts` carries the four derived identities, legacy fields dropped), `TxBuilder/Register.hs` (consumer registration deleted), `Blueprint.hs` (fixed-tuple schema `STuple [Schema]` for D-DEST's pair; `SList` unchanged; arity and element types still enforced). |
-| `offchain/journey/**` existing journeys and their CI jobs | Out of scope; re-cut in #172 under #174. Their six CI job blocks are retired here under D6 with seven surfaces mapped, never stubbed. No journey is authored here. |
+| `offchain/journey/Main.hs` | The bounded registry journey is #157's and is adapted here to the registry-mode contract. |
+| The seven NYA journey sources and their six CI jobs | `li01`, `li-refusals`, `lmlc`, `recovery`, `retirement`, `retire-verify` and `repair` stay at `main`; their re-cut is #172 under #174. Their six CI job blocks are retired here under D6 with seven surfaces mapped, never stubbed. |
 
 ## Out of this ticket's surface
 
-`lean/**` (#156, frozen), `simulator/**` (#163), `offchain/journey/**` (#172
-under #174) and the release archive (#158), the escrow (#152), the CLI (#139), `docs/preprod*`
+`lean/**` (#156, frozen), `simulator/**` (#163), the seven NYA journey
+sources named above (#172 under #174) and the release archive (#158), the
+escrow (#152), the CLI (#139), `docs/preprod*`
 (#153), the interface page (#159). Touching any is a Q to the epic owner.

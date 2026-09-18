@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "CS01, CS02, CS08 and the address-derivation rows are re-cut against the eight-field datum, the Read operation, the destination field, the AbsentCustody datum and the new blueprint hashes. docs/consumer-conformance.md states it as a contract change with the old and new field lists side by side.",
+      "text": "CS01, CS02, CS08 and the address-derivation rows are re-cut against the eight-field datum, the Read operation, the destination field, the AbsentCustody datum and the new blueprint hashes. docs/consumer-conformance.md states it as a contract change with the old and new field lists side by side. CG19 is re-cut against the interface's routing, with no hook: expected refused, held-q002.",
       "pause": 400
     }
   ],
@@ -241,7 +241,7 @@
       "pause": 400
     },
     {
-      "text": "The executable half of X1 stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 Q-003) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\"; journey work stays #158's.",
+      "text": "The executable half of X1 stays in #157. The encoding change forces exactly seven library files to follow under -Werror — Config.hs, TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs, and (amendment of 2026-09-17, ticket-157 Q-003) Deployment.hs and TxBuilder/Register.hs — and those are in this ticket's surface as \"what the encodings force to compile\". The bounded registry journey is adapted in #157; the seven NYA journeys remain #172's under #174.",
       "pause": 400
     },
     {
@@ -429,6 +429,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "79260431176167ae76294e45f3a5b46a04bbf28d265a8ed97f731807d7b0daa8"
+    "sha256": "0d3fcf854b5b251e663eaa4318d6ff298920f65f2d7921ee4ea763e867c36a0c"
   }
 }
