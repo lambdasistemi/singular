@@ -342,10 +342,8 @@ runMode mode registryPath blueprintPath = do
         let prov = nsProvider sess
             submit = nsSubmitter sess
             pp = nsPParams sess
-        let script = scriptFromBytes "naming-application" appBytes
-            appHash = computeScriptHash appBytes
+        let appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
-            appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
         checkPinnedApplication appHex
         emit
             "identity"
@@ -393,13 +391,11 @@ runMode mode registryPath blueprintPath = do
         -- It runs BEFORE the funding split: the registry builders take
         -- their own inputs from this wallet, and an output promised to
         -- the row pool must not be one of them.
-        recordIn <-
+        (recordIn, appliedScript, appliedHash, appliedAddr) <-
             setupFoldedRecord
                 prov
                 submit
                 pp
-                appAddr
-                script
                 appHex
                 stateBytes
                 requestBytes
@@ -416,10 +412,10 @@ runMode mode registryPath blueprintPath = do
                     , envSubmit = submit
                     , envPp = pp
                     , envPool = poolRef
-                    , envScript = script
-                    , envScriptHash = appHash
+                    , envScript = appliedScript
+                    , envScriptHash = appliedHash
                     , envAppHex = appHex
-                    , envAppAddr = appAddr
+                    , envAppAddr = appliedAddr
                     , envCtrlHash = ctrlHash
                     , envDestCodec = destAddrCodec
                     }
@@ -1234,11 +1230,7 @@ setupFoldedRecord ::
     Cage.Provider IO ->
     Submitter IO ->
     PParams ConwayEra ->
-    -- | the naming application's own address
-    Addr ->
-    -- | the naming application script
-    Script ConwayEra ->
-    -- | its hash, for narration
+    -- | unapplied NYA hash, for the identity pin
     String ->
     -- | state validator
     SBS.ShortByteString ->
@@ -1249,8 +1241,8 @@ setupFoldedRecord ::
     -- | unapplied @witness(kind, registry)@ validator
     SBS.ShortByteString ->
     NamingDatum ->
-    IO TxIn
-setupFoldedRecord prov submit pp appAddr appScript appHex stateBytes requestBytes appBytes witnessBytes recordDatum = do
+    IO (TxIn, Script ConwayEra, ScriptHash, Addr)
+setupFoldedRecord prov submit pp appHex stateBytes requestBytes appBytes witnessBytes recordDatum = do
     utxos <- Cage.queryUTxOs prov genesisAddr
     seedRef <- case sortOn (Down . (\(_, o) -> let Coin c = o ^. coinTxOutL in c)) utxos of
         ((txIn, _) : _) -> pure (txInToRef txIn)
@@ -1303,6 +1295,17 @@ setupFoldedRecord prov submit pp appAddr appScript appHex stateBytes requestByte
                         )
                     )
                 )
+        tok = TokenId (AssetName (SBS.toShort (deriveAssetName seedRef)))
+        appApplied =
+            appliedApplicationBytes
+                (scriptHashBytes (computeScriptHash stateBytes))
+                (onChainTokenId tok)
+                requestBytes
+                appBytes
+        appScript = scriptFromBytes "naming-application" appApplied
+        appHash = computeScriptHash appApplied
+        appAddr =
+            Addr Testnet (ScriptHashObj appHash) StakeRefNull
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
     signedBoot <- submitSignedRaw submit "cage-boot" unsignedBoot
     tid <- case Map.toList (tokensMinted cfg signedBoot) of
@@ -1358,7 +1361,7 @@ setupFoldedRecord prov submit pp appAddr appScript appHex stateBytes requestByte
             <> " carrying the active witness token for that key under the \
                \naming datum the approval bound"
         )
-    pure recordIn
+    pure (recordIn, appScript, appHash, appAddr)
   where
     publishBatch scripts = do
         unsigned <- publishRefScriptTx pp prov genesisAddr scripts

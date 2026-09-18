@@ -6629,7 +6629,13 @@ bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
         owner = addrKeyHashBytes payerAddr
         (destAddr, destHash) = dest
         name = approvalName edge key owner dest
-        appScript = scriptFromBytes "naming-application" (ncApplication codes)
+        appApplied =
+            appliedApplicationBytes
+                (scriptHashBytes (cfgScriptHash cfg))
+                (onChainTokenId tid)
+                (requestScriptBytes cfg)
+                (ncApplication codes)
+        appScript = scriptFromBytes "naming-application" appApplied
         appPolicy = PolicyID (hashScript appScript)
         approval =
             MultiAsset

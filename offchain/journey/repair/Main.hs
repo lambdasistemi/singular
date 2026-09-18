@@ -523,7 +523,13 @@ bootRepairCage prov submit tm stateBytes requestBytes appBytes witnessBytes adju
         ( cfg
         , tok
         , RegKit
-            { rkApp = scriptFromBytes "naming-application" appBytes
+            { rkApp =
+                scriptFromBytes "naming-application" $
+                    appliedApplicationBytes
+                        (scriptHashBytes (cfgScriptHash cfg))
+                        (onChainTokenId tok)
+                        requestBytes
+                        appBytes
             , rkWitness = witnessBytes
             , rkRefs = refs
             }

@@ -364,7 +364,12 @@ withBootedCage adjustCfg stateBytes requestBytes appBytes witnessBytes action =
                     , ceTrie = tm
                     , ceToken = tokenId
                     , ceAppScript =
-                        scriptFromBytes "naming-application" appBytes
+                        scriptFromBytes "naming-application" $
+                            appliedApplicationBytes
+                                (scriptHashBytes (cfgScriptHash cfg))
+                                (onChainTokenId tokenId)
+                                requestBytes
+                                appBytes
                     , ceWitnessBytes = witnessBytes
                     , ceRefs = refs
                     }

@@ -596,7 +596,17 @@ runJourney si stateBytes requestBytes stakingBytes appBytes witnessBytes = do
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
         let cfg = cageCfg stateBytes requestBytes appBytes witnessBytes seedRef
-            appScript = scriptFromBytes "naming-application" appBytes
+            appApplied =
+                appliedApplicationBytes
+                    (scriptHashBytes (cfgScriptHash cfg))
+                    ( onChainTokenId
+                        ( TokenId
+                            (AssetName (SBS.toShort (deriveAssetName seedRef)))
+                        )
+                    )
+                    requestBytes
+                    appBytes
+            appScript = scriptFromBytes "naming-application" appApplied
         (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
         -- The state validator alone is fifteen kilobytes: a fold that
         -- attaches it beside the request script and a token policy is
