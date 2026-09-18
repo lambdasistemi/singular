@@ -6,8 +6,9 @@ open Singular
 open Lean
 
 /-! The naming-lifecycle corpus over the registry-mode model: maintenance and
-recovery with the root untouched (NM2), retirement as `updateTerminal` (NM3),
-and the consumer binding pinning the eight-field datum's policies. -/
+recovery with the root untouched (NM2), retirement producing a same-registry
+ordinary-validator request followed by separate `updateTerminal` completion
+(NM3), and the consumer binding pinning the eight-field datum and identities. -/
 
 def l0 : NamingState := namingInitial
 
@@ -23,6 +24,60 @@ def lRecovered : NamingState :=
   match recoverController fixtureHasher lRegistered aliceKey nextControllerAddress
     recoveredFixture [nextControllerAddress] with
   | .ok s => s | .error _ => lRegistered
+
+def lRetirementPending : NamingState :=
+  match namingRetireLifecycle lRegistered aliceKey
+      [quorumKeyHash 1, quorumKeyHash 29] none with
+  | .ok state => state
+  | .error _ => lRegistered
+
+def lCompletionAttempt : RetirementCompletion :=
+  match lRetirementPending.pendingRetirements.head? with
+  | some pending => completionFor pending
+  | none =>
+      { key := aliceKey
+      , requestValidatorHash := lRetirementPending.parameters.requestValidatorHash
+      , requestToken := lRetirementPending.parameters.cageTokenName
+      , approval := none }
+
+def lMismatchedCompletionApproval : Option Approval :=
+  match lCompletionAttempt.approval with
+  | none => none
+  | some approval => some { approval with key := approval.key + 1 }
+
+def completionPositive : Bool :=
+  match namingCompleteRetirement lRetirementPending lCompletionAttempt with
+  | .ok completed =>
+      trieGet completed.registry.trie aliceKey == .known .terminal &&
+      !(completed.registry.held.any fun holding =>
+        holding.key == aliceKey && holding.kind == .active) &&
+      !(completed.pendingRetirements.any (·.request.key == aliceKey))
+  | .error _ => false
+
+def wrongValidatorRefused : Bool :=
+  match namingCompleteRetirement lRetirementPending
+      { lCompletionAttempt with
+        requestValidatorHash := lCompletionAttempt.requestValidatorHash + 1 } with
+  | .error "retirement-request-validator-mismatch" => true
+  | _ => false
+
+def wrongRequestTokenRefused : Bool :=
+  match namingCompleteRetirement lRetirementPending
+      { lCompletionAttempt with requestToken := lCompletionAttempt.requestToken + 1 } with
+  | .error "retirement-request-token-mismatch" => true
+  | _ => false
+
+def missingApprovalRefused : Bool :=
+  match namingCompleteRetirement lRetirementPending
+      { lCompletionAttempt with approval := none } with
+  | .error "retirement-approval-missing" => true
+  | _ => false
+
+def mismatchedApprovalRefused : Bool :=
+  match namingCompleteRetirement lRetirementPending
+      { lCompletionAttempt with approval := lMismatchedCompletionApproval } with
+  | .error "retirement-approval-mismatch" => true
+  | _ => false
 
 def row (id : String) (ok : Bool) (detail : Json) : Json :=
   Json.mkObj [ ("id", id), ("ok", ok), ("detail", detail) ]
@@ -74,9 +129,21 @@ def recoveryRows : List Json :=
 
 def retirementRows : List Json :=
   [ row "LT02-quorum-retirement-accepts"
-      ((namingRetireLifecycle lRegistered aliceKey
-          [quorumKeyHash 1, quorumKeyHash 29] none).isOk)
-      (toJson true)
+      (match namingRetireLifecycle lRegistered aliceKey
+          [quorumKeyHash 1, quorumKeyHash 29] none with
+      | .ok retired =>
+          trieGet retired.registry.trie aliceKey == .known .active &&
+          retired.pendingRetirements.any fun pending =>
+            pending.requestValidatorHash == retired.parameters.requestValidatorHash &&
+            pending.requestToken == retired.parameters.cageTokenName &&
+            pending.request.edge == .updateTerminal &&
+            pending.request.key == aliceKey &&
+            pending.request.approval.isSome
+      | .error _ => false)
+      (Json.mkObj
+        [ ("phase", toJson "retirement leaves the registry active")
+        , ("requestValidatorHash", toJson lRetirementPending.parameters.requestValidatorHash)
+        , ("requestToken", toJson lRetirementPending.parameters.cageTokenName) ])
   , row "LT03-insufficient-quorum-refused"
       (match namingRetireLifecycle lRegistered aliceKey [quorumKeyHash 1] none with
       | .error "naming-retirement-uncertified" => true | _ => false)
@@ -86,9 +153,18 @@ def retirementRows : List Json :=
       | .error "naming-retirement-uncertified" => true | _ => false)
       (toJson "naming-retirement-uncertified")
   , row "LT04-retirement-completes"
-      ((namingRetireLifecycle lRegistered aliceKey
-          [quorumKeyHash 1, quorumKeyHash 29] none).isOk)
-      (toJson true) ]
+      (completionPositive && wrongValidatorRefused && wrongRequestTokenRefused &&
+        missingApprovalRefused && mismatchedApprovalRefused)
+      (Json.mkObj
+        [ ("connectedProducedRequestCompletes", toJson completionPositive)
+        , ("wrongValidatorRefused", toJson wrongValidatorRefused)
+        , ("wrongValidatorPositive", toJson completionPositive)
+        , ("wrongRegistryTokenRefused", toJson wrongRequestTokenRefused)
+        , ("wrongRegistryTokenPositive", toJson completionPositive)
+        , ("missingApprovalRefused", toJson missingApprovalRefused)
+        , ("missingApprovalPositive", toJson completionPositive)
+        , ("mismatchedApprovalRefused", toJson mismatchedApprovalRefused)
+        , ("mismatchedApprovalPositive", toJson completionPositive) ]) ]
 
 def initializationRows : List Json :=
   [ row "LI01-canonical-initialization-accepts"
@@ -111,10 +187,21 @@ def initializationRows : List Json :=
       | .error "terminal-policy" => true | _ => false)
       (toJson "terminal-policy")
   , row "LI07-substituted-registry-refused"
-      (match initializeConsumer namingConsumerBinding
-        ({ canonicalInitialization with registry := 2 } : InitializationAttempt) with
-      | .error "registry-authenticity" => true | _ => false)
-      (toJson "registry-authenticity") ]
+      ((match initializeConsumer namingConsumerBinding
+          ({ canonicalInitialization with registry := 2 } : InitializationAttempt) with
+        | .error "registry-authenticity" => true | _ => false) &&
+       (match initializeConsumer namingConsumerBinding
+          ({ canonicalInitialization with cageTokenName :=
+            canonicalInitialization.cageTokenName + 1 } : InitializationAttempt) with
+        | .error "cage-token" => true | _ => false) &&
+       (match initializeConsumer namingConsumerBinding
+          ({ canonicalInitialization with requestValidatorHash :=
+            canonicalInitialization.requestValidatorHash + 1 } : InitializationAttempt) with
+        | .error "request-validator" => true | _ => false))
+      (Json.mkObj
+        [ ("registry", toJson "registry-authenticity")
+        , ("cageToken", toJson "cage-token")
+        , ("requestValidator", toJson "request-validator") ]) ]
 
 /-- A wire row publishes the VALUES it is about, not only its verdict.
 

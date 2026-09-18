@@ -25,13 +25,23 @@ def jRetracted : NamingState :=
   match namingRetract jWitness aliceKey with
   | .ok s => s | .error _ => jWitness
 
+def completeFirstRetirement (state : NamingState) : NamingState :=
+  match state.pendingRetirements.head? with
+  | none => state
+  | some pending =>
+      match namingCompleteRetirement state (completionFor pending) with
+      | .ok completed => completed
+      | .error _ => state
+
 def jRetired : NamingState :=
   match namingRetire jBooked aliceKey [quorumKeyHash 1, quorumKeyHash 29] none with
-  | .ok s => s | .error _ => jBooked
+  | .ok pending => completeFirstRetirement pending
+  | .error _ => jBooked
 
 def jRetiredByRecoveryKey : NamingState :=
   match namingRetire jBooked aliceKey [] (some nextControllerAddress) with
-  | .ok s => s | .error _ => jBooked
+  | .ok pending => completeFirstRetirement pending
+  | .error _ => jBooked
 
 def jAttested : NamingState :=
   match namingAttest jRetired aliceKey 700 with
