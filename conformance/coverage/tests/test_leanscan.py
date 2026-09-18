@@ -101,23 +101,27 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree at base: 79 = 42 manifest-bound + 37 unclassified.
+    """The frozen tree at base: 82 = 45 manifest-bound + 37 unclassified.
 
-    Re-frozen on #156's registry-mode model. The 42 are the registry's 24
-    statements plus naming's 7, its lifecycle's 6 and its wire encoding's 5; the
-    37 are the lemmas and effect equations they are proved from. Prior base
-    196 = 113 + 83, retired with the model it described — the disposition of all
-    44 base declarations is in docs/model-ledger.md (1 carried, 3 renamed,
-    40 retired), so the shrinking denominator here is the recorded retirement
-    and not an undiscovered population.
+    Re-frozen on #157's retirement split. The 45 are the registry's 24
+    statements plus naming's 7, its lifecycle's 9 and its wire encoding's 5; the
+    37 are the lemmas and effect equations they are proved from. The lifecycle's
+    6 became 9 with retirement_pending_inversion,
+    retirement_completion_inversion and retirement_completion_refusals, so this
+    denominator grew by exactly the three statements the split added. The #156
+    base was 79 = 42 + 37 and before it 196 = 113 + 83, retired with the model
+    it described — the disposition of all 44 of those base declarations is in
+    docs/model-ledger.md (1 carried, 3 renamed, 40 retired), so the earlier
+    shrinking denominator is the recorded retirement and not an undiscovered
+    population.
     """
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 79, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 82, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 42)
+        self.assertEqual(len(statements), 45)
 
     def test_attributed_count_at_base(self):
         decls = scan_tree_strict(REPO_ROOT / "lean")

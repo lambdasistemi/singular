@@ -6,8 +6,9 @@ request construction only, never person identity, entitlement to a spelling, or
 ownership of a payment destination.
 
 The record UTxO holds the active token and the trie carries only `Active`
-(NM1); `maintain` and `recover` never touch the trie (NM2); retirement
-completion is `updateTerminal` (NM3); the approval policy follows R-NM4 for all
+(NM1); `maintain` and `recover` never touch the trie (NM2); retirement creates
+a bound pending request and only its later completion applies `updateTerminal`
+(NM3); the approval policy follows R-NM4 for all
 six edges, with `updateTerminal` certified by the committed recovery key
 revealed and signing, or by a distinct-member quorum — never by the current
 control key alone (operator ruling). Naming fixtures are first-class fields
@@ -199,9 +200,58 @@ structure NamingRecord where
   fixture : NamingFixture
   deriving Repr, BEq, DecidableEq, ToJson
 
+/-- The cage token name is derived from an already-existing seed output
+reference.  In particular, it does not depend on the application policy or on
+the transaction that creates the registry. -/
+def cageTokenNameFromSeed (seedOutputReference : Nat) : Nat :=
+  (fnv1a [0x43, seedOutputReference.toUInt8] &&& 0xFFFFFFFF).toNat
+
+/-- The ordinary MPFS request validator is applied to the registry state
+policy and the seed-derived cage token name.  The application policy is not an
+input, so the application/request derivation remains acyclic. -/
+def appliedRequestValidatorHashFor (registryStatePolicy cageTokenName : Nat) : Nat :=
+  (fnv1a [0x52, registryStatePolicy.toUInt8, cageTokenName.toUInt8] &&& 0xFFFFFFFF).toNat
+
+/-- NYA's application identity is derived only after the applied request
+validator identity is known. -/
+def namingApplicationPolicyFor (requestValidatorHash : Nat) : Nat :=
+  (fnv1a [0x4E, requestValidatorHash.toUInt8] &&& 0xFFFFFFFF).toNat
+
+/-- Immutable application parameters for one naming registry.  The request
+validator hash is a script parameter, not a value selected by `Retire`. -/
+structure NamingParameters where
+  seedOutputReference : Nat
+  registryStatePolicy : Nat
+  cageTokenName : Nat
+  requestValidatorHash : Nat
+  retirementCustody : Nat
+  deriving Repr, BEq, DecidableEq, ToJson
+
+def namingParametersFor (seedOutputReference registryStatePolicy retirementCustody : Nat) :
+    NamingParameters :=
+  let cageTokenName := cageTokenNameFromSeed seedOutputReference
+  { seedOutputReference := seedOutputReference
+  , registryStatePolicy := registryStatePolicy
+  , cageTokenName := cageTokenName
+  , requestValidatorHash := appliedRequestValidatorHashFor registryStatePolicy cageTokenName
+  , retirementCustody := retirementCustody }
+
+def canonicalNamingParameters : NamingParameters := namingParametersFor 400 1 700
+
+/-- The completion request co-created by `Retire`.  Its validator home and
+request token are recorded beside the exact approved request, so completion
+can consume this object rather than reconstructing or manually seeding one. -/
+structure PendingRetirement where
+  requestValidatorHash : Nat
+  requestToken : Nat
+  request : Request
+  deriving Repr, BEq, DecidableEq, ToJson
+
 structure NamingState where
   registry : RegistryState
   records : List NamingRecord
+  parameters : NamingParameters
+  pendingRetirements : List PendingRetirement
   deriving BEq, DecidableEq
 
 /-- The commitment-adapter contract at the model/cryptography boundary: the
@@ -298,7 +348,7 @@ def namingConfig : Config :=
   , maxFee := 1
   , processTime := 2
   , retractTime := 3
-  , applicationPolicy := 7
+  , applicationPolicy := namingApplicationPolicyFor canonicalNamingParameters.requestValidatorHash
   , activePolicy := 8
   , absentPolicy := 9
   , terminalPolicy := 10 }
@@ -327,7 +377,9 @@ def namingStep (hasher : RecoveryHasher) (state : NamingState) (r : Request)
 /-- The registry the naming journeys start from. -/
 def namingInitial : NamingState :=
   { registry := { config := namingConfig, trie := [], custody := [], held := [] }
-  , records := [] }
+  , records := []
+  , parameters := canonicalNamingParameters
+  , pendingRetirements := [] }
 
 /-- A naming approval minted under the pinned application policy, scoped to the
 request's tuple and carrying the signatures its policy certified it on. -/
@@ -391,20 +443,109 @@ def namingBook (state : NamingState) (key : Nat) (out : Nat)
         registry := result.state
         records := { key := key, output := out, fixture := fixture } :: state.records }
 
-/-- Retire a record: `updateTerminal`, certified by the committed recovery key
-revealed and signing, or by a distinct-member quorum — never the current
-control key alone (NM3, R-NM4 as amended). -/
+/-- Construct the exact `Update(0x01,0x02)` request whose approval is minted by
+an authorized retirement. -/
+def retirementRequest (record : NamingRecord) (signatures : List (List Nat)) : Request :=
+  let r : Request :=
+    ({ edge := .updateTerminal, key := record.key, owner := record.output
+     , output := record.output } : Request)
+  { r with approval := namingApproval r signatures }
+
+/-- Move the held active token out of the record and into completion-only
+custody without changing the active trie leaf. -/
+def moveActiveToRetirementCustody (registry : RegistryState) (key custody : Nat) :
+    RegistryState :=
+  { registry with held := registry.held.map fun holding =>
+      if holding.key == key && holding.kind == .active
+      then { holding with output := custody }
+      else holding }
+
+/-- Retire a record in phase one: authorize the action, move the active token
+to retirement custody, remove the record, and co-create one pending completion
+request at the immutable ordinary MPFS request-validator home.  The registry
+leaf stays active and `updateTerminal` is not applied here. -/
 def namingRetire (state : NamingState) (key : Nat) (signatures : List (List Nat))
     (revealed : Option NamingAddress) : Except String NamingState := do
   let record ←
     Option.toExcept (state.records.find? (·.key == key)) "naming-record-unavailable"
-  let r : Request :=
-    ({ edge := .updateTerminal, key := key, owner := record.output
-     , output := record.output } : Request)
-  let ap := namingApproval r signatures
-  (namingStep fixtureHasher state { r with approval := ap } revealed).map
-    fun result =>
-      { state with registry := result.state, records := state.records.filter (·.key != key) }
+  if state.parameters.cageTokenName !=
+      cageTokenNameFromSeed state.parameters.seedOutputReference then
+    throw "retirement-cage-token-derivation"
+  if state.parameters.requestValidatorHash !=
+      appliedRequestValidatorHashFor state.parameters.registryStatePolicy
+        state.parameters.cageTokenName then
+    throw "retirement-request-validator-derivation"
+  if state.registry.config.applicationPolicy !=
+      namingApplicationPolicyFor state.parameters.requestValidatorHash then
+    throw "retirement-application-policy-derivation"
+  if state.pendingRetirements.any (·.request.key == key) then
+    throw "retirement-already-pending"
+  if !(state.registry.held.any fun holding =>
+      holding.key == key && holding.kind == .active && holding.output == record.output) then
+    throw "token-missing"
+  let request := retirementRequest record signatures
+  let context : NamingCtx :=
+    { controllerBytes := controllerAddress.bytes
+    , refundBytes := toBytes28 request.owner
+    , fixture := record.fixture }
+  if !(namingCertifies fixtureHasher .updateTerminal signatures revealed context) then
+    throw "naming-retirement-uncertified"
+  let pending : PendingRetirement :=
+    { requestValidatorHash := state.parameters.requestValidatorHash
+    , requestToken := state.parameters.cageTokenName
+    , request := request }
+  pure
+    { state with
+      registry := moveActiveToRetirementCustody state.registry key
+        state.parameters.retirementCustody
+      records := state.records.filter (·.key != key)
+      pendingRetirements := pending :: state.pendingRetirements }
+
+/-- What the completion transaction presents while consuming a pending
+retirement request.  The request body itself is always read from
+`state.pendingRetirements`; callers cannot substitute a manually seeded body. -/
+structure RetirementCompletion where
+  key : Key
+  requestValidatorHash : Nat
+  requestToken : Nat
+  approval : Option Approval
+  deriving Repr, BEq, DecidableEq, ToJson
+
+def completionFor (pending : PendingRetirement) : RetirementCompletion :=
+  { key := pending.request.key
+  , requestValidatorHash := pending.requestValidatorHash
+  , requestToken := pending.requestToken
+  , approval := pending.request.approval }
+
+/-- Phase two consumes the exact co-created request through the ordinary
+request-validator/`Contribute` boundary and only then applies
+`updateTerminal`, burns the held active token, and removes the pending object. -/
+def namingCompleteRetirement (state : NamingState) (attempt : RetirementCompletion) :
+    Except String NamingState := do
+  let pending ← Option.toExcept
+    (state.pendingRetirements.find? (·.request.key == attempt.key))
+    "retirement-request-missing"
+  if pending.requestValidatorHash != state.parameters.requestValidatorHash ||
+      attempt.requestValidatorHash != pending.requestValidatorHash then
+    throw "retirement-request-validator-mismatch"
+  if pending.requestToken != state.parameters.cageTokenName ||
+      attempt.requestToken != pending.requestToken then
+    throw "retirement-request-token-mismatch"
+  if pending.request.edge != .updateTerminal || pending.request.key != attempt.key then
+    throw "retirement-request-mismatch"
+  let approval ← Option.toExcept attempt.approval "retirement-approval-missing"
+  if some approval != pending.request.approval then
+    throw "retirement-approval-mismatch"
+  if !(state.registry.held.any fun holding =>
+      holding.key == attempt.key && holding.kind == .active &&
+        holding.output == state.parameters.retirementCustody) then
+    throw "retirement-custody-missing"
+  let result ← step state.registry { pending.request with approval := some approval }
+  pure
+    { state with
+      registry := result.state
+      pendingRetirements := state.pendingRetirements.filter
+        (·.request.key != attempt.key) }
 
 /-- Attest a retired name: `witnessTerminal`, anyone; the Over witness is
 minted by a folded read and freely burnable. -/
@@ -418,10 +559,18 @@ def namingAttest (state : NamingState) (key : Nat) (out : Nat) :
 record's key is exactly the booked active token at the record's output. -/
 def namingWellFormed (state : NamingState) : Prop :=
   Consistent state.registry ∧
-  ∀ record ∈ state.records,
+  (∀ record ∈ state.records,
     kindCount state.registry .active record.key = 1 ∧
     ∃ h ∈ state.registry.held, h.key = record.key ∧ h.kind = .active ∧
-      h.output = record.output
+      h.output = record.output) ∧
+  (∀ pending ∈ state.pendingRetirements,
+    pending.requestValidatorHash = state.parameters.requestValidatorHash ∧
+    pending.requestToken = state.parameters.cageTokenName ∧
+    pending.request.edge = .updateTerminal ∧
+    trieGet state.registry.trie pending.request.key = .known .active ∧
+    ∃ h ∈ state.registry.held,
+      h.key = pending.request.key ∧ h.kind = .active ∧
+      h.output = state.parameters.retirementCustody)
 
 end Singular
 
@@ -431,9 +580,17 @@ namespace Singular.Naming
 record's key is exactly the booked active token at the record's output. -/
 def WellFormed (state : NamingState) : Prop :=
   Consistent state.registry ∧
-  ∀ record ∈ state.records,
+  (∀ record ∈ state.records,
     kindCount state.registry .active record.key = 1 ∧
     ∃ h ∈ state.registry.held, h.key = record.key ∧ h.kind = .active ∧
-      h.output = record.output
+      h.output = record.output) ∧
+  (∀ pending ∈ state.pendingRetirements,
+    pending.requestValidatorHash = state.parameters.requestValidatorHash ∧
+    pending.requestToken = state.parameters.cageTokenName ∧
+    pending.request.edge = .updateTerminal ∧
+    trieGet state.registry.trie pending.request.key = .known .active ∧
+    ∃ h ∈ state.registry.held,
+      h.key = pending.request.key ∧ h.kind = .active ∧
+      h.output = state.parameters.retirementCustody)
 
 end Singular.Naming

@@ -2,11 +2,12 @@ import Singular.Naming
 
 /-! Lifecycle for the naming profile over the registry-mode model.
 `maintain` and `recover` replace the record's fixture and never touch the
-trie — the root is equal before and after (NM2). Retirement completes as
-`updateTerminal` certified per R-NM4 (NM3): the committed recovery key revealed
-and signing, or a distinct-member quorum — never the current control key alone.
-The consumer binding pins the eight-field datum's policies; `consumerPin` and
-`representativePolicy` are removed, not renamed. -/
+trie — the root is equal before and after (NM2). Retirement is authorized per
+R-NM4 (NM3), creates the ordinary-validator pending request and leaves the leaf
+active; a separate completion applies `updateTerminal`. The consumer binding
+pins the eight-field datum's policies plus the same-registry cage token and
+applied request-validator identity; `consumerPin` and `representativePolicy`
+are removed, not renamed. -/
 
 namespace Singular
 open Lean
@@ -18,6 +19,8 @@ structure ConsumerBinding where
   sourceRevision : String
   canonicalSeed : Nat
   registry : Nat
+  cageTokenName : Nat
+  requestValidatorHash : Nat
   applicationPolicy : Nat
   activePolicy : Nat
   absentPolicy : Nat
@@ -29,8 +32,13 @@ structure ConsumerBinding where
 def cardanoKeriRevision : String := "14a64a4681d3e429fab5877062b5c476c2a4bfe2"
 
 def namingConsumerBinding : ConsumerBinding :=
-  { sourceRevision := cardanoKeriRevision, canonicalSeed := 400, registry := 1,
-    applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
+  { sourceRevision := cardanoKeriRevision
+  , canonicalSeed := canonicalNamingParameters.seedOutputReference
+  , registry := canonicalNamingParameters.registryStatePolicy
+  , cageTokenName := canonicalNamingParameters.cageTokenName
+  , requestValidatorHash := canonicalNamingParameters.requestValidatorHash
+  , applicationPolicy := namingConfig.applicationPolicy
+  , activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
     validatorScript := 12 }
 
 structure InitializationAttempt where
@@ -38,6 +46,8 @@ structure InitializationAttempt where
   seed : Nat
   seedConsumed : Bool
   registry : Nat
+  cageTokenName : Nat
+  requestValidatorHash : Nat
   applicationPolicy : Nat
   activePolicy : Nat
   absentPolicy : Nat
@@ -46,8 +56,14 @@ structure InitializationAttempt where
   deriving Repr, BEq, DecidableEq, ToJson
 
 def canonicalInitialization : InitializationAttempt :=
-  { sourceRevision := cardanoKeriRevision, seed := 400, seedConsumed := true, registry := 1,
-    applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
+  { sourceRevision := cardanoKeriRevision
+  , seed := canonicalNamingParameters.seedOutputReference
+  , seedConsumed := true
+  , registry := canonicalNamingParameters.registryStatePolicy
+  , cageTokenName := canonicalNamingParameters.cageTokenName
+  , requestValidatorHash := canonicalNamingParameters.requestValidatorHash
+  , applicationPolicy := namingConfig.applicationPolicy
+  , activePolicy := 8, absentPolicy := 9, terminalPolicy := 10,
     validatorScript := 12 }
 
 def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAttempt) :
@@ -55,7 +71,15 @@ def initializeConsumer (binding : ConsumerBinding) (attempt : InitializationAtte
   if attempt.sourceRevision != binding.sourceRevision then throw "source-revision"
   if attempt.seed != binding.canonicalSeed || !attempt.seedConsumed then throw "canonical-seed"
   if attempt.registry != binding.registry then throw "registry-authenticity"
+  if attempt.cageTokenName != binding.cageTokenName then throw "cage-token"
+  if attempt.cageTokenName != cageTokenNameFromSeed attempt.seed then throw "cage-token-derivation"
+  if attempt.requestValidatorHash != binding.requestValidatorHash then throw "request-validator"
+  if attempt.requestValidatorHash !=
+      appliedRequestValidatorHashFor attempt.registry attempt.cageTokenName then
+    throw "request-validator-derivation"
   if attempt.applicationPolicy != binding.applicationPolicy then throw "application-policy"
+  if attempt.applicationPolicy != namingApplicationPolicyFor attempt.requestValidatorHash then
+    throw "application-policy-derivation"
   if attempt.activePolicy != binding.activePolicy then throw "active-policy"
   if attempt.absentPolicy != binding.absentPolicy then throw "absent-policy"
   if attempt.terminalPolicy != binding.terminalPolicy then throw "terminal-policy"
@@ -104,8 +128,8 @@ def recoverController (hasher : RecoveryHasher) (state : NamingState) (key : Nat
   pure { state with records :=
     { record with fixture := candidate } :: state.records.filter (·.key != key) }
 
-/-- Retirement: `updateTerminal` under R-NM4 — recovery key or quorum, never
-the control key alone (NM3). -/
+/-- Retirement phase one under R-NM4 — recovery key or quorum, never the
+control key alone. It creates the pending request; completion is separate. -/
 def namingRetireLifecycle (state : NamingState) (key : Nat) (signatures : List (List Nat))
     (revealed : Option NamingAddress) : Except String NamingState :=
   namingRetire state key signatures revealed

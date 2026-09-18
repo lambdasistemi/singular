@@ -30,9 +30,27 @@
     "statementSha256": "9c54dc25fe28017812a24e8ae23f11fa01d4547dcb15bf97093a26b9881ada12"
   },
   {
+    "name": "Singular.NamingLifecycleStatements.retirement_pending_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "8979555e1b9f60d36d6e04a70676589acc160b6fd332b3e5af7d2f763cb8d889"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_completion_inversion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d4a8aff20a184551622f8d51e0bf2d9bd5fbb6244bf9a09f969637cead628685"
+  },
+  {
+    "name": "Singular.NamingLifecycleStatements.retirement_completion_refusals",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "84830adcf0b8d18da9b94e06afa5e8f4ab184f53d64dccd02896482f30be052c"
+  },
+  {
     "name": "Singular.NamingLifecycleStatements.consumer_binding_pins_policies",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "23cdb04b62a598b4ffadc7bf3e3a6a2ba3ff59a876c95136b4c161ec3dc1f19d"
+    "statementSha256": "dcd2b65d5bb74deb929189ccd885ce080a5d878f7ba76d4d444d157bea7ec27f"
   }
 ]
