@@ -7,7 +7,12 @@ import Data.ByteString qualified as BS
 import PlutusCore.Data (Data (..))
 import PlutusCore.Evaluation.Machine.ExBudgetingDefaults (defaultCekParametersForTesting)
 import PlutusLedgerApi.V3 (uncheckedDeserialiseUPLC)
-import Singular.Registry.Blueprint (applyDataParam, extractCompiledCode, loadBlueprint)
+import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyDataParam,
+    extractCompiledCode,
+    loadBlueprint,
+ )
 import System.Environment (getEnv)
 import Test.Hspec (hspec, it, shouldBe)
 import UntypedPlutusCore (Program (..), fakeNameDeBruijn, termMapNames)
@@ -26,8 +31,14 @@ main = do
     script <-
         maybe (fail "application compiled code missing") pure $
             extractCompiledCode "application.application.spend" blueprint
-    let evaluate context =
-            let Program _ _ term = uncheckedDeserialiseUPLC (applyDataParam context script)
+    -- NYA is applied to the ordinary request-validator hash. These
+    -- value checks never reach retirement_completion, so any 28-byte
+    -- parameter is enough to bind the spend script.
+    let requestValidatorHash = BS.replicate 28 0xd0
+        applied = applyBytesParam requestValidatorHash script
+        evaluate context =
+            let Program _ _ term =
+                    uncheckedDeserialiseUPLC (applyDataParam context applied)
              in runCekDeBruijn
                     defaultCekParametersForTesting
                     counting
