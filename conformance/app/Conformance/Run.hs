@@ -4436,9 +4436,11 @@ runCG19RejectedFloor env cage tid = do
     -- attribution plus structured fields; raw node rejection stays
     -- in runtime evidence. Readability-bounded like row receipts.
     base <- requireBase
-    -- #157 C10: the receipt records the application policy the registry
-    -- pins, not the consumer hash it no longer has.
-    let hookHex = hex (SBS.fromShort (cfgApplicationPolicy cfg))
+    -- #157 C8/C10: `consumer.ak` is deleted and every rule it re-walked
+    -- beside the fold is the cage's own, so the control records the
+    -- authority that actually refuses this pair — the state script
+    -- (A-015) — not a hook the registry no longer has.
+    let authorityHex = hex (scriptHashBytes (cfgScriptHash cfg))
         underHashes = map T.pack (refusalScriptHashes underReason)
         orderedReqs =
             [ object
@@ -4465,7 +4467,7 @@ runCG19RejectedFloor env cage tid = do
                         , "upperUnderpaid" .= show upperU
                         , "upperFunded" .= show upperO
                         ]
-                , "hook" .= hookHex
+                , "authority" .= authorityHex
                 , "obligations"
                     .= [object ["owner" .= o, "owed" .= w] | (o, w) <- obligations]
                 , "underpaid"

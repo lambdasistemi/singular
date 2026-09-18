@@ -201,7 +201,21 @@ jobs:
               and (.refusal.limit | type == "string" and length > 0)
             ' "$f" > /dev/null || { echo "FAIL: $row structural refusal evidence moved"; exit 1; }
           done
-          nix run --quiet nixpkgs#jq -- -e '.outcome == "accepted" and .venue == "node-submit" and (.transactions | length > 0 and all(.[]; test("^[0-9a-f]{64}$")))' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 accepted observation missing'; exit 1; }
+          # CG19 under the registry-mode cage is REFUSED at the state script
+          # (A-015): the interface routes a processed request to its own
+          # destination minus the tip and a refund to the address custody
+          # records, so a crossed allocation -- one request's value routed to
+          # another's target, or to a hook the mandate deleted -- is a routing
+          # the cage refuses. Same structural refusal evidence as CG11/CG12.
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+            .outcome == "refused" and .venue == "node-submit"
+            and (.rejected | test("^[0-9a-f]{64}$"))
+            and .refusal.phase == "phase-2"
+            and (.refusal.hashes | index($state) != null)
+            and (.refusal.limit | type == "string" and length > 0)
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 structural refusal evidence moved'; exit 1; }
           grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
           grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
           # 8. standalone rejected-floor control receipt mandatory:
@@ -217,7 +231,7 @@ jobs:
             .control == "CG19-rejected-floor" and .row == "CG19"
             and .base == $base and .dirty == false
             and .blueprint == $row[0].blueprint and .node == $row[0].node
-            and .actions == ["Rejected", "Rejected"]
+            and .authority == $state and .actions == ["Rejected", "Rejected"]
             and (.obligations | length == 2)
             and (.obligations | all(.[]; (.owner | text) and (.owed | type == "number" and . > 1000)))
             and (."ordered-requests" | length == 2)

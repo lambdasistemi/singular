@@ -197,12 +197,12 @@
       "state": "bound-elsewhere"
     },
     {
-      "expected": "observe and report — accepted+HeldQ002 (processed crossed allocation unenforced); rejected-action refund-floor control separate",
+      "expected": "observe and report — refused+HeldQ002 (crossed allocation enforced by the state script); rejected-action refund-floor control separate",
       "group": "CG",
       "id": "CG19",
-      "note": "OBSERVED (generic4 bd0b9597): crossed Update allocation accepted — Update contributes no generic Rejected-owner refund obligations (owners list only for Rejected actions); processed allocation is judged by the checkpoint/consumer hook, not routed to owners. HeldQ002 retained; no debt reduction. The rejected-action refund-floor control (CG19-rejected-floor) tests Rejected-owner floors separately; the generic4 processed shortfall that accepted (97c2feae) is retained as REJECTED broken-instrument evidence (it targeted an abolished rule).",
-      "requirement": "Refund routing is action-dependent: processed Update value routes to the checkpoint/consumer hook (not to request owners); Rejected produces refund owners at inputLovelace-stateTip each under a per-owner no-underpayment floor.",
-      "source": "cardano-keri R11_contribute_value, R11_retract_value",
+      "note": "RE-CUT in #157 (A-015): the old oracle routed processed Update value to the checkpoint/consumer hook, a target C8/C10 delete. Under the registry-mode cage the fold routes each token to where the request names and refunds to the address custody records, so a crossed allocation is REFUSED at the state script (phase-2). Observed on the candidate: outcome refused, 0 transactions, attributed to state. HeldQ002 retained — the consumer's theorem R11 still routes to a checkpoint, and the chain now sides with the canonical interface. The rejected-action refund-floor control (CG19-rejected-floor) tests Rejected-owner floors separately.",
+      "requirement": "Refund routing follows the request: processed value routes to the request's destination minus the folder's tip; refunds go to the refund address recorded in custody; a crossed allocation is refused by the state script (interface, registry mode: no hook). Rejected produces refund owners at the recorded floor.",
+      "source": "cardano-keri R11_contribute_value, R11_retract_value; interface gist 2fb03c2e (registry mode)",
       "state": "uncovered"
     },
     {
