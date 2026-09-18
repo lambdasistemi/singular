@@ -423,6 +423,7 @@ contract change.
 ## Non-goals
 
 The runner and the release archive (#158). The escrow (#152). The CLI (#139).
-Upstream MPFS. The interface page (#159). Compatibility or migration for
+The completion stranding defect (#130). Upstream MPFS. The interface page
+(#159). Compatibility or migration for
 already deployed identities; parameterizing NYA changes its address and policy
 identity, so this ticket derives a new identity rather than claiming continuity.
