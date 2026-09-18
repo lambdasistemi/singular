@@ -90,15 +90,17 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, referenceScriptTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import PlutusTx.IsData.Class (FromData (..))
@@ -341,8 +343,9 @@ stepDerivedIdentity ::
     TokenId ->
     ConwayTx ->
     ConwayTx ->
+    [(TxIn, TxOut ConwayEra)] ->
     IO ()
-stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = do
+stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx refs = do
     let hashHex = hex . scriptHashBytes
         -- The unapplied layer: the blueprint's raw code hashes.
         unappliedState = hashHex (computeScriptHash rawState)
@@ -382,7 +385,21 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> hashHex (cfgScriptHash cfg)
     -- The scripts the run actually carried to the node.
     let bootWitness = witnessScriptHashes bootTx
-        updateWitness = witnessScriptHashes updateTx
+        updateWitness = carriedScriptHashes refs updateTx
+        pinHex p = hex (SBS.fromShort p)
+        -- The fold spends the state and the request and mints under the
+        -- three witness policies this registry pins, so those five are
+        -- exactly what it carries.
+        updateExpected =
+            Set.fromList
+                ( [stateHex, requestHex]
+                    <> map
+                        pinHex
+                        [ cfgAbsentPolicy cfg
+                        , cfgActivePolicy cfg
+                        , cfgTerminalPolicy cfg
+                        ]
+                )
     unless (bootWitness == Set.singleton stateHex) $
         failWith $
             "derived-applied-identity failed for state: \
@@ -396,7 +413,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
     -- #157: the fold withdraws from nothing, so the update transaction
     -- carries exactly the two derived scripts it spends — the retired
     -- consumer hook is no longer among them.
-    unless (updateWitness == Set.fromList [stateHex, requestHex]) $
+    unless (updateWitness == updateExpected) $
         failWith $
             "derived-applied-identity failed for request: \
             \expected the update transaction to carry exactly \
@@ -404,6 +421,8 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx = 
                 <> stateHex
                 <> " and 0x"
                 <> requestHex
+                <> " with the three pinned witness policies "
+                <> show (map pinHex [cfgAbsentPolicy cfg, cfgActivePolicy cfg, cfgTerminalPolicy cfg])
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "
@@ -479,6 +498,23 @@ witnessScriptHashes tx =
         [ hex (scriptHashBytes sh)
         | sh <- Map.keys (tx ^. witsTxL . scriptTxWitsL)
         ]
+
+{- | Every script a transaction carried to the node: the witness set it
+attached, plus the reference outputs it resolved through. A fold
+resolves every purpose through published references, so its witness set
+is empty and the scripts it executed travel in the outputs its body
+names.
+-}
+carriedScriptHashes ::
+    [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Set.Set String
+carriedScriptHashes refs tx =
+    witnessScriptHashes tx
+        <> Set.fromList
+            [ hex (scriptHashBytes (hashScript s))
+            | (i, o) <- refs
+            , i `Set.member` (tx ^. bodyTxL . referenceInputsTxBodyL)
+            , SJust s <- [o ^. referenceScriptTxOutL]
+            ]
 
 -- ---------------------------------------------------------
 -- The journey, on a real devnet
@@ -557,6 +593,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             tokenId
             bootTx
             appliedTx
+            refs
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
         stepReject cfg codes prov submit tm tokenId refs appliedState
