@@ -17,17 +17,20 @@ from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Re-frozen on #156's registry-mode model: 79 = 42 manifest-bound + 37
-        # unclassified. The 42 are the registry's 24 statements plus naming's 7,
-        # its lifecycle's 6 and its wire encoding's 5; the 37 are the lemmas and
-        # effect equations they are proved from. The previous base was
-        # 196 = 113 + 83 and is retired with the model it described — the
-        # disposition of all 44 base declarations is in docs/model-ledger.md
-        # (1 carried, 3 renamed, 40 retired).
+        # Re-frozen on #157's retirement split: 82 = 45 manifest-bound + 37
+        # unclassified. The 45 are the registry's 24 statements plus naming's 7,
+        # its lifecycle's 9 and its wire encoding's 5; the 37 are the lemmas and
+        # effect equations they are proved from. The lifecycle's 6 became 9 with
+        # retirement_pending_inversion, retirement_completion_inversion and
+        # retirement_completion_refusals; the unclassified 37 is unchanged,
+        # because the split added statements and no new lemma. The #156 base was
+        # 79 = 42 + 37, and before it 196 = 113 + 83 — the disposition of all 44
+        # of those base declarations is in docs/model-ledger.md (1 carried,
+        # 3 renamed, 40 retired).
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 42)
+        self.assertEqual(inv.manifest_bound, 45)
         self.assertEqual(inv.unclassified, 37)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 79)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 82)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
