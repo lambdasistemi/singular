@@ -185,7 +185,10 @@ jobs:
           #    blueprint. The human log marker is abbreviated and
           #    cannot serve as a script identity.
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
-          hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          # #157 C8/C10: `consumer.ak` is deleted and every rule it re-walked
+          # beside the fold is the cage's own, so there is no consumer hook to
+          # bind and the cage alone decides. The control below binds the
+          # refusal to the state script instead.
           for row in CG11 CG12; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             # jq expands its own --arg variables inside this program.
@@ -208,13 +211,13 @@ jobs:
           test -f "$c" || { echo 'FAIL: missing CG19-rejected-floor control receipt'; exit 1; }
           # jq expands its own --arg/--slurpfile variables.
           # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" --arg hook "$hook_hash" --slurpfile row "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json '
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" --slurpfile row "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
             .control == "CG19-rejected-floor" and .row == "CG19"
             and .base == $base and .dirty == false
             and .blueprint == $row[0].blueprint and .node == $row[0].node
-            and .hook == $hook and .actions == ["Rejected", "Rejected"]
+            and .actions == ["Rejected", "Rejected"]
             and (.obligations | length == 2)
             and (.obligations | all(.[]; (.owner | text) and (.owed | type == "number" and . > 1000)))
             and (."ordered-requests" | length == 2)
