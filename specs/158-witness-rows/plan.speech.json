@@ -1,0 +1,112 @@
+{
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Builders first — transaction construction for the new shapes: a request.",
+      "pause": 300
+    },
+    {
+      "text": "carrying an approval and a destination; Read; the custody output and its    spend; the co-minted terminate approval at Retire. They live in    offchain/lib beside the existing builders and are used by the journey. 2. The journey — twelve rows in order, each a function returning its    observation; narration and JSON from one source. 3. The archive — flake wrapper, README phrase, check_release.py and the    surface control variant. 4. Conformance and the page.",
+      "pause": 400
+    },
+    {
+      "text": "The PR is stacked on #157's branch and targets it; re-targeted to main when #157 merges.",
+      "pause": 400
+    }
+  ],
+  "staffing": [
+    {
+      "text": "Staffing.",
+      "pause": 500
+    },
+    {
+      "text": "Operator ruling: epic owner codex, ticket owner Opus, commit owner glm else muse, auditor Opus. Haskell and devnet work: muse --approve preferred for the commit owner (the GLM fence on network and devnet processes is the question; if it allows, glm). Auditor fresh Opus loading commit-auditor and verification. draft=NONE.",
+      "pause": 400
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Constraints.",
+      "pause": 500
+    },
+    {
+      "text": "No validator change. A refusal that does not match #157's trace-label table.",
+      "pause": 300
+    },
+    {
+      "text": "is a finding against #157, filed as a Q, never worked around in the runner. - Every accepted row is verified from chain state, not from the builder's   intent: the token is looked up at the address the request named; the custody   datum is decoded from the UTxO; the refund is a UTxO at the refund address. - Every refused row is verified from the node's phase-2 failure with the   script hash and the trace, and the run fails if the refusal is attributed   elsewhere. - The evidence directory retains the transaction CBOR for every row. - Devnet only; nothing is submitted to preprod (#153).",
+      "pause": 400
+    }
+  ],
+  "invariant-rows": [
+    {
+      "text": "Invariant rows.",
+      "pause": 500
+    },
+    {
+      "text": "Given / When / Then is the obligation; Observation what is read back; Control the seeded fault that must make the run fail for the named reason.",
+      "pause": 400
+    },
+    {
+      "text": "A table of 13 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: WR01; WR02; WR03; WR04; WR05; WR06; WR07; WR08; WR09; WR10; WR11; WR12; WRX.",
+      "pause": 400
+    }
+  ],
+  "archive-and-page-rows": [
+    {
+      "text": "Archive and page rows.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns id, Given / When / Then, Observation, Control. The rows: R1; R2; P1.",
+      "pause": 400
+    }
+  ],
+  "gates": [
+    {
+      "text": "Gates.",
+      "pause": 500
+    },
+    {
+      "text": "Gate W — this ticket. cabal build of the journey; the twelve rows on a devnet with attribution checks; the JSON report present; the archive phrases; just check-presentation; the diff inside offchain/journey/witness-rows/, offchain/lib builders, offchain/flake.nix, conformance/, tools/check_release.py, tools/release_surface_control.sh, onchain-release/README.md, docs/witness-rows*, mkdocs.yml. Falsified per class before the commit owner starts.",
+      "pause": 400
+    },
+    {
+      "text": "Ticket gate. nix develop --quiet -c just ci exit 0; green GitHub CI on the pushed head; the archive assembled and check_release.py green; fresh Opus audit bound to candidate, base and the devnet evidence directory.",
+      "pause": 400
+    }
+  ],
+  "evidence-required-at-acceptance": [
+    {
+      "text": "Evidence required at acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "the devnet run log and JSON with twelve rows, transaction ids, attributions;.",
+      "pause": 300
+    },
+    {
+      "text": "the retained CBOR per row;.",
+      "pause": 300
+    },
+    {
+      "text": "check_release.py and the surface control receipts;.",
+      "pause": 300
+    },
+    {
+      "text": "conformance receipts bound to the base;.",
+      "pause": 300
+    },
+    {
+      "text": "fresh independent audit report; green CI..",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "26b27bb904efed515687ad6a26958f7829a5cb7ea83fdf484c4e49e28cc92a0a"
+  }
+}

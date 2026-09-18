@@ -1,0 +1,16 @@
+{
+  "gate-held-not-a-task": [
+    {
+      "text": "Gate-held, not a task.",
+      "pause": 500
+    },
+    {
+      "text": "nix develop --quiet -c just ci exit 0 and green GitHub CI on the pushed head. The PR targets #157's branch until #157 merges, then main.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "27a7799494128bfaeb6375f6f04b3edcfb4c929420e81b92b454e5717f51cedb"
+  }
+}

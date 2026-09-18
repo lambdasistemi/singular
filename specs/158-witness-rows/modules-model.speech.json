@@ -1,0 +1,16 @@
+{
+  "out-of-this-tickets-surface": [
+    {
+      "text": "Out of this ticket's surface.",
+      "pause": 500
+    },
+    {
+      "text": "Validators (#157), the Lean (#156), the escrow (#152), the CLI (#139), preprod (#153).",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "36157819af5636811df8c64c7a8d6c5aa916c97c8bd8a3ff80070cf3dd6907a7"
+  }
+}
