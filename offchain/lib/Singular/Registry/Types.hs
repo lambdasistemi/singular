@@ -38,8 +38,10 @@ module Singular.Registry.Types (
     Neighbor (..),
 
     -- * State helpers
-    stateRepPolicyBytes,
-    stateConsumerPinBytes,
+    stateActivePolicyBytes,
+    stateAppPolicyBytes,
+    stateAbsentPolicyBytes,
+    stateTerminalPolicyBytes,
 
     -- * Pinned-hook consumer redeemer (NOTE-021)
     ConsumerRedeemer (..),
@@ -105,6 +107,12 @@ data OnChainOperation
         !ByteString
         -- | New value
         !ByteString
+    | -- | Read an existing key, leaving it unchanged (Constr 3, #157 C1/C3).
+      -- Appended: the published indices 0/1/2 never move. Only the
+      -- terminal codec byte is admitted on chain.
+      OpRead
+        -- | Expected current value; `0x02` and nothing else
+        !ByteString
     deriving stock (Show, Eq)
 
 {- | On-chain request to modify a token's trie.
@@ -123,13 +131,20 @@ data OnChainRequest = OnChainRequest
     -- ^ Fee (in lovelace) the requester agrees to pay
     , requestSubmittedAt :: !Integer
     -- ^ POSIX time (ms) when the request was submitted
+    , requestDestination :: !(ByteString, ByteString)
+    -- ^ Where this request's minted token goes, and the hash of the
+    -- inline datum the receiving output must carry (#157 D-DEST;
+    -- appended last). Encoded as a two-element list, exactly as Aiken
+    -- encodes a tuple. Empty datum hash means a datum-less output; for
+    -- `OpInsert "\x00"` the address component is the refund address.
     }
     deriving stock (Show, Eq)
 
-{- | On-chain token state. Matches Aiken
-@types\/State@ (6 fields: ownerless per ruling NOTE-028/A-003, plus
-the expected representative policy per issue #77 E-001 repair and
-the pinned consumer script per NOTE-013/019).
+{- | On-chain token state. Matches Aiken @types\/State@ (#157 C7: eight
+fields, replacing the six). `consumer_pin` is deleted with the pinned
+consumer; `representative_policy` is renamed `active_policy`; the
+application, absent and terminal policies are new. All four policies are
+set at genesis and preserved by every `Modify`.
 -}
 data OnChainTokenState = OnChainTokenState
     { stateRoot :: !OnChainRoot
@@ -140,16 +155,21 @@ data OnChainTokenState = OnChainTokenState
     -- ^ Oracle processing window duration (ms)
     , stateRetractTime :: !Integer
     -- ^ Requester retract window duration (ms)
-    , stateRepPolicy :: !BuiltinByteString
-    -- ^ Expected representative minting policy (28-byte script hash).
-    -- Issue #77 E-001 repair: `Singular.representativePolicy` refined on
-    -- chain. Set at bootstrap, preserved immutable across every `Modify`.
-    , stateConsumerPin :: !BuiltinByteString
-    -- ^ Pinned consumer script hash (28-byte script hash). NOTE-013/
-    -- NOTE-019 sixth field: `Singular.consumerPin` refined on chain.
-    -- Selected at bootstrap (width-checked at mint), preserved immutable
-    -- across every `Modify`; every `Modify` consuming at least one request
-    -- must withdraw exactly this script.
+    , stateAppPolicy :: !BuiltinByteString
+    -- ^ The application policy that certifies requests (#157 C4): a
+    -- request whose operation changes the trie is folded only if its
+    -- UTxO carries one asset under this policy whose name is the
+    -- request's approval binding.
+    , stateActivePolicy :: !BuiltinByteString
+    -- ^ The policy that mints the ACTIVE token (renamed from the
+    -- representative policy). Under it the asset name is the registry
+    -- key itself (#157 D-ASSET).
+    , stateAbsentPolicy :: !BuiltinByteString
+    -- ^ The policy that mints the ABSENT token, held in the cage's own
+    -- custody beside the inserter's refund address.
+    , stateTerminalPolicy :: !BuiltinByteString
+    -- ^ The policy that mints the TERMINAL token: a name is over,
+    -- forever.
     }
     deriving stock (Show, Eq)
 
@@ -202,6 +222,10 @@ data CageDatum
       RequestDatum !OnChainRequest
     | -- | Current token state (Constr 1)
       StateDatum !OnChainTokenState
+    | -- | The cage's own custody of an absent token (Constr 2, #157
+      -- D-CUSTODY; appended, so 0 and 1 never move): the registry key
+      -- it witnesses and the address the inserter named for the refund.
+      AbsentCustody !ByteString !ByteString
     deriving stock (Show, Eq)
 
 {- | Minting redeemer. Matches Aiken
@@ -304,17 +328,27 @@ data Neighbor = Neighbor
     }
     deriving stock (Show, Eq)
 
--- | The expected representative policy as plain bytes (issue #77, E-001):
--- unwraps the `BuiltinByteString` for hex comparison in verifiers.
-stateRepPolicyBytes :: OnChainTokenState -> ByteString
-stateRepPolicyBytes st = case stateRepPolicy st of
+-- | The active-token policy as plain bytes (issue #77 E-001, renamed by
+-- #157 C7): unwraps the `BuiltinByteString` for hex comparison in
+-- verifiers. Named for the field it reads — no alias of the
+-- representative policy survives.
+stateActivePolicyBytes :: OnChainTokenState -> ByteString
+stateActivePolicyBytes st = case stateActivePolicy st of
     BuiltinByteString bs -> bs
 
--- | The pinned consumer script hash as plain bytes (NOTE-013/NOTE-019):
--- unwraps the `BuiltinByteString` for the withdrawal credential builders
--- attach to every consuming `Modify`.
-stateConsumerPinBytes :: OnChainTokenState -> ByteString
-stateConsumerPinBytes st = case stateConsumerPin st of
+-- | The application policy as plain bytes (#157 C4).
+stateAppPolicyBytes :: OnChainTokenState -> ByteString
+stateAppPolicyBytes st = case stateAppPolicy st of
+    BuiltinByteString bs -> bs
+
+-- | The absent-token policy as plain bytes (#157 C5).
+stateAbsentPolicyBytes :: OnChainTokenState -> ByteString
+stateAbsentPolicyBytes st = case stateAbsentPolicy st of
+    BuiltinByteString bs -> bs
+
+-- | The terminal-token policy as plain bytes (#157 C5).
+stateTerminalPolicyBytes :: OnChainTokenState -> ByteString
+stateTerminalPolicyBytes st = case stateTerminalPolicy st of
     BuiltinByteString bs -> bs
 
 -- ---------------------------------------------------------
@@ -408,6 +442,8 @@ instance ToData OnChainOperation where
         mkD $ Constr 1 [bsToD v]
     toBuiltinData (OpUpdate old new) =
         mkD $ Constr 2 [bsToD old, bsToD new]
+    toBuiltinData (OpRead v) =
+        mkD $ Constr 3 [bsToD v]
 
 instance FromData OnChainOperation where
     fromBuiltinData bd = case unD bd of
@@ -415,6 +451,7 @@ instance FromData OnChainOperation where
         Constr 1 [v] -> OpDelete <$> bsFromD v
         Constr 2 [o, n] ->
             OpUpdate <$> bsFromD o <*> bsFromD n
+        Constr 3 [v] -> OpRead <$> bsFromD v
         _ -> Nothing
 
 instance UnsafeFromData OnChainOperation where
@@ -422,6 +459,7 @@ instance UnsafeFromData OnChainOperation where
         Constr 0 [B v] -> OpInsert v
         Constr 1 [B v] -> OpDelete v
         Constr 2 [B o, B n] -> OpUpdate o n
+        Constr 3 [B v] -> OpRead v
         _ ->
             error
                 "unsafeFromBuiltinData: OnChainOperation"
@@ -451,21 +489,28 @@ instance ToData OnChainRequest where
                 , unD (toBuiltinData requestValue)
                 , I requestFee
                 , I requestSubmittedAt
+                , List
+                    [ bsToD (fst requestDestination)
+                    , bsToD (snd requestDestination)
+                    ]
                 ]
 
 instance FromData OnChainRequest where
     fromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, own, k, val, I fee, I sub] -> do
+            [tok, own, k, val, I fee, I sub, List [da, dh]] -> do
                 requestToken <-
                     fromBuiltinData (mkD tok)
                 requestOwner <- bbsFromD own
                 requestKey <- bsFromD k
                 requestValue <-
                     fromBuiltinData (mkD val)
+                destAddress <- bsFromD da
+                destDatum <- bsFromD dh
                 let requestFee = fee
                     requestSubmittedAt = sub
+                    requestDestination = (destAddress, destDatum)
                 Just OnChainRequest{..}
         _ -> Nothing
 
@@ -473,7 +518,7 @@ instance UnsafeFromData OnChainRequest where
     unsafeFromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, B own, B k, val, I fee, I sub] ->
+            [tok, B own, B k, val, I fee, I sub, List [B da, B dh]] ->
                 OnChainRequest
                     { requestToken =
                         unsafeFromBuiltinData (mkD tok)
@@ -484,6 +529,7 @@ instance UnsafeFromData OnChainRequest where
                         unsafeFromBuiltinData (mkD val)
                     , requestFee = fee
                     , requestSubmittedAt = sub
+                    , requestDestination = (da, dh)
                     }
         _ ->
             error
@@ -499,16 +545,20 @@ instance ToData OnChainTokenState where
                 , I stateMaxFee
                 , I stateProcessTime
                 , I stateRetractTime
-                , bbsToD stateRepPolicy
-                , bbsToD stateConsumerPin
+                , bbsToD stateAppPolicy
+                , bbsToD stateActivePolicy
+                , bbsToD stateAbsentPolicy
+                , bbsToD stateTerminalPolicy
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, rp, cp] -> do
+        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] -> do
             stateRoot <- fromBuiltinData (mkD r)
-            stateRepPolicy <- bbsFromD rp
-            stateConsumerPin <- bbsFromD cp
+            stateAppPolicy <- bbsFromD ap
+            stateActivePolicy <- bbsFromD cp
+            stateAbsentPolicy <- bbsFromD bp
+            stateTerminalPolicy <- bbsFromD tp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
@@ -517,22 +567,24 @@ instance FromData OnChainTokenState where
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, rp, cp] ->
-            case (bbsFromD rp, bbsFromD cp) of
-                (Just repPolicy, Just consumerPin) ->
+        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] ->
+            case (bbsFromD ap, bbsFromD cp, bbsFromD bp, bbsFromD tp) of
+                (Just appP, Just activeP, Just absentP, Just terminalP) ->
                     OnChainTokenState
                         { stateRoot =
                             unsafeFromBuiltinData (mkD r)
                         , stateMaxFee = mf
                         , stateProcessTime = pt
                         , stateRetractTime = rt
-                        , stateRepPolicy = repPolicy
-                        , stateConsumerPin = consumerPin
+                        , stateAppPolicy = appP
+                        , stateActivePolicy = activeP
+                        , stateAbsentPolicy = absentP
+                        , stateTerminalPolicy = terminalP
                         }
                 _ ->
                     error
                         "unsafeFromBuiltinData:\
-                        \ OnChainTokenState.pin-or-policy"
+                        \ OnChainTokenState.policies"
         _ ->
             error
                 "unsafeFromBuiltinData:\
@@ -558,6 +610,9 @@ instance ToData CageDatum where
     toBuiltinData (StateDatum s) =
         mkD $
             Constr 1 [unD (toBuiltinData s)]
+    toBuiltinData (AbsentCustody k refund) =
+        mkD $
+            Constr 2 [bsToD k, bsToD refund]
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of
@@ -567,6 +622,8 @@ instance FromData CageDatum where
         Constr 1 [d] ->
             StateDatum
                 <$> fromBuiltinData (mkD d)
+        Constr 2 [k, refund] ->
+            AbsentCustody <$> bsFromD k <*> bsFromD refund
         _ -> Nothing
 
 instance UnsafeFromData CageDatum where
@@ -577,6 +634,7 @@ instance UnsafeFromData CageDatum where
         Constr 1 [d] ->
             StateDatum $
                 unsafeFromBuiltinData (mkD d)
+        Constr 2 [B k, B refund] -> AbsentCustody k refund
         _ -> error "unsafeFromBuiltinData: CageDatum"
 
 instance ToData Migration where

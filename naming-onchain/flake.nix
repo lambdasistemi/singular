@@ -68,10 +68,22 @@
           hash = "sha256-BDaM+JdswlPasHsI03rLl4OR7u5HsbAd3/VFaoiDTh4=";
         };
 
+        fuzz = pkgs.fetchFromGitHub {
+          owner = "aiken-lang";
+          repo = "fuzz";
+          rev = "v2.1.1";
+          hash = "sha256-oMHBJ/rIPov/1vB9u608ofXQighRq7DLar+hGrOYqTw=";
+        };
+
         packagesToml = pkgs.writeText "packages.toml" ''
           [[packages]]
           name = "aiken-lang/stdlib"
           version = "v2.2.0"
+          source = "github"
+
+          [[packages]]
+          name = "aiken-lang/fuzz"
+          version = "v2.1.1"
           source = "github"
         '';
 
@@ -82,6 +94,7 @@
           mkdir -p build/packages
           cp ${packagesToml} build/packages/packages.toml
           cp -r ${stdlib} build/packages/aiken-lang-stdlib
+          cp -r ${fuzz} build/packages/aiken-lang-fuzz
           chmod -R u+w build/packages
         '';
 

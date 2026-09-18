@@ -255,242 +255,17 @@ jobs:
       # revises the corpus.
       - name: Compare the vendored wire vectors with the live corpus
         run: nix develop ./offchain --quiet --command bash offchain/naming/run-drift-check.sh
-  li01:
-    name: LI01 canonical initialization, packaged and hermetic
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issues #47 + #51: the LI01 canonical-initialization runner on
-      # the same hermetic path as the e2e and the journey (D-011). It
-      # became a packaged `nix run` app when the naming codec moved
-      # inside the offchain flake root (#51): the Nix-built binary
-      # brings the locked cardano-node on its own PATH; no dev shell,
-      # no cabal, no package index, no warm developer state. `needs:`
-      # is ordering and fail-fast on the blueprint, exactly as for the
-      # e2e and journey jobs; the step builds the blueprint from the
-      # onchain flake itself and points REGISTRY_BLUEPRINT at that store
-      # path, so the consumed artifact is always built from the
-      # checked-out commit. The runner asserts the row's witness
-      # shape, the chain-read canonical binding, the initial naming
-      # checkpoint datum (decoded with the Naming.Datum codec against
-      # the contract's vendored bytes) and the resulting state, and
-      # exits non-zero on any mismatch (marker li01-state-matches-row).
-      - name: Run LI01 as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#li01
-  naming-rows:
-    name: The LM/LC maintenance and cancellation rows on a real devnet
-    needs: naming-validators
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #56: the ten maintenance and cancellation rows (LM01..LM04,
-      # WR01, LC01..LC06) executed against a real devnet with Singular's
-      # own naming validators. `needs:` is ordering and fail-fast on the
-      # naming validator job: the runner consumes the naming-onchain
-      # blueprint (built here from that flake, so the consumed artifact is
-      # always built from the checked-out commit) and its pinned
-      # script-identity.json. Every refusal must come back as a phase-2
-      # PlutusFailure naming the application validator (LC06's replay is
-      # the honest exception: the ledger itself refuses the consumed
-      # output); LM01's preservation, LC01's approval consumption, LC04
-      # after a real fold and LC06 after a real LC01 are asserted from the
-      # chain, and the run fails non-zero on any mismatch.
-      - name: Run the LM/LC rows as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
-  recovery-rows:
-    name: The LR recovery rows on a real devnet
-    needs: [blueprint, naming-validators]
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #62: the eleven recovery rows (LR01..LR11) executed against
-      # a real devnet with Singular's own naming validators. `needs:` is
-      # ordering and fail-fast on both blueprint jobs: the runner consumes
-      # the naming-onchain blueprint and the onchain registry blueprint (each
-      # built here from its own flake, so every consumed artifact is built
-      # from the checked-out commit) and its pinned script-identity.json. Every refusal must
-      # come back as a phase-2 PlutusFailure naming the application
-      # validator; LR01's preservation and transfer, LR04 after a real LR01
-      # against the genuine successor, LR05's old-controller refusal and
-      # maintenance under the recovered controller are asserted from the
-      # chain, and the run fails non-zero on any mismatch. The devnet runs
-      # under a private shallow TMPDIR so its node database cannot delete
-      # another lane's live database and its socket stays inside the AF_UNIX
-      # limit.
-      - name: Run the LR rows as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          mkdir -p /tmp/s62-devnet
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s62-devnet REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#recovery-rows
-  retirement-rows:
-    name: The LT retirement rows on a real devnet
-    needs: [blueprint, naming-validators]
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #66: the retirement rows (LT refusals and accepts,
-      # recovery-then-retire both routes, the connected Over journey
-      # with permissionless completion, occupied-key and mismatch
-      # refusals) executed against a real devnet with Singular's own
-      # naming validators and the
-      # completion-only custody script.
-      # `needs:` is ordering and fail-fast on both blueprint jobs:
-      # the runner consumes the naming-onchain blueprint and the onchain
-      # Registry blueprint (each built here from its own flake, so every
-      # consumed artifact is built from the checked-out commit) and its
-      # pinned script-identity.json. Submitted refusals come back as a
-      # phase-2 PlutusFailure naming the refusing script (LT09's replay
-      # is the honest exception: the ledger itself refuses the consumed
-      # output in phase 1, the LC06 precedent); builder-evaluation
-      # refusals (occupied-key fold, mismatched pair) fail locally
-      # naming the refusing script at its spending purpose before any
-      # submission; custody and the record's end are proved from the
-      # chain after LT01 and LT02, and the run fails non-zero on any
-      # mismatch.
-      # The devnet runs under a private shallow TMPDIR so its node database
-      # cannot delete another lane's live database and its socket stays
-      # inside the AF_UNIX limit.
-      - name: Run the LT rows as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          mkdir -p /tmp/s66-devnet
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s66-devnet REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#retirement-rows
-  li-refusals:
-    name: The LI02-LI08 initialization refusals on a real devnet
-    needs: [blueprint, naming-validators]
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #50: the seven wrong canonical initializations (LI02..LI08)
-      # executed against a real devnet, each attempt well-formed except for
-      # the single substitution under test. Three enforcement mechanisms,
-      # per the A-001 ruling: validators refuse LI02, LI04, LI05, LI07 and
-      # LI08 (each refusal asserted on its reason, naming the script that
-      # binds the substituted element); the LEDGER refuses LI06 in phase 1
-      # after a real LI01 (the consumed canonical seed, the LC06
-      # precedent); and LI03 is bounded by name derivation, not refused —
-      # the consistent rival from a second seed is accepted, and the row
-      # asserts from the chain that its token name differs from the
-      # canonical name and the canonical registry is unaffected. The run
-      # also proves the canonical state unchanged after the rows, and runs
-      # two required-to-fail controls (a canonical attempt against the
-      # armed guard, and a wrong-reason matcher).
-      - name: Run the initialization refusals as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
-  repair-rows:
-    name: The issue-79 repair rows on a real devnet
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 45
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #79: the imported-validator repair rows (permissionless
-      # folding and insert-only retraction) executed against a real
-      # devnet with the repaired registry validators. `needs:` is ordering
-      # and fail-fast on the blueprint job: the runner consumes the
-      # onchain blueprint (built here from that flake, so the consumed
-      # artifact is always built from the checked-out commit) and its
-      # regenerated script-identity.json. A valid fold is accepted with
-      # no registry-owner signer; a defective fold, an ownerless End, an
-      # Update/Delete retraction and a wrong-signer retract are refused
-      # by the validators for their named reasons; an owner-signed End
-      # and an Insert retract are accepted; a six-case generated fold
-      # property with a bisection shrinker corroborates the story rows.
-      # The devnet runs under a private shallow TMPDIR so its node
-      # database cannot delete another lane's live database and its
-      # socket stays inside the AF_UNIX limit.
-      - name: Run the repair rows as a packaged app without a dev shell
-        working-directory: offchain
-        run: |
-          mkdir -p /tmp/s79-devnet
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s79-devnet REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#repair-rows
+  # D6 (issue #157): the NYA application journeys are retired from this
+  # workflow's required set. Six job blocks stood here and ran seven
+  # journey surfaces — `li01`, `li-refusals`, `lmlc` (the `naming-rows`
+  # job), `recovery`, `retirement` together with its retained
+  # `retire-verify` exhibit, and `repair`. Every one of them consumes the
+  # naming application rather than the registry, so their application-level
+  # re-cut is issue #172 under the NYA epic #174, once #154 closes.
+  # Retired means the job blocks are gone: none is stubbed green, turned
+  # into a conditional skip, or given any other substitute success path
+  # here. The registry-protocol jobs (`e2e`, `journey`) and the generic
+  # rows above are unaffected.
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: blueprint
@@ -531,7 +306,8 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#cage-tests-e2e
   journey:
     name: The bounded registry journey, narrated end to end
     needs: blueprint
@@ -569,4 +345,5 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#journey

@@ -74,13 +74,16 @@ pub const redirected_refund =
 pub const redirected_hash =
   #"d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebeced"
 
-pub const representative_name = #"e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c"
+/// The registry key a naming record is booked under (#157 D-ASSET):
+/// under each token policy the asset name IS this key, so the record
+/// carries `(active_policy, registry_key)` and nothing else.
+pub const registry_key = #"616c696365"
 
 /// The retirement custody script hash (issue #66): matches
 /// `application.retirement_custody_hash` — the address a `Retire` may
-/// place the representative at.
+/// place the record's active token at.
 pub const custody_hash =
-  #"89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09"
+  #"7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07"
 
 pub const custody_address = address.from_script(custody_hash)
 

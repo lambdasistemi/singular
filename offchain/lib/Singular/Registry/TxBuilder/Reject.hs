@@ -14,6 +14,7 @@ root does NOT change.
 -}
 module Singular.Registry.TxBuilder.Reject (
     rejectRequestsImpl,
+    rejectRequestsWithRefs,
 ) where
 
 import Control.Exception (SomeException, try)
@@ -41,14 +42,19 @@ import Cardano.Ledger.Api.Tx.Out (
     coinTxOutL,
     datumTxOutL,
     mkBasicTxOut,
+    referenceScriptTxOutL,
     valueTxOutL,
  )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -65,22 +71,18 @@ import Singular.Registry.Provider (
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     OnChainRequest (..),
     OnChainTokenState (..),
     RequestAction (..),
     UpdateRedeemer (..),
-    stateConsumerPinBytes,
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
 
 {- | Build a reject transaction for Phase 3
-requests.
+requests, attaching the state and request scripts
+to the transaction itself.
 -}
 rejectRequestsImpl ::
     CageConfig ->
@@ -88,7 +90,29 @@ rejectRequestsImpl ::
     TokenId ->
     Addr ->
     IO ConwayTx
-rejectRequestsImpl cfg prov tid addr = do
+rejectRequestsImpl cfg prov tid addr =
+    rejectRequestsWithRefs cfg prov tid addr []
+
+{- | Build a reject transaction resolving its scripts through reference
+outputs when the caller has published them.
+
+The state validator alone is fifteen kilobytes and the request validator
+another two and a half, so a reject that carries both inline is 18317
+bytes against the protocol's `MaxTxSizeUTxO` of 16384 and the ledger
+refuses it before a script runs. Given outputs that carry those scripts,
+every purpose resolves through them instead and the transaction carries
+neither. An empty list keeps the attaching form, for a caller that has
+nothing published.
+-}
+rejectRequestsWithRefs ::
+    CageConfig ->
+    Provider IO ->
+    TokenId ->
+    Addr ->
+    -- | Outputs carrying the reject's scripts as reference scripts
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ConwayTx
+rejectRequestsWithRefs cfg prov tid addr refUtxos = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryRejectContext cfg prov tid addr
     let (_stateIn, stateOut) = stateUtxo
@@ -110,13 +134,14 @@ rejectRequestsImpl cfg prov tid addr = do
                 script
                 requestScript
                 lowerSlot
+                refUtxos
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
             (feeUtxo : stateUtxo : reqUtxos)
-            []
+            refUtxos
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
@@ -185,9 +210,17 @@ queryRejectContext cfg prov tid addr = do
             \requests"
     pp <- queryProtocolParams prov
     walletUtxos <- queryUTxOs prov addr
+    -- A published reference output lives in this same wallet. Spending
+    -- one to pay the fee would destroy the script the transaction is
+    -- resolving through, and collateral must be ada-only besides.
+    let spendableUtxos =
+            [ u
+            | u@(_, o) <- walletUtxos
+            , o ^. referenceScriptTxOutL == SNothing
+            ]
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
-        walletUtxos of
+        spendableUtxos of
         [] -> error "rejectRequests: no UTxOs"
         (u : _) -> pure u
     pure (stateUtxo, reqUtxos, feeUtxo, pp)
@@ -289,6 +322,7 @@ buildRejectProgram ::
     Script ConwayEra ->
     Script ConwayEra ->
     SlotNo ->
+    [(TxIn, TxOut ConwayEra)] ->
     Tx.TxBuild NoCtx Void ()
 buildRejectProgram
     cfg
@@ -300,7 +334,8 @@ buildRejectProgram
     newStateOut
     script
     requestScript
-    lowerSlot = do
+    lowerSlot
+    refUtxos = do
         let stateRef = txInToRef stateIn
             OnChainTokenState
                 { stateMaxFee = tipAmount
@@ -330,21 +365,14 @@ buildRejectProgram
                     )
                     reqUtxos
         mapM_ Tx.output refundOuts
-        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
-        -- pinned in the spent state with a null redeemer — the consumer
-        -- authenticates the batch from transaction evidence alone
-        -- (request value coverage, representative-mint binding). No
-        -- operator, no manifest: coherent batches pass no matter who
-        -- submits them.
-        Tx.withdrawScript
-            ( hookAccountAddress
-                (network cfg)
-                (stateConsumerPinBytes oldState)
-            )
-            (Coin 0)
-            Hook
-        Tx.attachScript (mkConsumerScript cfg)
-        Tx.attachScript script
-        Tx.attachScript requestScript
+        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- gone. Every rule it re-walked beside the fold — request value
+        -- coverage, the mint binding — is the cage's own now, checked
+        -- once from the transaction's own evidence.
+        if null refUtxos
+            then do
+                Tx.attachScript script
+                Tx.attachScript requestScript
+            else mapM_ (Tx.reference . fst) refUtxos
         Tx.collateral (fst feeUtxo)
         Tx.validFrom lowerSlot

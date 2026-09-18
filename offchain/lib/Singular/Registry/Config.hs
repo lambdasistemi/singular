@@ -60,18 +60,22 @@ data CageConfig = CageConfig
     -- ^ Phase 2 window (ms) for requester retract
     , defaultTip :: !Coin
     -- ^ Default oracle tip for newly booted tokens
-    , cfgRepPolicy :: !ShortByteString
-    -- ^ Expected representative minting policy (28 raw bytes) written
-    -- into the bootstrapped `State` datum (issue #77, E-001 repair).
-    -- Naming journeys pass the honest applied representative hash derived
-    -- from the blueprints; registry-only cages pass 28 zero bytes (no naming
-    -- validator reads it there). Preserved immutable across every `Modify`.
-    , cfgConsumerPin :: !ShortByteString
-    -- ^ Pinned consumer script hash (28 raw bytes). Sixth `State` field
-    -- (NOTE-013/NOTE-019): the unparameterized exhibit consumer
-    -- (NOTE-021 — no operator key, no appointed processor). Same value
-    -- for every cage sharing the consumer blueprint. Preserved immutable
-    -- across every `Modify`.
+    , cfgApplicationPolicy :: !ShortByteString
+    -- ^ The application policy the registry pins (28 raw bytes, #157 C4,
+    -- D-BOOT): the naming application script's applied hash, derived from
+    -- `naming-onchain/script-identity.json` for the registry identity this
+    -- boot creates. It certifies every request that changes the trie.
+    -- Never a literal.
+    , cfgActivePolicy :: !ShortByteString
+    -- ^ The active-token policy (28 raw bytes, #157 C5/C7, D-BOOT): the
+    -- applied hash of `witness(1, registry)`. Renamed from the
+    -- representative policy it became. Derived, never a literal.
+    , cfgAbsentPolicy :: !ShortByteString
+    -- ^ The absent-token policy (28 raw bytes, D-BOOT): the applied hash
+    -- of `witness(0, registry)`. Derived, never a literal.
+    , cfgTerminalPolicy :: !ShortByteString
+    -- ^ The terminal-token policy (28 raw bytes, D-BOOT): the applied hash
+    -- of `witness(2, registry)`. Derived, never a literal.
     , cfgConsumerScript :: !ShortByteString
     -- ^ Applied consumer script bytes (the witness every consuming
     -- `Modify` attaches for its hook withdrawal). Builders refuse to
@@ -80,12 +84,19 @@ data CageConfig = CageConfig
     -- ^ Target network (Mainnet or Testnet)
     }
 
-{- | Initial `State` datum from a cage configuration (issue #77, E-001
-repair; sixth field NOTE-013/NOTE-019): empty trie root, configured
-economics, the expected representative policy (`cfgRepPolicy`) and the
-pinned consumer (`cfgConsumerPin`). Single construction site
-for bootstrapped states — every journey boots through here or an
-identical local copy kept in sync by `cage-tests`/`TypesSpec` vectors.
+{- | Initial `State` datum from a cage configuration (#157 C7, D-BOOT):
+empty trie root, configured economics, and the four pinned policies the
+eight-field datum carries. Each of the four comes from the config, which
+derives it from the two partitions' `script-identity.json` for the registry
+identity this boot is about to create — the application policy from the
+naming application script, the three witness policies from
+`witness(kind, registry)` applied at kinds 0, 1 and 2. Nothing here is a
+literal or a placeholder, and the conformance rows round-trip all four
+through this datum.
+
+Single construction site for bootstrapped states — every journey boots
+through here or an identical local copy kept in sync by
+`cage-tests`/`TypesSpec` vectors.
 -}
 bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState
 bootStateFromCfg cfg root =
@@ -95,8 +106,12 @@ bootStateFromCfg cfg root =
             let Coin c = defaultTip cfg in c
         , stateProcessTime = defaultProcessTime cfg
         , stateRetractTime = defaultRetractTime cfg
-        , stateRepPolicy =
-            BuiltinByteString (SBS.fromShort (cfgRepPolicy cfg))
-        , stateConsumerPin =
-            BuiltinByteString (SBS.fromShort (cfgConsumerPin cfg))
+        , stateAppPolicy =
+            BuiltinByteString (SBS.fromShort (cfgApplicationPolicy cfg))
+        , stateActivePolicy =
+            BuiltinByteString (SBS.fromShort (cfgActivePolicy cfg))
+        , stateAbsentPolicy =
+            BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
+        , stateTerminalPolicy =
+            BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
         }

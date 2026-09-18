@@ -323,10 +323,14 @@ datumEncodingVectors =
                 , stateMaxFee = 2000000
                 , stateProcessTime = 300000
                 , stateRetractTime = 600000
-                , stateRepPolicy =
+                , stateAppPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xa9
+                , stateActivePolicy =
                     BuiltinByteString $ BS.replicate 28 0xaa
-                , stateConsumerPin =
-                    BuiltinByteString $ BS.replicate 28 0xcc
+                , stateAbsentPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xb0
+                , stateTerminalPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xc0
                 }
        in Aeson.object
             [ "description" .= txt "StateDatum encoding"
@@ -345,6 +349,11 @@ datumEncodingVectors =
                 , requestValue = OpInsert $ BS.pack [0x04, 0x05]
                 , requestFee = 1000000
                 , requestSubmittedAt = 1700000000000
+                , -- #157 D-DEST: the appended destination — where the minted
+                  -- token goes, and the inline datum the receiving output
+                  -- must carry.
+                  requestDestination =
+                    (BS.replicate 29 0x60, BS.empty)
                 }
        in Aeson.object
             [ "description" .= txt "RequestDatum with OpInsert"

@@ -1,24 +1,76 @@
-use aiken/collection/list.{find, foldl, head}
+use aiken/collection/dict
+use aiken/collection/pairs
+use aiken/collection/list
+use aiken/collection/list.{filter, find, foldl, head}
 use aiken/crypto.{VerificationKeyHash}
-use aiken/primitive/bytearray
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, empty, root}
 use aiken/merkle_patricia_forestry as mpf
 use aiken/option.{is_some}
 use cardano/address
-use cardano/assets.{PolicyId}
+use cardano/address.{Address}
+use cardano/assets
+use cardano/assets.{PolicyId, Value, from_asset, lovelace_of, quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction, find_input,
+  Spend,
+  Datum, InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
-use lib.{TokenId, assetName, exactQuantity, tokenFromPolicy}
+use lib.{
+  approvalName, assetName, decodeState, deltaOf, destinationMatches,
+  edgeDeleteAbsent, edgeInsertAbsent, edgeInsertActive, edgeOf,
+  edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal, exactQuantity,
+  kindAbsent, kindActive, kindTerminal, leafTerminal, paysAddress,
+  statedBefore, tokenFromPolicy,
+}
 use shared.{in_phase1, is_rejectable}
 use types.{
-  Burning, CageDatum, Delete, End, Insert, Migrating, MintRedeemer, Minting,
-  Modify, Rejected, Request, RequestAction, RequestDatum, State, StateDatum,
-  Update, UpdateAction, UpdateRedeemer,
+  AbsentCustody, Burning, CageDatum, Delete, End, Insert, Migrating,
+  MintRedeemer, Minting, Modify, Operation, Read, Rejected, Request,
+  RequestAction, RequestDatum, State, StateDatum, TokenId, Update,
+  UpdateAction, UpdateRedeemer,
 }
 
+// ============================================================================
+// The cage, in registry mode (#157)
+// ============================================================================
+//
+// The cage IS the registry. There is no pinned consumer script and no
+// mandatory withdrawal: every rule the application used to re-walk beside
+// the fold is checked here, once, from the transaction's own evidence.
+//
+// What a `Modify` must satisfy:
+//
+// - **C1/C2 admissibility** — the value of every known leaf is one codec
+//   byte, and only the seven `(operation, before-leaf)` rows change or
+//   read the trie. Every other shape refuses with its own trace, before
+//   any proof is checked.
+// - **C3 the read** — `Read(0x02)` is verified with the existing verifier
+//   at its own position in the batch, so its proof is checked against the
+//   intermediate root there. The leaf is unchanged.
+// - **C4 admission** — a request whose operation changes the trie is
+//   folded only if its UTxO carries exactly one asset under the pins's
+//   `application_policy` whose asset name is the approval binding of that
+//   request. No application script runs at fold time; the cage recomputes
+//   the name rather than trusting it. A read carries none and needs none.
+// - **C5 the delta** — the cage sums the token column of C2 over the
+//   requests it consumed, per key, and the transaction's mint under the
+//   three pinned token policies must equal that sum exactly. Nothing else
+//   may move under them.
+// - **C6 destinations** — each minted active or terminal token lands in
+//   exactly one output, the one its request named, carrying the datum it
+//   named and at least the request's value minus the tip. An absent token
+//   lands in the cage's own custody beside the inserter's refund address;
+//   a consumed absent token pays that address back.
+// - **C7 the pins** — the seven non-root fields are equal before and
+//   after every fold.
+// - **C8 coverage** — every consumed request carries at least its tip.
+//
+// Every refusal this file names RETURNS FALSE after emitting exactly one
+// user-defined trace, rather than crashing: a script that dies inside a
+// library cannot tell anyone why, and each row of Gate S is bound to the
+// single trace its refusal emits.
+
 // Ownerless registry (operator ruling NOTE-028/A-003, issue #77 repair):
-// the state validator takes no parameters. The former `previousPolicies`
+// the pins validator takes no parameters. The former `previousPolicies`
 // migration allowlist is gone with migration itself.
 validator state() {
   mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) {
@@ -39,24 +91,31 @@ validator state() {
     self: OutputReference,
     tx: Transaction,
   ) {
-    expect Some(StateDatum(state)) = maybeDatum
-    // Permissionless fold (issue #79, Defect 1): Modify must NOT require
-    // any owner — there is no registry-owner role (operator ruling
-    // NOTE-028/A-003). Lean `step .fold` checks nativeSpend, nonempty
-    // items, net mint equality, the mint witnesses, and the consumer
-    // invocation witness. `End` refuses for every party; see its arm below.
+    expect Some(datum) = maybeDatum
     expect Some(input) = find(tx.inputs, fn(i) { i.output_reference == self })
-    expect address.Script(policyId) = input.output.address.payment_credential
-    expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
-    expect exactQuantity(policyId, input.output.value, cageToken, 1)
-    when redeemer is {
-      Modify(actions) ->
-        validModify(state, input, policyId, cageToken, tx, actions)
-      // Ownerless registry (operator ruling NOTE-028/A-003, issue #77
-      // repair): termination is refused for every party — there is no
-      // registry-owner role, creator or otherwise. The constructor stays
-      // for the wire shape.
-      End -> fail
+    when datum is {
+      // The cage's own custody of an absent token (#157 D-CUSTODY): one
+      // spending path and nothing else. The redeemer is not what
+      // authorizes it — the shape of the fold around it is.
+      AbsentCustody { key, refund } ->
+        validCustodySpend(key, refund, input, tx)
+      StateDatum(pins) -> {
+        expect address.Script(policyId) =
+          input.output.address.payment_credential
+        expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+        expect exactQuantity(policyId, input.output.value, cageToken, 1)
+        when redeemer is {
+          // Permissionless fold (issue #79, Defect 1): `Modify` requires
+          // no owner — there is no registry-owner role (operator ruling
+          // NOTE-028/A-003).
+          Modify(actions) ->
+            validModify(pins, input, policyId, cageToken, tx, actions)
+          // Ownerless registry: termination is refused for every party.
+          // The constructor stays for the wire shape.
+          End -> fail
+          _ -> fail
+        }
+      }
       _ -> fail
     }
   }
@@ -66,95 +125,633 @@ validator state() {
   }
 }
 
-fn uncons(list: List<a>, cont: fn(a, List<a>) -> b) -> b {
-  when list is {
-    [] -> fail
-    [x, ..xs] -> cont(x, xs)
+// ----------------------------------------------------------------------------
+// The fold
+// ----------------------------------------------------------------------------
+
+/// What one consumed request still owes the transaction once its edge is
+/// admitted (#157 C6). Collected during the fold, discharged after it, so
+/// the trie walk and the value walk stay separate and each names its own
+/// reason.
+type Duty {
+  /// A minted active or terminal token must land in exactly one output,
+  /// the one the request named, holding at least `floor` lovelace.
+  ///
+  /// Two requests in one batch can mint the same `(policy, key)` — two
+  /// reads of one terminal name — and one asset cannot be in two
+  /// outputs at once, so their duties MERGE rather than stack: `count`
+  /// is how many tokens the single carrier must hold and `floor` the SUM
+  /// of the deposits it owes, so a folder cannot return one deposit and
+  /// pocket the other. `agreed` is false when the merged requests named
+  /// different destinations, which no single output can satisfy.
+  DeliverToken {
+    policy: PolicyId,
+    key: ByteArray,
+    destination: (ByteArray, ByteArray),
+    floor: Int,
+    count: Int,
+    agreed: Bool,
+  }
+  /// A minted absent token must land in the cage's own custody, beside
+  /// its key and the refund address the request named.
+  LockCustody { key: ByteArray, refund: ByteArray, floor: Int }
+  /// A consumed absent token's custody UTxO must be spent here, and its
+  /// lovelace paid to the address that custody recorded.
+  SpendCustody { key: ByteArray }
+  /// A burned active token must actually be an input; the cage does not
+  /// care where it came from — the application's custody does.
+  BurnFromInput { policy: PolicyId, key: ByteArray }
+}
+
+/// The fold's accumulator. `ok` latches false on the first refusal and
+/// every later step is skipped, so exactly one trace is emitted however
+/// many later rules the same transaction would also break.
+type Fold {
+  ok: Bool,
+  trie: MerklePatriciaForestry,
+  actions: List<RequestAction>,
+  consumed: Int,
+  minted: Value,
+  duties: List<Duty>,
+  refunds: List<Pair<VerificationKeyHash, Int>>,
+}
+
+/// Emit this refusal's single trace and latch the fold closed.
+fn halt(acc: Fold, reason: String) -> Fold {
+  trace reason
+  Fold { ..acc, ok: False }
+}
+
+/// The policy that mints a token of this kind, read off the pins's pins.
+fn policyOfKind(pins: State, kind: Int) -> PolicyId {
+  if kind == kindAbsent {
+    pins.absent_policy
+  } else if kind == kindActive {
+    pins.active_policy
+  } else {
+    pins.terminal_policy
   }
 }
 
-fn mkAction(tokenId, stateTip, process_time, retract_time, validity_range) {
-  fn(
-    input: Input,
-    acc: (
-      MerklePatriciaForestry,
-      List<RequestAction>,
-      List<Pair<VerificationKeyHash, Int>>,
-    ),
-  ) -> (
-    MerklePatriciaForestry,
-    List<RequestAction>,
-    List<Pair<VerificationKeyHash, Int>>,
-  ) {
-    when input.output.datum is {
-      InlineDatum(datum) ->
-        if datum is RequestDatum(request): CageDatum {
-          let Request {
-            requestToken,
-            requestKey,
-            requestValue,
-            requestOwner,
-            tip,
-            submitted_at,
-          } = request
-          if requestToken == tokenId {
-            expect tip == stateTip
-            let (root, actions, owners) = acc
-            let action, actionsTail <- uncons(actions)
-            let inputLovelace = assets.lovelace_of(input.output.value)
-            let newRoot =
-              when action is {
-                UpdateAction(proof) -> {
-                  expect in_phase1(validity_range, submitted_at, process_time)
-                  when requestValue is {
-                    Insert(value) -> mpf.insert(root, requestKey, value, proof)
-                    Delete(value) -> mpf.delete(root, requestKey, value, proof)
-                    Update(oldValue, newValue) ->
-                      mpf.update(root, requestKey, proof, oldValue, newValue)
-                  }
-                }
-                Rejected -> {
-                  expect
-                    is_rejectable(
-                      validity_range,
-                      submitted_at,
-                      process_time,
-                      retract_time,
-                    )
-                  root
-                }
-              }
-            // Refund rows (NOTE-014 item A2 as corrected by NOTE-017): only
-            // REJECTED rows are owed refunds, at `input − tip` with no fee
-            // share deducted and none invented. Processed rows add nothing
-            // here — their value may leave to a checkpoint lock or to
-            // change; the generic side admits the shape and the pinned
-            // consumer hook judges the allocation.
-            let newOwners =
-              when action is {
-                UpdateAction(_) -> owners
-                Rejected ->
-                  if inputLovelace > 0 {
-                    [Pair(requestOwner, inputLovelace - stateTip), ..owners]
-                  } else {
-                    owners
-                  }
-              }
-            (
-              newRoot,
-              actionsTail,
-              newOwners,
-            )
+/// Does every value byte this operation names decode as a leaf (#157
+/// C1)? Checked before the edge and before any proof: a request whose
+/// bytes are not a codec byte has no leaf at all.
+fn codecOk(op: Operation) -> Bool {
+  when op is {
+    Insert(value) -> is_some(decodeState(value))
+    Delete(value) -> is_some(decodeState(value))
+    Update(old, new) -> is_some(decodeState(old)) && is_some(decodeState(new))
+    Read(value) -> is_some(decodeState(value))
+  }
+}
+
+/// The reason this `(operation, before-leaf)` is not one of the seven
+/// rows (#157 C2, G3, N10). Total over the codec domain, and each arm is
+/// one trace: `edgeOf` says no, this says why.
+fn refuseEdge(acc: Fold, op: Operation, before: Option<Int>) -> Fold {
+  when op is {
+    Insert(_) -> halt(acc, @"insert-terminal")
+    Read(_) ->
+      // Lean distinguishes the facts (`read-absent` vs `read-active`), so
+      // the cage does too: G3 keeps the traces pairwise distinct where
+      // R3 says the facts differ, and M3 keeps its own named trace for
+      // the read of a LIVE name.
+      if before == Some(kindAbsent) {
+        halt(acc, @"read-absent")
+      } else {
+        halt(acc, @"read-non-terminal")
+      }
+    Delete(_) ->
+      if before == Some(kindTerminal) {
+        halt(acc, @"edge-from-terminal")
+      } else {
+        halt(acc, @"edge-inadmissible")
+      }
+    Update(old, new) ->
+      if before == Some(kindTerminal) {
+        halt(acc, @"edge-from-terminal")
+      } else if decodeState(new) == Some(kindAbsent) {
+        halt(acc, @"update-to-absent")
+      } else if decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
+        kindTerminal,
+      ) {
+        halt(acc, @"update-absent-to-terminal")
+      } else if decodeState(old) == Some(kindActive) && decodeState(new) == Some(
+        kindActive,
+      ) {
+        halt(acc, @"update-active-to-active")
+      } else {
+        halt(acc, @"edge-inadmissible")
+      }
+  }
+}
+
+/// The duties an admitted edge creates (#157 C6). Read off the edge and
+/// the request, never off anything the folder declares.
+fn dutiesOf(
+  pins: State,
+  edge: Int,
+  key: ByteArray,
+  destination: (ByteArray, ByteArray),
+  floor: Int,
+) -> List<Duty> {
+  let (refund, _) = destination
+  // Note: the merge fields start at one duty; `pushDuties` folds a second
+  // request for the same token into the same carrier.
+  if edge == edgeInsertAbsent {
+    [LockCustody { key, refund, floor }]
+  } else if edge == edgeInsertActive {
+    [DeliverToken {
+        policy: pins.active_policy,
+        key,
+        destination,
+        floor,
+        count: 1,
+        agreed: True,
+      }]
+  } else if edge == edgeUpdateActive {
+    [
+      SpendCustody { key },
+      DeliverToken {
+        policy: pins.active_policy,
+        key,
+        destination,
+        floor,
+        count: 1,
+        agreed: True,
+      },
+    ]
+  } else if edge == edgeUpdateTerminal {
+    [BurnFromInput { policy: pins.active_policy, key }]
+  } else if edge == edgeDeleteAbsent {
+    [SpendCustody { key }]
+  } else if edge == edgeWitnessTerminal {
+    [DeliverToken {
+      policy: pins.terminal_policy,
+      key,
+      destination,
+      floor,
+      count: 1,
+      agreed: True,
+    }]
+  } else {
+    // `deleteActive` (edge 5) burns the active token the request names;
+    // the cage requires it as an input, exactly as the terminal update
+    // does.
+    [BurnFromInput { policy: pins.active_policy, key }]
+  }
+}
+
+
+/// Add one edge's duties to the accumulated list, merging a delivery
+/// into an existing one for the same `(policy, key)`: one asset cannot
+/// sit in two outputs, so two requests minting it owe ONE carrier, with
+/// both tokens and both deposits in it.
+fn pushDuties(existing: List<Duty>, fresh: List<Duty>) -> List<Duty> {
+  when fresh is {
+    [] -> existing
+    [duty, ..rest] -> pushDuties(pushDuty(existing, duty), rest)
+  }
+}
+
+fn pushDuty(existing: List<Duty>, duty: Duty) -> List<Duty> {
+  when duty is {
+    DeliverToken { policy, key, destination, floor, count, agreed } ->
+      mergeDeliver(existing, policy, key, destination, floor, count, agreed)
+    _ -> [duty, ..existing]
+  }
+}
+
+fn mergeDeliver(
+  existing: List<Duty>,
+  policy: PolicyId,
+  key: ByteArray,
+  destination: (ByteArray, ByteArray),
+  floor: Int,
+  count: Int,
+  agreed: Bool,
+) -> List<Duty> {
+  when existing is {
+    [] -> [DeliverToken { policy, key, destination, floor, count, agreed }]
+    [head, ..rest] ->
+      when head is {
+        DeliverToken {
+          policy: heldPolicy,
+          key: heldKey,
+          destination: heldDestination,
+          floor: heldFloor,
+          count: heldCount,
+          agreed: heldAgreed,
+        } ->
+          if heldPolicy == policy && heldKey == key {
+            [
+              DeliverToken {
+                policy,
+                key,
+                destination: heldDestination,
+                floor: heldFloor + floor,
+                count: heldCount + count,
+                agreed: heldAgreed && agreed && heldDestination == destination,
+              },
+              ..rest
+            ]
+          } else {
+            [
+              head,
+              ..mergeDeliver(rest, policy, key, destination, floor, count, agreed)
+            ]
+          }
+        _ ->
+          [head, ..mergeDeliver(rest, policy, key, destination, floor, count, agreed)]
+      }
+  }
+}
+/// Admission by approval (#157 C4, D-APPROVAL): the request's UTxO must
+/// carry exactly one asset under the pins's application policy, at
+/// quantity 1, whose asset name is the approval binding of THIS request.
+/// The cage recomputes the name; a folder cannot substitute another
+/// owner's, another key's, another edge's or another destination's
+/// approval. The approval is not burned — no application script runs
+/// here — and leaves with the request's residual value.
+fn admitted(
+  acc: Fold,
+  pins: State,
+  edge: Int,
+  request: Request,
+  value: Value,
+) -> Fold {
+  let carried = assets.tokens(value, pins.application_policy)
+  when dict.keys(carried) is {
+    [name] ->
+      if dict.get(carried, name) != Some(1) {
+        halt(acc, @"no-approval")
+      } else if name != approvalName(
+        edge,
+        request.requestKey,
+        request.requestOwner,
+        request.destination,
+      ) {
+        halt(acc, @"approval-binding")
+      } else {
+        acc
+      }
+    _ -> halt(acc, @"no-approval")
+  }
+}
+
+/// One step of the fold, over the transaction's own inputs in order.
+fn mkAction(pins: State, tokenId: TokenId, validity_range) {
+  fn(input: Input, acc: Fold) -> Fold {
+    if !acc.ok {
+      acc
+    } else {
+      when input.output.datum is {
+        InlineDatum(datum) ->
+          if datum is RequestDatum(request): CageDatum {
+            if request.requestToken == tokenId {
+              stepRequest(acc, pins, request, input, validity_range)
+            } else {
+              // A request for another cage token is not ours to fold.
+              acc
+            }
           } else {
             acc
           }
-        } else {
-          acc
-        }
-      _ -> acc
+        _ -> acc
+      }
     }
   }
 }
+
+fn stepRequest(
+  acc: Fold,
+  pins: State,
+  request: Request,
+  input: Input,
+  validity_range,
+) -> Fold {
+  let Request { requestOwner, requestKey, requestValue, tip, submitted_at, destination, .. } =
+    request
+  let held = lovelace_of(input.output.value)
+  if tip != pins.tip {
+    halt(acc, @"tip-mismatch")
+  } else if held < tip {
+    // C8 (was the pinned consumer's R1): the cage checks carriage now,
+    // beside `tip == pins.tip`. Costless fabricated requests would
+    // otherwise fold for free — trie spam at zero price.
+    halt(acc, @"tip-coverage")
+  } else {
+    when acc.actions is {
+      [] -> halt(acc, @"missing-action")
+      [action, ..tail] -> {
+        let popped = Fold { ..acc, actions: tail, consumed: acc.consumed + 1 }
+        when action is {
+          Rejected ->
+            if !is_rejectable(
+              validity_range,
+              submitted_at,
+              pins.process_time,
+              pins.retract_time,
+            ) {
+              halt(popped, @"not-rejectable")
+            } else {
+              // Refund rows (NOTE-014 item A2 as corrected by NOTE-017):
+              // only REJECTED rows are owed refunds, at `input − tip`.
+              Fold {
+                ..popped,
+                refunds: [Pair(requestOwner, held - tip), ..popped.refunds],
+              }
+            }
+          UpdateAction(proof) ->
+            if !in_phase1(validity_range, submitted_at, pins.process_time) {
+              halt(popped, @"not-phase1")
+            } else if !codecOk(requestValue) {
+              halt(popped, @"leaf-codec")
+            } else {
+              let before =
+                when statedBefore(requestValue) is {
+                  None -> None
+                  Some(bytes) -> decodeState(bytes)
+                }
+              when edgeOf(requestValue, before) is {
+                None -> refuseEdge(popped, requestValue, before)
+                Some(edge) -> {
+                  let checked =
+                    if edge == edgeWitnessTerminal {
+                      // A read carries no approval and needs none (C4).
+                      popped
+                    } else {
+                      admitted(popped, pins, edge, request, input.output.value)
+                    }
+                  if !checked.ok {
+                    checked
+                  } else {
+                    applyEdge(
+                      checked,
+                      pins,
+                      edge,
+                      requestKey,
+                      requestValue,
+                      destination,
+                      held - tip,
+                      proof,
+                    )
+                  }
+                }
+              }
+            }
+        }
+      }
+    }
+  }
+}
+
+/// Walk the trie one step and record what the edge owes (#157 C3, C5,
+/// C6). The read is verified where it sits in the batch, against the
+/// intermediate root, and leaves the leaf exactly as it found it.
+fn applyEdge(
+  acc: Fold,
+  pins: State,
+  edge: Int,
+  key: ByteArray,
+  op: Operation,
+  destination: (ByteArray, ByteArray),
+  floor: Int,
+  proof: mpf.Proof,
+) -> Fold {
+  let advanced =
+    if edge == edgeWitnessTerminal {
+      // C3: no new proof code. `mpf.has` is the library's own inclusion
+      // check and is total, so a proof against the wrong root is an
+      // attributable refusal rather than a crash inside the library;
+      // the mandated `update(root, key, proof, v, v) == root` then runs
+      // on the verified proof and must leave the root alone.
+      if !mpf.has(acc.trie, key, leafTerminal, proof) {
+        None
+      } else {
+        let after = mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
+        if mpf.root(after) == mpf.root(acc.trie) {
+          Some(acc.trie)
+        } else {
+          None
+        }
+      }
+    } else {
+      Some(
+        when op is {
+          Insert(value) -> mpf.insert(acc.trie, key, value, proof)
+          Delete(value) -> mpf.delete(acc.trie, key, value, proof)
+          Update(old, new) -> mpf.update(acc.trie, key, proof, old, new)
+          // Unreachable: the read is handled above and `edgeOf` admits
+          // nothing else.
+          Read(_) -> acc.trie
+        },
+      )
+    }
+  when advanced is {
+    None -> halt(acc, @"read-root")
+    Some(trie) ->
+      Fold {
+        ..acc,
+        trie,
+        minted: foldl(
+          deltaOf(edge),
+          acc.minted,
+          fn(entry, value) {
+            let (kind, quantity) = entry
+            assets.merge(value, from_asset(policyOfKind(pins, kind), key, quantity))
+          },
+        ),
+        duties: pushDuties(
+          acc.duties,
+          dutiesOf(pins, edge, key, destination, floor),
+        ),
+      }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Discharging the duties
+// ----------------------------------------------------------------------------
+
+fn dutiesSatisfied(
+  pins: State,
+  cageAddress: Address,
+  duties: List<Duty>,
+  tx: Transaction,
+) -> Bool {
+  when duties is {
+    [] -> True
+    [duty, ..rest] ->
+      if dutyOk(pins, cageAddress, duty, tx) {
+        dutiesSatisfied(pins, cageAddress, rest, tx)
+      } else {
+        False
+      }
+  }
+}
+
+fn dutyOk(
+  pins: State,
+  cageAddress: Address,
+  duty: Duty,
+  tx: Transaction,
+) -> Bool {
+  when duty is {
+    DeliverToken { policy, key, destination, floor, count, agreed } -> {
+      let carriers = carriersOf(tx.outputs, policy, key)
+      when carriers is {
+        [carrier] ->
+          if !agreed || quantity_of(carrier.value, policy, key) != count || !destinationMatches(
+            destination,
+            carrier,
+          ) {
+            traceFalse(@"destination")
+          } else if lovelace_of(carrier.value) < floor {
+            // T6 / want-ledger R4: no folder incentive exists in this
+            // version, so the deposit that rode the request returns to
+            // the requester. The folder earns the tip and nothing else.
+            // `floor` is the SUM over the requests that share this
+            // carrier, so a second deposit cannot be pocketed.
+            traceFalse(@"deposit-returned")
+          } else {
+            True
+          }
+        _ -> traceFalse(@"destination")
+      }
+    }
+    LockCustody { key, refund, floor } -> {
+      let carriers = carriersOf(tx.outputs, pins.absent_policy, key)
+      when carriers is {
+        [carrier] ->
+          if quantity_of(carrier.value, pins.absent_policy, key) != 1 || carrier.address != cageAddress || !custodyDatumIs(
+            carrier.datum,
+            key,
+            refund,
+          ) || !onlyAsset(carrier.value, pins.absent_policy, key) {
+            traceFalse(@"absent-custody")
+          } else if lovelace_of(carrier.value) < floor {
+            traceFalse(@"deposit-returned")
+          } else {
+            True
+          }
+        _ -> traceFalse(@"absent-custody")
+      }
+    }
+    SpendCustody { key } ->
+      when custodyInput(cageAddress, key, tx.inputs) is {
+        None -> traceFalse(@"refund")
+        Some((refund, owed)) ->
+          if filter(
+            tx.outputs,
+            fn(out) { paysAddress(refund, out) && lovelace_of(out.value) >= owed },
+          ) == [] {
+            traceFalse(@"refund")
+          } else {
+            True
+          }
+      }
+    BurnFromInput { policy, key } ->
+      if find(
+        tx.inputs,
+        fn(i) { quantity_of(i.output.value, policy, key) >= 1 },
+      ) == None {
+        traceFalse(@"burn-from-input")
+      } else {
+        True
+      }
+  }
+}
+
+fn traceFalse(reason: String) -> Bool {
+  trace reason
+  False
+}
+
+fn carriersOf(
+  outputs: List<Output>,
+  policy: PolicyId,
+  key: ByteArray,
+) -> List<Output> {
+  filter(outputs, fn(out) { quantity_of(out.value, policy, key) != 0 })
+}
+
+/// The output carries this absent token and nothing else besides ADA
+/// (#157 C6: "No other asset in that output").
+fn onlyAsset(value: Value, policy: PolicyId, key: ByteArray) -> Bool {
+  filter(
+    assets.flatten(value),
+    fn(entry) {
+      let (entryPolicy, name, _) = entry
+      entryPolicy != #"" && !(entryPolicy == policy && name == key)
+    },
+  ) == []
+}
+
+fn custodyDatumIs(datum: Datum, key: ByteArray, refund: ByteArray) -> Bool {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is AbsentCustody { key: heldKey, refund: heldRefund }: CageDatum {
+        heldKey == key && heldRefund == refund
+      } else {
+        False
+      }
+    _ -> False
+  }
+}
+
+/// The custody UTxO for this key among the spent inputs, with the refund
+/// address it recorded and the lovelace it holds.
+fn custodyInput(
+  cageAddress: Address,
+  key: ByteArray,
+  inputs: List<Input>,
+) -> Option<(ByteArray, Int)> {
+  when
+    filter(
+      inputs,
+      fn(i) {
+        i.output.address == cageAddress && custodyKeyOf(i.output.datum) == Some(
+          key,
+        )
+      },
+    )
+  is {
+    [held] -> {
+      expect Some(refund) = custodyRefundOf(held.output.datum)
+      Some((refund, lovelace_of(held.output.value)))
+    }
+    _ -> None
+  }
+}
+
+fn custodyKeyOf(datum: Datum) -> Option<ByteArray> {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is AbsentCustody { key, refund: _ }: CageDatum {
+        Some(key)
+      } else {
+        None
+      }
+    _ -> None
+  }
+}
+
+fn custodyRefundOf(datum: Datum) -> Option<ByteArray> {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is AbsentCustody { key: _, refund }: CageDatum {
+        Some(refund)
+      } else {
+        None
+      }
+    _ -> None
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Rejected-row refunds (unchanged)
+// ----------------------------------------------------------------------------
 
 fn sumRefunds(
   outputs: List<Output>,
@@ -167,116 +764,301 @@ fn sumRefunds(
       expect address.VerificationKey(vkh) = output.address.payment_credential
       expect vkh == owner
       // Per-owner no-underpayment (NOTE-014 item A2): this row's output
-      // carries at least exactly what is owed. Unequal crossed allocations
-      // fail here even when every credential passes and every total
-      // matches. Min-UTxO top-ups from funding inputs may only add — the
-      // ledger's conservation plus the state's no-drain rule below close
-      // the rest, with no upper envelope to maintain.
-      expect assets.lovelace_of(output.value) >= owed
+      // carries at least exactly what is owed. Unequal crossed
+      // allocations fail here even when every credential passes and
+      // every total matches.
+      expect lovelace_of(output.value) >= owed
       sumRefunds(remaining, rest)
     }
   }
 }
 
+// ----------------------------------------------------------------------------
+// `Modify`
+// ----------------------------------------------------------------------------
+
 fn validModify(
-  state: State,
+  pins: State,
   input: Input,
   policyId: PolicyId,
   tokenId: TokenId,
   tx: Transaction,
   actions: List<RequestAction>,
-) {
-  // Fees ride funding inputs and ledger conservation explicitly; the
-  // validator pins per-owner floors, state preservation, and the root.
-  let Transaction { outputs, inputs, withdrawals, validity_range, fee: _tx_fee, .. } = tx
-  let State { root, tip, process_time, retract_time, representative_policy, consumer_pin } = state
+) -> Bool {
+  let Transaction { outputs, inputs, validity_range, mint, .. } = tx
   expect Some(output) = head(outputs)
   expect InlineDatum(outState) = output.datum
-  expect StateDatum(State {
-    root: newRoot,
-    tip: outTip,
-    process_time: outProcessTime,
-    retract_time: outRetractTime,
-    representative_policy: outRepresentativePolicy,
-    consumer_pin: outConsumerPin,
-  }) = outState
-  expect tip == outTip
-  expect process_time == outProcessTime
-  expect retract_time == outRetractTime
-  // E-001 repair (issue #77): the expected representative policy is registry
-  // configuration — genesis sets it, every fold preserves it. A fold altering
-  // it refuses here, before any root or refund check.
-  expect representative_policy == outRepresentativePolicy
-  // Pinned consumer hook (NOTE-013/NOTE-019): the pin is registry
-  // configuration — genesis selects it (width-checked at mint), every fold
-  // preserves it exactly. A fold altering it refuses here, beside the
-  // representative policy above.
-  expect consumer_pin == outConsumerPin
-
-  let (expectedNewRoot, actionsTail, owners) =
-    inputs
-      |> foldl(
-          (mpf.from_root(root), actions, []),
-          mkAction(tokenId, tip, process_time, retract_time, validity_range),
-        )
-  expect (mpf.root(expectedNewRoot) == newRoot)?
-  expect
-    output.address.payment_credential == input.output.address.payment_credential
-  // No-drain rule only (NOTE-017): the generic cage does NOT absorb
-  // processed bonds — locking is the consumer's allocation, enforced at
-  // the pinned hook, not here. Processed value may leave to a checkpoint
-  // lock or (as our current builders route it) to change; what the generic
-  // side refuses is losing track of it silently, which ledger conservation
-  // plus the rejected-row floors below already close. See the boundary
-  // table for what is admitted vs checked.
-  expect
-    assets.lovelace_of(output.value) >= assets.lovelace_of(input.output.value)
-  expect exactQuantity(policyId, output.value, tokenId, 1)
-
-  let n = list.length(owners)
-  // Exact request/action pairing (NOTE-020, A001/root 071): empty
-  // processing refuses — no matching request consumed, no batch. A dummy
-  // withdrawal, or a nonempty action list with no matching request, does
-  // not manufacture nonemptiness. Surplus unconsumed actions refuse —
-  // every supplied action must pair with an actual matching request, and
-  // missing actions still refuse at `uncons`. Both are checked before the
-  // hook predicate below and before fee/refund failures, so each control
-  // fails on its own reason.
-  // Mandatory invocation (NOTE-013): a `Modify` that consumes at least one
-  // request must withdraw the exact pinned consumer script. Presence of the
-  // exact withdrawal credential forces ledger execution of that script — a
-  // caller-declared flag, an input datum, or a redeemer label is not an
-  // invocation. Absence refuses; a withdrawal from any other script does
-  // not satisfy this.
-  let consumed = list.length(actions) - list.length(actionsTail)
-  expect consumed > 0
-  expect actionsTail == []
-  expect
-    list.any(
-          withdrawals,
-          fn(w) {
-            let Pair(credential, _) = w
-            when credential is {
-              address.Script(hash) -> hash == consumer_pin
-              _ -> False
-            }
-          },
-        )
-  when n is {
-    0 -> True
-    _ -> {
-      expect [_, ..refundOutputs] = outputs
-      let orderedOwners = list.reverse(owners)
-      // Exact per-owner floors above; totals are closed by ledger
-      // conservation (inputs + mint = outputs + fee), the state's lovelace
-      // no-drain rule above, and funding inputs covering fees and any
-      // min-UTxO top-ups visibly. No aggregate envelope to keep in sync.
-      expect sumRefunds(refundOutputs, orderedOwners)
-      True
+  expect StateDatum(next) = outState
+  if output.address.payment_credential != input.output.address.payment_credential {
+    // The continuation is the cage's own UTxO, at the cage's own
+    // address: a fold that hands the registry to another script is not a
+    // fold. Checked before anything the batch says, because everything
+    // after it is about a state that would not be the registry's.
+    traceFalse(@"continuation-address")
+  } else if !exactQuantity(policyId, output.value, tokenId, 1) {
+    traceFalse(@"state-token")
+  } else if lovelace_of(output.value) < lovelace_of(input.output.value) {
+    // No-drain rule (NOTE-017): the state UTxO's own lovelace may not
+    // fall. Processed value routes to the destinations below; ledger
+    // conservation plus the rejected-row floors close the rest.
+    traceFalse(@"state-drain")
+  } else if !pinsPreserved(pins, next) {
+    // C7: the seven non-root fields are registry configuration — genesis
+    // sets them, every fold preserves them. A fold altering any of them
+    // refuses here, before any root, delta or destination check.
+    traceFalse(@"pins-altered")
+  } else {
+    let folded =
+      foldl(
+        inputs,
+        Fold {
+          ok: True,
+          trie: mpf.from_root(pins.root),
+          actions,
+          consumed: 0,
+          minted: assets.zero,
+          duties: [],
+          refunds: [],
+        },
+        mkAction(pins, tokenId, validity_range),
+      )
+    if !folded.ok {
+      False
+    } else if folded.consumed <= 0 {
+      // Exact request/action pairing (NOTE-020, A001/root 071): empty
+      // processing refuses — no matching request consumed, no batch.
+      traceFalse(@"empty-fold")
+    } else if folded.actions != [] {
+      // Surplus unconsumed actions refuse: every supplied action must
+      // pair with an actual matching request, and missing actions
+      // already refused at `missing-action`.
+      traceFalse(@"surplus-actions")
+    } else if mpf.root(folded.trie) != next.root {
+      traceFalse(@"root")
+    } else if !mintMatches(pins, folded.minted, mint) {
+      // C5: the transaction's mint under the three pinned token policies
+      // equals the summed C2 column exactly — asset by asset, quantity
+      // by quantity — and nothing else moves under them. A mint that
+      // adds, omits, doubles or renames one asset is one delta mismatch.
+      traceFalse(@"delta-mismatch")
+    } else if !dutiesSatisfied(pins, input.output.address, folded.duties, tx) {
+      False
+    } else {
+      when folded.refunds is {
+        [] -> True
+        _ -> {
+          expect [_, ..refundOutputs] = outputs
+          sumRefunds(refundOutputs, list.reverse(folded.refunds))
+        }
+      }
     }
   }
 }
 
+/// C7: every field but the root survives the fold unchanged.
+fn pinsPreserved(before: State, after: State) -> Bool {
+  and {
+    before.tip == after.tip,
+    before.process_time == after.process_time,
+    before.retract_time == after.retract_time,
+    before.application_policy == after.application_policy,
+    before.active_policy == after.active_policy,
+    before.absent_policy == after.absent_policy,
+    before.terminal_policy == after.terminal_policy,
+  }
+}
+
+/// C5: the mint under each of the three pinned token policies equals the
+/// summed delta exactly. Both sides are compared as the ledger's own
+/// normalized token maps, so a zero net movement must be absent rather
+/// than present-at-zero.
+fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
+  and {
+    assets.tokens(expected, pins.absent_policy) == assets.tokens(
+      mint,
+      pins.absent_policy,
+    ),
+    assets.tokens(expected, pins.active_policy) == assets.tokens(
+      mint,
+      pins.active_policy,
+    ),
+    assets.tokens(expected, pins.terminal_policy) == assets.tokens(
+      mint,
+      pins.terminal_policy,
+    ),
+  }
+}
+
+// ----------------------------------------------------------------------------
+// The custody spending path (#157 C6, T5)
+// ----------------------------------------------------------------------------
+
+/// The cage's own spending path for a custody UTxO: spent in a `Modify`
+/// of THIS registry that consumes a request for ITS key with
+/// `Update(0x00, 0x01)` or `Delete(0x00)`, and nothing else. A plain
+/// spend, a fold for another key, a fold whose request for this key is a
+/// read, and a fold of another registry sharing the state script all
+/// refuse here. The refund leg is the fold's duty (`refund`), checked by
+/// `validModify` on the same transaction.
+fn validCustodySpend(
+  key: ByteArray,
+  refund: ByteArray,
+  self: Input,
+  tx: Transaction,
+) -> Bool {
+  when foldAuthenticated(self.output.address, tx) is {
+    None ->
+      // The fold itself, authenticated: the registry's own state token,
+      // at the cage's own address, SPENT with `Modify`. Without it a
+      // request-shaped neighbour would be enough, and custody would be
+      // spendable outside the fold that is supposed to consume it.
+      traceFalse(@"custody-spend")
+    Some(cageToken) ->
+      // The request this custody rides on, found by what BINDS it — its
+      // key and this registry.s own cage token — and not by where it
+      // sits. A deployed request lives at the request validator.s own
+      // address, not the cage.s, so an address test here would refuse
+      // every honest fold on chain while passing fixtures that happen to
+      // place requests beside the state.
+      if filter(
+        tx.inputs,
+        fn(i) { consumesAbsent(i.output.datum, key, cageToken) },
+      ) == [] {
+        traceFalse(@"custody-spend")
+      } else if !paysAddressSomewhere(refund, self, tx) {
+        traceFalse(@"custody-spend")
+      } else {
+        True
+      }
+  }
+}
+
+/// Is this transaction a fold of the registry this custody belongs to,
+/// and if so, which registry (#157 F-001, NOTE-004)?
+///
+/// Exactly one input at the cage's OWN address, carrying the state datum,
+/// SPENT with `Modify` — and the answer is that state's own cage token.
+/// The `Modify` is not a label a caller can assert: the ledger cannot let
+/// such an input be spent without executing this very validator on it,
+/// and `validModify` then proves the state token, the preserved pins, the
+/// new root and the minted deltas. Answering the token, rather than a
+/// bare yes, is what stops one registry's fold from authorizing another's
+/// custody when both are held by this same script: the caller must then
+/// show a request bound to the very registry whose fold it rode in on.
+fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Option<TokenId> {
+  when
+    filter(
+      tx.inputs,
+      fn(i) {
+        i.output.address == cageAddress && holdsState(i.output.datum) && spentModifying(
+          i.output_reference,
+          tx,
+        )
+      },
+    )
+  is {
+    [stateIn] ->
+      when cageAddress.payment_credential is {
+        address.Script(policyId) ->
+          tokenFromPolicy(policyId, stateIn.output.value)
+        _ -> None
+      }
+    _ -> None
+  }
+}
+
+/// `CageDatum`'s constructor tags, with the payloads left as `Data`
+/// (#157 F-001). Which arm a neighbouring UTxO carries is all this needs
+/// to know, and deciding it on the tag costs a fraction of decoding the
+/// eight-field state a second time.
+type DatumTag {
+  RequestTag(Data)
+  StateTag(Data)
+  CustodyTag(Data, Data)
+}
+
+/// `UpdateRedeemer`'s constructor tags, likewise: the real redeemer
+/// carries the batch's whole MPF proofs, and this asks only which arm it
+/// is.
+type RedeemerTag {
+  EndTag
+  ContributeTag(Data)
+  ModifyTag(Data)
+  RetractTag(Data)
+  SweepTag(Data)
+}
+
+fn holdsState(datum: Datum) -> Bool {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is StateTag(_): DatumTag {
+        True
+      } else {
+        False
+      }
+    _ -> False
+  }
+}
+
+fn spentModifying(reference: OutputReference, tx: Transaction) -> Bool {
+  when pairs.get_first(tx.redeemers, Spend(reference)) is {
+    Some(data) ->
+      if data is ModifyTag(_): RedeemerTag {
+        True
+      } else {
+        False
+      }
+    None -> False
+  }
+}
+
+/// A request datum of THIS registry, for this key, whose operation
+/// consumes the absent token: `Update(0x00, 0x01)` or `Delete(0x00)`.
+///
+/// The `requestToken` binding (NOTE-004) is what makes the authenticated
+/// fold above conclusive rather than circumstantial: `validModify`
+/// processes only the requests naming its own cage token, so a request
+/// carrying this token is one that fold must have processed. Without it a
+/// second registry on the same script could lend its `Modify` to a
+/// request it will never touch.
+fn consumesAbsent(datum: Datum, key: ByteArray, cageToken: TokenId) -> Bool {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is RequestDatum(request): CageDatum {
+        request.requestKey == key && request.requestToken == cageToken && when
+          request.requestValue
+        is {
+          Update(old, new) ->
+            decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
+              kindActive,
+            )
+          Delete(old) -> decodeState(old) == Some(kindAbsent)
+          _ -> False
+        }
+      } else {
+        False
+      }
+    _ -> False
+  }
+}
+
+fn paysAddressSomewhere(refund: ByteArray, self: Input, tx: Transaction) -> Bool {
+  let owed = lovelace_of(self.output.value)
+  filter(
+    tx.outputs,
+    fn(out) { paysAddress(refund, out) && lovelace_of(out.value) >= owed },
+  ) != []
+}
+
+// ----------------------------------------------------------------------------
+// Genesis
+// ----------------------------------------------------------------------------
+
+/// Genesis (#157 C7): the four policies are set here and preserved by
+/// every fold. Boot is permissionless — there is no owner — so the mint
+/// authorizes no particular choice of them; preservation is what gives
+/// them their force, not mint-time approval. The consumer pin and its
+/// width check are gone with `consumer.ak`.
 pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) {
   let Transaction { outputs, mint, inputs, .. } = tx
   let tokenId = TokenId { assetName: assetName(seed) }
@@ -286,22 +1068,8 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
   expect address.Script(targetScriptHash) = output.address.payment_credential
   expect targetScriptHash == policyId
   expect InlineDatum(tokenState) = output.datum
-  expect
-    StateDatum(State {
-      root: tokenRoot,
-      tip: _tip,
-      process_time: _processTime,
-      retract_time: _retractTime,
-      representative_policy: _representativePolicy,
-      consumer_pin: tokenConsumerPin,
-    })
-    = tokenState
+  expect StateDatum(State { root: tokenRoot, .. }) = tokenState
   expect tokenRoot == root(empty)
-  // Pinned consumer hook (NOTE-013): genesis selects the pin — any 28-byte
-  // script hash. Boot is permissionless (no owner), so the mint authorizes
-  // no value, only the width: preservation plus mandatory invocation (both
-  // in `validModify` above) give the pin its force, not mint-time approval.
-  expect bytearray.length(tokenConsumerPin) == 28
   expect exactQuantity(policyId, output.value, tokenId, 1)
   True
 }

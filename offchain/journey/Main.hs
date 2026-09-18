@@ -54,13 +54,13 @@ hashes and the parameters.
 -}
 module Main (main) where
 
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , catch
-    , displayException
-    , throwIO
-    )
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    catch,
+    displayException,
+    throwIO,
+ )
 import Control.Monad (unless, when)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.Bits (complement)
@@ -79,7 +79,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (%~), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn, stderr)
@@ -90,79 +90,28 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
-import Cardano.Ledger.Api.Tx.Out (datumTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, referenceScriptTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (Network (..))
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import PlutusTx.IsData.Class (FromData (..))
 
-import Singular.Registry.Blueprint (
-    applyRequestParams,
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
-    Root (..),
-    TokenId (..),
- )
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitTx,
-    funderAddr,
-    funderSignKey,
-    withNode,
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie qualified as CageTrie
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
-import Singular.Registry.Trie.PureManager (mkPureTrieManager)
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    computeScriptIntegrity,
-    deriveConsumerBinding,
-    extractCageDatum,
-    findStateUtxo,
-    mkInlineDatum,
-    onChainTokenId,
-    requestAddrFromCfg,
-    scriptHashBytes,
-    toLedgerData,
-    toPlcData,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl)
-import Singular.Registry.TxBuilder.Request (requestInsertImpl)
-import Singular.Registry.TxBuilder.Update (updateTokenImpl)
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    OnChainTxOutRef,
-    RequestAction (Update),
-    UpdateRedeemer (..),
- )
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
     SignKeyDSIGN,
     addKeyWitness,
  )
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Backend.Pure (
     MPFInMemoryDB,
     emptyMPFInMemoryDB,
@@ -198,18 +147,75 @@ import MPF.Proof.Insertion (
     foldMPFProof,
     mkMPFInclusionProof,
  )
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Cardano.Tx.Ledger (ConwayTx)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
+    NamingCodes,
+    applyRequestParams,
+    extractCompiledCode,
+    loadBlueprint,
+    loadNamingCodesFromEnv,
+ )
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
+    AssetName (..),
+    Coin (..),
+    ConwayEra,
+    PParams,
+    Root (..),
+    TokenId (..),
+    TxIn,
+ )
+import Singular.Registry.Node (
+    NodeSession (..),
+    awaitTx,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Edges qualified as Edges
+import Singular.Registry.TxBuilder.Internal (
+    cageAddrFromCfg,
+    cagePolicyIdFromCfg,
+    computeScriptHash,
+    computeScriptIntegrity,
+    extractCageDatum,
+    findStateUtxo,
+    leafAbsent,
+    mkInlineDatum,
+    onChainTokenId,
+    requestAddrFromCfg,
+    scriptHashBytes,
+    toLedgerData,
+    toPlcData,
+    txInToRef,
+ )
+import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
+import Singular.Registry.Types (
+    CageDatum (..),
+    OnChainOperation (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
+    OnChainTxOutRef,
+    RequestAction (Update),
+    UpdateRedeemer (..),
+ )
 
 -- ---------------------------------------------------------
 -- Entry point
 -- ---------------------------------------------------------
 
 main :: IO ()
-main = journey `catch` \(e :: SomeException) -> do
-    hPutStrLn stderr ("journey: FAILED: " <> displayException e)
-    exitWith (ExitFailure 1)
+main =
+    journey `catch` \(e :: SomeException) -> do
+        hPutStrLn stderr ("journey: FAILED: " <> displayException e)
+        exitWith (ExitFailure 1)
 
 journey :: IO ()
 journey = do
@@ -219,25 +225,24 @@ journey = do
     printIdentity si
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
-    case
-        ( extractCompiledCode "state.state" bp
-        , extractCompiledCode "request.request" bp
-        , extractCompiledCode "staking.staking" bp
-        , extractCompiledCode "consumer.consumer" bp
-        ) of
-        (Just stateBytes, Just requestBytes, Just stakingBytes, Just consumerBytes) ->
-            runJourney si stateBytes requestBytes stakingBytes consumerBytes
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         , extractCompiledCode "staking.staking" bp
+         ) of
+        (Just stateBytes, Just requestBytes, Just stakingBytes) ->
+            runJourney si stateBytes requestBytes stakingBytes
         _ ->
             failWith
-                "state.state, request.request, staking.staking or \
-                \consumer.consumer compiled code not found in blueprint"
+                "state.state, request.request or staking.staking \
+                \compiled code not found in blueprint"
 
 -- ---------------------------------------------------------
 -- Identity: which contracts this run exercises
 -- ---------------------------------------------------------
 
--- | Default location of the pinned-identity manifest, relative
--- to @offchain/@ (where the flake app and the CI job run it).
+{- | Default location of the pinned-identity manifest, relative
+to @offchain/@ (where the flake app and the CI job run it).
+-}
 defaultIdentityPath :: FilePath
 defaultIdentityPath = "../onchain/script-identity.json"
 
@@ -335,24 +340,22 @@ stepDerivedIdentity ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     TokenId ->
     ConwayTx ->
     ConwayTx ->
+    [(TxIn, TxOut ConwayEra)] ->
     IO ()
-stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx updateTx = do
+stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx refs = do
     let hashHex = hex . scriptHashBytes
         -- The unapplied layer: the blueprint's raw code hashes.
         unappliedState = hashHex (computeScriptHash rawState)
         unappliedRequest = hashHex (computeScriptHash rawRequest)
         unappliedStaking = hashHex (computeScriptHash rawStaking)
-        unappliedConsumer = hashHex (computeScriptHash rawConsumer)
     -- The pinned layer is the unapplied code this run's
     -- blueprint actually contains.
     checkPinnedUnapplied si "state.state" unappliedState
     checkPinnedUnapplied si "request.request" unappliedRequest
     checkPinnedUnapplied si "staking.staking" unappliedStaking
-    checkPinnedUnapplied si "consumer.consumer" unappliedConsumer
     -- Derivation: apply this instance's parameters to the
     -- unapplied code and hash the result.
     let stateHash = computeScriptHash (rawState)
@@ -371,17 +374,6 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx
                 <> stateHex
                 <> " cageToken=0x"
                 <> hex tokenName
-        consumerHash = computeScriptHash rawConsumer
-        consumerHex = hashHex consumerHash
-    -- The run's config follows from the same derivation (the consumer
-    -- takes no parameters — applied and unapplied coincide).
-    unless (SBS.fromShort (cfgConsumerPin cfg) == scriptHashBytes consumerHash) $
-        failWith $
-            "derived-applied-identity failed for consumer: \
-            \the run's pinned consumer hash is 0x"
-                <> hex (SBS.fromShort (cfgConsumerPin cfg))
-                <> " but this run's blueprint code hashes to 0x"
-                <> consumerHex
     unless (cfgScriptHash cfg == stateHash) $
         failWith $
             "derived-applied-identity failed for state: \
@@ -393,7 +385,21 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx
                 <> hashHex (cfgScriptHash cfg)
     -- The scripts the run actually carried to the node.
     let bootWitness = witnessScriptHashes bootTx
-        updateWitness = witnessScriptHashes updateTx
+        updateWitness = carriedScriptHashes refs updateTx
+        pinHex p = hex (SBS.fromShort p)
+        -- The fold spends the state and the request and mints under the
+        -- three witness policies this registry pins, so those five are
+        -- exactly what it carries.
+        updateExpected =
+            Set.fromList
+                ( [stateHex, requestHex]
+                    <> map
+                        pinHex
+                        [ cfgAbsentPolicy cfg
+                        , cfgActivePolicy cfg
+                        , cfgTerminalPolicy cfg
+                        ]
+                )
     unless (bootWitness == Set.singleton stateHex) $
         failWith $
             "derived-applied-identity failed for state: \
@@ -404,16 +410,19 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx
                 <> stateParams
                 <> ") but its script witness held "
                 <> show (Set.toList bootWitness)
-    unless (updateWitness == Set.fromList [stateHex, requestHex, consumerHex]) $
+    -- #157: the fold withdraws from nothing, so the update transaction
+    -- carries exactly the two derived scripts it spends — the retired
+    -- consumer hook is no longer among them.
+    unless (updateWitness == updateExpected) $
         failWith $
             "derived-applied-identity failed for request: \
             \expected the update transaction to carry exactly \
             \the derived applied hashes 0x"
                 <> stateHex
-                <> ", 0x"
+                <> " and 0x"
                 <> requestHex
-                <> " and consumer 0x"
-                <> consumerHex
+                <> " with the three pinned witness policies "
+                <> show (map pinHex [cfgAbsentPolicy cfg, cfgActivePolicy cfg, cfgTerminalPolicy cfg])
                 <> " (request parameters "
                 <> requestParams
                 <> ") but its script witness held "
@@ -447,18 +456,11 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking rawConsumer tid bootTx
             <> " takes no parameters (0) — applied and \
                \unapplied coincide, matching the pin"
         )
-    emit
-        "derived-applied-identity"
-        ( "consumer applied hash 0x"
-            <> consumerHex
-            <> " takes no parameters (0) — applied and \
-               \unapplied coincide, and the update tx carried \
-               \exactly this script as the hook witness"
-        )
 
--- | Require every manifest entry under the validator
--- prefix to pin exactly @unappliedHex@ — the hash of this
--- run's blueprint raw code.
+{- | Require every manifest entry under the validator
+prefix to pin exactly @unappliedHex@ — the hash of this
+run's blueprint raw code.
+-}
 checkPinnedUnapplied :: ScriptIdentity -> Text -> String -> IO ()
 checkPinnedUnapplied si prefix unappliedHex =
     case pins of
@@ -486,15 +488,33 @@ checkPinnedUnapplied si prefix unappliedHex =
         , prefix `T.isPrefixOf` vpTitle v
         ]
 
--- | The hashes of the PlutusV3 scripts a submitted
--- transaction carried in its witness set — the bytes the
--- node received and executed.
+{- | The hashes of the PlutusV3 scripts a submitted
+transaction carried in its witness set — the bytes the
+node received and executed.
+-}
 witnessScriptHashes :: ConwayTx -> Set.Set String
 witnessScriptHashes tx =
     Set.fromList
         [ hex (scriptHashBytes sh)
         | sh <- Map.keys (tx ^. witsTxL . scriptTxWitsL)
         ]
+
+{- | Every script a transaction carried to the node: the witness set it
+attached, plus the reference outputs it resolved through. A fold
+resolves every purpose through published references, so its witness set
+is empty and the scripts it executed travel in the outputs its body
+names.
+-}
+carriedScriptHashes ::
+    [(TxIn, TxOut ConwayEra)] -> ConwayTx -> Set.Set String
+carriedScriptHashes refs tx =
+    witnessScriptHashes tx
+        <> Set.fromList
+            [ hex (scriptHashBytes (hashScript s))
+            | (i, o) <- refs
+            , i `Set.member` (tx ^. bodyTxL . referenceInputsTxBodyL)
+            , SJust s <- [o ^. referenceScriptTxOutL]
+            ]
 
 -- ---------------------------------------------------------
 -- The journey, on a real devnet
@@ -518,9 +538,8 @@ runJourney ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     IO ()
-runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
+runJourney si stateBytes requestBytes stakingBytes = do
     withNode $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
@@ -542,34 +561,47 @@ runJourney si stateBytes requestBytes stakingBytes consumerBytes = do
                 failWith
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
-        let cfg = cageCfg stateBytes requestBytes consumerBytes seedRef
+        codes <- loadNamingCodesFromEnv
+        let cfg = cageCfg stateBytes requestBytes codes seedRef
         (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
-        -- Consumer stake registration (NOTE-020 item 2): the pinned
-        -- consumer's credential must be registered before the first
-        -- Modify withdraws it. Funded by genesis (the cage funder here).
-        regTx <- registerConsumerImpl cfg prov genesisAddr
-        _ <- submitWithGenesis submit regTx
-        emit "consumer" "consumer stake credential registered; hook withdrawals are live"
-        reqCount <- stepRequest cfg prov submit tokenId
+        -- The state validator alone is fifteen kilobytes: a fold that
+        -- attaches it, the request validator and a token policy does not
+        -- fit in a transaction. Published once, every purpose resolves
+        -- through these instead.
+        refs <-
+            Edges.publishCageRefs
+                cfg
+                codes
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                tokenId
+        emit
+            "references"
+            ( show (length refs)
+                <> " scripts published as reference outputs"
+            )
+        reqCount <- stepRequest cfg codes prov submit tokenId
         stepVerifyAbsent cfg prov mirrorRef tokenId
-        appliedTx <- stepApply cfg prov submit tm tokenId reqCount
+        appliedTx <- stepApply cfg codes prov submit tm tokenId refs reqCount
         stepDerivedIdentity
             si
             cfg
             stateBytes
             requestBytes
             stakingBytes
-            consumerBytes
             tokenId
             bootTx
             appliedTx
+            refs
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
-        stepReject cfg prov submit tm tokenId appliedState
+        stepReject cfg codes prov submit tm tokenId refs appliedState
         emit "complete" "11/11 journey steps ok"
 
--- | Boot a cage: mint the state token, register its trie,
--- observe the state UTxO and read the boot state datum.
+{- | Boot a cage: mint the state token, register its trie,
+observe the state UTxO and read the boot state datum.
+-}
 stepBoot ::
     CageConfig ->
     Cage.Provider IO ->
@@ -584,8 +616,7 @@ stepBoot cfg prov submit tm = do
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
     require "boot: state UTxO present at the cage address" $
         not (null stateUtxos)
-    bootRoot <- case
-        findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+    bootRoot <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith
                 "boot: no state UTxO carrying the policy token"
@@ -605,29 +636,35 @@ stepBoot cfg prov submit tm = do
         )
     pure (tid, bootRoot, signed)
 
--- | Submit an insert request into the cage's request address
--- and observe it land.
+{- | Submit an insert request into the cage's request address
+and observe it land.
+-}
 stepRequest ::
     CageConfig ->
+    NamingCodes ->
     Cage.Provider IO ->
     Submitter IO ->
     TokenId ->
     IO Int
-stepRequest cfg prov submit tid = do
+stepRequest cfg codes prov submit tid = do
     let reqAddr = requestAddrFromCfg cfg tid Testnet
     before <- Cage.queryUTxOs prov reqAddr
     require "request: request address empty before the request" $
         null before
-    unsigned <-
-        requestInsertImpl
+    -- #157 C4, D-APPROVAL: a tree edge is BOOKED, not merely requested.
+    -- The approval the naming application mints certifies which edge this
+    -- is, for whom and where it delivers; the request carries it to the
+    -- fold.
+    booked <-
+        Edges.bookEdge
             cfg
+            codes
             prov
-            (Coin 1_000_000)
+            (submitWithGenesis submit)
+            genesisAddr
             tid
             journeyKey
-            journeyValue
-            genesisAddr
-    signed <- submitWithGenesis submit unsigned
+            (OpInsert journeyValue)
     after <- Cage.queryUTxOs prov reqAddr
     require
         "request: request UTxO observed at the request address"
@@ -637,26 +674,30 @@ stepRequest cfg prov submit tid = do
         ( "submitted insert request key="
             <> textOf journeyKey
             <> " value="
-            <> textOf journeyValue
-            <> " tx="
-            <> show (txIdTx signed)
+            <> hex journeyValue
+            <> " booked_at="
+            <> show booked
             <> " request_utxos="
             <> show (length after)
         )
     pure (length after)
 
--- | Apply the request as the oracle: the update consumes the
--- request UTxO and moves the trie root on chain.
+{- | Apply the request as the oracle: the update consumes the
+request UTxO and moves the trie root on chain.
+-}
 stepApply ::
     CageConfig ->
+    NamingCodes ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
     Int ->
     IO ConwayTx
-stepApply cfg prov submit tm tid reqCount = do
-    unsigned <- updateTokenImpl cfg prov tm tid genesisAddr
+stepApply cfg codes prov submit tm tid refs reqCount = do
+    ctx <- Edges.registryContextFor cfg codes prov refs
+    unsigned <- updateTokenWithDuties cfg prov tm tid genesisAddr ctx
     signed <- submitWithGenesis submit unsigned
     after <- Cage.queryUTxOs prov (requestAddrFromCfg cfg tid Testnet)
     require "apply: the request UTxO was consumed" $
@@ -672,10 +713,11 @@ stepApply cfg prov submit tm tid reqCount = do
         )
     pure signed
 
--- | Read the resulting state back from the chain: decode the
--- state UTxO's inline datum and observe that the trie root
--- moved from the boot root. Returns the authenticated state
--- as read, for the negative section's unchanged control.
+{- | Read the resulting state back from the chain: decode the
+state UTxO's inline datum and observe that the trie root
+moved from the boot root. Returns the authenticated state
+as read, for the negative section's unchanged control.
+-}
 stepReadBack ::
     CageConfig ->
     Cage.Provider IO ->
@@ -684,8 +726,7 @@ stepReadBack ::
     IO OnChainTokenState
 stepReadBack cfg prov tid bootRoot = do
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
-    st <- case
-        findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+    st <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
         Nothing ->
             failWith "read-back: no state UTxO carrying the policy token"
         Just (_, out) -> case extractCageDatum out of
@@ -730,8 +771,9 @@ expectedRejectionReason =
     "phase-2 Plutus script evaluation failure \
     \on the submitted transaction"
 
--- | The node-level marker of that reason: a failed Plutus
--- evaluation is reported by the ledger as a 'PlutusFailure'.
+{- | The node-level marker of that reason: a failed Plutus
+evaluation is reported by the ledger as a 'PlutusFailure'.
+-}
 phase2ScriptFailureMarker :: String -> Bool
 phase2ScriptFailureMarker = isInfixOf "PlutusFailure"
 
@@ -746,13 +788,15 @@ have left no trace.
 -}
 stepReject ::
     CageConfig ->
+    NamingCodes ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
     OnChainTokenState ->
     IO ()
-stepReject cfg prov submit tm tid stateBeforeRejects = do
+stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
     -- A second, unapplied insert request: the payload the
     -- mutated updates below pretend to process. It stays at
     -- the request address throughout.
@@ -760,16 +804,16 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
     before <- Cage.queryUTxOs prov reqAddr
     require "reject: request address empty before the second request" $
         null before
-    unsignedReq <-
-        requestInsertImpl
+    _ <-
+        Edges.bookEdge
             cfg
+            codes
             prov
-            (Coin 1_000_000)
+            (submitWithGenesis submit)
+            genesisAddr
             tid
             negativeKey
-            negativeValue
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedReq
+            (OpInsert negativeValue)
     reqUtxos <- Cage.queryUTxOs prov reqAddr
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1
@@ -781,7 +825,7 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
         ( "pending insert request key="
             <> textOf negativeKey
             <> " value="
-            <> textOf negativeValue
+            <> hex negativeValue
             <> " request_utxos="
             <> show (length reqUtxos)
         )
@@ -805,7 +849,8 @@ stepReject cfg prov submit tm tid stateBeforeRejects = do
     -- well-formed for ledger phase 1 (the case descriptions
     -- say how), so only the on-chain validator stands between
     -- each transaction and the ledger.
-    baseTx <- updateTokenImpl cfg prov tm tid genesisAddr
+    rejectCtx <- Edges.registryContextFor cfg codes prov refs
+    baseTx <- updateTokenWithDuties cfg prov tm tid genesisAddr rejectCtx
     newRoot <- baseTxStateRoot baseTx
     pp <- Cage.queryProtocolParams prov
     -- The validators the four cases require to refuse, by
@@ -923,13 +968,14 @@ expectRejected caseName guard expectedScript submit tx = do
                         <> ">"
             emit caseName ("node refused it, reason matched: " <> reasonText)
 
--- | The payload of the request the negative section
--- pretends to process. It is never applied.
+{- | The payload of the request the negative section
+pretends to process. It is never applied.
+-}
 negativeKey :: ByteString
 negativeKey = "negative"
 
 negativeValue :: ByteString
-negativeValue = "probe"
+negativeValue = leafAbsent
 
 -- | The root the valid update writes into its state output.
 baseTxStateRoot :: ConwayTx -> IO OnChainRoot
@@ -975,15 +1021,17 @@ forgeContributeStateRef pp forgedRef tx =
 decodeUpdateRedeemer :: Data ConwayEra -> Maybe UpdateRedeemer
 decodeUpdateRedeemer (Data d) = fromBuiltinData (BuiltinData d)
 
--- | Lowercase hex of the script hash of a script payment
--- address, in the form the node names a failing script by.
+{- | Lowercase hex of the script hash of a script payment
+address, in the form the node names a failing script by.
+-}
 scriptHashHexOfAddr :: Addr -> String
 scriptHashHexOfAddr (Addr _ (ScriptHashObj sh) _) =
     hex (scriptHashBytes sh)
 scriptHashHexOfAddr _ = emptyScriptHashHex
 
--- | The empty fallback for a non-script address, which the
--- reason check can never match.
+{- | The empty fallback for a non-script address, which the
+reason check can never match.
+-}
 emptyScriptHashHex :: String
 emptyScriptHashHex = ""
 
@@ -1001,8 +1049,8 @@ tamperStateOutputRoot expected tampered tx =
             | stateRoot s == expected ->
                 out
                     & datumTxOutL
-                    .~ mkInlineDatum
-                        (toPlcData (StateDatum s{stateRoot = tampered}))
+                        .~ mkInlineDatum
+                            (toPlcData (StateDatum s{stateRoot = tampered}))
         _ -> out
 
 {- | Drop the Merkle proof witness from the Modify action, keeping
@@ -1033,14 +1081,15 @@ dropModifyProof pp tx =
 -- Authenticated-state verification (D-013)
 -- ---------------------------------------------------------
 
--- | The bounded operation the journey applies: an insert of
--- 'journeyKey' with 'journeyValue'. 'forgedValue' is a value
--- the state does not hold — the negative case's claim.
+{- | The bounded operation the journey applies: an insert of
+'journeyKey' with 'journeyValue'. 'forgedValue' is a value
+the state does not hold — the negative case's claim.
+-}
 journeyKey :: ByteString
 journeyKey = "hello"
 
 journeyValue :: ByteString
-journeyValue = "world"
+journeyValue = leafAbsent
 
 forgedValue :: ByteString
 forgedValue = "forged"
@@ -1069,8 +1118,9 @@ fromHexKVIdentity =
 mpfKeyPath :: ByteString -> HexKey
 mpfKeyPath = byteStringToHexKey . renderMPFHash . mkMPFHash
 
--- | Build the exclusion proof for a raw key against a
--- snapshot of the mirror database.
+{- | Build the exclusion proof for a raw key against a
+snapshot of the mirror database.
+-}
 exclusionProofFrom ::
     MPFInMemoryDB -> ByteString -> Maybe (MPFExclusionProof MPFHash)
 exclusionProofFrom db k =
@@ -1084,8 +1134,9 @@ exclusionProofFrom db k =
                     MPFStandaloneMPFCol
                     (mpfKeyPath k)
 
--- | Build the inclusion proof for a raw key against a
--- snapshot of the mirror database.
+{- | Build the inclusion proof for a raw key against a
+snapshot of the mirror database.
+-}
 inclusionProofFrom ::
     MPFInMemoryDB -> ByteString -> Maybe (MPFProof MPFHash)
 inclusionProofFrom db k =
@@ -1111,9 +1162,10 @@ trustedRootFromChain (OnChainRoot bs)
             failWith
                 ("verify: malformed chain root 0x" <> hex bs)
 
--- | Read the current state datum for a token straight from
--- the chain: the state UTxO at the cage address. This is the
--- only comparison target for every verification below.
+{- | Read the current state datum for a token straight from
+the chain: the state UTxO at the cage address. This is the
+only comparison target for every verification below.
+-}
 readChainState ::
     CageConfig ->
     Cage.Provider IO ->
@@ -1204,7 +1256,7 @@ stepVerifyPresent cfg prov mirrorRef tid = do
             "proved-present failed: key "
                 <> textOf journeyKey
                 <> " value "
-                <> textOf journeyValue
+                <> hex journeyValue
                 <> ": proof implies root 0x"
                 <> hex (renderMPFHash implied)
                 <> " but the chain read root 0x"
@@ -1214,7 +1266,7 @@ stepVerifyPresent cfg prov mirrorRef tid = do
         ( "proved present key="
             <> textOf journeyKey
             <> " value="
-            <> textOf journeyValue
+            <> hex journeyValue
             <> " root=0x"
             <> hex (unOnChainRoot chainRoot)
         )
@@ -1245,35 +1297,42 @@ stepVerifyPresent cfg prov mirrorRef tid = do
 -- Shared plumbing (same code path as the E2E suite)
 -- ---------------------------------------------------------
 
--- | Build a 'CageConfig' from state and request script bytes
--- plus the boot seed 'OnChainTxOutRef', exactly as the E2E
--- suite does. The raw state bytes are applied to the empty
--- (genesis) @previousPolicies@ allowlist before hashing,
--- matching the parameterized on-chain state script.
+{- | Build a 'CageConfig' from state and request script bytes
+plus the boot seed 'OnChainTxOutRef', exactly as the E2E
+suite does. The raw state bytes are applied to the empty
+(genesis) @previousPolicies@ allowlist before hashing,
+matching the parameterized on-chain state script.
+-}
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes consumerBytes seed =
+cageCfg stateBytes requestBytes codes seed =
     let appliedStateBytes = stateBytes
-        ConsumerBinding
-            { cbPin = consumerPin
-            , cbScriptBytes = consumerScriptBytes
-            } = deriveConsumerBinding consumerBytes
+        stateHash = computeScriptHash appliedStateBytes
+        registryId = scriptHashBytes stateHash <> deriveAssetName seed
+        (appPin, absentPin, activePin, terminalPin) =
+            Edges.namingPins codes registryId
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
-            , cfgScriptHash =
-                computeScriptHash appliedStateBytes
+            , cfgScriptHash = stateHash
             , cageSeed = seed
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
-            , cfgRepPolicy = SBS.pack (replicate 28 0)
-            , cfgConsumerPin = consumerPin
-            , cfgConsumerScript = consumerScriptBytes
+            , -- #157 D-BOOT: the four pins for THIS registry identity,
+              -- derived from the naming partition's own compiled code — the
+              -- application validator's own hash, and
+              -- `witness(kind, registry)` at kinds 0, 1 and 2. The journey
+              -- folds a real tree edge, so it needs all four (A-014).
+              cfgApplicationPolicy = appPin
+            , cfgActivePolicy = activePin
+            , cfgAbsentPolicy = absentPin
+            , cfgTerminalPolicy = terminalPin
+            , cfgConsumerScript = SBS.empty
             , network = Testnet
             }
 
@@ -1312,8 +1371,9 @@ submitWithGenesis submit unsigned = do
 -- Narration helpers
 -- ---------------------------------------------------------
 
--- | One narration line: what the runner did and what it
--- observed.
+{- | One narration line: what the runner did and what it
+observed.
+-}
 emit :: String -> String -> IO ()
 emit stepName detail =
     putStrLn ("[journey] " <> stepName <> ": " <> detail)

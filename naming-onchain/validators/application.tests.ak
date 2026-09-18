@@ -1,6 +1,6 @@
 use cardano/address
-use representative
-use application.{Cancel, Fold, InsertApproval, Maintain, Recover, Retire, WithdrawApproval}
+use application
+use application.{Maintain, Recover, Retire}
 use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/assets.{add, from_lovelace, zero}
@@ -18,6 +18,7 @@ use fixtures.{
   with_quorum,
 
 }
+use naming
 use naming.{RetirementQuorum, mpfs_state_hash, mpfs_state_policy}
 
 // ===========================================================================
@@ -226,326 +227,9 @@ test maintenance_identity_candidate_accepts() {
 // stored refund destination
 // ===========================================================================
 
-fn refund_output(value) {
-  Output {
-    address: refund_output_address,
-    value,
-    datum: InlineDatum(fixtures.as_datum(source_record())),
-    reference_script: None,
-  }
-}
-
-/// LC01-cancellation-stored-refund-accepts: cancellation presenting the
-/// stored refund destination, burning its withdraw approval, refunds
-/// the claim's lovelace to the bound destination.
-test lc01_cancellation_stored_refund_accepts() {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [refund_output(record_value)],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
-fn redirected(value) {
-  let base = refund_output(value)
-  Output { ..base, address: redirected_output_address }
-}
-
-/// LC02-cancellation-redirect-refused: a presented refund address
-/// differing from the stored one refuses.
-test lc02_cancellation_redirect_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: redirected_refund,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        fixtures.as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [redirected(record_value)],
-      [],
-      add(zero, app_policy, redirected_refund, -1),
-      [],
-    ),
-  )
-}
-
-/// LC03-insert-attestation-cancellation-refused: without the withdraw
-/// approval riding the claim there is no stored destination to compare
-/// against and nothing to burn.
-test lc03_cancellation_without_approval_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), record_value)],
-      [refund_output(record_value)],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
-/// Negation of the burn requirement: keeping the approval alive is not
-/// a cancellation.
-test cancellation_without_burn_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [refund_output(record_value)],
-      [],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// Negation of the refund amount: a refund output short of the claim's
-/// lovelace refuses.
-test cancellation_short_refund_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [refund_output(from_lovelace(deposit - 1))],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
-/// Negation of the refund destination: an output at another key does
-/// not satisfy the refund.
-test cancellation_misaddressed_refund_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [redirected(record_value)],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
 // ===========================================================================
 // Fold and retire — the claim/record transitions
 // ===========================================================================
-
-fn representative_name() {
-  blake2b_256("alice")
-}
-
-/// The value a live claim carries: its deposit plus the withdraw
-/// approval under the application policy.
-fn live_claim_value() {
-  claim_value_with_approval(record_value)
-}
-
-/// The burn matching a live claim's approval.
-fn fold_burn() {
-  burn_approval()
-}
-
-/// A fold freezes the four-field datum into the record and consumes the
-/// withdraw approval.
-test fold_freezes_datum_accepts() {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), live_claim_value())],
-      [continuation_output(fixtures.as_datum(source), record_value)],
-      [],
-      fold_burn(),
-      [],
-    ),
-  )
-}
-
-/// Negation: a fold may not alter the datum it freezes.
-test fold_altering_datum_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), live_claim_value())],
-      [continuation_output(
-        fixtures.as_datum(fixtures.maintained_record()),
-        record_value,
-      )],
-      [],
-      fold_burn(),
-      [],
-    ),
-  )
-}
-
-/// Negation: a fold without the withdraw approval riding the claim
-/// refuses — there is nothing to consume.
-test fold_without_approval_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), record_value)],
-      [continuation_output(fixtures.as_datum(source), record_value)],
-      [],
-      fold_burn(),
-      [],
-    ),
-  )
-}
-
-/// Negation: a fold that keeps the approval alive (no burn) refuses.
-test fold_without_burn_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), live_claim_value())],
-      [continuation_output(fixtures.as_datum(source), record_value)],
-      [],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// LC04-folded-claim-cancellation-refused: once the claim has folded,
-/// the approval is consumed — the record carries no withdraw approval
-/// under the application policy — and the Cancel path refuses.
-test lc04_folded_claim_cancellation_refuses() fail {
-  let folded = source_record()
-  let record_value_with_representative =
-    add(record_value, fixtures.rep_policy, fixtures.representative_name, 1)
-  application.application.spend(
-    Some(fixtures.as_datum(folded)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        fixtures.as_datum(folded),
-        record_value_with_representative,
-      )],
-      [refund_output(record_value)],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
-/// LC06-cancellation-replay-refused: replaying a cancellation against
-/// an already-consumed approval refuses — the claim no longer carries
-/// it and the burn cannot be re-executed.
-test lc06_cancellation_replay_refuses() fail {
-  let spent_claim = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(spent_claim)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(spent_claim), record_value)],
-      [refund_output(record_value)],
-      [],
-      burn_approval(),
-      [],
-    ),
-  )
-}
-
-/// Negation of the burn's exactness: consuming the approval twice in
-/// one cancellation (a double burn) refuses.
-test cancel_double_burn_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Cancel {
-      presented_refund: refund_destination,
-    },
-    self_ref,
-    tx(
-      [claim_input(
-        fixtures.as_datum(source),
-        claim_value_with_approval(record_value),
-      )],
-      [refund_output(record_value)],
-      [],
-      add(zero, app_policy, refund_destination, -2),
-      [],
-    ),
-  )
-}
 
 /// Negation: a retire that smuggles the record through as a
 /// continuation refuses.
@@ -553,10 +237,7 @@ test retire_with_continuation_refuses() fail {
   let source = source_record()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire {
-      representatives: [representative_name()],
-      key: "alice",
-    },
+    Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
     tx(
       [claim_input(fixtures.as_datum(source), record_value)],
@@ -571,102 +252,6 @@ test retire_with_continuation_refuses() fail {
 // ===========================================================================
 // The application policy's mint purpose — withdraw approvals
 // ===========================================================================
-
-fn approval_mint(quantity: Int) {
-  add(zero, app_policy, refund_destination, quantity)
-}
-
-/// Minting a withdraw approval binds the refund destination in the
-/// asset name, on the controller's signature.
-test withdraw_approval_binds_destination_accepts() {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx([], [], [controller], approval_mint(1), []),
-  )
-}
-
-/// Negation: without the controller's signature no approval mints.
-test withdraw_approval_without_controller_refuses() fail {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx([], [], [], approval_mint(1), []),
-  )
-}
-
-/// Negation: the approval's name must be the bound destination.
-test withdraw_approval_name_mismatch_refuses() fail {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx(
-      [],
-      [],
-      [controller],
-      add(zero, app_policy, redirected_refund, 1),
-      [],
-    ),
-  )
-}
-
-/// Negation: the approval mints exactly once.
-test withdraw_approval_wrong_quantity_refuses() fail {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx([], [], [controller], approval_mint(2), []),
-  )
-}
-
-/// The fold/cancellation burn the spend purpose itself demands: exactly
-/// -1, riding a live input at the application address that carries the
-/// approval. Unsigned — the approval token is the authorization, and
-/// the LC rows demand no signers.
-test cancel_burn_riding_claim_accepts() {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx(
-      [claim_input(
-        as_datum(source_record()),
-        claim_value_with_approval(record_value),
-      )],
-      [],
-      [],
-      approval_mint(-1),
-      [],
-    ),
-  )
-}
-
-/// Negation: a burn with no claim input carrying the approval refuses —
-/// the approval cannot leave the ledger without the claim it binds.
-test cancel_burn_without_claim_refuses() fail {
-  application.application.mint(
-    WithdrawApproval {
-      controller,
-      destination: refund_destination,
-    },
-    app_policy,
-    tx([], [], [], approval_mint(-1), []),
-  )
-}
 
 // ===========================================================================
 // Recovery — the LR rows (issue #62, RED: Recover does not exist yet)
@@ -719,7 +304,6 @@ test lr01_recovery_accepts() {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -754,6 +338,8 @@ const recovery_fresh_address2 =
 const recovery_script_reveal =
   #"710102030405060708090a0b0c0d0e0f101112131415161718191a1b1c"
 
+/// `LR06`: the commitment WITHOUT its domain separation — the forged
+/// digest that passes iff the separation is dropped.
 fn forged_commitment(revealed: ByteArray) -> ByteArray {
   blake2b_256(revealed)
 }
@@ -765,7 +351,6 @@ test lr02_wrong_reveal_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_wrong_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -789,7 +374,6 @@ test lr03_missing_signer_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -824,7 +408,6 @@ test lr04_replay_refuses() fail {
     Some(fixtures.as_datum(successor_as_source)),
     Recover {
       revealed_control: consumed_reveal,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -890,7 +473,6 @@ test lr06_forged_digest_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -914,7 +496,6 @@ test lr07_wrong_signer_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -942,37 +523,12 @@ test lr08_missing_fresh_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
     tx(
       [claim_input(fixtures.as_datum(source), recovery_record_value())],
       [continuation_output(fixtures.as_datum(stale), recovery_record_value())],
-      [recovery_revealed_hash],
-      zero,
-      [],
-    ),
-  )
-}
-
-test lr09_representative_tamper_refuses() fail {
-  let source = recovery_source()
-  let successor = recovery_successor()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Recover {
-      revealed_control: recovery_revealed,
-      representatives: [recovery_rep_tampered],
-      registry: app_policy,
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), recovery_record_value())],
-      [continuation_output(
-        fixtures.as_datum(successor),
-        recovery_record_value(),
-      )],
       [recovery_revealed_hash],
       zero,
       [],
@@ -987,7 +543,6 @@ test lr10_registry_tamper_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: rep_policy,
     },
     self_ref,
@@ -1023,7 +578,6 @@ test lr11_quorum_tamper_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -1055,7 +609,6 @@ test recovery_script_reveal_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_script_reveal,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -1090,7 +643,6 @@ test recovery_destination_tamper_refuses() fail {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -1131,9 +683,49 @@ fn retirement_source() {
 }
 
 fn retirement_claim_value() {
-  add(record_value, rep_policy, expected_rep_name("alice"), 1)
+  // #157 D-ASSET: the record carries the ACTIVE token whose asset name
+  // IS the registry key — the hashed representative name is gone.
+  add(record_value, rep_policy, fixtures.registry_key, 1)
 }
 
+
+/// The retirement's owner: any key the approval and its request agree on.
+const retirement_owner = member2
+
+/// #157 F-003 — a retirement books the `updateTerminal` edge, so the LT
+/// positives carry both co-created obligations: the bound approval, and
+/// the completion request that will fold `Update(0x01, 0x02)`.
+fn terminate_approval() -> ByteArray {
+  application.approval_name(
+    3,
+    fixtures.registry_key,
+    retirement_owner,
+    (#"", #""),
+  )
+}
+
+fn retirement_completion_output() -> Output {
+  Output {
+    address: address.from_script(mpfs_state_hash),
+    value: add(from_lovelace(3_000_000), app_policy, terminate_approval(), 1),
+    datum: InlineDatum(
+      naming.MRequestDatum(
+        naming.MRequest {
+          requestToken: naming.MTokenId {
+            assetName: fixtures.mock_registry_token,
+          },
+          requestOwner: retirement_owner,
+          requestKey: fixtures.registry_key,
+          requestValue: naming.MUpdate(#"01", #"02"),
+          tip: 1_000_000,
+          submitted_at: 0,
+          destination: (#"", #""),
+        },
+      ),
+    ),
+    reference_script: None,
+  }
+}
 fn retirement_custody_output(value) {
   Output {
     address: custody_address,
@@ -1143,43 +735,25 @@ fn retirement_custody_output(value) {
   }
 }
 
-/// LT01-controller-retirement-accepts: the controller alone retires; the
-/// representative moves into custody; no quorum signature.
-test lt01_controller_retirement_accepts() {
-  let source = retirement_source()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), retirement_claim_value()),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(retirement_claim_value())],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
 /// LT02-quorum-retirement-accepts: the quorum alone retires with no
 /// controller signature.
 test lt02_quorum_retirement_accepts() {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
     retirement_tx(
       [
         claim_input(fixtures.as_datum(source), retirement_claim_value()),
         fixtures.state_input(),
       ],
-      [retirement_custody_output(retirement_claim_value())],
+      [
+        retirement_custody_output(retirement_claim_value()),
+        retirement_completion_output(),
+      ],
       [member2, member3],
-      zero,
+      add(zero, app_policy, terminate_approval(), 1),
       [],
     ),
   )
@@ -1191,7 +765,7 @@ test lt03_insufficient_quorum_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
     retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
@@ -1209,7 +783,7 @@ test lt03_duplicate_member_refuses() fail {
   let source = retirement_source()
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
     retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
@@ -1237,7 +811,7 @@ test lt03_duplicate_stored_member_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [fixtures.representative_name], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
     retirement_tx(
       [claim_input(fixtures.as_datum(source), retirement_claim_value())],
@@ -1246,146 +820,6 @@ test lt03_duplicate_stored_member_refuses() fail {
       zero,
       [],
     ),
-  )
-}
-
-/// LT08-wrong-retirement-custody-refused: authorized by the controller
-/// but the representative goes anywhere but the custody script — a plain
-/// output elsewhere carrying the representative, with no continuation of
-/// the record, so the stub would accept and only the custody check refuses.
-test lt08_wrong_custody_refuses() fail {
-  let source = retirement_source()
-  let elsewhere =
-    Output {
-      address: refund_output_address,
-      value: retirement_claim_value(),
-      datum: NoDatum,
-      reference_script: None,
-    }
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), retirement_claim_value()),
-        fixtures.state_input(),
-      ],
-      [elsewhere],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// `representative-policy` (issue #77, E-001): retiring a record carrying a
-/// foreign-policy representative refuses — the moved policy must equal the
-/// registry state's expected policy. The claim, burn and custody all move
-/// the name under `foreign_policy` while the spent state pins `rep_policy`.
-test lt08_foreign_policy_refuses() fail {
-  let source = retirement_source()
-  let foreign_value =
-    add(record_value, "foreign_policy", expected_rep_name("alice"), 1)
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), foreign_value),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(foreign_value)],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// Retiring a record under a different spelling refuses even with the
-/// correct registry witness and representative policy.
-test lt08_other_spelling_refuses() fail {
-  let source = retirement_source()
-  let foreign_name = other_spelling_rep_name(fixtures.controller)
-  let foreign_value = add(record_value, rep_policy, foreign_name, 1)
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [foreign_name], key: "alice" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), foreign_value),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(foreign_value)],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// Different spelling bytes refuse even with otherwise valid retirement.
-test lt08_wrong_spelling_bytes_refuses() fail {
-  let source = retirement_source()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: #"00" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), retirement_claim_value()),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(retirement_claim_value())],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// Wrong creation key (NOTE-011): the recomputation over a different key
-/// mismatches the minted commitment and refuses, even with the honest
-/// registry and policy throughout.
-test lt08_wrong_key_refuses() fail {
-  let source = retirement_source()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "bob" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), retirement_claim_value()),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(retirement_claim_value())],
-      [controller],
-      zero,
-      [],
-    ),
-  )
-}
-
-/// Reference path (NOTE-014 item A1): the state is referenced, not spent —
-/// no `Modify`, no state output, no mint. Same custody, same signers as LT01.
-test lt01_reference_state_accepts() {
-  let source = retirement_source()
-  let base =
-    retirement_tx(
-      [claim_input(fixtures.as_datum(source), retirement_claim_value())],
-      [retirement_custody_output(retirement_claim_value())],
-      [controller],
-      zero,
-      [],
-    )
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    fixtures.with_state_reference(base, fixtures.state_input()),
   )
 }
 
@@ -1403,7 +837,7 @@ test retire_forged_reference_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
     fixtures.with_state_reference(base, fixtures.state_input_no_token()),
   )
@@ -1424,7 +858,7 @@ test retire_foreign_datum_reference_refuses() fail {
     )
   application.application.spend(
     Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
+    Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
     fixtures.with_state_reference(base, fixtures.state_input_foreign_datum()),
   )
@@ -1440,490 +874,6 @@ test retire_foreign_datum_reference_refuses() fail {
 // (`Singular.foldOne` `.insert`: approval bound to the datum,
 // `representative-identity`, certified output carrying the minted name).
 
-/// Mirror of the validator's insert-approval name equation, copied — not
-/// called — so the test binds the formula, not the function.
-fn insert_approval_name_mirror() {
-  blake2b_256(
-    bytearray.concat(
-      bytearray.concat(
-        bytearray.concat(
-          bytearray.from_string(@"singular/naming/insert-approval/v1"),
-          #"00",
-        ),
-        fixtures.control,
-      ),
-      fixtures.commitment,
-    ),
-  )
-}
-
-/// Copy the operator equation using stdlib primitives, not the implementation.
-fn expected_rep_name(key: ByteArray) -> ByteArray {
-  blake2b_256(key)
-}
-
-fn other_spelling_rep_name(_key: ByteArray) -> ByteArray {
-  blake2b_256("bob")
-}
-
-/// The representative name the insert fold must mint for the source
-/// request key. Copied, not called.
-fn insert_rep_name_mirror() {
-  expected_rep_name("alice")
-}
-
-fn insert_claim_value() {
-  add(record_value, app_policy, insert_approval_name_mirror(), 1)
-}
-
-fn insert_burn() {
-  add(
-    add(zero, app_policy, insert_approval_name_mirror(), -1),
-    rep_policy,
-    insert_rep_name_mirror(),
-    1,
-  )
-}
-
-fn insert_record_value() {
-  add(record_value, rep_policy, insert_rep_name_mirror(), 1)
-}
-
-/// Minting an insert approval binds the proposal core (control address
-/// and next-control commitment) in the asset name, on the controller's
-/// signature.
-test insert_approval_binds_proposal_accepts() {
-  application.application.mint(
-    InsertApproval {
-      controller,
-      control: fixtures.control,
-      commitment: fixtures.commitment,
-    },
-    app_policy,
-    tx([], [], [controller], add(
-      zero,
-      app_policy,
-      insert_approval_name_mirror(),
-      1,
-    ), []),
-  )
-}
-
-/// Negation: the approval's name must be the bound proposal hash.
-test insert_approval_name_mismatch_refuses() fail {
-  application.application.mint(
-    InsertApproval {
-      controller,
-      control: fixtures.control,
-      commitment: fixtures.commitment,
-    },
-    app_policy,
-    tx([], [], [controller], add(zero, app_policy, refund_destination, 1), []),
-  )
-}
-
-/// Negation: without the controller's signature no insert approval mints.
-test insert_approval_without_controller_refuses() fail {
-  application.application.mint(
-    InsertApproval {
-      controller,
-      control: fixtures.control,
-      commitment: fixtures.commitment,
-    },
-    app_policy,
-    tx(
-      [],
-      [],
-      [],
-      add(zero, app_policy, insert_approval_name_mirror(), 1),
-      [],
-    ),
-  )
-}
-
-/// The fold-time burn of an insert approval rides the claim that carries
-/// it, exactly as the withdraw-approval burn does.
-test insert_burn_riding_claim_accepts() {
-  application.application.mint(
-    InsertApproval {
-      controller,
-      control: fixtures.control,
-      commitment: fixtures.commitment,
-    },
-    app_policy,
-    tx(
-      [claim_input(fixtures.as_datum(source_record()), insert_claim_value())],
-      [],
-      [],
-      insert_burn(),
-      [],
-    ),
-  )
-}
-
-/// An insert fold freezes the datum, consumes the bound approval, and
-/// the record inherits the claim's value minus the approval plus the
-/// representative the fold mints under the representative policy.
-test fold_insert_freezes_and_mints_accepts() {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), insert_record_value())],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (`representative-identity`): a fold naming a representative
-/// the record's control does not determine refuses.
-test fold_insert_tampered_representative_refuses() fail {
-  let source = source_record()
-  let tampered = expected_rep_name("bob")
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [tampered],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), insert_record_value())],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (certified output): a fold whose record does not carry the
-/// named representative refuses.
-test fold_insert_missing_record_representative_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), record_value)],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (insert binding): a withdraw approval cannot ride an insert
-/// fold — the burned approval must be the datum-bound insert approval.
-test fold_insert_withdraw_approval_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), live_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), insert_record_value())],
-      [],
-      fold_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (`representative-policy`, issue #77 E-001): a fold carrying the
-/// right name under a foreign policy refuses — the moved representative's
-/// policy must equal the registry state's expected policy, not just any
-/// policy. The mint and the record both move the name under `foreign_policy`
-/// while the spent state pins `rep_policy`.
-test fold_insert_foreign_policy_refuses() fail {
-  let source = source_record()
-  let foreign_mint =
-    add(
-      add(zero, app_policy, insert_approval_name_mirror(), -1),
-      "foreign_policy",
-      insert_rep_name_mirror(),
-      1,
-    )
-  let foreign_record_value =
-    add(record_value, "foreign_policy", insert_rep_name_mirror(), 1)
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), foreign_record_value)],
-      [],
-      foreign_mint,
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (`representative-identity` with registry, NOTE-007): a fold
-/// carrying the honest policy but a name bound to a foreign registry
-/// refuses — association is recomputed from the supplied state's own
-/// token, not from the redeemer.
-test fold_insert_other_spelling_refuses() fail {
-  let source = source_record()
-  let foreign_name = other_spelling_rep_name(fixtures.controller)
-  let foreign_mint =
-    add(
-      add(zero, app_policy, insert_approval_name_mirror(), -1),
-      rep_policy,
-      foreign_name,
-      1,
-    )
-  let foreign_record_value = add(record_value, rep_policy, foreign_name, 1)
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [foreign_name],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), foreign_record_value)],
-      [],
-      foreign_mint,
-      native_modify(),
-    ),
-  )
-}
-
-/// Boundary control (NOTE-009 §3): an honest insert fold whose only state
-/// input carries TWO cage tokens refuses at the authentication boundary —
-/// quantity is established where authentication happens, not incidentally.
-test fold_insert_two_token_state_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input_two_tokens(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), insert_record_value())],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Boundary control (NOTE-009 §3): an honest insert fold whose state-address
-/// input carries NO cage token (request-shaped) refuses at the boundary.
-test fold_insert_untokened_state_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input_no_token(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), insert_record_value())],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-/// Negation (path separation): an insert approval cannot be consumed by
-/// an empty-representatives fold — that path is the withdraw-approval
-/// fold and demands a canonical approval name.
-test fold_empty_with_insert_approval_refuses() fail {
-  let source = source_record()
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [],
-    },
-    self_ref,
-    tx(
-      [claim_input(fixtures.as_datum(source), insert_claim_value())],
-      [continuation_output(fixtures.as_datum(source), record_value)],
-      [],
-      insert_burn(),
-      native_modify(),
-    ),
-  )
-}
-
-fn spelling_fold_tx(name: ByteArray, key: ByteArray) {
-  let request_datum: Data = naming.MRequestDatum(naming.MRequest {
-    requestToken: naming.MTokenId { assetName: mock_registry_token },
-    requestOwner: controller,
-    requestKey: key,
-    requestValue: naming.MInsert(name),
-    tip: 0,
-    submitted_at: 0,
-  })
-  let modify: Data = naming.MirrorModify([naming.MAUpdate([])])
-  tx(
-    [
-      claim_input(fixtures.as_datum(source_record()), insert_claim_value()),
-      fixtures.state_input(),
-      transaction.Input {
-        output_reference: transaction.OutputReference {
-          transaction_id: #"1234", output_index: 0,
-        },
-        output: Output {
-          address: fixtures.app_address,
-          value: record_value,
-          datum: InlineDatum(request_datum),
-          reference_script: None,
-        },
-      },
-    ],
-    [continuation_output(fixtures.as_datum(source_record()), add(record_value, rep_policy, name, 1))],
-    [],
-    add(add(zero, app_policy, insert_approval_name_mirror(), -1), rep_policy, name, 1),
-    [Pair(transaction.Spend(fixtures.state_ref), modify)],
-  )
-}
-
-test fold_spelling_hash_accepts() {
-  let name = blake2b_256("alice")
-  application.application.spend(
-    Some(fixtures.as_datum(source_record())),
-    Fold { representatives: [name] }, self_ref,
-    spelling_fold_tx(name, "alice"),
-  )
-}
-
-test fold_wrong_spelling_hash_refuses() fail {
-  let name = blake2b_256("bob")
-  application.application.spend(
-    Some(fixtures.as_datum(source_record())),
-    Fold { representatives: [name] }, self_ref,
-    spelling_fold_tx(name, "alice"),
-  )
-}
-
-fn spelling_request(key: ByteArray, name: ByteArray) -> transaction.Input {
-  let datum: Data = naming.MRequestDatum(naming.MRequest {
-    requestToken: naming.MTokenId { assetName: mock_registry_token },
-    requestOwner: controller, requestKey: key, requestValue: naming.MInsert(name),
-    tip: 0, submitted_at: 0,
-  })
-  transaction.Input {
-    output_reference: transaction.OutputReference { transaction_id: #"1234", output_index: 0 },
-    output: Output { address: fixtures.app_address, value: record_value,
-      datum: InlineDatum(datum), reference_script: None },
-  }
-}
-
-fn native_modify() {
-  let modify: Data = naming.MirrorModify([naming.MAUpdate([])])
-  [Pair(transaction.Spend(fixtures.state_ref), modify)]
-}
-
-/// A correctly named but rejected native request cannot authorize a mint.
-test fold_rejected_spelling_request_refuses() fail {
-  let name = blake2b_256("alice")
-  let base = spelling_fold_tx(name, "alice")
-  let rejected: Data = naming.MirrorModify([naming.MARejected])
-  application.application.spend(
-    Some(fixtures.as_datum(source_record())),
-    Fold { representatives: [name] }, self_ref,
-    transaction.Transaction { ..base, redeemers: [Pair(transaction.Spend(fixtures.state_ref), rejected)] },
-  )
-}
-
-/// Issue #110 regression probe: B has an authentic different token but copies
-/// A's configured policy. Retirement must not associate A's NFT with B.
-test lt01_foreign_registry_reference_refuses() fail {
-  let source = retirement_source()
-  let base = retirement_tx(
-    [claim_input(fixtures.as_datum(source), retirement_claim_value())],
-    [retirement_custody_output(retirement_claim_value())],
-    [controller], zero, [],
-  )
-  let canonical = fixtures.state_input()
-  let foreign = transaction.Input {
-    ..canonical,
-    output: Output {
-      ..canonical.output,
-      value: add(record_value, naming.mpfs_state_hash, fixtures.foreign_registry_token, 1),
-    },
-  }
-  let witnessed = fixtures.with_state_reference(base, foreign)
-  expect application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    witnessed,
-  )
-  representative.representative.withdraw(
-    app_policy, bytearray.concat(naming.mpfs_state_hash, mock_registry_token),
-    #"", address.Script(rep_policy), witnessed,
-  )
-}
-
-test retire_without_representative_witness_refuses() fail {
-  let source = retirement_source()
-  let base = retirement_tx(
-    [claim_input(fixtures.as_datum(source), retirement_claim_value())],
-    [retirement_custody_output(retirement_claim_value())], [controller], zero, [],
-  )
-  application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" }, self_ref,
-    transaction.Transaction { ..base, withdrawals: [] },
-  )
-}
-
 // Permanent second-asset regression controls.
 const extra_policy = #"ffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544"
 
@@ -1936,7 +886,6 @@ test t146_lr01_with_extra_token_refuses() {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -1947,25 +896,6 @@ test t146_lr01_with_extra_token_refuses() {
         extra_token(recovery_record_value()),
       )],
       [recovery_revealed_hash],
-      zero,
-      [],
-    ),
-  )
-}
-
-test t146_lt01_with_extra_token_refuses() {
-  let source = retirement_source()
-  !application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Retire { representatives: [expected_rep_name("alice")], key: "alice" },
-    self_ref,
-    retirement_tx(
-      [
-        claim_input(fixtures.as_datum(source), extra_token(retirement_claim_value())),
-        fixtures.state_input(),
-      ],
-      [retirement_custody_output(extra_token(retirement_claim_value()))],
-      [controller],
       zero,
       [],
     ),
@@ -2132,7 +1062,6 @@ test t146_recover_extra_token_refuses() {
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
-      representatives: [recovery_rep],
       registry: app_policy,
     },
     self_ref,
@@ -2145,28 +1074,6 @@ test t146_recover_extra_token_refuses() {
       [recovery_revealed_hash],
       zero,
       [],
-    ),
-  )
-}
-
-test t146_fold_extra_token_refuses() {
-  let source = source_record()
-  !application.application.spend(
-    Some(fixtures.as_datum(source)),
-    Fold {
-      representatives: [insert_rep_name_mirror()],
-    },
-    self_ref,
-    tx(
-      [
-        claim_input(fixtures.as_datum(source), insert_claim_value()),
-        fixtures.state_input(),
-        spelling_request("alice", expected_rep_name("alice")),
-      ],
-      [continuation_output(fixtures.as_datum(source), extra_token(insert_record_value()))],
-      [],
-      insert_burn(),
-      native_modify(),
     ),
   )
 }

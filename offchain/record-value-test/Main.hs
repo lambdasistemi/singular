@@ -43,12 +43,18 @@ main = do
             refused (_cekReportResult report) `shouldBe` True
             _cekReportLogs report `shouldBe` ["record-value-preservation"]
         it "diagnoses a polluted recovery input by name" $ do
-            let redeemer = Constr 4 [B "reveal", List [B "representative"], B "registry"]
+            -- #157 N-redeemers: `Recover { revealed_control, registry }`
+            -- is constructor 2 of the three that survived the claim
+            -- lifecycle's removal. The polluted record still refuses at
+            -- the single-asset check, before recovery is considered.
+            let redeemer = Constr 2 [B "reveal", B "registry"]
                 report = evaluate (recordContext True True redeemer)
             refused (_cekReportResult report) `shouldBe` True
             _cekReportLogs report `shouldBe` ["record-single-asset"]
         it "diagnoses a polluted retirement input by name" $ do
-            let redeemer = Constr 3 [List [B "representative"], B "alice"]
+            -- `Retire { key, revealed_control }` is constructor 1, and it
+            -- carries the registry key it ends (#157 N6).
+            let redeemer = Constr 1 [B "alice", B "reveal"]
                 report = evaluate (recordContext True True redeemer)
             refused (_cekReportResult report) `shouldBe` True
             _cekReportLogs report `shouldBe` ["record-single-asset"]

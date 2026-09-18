@@ -43,53 +43,102 @@ coverage plan and the parser rejects the string. A row prints as
 executed only when a run receipt for it exists and matches the
 current base (`--receipts DIR` or `CONFORMANCE_RECEIPTS`).
 
-## Current ownerless integration
+## The registry-mode contract change
 
-The released interface follows the ownerless six-field state contract.
-The historical reports below retain their original transaction identities,
-measurements and limitations; they are not current execution claims.
-Coverage requires fresh receipts bound to the source and blueprint being
-replayed. A build or a green check of expected debt grants no coverage.
+This is a **contract change**, declared here rather than discovered by a
+consumer through a failing decode. Anything that reads Singular's datums or
+builds its redeemers changes with it.
+
+### The state datum: six fields become eight
+
+| # | before | after |
+| --- | --- | --- |
+| 0 | `root` | `root` |
+| 1 | `maxFee` | `maxFee` |
+| 2 | `processTime` | `processTime` |
+| 3 | `retractTime` | `retractTime` |
+| 4 | `repPolicy` | `applicationPolicy` |
+| 5 | `consumerPin` | `activePolicy` |
+| 6 | — | `absentPolicy` |
+| 7 | — | `terminalPolicy` |
+
+`consumerPin` is **deleted** with the pinned consumer script it named; the
+mandatory withdrawal that script required is deleted with it. `repPolicy` is
+**renamed** `activePolicy` and keeps its meaning — the policy that mints the
+token standing for a live registration. Three pins are **new**: the
+application policy that certifies requests, and the absent and terminal token
+policies.
+
+A decoder that reads field 4 as the representative policy now reads the
+application policy, and a decoder that reads six fields refuses an
+eight-field datum. Both are the intended consequence, and both are exercised:
+the state round-trip row round-trips all four derived pins through a boot
+datum, and its armed control demands the old six-field encoding and fails.
+
+None of the four is a literal. Each is derived, for the registry identity a
+boot creates, from the two partitions' `script-identity.json`: the application
+policy is the naming application script's applied hash, and the three token
+policies are the one parametrised witness script applied at kinds 0, 1 and 2.
+
+### The operation: a fourth constructor
+
+| index | before | after |
+| --- | --- | --- |
+| 0 | `Insert value` | `Insert value` |
+| 1 | `Delete value` | `Delete value` |
+| 2 | `Update old new` | `Update old new` |
+| 3 | — | `Read value` |
+
+The three published indices do not move. A read leaves its key exactly where
+it is, and on chain only the terminal codec byte is admitted for it.
+
+### The request: a destination
+
+`Request` gains one field, appended last: `destination`, a pair of the binary
+address bytes the minted token must land at and the hash of the inline datum
+that output must carry. An empty datum hash means a datum-less output. A
+request that mints nothing names no destination.
+
+### The cage datum: a third constructor
+
+| index | before | after |
+| --- | --- | --- |
+| 0 | `RequestDatum` | `RequestDatum` |
+| 1 | `StateDatum` | `StateDatum` |
+| 2 | — | `AbsentCustody { key, refund }` |
+
+### Redeemers that are gone
+
+The naming application's spend redeemer becomes `Maintain`, `Retire`,
+`Recover`; `Fold` and `Cancel` are removed with the pending-claim lifecycle
+they served. Its mint redeemer becomes the single `Approve { edge, key, owner,
+destination }`; `WithdrawApproval` and `InsertApproval` are removed. The
+representative policy is retired in favour of the one parametrised witness
+policy, instantiated three times.
+
+### What a reader should do
+
+Read tokens, never the root. The presence of an active witness under the
+active policy, at the asset name equal to the registry key, is a live
+registration; the presence of a terminal witness is a name that is over. The
+asset name is the key itself — there is no hashed representative name any
+more.
+
+## Current registry-mode integration
+
+The released interface follows the eight-field registry-mode state contract
+above. The historical reports below retain their original transaction
+identities, measurements and limitations; they are not current execution
+claims. Coverage requires fresh receipts bound to the source and blueprint
+being replayed. A build or a green check of expected debt grants no coverage.
 
 | Surface | Current contract and remaining limit |
-|---|---|
-| State codec, CS01/CS02/CS08 | The six fields are root, maxFee, processTime, retractTime, repPolicy and consumerPin. CS08 exercises Base and AltRepPolicy with the real consumer pin. Historical owner/stake_script receipts do not establish this codec. |
-| Blueprint encodings, CS01 | Fourteen live types: thirteen encoder/decoder pairs plus the Hook encoder. Hook has no Haskell FromData instance; no Hook decoder round trip is claimed. |
-| Parameters, CS06 | State, consumer and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The former state allowlist is absent. |
+| --- | --- |
+| State codec, CS01/CS02/CS08 | The eight fields are root, maxFee, processTime, retractTime, applicationPolicy, activePolicy, absentPolicy and terminalPolicy. The state round-trip row boots two cages and compares all eight fields submitted versus chain-observed, including the four derived pins; its armed control demands the old six-field encoding and fails. Historical owner, stake_script and consumer-pin receipts do not establish this codec. |
+| Blueprint encodings, CS01 | Every encoder/decoder pair in the registry types is compared against the compiled blueprint's own declared schema, constructor index and field order — including the appended read operation, the appended request destination and the appended custody datum. The retired consumer encoder is gone with its script. |
+| Parameters, CS06 | State and staking declare zero parameters. Request retains two ordered parameters, statePolicyId and cageTokenName, and order discrimination. The witness policy declares two, kind and registry. The former state allowlist is absent. |
 | Address derivation, CA04 | State uses the production derivation compared with the actual chain address. The same comparison rejects an erroneous extra application with every other input fixed. Its receipt records addresses, arity, decisions and the off-chain identity venue; it is not a phase-2 rejection. Request retains applied-versus-unapplied address discrimination. |
 | Generic observations, CG11/CG12/CG19 | All three require observe-and-report and remain held-q002. Current refusals need structural phase/script attribution and an accepting control; a missing named failure branch remains an explicit limit. An observation does not fulfill the consumer requirement. |
-| Superseded authority rows | CG13 and CG20 join the superseded owner-role claims. Their identities and historical evidence remain in the inventory alongside CG16/CG17. No row is removed or credited by this disposition. |
-| Spending constructors, CS03 | Contribute 1, Modify 2 and Retract 3 have accepting routes. End 0 and Sweep 4 remain explicit residuals inside the partial receipt. Every constructor still owes an accepting witness or an action-attributed refusal with a structured index discriminator. |
-| Request and mint constructors, CS05 | Update 0, Rejected 1 and Minting 0 retain accepting routes. Burning 2 and Migrating 1 remain residuals inside the partial receipt. Migrating currently refuses unconditionally; the missing attributed witness and index discriminator remain owed. The old allowlist explanation is historical. |
-| Fork correspondence, CS07 | E17's product repair and its released journey do not close this conformance row. Issue #81 stays open under E18 for fresh correspondence evidence. |
-
-Partial is a distinct state in receipts and inventory output. A legacy
-CS03/CS05 receipt without constructor accounting is incomplete, never
-covered. Unstructured refusal text cannot earn constructor credit. A
-receipt claiming success with a residual, or omitting a constructor, is
-rejected. The full constructor obligation remains above the partial
-observation.
-
-The generic session registers the actual consumer script reward account
-before any Hook withdrawal. Registration is setup evidence; a ledger
-setup refusal cannot establish a validator property. The same real Hook
-withdrawal and redeemer remain in the fold builders.
-
-```mermaid
-flowchart LR
-    A[Current source and blueprint] -->|execute with controls| B[Bound receipts]
-    B -->|complete witnesses| C[Executed row evidence]
-    B -->|named missing constructors| D[Partial]
-    B -->|unmet consumer requirement| E[Held]
-    D -->|retains debt| F[Strict completion incomplete]
-    E -->|retains debt| F
-```
-
-The protected coverage population stays **196**, with both required
-implementation layers. Strict completion remains incomplete at
-196 mapping issues, 196 layer issues, zero findings, 83 unclassified
-obligations and zero stale mappings. The bounded E17 release does not
-waive this E18 debt or the separate #87 Blaster work.
 
 ## Historical execution reports
 

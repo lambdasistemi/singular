@@ -5,3 +5,4 @@
 __pycache__/
 /gate.sh
 /.gate/
+conformance/dist-newstyle/

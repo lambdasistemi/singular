@@ -14,9 +14,12 @@ blueprint JSON itself.
 
 If the blueprint does not declare enough to check a given type, the
 row reports precisely which type and why, rather than weakening to a
-round trip. All fourteen types are declared; there are no gaps.
-ConsumerRedeemer is encoder-only (no FromData exists): its schema,
-index and field shape are checked, explicitly not a round trip.
+round trip. Every declared type is checked; there are no gaps.
+
+#157 C10: the consumer redeemer is gone with the consumer script, so
+its encoder-only row goes with it — there is no blueprint definition
+left for it to check against, and a row that checked nothing would be
+worse than an absent one.
 
 The executing negative control (@CONFORMANCE_CONTROL=wrong-index@)
 demands index 99 for 'End': the real 'End' (index 0) must fail its
@@ -28,6 +31,7 @@ module Conformance.CS01 (
 ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
+import Control.Monad (when)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as AesonTypes
 import Data.ByteString qualified as BS
@@ -59,7 +63,6 @@ import Singular.Registry.TxBuilder.Internal (
 
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     Migration (..),
     MintRedeemer (..),
     Neighbor (..),
@@ -96,6 +99,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
         Left err -> failWith ("blueprint JSON does not parse: " <> err)
         Right (val :: Aeson.Value) -> pure (extractTitles val)
     let defs = definitions bp
+    when (control == Just "blueprint-wrong-arity") (armWrongArity defs)
     nTypes <- checkAll defs titleMap spoil
     fsize <- getFileSize blueprintPath
     nodeVer <- readNodeVersion
@@ -122,6 +126,42 @@ runCS01 blueprintPath receiptsDir base dirty = do
     writeReceiptFile receiptsDir receipt
     emit "row" ("CS01: ACCEPTED " <> show nTypes <> " types vs blueprint, size=" <> show fsize)
 
+{- | The armed control for the fixed-tuple schema (#157 D-DEST): demand
+that a THREE-element list validate against the two-element destination
+pair. It cannot, because a tuple is validated at exact arity — so the
+run exits nonzero and the row is shown able to notice a loosened
+oracle. A homogeneous `SList` rule would accept it, which is precisely
+the mistake this control exists to catch.
+-}
+armWrongArity :: Map.Map Text Schema -> IO ()
+armWrongArity defs = do
+    emit
+        "control"
+        "CS01 ARMED (blueprint-wrong-arity): demanding a three-element \
+        \list validate as the two-element destination pair"
+    schema <- case Map.lookup destinationTupleDef defs of
+        Just sc -> pure sc
+        Nothing ->
+            failWith
+                ( "CS01 control cannot arm: no "
+                    <> T.unpack destinationTupleDef
+                    <> " definition in the blueprint"
+                )
+    let tooLong = List [B "a", B "b", B "c"]
+    if validateData defs schema tooLong
+        then
+            emit
+                "control-wrong-arity"
+                "a three-element list validated as the pair"
+        else
+            failWith
+                "CS01 ARMED (blueprint-wrong-arity): the three-element \
+                \list was refused, as the contract requires"
+
+-- | The blueprint's own name for the destination pair's schema.
+destinationTupleDef :: Text
+destinationTupleDef = "Tuple<<ByteArray,ByteArray>>"
+
 -- | Check every type; spoil mode demands a wrong index for End.
 -- Returns the checked type count for the terminal (NOTE-063: the
 -- list drives execution, so the count cannot drift from it).
@@ -142,7 +182,6 @@ checkAll defs titles spoil = do
             , ("UpdateRedeemer", checkUpdateRedeemer defs spoil)
             , ("ProofStep", checkProofStep defs)
             , ("Neighbor", checkNeighbor defs)
-            , ("ConsumerRedeemer", checkConsumerRedeemer defs)
             ]
     mapM_ snd checks
     -- NOTE-046: checkOptionStake retired — the candidate blueprint
@@ -178,6 +217,7 @@ sampleRequest =
         , requestValue = OpInsert "cs01-value"
         , requestFee = 1000000
         , requestSubmittedAt = 1234567890
+        , requestDestination = ("cs01-address", "cs01-datum-hash")
         }
 
 sampleState :: OnChainTokenState
@@ -187,18 +227,20 @@ sampleState =
         , stateMaxFee = 1000000
         , stateProcessTime = 30000
         , stateRetractTime = 30000
-        , stateRepPolicy = BuiltinByteString (BS.replicate 28 8)
-        , stateConsumerPin = BuiltinByteString (BS.replicate 28 9)
+        , stateAppPolicy = BuiltinByteString (BS.replicate 28 6)
+        , stateActivePolicy = BuiltinByteString (BS.replicate 28 8)
+        , stateAbsentPolicy = BuiltinByteString (BS.replicate 28 9)
+        , stateTerminalPolicy = BuiltinByteString (BS.replicate 28 10)
         }
 
--- | Second round-trip sample varying the representative policy
--- (NOTE-046: the old stake None/Some variation has no subject —
--- the state carries no stake script. Single-variable difference
--- keeps the pair discriminating).
+-- | Second round-trip sample varying one pin (NOTE-046: the old stake
+-- None/Some variation has no subject — the state carries no stake
+-- script). A single-variable difference keeps the pair discriminating,
+-- and the pin it varies is the one #157 C7 renamed the active policy.
 sampleStateAltPolicy :: OnChainTokenState
 sampleStateAltPolicy =
     sampleState
-        { stateRepPolicy = BuiltinByteString (BS.replicate 28 7)
+        { stateActivePolicy = BuiltinByteString (BS.replicate 28 7)
         }
 
 sampleMigration :: Migration
@@ -254,7 +296,7 @@ requireIndex other _ label =
 checkTokenId :: Map.Map Text Schema -> IO ()
 checkTokenId defs = do
     requireRoundTripReal sampleToken "OnChainTokenId"
-    requireSchema defs "lib/TokenId" (toD sampleToken) "OnChainTokenId"
+    requireSchema defs "types/TokenId" (toD sampleToken) "OnChainTokenId"
     requireIndex (toD sampleToken) 0 "OnChainTokenId"
 
 checkTxOutRef :: Map.Map Text Schema -> IO ()
@@ -276,15 +318,21 @@ checkOperation defs = do
     let ins = OpInsert "v1"
         del = OpDelete "v1"
         upd = OpUpdate "old" "new"
+        rd = OpRead "\x02"
     requireRoundTripReal ins "OpInsert"
     requireRoundTripReal del "OpDelete"
     requireRoundTripReal upd "OpUpdate"
+    requireRoundTripReal rd "OpRead"
     requireSchema defs "types/Operation" (toD ins) "OpInsert"
     requireSchema defs "types/Operation" (toD del) "OpDelete"
     requireSchema defs "types/Operation" (toD upd) "OpUpdate"
+    requireSchema defs "types/Operation" (toD rd) "OpRead"
     requireIndex (toD ins) 0 "OpInsert"
     requireIndex (toD del) 1 "OpDelete"
     requireIndex (toD upd) 2 "OpUpdate"
+    -- #157 C1: the read is APPENDED at index 3; the three published
+    -- indices do not move, and this row is what says so.
+    requireIndex (toD rd) 3 "OpRead"
 
 checkRequest :: Map.Map Text Schema -> IO ()
 checkRequest defs = do
@@ -304,12 +352,17 @@ checkCageDatum :: Map.Map Text Schema -> IO ()
 checkCageDatum defs = do
     let req = RequestDatum sampleRequest
         st = StateDatum sampleState
+        custody = AbsentCustody "cs01-key" "cs01-refund"
     requireRoundTripReal req "RequestDatum"
     requireRoundTripReal st "StateDatum"
+    requireRoundTripReal custody "AbsentCustody"
     requireSchema defs "types/CageDatum" (toD req) "RequestDatum"
     requireSchema defs "types/CageDatum" (toD st) "StateDatum"
+    requireSchema defs "types/CageDatum" (toD custody) "AbsentCustody"
     requireIndex (toD req) 0 "RequestDatum"
     requireIndex (toD st) 1 "StateDatum"
+    -- #157 D-CUSTODY: appended at index 2; 0 and 1 do not move.
+    requireIndex (toD custody) 2 "AbsentCustody"
 
 checkMintRedeemer :: Map.Map Text Schema -> IO ()
 checkMintRedeemer defs = do
@@ -396,28 +449,6 @@ checkNeighbor defs = do
     requireSchema defs "aiken/merkle_patricia_forestry/Neighbor" (toD sampleNeighbor) "Neighbor"
     requireIndex (toD sampleNeighbor) 0 "Neighbor"
 
--- | Hook encoder (NOTE-063): ToData-only coverage. No FromData
--- instance exists for ConsumerRedeemer and none is fabricated —
--- this checks the encoder (schema, index, field shape) against the
--- live blueprint plus malformed refusals, explicitly not a round
--- trip.
-checkConsumerRedeemer :: Map.Map Text Schema -> IO ()
-checkConsumerRedeemer defs = do
-    let hookD = toD Hook
-    requireSchema defs "consumer/ConsumerRedeemer" hookD "Hook"
-    requireIndex hookD 0 "Hook"
-    let badIx = Constr 1 []
-        badShape = Constr 0 [B (BS.replicate 28 1)]
-    case Map.lookup "consumer/ConsumerRedeemer" defs of
-        Nothing -> failWith "CS01 gap: no consumer/ConsumerRedeemer definition"
-        Just schema -> do
-            if validateData defs schema badIx
-                then failWith "CS01 control failed: Constr 1 validates against ConsumerRedeemer"
-                else emit "control-hook-index" "wrong Hook index correctly rejected"
-            if validateData defs schema badShape
-                then failWith "CS01 control failed: Constr 0 with fields validates against ConsumerRedeemer"
-                else emit "control-hook-shape" "Hook with fields correctly rejected"
-
 -- ---------------------------------------------------------
 -- Round trips through the real instances (mirrored decoding)
 -- ---------------------------------------------------------
@@ -456,25 +487,30 @@ instance RealFromData OnChainOperation where
     realFromData (Constr 0 [B v]) = Just (OpInsert v)
     realFromData (Constr 1 [B v]) = Just (OpDelete v)
     realFromData (Constr 2 [B o, B n]) = Just (OpUpdate o n)
+    realFromData (Constr 3 [B v]) = Just (OpRead v)
     realFromData _ = Nothing
 
 instance RealFromData OnChainRequest where
-    realFromData (Constr 0 [tok, B own, B k, val, I fee, I sub]) = do
-        tk <- realFromData tok :: Maybe OnChainTokenId
-        vv <- realFromData val :: Maybe OnChainOperation
-        Just
-            OnChainRequest
-                { requestToken = tk
-                , requestOwner = BuiltinByteString own
-                , requestKey = k
-                , requestValue = vv
-                , requestFee = fee
-                , requestSubmittedAt = sub
-                }
+    realFromData
+        (Constr 0 [tok, B own, B k, val, I fee, I sub, List [B da, B dh]]) = do
+            tk <- realFromData tok :: Maybe OnChainTokenId
+            vv <- realFromData val :: Maybe OnChainOperation
+            Just
+                OnChainRequest
+                    { requestToken = tk
+                    , requestOwner = BuiltinByteString own
+                    , requestKey = k
+                    , requestValue = vv
+                    , requestFee = fee
+                    , requestSubmittedAt = sub
+                    , -- #157 D-DEST: appended last, and a two-element list
+                      -- exactly as Aiken encodes a tuple.
+                      requestDestination = (da, dh)
+                    }
     realFromData _ = Nothing
 
 instance RealFromData OnChainTokenState where
-    realFromData (Constr 0 [r, I mf, I pt, I rt, B rp, B cp]) = do
+    realFromData (Constr 0 [r, I mf, I pt, I rt, B ap, B cp, B bp, B tp]) = do
         rt' <- realFromData r :: Maybe OnChainRoot
         Just
             OnChainTokenState
@@ -482,14 +518,17 @@ instance RealFromData OnChainTokenState where
                 , stateMaxFee = mf
                 , stateProcessTime = pt
                 , stateRetractTime = rt
-                , stateRepPolicy = BuiltinByteString rp
-                , stateConsumerPin = BuiltinByteString cp
+                , stateAppPolicy = BuiltinByteString ap
+                , stateActivePolicy = BuiltinByteString cp
+                , stateAbsentPolicy = BuiltinByteString bp
+                , stateTerminalPolicy = BuiltinByteString tp
                 }
     realFromData _ = Nothing
 
 instance RealFromData CageDatum where
     realFromData (Constr 0 [d]) = RequestDatum <$> realFromData d
     realFromData (Constr 1 [d]) = StateDatum <$> realFromData d
+    realFromData (Constr 2 [B k, B refund]) = Just (AbsentCustody k refund)
     realFromData _ = Nothing
 
 instance RealFromData Migration where
@@ -562,10 +601,10 @@ extractTitles val =
 
 checkFieldTitles :: TitleMap -> IO ()
 checkFieldTitles titles = do
-    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "representative_policy", "consumer_pin"]
-    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at"]
+    expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "application_policy", "active_policy", "absent_policy", "terminal_policy"]
+    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at", "destination"]
     expectFields titles "types/Migration" "Migration" ["oldPolicy", "tokenId"]
-    expectFields titles "lib/TokenId" "TokenId" ["assetName"]
+    expectFields titles "types/TokenId" "TokenId" ["assetName"]
     expectFields titles "cardano/transaction/OutputReference" "OutputReference" ["transaction_id", "output_index"]
     expectFields titles "aiken/merkle_patricia_forestry/Neighbor" "Neighbor" ["nibble", "prefix", "root"]
     expectFields titles "aiken/merkle_patricia_forestry/ProofStep" "Branch" ["skip", "neighbors"]

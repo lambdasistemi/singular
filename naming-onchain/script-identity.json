@@ -5,17 +5,17 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "1239f396899f80b7ec377fe181e2014b7bc54da0a4c4ab0d9df3fdc5",
+      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
       "parameters": 0
     },
     {
@@ -29,29 +29,24 @@
       "parameters": 0
     },
     {
-      "title": "representative.representative.mint",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
-      "title": "representative.representative.withdraw",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
-      "title": "representative.representative.else",
-      "hash": "2cecdbaecb1db4db198be71cd83310e49dc6c4869c1de6e141ecd3f8",
-      "parameters": 2
-    },
-    {
       "title": "retirement_custody.retirement_custody.spend",
-      "hash": "89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09",
+      "hash": "7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07",
       "parameters": 0
     },
     {
       "title": "retirement_custody.retirement_custody.else",
-      "hash": "89ee4bffc93cb72213f8361b73348c4ec4581cc095cb10faabd4fc09",
+      "hash": "7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07",
       "parameters": 0
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "b55d01beb97dbfc6c5de1919d28e1adb707fc7156292427d9f35a7ec",
+      "parameters": 2
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "b55d01beb97dbfc6c5de1919d28e1adb707fc7156292427d9f35a7ec",
+      "parameters": 2
     }
   ]
 }

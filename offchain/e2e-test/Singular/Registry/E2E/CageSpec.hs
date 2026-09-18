@@ -12,6 +12,10 @@ module Singular.Registry.E2E.CageSpec (
     withBootedCage,
     submitInsertRequest,
     submitWithGenesis,
+    publishCageRefs,
+    registryContextFor,
+    bookEdge,
+    foldEdge,
 ) where
 
 import Control.Concurrent (threadDelay)
@@ -35,57 +39,13 @@ import Cardano.Ledger.Api.Tx (
     txIdTx,
  )
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Mary.Value (
     MultiAsset (..),
  )
 import Cardano.Ledger.TxIn (TxIn (..))
 
-
-import Singular.Registry.Blueprint (
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.Config (
-    CageConfig (..),
- )
-import Singular.Registry.Ledger (
-    Coin (..),
-    TokenId (..),
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (TrieManager (..))
-import Singular.Registry.Trie.PureManager (
-    mkPureTrieManager,
- )
-import Singular.Registry.TxBuilder.Boot (
-    bootTokenImpl,
- )
-import Singular.Registry.TxBuilder.Internal (
-    ConsumerBinding (..),
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    deriveConsumerBinding,
-    requestAddrFromCfg,
-    txInToRef,
- )
-import Singular.Registry.TxBuilder.Register (
-    registerConsumerImpl,
- )
-import Singular.Registry.TxBuilder.Reject (
-    rejectRequestsImpl,
- )
-import Singular.Registry.TxBuilder.Request (
-    requestInsertImpl,
- )
-import Singular.Registry.TxBuilder.Retract (
-    retractRequestImpl,
- )
-import Singular.Registry.TxBuilder.Update (
-    updateTokenImpl,
- )
-import Singular.Registry.Types (OnChainTxOutRef)
 import Cardano.Node.Client.E2E.Devnet (
     withCardanoNode,
  )
@@ -113,6 +73,54 @@ import Cardano.Node.Client.Submitter (
  )
 import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
+    NamingCodes,
+    extractCompiledCode,
+    loadBlueprint,
+    loadNamingCodesFromEnv,
+ )
+import Singular.Registry.Config (
+    CageConfig (..),
+ )
+import Singular.Registry.Ledger (
+    Coin (..),
+    ConwayEra,
+    TokenId (..),
+ )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.PureManager (
+    mkPureTrieManager,
+ )
+import Singular.Registry.TxBuilder.Boot (
+    bootTokenImpl,
+ )
+import Singular.Registry.TxBuilder.Edges (SubmitSigned)
+import Singular.Registry.TxBuilder.Edges qualified as Edges
+import Singular.Registry.TxBuilder.Internal (
+    cageAddrFromCfg,
+    cagePolicyIdFromCfg,
+    computeScriptHash,
+    leafAbsent,
+    requestAddrFromCfg,
+    scriptHashBytes,
+    txInToRef,
+ )
+import Singular.Registry.TxBuilder.Reject (
+    rejectRequestsWithRefs,
+ )
+import Singular.Registry.TxBuilder.Request (
+    requestInsertImpl,
+ )
+import Singular.Registry.TxBuilder.Retract (
+    retractRequestImpl,
+ )
+import Singular.Registry.TxBuilder.Update (
+    RegistryContext,
+    updateTokenWithDuties,
+ )
+import Singular.Registry.Types (OnChainOperation (..), OnChainTxOutRef)
 
 {- | Full cage protocol E2E test spec.
 Skips when @REGISTRY_BLUEPRINT@ is not set.
@@ -147,12 +155,9 @@ spec = describe "Cage E2E" $ do
                          , extractCompiledCode
                             "staking.staking"
                             bp
-                         , extractCompiledCode
-                            "consumer.consumer"
-                            bp
                          ) of
-                        (Just stateBytes, Just requestBytes, _, Just consumerBytes) ->
-                            cageFlowSpec stateBytes requestBytes consumerBytes
+                        (Just stateBytes, Just requestBytes, _) ->
+                            cageFlowSpec stateBytes requestBytes
                         _ ->
                             it "no compiled code" $
                                 expectationFailure
@@ -167,15 +172,13 @@ spec = describe "Cage E2E" $ do
 cageFlowSpec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
     Spec
-cageFlowSpec stateBytes requestBytes consumerBytes = do
+cageFlowSpec stateBytes requestBytes = do
     it "boots state and applies a request update"
         $ withBootedCage
             id
             stateBytes
             requestBytes
-            consumerBytes
         $ \cfg prov submit tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -183,26 +186,33 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
                         tokenId
                         Testnet
 
+            -- #157 C2: an insert takes an edge only when its value is a
+            -- leaf. This row books the witnessed absence of "hello"
+            -- (edge 0), carrying the approval the cage demands of every
+            -- processed request, and folds it.
+            refs <- publishCageRefs cfg prov submit tokenId
             _ <-
-                submitInsertRequest
+                bookEdge
                     cfg
                     prov
                     submit
                     tokenId
                     "hello"
-                    "world"
+                    (OpInsert leafAbsent)
             reqUtxosBefore <-
                 Cage.queryUTxOs prov requestAddr
             length reqUtxosBefore
                 `shouldSatisfy` (> 0)
 
+            ctx <- registryContextFor cfg prov tokenId refs
             unsignedUpdate <-
-                updateTokenImpl
+                updateTokenWithDuties
                     cfg
                     prov
                     tm
                     tokenId
                     genesisAddr
+                    ctx
             _ <- submitWithGenesis submit unsignedUpdate
 
             reqUtxosAfter <-
@@ -215,7 +225,6 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
             fastRetractCfg
             stateBytes
             requestBytes
-            consumerBytes
         $ \cfg prov submit _tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -256,7 +265,6 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
             fastRejectCfg
             stateBytes
             requestBytes
-            consumerBytes
         $ \cfg prov submit _tm tokenId -> do
             let requestAddr =
                     requestAddrFromCfg
@@ -278,12 +286,18 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
 
             threadDelay 3_000_000
 
+            -- The state validator alone is fifteen kilobytes: a reject
+            -- that attaches it and the request script is 18317 bytes
+            -- against a 16384-byte protocol maximum. Published
+            -- references carry both instead.
+            refs <- publishCageRefs cfg prov submit tokenId
             unsignedReject <-
-                rejectRequestsImpl
+                rejectRequestsWithRefs
                     cfg
                     prov
                     tokenId
                     genesisAddr
+                    refs
             _ <- submitWithGenesis submit unsignedReject
 
             reqUtxosAfter <-
@@ -291,14 +305,13 @@ cageFlowSpec stateBytes requestBytes consumerBytes = do
             length reqUtxosAfter
                 `shouldSatisfy` (< length reqUtxosBefore)
 
-    -- No End / Sweep / staking cases: termination, migration and seizure
-    -- refuse for every party under the ownerless ruling (NOTE-028/A-003).
-    -- That refusal evidence, with success controls, lives in repair-rows
-    -- (ownerless-end/migration/sweep, receipted) instead of here.
+-- No End / Sweep / staking cases: termination, migration and seizure
+-- refuse for every party under the ownerless ruling (NOTE-028/A-003).
+-- That refusal evidence, with success controls, lives in repair-rows
+-- (ownerless-end/migration/sweep, receipted) instead of here.
 
 withBootedCage ::
     (CageConfig -> CageConfig) ->
-    SBS.ShortByteString ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     ( CageConfig ->
@@ -309,8 +322,8 @@ withBootedCage ::
       IO a
     ) ->
     IO a
-withBootedCage adjustCfg stateBytes requestBytes consumerBytes action =
-    withE2E stateBytes requestBytes consumerBytes $
+withBootedCage adjustCfg stateBytes requestBytes action =
+    withE2E stateBytes requestBytes $
         \cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
             tokenId <- bootCage cfg prov submit tm
@@ -331,10 +344,6 @@ bootCage cfg prov submit tm = do
             prov
             genesisAddr
     signedBoot <- submitWithGenesis submit unsignedBoot
-    -- Consumer stake registration (NOTE-020 item 2): fresh devnet per
-    -- test, so register every boot. Funded by genesis (the cage funder).
-    regTx <- registerConsumerImpl cfg prov genesisAddr
-    _ <- submitWithGenesis submit regTx
     let tokenId =
             extractTokenId cfg signedBoot
     createTrie tm tokenId
@@ -409,9 +418,6 @@ withE2E ::
     SBS.ShortByteString ->
     -- | Unparameterized request compiled-code bytes
     SBS.ShortByteString ->
-    -- | Unparameterized consumer compiled-code bytes (the consumer
-    -- takes no parameters — NOTE-021).
-    SBS.ShortByteString ->
     ( CageConfig ->
       Cage.Provider IO ->
       Submitter IO ->
@@ -419,7 +425,7 @@ withE2E ::
       IO a
     ) ->
     IO a
-withE2E stateBytes requestBytes consumerBytes action = do
+withE2E stateBytes requestBytes action = do
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -468,11 +474,12 @@ withE2E stateBytes requestBytes consumerBytes action = do
                     "withE2E: no UTxOs in genesis \
                     \wallet — cannot pick a seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
+        codes <- loadNamingCodesFromEnv
         let cfg =
                 cageCfg
                     stateBytes
                     requestBytes
-                    consumerBytes
+                    codes
                     seedRef
         result <- action cfg prov submit tm
         cancel nodeThread
@@ -546,26 +553,100 @@ script.
 cageCfg ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
-    SBS.ShortByteString ->
+    NamingCodes ->
     OnChainTxOutRef ->
     CageConfig
-cageCfg stateBytes requestBytes consumerBytes seed =
+cageCfg stateBytes requestBytes codes seed =
     let appliedStateBytes = stateBytes
-        ConsumerBinding
-            { cbPin = consumerPin
-            , cbScriptBytes = consumerScriptBytes
-            } = deriveConsumerBinding consumerBytes
+        stateHash = computeScriptHash appliedStateBytes
+        -- #157 D-BOOT: the four pins for THIS registry identity, derived
+        -- from the naming partition's own compiled code exactly as the
+        -- conformance rows derive them (A-014). The registry id a witness
+        -- policy is parameterized by is the state policy plus the token
+        -- name the seed determines.
+        registryId = scriptHashBytes stateHash <> deriveAssetName seed
+        (appPin, absentPin, activePin, terminalPin) =
+            Edges.namingPins codes registryId
      in CageConfig
             { cageScriptBytes = appliedStateBytes
             , requestScriptBytes = requestBytes
-            , cfgScriptHash =
-                computeScriptHash appliedStateBytes
+            , cfgScriptHash = stateHash
             , cageSeed = seed
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
-            , cfgRepPolicy = SBS.pack (replicate 28 0)
-            , cfgConsumerPin = consumerPin
-            , cfgConsumerScript = consumerScriptBytes
+            , cfgApplicationPolicy = appPin
+            , cfgAbsentPolicy = absentPin
+            , cfgActivePolicy = activePin
+            , cfgTerminalPolicy = terminalPin
+            , cfgConsumerScript = SBS.empty
             , network = Testnet
             }
+
+-- ---------------------------------------------------------
+-- Registry-mode edges (#157 C2, C4, D-APPROVAL)
+-- ---------------------------------------------------------
+
+{- | Sign with the genesis key, submit and wait: the submission
+discipline every transaction of this suite uses.
+-}
+genesisSubmit :: Submitter IO -> SubmitSigned
+genesisSubmit = submitWithGenesis
+
+{- | Publish this cage's scripts as reference outputs. The state
+validator alone is fifteen kilobytes, so a fold or a reject that
+attaches it and the request script does not fit in a transaction; with
+references every purpose resolves through them instead.
+-}
+publishCageRefs ::
+    CageConfig ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TokenId ->
+    IO [(TxIn, TxOut ConwayEra)]
+publishCageRefs cfg prov submit tokenId = do
+    codes <- loadNamingCodesFromEnv
+    Edges.publishCageRefs cfg codes prov (genesisSubmit submit) genesisAddr tokenId
+
+-- | The duties context a fold of tree edges discharges its obligations from.
+registryContextFor ::
+    CageConfig ->
+    Cage.Provider IO ->
+    TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO RegistryContext
+registryContextFor cfg prov _tokenId refs = do
+    codes <- loadNamingCodesFromEnv
+    Edges.registryContextFor cfg codes prov refs
+
+{- | Book one tree edge: the approval the naming application mints
+certifies the edge, and the request carries it to the fold.
+-}
+bookEdge ::
+    CageConfig ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TokenId ->
+    ByteString ->
+    OnChainOperation ->
+    IO TxIn
+bookEdge cfg prov submit tokenId key op = do
+    codes <- loadNamingCodesFromEnv
+    Edges.bookEdge cfg codes prov (genesisSubmit submit) genesisAddr tokenId key op
+
+-- | Book one edge and fold it, end to end on a real devnet.
+foldEdge ::
+    CageConfig ->
+    Cage.Provider IO ->
+    Submitter IO ->
+    TrieManager IO ->
+    TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
+    ByteString ->
+    OnChainOperation ->
+    IO ConwayTx
+foldEdge cfg prov submit tm tokenId refs key op = do
+    _ <- bookEdge cfg prov submit tokenId key op
+    ctx <- registryContextFor cfg prov tokenId refs
+    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
+    submitWithGenesis submit unsigned

@@ -16,6 +16,11 @@ and per-request refund outputs.
 -}
 module Singular.Registry.TxBuilder.Update (
     updateTokenImpl,
+    updateTokenWithDuties,
+    emptyRegistryContext,
+    RegistryDuties (..),
+    RegistryContext (..),
+    registryDuties,
 ) where
 
 import Control.Exception (SomeException, try)
@@ -47,6 +52,21 @@ import Cardano.Ledger.Api.Tx.Out (
     valueTxOutL,
  )
 import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Keys (KeyHash)
+import Cardano.Tx.Build (Guard)
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut, referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.Core (hashScript)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
+import PlutusCore.Data qualified as PLC
+import Singular.Registry.TxBuilder.ConnectedFold (
+    ConnectedMint (..),
+    ConnectedSpend (..),
+    RawRedeemer (..),
+ )
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose,
  )
@@ -71,9 +91,9 @@ import Singular.Registry.Trie (
     TrieManager (..),
  )
 import Singular.Registry.TxBuilder.Internal
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Types (
     CageDatum (..),
-    ConsumerRedeemer (..),
     OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
@@ -81,7 +101,6 @@ import Singular.Registry.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
-    stateConsumerPinBytes,
  )
 import Cardano.Slotting.Slot (SlotNo)
 import Cardano.Tx.Build qualified as Tx
@@ -98,7 +117,41 @@ updateTokenImpl ::
     TokenId ->
     Addr ->
     IO ConwayTx
-updateTokenImpl cfg prov tm tid addr = do
+updateTokenImpl cfg prov tm tid addr =
+    updateTokenWithDuties cfg prov tm tid addr emptyRegistryContext
+
+{- | The context a fold of tree edges needs beyond the registry's own
+configuration: the three token policies' scripts, the cage script that
+custody spends run, and the preimages of the destination datums the
+bookings named.
+
+`emptyRegistryContext` carries none of it, which is right for a caller
+that folds only rejections — and refuses loudly, naming the missing
+script, for one that folds an edge without it.
+-}
+emptyRegistryContext :: RegistryContext
+emptyRegistryContext =
+    RegistryContext
+        { rcWitnessScripts = Map.empty
+        , rcCageScript = Nothing
+        , rcCageUtxos = []
+        , rcDatums = []
+        , rcAllowInadmissible = False
+        , rcRefUtxos = []
+        }
+
+{- | Fold the pending requests, discharging every obligation the edges
+they take create (#157 C5, C6, T1-T6).
+-}
+updateTokenWithDuties ::
+    CageConfig ->
+    Provider IO ->
+    TrieManager IO ->
+    TokenId ->
+    Addr ->
+    RegistryContext ->
+    IO ConwayTx
+updateTokenWithDuties cfg prov tm tid addr ctx0 = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryContext cfg prov tid addr
     let (stateIn, stateOut) = stateUtxo
@@ -110,6 +163,22 @@ updateTokenImpl cfg prov tm tid addr = do
                 stateOut
                 newRoot
         requestScript = mkRequestScript cfg tid
+    -- The cage's own UTxOs are where custody sits; the caller need not
+    -- have queried them, and the cage script is this build's own.
+    cageUtxos <-
+        if null (rcCageUtxos ctx0)
+            then queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+            else pure (rcCageUtxos ctx0)
+    let ctx =
+            ctx0
+                { rcCageUtxos = cageUtxos
+                , rcCageScript = case rcCageScript ctx0 of
+                    Just s -> Just s
+                    Nothing -> Just script
+                }
+    duties <- case registryDuties cfg pp oldState ctx reqUtxos (map (const True) reqUtxos) of
+        Right d -> pure d
+        Left err -> error ("updateToken: " <> err)
     upperSlot <-
         computeUpperSlot prov oldState reqUtxos
     let evalTx = mkEvalTx prov
@@ -127,13 +196,15 @@ updateTokenImpl cfg prov tm tid addr = do
                 requestScript
                 proofs
                 upperSlot
+                duties
+                (rcRefUtxos ctx)
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
-            (feeUtxo : stateUtxo : reqUtxos)
-            []
+            (feeUtxo : stateUtxo : reqUtxos <> map csUtxo (rdSpends duties))
+            (rcRefUtxos ctx)
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
@@ -181,10 +252,13 @@ queryContext cfg prov tid addr = do
         error "updateToken: no pending requests"
     pp <- queryProtocolParams prov
     walletUtxos <- queryUTxOs prov addr
+    -- #157: an approval is not burned at the fold, so it returns to the
+    -- funder and rides in the wallet from then on. The fee input doubles
+    -- as collateral, and collateral must be ada-only.
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
-        walletUtxos of
-        [] -> error "updateToken: no UTxOs"
+        (filter (adaOnlyOutput . snd) walletUtxos) of
+        [] -> error "updateToken: no ada-only UTxO to fund the fold"
         (u : _) -> pure u
     pure (stateUtxo, reqUtxos, feeUtxo, pp)
 
@@ -311,6 +385,8 @@ buildProgram ::
     Script ConwayEra ->
     [[ProofStep]] ->
     SlotNo ->
+    RegistryDuties ->
+    [(TxIn, TxOut ConwayEra)] ->
     Tx.TxBuild NoCtx Void ()
 buildProgram
     _cfg
@@ -324,7 +400,9 @@ buildProgram
     script
     requestScript
     proofs
-    upperSlot = do
+    upperSlot
+    duties
+    refUtxos = do
         let stateRef = txInToRef stateIn
         let actions = map Update proofs
         _ <- Tx.spendScript stateIn (Modify actions)
@@ -341,22 +419,29 @@ buildProgram
              in if f > Coin 0
                     then Tx.Ok f
                     else Tx.Iterate f
-        -- Pinned-hook invocation (NOTE-021): withdraw the exact consumer
-        -- pinned in the spent state with a null redeemer — the consumer
-        -- authenticates the batch from transaction evidence alone
-        -- (request value coverage, representative-mint binding). No
-        -- operator, no manifest: coherent batches pass no matter who
-        -- submits them.
-        Tx.withdrawScript
-            ( hookAccountAddress
-                (network _cfg)
-                (stateConsumerPinBytes _oldState)
-            )
-            (Coin 0)
-            Hook
-        Tx.attachScript (mkConsumerScript _cfg)
-        Tx.attachScript script
-        Tx.attachScript requestScript
+        -- #157 C10: the pinned consumer and its mandatory withdrawal are
+        -- gone. Every rule it re-walked beside the fold — request value
+        -- coverage, the mint binding — is the cage's own now, checked
+        -- once from the transaction's own evidence.
+        -- #157 C5/C6/T1-T6: what the edges owe. The custody an edge
+        -- consumes is spent, the tokens it moves are minted or burned
+        -- under the registry's own three policies, and the carriers it
+        -- owes — custody, destination, deposit return — are created.
+        mapM_
+            (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))
+            (rdSpends duties)
+        mapM_
+            (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
+            (rdMints duties)
+        mapM_ Tx.output (rdOutputs duties)
+        mapM_ Tx.requireSignature (rdSigners duties)
+        if null refUtxos
+            then do
+                Tx.attachScript script
+                Tx.attachScript requestScript
+                mapM_ (Tx.attachScript . csScript) (rdSpends duties)
+                mapM_ (Tx.attachScript . cmScript) (rdMints duties)
+            else mapM_ (Tx.reference . fst) refUtxos
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
 
@@ -396,3 +481,289 @@ processRequest trie (_txIn, txOut) = do
                     key
             _ <- insert trie key v
             pure (fromMaybe [] mSteps)
+        -- #157 C3: a read leaves the leaf exactly where it is, so the
+        -- builder walks the proof for it and changes nothing.
+        OpRead _ -> do
+            mSteps <- getProofSteps trie key
+            pure (fromMaybe [] mSteps)
+
+-- ---------------------------------------------------------
+-- Registry-mode obligations (#157 C5, C6, T1-T6)
+-- ---------------------------------------------------------
+
+{- | Everything an edge owes a fold beyond the trie: what must move under
+the three token policies, where the minted token has to land, which
+custody has to be spent, and who has to sign.
+
+The cage computes these from the requests it consumes (`dutiesOf`,
+`dutyOk`); this recomputes them from the same requests so a fold can be
+built that discharges them. The two are deliberately separate
+derivations — a builder that agrees with the validator by construction
+would not catch a disagreement.
+-}
+data RegistryDuties = RegistryDuties
+    { rdMints :: [ConnectedMint]
+    , rdOutputs :: [TxOut ConwayEra]
+    , rdSpends :: [ConnectedSpend]
+    , rdSigners :: [KeyHash Guard]
+    }
+
+instance Semigroup RegistryDuties where
+    a <> b =
+        RegistryDuties
+            (rdMints a <> rdMints b)
+            (rdOutputs a <> rdOutputs b)
+            (rdSpends a <> rdSpends b)
+            (rdSigners a <> rdSigners b)
+
+instance Monoid RegistryDuties where
+    mempty = RegistryDuties [] [] [] []
+
+{- | What a fold needs in hand to discharge the obligations: the three
+token policies' scripts by kind, the cage script (custody spends run it),
+the UTxOs sitting at the cage address (custody lives among them), and the
+preimages of any destination datum the bookings named — the request
+carries only the hash, and the output has to carry the datum itself.
+-}
+data RegistryContext = RegistryContext
+    { rcWitnessScripts :: Map.Map Integer (Script ConwayEra)
+    , rcCageScript :: Maybe (Script ConwayEra)
+    , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
+    , rcDatums :: [(ByteString, PLC.Data)]
+    , rcAllowInadmissible :: Bool
+    -- ^ Build a fold even when a request takes no admissible edge, so a
+    -- row that exists to watch the chain REFUSE one can produce the
+    -- transaction it submits. An honest builder leaves this off and
+    -- fails early, naming the request.
+    , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
+    -- ^ Outputs carrying the fold's scripts as reference scripts. The
+    -- state validator alone is fifteen kilobytes, so a fold that
+    -- attaches it, the request script and a token policy does not fit
+    -- in a transaction; with references every purpose resolves through
+    -- them instead.
+    }
+
+{- | The obligations this set of requests creates, or the reason they
+cannot be met. A fold whose duties cannot be built is a fold that would be
+refused on chain; failing here names why, in the builder, where it is
+cheap.
+-}
+registryDuties ::
+    CageConfig ->
+    PParams ConwayEra ->
+    OnChainTokenState ->
+    RegistryContext ->
+    [(TxIn, TxOut ConwayEra)] ->
+    -- | Whether each request is PROCESSED by this fold. A rejected
+    -- request takes no edge: it owes its owner a refund, and the
+    -- approval that certified it was never spent.
+    [Bool] ->
+    Either String RegistryDuties
+registryDuties cfg pp st ctx reqUtxos processed =
+    -- Unmatched requests are NOT processed: a deficit fold has more
+    -- requests than actions, and the tail of it takes no edge.
+    mconcat <$> mapM one (zip reqUtxos (processed <> repeat False))
+  where
+    net = network cfg
+    cageAddr = cageAddrFromCfg cfg net
+    tip = stateMaxFee st
+    one (_, isProcessed)
+        | not isProcessed = Right mempty
+    one ((_, reqOut), _) = do
+        req <- case extractCageDatum reqOut of
+            Just (RequestDatum r) -> Right r
+            _ -> Left "registryDuties: a request input carries no request datum"
+        let key = requestKey req
+            op = requestValue req
+            dest@(destAddr, destHash) = requestDestination req
+            Coin held = reqOut ^. coinTxOutL
+            floorAda = held - tip
+        case edgeOf op (statedBefore op) of
+            Nothing
+                | rcAllowInadmissible ctx ->
+                    -- The cage will refuse this, which is the point: a row
+                    -- that exists to watch the refusal needs the
+                    -- transaction built, not withheld.
+                    approvalReturn req reqOut
+            Nothing ->
+                Left
+                    ( "registryDuties: "
+                        <> show op
+                        <> " on key "
+                        <> show key
+                        <> " is not one of the seven admissible edges"
+                    )
+            Just edge -> do
+                mints <- mintsFor edge key
+                rest <- dutiesFor edge key dest destAddr destHash floorAda
+                back <- approvalReturn req reqOut
+                pure (mints <> rest <> back)
+    {- An approval is not burned at the fold (D-APPROVAL), so it has to
+    land somewhere. It goes back to the owner who booked it, in an output
+    of its own: left to the balancer it would settle in the folder's
+    change, and the folder's wallet would stop being able to fund a fold
+    at all, because collateral must be ada-only. -}
+    approvalReturn :: OnChainRequest -> TxOut ConwayEra -> Either String RegistryDuties
+    approvalReturn req reqOut = do
+        let BuiltinByteString owner = requestOwner req
+            carried =
+                case reqOut ^. valueTxOutL of
+                    MaryValue _ (MultiAsset m) ->
+                        Map.filterWithKey
+                            (\p _ -> p == policyIdFromPin (cfgApplicationPolicy cfg))
+                            m
+        if Map.null carried
+            then pure mempty
+            else do
+                addr <- case addrFromBytes owner of
+                    Just a -> Right a
+                    Nothing -> Right (addrFromKeyHashBytes net owner)
+                -- The minimum depends on the serialised size, and the coin
+                -- field is part of it, so the empty probe understates it.
+                -- One more pass at the answer it gives converges.
+                let at c = mkBasicTxOut addr (MaryValue (Coin c) (MultiAsset carried))
+                    Coin first = getMinCoinTxOut @ConwayEra pp (at 0)
+                    Coin settled = getMinCoinTxOut @ConwayEra pp (at first)
+                pure mempty{rdOutputs = [at settled]}
+    mintsFor edge key =
+        fmap mconcat $
+            mapM
+                ( \(kind, quantity) -> do
+                    script <- case Map.lookup kind (rcWitnessScripts ctx) of
+                        Just s -> Right s
+                        Nothing ->
+                            Left
+                                ( "registryDuties: no witness script for kind "
+                                    <> show kind
+                                )
+                    pure
+                        mempty
+                            { rdMints =
+                                [ ConnectedMint
+                                    { cmPolicy = PolicyID (hashScript script)
+                                    , cmAssets = Map.singleton (AssetName (SBS.toShort key)) quantity
+                                    , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+                                    , cmScript = script
+                                    }
+                                ]
+                            }
+                )
+                (deltaOf edge)
+    dutiesFor edge key dest destAddr destHash floorAda
+        | edge == 0 = lockCustody key destAddr floorAda
+        | edge == 1 = deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 2 = (<>) <$> spendCustody key <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
+        | edge == 3 = pure mempty
+        | edge == 4 = spendCustody key
+        | edge == 5 = pure mempty
+        | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
+        | otherwise = Left ("registryDuties: unknown edge " <> show edge)
+    -- C6: the absent token sits at the cage, alone, under a custody datum
+    -- naming its key and the address the deposit goes back to.
+    lockCustody key refund floorAda = do
+        let value =
+                MaryValue
+                    (Coin floorAda)
+                    (MultiAsset (Map.singleton (policyIdOf (cfgAbsentPolicy cfg)) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+            out =
+                mkBasicTxOut cageAddr value
+                    & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody key refund))
+        requireMinAda "custody" out
+        pure mempty{rdOutputs = [out]}
+    -- T1/T2: the minted token lands in exactly the output the request
+    -- named, carrying the datum whose hash the approval bound.
+    deliver policy key _dest destHash floorAda = do
+        addr <- destinationAddr
+        datum <- destinationDatum destHash
+        let value =
+                MaryValue
+                    (Coin floorAda)
+                    (MultiAsset (Map.singleton (policyIdOf policy) (Map.singleton (AssetName (SBS.toShort key)) 1)))
+            out = case datum of
+                Nothing -> mkBasicTxOut addr value
+                Just d -> mkBasicTxOut addr value & datumTxOutL .~ mkInlineDatum d
+        requireMinAda "destination" out
+        pure mempty{rdOutputs = [out]}
+      where
+        destinationAddr = case addrFromBytes (fst _dest) of
+            Just a -> Right a
+            Nothing ->
+                Left
+                    ( "registryDuties: the request names an address this \
+                      \builder cannot decode: "
+                        <> show (fst _dest)
+                    )
+        destinationDatum h
+            | BS.null h = Right Nothing
+            | otherwise = case Prelude.lookup h (rcDatums ctx) of
+                Just d -> Right (Just d)
+                Nothing ->
+                    Left
+                        ( "registryDuties: no preimage in hand for the \
+                          \destination datum hash "
+                            <> show h
+                        )
+    -- T4/T5: the custody this edge consumes is spent, and its deposit
+    -- goes back to the address it recorded.
+    spendCustody key = do
+        (utxo, refund, owed) <- findCustody key
+        cageScript <- case rcCageScript ctx of
+            Just s -> Right s
+            Nothing ->
+                Left
+                    "registryDuties: this edge spends custody, and the \
+                    \builder was given no cage script to spend it with"
+        let refundAddr = case addrFromBytes refund of
+                Just a -> a
+                Nothing -> error "registryDuties: custody records an undecodable refund address"
+            out = mkBasicTxOut refundAddr (MaryValue (Coin owed) mempty)
+        requireMinAda "refund" out
+        pure
+            mempty
+                { rdSpends =
+                    [ ConnectedSpend
+                        { csUtxo = utxo
+                        , csRedeemer = RawRedeemer (toPlcData (Modify []))
+                        , csScript = cageScript
+                        }
+                    ]
+                , rdOutputs = [out]
+                }
+    findCustody key =
+        case
+            [ (u, refund, coin)
+            | u@(_, o) <- rcCageUtxos ctx
+            , Just (AbsentCustody k refund) <- [extractCageDatum o]
+            , k == key
+            , let Coin coin = o ^. coinTxOutL
+            ]
+            of
+            [c] -> Right c
+            [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
+            _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
+    requireMinAda what out =
+        let Coin minAda = getMinCoinTxOut @ConwayEra pp out
+            Coin got = out ^. coinTxOutL
+         in if got >= minAda
+                then Right ()
+                else
+                    Left
+                        ( "registryDuties: the "
+                            <> what
+                            <> " output holds "
+                            <> show got
+                            <> " lovelace, under the "
+                            <> show minAda
+                            <> " minimum"
+                        )
+    policyIdOf = policyIdFromPin
+
+{- | Can this output fund a fold? It must hold ada and nothing else,
+because it doubles as collateral, and it must not be one of the published
+reference outputs, because a transaction may not both spend an output and
+reference it.
+-}
+adaOnlyOutput :: TxOut ConwayEra -> Bool
+adaOnlyOutput out =
+    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
+        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)

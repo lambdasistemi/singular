@@ -22,6 +22,19 @@ module Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     computeScriptHash,
 
+    -- * Registry-mode edges (#157 C2)
+    leafAbsent,
+    leafActive,
+    leafTerminal,
+    decodeLeaf,
+    statedBefore,
+    policyIdFromPin,
+    addrFromBytes,
+    edgeOf,
+    deltaOf,
+    policyOfKind,
+    approvalName,
+
     -- * Derived identity
     cagePolicyIdFromCfg,
     cageAddrFromCfg,
@@ -30,6 +43,7 @@ module Singular.Registry.TxBuilder.Internal (
 
     -- * Datum helpers
     mkRequestDatum,
+    mkRequestDatumWith,
     toPlcData,
     toLedgerData,
     mkInlineDatum,
@@ -93,8 +107,8 @@ import Data.Set qualified as Set
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 
-import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
-import Cardano.Ledger.Address (AccountAddress (..), AccountId (..), Addr (..))
+import Cardano.Crypto.Hash (Blake2b_256, hashFromBytes, hashToBytes, hashWith)
+import Cardano.Ledger.Address (AccountAddress (..), AccountId (..), Addr (..), decodeAddrEither)
 import Cardano.Ledger.Alonzo.PParams (
     LangDepView,
     getLanguageView,
@@ -418,6 +432,24 @@ mkRequestDatum ::
     Integer ->
     PLC.Data
 mkRequestDatum tid addr key op fee submittedAt =
+    mkRequestDatumWith tid addr key op fee submittedAt (BS.empty, BS.empty)
+
+{- | A request datum naming where the edge it books delivers (#157
+D-DEST). The cage reads the destination for every edge that mints an
+active or terminal token, and the approval that certifies the edge binds
+these same bytes, so the booking and the fold cannot disagree about where
+the token goes.
+-}
+mkRequestDatumWith ::
+    TokenId ->
+    Addr ->
+    ByteString ->
+    OnChainOperation ->
+    Integer ->
+    Integer ->
+    (ByteString, ByteString) ->
+    PLC.Data
+mkRequestDatumWith tid addr key op fee submittedAt destination =
     let datum =
             OnChainRequest
                 { requestToken = onChainTokenId tid
@@ -428,6 +460,7 @@ mkRequestDatum tid addr key op fee submittedAt =
                 , requestValue = op
                 , requestFee = fee
                 , requestSubmittedAt = submittedAt
+                , requestDestination = destination
                 }
      in toPlcData (RequestDatum datum)
 
@@ -806,3 +839,130 @@ elsewhere (no named semantic match), never silently accepted.
 -}
 isBudgetFailure :: String -> Bool
 isBudgetFailure s = "overspending the budget" `isInfixOf` s
+
+-- ---------------------------------------------------------
+-- Registry-mode edges (#157 C2)
+-- ---------------------------------------------------------
+
+{- | The three leaf states the registry admits. Every other value byte is
+refused by the cage before a proof is checked, so a builder that wants a
+fold to land has exactly these to choose from.
+-}
+leafAbsent, leafActive, leafTerminal :: ByteString
+leafAbsent = BS.singleton 0x00
+leafActive = BS.singleton 0x01
+leafTerminal = BS.singleton 0x02
+
+-- | The leaf a value byte denotes, or `Nothing` for anything else.
+decodeLeaf :: ByteString -> Maybe Integer
+decodeLeaf bs
+    | bs == leafAbsent = Just 0
+    | bs == leafActive = Just 1
+    | bs == leafTerminal = Just 2
+    | otherwise = Nothing
+
+{- | The C2 row this operation takes against the key's current leaf, if it
+is one of the seven at all. The same table the cage's `edgeOf` reads,
+transcribed once here so both builders and the runner agree with it.
+
+`Nothing` for the key means absent from the trie.
+-}
+edgeOf :: OnChainOperation -> Maybe ByteString -> Maybe Integer
+edgeOf op before = case op of
+    OpInsert v -> case (before, decodeLeaf v) of
+        (Nothing, Just 0) -> Just 0
+        (Nothing, Just 1) -> Just 1
+        _ -> Nothing
+    OpUpdate _ new -> case (before >>= decodeLeaf, decodeLeaf new) of
+        (Just 0, Just 1) -> Just 2
+        (Just 1, Just 2) -> Just 3
+        _ -> Nothing
+    OpDelete _ -> case before >>= decodeLeaf of
+        Just 0 -> Just 4
+        Just 1 -> Just 5
+        _ -> Nothing
+    OpRead _ -> case before >>= decodeLeaf of
+        Just 2 -> Just 6
+        _ -> Nothing
+
+{- | What an edge owes the mint, as @(kind, quantity)@ over the three token
+policies: kind 0 absent, 1 active, 2 terminal.
+-}
+deltaOf :: Integer -> [(Integer, Integer)]
+deltaOf edge = case edge of
+    0 -> [(0, 1)]
+    1 -> [(1, 1)]
+    2 -> [(0, -1), (1, 1)]
+    3 -> [(1, -1)]
+    4 -> [(0, -1)]
+    5 -> [(1, -1)]
+    6 -> [(2, 1)]
+    _ -> []
+
+-- | The policy a kind names in this registry's configuration.
+policyOfKind :: CageConfig -> Integer -> SBS.ShortByteString
+policyOfKind cfg kind = case kind of
+    0 -> cfgAbsentPolicy cfg
+    1 -> cfgActivePolicy cfg
+    2 -> cfgTerminalPolicy cfg
+    _ -> error "policyOfKind: not a token kind"
+
+{- | The approval binding (#157 D-APPROVAL): the asset name the application
+policy mints to certify one edge, @blake2b_256(edge ‖ key ‖ owner ‖
+destination address ‖ destination datum hash)@. One formula, recomputed by
+the cage from the request it rides; a builder that computes it differently
+makes an honest booking refuse loudly at the fold.
+-}
+approvalName ::
+    Integer ->
+    -- | Registry key
+    ByteString ->
+    -- | Owner (the payment key hash the approval binds)
+    ByteString ->
+    -- | Destination: address bytes and datum hash
+    (ByteString, ByteString) ->
+    ByteString
+approvalName edge key owner (destAddr, datumHash) =
+    blake2b256
+        ( BS.singleton (fromInteger edge)
+            <> key
+            <> owner
+            <> destAddr
+            <> datumHash
+        )
+
+blake2b256 :: ByteString -> ByteString
+blake2b256 = hashToBytes . hashWith @Blake2b_256 id
+
+{- | The leaf an operation states the key held before it (#157 C2). The
+cage reads the request's own claim rather than the trie, and so does every
+builder, or the two would disagree about which edge is being taken.
+-}
+statedBefore :: OnChainOperation -> Maybe ByteString
+statedBefore op = case op of
+    OpInsert _ -> Nothing
+    OpDelete old -> Just old
+    OpUpdate old _ -> Just old
+    OpRead v -> Just v
+
+{- | The policy id a 28-byte pin names. The four pins the state datum
+carries are raw script hashes; this is the one place that turns one back
+into the ledger's own type.
+-}
+policyIdFromPin :: SBS.ShortByteString -> PolicyID
+policyIdFromPin pin = case hashFromBytes (SBS.fromShort pin) of
+    Just h -> PolicyID (ScriptHash h)
+    Nothing ->
+        error
+            ( "policyIdFromPin: a pin is not a 28-byte script hash: "
+                <> show pin
+            )
+
+{- | The address a request's binary destination names (#157 D-DEST). The
+bytes are a full Cardano address, network byte and all, so nothing here
+supplies a network of its own.
+-}
+addrFromBytes :: ByteString -> Maybe Addr
+addrFromBytes bs = case decodeAddrEither bs of
+    Right a -> Just a
+    Left _ -> Nothing

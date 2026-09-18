@@ -1,0 +1,212 @@
+{
+  "evidence-required-at-acceptance": [
+    {
+      "text": "Evidence required at acceptance.",
+      "pause": 500
+    },
+    {
+      "text": "just test and just script-identity receipts in both partitions;.",
+      "pause": 300
+    },
+    {
+      "text": "the regenerated script-identity.json hashes in the handback;.",
+      "pause": 300
+    },
+    {
+      "text": "the trace-label table;.",
+      "pause": 300
+    },
+    {
+      "text": "the mutant ledger (M1–M4) as refusing tests with controls;.",
+      "pause": 300
+    },
+    {
+      "text": "the conformance re-baseline receipts and the contract-change section;.",
+      "pause": 300
+    },
+    {
+      "text": "fresh independent audit report; green CI on the pushed head..",
+      "pause": 300
+    }
+  ],
+  "gates": [
+    {
+      "text": "Gates.",
+      "pause": 500
+    },
+    {
+      "text": "Gate S — this ticket, focused. just test and just script-identity in both partitions; the Haskell encoding round-trips against the regenerated blueprint (blueprint-check); consumer.ak absent from the tree; the trace-label table total; just check-presentation; the diff inside onchain/, naming-onchain/, conformance/, offchain/ encodings only as needed for the blueprint change, the three naming docs and their speech, and docs/consumer-conformance.md. Authored and falsified per class before the commit owner starts; blind-audited per gate-script.",
+      "pause": 400
+    },
+    {
+      "text": "Ticket gate. nix develop --quiet -c just ci exit 0 on the head, green GitHub CI on the exact pushed head, fresh Opus commit-auditor report bound to candidate and base, mutants M1–M4 each recorded as refusing test plus control.",
+      "pause": 400
+    }
+  ],
+  "codec-and-combinations": [
+    {
+      "text": "Codec and combinations.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: G1; G2; G3; G4; G5.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "Order is fixed by dependency, not preference:",
+      "pause": 400
+    },
+    {
+      "text": "Types and codec first — State eight fields, Operation.Read,.",
+      "pause": 300
+    },
+    {
+      "text": "Request.destination, CageDatum.AbsentCustody, the codec bytes — so the    blueprint, the Haskell encodings and the conformance rows can be regenerated    once and every later slice compiles against them. 2. The cage — C2 admissibility, C3 read, C4 admission, C5 delta, C6    destinations and custody, C8 coverage; consumer.ak deleted in the same    commit as the withdrawal requirement, never one without the other. 3. The token policies — witness(kind, registry); representative.ak    retired. 4. Naming — the approval arms, the fold-created record, retirement's    co-minted terminate approval; naming.ak loses its value vocabulary. 5. Conformance and docs — re-baseline, then the naming pages.",
+      "pause": 400
+    },
+    {
+      "text": "Nothing is pushed red to main; intermediate red heads on this draft branch are permitted (A-002). The PR is stacked on #156's branch and targets it; it is re-targeted to main when #156 merges.",
+      "pause": 400
+    }
+  ],
+  "constraints": [
+    {
+      "text": "Constraints.",
+      "pause": 500
+    },
+    {
+      "text": "The frozen #156 Lean and its refusal reasons are the vocabulary; an Aiken.",
+      "pause": 300
+    },
+    {
+      "text": "trace label maps to exactly one Lean reason, and the mapping is a table in the   handback. - No new proof code enters the cage: the read uses mpf.update(root, key,   proof, v, v). - Constructor indices already published are kept; new constructors are   appended (Read 3, AbsentCustody 2, destination last field). Removed   constructors (Fold, Cancel, WithdrawApproval, InsertApproval) are a   declared contract change, listed in the conformance page. - just test in both partitions must contain, for every refusal row, a test   whose name carries the row id and whose failure is the named trace. - Script identities are regenerated (just script-identity-regen) and the   hashes recorded in the handback; docs/preprod.md is not touched (the   deployed instance is the old contract until #153).",
+      "pause": 400
+    }
+  ],
+  "staffing": [
+    {
+      "text": "Staffing.",
+      "pause": 500
+    },
+    {
+      "text": "Operator ruling, verbatim: \"use codex as eo, opus as to, glm or muse as co\"; \"use opus as auditor\".",
+      "pause": 400
+    },
+    {
+      "text": "Ticket owner: claude (Opus)..",
+      "pause": 300
+    },
+    {
+      "text": "Commit owner: glm --approve if its probationary fence allows Aiken and the.",
+      "pause": 300
+    },
+    {
+      "text": "Haskell encodings; else muse --approve. One seat. - Auditor: fresh Opus, claude --dangerously-skip-permissions --model   'claude-opus-5[1m]' --effort high, own pane, own worktree, loading   commit-auditor and code-the-design. - draft=NONE.",
+      "pause": 400
+    }
+  ],
+  "trace-label-table": [
+    {
+      "text": "Trace-label table.",
+      "pause": 500
+    },
+    {
+      "text": "The handback carries the table Aiken trace → Lean reason for every refusal above; the auditor checks it is total over the Lean refusal reasons that the cage can reach, and that no Aiken trace maps to two reasons.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-naming": [
+    {
+      "text": "Invariant rows — naming.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 11 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: N1; N2; N3; N4; N5; N6; T6; N7; N8; N9; N10.",
+      "pause": 400
+    }
+  ],
+  "destinations-and-custody": [
+    {
+      "text": "Destinations and custody.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: T1; T2; T3; T4; T5.",
+      "pause": 400
+    }
+  ],
+  "delta-and-mint": [
+    {
+      "text": "Delta and mint.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: M1; M2; M3; M4; M5.",
+      "pause": 400
+    },
+    {
+      "text": "M1–M4 are the four #154 mutants at Aiken level; the ledger records each as a refusing test with its accepting control. They are not \"the mutated validator fails to compile\".",
+      "pause": 400
+    }
+  ],
+  "admission": [
+    {
+      "text": "Admission.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 4 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: A1; A2; A3; A4.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-consumers-and-docs": [
+    {
+      "text": "Invariant rows — consumers and docs.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 2 rows, columns id, Given / When / Then, Observation, Control. The rows: X1; X2.",
+      "pause": 400
+    }
+  ],
+  "coverage-and-retraction": [
+    {
+      "text": "Coverage and retraction.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 2 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: V1; V2.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-the-cage": [
+    {
+      "text": "Invariant rows — the cage.",
+      "pause": 500
+    },
+    {
+      "text": "Given / When / Then is the obligation; Observation the Aiken test or property that exhibits it; Control the seeded fault that must fail for the named reason.",
+      "pause": 400
+    }
+  ],
+  "invariant-rows-the-token-policies": [
+    {
+      "text": "Invariant rows — the token policies.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns id, binds, Given / When / Then, Observation, Control. The rows: P1; P2; P3.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b86897f5cd6668f1dd0870d6834d93521c49dc0595a9eceeea986f96a0a661cc"
+  }
+}

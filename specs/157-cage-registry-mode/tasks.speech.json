@@ -1,0 +1,90 @@
+{
+  "types-and-codec": [
+    {
+      "text": "Types and codec.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T157-01 — State eight fields; Operation.Read; Request.destination;.",
+      "pause": 300
+    },
+    {
+      "text": "CageDatum.AbsentCustody; blueprint regenerated; Haskell encodings follow       (blueprint-check green). - [ ] T157-02 — codec helpers in lib.ak (decodeState, edgeOf,       deltaOf, approvalName, destinationMatches) with their unit rows.",
+      "pause": 400
+    }
+  ],
+  "the-cage": [
+    {
+      "text": "The cage.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T157-03 — admissibility: the seven rows accept, every other shape refuses.",
+      "pause": 300
+    },
+    {
+      "text": "with its own trace, before the proof (G1–G3). - [ ] T157-04 — the read at its position; batches of only reads (G4, G5). - [ ] T157-05 — admission by bound approval; reads need none; pins preserved       (A1–A4). - [ ] T157-06 — the delta against the mint, per key, all three policies       (M1–M5). - [ ] T157-07 — destinations and custody; the custody spending path; R-ADA       refunds with inserter ≠ booker (T1–T5). - [ ] T157-08 — tip coverage in the cage; reads retractable (V1, V2). - [ ] T157-09 — consumer.ak, its tests, the pin and the withdrawal       requirement deleted in one commit.",
+      "pause": 400
+    }
+  ],
+  "the-token-policies": [
+    {
+      "text": "The token policies.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T157-10 — witness(kind, registry); three instances; co-presence with a.",
+      "pause": 300
+    },
+    {
+      "text": "Modify; terminal burn free; representative.ak retired (P1–P3).",
+      "pause": 400
+    }
+  ],
+  "naming": [
+    {
+      "text": "Naming.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T157-11 — Approve arm for the six edges per R-NM4 (N1–N5)..",
+      "pause": 300
+    },
+    {
+      "text": "[ ] T157-12 — the fold-created record; Fold/Cancel/claim lifecycle.",
+      "pause": 300
+    },
+    {
+      "text": "removed (N7). - [ ] T157-13 — Retire authorized by the committed recovery key or the       quorum, never the current control key alone; co-mints the terminate       approval and the completion request; completion folds       Update(0x01,0x02) (N6, N8). - [ ] T157-13b — the destination output of a folded booking or read carries at       least the request's value minus the tip (T6). - [ ] T157-14 — Maintain/Recover rows re-run; naming.ak loses its value       vocabulary (N9, N10). - [ ] T157-15 — just test and just script-identity-regen in both partitions;       hashes in the handback.",
+      "pause": 400
+    }
+  ],
+  "consumers-and-docs": [
+    {
+      "text": "Consumers and docs.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] T157-16 — conformance re-baselined; contract change stated with old and.",
+      "pause": 300
+    },
+    {
+      "text": "new fields side by side (X1). - [ ] T157-17 — the three naming docs updated; speech restamped;       just check-presentation green (X2). - [ ] T157-18 — the trace-label table Aiken trace → Lean reason, total.",
+      "pause": 400
+    }
+  ],
+  "gate-held-not-a-task": [
+    {
+      "text": "Gate-held, not a task.",
+      "pause": 500
+    },
+    {
+      "text": "nix develop --quiet -c just ci exit 0 on the head and green GitHub CI on the pushed head are the ticket gate's criteria. The PR targets #156's branch until #156 merges, then main.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "107b14422a6cc160d95691a9c64fede360e42a80ac79e3abe34cc0e856b6cf7d"
+  }
+}

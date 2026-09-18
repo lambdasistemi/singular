@@ -1,0 +1,40 @@
+{
+  "dependency-direction": [
+    {
+      "text": "Dependency direction.",
+      "pause": 500
+    },
+    {
+      "text": "A code block reads: onchain/validators types.ak        State (8), Operation (+Read), Request (+destination), CageDatum (+AbsentCustody) lib.ak          codec helpers: decodeState, approvalName, destinationMatches state.ak        the cage: admissibility, read, admission, delta, custody, coverage request.ak      Contribu…",
+      "pause": 300
+    },
+    {
+      "text": "The cage depends on nothing of naming's. Naming depends on the cage's state token and policy ids, and on nothing at fold time.",
+      "pause": 400
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "Changed responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 12 rows, columns module, responsibility after this ticket. The rows: types.ak; lib.ak; state.ak; request.ak; witness.ak; application.ak; retirement_custody.ak; naming.ak; conformance/; offchain/ encodings and what they force; offchain/journey/Main.hs; the seven NYA journey sources and their six CI jobs.",
+      "pause": 400
+    }
+  ],
+  "out-of-this-tickets-surface": [
+    {
+      "text": "Out of this ticket's surface.",
+      "pause": 500
+    },
+    {
+      "text": "lean/ (#156, frozen), simulator/ (#163), the seven NYA journey sources named above (#172 under #174) and the release archive (#158), the escrow (#152), the CLI (#139), docs/preprod (#153), the interface page (#159). Touching any is a Q to the epic owner.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "a2ce61d5ce56098bb2d3ccb4d120462f9956e8a69cf0f8a0cd057c0ccc2561c0"
+  }
+}

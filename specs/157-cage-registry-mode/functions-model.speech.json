@@ -1,0 +1,86 @@
+{
+  "onchainvalidatorslibak": [
+    {
+      "text": "onchain/validators/lib.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 5 rows, columns declaration, shape, constraint. The rows: decodeState(bytes: ByteArray) -> Option<Int>; edgeOf(op: Operation, before: Option<Int>) -> Option<Int>; deltaOf(edge: Int) -> List<(Int, Int)>; approvalName(edge: Int, key, owner, destination) -> ByteArray; destinationMatches(dest: (ByteArray, ByteArray), out: Output) -> Bool.",
+      "pause": 400
+    }
+  ],
+  "onchainvalidatorsstateak": [
+    {
+      "text": "onchain/validators/state.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 4 rows, columns declaration, shape, constraint. The rows: mkAction(...); validModify(state, input, policyId, tokenId, tx, actions); validCustodySpend(datum: AbsentCustody, tx); validateMint(seed, policyId, tx).",
+      "pause": 400
+    }
+  ],
+  "onchainvalidatorsrequestak": [
+    {
+      "text": "onchain/validators/request.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 1 rows, columns declaration, change. The rows: validateRetract.",
+      "pause": 400
+    }
+  ],
+  "naming-onchainvalidatorswitnessak": [
+    {
+      "text": "naming-onchain/validators/witness.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 1 rows, columns declaration, shape, constraint. The rows: validator witness(kind: Int, registry: ByteArray).",
+      "pause": 400
+    }
+  ],
+  "naming-onchainvalidatorsapplicationak": [
+    {
+      "text": "naming-onchain/validators/application.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 4 rows, columns declaration, shape, constraint. The rows: ApplicationRedeemer; ApplicationMintRedeemer; approve(edge, key, owner, destination, tx) -> Bool; retire(record, custody_out, key, revealed_control, tx).",
+      "pause": 400
+    }
+  ],
+  "naming-onchainvalidatorsnamingak": [
+    {
+      "text": "naming-onchain/validators/naming.ak.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 3 rows, columns declaration, change. The rows: over_marker_for; MpfsState, mpfs_state_datum*; mrequest, MOperation.",
+      "pause": 400
+    }
+  ],
+  "offchainlibsingularregistryconfighs": [
+    {
+      "text": "offchain/lib/Singular/Registry/Config.hs.",
+      "pause": 500
+    },
+    {
+      "text": "A table of 2 rows, columns declaration, shape, constraint. The rows: CageConfig; bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState.",
+      "pause": 400
+    }
+  ],
+  "removed": [
+    {
+      "text": "Removed.",
+      "pause": 500
+    },
+    {
+      "text": "consumer.ak and consumer.tests.ak; representative.ak and its tests (replaced by witness.ak and witness.tests.ak); Fold, Cancel, WithdrawApproval, InsertApproval and their rows (LC, the claim fold_ rows); consumer_pin in every builder and fixture.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "5079385169ab668b0f407e90d60d19220be71626cde2a2096bd6c1df7b8e17b1"
+  }
+}
