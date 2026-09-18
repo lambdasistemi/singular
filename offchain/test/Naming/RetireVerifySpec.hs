@@ -1,16 +1,20 @@
 {- | Unit tests for the retirement-binding predicates (NOTE-024 item
 3, NOTE-026).
 
-Trust split, stated plainly: the NAME FORMULA is pinned by
-@Naming.RegisterSpec@ (fixed vectors) and cross-checked on devnet
-(ledger executes both on-chain copies against mirror-computed names);
-what is pinned HERE is every predicate the independent reader
+What is pinned HERE is every predicate the independent reader
 applies — key/control/log agreement, policy derivation, custody
 triple binding (policy AND name AND quantity), creation-mint
-binding, and route signers — using @representativeName@ the same way
-production code does. A deviation in any single field must refuse,
-and the wrong-policy\/same-name case must refuse (that is the
+binding, and route signers. A deviation in any single field must
+refuse, and the wrong-policy\/same-name case must refuse (that is the
 NOTE-026 defect class: a dropped policy).
+
+Since #157 (D-ASSET) there is no name formula left to pin: under each
+of the registry's three token policies the asset name IS the registry
+key, and a record carries the ACTIVE token of its own key. The hashed
+representative name went with the representative policy it named, and
+the armed negative below holds that retirement shut — a reader that
+recomputed @representativeName@ would accept evidence the chain never
+produced and refuse evidence it did.
 -}
 module Naming.RetireVerifySpec (spec) where
 
@@ -33,9 +37,18 @@ policyR = BS.replicate 28 0x52
 policyX = BS.replicate 28 0x58
 tokenT = "cage-token-name"
 
+-- | The witness asset names: the registry keys themselves (#157
+-- D-ASSET).
 repA, repB :: ByteString
-repA = representativeName "alice"
-repB = representativeName "bob"
+repA = "alice"
+repB = "bob"
+
+{- | What the retired formula would have produced for the same key —
+the hashed representative name. Nothing on chain carries it since
+#157; it exists here only so the armed negative can offer it.
+-}
+retiredRepA :: ByteString
+retiredRepA = representativeName "alice"
 quorum12 :: [ByteString]
 quorum12 = [BS.replicate 28 0x11, BS.replicate 28 0x12]
 
@@ -112,6 +125,21 @@ spec = describe "retirement binding predicates" $ do
             `shouldSatisfy` isLeft
     it "refuses a creation mint missing the rep" $
         verifyRetireEvidence validLT{reCreationMint = [("app-policy", "approval", -1)]}
+            `shouldSatisfy` isLeft
+    -- The armed negative for the retired formula (A-007 item 4). A
+    -- bundle whose creation mint, custody output and public log all
+    -- agree on `representativeName key` is exactly what the pre-#157
+    -- reader accepted. It must refuse now: the chain names the asset
+    -- by the key, and a verifier that recomputes the hash would read
+    -- a registry nobody runs.
+    it "refuses the retired representativeName formula" $
+        verifyRetireEvidence
+            validLT
+                { reCreationMint =
+                    [("app-policy", "approval", -1), (policyR, retiredRepA, 1)]
+                , reCustodyName = retiredRepA
+                , reRepLog = retiredRepA
+                }
             `shouldSatisfy` isLeft
     it "derives the single positive mint policy" $
         positiveMintPolicy [("app", "a", -1), (policyR, repA, 1)]

@@ -7,6 +7,13 @@ permissionless authorization (empty required signers, fee-owner-only
 witness outside every route). Resolution (finding the custody, the
 request, the state transition in retained CBOR) lives in the reader
 executable and is proved by the VERIFIED-COMPLETE run, not here.
+
+Since #157 (N4) completion is the fold of @Update(0x01, 0x02)@ — the
+key's leaf goes from live to over. The @over@ marker went with the
+naming value vocabulary it committed to; the armed negative below
+holds that door shut, because a reader still expecting
+@(rep, "over" <> rep)@ would accept a request the cage refuses and
+refuse the one it folds.
 -}
 module Naming.CompleteVerifySpec (spec) where
 
@@ -23,6 +30,11 @@ import Naming.Verify (
 policyR, repA, rootOld, rootNew, ctrlA, q1m, q2m, feeK, otherK :: ByteString
 policyR = BS.replicate 28 0x52
 repA = BS.replicate 32 0x41
+
+-- | The two leaves a completion moves between (#157 C1).
+liveLeaf, overLeaf :: ByteString
+liveLeaf = "\x01"
+overLeaf = "\x02"
 rootOld = BS.replicate 32 0x0a
 rootNew = BS.replicate 32 0x0b
 ctrlA = BS.replicate 28 0xaa
@@ -39,8 +51,8 @@ validComplete =
         , ceCompleteTx = "TxC"
         , ceCustodyTxid = "TxR"
         , ceRequestTxid = "TxR"
-        , ceReqOld = repA
-        , ceReqNew = overMarkerFor repA
+        , ceReqOld = liveLeaf
+        , ceReqNew = overLeaf
         , ceRepPolicy = policyR
         , ceRepName = repA
         , ceCustodyPolicy = policyR
@@ -68,10 +80,22 @@ spec = describe "Completion evidence" $ do
     it "refuses a missing request (empty creator)" $
         verifyCompletion validComplete{ceRequestTxid = ""}
             `shouldSatisfy` isLeft
-    it "refuses a folded request from the wrong old value" $
+    it "refuses a folded request from the wrong old leaf" $
         verifyCompletion validComplete{ceReqOld = BS.replicate 32 0x42}
             `shouldSatisfy` isLeft
-    it "refuses a folded request not writing the marker" $
+    -- The armed negative for the retired pair (A-007 item 4). A bundle
+    -- whose folded request reads the held asset and writes its "over"
+    -- marker is exactly what the pre-#157 reader accepted. It must
+    -- refuse now: nothing on chain writes that pair, and a reader that
+    -- still took it would be reading a registry nobody runs.
+    it "refuses the retired representative/Over request pair" $
+        verifyCompletion
+            validComplete
+                { ceReqOld = repA
+                , ceReqNew = overMarkerFor repA
+                }
+            `shouldSatisfy` isLeft
+    it "refuses a folded request not writing the over leaf" $
         verifyCompletion validComplete{ceReqNew = BS.replicate 36 0x43}
             `shouldSatisfy` isLeft
     it "refuses a wrong custody policy" $

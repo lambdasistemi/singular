@@ -14,6 +14,7 @@ use cardano/transaction.{
 use fixtures
 use naming
 use naming.{NamingRecord, RetirementQuorum}
+use retirement_custody
 use witness
 
 /// Registry-mode rows for naming (#157 Gate S): the six approval arms,
@@ -564,6 +565,172 @@ test t157_n6_terminate_approval_without_a_retire_refuses() fail {
       [],
       [],
       [],
+    ),
+  )
+}
+
+// ============================================================================
+// N8 — completion consumes the request retirement actually produced
+// ============================================================================
+
+/// Fixture for the ordinary applied request-validator hash
+/// (D-157-REQUEST-HOME). Distinct from `mpfs_state_hash` so a
+/// cage-home request cannot satisfy the request-home obligation.
+const requestValidatorHash: ByteArray =
+  #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+
+fn completionRequestAt(
+  validatorHash: ByteArray,
+  token: ByteArray,
+  boundName: ByteArray,
+) -> Output {
+  Output {
+    address: address.from_script(validatorHash),
+    value: add(from_lovelace(3_000_000), appPolicy, boundName, 1),
+    datum: InlineDatum(
+      naming.MRequestDatum(
+        naming.MRequest {
+          requestToken: naming.MTokenId { assetName: token },
+          requestOwner: controllerKey,
+          requestKey: registryKey,
+          requestValue: naming.MUpdate(#"01", #"02"),
+          tip: 1_000_000,
+          submitted_at: 0,
+          destination: (#"", #""),
+        },
+      ),
+    ),
+    reference_script: None,
+  }
+}
+
+fn retireProducing(request: Output) -> Bool {
+  application.application.spend(
+    Some(fixtures.as_datum(retirementRecord())),
+    Retire { key: registryKey, revealed_control: recoveryReveal },
+    fixtures.self_ref,
+    Transaction {
+      ..transaction.placeholder,
+      inputs: [recordInput(recordValue())],
+      reference_inputs: [fixtures.state_input()],
+      outputs: [custodyOutput(), request],
+      mint: terminateApproval(),
+      extra_signatories: [recoveryKey],
+    },
+  )
+}
+
+fn producedRequestInput(request: Output) -> Input {
+  Input {
+    output_reference: OutputReference {
+      transaction_id: "1234567890abcdef",
+      output_index: 9,
+    },
+    output: request,
+  }
+}
+
+fn completeProduced(request: Output) -> Bool {
+  let held = add(from_lovelace(5_000_000), activePolicy, registryKey, 1)
+  let modify: Data =
+    naming.MirrorModify(
+      [naming.MAUpdate([naming.MLeaf { skip: 0, key: #"", value: #"" }])],
+    )
+  retirement_custody.retirement_custody.spend(
+    None,
+    #"00",
+    fixtures.self_ref,
+    fixtures.tx(
+      [
+        Input {
+          output_reference: fixtures.self_ref,
+          output: Output {
+            address: address.from_script(application.retirement_custody_hash),
+            value: held,
+            datum: NoDatum,
+            reference_script: None,
+          },
+        },
+        fixtures.state_input(),
+        producedRequestInput(request),
+      ],
+      [
+        Output {
+          address: address.from_script(naming.mpfs_state_hash),
+          value: fixtures.state_input().output.value,
+          datum: InlineDatum(
+            naming.mpfs_state_datum_with_root(
+              #"01",
+              activePolicy,
+              appPolicy,
+            ),
+          ),
+          reference_script: None,
+        },
+      ],
+      [],
+      add(zero, activePolicy, registryKey, -1),
+      [Pair(Spend(fixtures.state_ref), modify)],
+    ),
+  )
+}
+
+/// Connected LT04: retirement co-creates the Update(0x01,0x02) request
+/// at the ordinary request validator, and completion spends that same
+/// output. A manually seeded cage-home request is not this row.
+test t157_n8_connected_retirement_completion_accepts() {
+  let produced =
+    completionRequestAt(
+      requestValidatorHash,
+      fixtures.mock_registry_token,
+      approvalOf(3, registryKey, controllerKey, noDestination()),
+    )
+  retireProducing(produced) && completeProduced(produced)
+}
+
+/// The cage/state address is the wrong validator home.
+test t157_n8_wrong_request_validator_refuses() fail {
+  retireProducing(
+    completionRequestAt(
+      naming.mpfs_state_hash,
+      fixtures.mock_registry_token,
+      approvalOf(3, registryKey, controllerKey, noDestination()),
+    ),
+  )
+}
+
+/// A request naming another registry's cage token is not this
+/// registry's completion request.
+test t157_n8_wrong_registry_token_refuses() fail {
+  retireProducing(
+    completionRequestAt(
+      requestValidatorHash,
+      fixtures.foreign_registry_token,
+      approvalOf(3, registryKey, controllerKey, noDestination()),
+    ),
+  )
+}
+
+/// The co-created request must carry the bound updateTerminal
+/// approval; minting it elsewhere is not enough.
+test t157_n8_missing_bound_approval_refuses() fail {
+  retireProducing(
+    completionRequestAt(
+      requestValidatorHash,
+      fixtures.mock_registry_token,
+      #"00",
+    ),
+  )
+}
+
+/// A different edge/key binding on the request is not the terminate
+/// approval this retirement minted.
+test t157_n8_mismatched_bound_approval_refuses() fail {
+  retireProducing(
+    completionRequestAt(
+      requestValidatorHash,
+      fixtures.mock_registry_token,
+      approvalOf(3, otherKey, controllerKey, noDestination()),
     ),
   )
 }
