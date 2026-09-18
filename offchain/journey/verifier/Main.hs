@@ -84,7 +84,6 @@ import Cardano.Ledger.Binary (DecCBOR (..), decodeFull', decodeFullAnnotator)
 import Cardano.Ledger.Binary.Version (Version)
 import Singular.Registry.Blueprint (
     applyBytesParam,
-    applyIntParam,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
@@ -104,7 +103,7 @@ import Singular.Registry.Types (
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
-    stateActivePolicyBytes,
+    stateRepPolicyBytes,
  )
 import Cardano.Tx.Ledger (ConwayTx)
 import Naming.Datum
@@ -366,7 +365,7 @@ loadIdentities evidence namingPath registryPath = do
         mbp <- either fail pure =<< loadBlueprint registryPath
         case
             ( extractCompiledCode "application.application" nbp
-            , extractCompiledCode "witness.witness" nbp
+            , extractCompiledCode "representative.representative" nbp
             , extractCompiledCode "state.state" mbp
             , extractCompiledCode "request.request" mbp
             ) of
@@ -381,7 +380,7 @@ loadIdentities evidence namingPath registryPath = do
                         , [(AssetName tokSbs, 1)] <- [Map.toList names]
                         , let tok = SBS.fromShort tokSbs
                         , Just (StateDatum st) <- [outCageDatum out]
-                        , stateActivePolicyBytes st == idRepAppliedHash (assemble tok appBytes repBytes stateBytes reqBytes)
+                        , stateRepPolicyBytes st == idRepAppliedHash (assemble tok appBytes repBytes stateBytes reqBytes)
                         ]
                 case candidates of
                     [tok] -> pure (assemble tok appBytes repBytes stateBytes reqBytes)
@@ -390,11 +389,7 @@ loadIdentities evidence namingPath registryPath = do
             _ -> fail "required validator code missing from blueprints"
     assemble tok appBytes repBytes stateBytes reqBytes =
         let appH = scriptHashBytes (computeScriptHash appBytes)
-            -- #157 C5: the active token policy is `witness(1, registry)`,
-            -- applied to this registry identity. It replaced the
-            -- representative policy in the same role; the record fields
-            -- below keep their spelling.
-            repApplied = applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) tok) (applyIntParam 1 repBytes)
+            repApplied = applyBytesParam (registryAssetId (scriptHashBytes (computeScriptHash stateBytes)) tok) (applyBytesParam appH repBytes)
             repAppliedH = scriptHashBytes (computeScriptHash repApplied)
          in Identities
                 { idRegistryToken = tok
@@ -933,7 +928,7 @@ consumedStateRep :: Ctx -> ConwayTx -> Maybe ByteString
 consumedStateRep ctx tx =
     case [inp | RStateSpend inp 2 <- resolvePurposes ids (evUtxos (ctxEvidence ctx)) tx] of
         [inp] -> case Map.lookup (showInShort inp) (evUtxos (ctxEvidence ctx)) >>= outCageDatum of
-            Just (StateDatum st) -> Just (stateActivePolicyBytes st)
+            Just (StateDatum st) -> Just (stateRepPolicyBytes st)
             _ -> Nothing
         _ -> Nothing
   where

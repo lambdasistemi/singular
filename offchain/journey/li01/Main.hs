@@ -474,19 +474,12 @@ runLi01 control si stateBytes requestBytes = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
-                    -- NOTE-020 / #157 D-BOOT: compile-only placeholders.
-                    -- This journey submits no `Modify` (bootstrap and
-                    -- refusal rows only), so nothing reads the four pins
-                    -- the state datum carries. Any future `Modify` path
-                    -- must derive all four from the two partitions' script
-                    -- identities for the registry it boots — the
-                    -- application validator's own hash and
-                    -- `witness(kind, registry)` at kinds 0, 1 and 2 (see
-                    -- register/recovery/retirement).
-                    , cfgApplicationPolicy = SBS.pack (replicate 28 0)
-                    , cfgActivePolicy = SBS.pack (replicate 28 0)
-                    , cfgAbsentPolicy = SBS.pack (replicate 28 0)
-                    , cfgTerminalPolicy = SBS.pack (replicate 28 0)
+                    , cfgRepPolicy = SBS.pack (replicate 28 0)
+                    , cfgConsumerPin = SBS.pack (replicate 28 0)
+                    -- NOTE-020: compile-only placeholder (this journey
+                    -- submits no Modify: bootstrap-enforcement rows only).
+                    -- Any future Modify path must pin a bound consumer and
+                    -- register it first (see register/recovery/retirement).
                     , cfgConsumerScript = SBS.empty
                     , network = Testnet
                     }
