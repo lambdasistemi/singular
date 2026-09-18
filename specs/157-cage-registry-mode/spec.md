@@ -4,8 +4,11 @@ Authority: the settled interface, gist revision `4a2bd178`
 (https://gist.github.com/paolino/2fb03c2e6182fb861bb1361b3977fdc2), and the
 #156 Lean model once frozen — the mandate at
 `specs/156-registry-mode-model/`, operator-accepted at packet v3, head
-`9668eee4b20f9eb87e31ec9c9ed5ea77e82529c7`. Where this document, the on-chain
-code or the issue disagree with the interface or the frozen Lean, those win.
+`9668eee4b20f9eb87e31ec9c9ed5ea77e82529c7` — plus the model-first repair for
+the settled decision `D-157-REQUEST-HOME` recorded at
+`specs/decisions/157-retirement-request-home.md`. Where this document, the
+on-chain code or the issue disagree with that revision-bound Lean authority,
+Lean wins.
 Constitution: `.specify/memory/constitution.md` v1.0.0.
 
 Base: `main` at the commit this branch was cut from. Depends on #156 and
@@ -217,10 +220,24 @@ alone. A thief holding Alice's current key can change where the name pays until
 she recovers; they can no longer end it. The authorized transaction moves the
 active token from the record into completion-only custody, mints the
 `updateTerminal` approval (N2 — the same proof is present) and creates the
-completion request carrying it — today's co-created request. Completion is the fold of `Update(0x01, 0x02)`: the custody UTxO is
-spent, its held token is the burn the delta requires, and the record's name is
-`0x02` forever. `retirement_custody.ak` keeps its rules; `over_marker_for` and
-the naming-specific value vocabulary in `naming.ak` are deleted.
+completion request carrying it at the **ordinary parameterized MPFS request
+validator**, never at the cage/state address. NYA takes the applied request
+validator hash as an immutable script parameter; it is derived from the
+request validator applied to this registry's state policy ID and seed-derived
+cage token name, not selected by the `Retire` redeemer. The request's
+`requestToken` is that same cage token. Completion consumes this exact request
+through `Contribute`, spends state with `Modify` and the retirement custody,
+burns the held active token, and only then folds `Update(0x01,0x02)` so the leaf
+becomes `0x02` forever. Retirement itself leaves the leaf active and does not
+apply `updateTerminal`. No `RequestDatum` spending arm is added to the cage.
+`retirement_custody.ak` keeps its rules; `over_marker_for` and the
+naming-specific value vocabulary in `naming.ak` are deleted.
+
+Executable refusal evidence covers a wrong applied request-validator identity,
+a wrong registry/cage token, a missing bound approval, and a mismatched bound
+approval. Each refusal retains the connected positive control that completes
+using the request produced by the preceding retirement, never a manually
+seeded completion request.
 
 ### N5 — `maintain` and `recover` never touch the trie
 
@@ -352,6 +369,15 @@ hash; the three witness policies are `witness(kind, registry)` applied for
 derivation round-trips through the boot datum. A placeholder id, or a retained
 removed field, is a contract change and is refused as a finding.
 
+For NYA the dependency order is strict: the parameterless cage script hash and
+the cage token name derived from a pre-existing seed output reference determine
+the applied request-validator hash; that immutable hash determines the applied
+NYA application script and its policy ID; genesis then pins that application
+policy. Deployment derives and verifies the tuple together. This remains
+acyclic only while the cage script has no application-policy parameter and the
+cage token name remains seed-output-reference derived. Moving either fact is a
+model/deployment identity change, not an implementation detail.
+
 The executable half of X1 stays in #157. The encoding change forces exactly
 seven library files to follow under `-Werror` — `Config.hs`,
 `TxBuilder/{ConnectedFold,Reject,Update,Internal}.hs`, and (amendment of
@@ -397,5 +423,6 @@ contract change.
 ## Non-goals
 
 The runner and the release archive (#158). The escrow (#152). The CLI (#139).
-The completion stranding defect (#130). Upstream MPFS. The Lean model (#156).
-The interface page (#159).
+Upstream MPFS. The interface page (#159). Compatibility or migration for
+already deployed identities; parameterizing NYA changes its address and policy
+identity, so this ticket derives a new identity rather than claiming continuity.

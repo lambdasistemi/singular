@@ -101,7 +101,7 @@ theorem naming_recovery_commitment_binding (hasher : RecoveryHasher)
 with the trie and every record holds its active token. -/
 theorem naming_wellformed_initial :
     Naming.WellFormed namingInitial := by
-  refine ⟨⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · intro key; simp [kindCount, trieGet, namingInitial]
   · intro key; simp [kindCount, namingInitial]
   · intro key; simp [custodyCount, trieGet, namingInitial]
@@ -110,6 +110,7 @@ theorem naming_wellformed_initial :
   · intro c hmem; simp [namingInitial] at hmem
   · intro c₁ h1 _ _ _; simp [namingInitial] at h1
   · intro record hmem; simp [namingInitial] at hmem
+  · intro pending hmem; simp [namingInitial] at hmem
 
 end NamingStatements
 end Singular

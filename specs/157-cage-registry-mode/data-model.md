@@ -34,6 +34,11 @@ inline datum the receiving output must carry (`datum_hash` empty for none).
 For `Insert(0x00)` the address is the refund address; the token goes to
 custody.
 
+For retirement completion, `requestToken` is the same registry's seed-derived
+cage token. The request is locked by the ordinary request validator applied to
+that cage token and the registry state policy ID; the validator identity is not
+a request or redeemer field.
+
 ## `State` (eight fields, replaces six)
 
 | field | role | change |
@@ -58,6 +63,9 @@ by every `Modify`.
 | 1 | `StateDatum` | `State` |
 | 2 | `AbsentCustody` | `key, refund` |
 
+`RequestDatum` remains spendable only at the ordinary request validator through
+`Contribute`. The cage/state validator gains no `RequestDatum` spending arm.
+
 ## Token identity
 
 Under each of the three policies the asset name is the registry key. Identity
@@ -78,6 +86,21 @@ recomputed by the cage; not burned at fold.
 | application spend | `Maintain` 0, `Retire` 1, `Recover` 2 |
 | application mint | `Approve { edge, key, owner, destination }` 0 |
 | witness mint | `Fold` 0 — the only redeemer; the cage decides quantities |
+
+## Naming application parameters and pending retirement
+
+NYA is applied to one immutable `request_validator_hash`. That hash is derived
+from the compiled ordinary request validator applied to `(state_policy_id,
+cage_token_name)` for the same registry. `cage_token_name` is derived from a
+pre-existing seed output reference; the cage script has no application-policy
+parameter. Those two assumptions keep the dependency acyclic. The applied NYA
+identity then determines `application_policy`, which genesis pins.
+
+A pending retirement records exactly `(request_validator_hash, requestToken,
+approved Update(0x01,0x02) request)`. Retirement creates it and moves the active
+token to completion custody while the leaf stays Active. Completion consumes
+that stored object, validates its home, same-registry token and bound approval,
+then alone removes the active holding and writes Terminal.
 
 ## State invariants the cage keeps
 

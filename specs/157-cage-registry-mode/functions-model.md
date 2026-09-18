@@ -27,6 +27,7 @@ constraints. No bodies.
 | declaration | change |
 |---|---|
 | `validateRetract` | admits `Read(_)` beside `Insert(_)` |
+| `validateContribute` | remains the sole spending path for the retirement completion `RequestDatum`; it contributes the stored `Update(0x01,0x02)` request to the same transaction's `Modify` |
 
 ## `naming-onchain/validators/witness.ak`
 
@@ -38,10 +39,11 @@ constraints. No bodies.
 
 | declaration | shape | constraint |
 |---|---|---|
+| application validator parameters | `(request_validator_hash, ...)` | `request_validator_hash` is immutable and equals the ordinary request validator applied to the same state policy ID and cage token; never redeemer-selected |
 | `ApplicationRedeemer` | `Maintain`, `Retire { key }`, `Recover { revealed_control, registry }` | `Fold`, `Cancel` removed |
 | `ApplicationMintRedeemer` | `Approve { edge, key, owner, destination }` | asset name `== approvalName(..)`; exactly one asset moves |
 | `approve(edge, key, owner, destination, tx) -> Bool` | the six arms of R-NM4 | `insertAbsent` unconditional; `insertActive`/`updateActive` owner signs and `destination` is the application address with a well-formed record datum hash; `updateTerminal` the committed recovery key (reveal + signature, as `recover`) or quorum from the record input — never the current control key alone; `deleteAbsent` refund key signs, custody as reference input; `deleteActive` `False` |
-| `retire(record, custody_out, key, revealed_control, tx)` | authorized by the committed recovery key (reveal of `next_control_commitment` + its signature) or by the quorum; the same transaction mints `Approve { updateTerminal, key, .. }` and creates the completion request | LT01 (control key alone) is retired as a row; LT02/LT03 stand; a wrong reveal refuses |
+| `retire(record, custody_out, key, revealed_control, tx)` | authorized by the committed recovery key (reveal of `next_control_commitment` + its signature) or by the quorum; the same transaction mints the bound `Approve { updateTerminal, key, .. }`, moves the active token to custody, and creates the completion request at the immutable applied ordinary request-validator hash with `requestToken` equal to the same cage token; it does not apply the update | LT01 (control key alone) is retired; LT02/LT03 stand; wrong reveal, validator identity, registry token, missing approval, and mismatched approval refuse beside positives |
 
 ## `naming-onchain/validators/naming.ak`
 
@@ -57,6 +59,7 @@ constraints. No bodies.
 |---|---|---|
 | `CageConfig` | gains `cfgApplicationPolicy`, `cfgActivePolicy`, `cfgAbsentPolicy`, `cfgTerminalPolicy`; loses `cfgConsumerPin` | each derived from the partitions' `script-identity.json` given the registry identity (D-BOOT); never a literal |
 | `bootStateFromCfg :: CageConfig -> OnChainRoot -> OnChainTokenState` | the eight-field boot datum | the four pins from the config; CS08 round-trips them |
+| deployment identity derivation | `state hash + seed output ref -> cage token -> applied request hash -> applied NYA/application policy` | derives and verifies the complete tuple before boot; relies on the cage having no application-policy script parameter and on the cage token remaining seed-reference derived |
 
 ## Removed
 

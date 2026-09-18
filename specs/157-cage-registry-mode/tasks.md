@@ -38,8 +38,13 @@ the author. Order follows `plan.md`.
       removed (N7).
 - [ ] T157-13 — `Retire` authorized by the committed recovery key or the
       quorum, never the current control key alone; co-mints the terminate
-      approval and the completion request; completion folds
-      `Update(0x01,0x02)` (N6, N8).
+      approval and creates the completion request at NYA's immutable applied
+      ordinary request-validator hash with `requestToken` bound to the same
+      registry cage token; retirement leaves the leaf active; completion
+      consumes that produced request with `Contribute`, state `Modify` and
+      custody, then folds `Update(0x01,0x02)` (N6, N8). Wrong validator, wrong
+      registry token, missing approval and mismatched approval each have an
+      executable refusal and positive control; no cage `RequestDatum` arm.
 - [ ] T157-13b — the destination output of a folded booking or read carries at
       least the request's value minus the tip (T6).
 - [ ] T157-14 — `Maintain`/`Recover` rows re-run; `naming.ak` loses its value
@@ -50,7 +55,8 @@ the author. Order follows `plan.md`.
 ## Consumers and docs
 
 - [ ] T157-16 — conformance re-baselined; contract change stated with old and
-      new fields side by side (X1).
+      new fields side by side, and deployment derives/verifies cage/token →
+      request validator → NYA/application policy in that order (X1).
 - [ ] T157-17 — the three naming docs updated; speech restamped;
       `just check-presentation` green (X2).
 - [ ] T157-18 — the trace-label table `Aiken trace → Lean reason`, total.

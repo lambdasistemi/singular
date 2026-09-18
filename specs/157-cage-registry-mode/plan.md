@@ -1,7 +1,8 @@
 # #157 — plan and invariant mandate
 
-One PR, `code-the-design`: the frozen #156 Lean is the behavioral authority;
-this ticket makes the Aiken correspond to it. Every invariant row binds a Lean
+One PR, `code-the-design`: the #156 Lean plus the model-first
+`D-157-REQUEST-HOME` repair is the behavioral authority; this ticket makes the
+Aiken correspond to its accepted revision. Every invariant row binds a Lean
 identity or a #156 row, a Given/When/Then, the executable Aiken observation that
 exhibits it, and a control able to fail for the intended reason. A row whose
 only check would be reading source is a blocked question, not a row.
@@ -19,8 +20,10 @@ Order is fixed by dependency, not preference:
    commit as the withdrawal requirement, never one without the other.
 3. **The token policies** — `witness(kind, registry)`; `representative.ak`
    retired.
-4. **Naming** — the approval arms, the fold-created record, retirement's
-   co-minted terminate approval; `naming.ak` loses its value vocabulary.
+4. **Naming** — derive the ordinary request-validator identity from the same
+   registry, apply its hash as an immutable NYA parameter, then add the approval
+   arms, fold-created record and retirement's co-created request; `naming.ak`
+   loses its value vocabulary.
 5. **Conformance and docs** — re-baseline, then the naming pages.
 
 Nothing is pushed red to `main`; intermediate red heads on this draft branch are
@@ -42,7 +45,7 @@ Operator ruling, verbatim: "use codex as eo, opus as to, glm or muse as co";
 
 ## Constraints
 
-- The frozen #156 Lean and its refusal reasons are the vocabulary; an Aiken
+- The revision-bound Lean model and its refusal reasons are the vocabulary; an Aiken
   trace label maps to exactly one Lean reason, and the mapping is a table in the
   handback.
 - No new proof code enters the cage: the read uses `mpf.update(root, key,
@@ -56,6 +59,10 @@ Operator ruling, verbatim: "use codex as eo, opus as to, glm or muse as co";
 - Script identities are regenerated (`just script-identity-regen`) and the
   hashes recorded in the handback; `docs/preprod.md` is not touched (the
   deployed instance is the old contract until #153).
+- Identity derivation is ordered and checked as one tuple: parameterless cage
+  script plus seed-derived cage token, then applied request validator, then
+  applied NYA/application policy, then genesis pins. No request-validator hash
+  may be redeemer-selected, and the cage gains no `RequestDatum` spending arm.
 
 ## Invariant rows — the cage
 
@@ -130,10 +137,10 @@ fails to compile".
 | N3 | R-NM4 `insertAbsent` | Given `Approve { insertAbsent, k, refund, - }`; when minted with no signature; then accepted. | Accepting test | — (N4 is the negative) |
 | N4 | R-NM4 `deleteAbsent` | Given custody `AbsentCustody { k, r }` as a reference input; when `Approve { deleteAbsent, k, r', - }` is minted; then accepted iff `r' = r` and `r`'s payment key signs. | Accepting test; refusing: wrong `r'`; right `r'` unsigned; no reference input | — |
 | N5 | R-NM4 `deleteActive` | Given `Approve { deleteActive, .. }`; when minted under any signatures; then refused `never-certified`. | Refusing test | — |
-| N6 | D-TERMINATE | Given a `Retire` proving the committed recovery key (reveal + signature) or a distinct-member quorum (LT02); when the same transaction mints `Approve { updateTerminal, k, .. }` and creates the completion request carrying it; then accepted. Below quorum (LT03), refused. **The current control key alone: refused `retire-needs-recovery-key`** (R1). | Four tests: recovery-key accepts; quorum accepts; below quorum refuses; control key alone refuses | A terminate approval minted with no `Retire` in the transaction refuses `retire-required`; a wrong reveal refuses as in `lr02` |
+| N6 | D-TERMINATE, D-157-REQUEST-HOME | Given a `Retire` proving the committed recovery key (reveal + signature) or a distinct-member quorum (LT02); when the same transaction mints `Approve { updateTerminal, k, .. }` and creates the completion request at NYA's immutable applied ordinary request-validator hash with `requestToken` equal to the same registry's cage token; then accepted without changing the active leaf. Below quorum (LT03), refused. **The current control key alone: refused `retire-needs-recovery-key`** (R1). | Recovery-key and quorum positives; below quorum and control-key refusals; produced-request identity observed | No terminate approval without `Retire`; wrong reveal; wrong request-validator identity and wrong registry token each refuse beside the unmodified positive |
 | T6 | C6 (R4) | Given a folded booking or read whose request carried value `V` and tip `t`; when the fold completes; then the destination output carries at least `V − t`. | Accepting test with the exact residual | A fold that keeps the residual for the folder, or under-funds the destination output, refuses `deposit-returned` |
 | N7 | N3 fold-created record | Given an `insertActive` fold; when the record output at the application address carries the bound datum and exactly the active token; then accepted (cage T1). Given a record with a second asset; refused `record-single-asset`. | Accepting and refusing tests | — |
-| N8 | N4 completion | Given completion-only custody holding the active token for `k` and its co-created `Update(0x01,0x02)` request; when folded; then custody is spent, the token burned, the leaf `0x02`. | Accepting test (LT rows ported) | A completion whose burn is not the held token refuses (existing `held_burned_exactly_once`) |
+| N8 | N4 completion | Given completion-only custody holding the active token for `k` and the actual co-created `Update(0x01,0x02)` request at the ordinary request validator; when that request is consumed with `Contribute` and state with `Modify`; then custody is spent, the token burned, and only this step writes leaf `0x02`. | Connected LT04 retirement→produced request→completion | Wrong validator, wrong registry token, missing approval, and mismatched approval each refuse with an explicit positive; substituting a manually seeded request is not evidence |
 | N9 | NM2 | Given a live record; when `Maintain` or `Recover` runs; then the registry state is not an input and the root is unchanged. | Existing LM/LR rows, re-run | A `Maintain` that spends the state refuses |
 | N10 | #156 T1 | Given a `0x02` leaf; when any **tree-changing** request for `k` is folded — `Insert`, `Update`, `Delete` with any value — then refused (C2, `edge-from-terminal`). `Read(0x02)` for `k` is **accepted** and mints `+1 terminal` (C2, C3, G5, M3): T1 is stated for every edge but `witnessTerminal`. | Rows for each tree-changing operation on `0x02`; one accepting `Read(0x02)` row | Admitting any tree-changing operation on `0x02` turns its row accepting; refusing the read turns G5 red |
 
