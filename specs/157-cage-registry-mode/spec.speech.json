@@ -269,13 +269,13 @@
       "pause": 400
     }
   ],
-  "x3-the-existing-journeys-follow-the-contract-amendment-of-2026-09-18": [
+  "x3-the-existing-journeys-are-nyas-amendment-of-2026-09-18-epic-owner-r3": [
     {
-      "text": "X3 — the existing journeys follow the contract (amendment of 2026-09-18).",
+      "text": "X3 — the existing journeys are NYA's (amendment of 2026-09-18, epic owner r3).",
       "pause": 500
     },
     {
-      "text": "The journeys already on main — li01, li-refusals, lmlc, recovery, retirement, retire-verify, repair and their CI jobs — are model-bound consumers of the cage and naming contracts, like the simulator was for #156. They are re-cut in this ticket, not left to #158: a boot with the four derived pins; requests carrying an approval and a destination; the record created by the fold instead of a claim; retirement proved by the recovery key or the quorum. Rows whose behaviour the design retires — the claim-and-cancel LC rows, the pending-claim Fold, retirement by the control key alone — are retired with a recorded mapping in the journey's README, never silently dropped and never kept green by a stub. Rows that survive (LI, LM, LR, LT minus the retired ones) replay against the new blueprint with their attribution checks intact. main is never red on a journey job after this ticket merges. No new journey is authored here: witness-rows and the archive are #158's.",
+      "text": "The journeys on main — li01, li-refusals, lmlc, recovery, retirement, retire-verify, repair — are consumers of the naming application, not of the registry. Their re-cut is #172 under the NYA epic #174, after #154 closes. In this ticket their CI jobs are retired from the required set with a recorded mapping, D6; none is stubbed green. No new journey is authored here: witness-rows is #158's, against the open application, #173.",
       "pause": 400
     }
   ],
@@ -291,7 +291,7 @@
       "pause": 500
     },
     {
-      "text": "The runner and the release archive (#158). The escrow (#152). The CLI (#139). The completion stranding defect (#130). Upstream MPFS. The Lean model (#156). The interface page (#159).",
+      "text": "The runner and the release archive (#158). The escrow (#152). The CLI (#139). The completion stranding defect (#130). Upstream MPFS. The Lean model (#156). The interface page (#159). The NYA journeys and their CI jobs (#172, epic #174); retirement completion at the request validator (#175).",
       "pause": 400
     }
   ],
@@ -429,6 +429,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "2a6c42f936c22c3bc3a5b88b56fc8af5a5cd9ba3de1a8ead8408b4220f64e5eb"
+    "sha256": "ad68f95bf0e1ea2669d4eacee160b3000f06d1033864bc42b15cac32bfa6c2ba"
   }
 }
