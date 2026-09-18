@@ -27,10 +27,9 @@ module Naming.Verify (
 
 import Data.ByteString (ByteString)
 
-import Naming.Register (overMarkerFor, representativeName)
-
--- | Read one naming token from complete non-ADA value triples. The caller
--- supplies the deployment's allowed approval and representative policies.
+{- | Read one naming token from complete non-ADA value triples. The caller
+supplies the deployment's allowed approval and representative policies.
+-}
 singleNamingToken ::
     [ByteString] ->
     [(ByteString, ByteString, Integer)] ->
@@ -78,7 +77,11 @@ data RetireEvidence = RetireEvidence
     , reCustodyQty :: Integer
     -- ^ Custody output asset quantity (retire-tx bytes).
     , reRepLog :: ByteString
-    -- ^ Representative as published in public creation material.
+    {- ^ The witness asset name as published in public creation
+    material. Since #157 (D-ASSET) that is the registry key itself:
+    under each of the registry's three token policies the asset name IS
+    the key, and a record carries the ACTIVE token of its own key.
+    -}
     , reSigners :: [ByteString]
     -- ^ Retire-tx required signatories (body bytes).
     , reWitnesses :: [ByteString]
@@ -86,10 +89,10 @@ data RetireEvidence = RetireEvidence
     }
     deriving stock (Eq, Show)
 
-{- | The representative mint policy of a creation fold: exactly one
-positive-quantity policy (the approval burn is negative). Anything
-else — none, several — fails: the derivation admits no judgment
-calls about which policy is \"the\" representative one.
+{- | The witness mint policy of a creation fold: exactly one
+positive-quantity policy. Anything else — none, several — fails: the
+derivation admits no judgment calls about which policy is \"the\" one
+the fold minted under.
 -}
 positiveMintPolicy :: [(ByteString, ByteString, Integer)] -> Either String ByteString
 positiveMintPolicy triples = case [p | (p, _, q) <- triples, q > 0] of
@@ -113,19 +116,24 @@ verifyRetireEvidence ev = do
         (reCreationHashLog ev)
     -- Derive the policy from the creation mint, then verify custody agrees.
     repPolicy <- positiveMintPolicy (reCreationMint ev)
-    let repComputed = representativeName (reSpelling ev)
-    -- Creation mint binds the recomputed name at +1 under that policy.
+    -- #157 D-ASSET: the asset name under each token policy IS the
+    -- registry key, so there is nothing to recompute — the name the
+    -- evidence already carries is the name every clause below binds.
+    -- The hashed representative formula went with the representative
+    -- policy it named.
+    let repName = reSpelling ev
+    -- Creation mint binds that name at +1 under that policy.
     unlessEq
-        "creation mint does not carry the recomputed rep at +1"
+        "creation mint does not carry the key's witness at +1"
         [(n, q) | (p, n, q) <- reCreationMint ev, p == repPolicy]
-        [(repComputed, 1)]
+        [(repName, 1)]
     -- Custody triple binds policy, name and quantity together: a
     -- same-name token under a different policy is a different asset
     -- and refuses here (NOTE-026).
-    unlessEq "custody policy is not the derived rep policy" (reCustodyPolicy ev) repPolicy
-    unlessEq "custody name is not the recomputed rep" (reCustodyName ev) repComputed
+    unlessEq "custody policy is not the derived witness policy" (reCustodyPolicy ev) repPolicy
+    unlessEq "custody name is not the registry key" (reCustodyName ev) repName
     unlessEq "custody quantity is not 1" (reCustodyQty ev) 1
-    unlessEq "recomputed rep differs from public creation material" repComputed (reRepLog ev)
+    unlessEq "key differs from public creation material" repName (reRepLog ev)
     -- Route: singleton signers must be the current control
     -- (controller route, rotated or not); larger sets must equal the
     -- quorum with the control absent (quorum route). Every expected
@@ -235,13 +243,13 @@ verifyCompletion ev = do
     -- transaction as the spent custody (a request queued anywhere
     -- else, or no request at all, refuses).
     unlessEq "folded request is not the retire's own (creator mismatch)" (ceRequestTxid ev) (ceCustodyTxid ev)
-    -- Value relation: the folded Update moves the burned asset to
-    -- its Over marker (what the scripts check on ledger).
-    unlessEq "folded request old value is not the burned asset" (ceReqOld ev) (ceRepName ev)
-    unlessEq
-        "folded request does not write the Over marker"
-        (ceReqNew ev)
-        (overMarkerFor (ceRepName ev))
+    -- Value relation (#157 N4): completion is the fold of
+    -- `Update(0x01, 0x02)` — the key's leaf goes from live to over.
+    -- The Over marker went with the naming value vocabulary; the leaf
+    -- codec IS the value now, and these are the exact bytes both the
+    -- cage and the custody script read.
+    unlessEq "folded request does not read the live leaf" (ceReqOld ev) liveLeaf
+    unlessEq "folded request does not write the over leaf" (ceReqNew ev) overLeaf
     -- Burn: the spent custody triple is the verified pair, and the
     -- mint field burns exactly it once.
     unlessEq "spent custody policy is not the verified rep policy" (ceCustodyPolicy ev) (ceRepPolicy ev)
@@ -271,3 +279,11 @@ verifyCompletion ev = do
     unlessOk msg _ = Left msg
     unlessAbsent _ xs ys | all (`notElem` ys) xs = Right ()
     unlessAbsent msg _ _ = Left msg
+
+{- | The two leaves a completion moves between (#157 C1): live and
+over. A registry leaf is one of exactly three bytes, and the
+terminating edge is the one that goes from the second to the third.
+-}
+liveLeaf, overLeaf :: ByteString
+liveLeaf = "\x01"
+overLeaf = "\x02"

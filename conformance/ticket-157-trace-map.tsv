@@ -85,6 +85,10 @@ naming-onchain	t157_n6_retire_with_the_control_key_alone_refuses	retire-needs-re
 naming-onchain	t157_n6_terminate_approval_without_a_retire_refuses	retire-required	naming-retirement-uncertified
 naming-onchain	t157_n7_record_with_a_second_asset_refuses	record-single-asset	naming-record-unavailable
 naming-onchain	t157_n8_completion_burning_another_token_refuses	completion-burn	token-missing
+naming-onchain	t157_n8_wrong_request_validator_refuses	retirement-request-validator-mismatch	retirement-request-validator-mismatch
+naming-onchain	t157_n8_wrong_registry_token_refuses	retirement-request-token-mismatch	retirement-request-token-mismatch
+naming-onchain	t157_n8_missing_bound_approval_refuses	retirement-approval-missing	retirement-approval-missing
+naming-onchain	t157_n8_mismatched_bound_approval_refuses	retirement-approval-mismatch	retirement-approval-mismatch
 naming-onchain	t157_n9_maintain_spending_the_registry_refuses	no-registry-spend	naming-context
 naming-onchain	t157_p1_absent_mint_outside_a_fold_refuses	no-fold	Model.I-W1-mint-witness
 naming-onchain	t157_p1_active_mint_outside_a_fold_refuses	no-fold	Model.I-W1-mint-witness

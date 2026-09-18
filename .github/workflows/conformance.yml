@@ -185,7 +185,13 @@ jobs:
           #    blueprint. The human log marker is abbreviated and
           #    cannot serve as a script identity.
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
-          hook_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "consumer.consumer.withdraw" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
+          if nix run --quiet nixpkgs#jq -- -e '.validators[] | select(.title == "consumer.consumer.withdraw")' "$blueprint" >/dev/null; then
+            echo 'FAIL: retired consumer.consumer.withdraw still present in the onchain blueprint'
+            exit 1
+          fi
+          hook_hash="$(sed -n 's/^application-policy: //p' /tmp/generic-rows.log | tail -1)"
+          [ -n "$hook_hash" ] || { echo 'FAIL: producer did not emit cfgApplicationPolicy'; exit 1; }
+          [ "${#hook_hash}" -eq 56 ] || { echo "FAIL: cfgApplicationPolicy is not a 28-byte hash: $hook_hash"; exit 1; }
           for row in CG11 CG12; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             # jq expands its own --arg variables inside this program.
@@ -198,7 +204,7 @@ jobs:
               and (.refusal.limit | type == "string" and length > 0)
             ' "$f" > /dev/null || { echo "FAIL: $row structural refusal evidence moved"; exit 1; }
           done
-          nix run --quiet nixpkgs#jq -- -e '.outcome == "accepted" and .venue == "node-submit" and (.transactions | length > 0 and all(.[]; test("^[0-9a-f]{64}$")))' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 accepted observation missing'; exit 1; }
+          nix run --quiet nixpkgs#jq -- -e '.outcome == "refused" and .verdict == "held-q002" and .transactions == []' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 must remain refused/held-q002 with no accepted transactions'; exit 1; }
           grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
           grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
           # 8. standalone rejected-floor control receipt mandatory:

@@ -10,7 +10,7 @@ use fixtures.{
   altered_control, app_policy, burn_approval, claim_input,
   claim_value_with_approval, continuation_output, controller, custody_address,
   deposit, member2, member3,
-  mock_registry_token,
+  mock_registry_token, request_validator_hash,
   redirected_output_address,
   redirected_refund, refund_destination, refund_output_address, rep_policy,
   self_ref, state_datum,
@@ -45,6 +45,7 @@ test lm01_maintenance_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -64,6 +65,7 @@ test lm02_maintenance_unauthorized_refuses() fail {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -86,6 +88,7 @@ test lm03_commitment_tamper_refuses() fail {
     tampered_commitment,
   )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -111,6 +114,7 @@ test lm04_quorum_alteration_refuses() fail {
     },
   )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -131,6 +135,7 @@ test maintenance_control_tamper_refuses() fail {
   let swapped =
     fixtures.with_control(fixtures.maintained_record(), altered_control)
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -149,6 +154,7 @@ test maintenance_control_tamper_refuses() fail {
 test maintenance_without_continuation_refuses() fail {
   let source = source_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -170,6 +176,7 @@ test maintenance_with_two_continuations_refuses() fail {
   let continuation =
     continuation_output(fixtures.as_datum(maintained), record_value)
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -188,6 +195,7 @@ test maintenance_value_shrink_refuses() fail {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -209,6 +217,7 @@ test maintenance_value_shrink_refuses() fail {
 test maintenance_identity_candidate_accepts() {
   let source = source_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -236,6 +245,7 @@ test maintenance_identity_candidate_accepts() {
 test retire_with_continuation_refuses() fail {
   let source = source_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
@@ -301,6 +311,7 @@ test lr01_recovery_accepts() {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -348,6 +359,7 @@ test lr02_wrong_reveal_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_wrong_revealed,
@@ -371,6 +383,7 @@ test lr03_missing_signer_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -405,6 +418,7 @@ test lr04_replay_refuses() fail {
   let successor_value =
     add(record_value, app_policy, recovery_rep, 1)
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(successor_as_source)),
     Recover {
       revealed_control: consumed_reveal,
@@ -427,6 +441,7 @@ test lr05_old_controller_refuses() fail {
   let maintained =
     fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(recovered)),
     Maintain,
     self_ref,
@@ -449,6 +464,7 @@ test lr05_recovered_controller_maintains_accepts() {
   let maintained =
     fixtures.with_control(fixtures.maintained_record(), recovery_revealed)
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(recovered)),
     Maintain,
     self_ref,
@@ -470,6 +486,7 @@ test lr06_forged_digest_refuses() fail {
     with_commitment(source_record(), forged_commitment(recovery_revealed))
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -493,6 +510,7 @@ test lr07_wrong_signer_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -520,6 +538,7 @@ test lr08_missing_fresh_refuses() fail {
       recovery_commitment(recovery_revealed),
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -540,6 +559,7 @@ test lr10_registry_tamper_refuses() fail {
   let source = recovery_source()
   let successor = recovery_successor()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -575,6 +595,7 @@ test lr11_quorum_tamper_refuses() fail {
       recovery_commitment(recovery_fresh_address),
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -606,6 +627,7 @@ test recovery_script_reveal_refuses() fail {
       recovery_commitment(recovery_fresh_address),
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_script_reveal,
@@ -640,6 +662,7 @@ test recovery_destination_tamper_refuses() fail {
       recovery_commitment(recovery_fresh_address),
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -706,7 +729,7 @@ fn terminate_approval() -> ByteArray {
 
 fn retirement_completion_output() -> Output {
   Output {
-    address: address.from_script(mpfs_state_hash),
+    address: address.from_script(request_validator_hash),
     value: add(from_lovelace(3_000_000), app_policy, terminate_approval(), 1),
     datum: InlineDatum(
       naming.MRequestDatum(
@@ -740,6 +763,7 @@ fn retirement_custody_output(value) {
 test lt02_quorum_retirement_accepts() {
   let source = retirement_source()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
@@ -764,6 +788,7 @@ test lt02_quorum_retirement_accepts() {
 test lt03_insufficient_quorum_refuses() fail {
   let source = retirement_source()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
@@ -782,6 +807,7 @@ test lt03_insufficient_quorum_refuses() fail {
 test lt03_duplicate_member_refuses() fail {
   let source = retirement_source()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
@@ -810,6 +836,7 @@ test lt03_duplicate_stored_member_refuses() fail {
       },
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: #"" },
     self_ref,
@@ -836,6 +863,7 @@ test retire_forged_reference_refuses() fail {
       [],
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
@@ -857,6 +885,7 @@ test retire_foreign_datum_reference_refuses() fail {
       [],
     )
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Retire { key: fixtures.registry_key, revealed_control: recovery_revealed },
     self_ref,
@@ -883,6 +912,7 @@ test t146_lr01_with_extra_token_refuses() {
   let source = recovery_source()
   let successor = recovery_successor()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,
@@ -906,6 +936,7 @@ test t146_lm01_with_extra_token_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -923,6 +954,7 @@ test t146_maintain_extra_token_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -940,6 +972,7 @@ test t146_maintain_lovelace_topup_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -957,6 +990,7 @@ test t146_maintain_lovelace_reduction_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -974,6 +1008,7 @@ test t146_maintain_addition_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -991,6 +1026,7 @@ test t146_maintain_same_policy_addition_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -1008,6 +1044,7 @@ test t146_maintain_quantity_increase_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -1025,6 +1062,7 @@ test t146_maintain_removal_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -1042,6 +1080,7 @@ test t146_maintain_replacement_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Maintain,
     self_ref,
@@ -1059,6 +1098,7 @@ test t146_recover_extra_token_refuses() {
   let source = recovery_source()
   let successor = recovery_successor()
   !application.application.spend(
+    request_validator_hash,
     Some(fixtures.as_datum(source)),
     Recover {
       revealed_control: recovery_revealed,

@@ -14,6 +14,7 @@ root does NOT change.
 -}
 module Singular.Registry.TxBuilder.Reject (
     rejectRequestsImpl,
+    rejectRequestsWithRefs,
 ) where
 
 import Control.Exception (SomeException, try)
@@ -49,6 +50,9 @@ import Cardano.Ledger.Conway.Scripts (
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -70,9 +74,6 @@ import Singular.Registry.Types (
     RequestAction (..),
     UpdateRedeemer (..),
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -86,7 +87,25 @@ rejectRequestsImpl ::
     TokenId ->
     Addr ->
     IO ConwayTx
-rejectRequestsImpl cfg prov tid addr = do
+rejectRequestsImpl cfg prov tid addr =
+    rejectRequestsWithRefs cfg prov tid addr []
+
+{- | The same rejection, with the cage and request validators resolved
+from reference outputs instead of attached.
+
+The two together are seventeen kilobytes, over MaxTxSize, so a cage
+whose scripts are published rejects through them; the script hashes the
+ledger runs are the same either way.
+-}
+rejectRequestsWithRefs ::
+    CageConfig ->
+    Provider IO ->
+    TokenId ->
+    Addr ->
+    -- | outputs carrying the two validators as reference scripts
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ConwayTx
+rejectRequestsWithRefs cfg prov tid addr refUtxos = do
     (stateUtxo, reqUtxos, feeUtxo, pp) <-
         queryRejectContext cfg prov tid addr
     let (_stateIn, stateOut) = stateUtxo
@@ -108,13 +127,14 @@ rejectRequestsImpl cfg prov tid addr = do
                 script
                 requestScript
                 lowerSlot
+                refUtxos
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
             (feeUtxo : stateUtxo : reqUtxos)
-            []
+            refUtxos
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
@@ -287,6 +307,7 @@ buildRejectProgram ::
     Script ConwayEra ->
     Script ConwayEra ->
     SlotNo ->
+    [(TxIn, TxOut ConwayEra)] ->
     Tx.TxBuild NoCtx Void ()
 buildRejectProgram
     cfg
@@ -298,7 +319,8 @@ buildRejectProgram
     newStateOut
     script
     requestScript
-    lowerSlot = do
+    lowerSlot
+    refUtxos = do
         let stateRef = txInToRef stateIn
             OnChainTokenState
                 { stateMaxFee = tipAmount
@@ -332,7 +354,10 @@ buildRejectProgram
         -- gone. Every rule it re-walked beside the fold — request value
         -- coverage, the mint binding — is the cage's own now, checked
         -- once from the transaction's own evidence.
-        Tx.attachScript script
-        Tx.attachScript requestScript
+        if null refUtxos
+            then do
+                Tx.attachScript script
+                Tx.attachScript requestScript
+            else mapM_ (Tx.reference . fst) refUtxos
         Tx.collateral (fst feeUtxo)
         Tx.validFrom lowerSlot

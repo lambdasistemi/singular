@@ -39,6 +39,7 @@ module Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     cageAddrFromCfg,
     requestAddrFromCfg,
+    appliedApplicationBytes,
     onChainTokenId,
 
     -- * Datum helpers
@@ -198,7 +199,14 @@ import PlutusTx.IsData.Class (
     ToData (..),
  )
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Balance (
+    BalanceResult (..),
+    balanceTx,
+ )
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Blueprint (
+    applyBytesParam,
     applyRequestParams,
  )
 import Singular.Registry.Config (
@@ -219,12 +227,6 @@ import Singular.Registry.Types (
     OnChainTokenId (..),
     OnChainTxOutRef (..),
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Balance (
-    BalanceResult (..),
-    balanceTx,
- )
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty MPF root (32 zero bytes).
 emptyRoot :: ByteString
@@ -417,6 +419,23 @@ requestScriptBytesFromCfg cfg tid =
         (scriptHashBytes $ cfgScriptHash cfg)
         (onChainTokenId tid)
         (requestScriptBytes cfg)
+
+{- | NYA applied to the ordinary request-validator hash for this
+registry: `request(statePolicy, cageToken)` then
+`application(requestHash)`.
+-}
+appliedApplicationBytes ::
+    ByteString ->
+    OnChainTokenId ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString
+appliedApplicationBytes statePolicy tok requestBytes applicationBytes =
+    let requestHash =
+            scriptHashBytes $
+                computeScriptHash $
+                    applyRequestParams statePolicy tok requestBytes
+     in applyBytesParam requestHash applicationBytes
 
 scriptHashBytes :: ScriptHash -> ByteString
 scriptHashBytes (ScriptHash h) =
@@ -677,13 +696,14 @@ extractOwnerBytes out =
                 "extractOwnerBytes: \
                 \not a request"
 
--- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
--- routing): exactly `input lovelace − tip`, floored at min-UTxO with the
--- top-up funded visibly. No fee share is deducted here and none is
--- invented (fees ride funding inputs; the validator pins per-owner floors
--- and exact lock accumulation instead of an aggregate envelope). THE shared
--- helper for every rejected-refund emission — `Reject` and manual paths
--- call it; processed rows emit no refunds at all (their bond locks).
+{- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
+routing): exactly `input lovelace − tip`, floored at min-UTxO with the
+top-up funded visibly. No fee share is deducted here and none is
+invented (fees ride funding inputs; the validator pins per-owner floors
+and exact lock accumulation instead of an aggregate envelope). THE shared
+helper for every rejected-refund emission — `Reject` and manual paths
+call it; processed rows emit no refunds at all (their bond locks).
+-}
 computeRefund ::
     PParams ConwayEra ->
     Network ->
@@ -824,11 +844,10 @@ evalScriptHash s =
 
 findAfter :: String -> String -> Maybe String
 findAfter needle hay =
-    case
-        [ drop (length needle) t
-        | t <- tails hay
-        , needle `isPrefixOf` t
-        ] of
+    case [ drop (length needle) t
+         | t <- tails hay
+         , needle `isPrefixOf` t
+         ] of
         (r : _) -> Just r
         [] -> Nothing
 

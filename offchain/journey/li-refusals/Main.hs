@@ -87,13 +87,13 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, poll)
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , displayException
-    , throwIO
-    , try
-    )
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    displayException,
+    throwIO,
+    try,
+ )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -107,10 +107,10 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (intercalate, isInfixOf, sortBy)
 import Data.Map.Strict qualified as Map
 import Data.Ord (comparing)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Sequence.Strict qualified as StrictSeq
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -131,6 +131,7 @@ import Cardano.Ledger.Api.Tx.Body (
     mintTxBodyL,
     mkBasicTxBody,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
     scriptIntegrityHashTxBodyL,
  )
@@ -142,6 +143,7 @@ import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     getMinCoinTxOut,
     mkBasicTxOut,
+    referenceScriptTxOutL,
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (
@@ -149,7 +151,7 @@ import Cardano.Ledger.Api.Tx.Wits (
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash, hashScript)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
@@ -158,6 +160,34 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
+import Cardano.Node.Client.E2E.Setup (
+    addKeyWitness,
+    devnetMagic,
+    genesisAddr,
+    genesisDir,
+    genesisSignKey,
+ )
+import Cardano.Node.Client.Ledger (ConwayTx)
+import Cardano.Node.Client.N2C.Connection (
+    newLSQChannel,
+    newLTxSChannel,
+    runNodeClient,
+ )
+import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
+import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
+import Cardano.Node.Client.Provider qualified as N2C
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Naming.Datum
+import Naming.Register (registryAssetId)
+import Naming.Wire (
+    Address (..),
+    WireData (..),
+    addressBytes,
+    canonicalAddress,
+    decodeAddress,
+    serialiseWireData,
+ )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
@@ -177,6 +207,8 @@ import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
+    appliedApplicationBytes,
+    approvalName,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
@@ -186,6 +218,7 @@ import Singular.Registry.TxBuilder.Internal (
     findStateUtxo,
     mkCageScript,
     mkInlineDatum,
+    onChainTokenId,
     placeholderExUnits,
     scriptFromBytes,
     scriptHashBytes,
@@ -199,34 +232,6 @@ import Singular.Registry.Types (
     OnChainRoot (..),
     OnChainTxOutRef (..),
  )
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup (
-    addKeyWitness,
-    devnetMagic,
-    genesisAddr,
-    genesisDir,
-    genesisSignKey,
- )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.N2C.Connection (
-    newLSQChannel,
-    newLTxSChannel,
-    runNodeClient,
- )
-import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
-import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Naming.Register (registryAssetId)
-import Naming.Datum
-import Naming.Wire
-    ( Address (..)
-    , WireData (..)
-    , addressBytes
-    , canonicalAddress
-    , decodeAddress
-    , serialiseWireData
-    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -235,11 +240,13 @@ import Naming.Wire
 data Mode
     = -- | the seven rows, then a real LI01, then LI06.
       MainRun
-    | -- | the canonical initialization run against the armed refusal
-      -- guard: it succeeds, and the guard must fail the run.
+    | {- | the canonical initialization run against the armed refusal
+      guard: it succeeds, and the guard must fail the run.
+      -}
       ControlCanonical
-    | -- | every refusal matched against a marker that cannot occur:
-      -- the matcher must fail the run naming what came back.
+    | {- | every refusal matched against a marker that cannot occur:
+      the matcher must fail the run naming what came back.
+      -}
       ControlWrongReason
     deriving (Eq, Show)
 
@@ -252,9 +259,10 @@ readMode =
         Just other ->
             failWith ("unknown LIREFUSALS_CONTROL value " <> other)
 
--- | The marker the wrong-reason control matches refusals against: by
--- construction no node reason can contain it, so a matched reason can
--- never close a row and the control must fail.
+{- | The marker the wrong-reason control matches refusals against: by
+construction no node reason can contain it, so a matched reason can
+never close a row and the control must fail.
+-}
 wrongReasonMarker :: String
 wrongReasonMarker =
     "wrong-reason-control marker that no node reason can ever contain"
@@ -263,18 +271,20 @@ wrongReasonMarker =
 -- Ledger-shape constants (the #56 discipline)
 -- ---------------------------------------------------------
 
--- | Flat fee for hand-balanced refusal transactions: above the
--- devnet's minimum, above the fee the declared max execution units
--- price in (~8.8 ada for two mint purposes) and above the size fee of
--- carrying two script witnesses, so a phase-1 fee refusal can never
--- masquerade as the row's verdict.
+{- | Flat fee for hand-balanced refusal transactions: above the
+devnet's minimum, above the fee the declared max execution units
+price in (~8.8 ada for two mint purposes) and above the size fee of
+carrying two script witnesses, so a phase-1 fee refusal can never
+masquerade as the row's verdict.
+-}
 flatFee :: Integer
 flatFee = 12_000_000
 
--- | Declared execution units for hand-balanced transactions: the
--- devnet's maxTxExUnits (e2e-test\/genesis\/alonzo-genesis.json).
--- Refusal transactions declare exactly it so an oversized real cost
--- can never reject the tx before its validator refuses.
+{- | Declared execution units for hand-balanced transactions: the
+devnet's maxTxExUnits (e2e-test\/genesis\/alonzo-genesis.json).
+Refusal transactions declare exactly it so an oversized real cost
+can never reject the tx before its validator refuses.
+-}
 maxUnits :: ExUnits
 maxUnits = ExUnits 3_000_000 200_000_000
 
@@ -388,16 +398,40 @@ runMode mode registryPath namingPath = do
         utxos1 <- Cage.queryUTxOs prov genesisAddr
         canonicalSeed <- utxoByRef utxos1 (worldCanonicalRef world) "canonical seed"
         altSeed <- utxoByRef utxos1 (worldAltRef world) "alternate seed"
-        let appHash = computeScriptHash appBytes
+        let canonicalName0 = deriveAssetName (worldCanonicalRef world)
+            tok0 =
+                TokenId (AssetName (SBS.toShort canonicalName0))
+            appApplied =
+                appliedApplicationBytes
+                    (scriptHashBytes appliedHash)
+                    (onChainTokenId tok0)
+                    requestBytes
+                    appBytes
+            appHash = computeScriptHash appApplied
             appHex = hex (scriptHashBytes appHash)
+            unappliedAppHex =
+                hex (scriptHashBytes (computeScriptHash appBytes))
             appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
+            -- #157 D-BOOT: the four pins this registry identity carries, all
+            -- derived — NYA applied to the ordinary request-validator hash,
+            -- and `witness(kind, registry)` applied at kinds 0, 1 and 2.
+            canonicalRegistryId =
+                registryAssetId
+                    (scriptHashBytes appliedHash)
+                    (deriveAssetName (worldCanonicalRef world))
+            witnessPin kind =
+                SBS.toShort
+                    ( scriptHashBytes
+                        ( computeScriptHash
+                            (applyBytesParam canonicalRegistryId (applyIntParam kind reprBytes))
+                        )
+                    )
             reprAppliedBytes =
-                applyBytesParam (registryAssetId (scriptHashBytes appliedHash) (deriveAssetName (worldCanonicalRef world))) $
-                    applyIntParam 1 reprBytes
+                applyBytesParam canonicalRegistryId (applyIntParam 1 reprBytes)
             reprAppliedHash = computeScriptHash reprAppliedBytes
             reprAppliedHex = hex (scriptHashBytes reprAppliedHash)
             reprUnappliedHex = hex (scriptHashBytes (computeScriptHash reprBytes))
-        checkPinnedApplication namingSi appHex
+        checkPinnedApplication namingSi unappliedAppHex
         checkPinnedRepresentative namingSi reprUnappliedHex
         emit
             "identity"
@@ -409,7 +443,7 @@ runMode mode registryPath namingPath = do
                    \the enforcement the rows meet); applicationPolicy=7 \
                    \naming-application script 0x"
                 <> appHex
-                <> " (0 parameters: the pinned hash is the applied hash); \
+                <> " (NYA applied to the ordinary request-validator hash); \
                    \representativePolicy=8 applied 0x"
                 <> reprAppliedHex
                 <> " = unapplied 0x"
@@ -435,25 +469,18 @@ runMode mode registryPath namingPath = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
-                    -- NOTE-020 / #157 D-BOOT: compile-only placeholders.
-                    -- This journey submits no `Modify` (bootstrap and
-                    -- refusal rows only), so nothing reads the four pins
-                    -- the state datum carries. Any future `Modify` path
-                    -- must derive all four from the two partitions' script
-                    -- identities for the registry it boots — the
-                    -- application validator's own hash and
-                    -- `witness(kind, registry)` at kinds 0, 1 and 2 (see
-                    -- register/recovery/retirement).
-                    , cfgApplicationPolicy = SBS.pack (replicate 28 0)
-                    , cfgActivePolicy = SBS.pack (replicate 28 0)
-                    , cfgAbsentPolicy = SBS.pack (replicate 28 0)
-                    , cfgTerminalPolicy = SBS.pack (replicate 28 0)
+                    , -- #157 D-BOOT: the four pins are derived for THIS registry
+                      -- identity, never typed.
+                      cfgApplicationPolicy = SBS.toShort (scriptHashBytes appHash)
+                    , cfgActivePolicy = witnessPin 1
+                    , cfgAbsentPolicy = witnessPin 0
+                    , cfgTerminalPolicy = witnessPin 2
                     , cfgConsumerScript = SBS.empty
                     , network = Testnet
                     }
             scriptAddr = cageAddrFromCfg cfg Testnet
             appliedScript = mkCageScript cfg
-            appScript = scriptFromBytes "naming-application" appBytes
+            appScript = scriptFromBytes "naming-application" appApplied
             reprAppliedScript = scriptFromBytes "representative" reprAppliedBytes
             canonicalName = deriveAssetName (worldCanonicalRef world)
             altName = deriveAssetName (worldAltRef world)
@@ -477,6 +504,8 @@ runMode mode registryPath namingPath = do
                             , quorumThreshold = 1
                             }
                     }
+        stateRef <-
+            publishStateRef prov submit pp appliedScript (worldRefFund world)
         let env =
                 Env
                     { envProv = prov
@@ -493,6 +522,7 @@ runMode mode registryPath namingPath = do
                     , envReprAppliedScript = reprAppliedScript
                     , envReprAppliedHash = reprAppliedHash
                     , envReprAppliedHex = reprAppliedHex
+                    , envStateRef = stateRef
                     , envScriptAddr = scriptAddr
                     , envCfg = cfg
                     , envCtrlHash = ctrlHash
@@ -505,10 +535,11 @@ runMode mode registryPath namingPath = do
             _ -> runRows mode env canonicalSeed altSeed
         cancel nodeThread
 
--- | The seven rows in world order: the six fresh-world attempts
--- (canonical seed still unspent — before.consumedSeeds=[]), the real
--- LI01, then LI06 against the genuinely consumed seed, then the
--- no-trace proof.
+{- | The seven rows in world order: the six fresh-world attempts
+(canonical seed still unspent — before.consumedSeeds=[]), the real
+LI01, then LI06 against the genuinely consumed seed, then the
+no-trace proof.
+-}
 runRows :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ()
 runRows mode env canonicalSeed altSeed = do
     rowLI02 mode env altSeed
@@ -548,6 +579,10 @@ data Env = Env
     , envReprAppliedScript :: Script ConwayEra
     , envReprAppliedHash :: ScriptHash
     , envReprAppliedHex :: String
+    , envStateRef :: TxIn
+    {- ^ the reference input that resolves the applied state script
+    for the rows that cannot attach it (see 'publishStateRef')
+    -}
     , envScriptAddr :: Addr
     , envCfg :: CageConfig
     , envCtrlHash :: ByteString
@@ -555,7 +590,6 @@ data Env = Env
     , envAltName :: ByteString
     , envNamingDatum :: NamingDatum
     }
-
 
 -- ---------------------------------------------------------
 -- World designation
@@ -565,12 +599,21 @@ data World = World
     { worldCanonicalRef :: OnChainTxOutRef
     , worldAltRef :: OnChainTxOutRef
     , worldPool :: IORef [(TxIn, TxOut ConwayEra)]
+    , worldRefFund :: (TxIn, TxOut ConwayEra)
+    {- ^ the output that funds the reference-script publication. The
+    applied state script is fifteen kilobytes, so a row carrying a
+    second script beside it cannot attach it and stay under
+    MaxTxSize; those rows resolve it from a reference output
+    instead. Its min-ADA is far above a funder's, so it is held
+    out of the pool.
+    -}
     }
 
--- | Split the single genesis UTxO into the designated seeds and the
--- funding pool. Output 0 is the canonical seed; after this
--- transaction it is the lexically first UTxO of the genesis wallet
--- (one txid, lowest index), so the LI01 designation rule names it.
+{- | Split the single genesis UTxO into the designated seeds and the
+funding pool. Output 0 is the canonical seed; after this
+transaction it is the lexically first UTxO of the genesis wallet
+(one txid, lowest index), so the LI01 designation rule names it.
+-}
 designateWorld ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -583,10 +626,12 @@ designateWorld prov submit genesisIn genesisOut = do
         funderCoin = 25_000_000
         canonicalCoin = 50_000_000
         altCoin = 2_000_000
+        refFundCoin = 120_000_000
         fee = 1_000_000
         outs =
             [ mkBasicTxOut genesisAddr (MaryValue (Coin canonicalCoin) mempty)
             , mkBasicTxOut genesisAddr (MaryValue (Coin altCoin) mempty)
+            , mkBasicTxOut genesisAddr (MaryValue (Coin refFundCoin) mempty)
             ]
                 <> [ mkBasicTxOut genesisAddr (MaryValue (Coin funderCoin) mempty)
                    | _ <- [1 .. nFunders]
@@ -614,20 +659,26 @@ designateWorld prov submit genesisIn genesisOut = do
         mine =
             sortBy
                 (comparing (txInIndex . fst))
-                [p | p@(i, _) <- after, txInTxIdHex i == txid, txInIndex i < nFunders + 2]
-    unless (toInteger (length mine) == nFunders + 2) $
+                [p | p@(i, _) <- after, txInTxIdHex i == txid, txInIndex i < nFunders + 3]
+    unless (toInteger (length mine) == nFunders + 3) $
         failWith
             ( "world: expected "
-                <> show (nFunders + 2)
+                <> show (nFunders + 3)
                 <> " designated outputs, found "
                 <> show (length mine)
             )
     let indexed = [(txInIndex i, p) | p@(i, _) <- mine]
         seed0 = lookup 0 indexed
         seed1 = lookup 1 indexed
-        pool = [p | (idx, p) <- indexed, idx >= 2]
+        refFund = lookup 2 indexed
+        pool = [p | (idx, p) <- indexed, idx >= 3]
     (cIn, _) <- maybe (failWith "world: canonical seed output missing") pure seed0
     (aIn, _) <- maybe (failWith "world: alternate seed output missing") pure seed1
+    refFundUtxo <-
+        maybe
+            (failWith "world: reference-script funding output missing")
+            pure
+            refFund
     poolRef <- newIORef pool
     emit
         "world"
@@ -640,25 +691,105 @@ designateWorld prov submit genesisIn genesisOut = do
             <> showIn aIn
             <> " (output 1); "
             <> show nFunders
-            <> " funding UTxOs of 25 ada behind them"
+            <> " funding UTxOs of 25 ada behind them, and output 2 (120 \
+               \ada) reserved to publish the applied state script as a \
+               \reference output"
         )
     pure
         World
             { worldCanonicalRef = txInToRef cIn
             , worldAltRef = txInToRef aIn
             , worldPool = poolRef
+            , worldRefFund = refFundUtxo
             }
+
+{- | Publish the applied state script as a reference output and answer
+the input that resolves it. The script is fifteen kilobytes: a row
+that has to carry a second script beside it — LI05 brings the
+substituted application policy, LI07 the substituted representative
+policy — cannot attach both and stay under MaxTxSize (16384). The
+reference output is created once, from the designated funding output,
+and never spent; resolving a script by reference witnesses the same
+script hash the row names, so every attribution the rows make is
+unchanged.
+-}
+publishStateRef ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    PParams ConwayEra ->
+    Script ConwayEra ->
+    (TxIn, TxOut ConwayEra) ->
+    IO TxIn
+publishStateRef prov submit pp script (fundIn, fundOut) = do
+    let fee = 2_000_000
+        Coin available = fundOut ^. coinTxOutL
+        probe :: TxOut ConwayEra
+        probe =
+            mkBasicTxOut genesisAddr (MaryValue (Coin 0) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        Coin minCoin = getMinCoinTxOut pp probe
+        -- The coin field is part of the serialized size, so the probe
+        -- above under-measures by its own encoding; a whole ada of
+        -- margin is cheaper than a second probe.
+        refCoin = minCoin + 1_000_000
+        refOut = probe & coinTxOutL .~ Coin refCoin
+        change = available - refCoin - fee
+    when (change <= 1_000_000) $
+        failWith
+            ( "world: the reference-script funding output holds "
+                <> show available
+                <> " lovelace, too little for a "
+                <> show refCoin
+                <> "-lovelace reference output"
+            )
+    let body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton fundIn
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ refOut
+                        , mkBasicTxOut genesisAddr (MaryValue (Coin change) mempty)
+                        ]
+                & feeTxBodyL .~ Coin fee
+        publishTx = mkBasicTx body
+    result <- submitTx submit (addKeyWitness genesisSignKey publishTx)
+    case result of
+        Submitted _ -> pure ()
+        Rejected reason ->
+            failWith
+                ( "world: the reference-script publication was refused: "
+                    <> T.unpack (TE.decodeUtf8Lenient reason)
+                )
+    threadDelay 5_000_000
+    after <- Cage.queryUTxOs prov genesisAddr
+    let txid = txIdHex publishTx
+    case [i | (i, _) <- after, txInTxIdHex i == txid, txInIndex i == 0] of
+        (refIn : _) -> do
+            emit
+                "state-reference"
+                ( "the applied state script published as the reference \
+                  \output "
+                    <> showIn refIn
+                    <> " carrying "
+                    <> show refCoin
+                    <> " lovelace: the rows that carry a second script \
+                       \beside it resolve it from there instead of \
+                       \attaching it"
+                )
+            pure refIn
+        [] -> failWith "world: the published reference output is missing"
 
 -- ---------------------------------------------------------
 -- LI02 — the seed substituted
 -- ---------------------------------------------------------
 
--- | The canonical initialization with the seed input substituted: the
--- transaction spends an alternate UTxO while the redeemer still names
--- the canonical seed and the mint still carries the canonical
--- registry token. The applied state script's bootstrap check — the
--- redeemer's seed must be an input — is what binds the canonical
--- seed, and it is exactly what the substitution breaks.
+{- | The canonical initialization with the seed input substituted: the
+transaction spends an alternate UTxO while the redeemer still names
+the canonical seed and the mint still carries the canonical
+registry token. The applied state script's bootstrap check — the
+redeemer's seed must be an input — is what binds the canonical
+seed, and it is exactly what the substitution breaks.
+-}
 rowLI02 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> IO ()
 rowLI02 mode env altSeed = do
     let canonicalRef = cageSeed (envCfg env)
@@ -689,6 +820,7 @@ rowLI02 mode env altSeed = do
                 , rtxOutputs = [regOut, cpOut]
                 , rtxChangeTokens = mempty
                 , rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.empty
                 }
     expectRefused
         mode
@@ -697,8 +829,8 @@ rowLI02 mode env altSeed = do
         "canonical-seed"
         (envAppliedHex env)
         ( "the seed input is the alternate UTxO (seed 401) while the minted \
-           \registry identity and the redeemer still name the canonical \
-           \seed 400 ("
+          \registry identity and the redeemer still name the canonical \
+          \seed 400 ("
             <> show canonicalRef
             <> "): the bootstrap check — the redeemer's seed must be an \
                \input — refuses; substituted element: the seed; the \
@@ -710,7 +842,7 @@ rowLI02 mode env altSeed = do
 -- LI03 — a rival registry from a second seed
 -- ---------------------------------------------------------
 
- -- A-001 recut: the internally consistent rival — the alternate seed is
+-- A-001 recut: the internally consistent rival — the alternate seed is
 -- spent, the redeemer names it, the mint carries its token, output 0 is a
 -- valid registry shape for it. The frozen bootstrap has no canonical-seed
 -- allowlist, so the LEDGER ACCEPTS it; per the A-001 ruling the row asserts
@@ -752,6 +884,7 @@ rowLI03 mode env altSeed = case mode of
                     , rtxOutputs = [regOut, cpOut]
                     , rtxChangeTokens = mempty
                     , rtxReqSigners = Set.empty
+                    , rtxRefInputs = Set.empty
                     }
         let signed = addKeyWitness genesisSignKey tx
         result <- submitTx (envSubmit env) signed
@@ -772,15 +905,14 @@ rowLI03 mode env altSeed = case mode of
                 -- differs from the canonical name.
                 scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
                 let rivalTokenId = TokenId (AssetName (SBS.toShort (envAltName env)))
-                (rivalIn, _) <- case
-                    findStateUtxo
-                        (cagePolicyIdFromCfg (envCfg env))
-                        rivalTokenId
-                        scriptUtxos of
-                        Just r -> pure r
-                        Nothing ->
-                            failWith
-                                "LI03: the accepted rival registry UTxO is not live at the application validator"
+                (rivalIn, _) <- case findStateUtxo
+                    (cagePolicyIdFromCfg (envCfg env))
+                    rivalTokenId
+                    scriptUtxos of
+                    Just r -> pure r
+                    Nothing ->
+                        failWith
+                            "LI03: the accepted rival registry UTxO is not live at the application validator"
                 unless (envAltName env /= envCanonicalName env) $
                     failWith
                         "LI03: the rival name equals the canonical name — derivation broken"
@@ -815,11 +947,12 @@ rowLI03 mode env altSeed = case mode of
 -- LI04 — the registry identity substituted
 -- ---------------------------------------------------------
 
--- | The canonical seed is spent and the redeemer still names it, but
--- the minted token — the registry identity — is named by the alternate
--- seed (registry 2's identity), and output 0 carries it. The applied
--- state script's exact-quantity check — the mint under the policy must
--- be exactly the seed-derived token — refuses.
+{- | The canonical seed is spent and the redeemer still names it, but
+the minted token — the registry identity — is named by the alternate
+seed (registry 2's identity), and output 0 carries it. The applied
+state script's exact-quantity check — the mint under the policy must
+be exactly the seed-derived token — refuses.
+-}
 rowLI04 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra) -> IO ()
 rowLI04 mode env canonicalSeed _altSeed = do
     let canonicalRef = cageSeed (envCfg env)
@@ -853,6 +986,7 @@ rowLI04 mode env canonicalSeed _altSeed = do
                 , rtxOutputs = [regOut, cpOut]
                 , rtxChangeTokens = mempty
                 , rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.empty
                 }
     expectRefused
         mode
@@ -861,7 +995,7 @@ rowLI04 mode env canonicalSeed _altSeed = do
         "registry-authenticity"
         (envAppliedHex env)
         ( "the canonical seed is spent and the redeemer names it, but the \
-           \minted registry token is named by the alternate seed (registry "
+          \minted registry token is named by the alternate seed (registry "
             <> "2's identity, 0x"
             <> hex (envAltName env)
             <> ") instead of the canonical registry token 0x"
@@ -877,14 +1011,16 @@ rowLI04 mode env canonicalSeed _altSeed = do
 -- LI05 — the application policy substituted
 -- ---------------------------------------------------------
 
--- | The canonical initialization exercises no application policy
--- (applicationMint is false), so the substitution manifests by bringing
--- the substituted policy's script into the initialization and minting
--- under it: the attempt mints a token named by the canonical registry
--- identity (what a confounded initializer would do — reuse the
--- registry's name) under the naming application policy. That policy's
--- own address discipline — the mint's asset name must be a canonical
--- address — refuses, naming the substituted policy.
+{- | The canonical initialization exercises no application policy
+(applicationMint is false), so the substitution manifests by bringing
+the substituted policy's script into the initialization and minting
+under it: the attempt mints a token named by the canonical registry
+identity (what a confounded initializer would do — reuse the
+registry's name) under the naming application policy. That policy's
+own discipline — the mint's asset name must BE the approval binding
+of the edge, key, owner and destination its redeemer names
+(D-APPROVAL) — refuses, naming the substituted policy.
+-}
 rowLI05 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> IO ()
 rowLI05 mode env canonicalSeed = do
     let canonicalRef = cageSeed (envCfg env)
@@ -910,18 +1046,18 @@ rowLI05 mode env canonicalSeed = do
                         )
                     ,
                         ( ConwayMinting (AsIx idx)
-                        , ( Data (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
-                          , maxUnits
-                          )
+                        ,
+                            ( Data (uncurry4 approveRedeemer (absenceApproval env))
+                            , maxUnits
+                            )
                         )
                     ]
-        scripts =
-            Map.fromList
-                [
-                    (envAppliedHash env, envAppliedScript env)
-                ,
-                    (envAppHash env, envAppScript env)
-                ]
+        -- The applied state script resolves from the published
+        -- reference output: attached beside the seven-kilobyte
+        -- application script it puts the body at 24071 bytes, over
+        -- MaxTxSize, and a phase-1 size refusal is not this row's
+        -- verdict. The hash the ledger runs is the same either way.
+        scripts = Map.singleton (envAppHash env) (envAppScript env)
         regOut = registryOut env (envScriptAddr env) (cagePolicyIdFromCfg (envCfg env)) (envCanonicalName env)
         cpOut = checkpointOut env (envScriptAddr env)
     tx <-
@@ -935,6 +1071,7 @@ rowLI05 mode env canonicalSeed = do
                 , rtxOutputs = [regOut, cpOut]
                 , rtxChangeTokens = substitutedMA
                 , rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.singleton (envStateRef env)
                 }
     expectRefused
         mode
@@ -949,36 +1086,41 @@ rowLI05 mode env canonicalSeed = do
             <> ") into the initialization and mints a token named by the "
             <> "canonical registry identity 0x"
             <> hex (envCanonicalName env)
-            <> " under it: the substituted policy's own address discipline "
-            <> "(the mint's asset name must be a canonical address) refuses; "
+            <> " under it: the substituted policy's own approval discipline "
+            <> "(the mint's asset name must be the approval binding of the "
+            <> "edge, key, owner and destination the redeemer names) refuses; "
             <> "substituted element: the applicationPolicy; the canonical "
             <> "value it should have had: applicationPolicy 7, which mints "
             <> "nothing at initialization"
         )
         tx
 
--- | The boundary of LI05's refusal, recorded as evidence: the same
--- substituted policy mint, made well-formed for THAT policy (asset
--- name = a canonical address, the controller signing). It is funded
--- from the pool (never a designated seed, never the canonical seed)
--- and never fails the run — whatever the ledger rules here is the
--- boundary evidence of what LI05's refusal does and does not bind.
+{- | The boundary of LI05's refusal, recorded as evidence: the same
+substituted policy mint, made well-formed for THAT policy — the
+asset name IS the approval binding of the tuple the redeemer names,
+so the mint reaches the edge-0 arm instead of stopping at the
+binding. It is funded from the pool (never a designated seed, never
+the canonical seed) and never fails the run — whatever the ledger
+rules here is the boundary evidence of what LI05's refusal does and
+does not bind.
+-}
 li05BoundaryProbe :: Env -> IO ()
 li05BoundaryProbe env = do
     ((probeIn, probeOut), _) <- takeFundCollateral env
     let appPolicy = PolicyID (envAppHash env)
-        destBytes = serialiseAddr genesisAddr
+        (edge, key, owner, dest) = absenceApproval env
+        boundName = approvalName edge key owner dest
         mintMA =
             MultiAsset $
                 Map.singleton
                     appPolicy
-                    (Map.singleton (AssetName (SBS.toShort destBytes)) 1)
+                    (Map.singleton (AssetName (SBS.toShort boundName)) 1)
         idx = mintIndexOf mintMA appPolicy
         redeemers =
             Redeemers $
                 Map.singleton
                     (ConwayMinting (AsIx idx))
-                    (Data (withdrawApprovalRedeemer (envCtrlHash env) destBytes), maxUnits)
+                    (Data (approveRedeemer edge key owner dest), maxUnits)
         scripts = Map.singleton (envAppHash env) (envAppScript env)
     tx <-
         buildRefusalTx
@@ -990,7 +1132,10 @@ li05BoundaryProbe env = do
                 , rtxScripts = scripts
                 , rtxOutputs = []
                 , rtxChangeTokens = mintMA
-                , rtxReqSigners = Set.singleton (envCtrlHash env)
+                , -- the edge-0 arm requires no signature: nobody's
+                  -- permission is needed to witness that a name is free
+                  rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.empty
                 }
     let signed = addKeyWitness genesisSignKey tx
     result <- submitTx (envSubmit env) signed
@@ -1001,11 +1146,14 @@ li05BoundaryProbe env = do
                 ( "the well-formed mint under the substituted application policy "
                     <> "was ACCEPTED (tx="
                     <> txIdHex signed
-                    <> "): a withdraw-approval-shaped asset named by a canonical "
-                    <> "address, controller-signed, passes the policy's own "
-                    <> "discipline — LI05's refusal is the substituted policy's "
-                    <> "own rule, not the initialization binding refusing a wrong "
-                    <> "applicationPolicy; the canonical seed was not spent"
+                    <> "): an asset named 0x"
+                    <> hex boundName
+                    <> ", exactly the approval binding of edge 0 for the "
+                    <> "canonical key refunding the genesis controller, passes "
+                    <> "the policy's own discipline — LI05's refusal is the "
+                    <> "substituted policy's own rule, not the initialization "
+                    <> "binding refusing a wrong applicationPolicy; the "
+                    <> "canonical seed was not spent"
                 )
         Rejected reason ->
             emit
@@ -1020,13 +1168,15 @@ li05BoundaryProbe env = do
 -- LI07 — the representative policy substituted
 -- ---------------------------------------------------------
 
--- | The canonical initialization mints no representative
--- (representativeMint is false). The attempt brings the substituted
--- representative policy's applied script into the initialization and
--- mints a representative under it. The policy never moves an asset on
--- its own authority — a mint must ride an application-spend with a
--- Fold redeemer naming it — and no application spend can ride an
--- initialization, so the substituted policy refuses, naming itself.
+{- | The canonical initialization mints no representative
+(representativeMint is false). The attempt brings the substituted
+representative policy's applied script into the initialization and
+mints a witness under it. The policy never moves an asset on its own
+authority — a mint must ride a fold, that is a spend of the registry
+state token it is bound to carrying a @Modify@ redeemer — and an
+initialization has no state token to spend yet, so the substituted
+policy refuses at @no-fold@, naming itself.
+-}
 rowLI07 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> IO ()
 rowLI07 mode env canonicalSeed = do
     let canonicalRef = cageSeed (envCfg env)
@@ -1053,16 +1203,16 @@ rowLI07 mode env canonicalSeed = do
                         )
                     ,
                         ( ConwayMinting (AsIx idx)
-                        , (Data (PLC.Constr 0 []), maxUnits) -- MintRepresentative
+                        , -- the witness policy reads no redeemer: its
+                          -- whole rule is co-presence with the fold
+                          (Data (PLC.Constr 0 []), maxUnits)
                         )
                     ]
+        -- As in LI05: the applied state script comes from the
+        -- published reference output so the substituted
+        -- representative script fits beside it.
         scripts =
-            Map.fromList
-                [
-                    (envAppliedHash env, envAppliedScript env)
-                ,
-                    (envReprAppliedHash env, envReprAppliedScript env)
-                ]
+            Map.singleton (envReprAppliedHash env) (envReprAppliedScript env)
         regOut = registryOut env (envScriptAddr env) (cagePolicyIdFromCfg (envCfg env)) (envCanonicalName env)
         cpOut = checkpointOut env (envScriptAddr env)
     tx <-
@@ -1076,6 +1226,7 @@ rowLI07 mode env canonicalSeed = do
                 , rtxOutputs = [regOut, cpOut]
                 , rtxChangeTokens = substitutedMA
                 , rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.singleton (envStateRef env)
                 }
     expectRefused
         mode
@@ -1087,11 +1238,12 @@ rowLI07 mode env canonicalSeed = do
             <> "(representativeMint is false); the attempt brings the substituted "
             <> "representative policy 9 (applied 0x"
             <> envReprAppliedHex env
-            <> ") into the initialization and mints a representative under it: "
+            <> ") into the initialization and mints a witness under it: "
             <> "the policy never moves an asset on its own authority — the mint "
-            <> "must ride an application spend with a Fold redeemer naming it — "
-            <> "and no application spend can ride an initialization, so the "
-            <> "substituted policy refuses; substituted element: the "
+            <> "must ride a fold, a spend of the registry state token it is "
+            <> "bound to carrying a Modify redeemer — and an initialization has "
+            <> "no state token to spend yet, so the substituted policy refuses; "
+            <> "substituted element: the "
             <> "representativePolicy; the canonical value it should have had: "
             <> "representativePolicy 8, which mints nothing at initialization"
         )
@@ -1101,15 +1253,17 @@ rowLI07 mode env canonicalSeed = do
 -- LI08 — the validator script substituted
 -- ---------------------------------------------------------
 
--- | The initialization performed under a substituted validator script:
--- everything else stays canonical (canonical seed input, canonical
--- registry token name, bootstrap-shaped registry output), but the mint
--- policy, script witness and registry address all name the substituted
--- script (the naming-application script, 0 parameters, applied hash =
--- pinned hash). That script cannot perform the bootstrap — its mint
--- branch demands an address-shaped asset name — and refuses, proving
--- the initialization is bound to validatorScript 12 because only it
--- can execute the bootstrap.
+{- | The initialization performed under a substituted validator script:
+everything else stays canonical (canonical seed input, canonical
+registry token name, bootstrap-shaped registry output), but the mint
+policy, script witness and registry address all name the substituted
+script (the naming-application script, 0 parameters, applied hash =
+pinned hash). That script cannot perform the bootstrap — its mint
+branch demands an asset name that is an approval binding — and
+refuses, proving
+the initialization is bound to validatorScript 12 because only it
+can execute the bootstrap.
+-}
 rowLI08 :: Mode -> Env -> (TxIn, TxOut ConwayEra) -> IO ()
 rowLI08 mode env canonicalSeed = do
     let appPolicy = PolicyID (envAppHash env)
@@ -1122,7 +1276,7 @@ rowLI08 mode env canonicalSeed = do
             Redeemers $
                 Map.singleton
                     (ConwayMinting (AsIx 0))
-                    ( Data (withdrawApprovalRedeemer (envCtrlHash env) (envCanonicalName env))
+                    ( Data (uncurry4 approveRedeemer (absenceApproval env))
                     , maxUnits
                     )
         scripts = Map.singleton (envAppHash env) (envAppScript env)
@@ -1139,6 +1293,7 @@ rowLI08 mode env canonicalSeed = do
                 , rtxOutputs = [regOut, cpOut]
                 , rtxChangeTokens = mempty
                 , rtxReqSigners = Set.empty
+                , rtxRefInputs = Set.empty
                 }
     expectRefused
         mode
@@ -1175,13 +1330,14 @@ data CanonicalSnap = CanonicalSnap
     , csCheckpointDatum :: Datum ConwayEra
     }
 
--- | Execute the real canonical initialization (LI01's transaction and
--- verifications, from issue #47): consume the canonical seed, mint the
--- registry identity token, create the registry and checkpoint outputs,
--- and verify the witness shape, the seed consumption and the checkpoint
--- datum from the chain. Returns the signed transaction (LI06 replays
--- those exact bytes) and the snapshot the no-trace proof compares
--- against.
+{- | Execute the real canonical initialization (LI01's transaction and
+verifications, from issue #47): consume the canonical seed, mint the
+registry identity token, create the registry and checkpoint outputs,
+and verify the witness shape, the seed consumption and the checkpoint
+datum from the chain. Returns the signed transaction (LI06 replays
+those exact bytes) and the snapshot the no-trace proof compares
+against.
+-}
 runRealLi01 ::
     Env ->
     (TxIn, TxOut ConwayEra) ->
@@ -1252,18 +1408,16 @@ runRealLi01 env canonicalSeed = do
     scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
     let tokenId = TokenId (AssetName (SBS.toShort (envCanonicalName env)))
         li01Utxos = filter ((== txid) . txInTxIdHex . fst) scriptUtxos
-    (regIn, regOut) <- case
-        findStateUtxo (cagePolicyIdFromCfg (envCfg env)) tokenId li01Utxos of
-            Just r -> pure r
-            Nothing -> failWith "li01: no registry UTxO from the LI01 tx is live at the application validator"
-    (cpIn, cpOut) <- case
-        [ p
-        | p@(i, _) <- li01Utxos
-        , i /= regIn
-        , isNamingDatum (snd p)
-        ] of
-            [c] -> pure c
-            _ -> failWith "li01: expected exactly one checkpoint output from the LI01 tx"
+    (regIn, regOut) <- case findStateUtxo (cagePolicyIdFromCfg (envCfg env)) tokenId li01Utxos of
+        Just r -> pure r
+        Nothing -> failWith "li01: no registry UTxO from the LI01 tx is live at the application validator"
+    (cpIn, cpOut) <- case [ p
+                          | p@(i, _) <- li01Utxos
+                          , i /= regIn
+                          , isNamingDatum (snd p)
+                          ] of
+        [c] -> pure c
+        _ -> failWith "li01: expected exactly one checkpoint output from the LI01 tx"
     -- The checkpoint datum decodes with the merged codec and its bytes
     -- are the contract codec's encoding of the fixture.
     decoded <- case datumDataOf cpOut >>= wireOf >>= decodeNamingDatum of
@@ -1295,12 +1449,11 @@ runRealLi01 env canonicalSeed = do
     -- touched the canonical registry: it is a different UTxO under a
     -- different name, both read back from the chain.
     let rivalTokenId = TokenId (AssetName (SBS.toShort (envAltName env)))
-    (rivalIn, _) <- case
-        findStateUtxo (cagePolicyIdFromCfg (envCfg env)) rivalTokenId scriptUtxos of
-            Just r -> pure r
-            Nothing ->
-                failWith
-                    "li03-canonical: the rival registry is no longer live at the application validator"
+    (rivalIn, _) <- case findStateUtxo (cagePolicyIdFromCfg (envCfg env)) rivalTokenId scriptUtxos of
+        Just r -> pure r
+        Nothing ->
+            failWith
+                "li03-canonical: the rival registry is no longer live at the application validator"
     unless (rivalIn /= regIn) $
         failWith "li03-canonical: the rival UTxO is the canonical registry — name collision"
     emit
@@ -1318,10 +1471,8 @@ runRealLi01 env canonicalSeed = do
             <> "from the canonical seed, which LI06 proves can only be consumed once"
         )
     pure
-        (
-            signed
-        ,
-            CanonicalSnap
+        ( signed
+        , CanonicalSnap
             { csRegistryIn = regIn
             , csRegistryValue = regOut ^. valueTxOutL
             , csRegistryDatum = regOut ^. datumTxOutL
@@ -1336,10 +1487,11 @@ runRealLi01 env canonicalSeed = do
 -- LI06 — the canonical seed again, after a real LI01
 -- ---------------------------------------------------------
 
--- | Replaying LI01's EXACT signed transaction: a consumed UTxO cannot
--- be re-spent, so the LEDGER refuses in phase 1, naming the consumed
--- input — the strongest form of the guarantee and recorded exactly as
--- that, not dressed up as a validator refusal (the LC06 precedent).
+{- | Replaying LI01's EXACT signed transaction: a consumed UTxO cannot
+be re-spent, so the LEDGER refuses in phase 1, naming the consumed
+input — the strongest form of the guarantee and recorded exactly as
+that, not dressed up as a validator refusal (the LC06 precedent).
+-}
 rowLI06 :: Env -> (TxIn, TxOut ConwayEra) -> ConwayTx -> CanonicalSnap -> IO ()
 rowLI06 env canonicalSeed signedLi01 _snap = do
     -- The consumed-seed state is the chain's own: the canonical seed is
@@ -1399,11 +1551,12 @@ rowLI06 env canonicalSeed signedLi01 _snap = do
 -- The no-trace proof
 -- ---------------------------------------------------------
 
--- | After the seven rows the canonical state is read back unchanged:
--- the registry and checkpoint outputs the real LI01 created hold the
--- same value, address and datum bytes, and the canonical seed is still
--- absent from the unspent set. A rejected evaluation never applies, so
--- the refused transactions left no trace.
+{- | After the seven rows the canonical state is read back unchanged:
+the registry and checkpoint outputs the real LI01 created hold the
+same value, address and datum bytes, and the canonical seed is still
+absent from the unspent set. A rejected evaluation never applies, so
+the refused transactions left no trace.
+-}
 finalNoTrace :: Env -> CanonicalSnap -> IO ()
 finalNoTrace env snap = do
     scriptUtxos <- Cage.queryUTxOs (envProv env) (envScriptAddr env)
@@ -1442,10 +1595,11 @@ finalNoTrace env snap = do
 -- The canonical-attempt control
 -- ---------------------------------------------------------
 
--- | The canonical initialization run against the armed refusal guard:
--- it is actually canonical, so it succeeds — and the run must fail,
--- because a guard that accepts a canonical attempt is a binding that
--- does not bind.
+{- | The canonical initialization run against the armed refusal guard:
+it is actually canonical, so it succeeds — and the run must fail,
+because a guard that accepts a canonical attempt is a binding that
+does not bind.
+-}
 runControlCanonical :: Env -> (TxIn, TxOut ConwayEra) -> IO ()
 runControlCanonical env canonicalSeed = do
     unsigned <-
@@ -1479,22 +1633,32 @@ runControlCanonical env canonicalSeed = do
 -- Transaction builders
 -- ---------------------------------------------------------
 
--- | A hand-balanced refusal transaction (the #56 discipline): seed
--- input plus one pooled funder and collateral, flat fee, declared max
--- execution units, integrity sealed over the redeemers, change back to
--- the genesis wallet.
+{- | A hand-balanced refusal transaction (the #56 discipline): seed
+input plus one pooled funder and collateral, flat fee, declared max
+execution units, integrity sealed over the redeemers, change back to
+the genesis wallet.
+-}
 data RefusalTx = RefusalTx
     { rtxSeed :: (TxIn, TxOut ConwayEra)
     , rtxMint :: MultiAsset
     , rtxRedeemers :: Redeemers ConwayEra
     , rtxScripts :: Map.Map ScriptHash (Script ConwayEra)
     , rtxOutputs :: [TxOut ConwayEra]
-    , -- | tokens the change output must carry (the phase-1 value
-      -- conservation demands the minted assets ride an output)
-      rtxChangeTokens :: MultiAsset
-    , -- | key hashes the body demands as required signers (the Plutus
-      -- @extra_signatories@ come from here, not from the witness set)
-      rtxReqSigners :: Set.Set ByteString
+    , rtxChangeTokens :: MultiAsset
+    {- ^ tokens the change output must carry (the phase-1 value
+    conservation demands the minted assets ride an output)
+    -}
+    , rtxReqSigners :: Set.Set ByteString
+    {- ^ key hashes the body demands as required signers (the Plutus
+    @extra_signatories@ come from here, not from the witness set)
+    -}
+    , rtxRefInputs :: Set.Set TxIn
+    {- ^ inputs whose reference scripts resolve witnesses the body
+    does not attach. A row that has to carry a second script
+    beside the fifteen-kilobyte applied state script resolves that
+    one from here instead: the ledger runs the same script hash,
+    so the attribution the row makes is unchanged.
+    -}
     }
 
 buildRefusalTx :: Env -> RefusalTx -> IO ConwayTx
@@ -1526,16 +1690,18 @@ buildRefusalTx env spec = do
                 & reqSignerHashesTxBodyL
                     .~ Set.map addrWitnessKeyHash (rtxReqSigners spec)
                 & mintTxBodyL .~ rtxMint spec
+                & referenceInputsTxBodyL .~ rtxRefInputs spec
                 & scriptIntegrityHashTxBodyL .~ integrity
     pure $
         mkBasicTx body
             & witsTxL . scriptTxWitsL .~ rtxScripts spec
             & witsTxL . rdmrsTxWitsL .~ rtxRedeemers spec
 
--- | The bootstrap-shaped registry output: at @addr@, carrying exactly
--- one token under @policy@ named @name@, inline StateDatum with the
--- empty root — the shape the applied state script's mint branch
--- prescribes for output 0.
+{- | The bootstrap-shaped registry output: at @addr@, carrying exactly
+one token under @policy@ named @name@, inline StateDatum with the
+empty root — the shape the applied state script's mint branch
+prescribes for output 0.
+-}
 registryOut :: Env -> Addr -> PolicyID -> ByteString -> TxOut ConwayEra
 registryOut env addr policy name =
     let mintMA =
@@ -1545,8 +1711,9 @@ registryOut env addr policy name =
      in mkBasicTxOut addr (MaryValue (Coin 2_000_000) mintMA)
             & datumTxOutL .~ mkInlineDatum (toPlcData stateDatum)
 
--- | The naming checkpoint output: min-ADA plus margin, the four-field
--- naming datum inline.
+{- | The naming checkpoint output: min-ADA plus margin, the four-field
+naming datum inline.
+-}
 checkpointOut :: Env -> Addr -> TxOut ConwayEra
 checkpointOut env addr =
     let probe :: TxOut ConwayEra
@@ -1557,27 +1724,67 @@ checkpointOut env addr =
         Coin c = getMinCoinTxOut (envPp env) probe
      in probe & coinTxOutL .~ Coin (c + 1_000_000)
 
--- | The Conway mint-purpose index of @pid@: the ledger orders mint
--- purposes by the mint map's policy-id order.
+{- | The Conway mint-purpose index of @pid@: the ledger orders mint
+purposes by the mint map's policy-id order.
+-}
 mintIndexOf :: MultiAsset -> PolicyID -> Word32
 mintIndexOf (MultiAsset ma) pid =
-  fromIntegral (length [p | p <- Map.keys ma, p < pid])
+    fromIntegral (length [p | p <- Map.keys ma, p < pid])
 
--- | Mint redeemer @WithdrawApproval { controller, destination }@ —
--- the naming application policy's mint branch.
-withdrawApprovalRedeemer :: ByteString -> ByteString -> PLC.Data
-withdrawApprovalRedeemer controller destination =
-    PLC.Constr 0 [PLC.B controller, PLC.B destination]
+{- | Mint redeemer @Approve { edge, key, owner, destination }@ — the
+naming application policy's only mint redeemer since #157 N2. The
+policy certifies one C2 edge for one key, one owner and one
+destination, and the asset name minted must equal the approval
+binding of exactly that tuple (D-APPROVAL).
+-}
+approveRedeemer ::
+    Integer ->
+    -- | registry key
+    ByteString ->
+    -- | owner: the payment key hash the approval binds
+    ByteString ->
+    -- | destination: address bytes and datum hash
+    (ByteString, ByteString) ->
+    PLC.Data
+approveRedeemer edge key owner (destAddr, datumHash) =
+    PLC.Constr
+        0
+        [ PLC.I edge
+        , PLC.B key
+        , PLC.B owner
+        , PLC.List [PLC.B destAddr, PLC.B datumHash]
+        ]
+
+{- | The absence-approval tuple the substitution rows and the boundary
+probe both name: edge 0 @insertAbsent@ for the canonical registry
+key, refunding the genesis controller, no datum. The rows mint an
+asset named otherwise, so the binding refuses them; the probe mints
+the asset this tuple actually binds.
+-}
+absenceApproval :: Env -> (Integer, ByteString, ByteString, (ByteString, ByteString))
+absenceApproval env =
+    ( 0
+    , envCanonicalName env
+    , envCtrlHash env
+    , (serialiseAddr genesisAddr, BS.empty)
+    )
+
+{- | Apply a four-argument function to the tuple 'absenceApproval'
+answers.
+-}
+uncurry4 :: (a -> b -> c -> d -> e) -> (a, b, c, d) -> e
+uncurry4 f (a, b, c, d) = f a b c d
 
 -- ---------------------------------------------------------
 -- Refusal attribution (the #41 discipline)
 -- ---------------------------------------------------------
 
--- | Submit @tx@ and require the node to refuse it in phase 2 naming
--- @marker@. In wrong-reason control mode the marker is the impossible
--- one, so the matcher fails naming what came back. In main mode an
--- ACCEPTED attempt fails the run — a refusal the guard cannot produce
--- is a binding that does not bind.
+{- | Submit @tx@ and require the node to refuse it in phase 2 naming
+@marker@. In wrong-reason control mode the marker is the impossible
+one, so the matcher fails naming what came back. In main mode an
+ACCEPTED attempt fails the run — a refusal the guard cannot produce
+is a binding that does not bind.
+-}
 expectRefused ::
     Mode ->
     Env ->
@@ -1614,7 +1821,11 @@ expectRefused mode env rowName modelReason marker guard tx = do
                     )
             unless (expectedMarker `isInfixOf` reasonText) $
                 failWith
-                    ( rowName
+                    ( ( if wrongReasonMode
+                            then "CONTROL wrong-reason: "
+                            else ""
+                      )
+                        <> rowName
                         <> ": reason mismatch — expected the refusal to name <"
                         <> expectedMarker
                         <> "> but the node said <"
@@ -1636,8 +1847,9 @@ expectRefused mode env rowName modelReason marker guard tx = do
                     <> guard
                 )
 
--- | The row id up to the first dash ("LI02-alternate-seed-refused" →
--- "LI02") so the receipt line leads with the row number itself.
+{- | The row id up to the first dash ("LI02-alternate-seed-refused" →
+"LI02") so the receipt line leads with the row number itself.
+-}
 shortId :: String -> String
 shortId = takeWhile (/= '-')
 
@@ -1645,12 +1857,13 @@ shortId = takeWhile (/= '-')
 -- The canonical initialization transaction (LI01's builder)
 -- ---------------------------------------------------------
 
--- | Build the canonical initialization transaction exactly as issue
--- #47's runner does: consume the canonical seed, mint exactly one
--- registry identity token named by the seed, create the
--- validator-prescribed registry state UTxO plus the naming checkpoint
--- output. Evaluation and fee balancing come from the same library
--- path, so the accepted row and the LI06 replay are the #47 shape.
+{- | Build the canonical initialization transaction exactly as issue
+#47's runner does: consume the canonical seed, mint exactly one
+registry identity token named by the seed, create the
+validator-prescribed registry state UTxO plus the naming checkpoint
+output. Evaluation and fee balancing come from the same library
+path, so the accepted row and the LI06 replay are the #47 shape.
+-}
 buildCanonicalTx ::
     CageConfig ->
     PParams ConwayEra ->
@@ -1774,8 +1987,9 @@ readNamingIdentity path = do
     bytes <- BS.readFile path
     either failWith pure (eitherDecode' (BSL.fromStrict bytes))
 
--- | Fail the run unless every manifest entry under the prefix pins
--- exactly @unappliedHex@, the hash of this run's blueprint raw code.
+{- | Fail the run unless every manifest entry under the prefix pins
+exactly @unappliedHex@, the hash of this run's blueprint raw code.
+-}
 checkPinnedUnapplied :: ScriptIdentity -> T.Text -> String -> IO ()
 checkPinnedUnapplied si prefix unappliedHex =
     case pins of
@@ -1800,9 +2014,10 @@ checkPinnedUnapplied si prefix unappliedHex =
         , prefix `T.isPrefixOf` vpTitle v
         ]
 
--- | The naming application script has no parameters: every pinned
--- application.application entry must equal the hash this run loaded
--- (the #56 check).
+{- | The naming application script has no parameters: every pinned
+application.application entry must equal the hash this run loaded
+(the #56 check).
+-}
 checkPinnedApplication :: NamingIdentity -> String -> IO ()
 checkPinnedApplication ni appHex = do
     let pins = pinsUnder ni "application.application"
@@ -1816,8 +2031,9 @@ checkPinnedApplication ni appHex = do
                 <> " but this run's application script hashes to 0x"
                 <> appHex
 
--- | The representative script's unapplied pin must equal the hash of
--- this run's raw representative code.
+{- | The representative script's unapplied pin must equal the hash of
+this run's raw representative code.
+-}
 checkPinnedRepresentative :: NamingIdentity -> String -> IO ()
 checkPinnedRepresentative ni unappliedHex = do
     let pins = pinsUnder ni "witness.witness.mint"
@@ -1864,9 +2080,10 @@ namingDatumToData nd =
             , PLC.List (map PLC.B (quorumMembers q))
             ]
 
--- | Domain-separated next-control commitment
--- (docs/naming-lifecycle.md): @BLAKE2b-256("singular\/naming\/
--- next-control\/v1" || 0x00 || canonical-address-bytes)@.
+{- | Domain-separated next-control commitment
+(docs/naming-lifecycle.md): @BLAKE2b-256("singular\/naming\/
+next-control\/v1" || 0x00 || canonical-address-bytes)@.
+-}
 nextControlCommitmentOf :: ByteString -> ByteString
 nextControlCommitmentOf bs =
     convert
@@ -1874,36 +2091,32 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            )
-            :: Digest Blake2b_256
+            ) ::
+            Digest Blake2b_256
         )
 
 datumDiffs :: NamingDatum -> NamingDatum -> [String]
 datumDiffs e d =
     concat
-        [ [
-            "controlAddress expected 0x"
+        [ [ "controlAddress expected 0x"
                 <> hex (addressBytes (controlAddress e))
                 <> " but decoded 0x"
                 <> hex (addressBytes (controlAddress d))
           | controlAddress e /= controlAddress d
           ]
-        , [
-            "paymentDestination expected "
+        , [ "paymentDestination expected "
                 <> destText (paymentDestination e)
                 <> " but decoded "
                 <> destText (paymentDestination d)
           | paymentDestination e /= paymentDestination d
           ]
-        , [
-            "nextControlCommitment expected 0x"
+        , [ "nextControlCommitment expected 0x"
                 <> hex (nextControlCommitment e)
                 <> " but decoded 0x"
                 <> hex (nextControlCommitment d)
           | nextControlCommitment e /= nextControlCommitment d
           ]
-        , [
-            "retirementQuorum expected "
+        , [ "retirementQuorum expected "
                 <> quorumText (retirementQuorum e)
                 <> " but decoded "
                 <> quorumText (retirementQuorum d)
@@ -1934,8 +2147,9 @@ wireOf (PLC.I n) = Just (WInt n)
 wireOf (PLC.List xs) = WList <$> traverse wireOf xs
 wireOf _ = Nothing
 
--- | The raw on-chain Plutus data of an output, if it has an inline
--- datum.
+{- | The raw on-chain Plutus data of an output, if it has an inline
+datum.
+-}
 datumDataOf :: TxOut ConwayEra -> Maybe PLC.Data
 datumDataOf out = case out ^. datumTxOutL of
     Datum bd -> let Data d = binaryDataToData bd in Just d
@@ -2034,8 +2248,9 @@ txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
 txInIndex :: TxIn -> Integer
 txInIndex (TxIn _ (TxIx i)) = toInteger i
 
--- | The (txid bytes, output index) sort key of an input, so the seed
--- designation is deterministic.
+{- | The (txid bytes, output index) sort key of an input, so the seed
+designation is deterministic.
+-}
 outRefSortKey :: TxIn -> (ByteString, Integer)
 outRefSortKey i =
     let r = txInToRef i

@@ -99,11 +99,13 @@ import Singular.Registry.Node (
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
+    appliedApplicationBytes,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
     mkCageScript,
     mkRequestScript,
+    onChainTokenId,
     scriptFromBytes,
     scriptHashBytes,
     txInToRef,
@@ -175,8 +177,9 @@ data Compiled = Compiled
     { cStateBytes :: SBS.ShortByteString
     , cRequestBytes :: SBS.ShortByteString
     , cAppBytes :: SBS.ShortByteString
-    -- ^ The application validator, unapplied: its hash IS the application
-    -- policy the registry pins.
+    {- ^ The application validator, unapplied: its hash IS the application
+    policy the registry pins.
+    -}
     , cWitnessBytes :: SBS.ShortByteString
     -- ^ @witness(kind, registry)@, unapplied.
     , cAbsentBytes :: SBS.ShortByteString
@@ -234,13 +237,21 @@ transcription.
 -}
 bindSeed :: Compiled -> TxIn -> Compiled
 bindSeed c seedIn =
-    let registryId =
-            scriptHashBytes (computeScriptHash (cStateBytes c))
-                <> deriveAssetName (txInToRef seedIn)
+    let statePolicy = scriptHashBytes (computeScriptHash (cStateBytes c))
+        tokenName = deriveAssetName (txInToRef seedIn)
+        registryId = statePolicy <> tokenName
+        tok = TokenId (AssetName (SBS.toShort tokenName))
+        appApplied =
+            appliedApplicationBytes
+                statePolicy
+                (onChainTokenId tok)
+                (cRequestBytes c)
+                (cAppBytes c)
         witnessAt kind =
             applyBytesParam registryId (applyIntParam kind (cWitnessBytes c))
      in c
-            { cAbsentBytes = witnessAt 0
+            { cAppBytes = appApplied
+            , cAbsentBytes = witnessAt 0
             , cActiveBytes = witnessAt 1
             , cTerminalBytes = witnessAt 2
             }

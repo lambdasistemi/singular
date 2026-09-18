@@ -61,15 +61,16 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , displayException
-    , throwIO
-    , try
-    )
-import Control.Monad (unless, when)
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    displayException,
+    throwIO,
+    try,
+ )
+import Control.Monad (unless)
 import Crypto.Hash (Blake2b_256, Digest, hash)
+import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.Bits (complement)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -78,15 +79,14 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.List (intercalate, isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust, listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Environment (lookupEnv)
@@ -96,7 +96,7 @@ import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData, hashData)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     collateralInputsTxBodyL,
@@ -131,33 +131,6 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
-import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
-import Singular.Registry.Ledger (
-    AssetName (..),
-    Coin (..),
-    ConwayEra,
-    PParams,
- )
-import Singular.Registry.Node (
-    NodeSession (..),
-    awaitChain,
-    awaitTx,
-    confirmationDelay,
-    funderAddr,
-    funderSignKey,
-    withNode,
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    computeScriptHash,
-    computeScriptIntegrity,
-    mkInlineDatum,
-    scriptFromBytes,
-    scriptHashBytes,
-    spendingIndex,
- )
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
     SignKeyDSIGN,
@@ -169,49 +142,97 @@ import Cardano.Node.Client.E2E.Setup (
 import Cardano.Node.Client.Ledger (ConwayTx)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Naming.Datum
-import Naming.Wire
-    ( Address (..)
-    , WireData (..)
-    , addressBytes
-    , canonicalAddress
-    , decodeAddress
-    , serialiseWireData
-    )
+import Naming.Wire (
+    Address (..),
+    WireData (..),
+    addressBytes,
+    decodeAddress,
+    serialiseWireData,
+ )
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyIntParam,
+    extractCompiledCode,
+    loadBlueprint,
+ )
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
+    AssetName (..),
+    Coin (..),
+    ConwayEra,
+    PParams,
+    TokenId (..),
+ )
+import Singular.Registry.Node (
+    NodeSession (..),
+    awaitChain,
+    awaitTx,
+    confirmationDelay,
+    funderAddr,
+    funderSignKey,
+    withNode,
+ )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Internal (
+    addrKeyHashBytes,
+    addrWitnessKeyHash,
+    appliedApplicationBytes,
+    cagePolicyIdFromCfg,
+    computeScriptHash,
+    computeScriptIntegrity,
+    leafActive,
+    mkInlineDatum,
+    onChainTokenId,
+    scriptFromBytes,
+    scriptHashBytes,
+    spendingIndex,
+    txInToRef,
+ )
+import Singular.Registry.TxBuilder.Update (
+    bookEdgeTx,
+    foldRefScripts,
+    publishRefScriptTx,
+    refScriptBatches,
+    registryContextFor,
+    updateTokenWithDuties,
+ )
+import Singular.Registry.Types (OnChainOperation (..))
 
 -- ---------------------------------------------------------
 -- Run modes
 -- ---------------------------------------------------------
 
 data Mode
-    = -- | the ten rows.
+    = -- | the four maintenance rows.
       MainRun
-    | -- | LC01 as the correspondence record describes it, against
-      -- whatever blueprint NAMING_BLUEPRINT names.
-      Probe
-    | -- | LM02's transaction made actually valid: it must succeed,
-      -- and the refusal guard must then fail the run (exit 1).
+    | {- | LM02's transaction made actually valid: it must succeed,
+      and the refusal guard must then fail the run (exit 1).
+      -}
       ControlValid
-    | -- | every refusal matched against a marker that cannot occur:
-      -- the matcher must fail the run naming what came back.
+    | {- | every refusal matched against a marker that cannot occur:
+      the matcher must fail the run naming what came back.
+      -}
       ControlWrongReason
     deriving (Eq, Show)
 
 readMode :: IO Mode
 readMode =
-    lookupEnv "LMLC_PROBE" >>= \case
-        Just _ -> pure Probe
-        Nothing ->
-            lookupEnv "LMLC_CONTROL" >>= \case
-                Just "valid" -> pure ControlValid
-                Just "wrong-reason" -> pure ControlWrongReason
-                Just other
-                    | not (null other) ->
-                        failWith ("unknown LMLC_CONTROL value " <> other)
-                _ -> pure MainRun
+    lookupEnv "LMLC_CONTROL" >>= \case
+        Just "valid" -> pure ControlValid
+        Just "wrong-reason" -> pure ControlWrongReason
+        Just other
+            | not (null other) ->
+                failWith ("unknown LMLC_CONTROL value " <> other)
+        _ -> pure MainRun
 
--- | The marker the wrong-reason control matches refusals against: by
--- construction no node reason can contain it, so a matched reason can
--- never close a row and the control must fail.
+{- | The marker the wrong-reason control matches refusals against: by
+construction no node reason can contain it, so a matched reason can
+never close a row and the control must fail.
+-}
 wrongReasonMarker :: String
 wrongReasonMarker =
     "wrong-reason-control marker that no node reason can ever contain"
@@ -220,28 +241,32 @@ wrongReasonMarker =
 -- Ledger-shape constants
 -- ---------------------------------------------------------
 
--- | Flat fee for hand-balanced transactions. Generously above the
--- devnet's minimum (~0.2 ada for a small tx) and above the fee the
--- declared max execution units price in (~8.8 ada).
+{- | Flat fee for hand-balanced transactions. Generously above the
+devnet's minimum (~0.2 ada for a small tx) and above the fee the
+declared max execution units price in (~8.8 ada).
+-}
 flatFee :: Integer
 flatFee = 10_000_000
 
--- | maxTxExUnits from the checked-in devnet genesis
--- (e2e-test/genesis/alonzo-genesis.json). Declared units must be <=
--- this; refusal transactions declare exactly it so an oversized real
--- cost can never reject the tx before its validator refuses.
--- | Declared units for hand-balanced transactions. Generous enough
--- that a full datum decode plus the row's guard (~100M steps, ~1.5M
--- mem measured on chain) runs to completion, small enough that a
--- runaway evaluation hits the wall in seconds instead of minutes.
+{- | maxTxExUnits from the checked-in devnet genesis
+(e2e-test/genesis/alonzo-genesis.json). Declared units must be <=
+this; refusal transactions declare exactly it so an oversized real
+cost can never reject the tx before its validator refuses.
+| Declared units for hand-balanced transactions. Generous enough
+that a full datum decode plus the row's guard (~100M steps, ~1.5M
+mem measured on chain) runs to completion, small enough that a
+runaway evaluation hits the wall in seconds instead of minutes.
+-}
 maxUnits :: ExUnits
 maxUnits = ExUnits 3_000_000 200_000_000
 
--- | Lovelace a claim carries. Generously above the flat fee so LC01's
--- refund check is real: owed = claim - fee stays positive and the
--- refund output must pay it.
-claimCoin :: Integer
-claimCoin = 25_000_000
+{- | What a booking locks: the tip the registry keeps plus the deposit
+that rides to the destination the approval bound. The record the fold
+creates holds that deposit minus the tip, and it must clear min-UTxO
+carrying its active witness token and the naming datum.
+-}
+recordBond :: Integer
+recordBond = 25_000_000
 
 -- ---------------------------------------------------------
 -- Entry point
@@ -256,14 +281,8 @@ main = do
         MainRun ->
             emit
                 "row"
-                "issue #56: the LM/LC maintenance and cancellation rows on \
-                \a real ledger"
-        Probe ->
-            emit
-                "probe"
-                "LC01-cancellation-stored-refund-accepts as the \
-                \correspondence record describes it (approval burned \
-                \exactly -1), against the blueprint NAMING_BLUEPRINT names"
+                "issue #56: the LM maintenance rows on a real ledger, \
+                \against a record a real registry fold created"
         ControlValid ->
             emit
                 "control"
@@ -274,9 +293,15 @@ main = do
                 "control"
                 "wrong-reason control: refusals matched against a marker \
                 \that cannot occur, so the matcher must fail the run"
+    -- #157: a record is not made by hand any more. It is what a fold of
+    -- the registry leaves behind, so this runner boots a cage from the
+    -- registry blueprint and certifies its activation under the naming
+    -- one. Both partitions are inputs.
+    registryPath <- requireEnv "REGISTRY_BLUEPRINT"
     blueprintPath <- requireEnv "NAMING_BLUEPRINT"
     outcome <-
-        try (runMode mode blueprintPath) :: IO (Either SomeException ())
+        try (runMode mode registryPath blueprintPath) ::
+            IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -287,8 +312,8 @@ main = do
 -- The run
 -- ---------------------------------------------------------
 
-runMode :: Mode -> FilePath -> IO ()
-runMode mode blueprintPath = do
+runMode :: Mode -> FilePath -> FilePath -> IO ()
+runMode mode registryPath blueprintPath = do
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
     appBytes <- case extractCompiledCode "application.application" bp of
@@ -297,6 +322,22 @@ runMode mode blueprintPath = do
             failWith
                 "application.application compiled code not found in the \
                 \naming blueprint"
+    witnessBytes <- case extractCompiledCode "witness.witness.mint" bp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith
+                "witness.witness.mint compiled code not found in the \
+                \naming blueprint"
+    erbp <- loadBlueprint registryPath
+    rbp <- either failWith pure erbp
+    stateBytes <- case extractCompiledCode "state.state" rbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith "state.state compiled code not found in the registry blueprint"
+    requestBytes <- case extractCompiledCode "request.request" rbp of
+        Just bytes -> pure bytes
+        Nothing ->
+            failWith "request.request compiled code not found in the registry blueprint"
     withNode $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
@@ -305,7 +346,6 @@ runMode mode blueprintPath = do
             appHash = computeScriptHash appBytes
             appHex = hex (scriptHashBytes appHash)
             appAddr = Addr Testnet (ScriptHashObj appHash) StakeRefNull
-            appPolicy = PolicyID appHash
         checkPinnedApplication appHex
         emit
             "identity"
@@ -319,14 +359,6 @@ runMode mode blueprintPath = do
         -- devnet enterprise payment-key addresses.
         let ctrlHash = addrKeyHashBytes genesisAddr
             ctrlAddrBytes = serialiseAddr genesisAddr
-            refundAddr =
-                enterpriseAddr
-                    (keyHashFromSignKey (mkSignKey "t56-refund-key-seed-000000000001"))
-            refundBytes = serialiseAddr refundAddr
-            foldRefundAddr =
-                enterpriseAddr
-                    (keyHashFromSignKey (mkSignKey "t56-refund-fold-key-seed-0000001"))
-            foldRefundBytes = serialiseAddr foldRefundAddr
             destAddr =
                 enterpriseAddr
                     (keyHashFromSignKey (mkSignKey "t56-destination-key-seed-0000001"))
@@ -339,23 +371,42 @@ runMode mode blueprintPath = do
                         "fixture: a devnet address does not decode as the contract's canonical address"
             ctrlAddrCodec = mustCodec ctrlAddrBytes
             destAddrCodec = mustCodec (serialiseAddr destAddr)
-            commitmentC = nextControlCommitmentOf ctrlAddrBytes
-            commitmentF = nextControlCommitmentOf (serialiseAddr refundAddr)
-            mkDatum c =
+            recordDatum =
                 NamingDatum
                     { controlAddress = ctrlAddrCodec
                     , paymentDestination = NoDestination
-                    , nextControlCommitment = c
+                    , nextControlCommitment =
+                        nextControlCommitmentOf ctrlAddrBytes
                     , retirementQuorum =
                         RetirementQuorum
                             { quorumMembers = [ctrlHash]
                             , quorumThreshold = 1
                             }
                     }
-            datumLC = mkDatum commitmentC
-            datumLM = mkDatum commitmentC
-            datumFold = mkDatum commitmentF
-        -- Split the genesis wallet into funding and collateral UTxOs.
+        -- #157: the record the LM rows maintain is not placed by hand.
+        -- It is what a real registry fold leaves behind — the cage boots,
+        -- an activation of one key is certified by the application
+        -- policy and booked, and the fold delivers the active witness
+        -- token to the application's own address under the record datum
+        -- the approval bound.
+        --
+        -- It runs BEFORE the funding split: the registry builders take
+        -- their own inputs from this wallet, and an output promised to
+        -- the row pool must not be one of them.
+        recordIn <-
+            setupFoldedRecord
+                prov
+                submit
+                pp
+                appAddr
+                script
+                appHex
+                stateBytes
+                requestBytes
+                appBytes
+                witnessBytes
+                recordDatum
+        -- Split what is left into funding and collateral UTxOs.
         emit "split" "splitting the genesis wallet into funding UTxOs"
         pool <- splitGenesis prov submit
         poolRef <- newIORef pool
@@ -368,45 +419,11 @@ runMode mode blueprintPath = do
                     , envScript = script
                     , envScriptHash = appHash
                     , envAppHex = appHex
-                    , envAppPolicy = appPolicy
                     , envAppAddr = appAddr
                     , envCtrlHash = ctrlHash
-                    , envRefundBytes = refundBytes
-                    , envRefundAddr = refundAddr
-                    , envDestAddr = destAddr
                     , envDestCodec = destAddrCodec
-                    , envFoldRefundBytes = foldRefundBytes
                     }
-        -- Setup 1: mint the withdraw approval (the refund recorded at
-        -- request time, controller-signed) and create claimLC (with the
-        -- approval) and claimLM (without one).
-        (txid1, claimLCIn, claimLMIn) <- setupTwoClaims env datumLC datumLM
-        _ <- waitConfirmation (txid1 <> " (setup: claimLC, claimLM)")
-        -- Setup 2: a second approval and claimFold — the claim the LC04
-        -- proof folds for real. One approval per transaction: the mint
-        -- purpose mints exactly one.
-        (txid2, claimFoldIn) <- setupFoldClaim env datumFold
-        _ <- waitConfirmation (txid2 <> " (setup: claimFold)")
-        emit
-            "setup"
-            ( "claims live at the application validator 0x"
-                <> appHex
-                <> ": claimLC="
-                <> showIn claimLCIn
-                <> " claimLM="
-                <> showIn claimLMIn
-                <> " claimFold="
-                <> showIn claimFoldIn
-                <> "; the refund recorded at request time is the approval's \
-                   \asset name 0x"
-                <> hex refundBytes
-                <> " (minted controller-signed in "
-                <> txid1
-                <> ")"
-            )
-        case mode of
-            Probe -> runProbe env claimLCIn
-            _ -> runRows mode env claimLCIn claimLMIn claimFoldIn
+        runRows mode env recordIn
 
 -- | The environment every row builds against.
 data Env = Env
@@ -417,72 +434,13 @@ data Env = Env
     , envScript :: Script ConwayEra
     , envScriptHash :: ScriptHash
     , envAppHex :: String
-    , envAppPolicy :: PolicyID
     , envAppAddr :: Addr
     , envCtrlHash :: ByteString
-    , envRefundBytes :: ByteString
-    , envRefundAddr :: Addr
-    , envDestAddr :: Addr
     , envDestCodec :: Address
-    , envFoldRefundBytes :: ByteString
     }
 
 -- ---------------------------------------------------------
--- The probe: LC01 against whatever blueprint was named
--- ---------------------------------------------------------
-
-runProbe :: Env -> TxIn -> IO ()
-runProbe env claimLCIn = do
-    snap <- mustSnap env claimLCIn
-    tx <-
-        cancelBody
-            env
-            snap
-            (envRefundBytes env)
-            (envRefundAddr env)
-            (snapCoin snap - flatFee)
-            (mintBurn (envAppPolicy env) (envRefundBytes env))
-            (Just (withdrawApprovalRedeemer env (envRefundBytes env)))
-    emit
-        "probe-build"
-        ( "LC01 built exactly as the correspondence record describes: the \
-          \claim carries the approval (asset name = stored refund 0x"
-            <> hex (envRefundBytes env)
-            <> "), Cancel presents that refund, the approval burns exactly \
-               \-1, the refund pays the claim's lovelace to the bound \
-               \destination, nothing else is wrong with the transaction"
-        )
-    result <- submitTx (envSubmit env) (addKeyWitness genesisSignKey tx)
-    case result of
-        Submitted _ ->
-            emit
-                "probe-wall"
-                "the transaction was ACCEPTED: the mint purpose executed the \
-                \burn — the wall this probe looks for is not there"
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
-                phase2 = "PlutusFailure" `isInfixOf` reasonText
-                namesApp = envAppHex env `isInfixOf` reasonText
-            when (phase2 && namesApp) $
-                emit
-                    "probe-wall"
-                    ( "WALL CONFIRMED — refused because: "
-                        <> reasonText
-                        <> " — every condition of LC01 holds, so this is the \
-                           \mint purpose refusing the very burn the spend \
-                           \purpose demands: one script whose two purposes \
-                           \cannot compose in one transaction"
-                    )
-            unless (phase2 && namesApp) $
-                emit
-                    "probe-wall"
-                    ( "refused, but not by the application validator in phase \
-                      \2: "
-                        <> reasonText
-                    )
-
--- ---------------------------------------------------------
--- The ten rows
+-- The four maintenance rows
 -- ---------------------------------------------------------
 
 {- | The wallet every actor of this run is funded from. On the factory
@@ -498,69 +456,20 @@ genesisAddr = funderAddr
 genesisSignKey :: SignKeyDSIGN Ed25519DSIGN
 genesisSignKey = funderSignKey
 
-runRows :: Mode -> Env -> TxIn -> TxIn -> TxIn -> IO ()
-runRows mode env claimLCIn claimLMIn claimFoldIn = do
-    -- WR01 — the refund recorded at request time, read back on chain.
-    rowWR01 env claimLCIn
-    -- The LM group on claimLM.
-    a1 <- rowLM01 env claimLMIn
+runRows :: Mode -> Env -> TxIn -> IO ()
+runRows mode env recordIn = do
+    -- The LM group, on the record the fold created.
+    a1 <- rowLM01 env recordIn
     rowLM02 mode env a1
     rowLM03 env a1
     rowLM04 env a1
-    -- LC03 rides A1: a claim without a withdraw approval.
-    rowLC03 env a1
-    -- LC01 consumes claimLC; LC06 replays against the consumed approval.
-    signedLC01 <- rowLC01 env claimLCIn
-    rowLC06 env claimLCIn signedLC01
-    -- LC02 against claimFold (still carrying its approval), then the
-    -- real fold, then LC04 against the folded record.
-    claimFoldSnap <- mustSnap env claimFoldIn
-    rowLC02 env claimFoldSnap
-    recordSnap <- rowFold env claimFoldIn
-    rowLC04 env recordSnap
     -- The final no-trace sweep after every refusal.
-    finalNoTrace env a1 recordSnap
+    finalNoTrace env a1
     emit
         "complete"
-        ( "the LM/LC rows executed on a real devnet; every refusal \
-          \attributed to its reason, the four proofs shown, the state \
-          \after the refusals unchanged"
-        )
-
--- ---------------------------------------------------------
--- WR01 — refund round-trip
--- ---------------------------------------------------------
-
-rowWR01 :: Env -> TxIn -> IO ()
-rowWR01 env claimLCIn = do
-    snap <- mustSnap env claimLCIn
-    let approvalQty = lookup (envRefundBytes env) (snapTokens snap)
-    unless (approvalQty == Just 1) $
-        failWith
-            ( "WR01: the claim does not carry exactly one withdraw approval \
-              \named by the recorded refund: observed "
-                <> show approvalQty
-            )
-    decoded <- chainDatumOf env snap "WR01"
-    unless
-        ( canonicalAddress (controlAddress decoded)
-            && nextControlCommitment decoded
-                == nextControlCommitmentOf (addressBytes (controlAddress decoded))
-        )
-        $ failWith "WR01: the chain datum is not the recorded fixture"
-    emit
-        "row"
-        ( "WR01-insert-request-refund-roundtrip: the refund recorded at \
-          \request time round-trips on chain — recorded 0x"
-            <> hex (envRefundBytes env)
-            <> " (the mint redeemer's destination, controller-signed); bound \
-               \on chain as the withdraw approval's asset name, quantity 1, \
-               \riding claimLC="
-            <> showIn claimLCIn
-            <> " at the application validator 0x"
-            <> envAppHex env
-            <> "; the claim's four-field datum decodes with the merged codec; \
-               \the round trip completes when LC01 pays this exact address"
+        ( "the LM rows executed on a real devnet against a record a real \
+          \registry fold created; every refusal attributed to its reason, \
+          \the proofs shown, the state after the refusals unchanged"
         )
 
 -- ---------------------------------------------------------
@@ -572,8 +481,8 @@ rowLM01 env claimIn = do
     snap <- mustSnap env claimIn
     current <- chainDatumOf env snap "LM01"
     let destCodec = envDestCodec env
-        maintained = current {paymentDestination = SomeDestination destCodec}
-    tx <- maintainTx env snap (Just (\d -> d {paymentDestination = SomeDestination destCodec})) True
+        maintained = current{paymentDestination = SomeDestination destCodec}
+    tx <- maintainTx env snap (Just (\d -> d{paymentDestination = SomeDestination destCodec})) True
     let signed = addKeyWitness genesisSignKey tx
     unless
         ( Set.singleton (addrWitnessKeyHash (envCtrlHash env))
@@ -594,7 +503,7 @@ rowLM01 env claimIn = do
                   ]
                 , [ "nextControlCommitment changed"
                   | nextControlCommitment decoded
-                      /= nextControlCommitment current
+                        /= nextControlCommitment current
                   ]
                 , [ "retirementQuorum changed"
                   | retirementQuorum decoded /= retirementQuorum current
@@ -643,10 +552,38 @@ rowLM01 env claimIn = do
 tamperedCommitment :: ByteString
 tamperedCommitment =
     BS.pack
-        [ 0x15, 0x61, 0xc1, 0x5b, 0x49, 0x80, 0x85, 0x7f
-        , 0xb0, 0x6e, 0x4a, 0xb3, 0x5c, 0xc9, 0xbc, 0xec
-        , 0xaf, 0x09, 0x0b, 0x0a, 0xa8, 0xbd, 0xef, 0x19
-        , 0xf6, 0x33, 0x15, 0x65, 0xa3, 0x33, 0x20, 0x4f
+        [ 0x15
+        , 0x61
+        , 0xc1
+        , 0x5b
+        , 0x49
+        , 0x80
+        , 0x85
+        , 0x7f
+        , 0xb0
+        , 0x6e
+        , 0x4a
+        , 0xb3
+        , 0x5c
+        , 0xc9
+        , 0xbc
+        , 0xec
+        , 0xaf
+        , 0x09
+        , 0x0b
+        , 0x0a
+        , 0xa8
+        , 0xbd
+        , 0xef
+        , 0x19
+        , 0xf6
+        , 0x33
+        , 0x15
+        , 0x65
+        , 0xa3
+        , 0x33
+        , 0x20
+        , 0x4f
         ]
 
 rowLM02 :: Mode -> Env -> Snap -> IO ()
@@ -692,7 +629,7 @@ rowLM03 env a1 = do
         maintainTx
             env
             a1
-            (Just (\d -> d {nextControlCommitment = tamperedCommitment}))
+            (Just (\d -> d{nextControlCommitment = tamperedCommitment}))
             True
     expectRefused
         MainRun
@@ -738,265 +675,13 @@ rowLM04 env a1 = do
     noTrace env a1 "LM04"
 
 -- ---------------------------------------------------------
--- LC03 — no approval, no cancellation
--- ---------------------------------------------------------
-
-rowLC03 :: Env -> Snap -> IO ()
-rowLC03 env a1 = do
-    -- The claim carries no withdraw approval, so the tx carries no burn
-    -- either: well-formed for phase 1, refused in phase 2 at the
-    -- approval binding.
-    tx <-
-        cancelBody
-            env
-            a1
-            (envRefundBytes env)
-            (envRefundAddr env)
-            smallRefundCoin
-            mempty
-            Nothing
-    expectRefused
-        MainRun
-        env
-        "LC03-insert-attestation-cancellation-refused"
-        "withdraw-binding"
-        ( "no withdraw approval rides the claim, so there is no stored \
-          \destination to compare against and nothing to burn: the \
-          \validator's approval-binding destructure refuses"
-        )
-        tx
-    noTrace env a1 "LC03"
-
--- | Refund size for refusal cancellations: comfortably above min-ADA.
-smallRefundCoin :: Integer
-smallRefundCoin = 2_500_000
-
--- ---------------------------------------------------------
--- LC01 — cancellation accepts; the approval is consumed
--- ---------------------------------------------------------
-
-rowLC01 :: Env -> TxIn -> IO ConwayTx
-rowLC01 env claimLCIn = do
-    snap <- mustSnap env claimLCIn
-    let refund = snapCoin snap - flatFee
-    tx <-
-        cancelBody
-            env
-            snap
-            (envRefundBytes env)
-            (envRefundAddr env)
-            refund
-            (mintBurn (envAppPolicy env) (envRefundBytes env))
-            (Just (withdrawApprovalRedeemer env (envRefundBytes env)))
-    let signed = addKeyWitness genesisSignKey tx
-    unless (Set.null (signed ^. bodyTxL . reqSignerHashesTxBodyL)) $
-        failWith "LC01: the row's witness is requiredSigners: []"
-    submitAccepted env "LC01" signed
-    _ <- waitConfirmation (txIdHex signed <> " (LC01)")
-    -- The mint is exactly the burn.
-    let MultiAsset mintMA = signed ^. bodyTxL . mintTxBodyL
-        burnQty =
-            Map.lookup (envAppPolicy env) mintMA
-                >>= Map.lookup (AssetName (SBS.toShort (envRefundBytes env)))
-    unless (burnQty == Just (-1)) $
-        failWith
-            ( "LC01: the mint is not exactly the approval burn: "
-                <> show burnQty
-            )
-    -- Proof 2: the approval is consumed — no longer on chain.
-    let owed = snapCoin snap - feeOf signed
-        feeOf t = let Coin c = t ^. bodyTxL . feeTxBodyL in c
-    refundUtxos <- Cage.queryUTxOs (envProv env) (envRefundAddr env)
-    let refundCoins = [c | (_, o) <- refundUtxos, let Coin c = o ^. coinTxOutL]
-    unless (any (>= owed) refundCoins) $
-        failWith
-            ( "LC01: the refund did not land at the bound destination: owed "
-                <> show owed
-                <> ", observed "
-                <> show refundCoins
-            )
-    appUtxos <- Cage.queryUTxOs (envProv env) (envAppAddr env)
-    genesisUtxos <- Cage.queryUTxOs (envProv env) genesisAddr
-    let approvalLiveIn o = case o ^. valueTxOutL of
-            MaryValue _ (MultiAsset ma) ->
-                case Map.lookup (envAppPolicy env) ma of
-                    Just inner ->
-                        isJust
-                            ( Map.lookup
-                                (AssetName (SBS.toShort (envRefundBytes env)))
-                                inner
-                            )
-                    Nothing -> False
-        approvalAnywhere =
-            any (approvalLiveIn . snd) (appUtxos <> genesisUtxos <> refundUtxos)
-    unless (not approvalAnywhere) $
-        failWith
-            ( "LC01: an approval token named by the LC refund binding is "
-                <> "still live on chain"
-            )
-    emit
-        "row"
-        ( "LC01-cancellation-stored-refund-accepts: accepted tx="
-            <> txIdHex signed
-            <> " — Cancel presented the stored refund 0x"
-            <> hex (envRefundBytes env)
-            <> ", unsigned (requiredSigners: []), the approval burned exactly \
-               \-1"
-        )
-    emit
-        "consumed"
-        ( "LC01-approval-consumed: the approval is consumed — burned exactly \
-          \once in tx "
-            <> txIdHex signed
-            <> " and no longer on chain: no UTxO at the application validator \
-               \carries any asset under the application policy 0x"
-            <> envAppHex env
-            <> " (mint supply +1 at request time, -1 here = 0); the refund of "
-            <> show owed
-            <> " lovelace owed was paid to the bound destination 0x"
-            <> hex (envRefundBytes env)
-            <> " and observed there"
-        )
-    pure signed
-
--- ---------------------------------------------------------
--- LC06 — the replay, against the genuinely consumed approval
--- ---------------------------------------------------------
-
-rowLC06 :: Env -> TxIn -> ConwayTx -> IO ()
-rowLC06 env claimIn signedLC01 = do
-    appUtxos <- Cage.queryUTxOs (envProv env) (envAppAddr env)
-    unless (not (any ((== claimIn) . fst) appUtxos)) $
-        failWith "LC06: the claim is unexpectedly still live"
-    emit
-        "row"
-        ( "LC06-cancellation-replay-refused: replaying LC01's exact \
-          \cancellation tx="
-            <> txIdHex signedLC01
-            <> " against the genuinely consumed approval (the claim is no \
-               \longer live)"
-        )
-    result <- submitTx (envSubmit env) signedLC01
-    case result of
-        Submitted _ ->
-            failWith
-                "LC06: the replay was ACCEPTED — a consumed approval \
-                \authorized cancellation twice"
-        Rejected reason -> do
-            let reasonText = T.unpack (TE.decodeUtf8Lenient reason)
-                allSpent = "All inputs are spent" `isInfixOf` reasonText
-            unless allSpent $
-                failWith
-                    ( "LC06: reason mismatch — expected the ledger to refuse \
-                      \the replay in phase 1 naming the consumed output "
-                        <> txIdHex signedLC01
-                        <> " (the ledger shape of request-unavailable) but the \
-                           \node said <"
-                        <> reasonText
-                        <> ">"
-                    )
-            emit
-                "row"
-                ( "LC06-cancellation-replay-refused: REFUSED, reason matched \
-                  \(model reason request-unavailable): "
-                    <> reasonText
-                    <> " — the ledger itself refuses in phase 1, naming the \
-                       \consumed output: a consumed UTxO cannot be re-spent, \
-                       \so the replay never reaches the validator; recorded as \
-                       \exactly that, not dressed up as a validator refusal"
-                )
-
--- ---------------------------------------------------------
--- LC02 — the redirected refund
--- ---------------------------------------------------------
-
-rowLC02 :: Env -> Snap -> IO ()
-rowLC02 env claimFoldSnap = do
-    let redirectedAddr =
-            enterpriseAddr
-                (keyHashFromSignKey (mkSignKey "t56-redirected-key-seed-00000001"))
-    tx <-
-        cancelBody
-            env
-            claimFoldSnap
-            (serialiseAddr redirectedAddr)
-            redirectedAddr
-            smallRefundCoin
-            (mintBurn (envAppPolicy env) (envFoldRefundBytes env))
-            (Just (withdrawApprovalRedeemer env (envFoldRefundBytes env)))
-    expectRefused
-        MainRun
-        env
-        "LC02-cancellation-redirect-refused"
-        "withdraw-refund-address"
-        ( "the presented refund differs from the stored one, so the \
-          \validator's refund equality refuses; the transaction is otherwise \
-          \exactly the accepted LC01 shape"
-        )
-        tx
-    noTrace env claimFoldSnap "LC02"
-
--- ---------------------------------------------------------
--- The real fold, then LC04
--- ---------------------------------------------------------
-
-rowFold :: Env -> TxIn -> IO Snap
-rowFold env claimFoldIn = do
-    snap <- mustSnap env claimFoldIn
-    current <- chainDatumOf env snap "fold"
-    tx <- foldBody env snap current
-    let signed = addKeyWitness genesisSignKey tx
-    submitAccepted env "fold" signed
-    _ <- waitConfirmation (txIdHex signed <> " (fold)")
-    recordIn <-
-        mustFindUTxO (envProv env) (envAppAddr env) (txIdHex signed) "folded record"
-    recordSnap <- mustSnap env recordIn
-    emit
-        "row"
-        ( "fold: claimFold="
-            <> showIn claimFoldIn
-            <> " folded for real into record="
-            <> showIn recordIn
-            <> " tx="
-            <> txIdHex signed
-            <> " — the fold consumed the withdraw approval (burned exactly \
-               \once at fold, the record inheriting the value minus it)"
-        )
-    pure recordSnap
-
-rowLC04 :: Env -> Snap -> IO ()
-rowLC04 env recordSnap = do
-    tx <-
-        cancelBody
-            env
-            recordSnap
-            (envFoldRefundBytes env)
-            (envRefundAddr env)
-            smallRefundCoin
-            mempty
-            Nothing
-    expectRefused
-        MainRun
-        env
-        "LC04-folded-claim-cancellation-refused"
-        "request-unavailable"
-        ( "ran after a real fold: the fold consumed the approval (burned at \
-          \fold), so the folded record carries no withdraw approval and the \
-          \validator's approval-binding destructure refuses the cancellation"
-        )
-        tx
-    noTrace env recordSnap "LC04"
-
--- ---------------------------------------------------------
 -- The final no-trace sweep
 -- ---------------------------------------------------------
 
-finalNoTrace :: Env -> Snap -> Snap -> IO ()
-finalNoTrace env a1 recordR = do
+finalNoTrace :: Env -> Snap -> IO ()
+finalNoTrace env a1 = do
     now1 <- mustSnap env (snapIn a1)
-    now2 <- mustSnap env (snapIn recordR)
     unless (sameSnap a1 now1) $ failWith "final: A1 moved"
-    unless (sameSnap recordR now2) $ failWith "final: the folded record moved"
     emit
         "no-trace"
         ( "state unchanged after every refusal — no trace: A1="
@@ -1005,12 +690,6 @@ finalNoTrace env a1 recordR = do
             <> show (snapCoin a1)
             <> " lovelace, tokens "
             <> show (snapTokens a1)
-            <> ", datum bytes unchanged) and folded record="
-            <> showIn (snapIn recordR)
-            <> " ("
-            <> show (snapCoin recordR)
-            <> " lovelace, tokens "
-            <> show (snapTokens recordR)
             <> ", datum bytes unchanged); the refused transactions left the \
                \authenticated state exactly as it was"
         )
@@ -1060,7 +739,11 @@ expectRefused mode env rowName modelReason guard tx = do
                     )
             unless (expectedMarker `isInfixOf` reasonText) $
                 failWith
-                    ( rowName
+                    ( ( if wrongReasonMode
+                            then "CONTROL wrong-reason: "
+                            else ""
+                      )
+                        <> rowName
                         <> ": reason mismatch — expected the refusal to name <"
                         <> expectedMarker
                         <> "> but the node said <"
@@ -1086,10 +769,11 @@ expectRefused mode env rowName modelReason guard tx = do
 -- max declared units, integrity sealed once)
 -- ---------------------------------------------------------
 
--- | The maintenance transaction: spend the claim with a Maintain
--- redeemer, continue the record at the application validator with
--- @contDatum@, pay the flat fee from the funding input. When
--- @demandsController@, the body demands the controller's signature.
+{- | The maintenance transaction: spend the claim with a Maintain
+redeemer, continue the record at the application validator with
+@contDatum@, pay the flat fee from the funding input. When
+@demandsController@, the body demands the controller's signature.
+-}
 maintainTx ::
     Env ->
     Snap ->
@@ -1111,8 +795,16 @@ maintainTx env snap overrideM demanded = do
                     (Data redeemerMaintain, maxUnits)
                 )
         integrity = computeScriptIntegrity (envPp env) redeemers
+        -- `maintain` demands the record's whole value be preserved —
+        -- its active witness token included — so the continuation
+        -- carries exactly what the record held.
         contOut =
-            scriptOut (envPp env) (envAppAddr env) (snapCoin snap) mempty contDatum
+            scriptOut
+                (envPp env)
+                (envAppAddr env)
+                (snapCoin snap)
+                (let MultiAsset m = snapTokens snap in m)
+                contDatum
         change = changeOut (snapCoin snap + coinOf fund) flatFee [contOut]
         body =
             mkBasicTxBody
@@ -1135,108 +827,9 @@ maintainTx env snap overrideM demanded = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | The cancellation transaction: spend the claim with a Cancel
--- redeemer presenting @presented@, pay a refund output to
--- @refundAddr@ carrying @refundCoin@, mint @mint@ (with @mintRdmr@
--- when minting or burning under the policy).
-cancelBody ::
-    Env ->
-    Snap ->
-    -- | the presented refund
-    ByteString ->
-    -- | the refund output address
-    Addr ->
-    Integer ->
-    MultiAsset ->
-    Maybe PLC.Data ->
-    IO ConwayTx
-cancelBody env snap presented refundAddr refundCoin mint mintRdmr = do
-    (fund, collateral) <- takeFundCollateral env
-    let inputs = Set.fromList [snapIn snap, fst fund]
-        spendIdx = spendingIndex (snapIn snap) inputs
-        spendEntry = (Data (redeemerCancel presented), maxUnits)
-        redeemers = case mintRdmr of
-            Just mr ->
-                Redeemers $
-                    Map.fromList
-                        [ (ConwaySpending (AsIx spendIdx), spendEntry)
-                        , (ConwayMinting (AsIx 0), (Data mr, maxUnits))
-                        ]
-            Nothing ->
-                Redeemers (Map.singleton (ConwaySpending (AsIx spendIdx)) spendEntry)
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        refundOut =
-            plainOut (envPp env) refundAddr refundCoin
-        change =
-            changeOut (snapCoin snap + coinOf fund) flatFee [refundOut]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ inputs
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [refundOut, change]
-                & feeTxBodyL .~ Coin flatFee
-                & mintTxBodyL .~ mint
-                & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
-        ( mkBasicTx body
-            & witsTxL . scriptTxWitsL
-                .~ Map.singleton (envScriptHash env) (envScript env)
-            & witsTxL . rdmrsTxWitsL .~ redeemers
-        )
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
-
--- | The real fold: spend the claim with a Fold redeemer, continue the
--- record at the application validator with the same datum, burn the
--- approval exactly once.
-foldBody :: Env -> Snap -> NamingDatum -> IO ConwayTx
-foldBody env snap current = do
-    (fund, collateral) <- takeFundCollateral env
-    let inputs = Set.fromList [snapIn snap, fst fund]
-        spendIdx = spendingIndex (snapIn snap) inputs
-        redeemers =
-            Redeemers $
-                Map.fromList
-                    [
-                        ( ConwaySpending (AsIx spendIdx)
-                        , (Data (PLC.Constr 2 [PLC.List []]), maxUnits)
-                        )
-                    ,
-                        ( ConwayMinting (AsIx 0)
-                        , ( Data (withdrawApprovalRedeemer env (envFoldRefundBytes env))
-                          , maxUnits
-                          )
-                        )
-                    ]
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        recordOut =
-            scriptOut (envPp env) (envAppAddr env) (snapCoin snap) mempty current
-        change = changeOut (snapCoin snap + coinOf fund) flatFee [recordOut]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ inputs
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [recordOut, change]
-                & feeTxBodyL .~ Coin flatFee
-                & mintTxBodyL .~ mintBurn (envAppPolicy env) (envFoldRefundBytes env)
-                & scriptIntegrityHashTxBodyL .~ integrity
-    pure $
-        ( mkBasicTx body
-            & witsTxL . scriptTxWitsL
-                .~ Map.singleton (envScriptHash env) (envScript env)
-            & witsTxL . rdmrsTxWitsL .~ redeemers
-        )
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
-
--- | Mint redeemer @WithdrawApproval { controller, destination }@ —
--- this run's controller binding @destination@.
-withdrawApprovalRedeemer :: Env -> ByteString -> PLC.Data
-withdrawApprovalRedeemer env destination =
-    PLC.Constr 0 [PLC.B (envCtrlHash env), PLC.B destination]
-
--- | An output at the application validator carrying @tokens@ and the
--- inline naming datum, sized at least min-ADA plus margin.
+{- | An output at the application validator carrying @tokens@ and the
+inline naming datum, sized at least min-ADA plus margin.
+-}
 scriptOut ::
     PParams ConwayEra ->
     Addr ->
@@ -1253,14 +846,6 @@ scriptOut pp addr coin tokens datum =
             addr
             (MaryValue (Coin finalCoin) (MultiAsset tokens))
             & datumTxOutL .~ mkInlineDatum (namingDataToData datum)
-
-plainOut :: PParams ConwayEra -> Addr -> Integer -> TxOut ConwayEra
-plainOut pp addr coin =
-    let probe :: TxOut ConwayEra
-        probe = mkBasicTxOut addr (MaryValue (Coin 0) mempty)
-        minCoin = let Coin c = getMinCoinTxOut pp probe in c
-        finalCoin = max coin (minCoin + 1_000_000)
-     in mkBasicTxOut addr (MaryValue (Coin finalCoin) mempty)
 
 changeOut ::
     -- | total input lovelace
@@ -1279,115 +864,6 @@ changeOut inCoin fee outs =
 -- ---------------------------------------------------------
 -- Setup transactions
 -- ---------------------------------------------------------
-
--- | Setup 1: mint the withdraw approval (the refund recorded at
--- request time, controller-signed) and create claimLC (with the
--- approval) and claimLM (without one).
-setupTwoClaims ::
-    Env ->
-    NamingDatum ->
-    NamingDatum ->
-    IO (String, TxIn, TxIn)
-setupTwoClaims env datumLC datumLM = do
-    (fund, collateral) <- takeFundCollateral env
-    let approvalTokens =
-            Map.singleton
-                (envAppPolicy env)
-                (Map.singleton (AssetName (SBS.toShort (envRefundBytes env))) 1)
-        claimLCOut =
-            scriptOut (envPp env) (envAppAddr env) claimCoin approvalTokens datumLC
-        claimLMOut = scriptOut (envPp env) (envAppAddr env) claimCoin mempty datumLM
-        redeemers =
-            Redeemers
-                ( Map.singleton
-                    (ConwayMinting (AsIx 0))
-                    (Data (withdrawApprovalRedeemer env (envRefundBytes env)), maxUnits)
-                )
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        change = changeOut (coinOf fund) flatFee [claimLCOut, claimLMOut]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.fromList [fst fund]
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [claimLCOut, claimLMOut, change]
-                & feeTxBodyL .~ Coin flatFee
-                & mintTxBodyL .~ MultiAsset approvalTokens
-                & reqSignerHashesTxBodyL
-                    .~ Set.singleton (addrWitnessKeyHash (envCtrlHash env))
-                & scriptIntegrityHashTxBodyL .~ integrity
-        tx =
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ Map.singleton (envScriptHash env) (envScript env)
-                & witsTxL . rdmrsTxWitsL .~ redeemers
-    let signed = addKeyWitness genesisSignKey tx
-    submitAccepted env "setup-claims" signed
-    utxos <- queryAfterDelay env
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
-    claimLCIn <- pickClaim mine True "claimLC"
-    claimLMIn <- pickClaim mine False "claimLM"
-    pure (txIdHex signed, claimLCIn, claimLMIn)
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
-    pickClaim candidates wantApproval label = do
-        snaps <- traverse (mustSnap env . fst) candidates
-        let matches =
-                [ fst cin
-                | (cin, s) <- zip candidates snaps
-                , (not (null (snapTokens s)) == wantApproval)
-                ]
-        case matches of
-            (cin : _) -> pure cin
-            [] -> failWith ("setup: could not distinguish " <> label)
-
--- | Setup 2: a second approval and claimFold — the claim the LC04
--- proof folds for real. One approval per transaction: the mint
--- purpose mints exactly one.
-setupFoldClaim ::
-    Env ->
-    NamingDatum ->
-    IO (String, TxIn)
-setupFoldClaim env datumFold = do
-    (fund, collateral) <- takeFundCollateral env
-    let approvalTokens =
-            Map.singleton
-                (envAppPolicy env)
-                (Map.singleton (AssetName (SBS.toShort (envFoldRefundBytes env))) 1)
-        claimOut =
-            scriptOut (envPp env) (envAppAddr env) claimCoin approvalTokens datumFold
-        redeemers =
-            Redeemers
-                ( Map.singleton
-                    (ConwayMinting (AsIx 0))
-                    (Data (withdrawApprovalRedeemer env (envFoldRefundBytes env)), maxUnits)
-                )
-        integrity = computeScriptIntegrity (envPp env) redeemers
-        change = changeOut (coinOf fund) flatFee [claimOut]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.fromList [fst fund]
-                & collateralInputsTxBodyL .~ Set.singleton (fst collateral)
-                & outputsTxBodyL .~ StrictSeq.fromList [claimOut, change]
-                & feeTxBodyL .~ Coin flatFee
-                & mintTxBodyL .~ MultiAsset approvalTokens
-                & reqSignerHashesTxBodyL
-                    .~ Set.singleton (addrWitnessKeyHash (envCtrlHash env))
-                & scriptIntegrityHashTxBodyL .~ integrity
-        tx =
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ Map.singleton (envScriptHash env) (envScript env)
-                & witsTxL . rdmrsTxWitsL .~ redeemers
-    let signed = addKeyWitness genesisSignKey tx
-    submitAccepted env "setup-fold-claim" signed
-    utxos <- queryAfterDelay env
-    let mine = sortBy (comparing (txInIndex . fst)) (utxosByTxId utxos (txIdHex signed))
-    case mine of
-        ((cin, _) : _) -> pure (txIdHex signed, cin)
-        [] ->
-            failWith "setup: claimFold not found at the application validator"
-  where
-    coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
 -- | Split the genesis wallet into funding and collateral UTxOs.
 splitGenesis :: Cage.Provider IO -> Submitter IO -> IO [(TxIn, TxOut ConwayEra)]
@@ -1471,7 +947,12 @@ takeFundCollateral env = do
 data Snap = Snap
     { snapIn :: TxIn
     , snapCoin :: Integer
-    , snapTokens :: [(ByteString, Integer)]
+    , snapTokens :: MultiAsset
+    {- ^ everything the record holds beside its lovelace. Since #157 a
+    record is created by a fold and carries the registry's active
+    witness token for its key, and `maintain` demands the whole
+    value be preserved, so the snapshot keeps all of it.
+    -}
     , snapDatum :: Maybe PLC.Data
     }
 
@@ -1481,14 +962,7 @@ mustSnap env txin = do
     case filter ((== txin) . fst) utxos of
         [(_, o)] -> do
             let Coin c = o ^. coinTxOutL
-                tokens = case o ^. valueTxOutL of
-                    MaryValue _ (MultiAsset ma) ->
-                        maybe
-                            []
-                            ( Map.toAscList
-                                . Map.mapKeys (SBS.fromShort . assetNameBytes)
-                            )
-                            (Map.lookup (envAppPolicy env) ma)
+                MaryValue _ tokens = o ^. valueTxOutL
                 datum = datumDataOf o
             pure (Snap txin c tokens datum)
         _ ->
@@ -1530,8 +1004,9 @@ datumDataOf out = case out ^. datumTxOutL of
     Datum bd -> let Data d = binaryDataToData bd in Just d
     _ -> Nothing
 
--- | On-chain Plutus data as the codec's wire value: exactly the shapes
--- the contract serialises.
+{- | On-chain Plutus data as the codec's wire value: exactly the shapes
+the contract serialises.
+-}
 wireOf :: PLC.Data -> Maybe WireData
 wireOf (PLC.Constr i fs)
     | i >= 0 && i <= 6 = Constr (fromIntegral i) <$> traverse wireOf fs
@@ -1560,9 +1035,9 @@ assertChainBytes snap expected label =
                         ( label
                             <> ": the on-chain bytes are not the codec encoding: \
                                \chain=0x"
-                                <> hex chainBytes
-                                <> " codec=0x"
-                                <> hex codecBytes
+                            <> hex chainBytes
+                            <> " codec=0x"
+                            <> hex codecBytes
                         )
         _ ->
             failWith
@@ -1626,21 +1101,20 @@ namingDataToData nd =
 redeemerMaintain :: PLC.Data
 redeemerMaintain = PLC.Constr 0 []
 
-redeemerCancel :: ByteString -> PLC.Data
-redeemerCancel presentedRefund = PLC.Constr 1 [PLC.B presentedRefund]
-
-mintBurn :: PolicyID -> ByteString -> MultiAsset
-mintBurn policy name =
-    MultiAsset
-        (Map.singleton policy (Map.singleton (AssetName (SBS.toShort name)) (-1)))
-
 -- ---------------------------------------------------------
 -- Submission helpers
 -- ---------------------------------------------------------
 
 submitAccepted :: Env -> String -> ConwayTx -> IO ()
-submitAccepted env label signed =
-    submitTx (envSubmit env) signed >>= \case
+submitAccepted env = submitAcceptedWith (envSubmit env)
+
+{- | 'submitAccepted' before there is an environment: the record the rows
+maintain is folded from the funding wallet directly, ahead of the split
+that fills the row pool.
+-}
+submitAcceptedWith :: Submitter IO -> String -> ConwayTx -> IO ()
+submitAcceptedWith submit label signed =
+    submitTx submit signed >>= \case
         Submitted _ ->
             emit "submit" (label <> ": accepted tx=" <> txIdHex signed)
         Rejected reason ->
@@ -1654,11 +1128,6 @@ waitConfirmation :: String -> IO ()
 waitConfirmation what = do
     threadDelay confirmationDelay
     emit "confirm" ("confirmed on chain: " <> what)
-
-queryAfterDelay :: Env -> IO [(TxIn, TxOut ConwayEra)]
-queryAfterDelay env = do
-    threadDelay confirmationDelay
-    Cage.queryUTxOs (envProv env) (envAppAddr env)
 
 -- ---------------------------------------------------------
 -- Pinned identity
@@ -1681,8 +1150,9 @@ instance FromJSON ManifestPin where
     parseJSON = withObject "ManifestPin" $ \o ->
         ManifestPin <$> o .: "title" <*> o .: "hash"
 
--- | Fail the run unless every manifest pin under
--- @application.application@ equals the hash this run loaded.
+{- | Fail the run unless every manifest pin under
+@application.application@ equals the hash this run loaded.
+-}
 checkPinnedApplication :: String -> IO ()
 checkPinnedApplication appHex = do
     path <-
@@ -1740,6 +1210,187 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            )
-            :: Digest Blake2b_256
+            ) ::
+            Digest Blake2b_256
         )
+
+-- ---------------------------------------------------------
+-- The record the rows maintain, made by a real fold (#157)
+-- ---------------------------------------------------------
+
+{- | Boot a registry, certify one activation of a key under the naming
+application policy, book it, and fold it. What the fold leaves behind is
+the record: an output at the application validator's own address holding
+the registry's active witness token for that key, under the naming datum
+whose hash the approval bound.
+
+That is the whole of what changed for these rows. A claim used to be
+placed by hand and carry a withdraw approval; a record is what a fold
+delivers, and the only thing that can create one is a fold. The
+maintenance propositions below are unchanged — they were never about how
+the record came to exist.
+-}
+setupFoldedRecord ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    PParams ConwayEra ->
+    -- | the naming application's own address
+    Addr ->
+    -- | the naming application script
+    Script ConwayEra ->
+    -- | its hash, for narration
+    String ->
+    -- | state validator
+    SBS.ShortByteString ->
+    -- | request validator
+    SBS.ShortByteString ->
+    -- | naming application validator
+    SBS.ShortByteString ->
+    -- | unapplied @witness(kind, registry)@ validator
+    SBS.ShortByteString ->
+    NamingDatum ->
+    IO TxIn
+setupFoldedRecord prov submit pp appAddr appScript appHex stateBytes requestBytes appBytes witnessBytes recordDatum = do
+    utxos <- Cage.queryUTxOs prov genesisAddr
+    seedRef <- case sortOn (Down . (\(_, o) -> let Coin c = o ^. coinTxOutL in c)) utxos of
+        ((txIn, _) : _) -> pure (txInToRef txIn)
+        [] -> failWith "setup: the funding wallet has no UTxOs"
+    let cfg =
+            CageConfig
+                { cageScriptBytes = stateBytes
+                , requestScriptBytes = requestBytes
+                , cfgScriptHash = computeScriptHash stateBytes
+                , cageSeed = seedRef
+                , defaultProcessTime = 120_000
+                , defaultRetractTime = 30_000
+                , defaultTip = Coin 1_000_000
+                , -- #157 D-BOOT: all four pins derived for THIS registry
+                  -- identity — NYA applied to the ordinary request-validator
+                  -- hash, and `witness(kind, registry)` at kinds 0, 1 and 2.
+                  cfgApplicationPolicy =
+                    SBS.toShort
+                        ( scriptHashBytes
+                            ( computeScriptHash
+                                ( appliedApplicationBytes
+                                    (scriptHashBytes (computeScriptHash stateBytes))
+                                    ( onChainTokenId
+                                        ( TokenId
+                                            ( AssetName
+                                                (SBS.toShort (deriveAssetName seedRef))
+                                            )
+                                        )
+                                    )
+                                    requestBytes
+                                    appBytes
+                                )
+                            )
+                        )
+                , cfgActivePolicy = witnessPin 1
+                , cfgAbsentPolicy = witnessPin 0
+                , cfgTerminalPolicy = witnessPin 2
+                , cfgConsumerScript = SBS.empty
+                , network = Testnet
+                }
+        witnessPin kind =
+            SBS.toShort
+                ( scriptHashBytes
+                    ( computeScriptHash
+                        ( applyBytesParam
+                            ( scriptHashBytes (computeScriptHash stateBytes)
+                                <> deriveAssetName seedRef
+                            )
+                            (applyIntParam kind witnessBytes)
+                        )
+                    )
+                )
+    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+    signedBoot <- submitSignedRaw submit "cage-boot" unsignedBoot
+    tid <- case Map.toList (tokensMinted cfg signedBoot) of
+        [(an, _)] -> pure (TokenId an)
+        _ -> failWith "setup: the boot minted an unexpected asset set"
+    tm <- mkPureTrieManager
+    createTrie tm tid
+    -- The state validator alone is fifteen kilobytes: a fold that
+    -- attaches it beside the request validator and a token policy is
+    -- over MaxTxSize before it carries a proof. Published once, the
+    -- fold resolves all five scripts from reference outputs.
+    refs <-
+        concat
+            <$> mapM
+                publishBatch
+                (refScriptBatches (foldRefScripts cfg tid witnessBytes))
+    -- The activation's destination (D-DEST, R-NM4): the naming
+    -- application's own address, and the record datum it will carry.
+    -- `record_destination` demands exactly that of an edge-1 approval.
+    let datumData = namingDataToData recordDatum
+        destHash =
+            hashToBytes (extractHash (hashData (Data datumData :: Data ConwayEra)))
+        dest = (serialiseAddr appAddr, destHash)
+    unsignedBook <-
+        bookEdgeTx
+            cfg
+            prov
+            tid
+            appScript
+            genesisAddr
+            recordKey
+            (OpInsert leafActive)
+            dest
+            []
+            recordBond
+    _ <- submitSignedRaw submit "book-activation" unsignedBook
+    ctx <- registryContextFor cfg prov tid witnessBytes [(destHash, datumData)] refs
+    unsignedFold <- updateTokenWithDuties cfg prov tm tid genesisAddr ctx
+    signedFold <- submitSignedRaw submit "fold" unsignedFold
+    recordIn <-
+        mustFindUTxO prov appAddr (txIdHex signedFold) "folded record"
+    emit
+        "setup"
+        ( "registry "
+            <> hex (scriptHashBytes (cfgScriptHash cfg))
+            <> " booted, the activation of key "
+            <> show recordKey
+            <> " certified by the application policy 0x"
+            <> appHex
+            <> " and folded; the record it created lives at the \
+               \application validator: "
+            <> showIn recordIn
+            <> " carrying the active witness token for that key under the \
+               \naming datum the approval bound"
+        )
+    pure recordIn
+  where
+    publishBatch scripts = do
+        unsigned <- publishRefScriptTx pp prov genesisAddr scripts
+        signed <- submitSignedRaw submit "publish-references" unsigned
+        utxos <- Cage.queryUTxOs prov genesisAddr
+        mapM
+            ( \ix ->
+                let txIn = TxIn (txIdTx signed) (TxIx (fromIntegral ix))
+                 in case [o | (i, o) <- utxos, i == txIn] of
+                        (o : _) -> pure (txIn, o)
+                        [] ->
+                            failWith
+                                "setup: a published reference output is not \
+                                \on chain"
+            )
+            [0 .. length scripts - 1]
+
+-- | The key the record is the registry's record of.
+recordKey :: ByteString
+recordKey = "t56-lm-name"
+
+-- | The assets a boot transaction minted under the cage's own policy.
+tokensMinted ::
+    CageConfig -> ConwayTx -> Map.Map AssetName Integer
+tokensMinted cfg tx =
+    let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
+     in Map.findWithDefault Map.empty (cagePolicyIdFromCfg cfg) ma
+
+-- | Sign with the funding key, submit, and wait for confirmation.
+submitSignedRaw :: Submitter IO -> String -> ConwayTx -> IO ConwayTx
+submitSignedRaw submit label unsigned = do
+    let signed = addKeyWitness genesisSignKey unsigned
+    submitAcceptedWith submit label signed
+    _ <- waitConfirmation (txIdHex signed <> " (" <> label <> ")")
+    pure signed

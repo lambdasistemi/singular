@@ -15,8 +15,14 @@ then outputs a new State UTxO with the updated root
 and per-request refund outputs.
 -}
 module Singular.Registry.TxBuilder.Update (
+    adaOnlyOutput,
     updateTokenImpl,
     updateTokenWithDuties,
+    bookEdgeTx,
+    foldRefScripts,
+    publishRefScriptTx,
+    refScriptBatches,
+    registryContextFor,
     emptyRegistryContext,
     RegistryDuties (..),
     RegistryContext (..),
@@ -29,6 +35,8 @@ import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
+import Data.Sequence.Strict qualified as StrictSeq
+import Data.Set qualified as Set
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (
     utcTimeToPOSIXSeconds,
@@ -37,27 +45,38 @@ import Data.Void (Void)
 import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Alonzo.Scripts (AsIx)
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx (
+    Redeemers (..),
     bodyTxL,
+    mkBasicTx,
+    mkBasicTxBody,
+    rdmrsTxWitsL,
+    scriptTxWitsL,
+    witsTxL,
  )
 import Cardano.Ledger.Api.Tx.Body (
+    collateralInputsTxBodyL,
     feeTxBodyL,
+    inputsTxBodyL,
+    mintTxBodyL,
+    outputsTxBodyL,
+    referenceInputsTxBodyL,
+    reqSignerHashesTxBodyL,
+    scriptIntegrityHashTxBodyL,
  )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Keys (KeyHash)
-import Cardano.Tx.Build (Guard)
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
-import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL, getMinCoinTxOut, mkBasicTxOut, referenceScriptTxOutL, valueTxOutL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.Scripts (
+    ConwayPlutusPurpose (..),
+ )
+import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Hashes (originalBytes)
+import Cardano.Ledger.Keys (KeyHash)
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Plutus.ExUnits (ExUnits)
+import Cardano.Tx.Build (Guard)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -66,13 +85,17 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedMint (..),
     ConnectedSpend (..),
     RawRedeemer (..),
+    generousUnits,
  )
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose,
- )
-import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
+import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyIntParam,
+ )
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -80,7 +103,7 @@ import Singular.Registry.Ledger (
     ConwayEra,
     PParams,
     Root (..),
-    TokenId,
+    TokenId (..),
     TxIn,
  )
 import Singular.Registry.Provider (
@@ -91,7 +114,6 @@ import Singular.Registry.Trie (
     TrieManager (..),
  )
 import Singular.Registry.TxBuilder.Internal
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainOperation (..),
@@ -102,9 +124,6 @@ import Singular.Registry.Types (
     RequestAction (..),
     UpdateRedeemer (..),
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -531,16 +550,18 @@ data RegistryContext = RegistryContext
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
     , rcDatums :: [(ByteString, PLC.Data)]
     , rcAllowInadmissible :: Bool
-    -- ^ Build a fold even when a request takes no admissible edge, so a
-    -- row that exists to watch the chain REFUSE one can produce the
-    -- transaction it submits. An honest builder leaves this off and
-    -- fails early, naming the request.
+    {- ^ Build a fold even when a request takes no admissible edge, so a
+    row that exists to watch the chain REFUSE one can produce the
+    transaction it submits. An honest builder leaves this off and
+    fails early, naming the request.
+    -}
     , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
-    -- ^ Outputs carrying the fold's scripts as reference scripts. The
-    -- state validator alone is fifteen kilobytes, so a fold that
-    -- attaches it, the request script and a token policy does not fit
-    -- in a transaction; with references every purpose resolves through
-    -- them instead.
+    {- ^ Outputs carrying the fold's scripts as reference scripts. The
+    state validator alone is fifteen kilobytes, so a fold that
+    attaches it, the request script and a token policy does not fit
+    in a transaction; with references every purpose resolves through
+    them instead.
+    -}
     }
 
 {- | The obligations this set of requests creates, or the reason they
@@ -554,9 +575,10 @@ registryDuties ::
     OnChainTokenState ->
     RegistryContext ->
     [(TxIn, TxOut ConwayEra)] ->
-    -- | Whether each request is PROCESSED by this fold. A rejected
-    -- request takes no edge: it owes its owner a refund, and the
-    -- approval that certified it was never spent.
+    {- | Whether each request is PROCESSED by this fold. A rejected
+    request takes no edge: it owes its owner a refund, and the
+    approval that certified it was never spent.
+    -}
     [Bool] ->
     Either String RegistryDuties
 registryDuties cfg pp st ctx reqUtxos processed =
@@ -730,14 +752,12 @@ registryDuties cfg pp st ctx reqUtxos processed =
                 , rdOutputs = [out]
                 }
     findCustody key =
-        case
-            [ (u, refund, coin)
-            | u@(_, o) <- rcCageUtxos ctx
-            , Just (AbsentCustody k refund) <- [extractCageDatum o]
-            , k == key
-            , let Coin coin = o ^. coinTxOutL
-            ]
-            of
+        case [ (u, refund, coin)
+             | u@(_, o) <- rcCageUtxos ctx
+             , Just (AbsentCustody k refund) <- [extractCageDatum o]
+             , k == key
+             , let Coin coin = o ^. coinTxOutL
+             ] of
             [c] -> Right c
             [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
             _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
@@ -767,3 +787,283 @@ adaOnlyOutput :: TxOut ConwayEra -> Bool
 adaOnlyOutput out =
     (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
         && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
+
+{- | Book one registry-mode edge (#157 C2, C4, D-APPROVAL): mint the
+approval that certifies it under the registry's pinned application policy,
+and create the request that carries it.
+
+The approval's asset name IS the binding — the edge index, the key, the
+owner and the destination, hashed together — and the cage recomputes it
+from the request at fold time, so a booking and a fold cannot disagree
+about what was certified.
+
+Returns the unsigned transaction; the caller signs with the payer's key and
+whatever else the certifying arm demands. Which signature or reference that
+is belongs to the edge (R-NM4): an absence witness needs none, an
+activation needs the controller, a deletion needs the custody in view.
+-}
+bookEdgeTx ::
+    CageConfig ->
+    Provider IO ->
+    TokenId ->
+    {- | The naming application script: the registry's pinned application
+    policy, whose mint arm certifies the edge
+    -}
+    Script ConwayEra ->
+    -- | Payer, who is also the request's owner
+    Addr ->
+    -- | Registry key
+    ByteString ->
+    OnChainOperation ->
+    -- | Destination: address bytes and datum hash
+    (ByteString, ByteString) ->
+    -- | Reference inputs the certifying arm reads
+    [(TxIn, TxOut ConwayEra)] ->
+    -- | Bond: the tip plus the deposit that rides to the destination
+    Integer ->
+    IO ConwayTx
+bookEdgeTx cfg prov tid appScript payerAddr key op dest refIns bond = do
+    edge <- case edgeOf op (statedBefore op) of
+        Just e -> pure e
+        Nothing ->
+            error
+                ( "bookEdge: "
+                    <> show op
+                    <> " on key "
+                    <> show key
+                    <> " is not one of the seven admissible edges"
+                )
+    pp <- queryProtocolParams prov
+    utxos <- queryUTxOs prov payerAddr
+    (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+        [] -> error "bookEdge: payer wallet has no UTxOs"
+        (u : _) -> pure u
+    -- A spent approval is not burned at the fold, so it returns to the
+    -- funder and rides in the wallet from then on. The booking carries
+    -- whatever its input holds through to its own change, and collateral
+    -- is taken from an ada-only output, which is all the ledger accepts.
+    collateralIn <-
+        case sortOn (Down . (^. coinTxOutL) . snd) (filter (fundable . snd) utxos) of
+            [] -> error "bookEdge: payer wallet has no ada-only output for collateral"
+            ((i, _) : _) -> pure i
+    now <- currentPosixMs
+    let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
+        Coin tipVal = defaultTip cfg
+        fee = 2_000_000
+        change = feeBal - bond - fee
+        owner = addrKeyHashBytes payerAddr
+        (destAddr, destHash) = dest
+        name = approvalName edge key owner dest
+        appPolicy = PolicyID (hashScript appScript)
+        approval =
+            MultiAsset
+                (Map.singleton appPolicy (Map.singleton (AssetName (SBS.toShort name)) 1))
+        approveRedeemer =
+            PLC.Constr
+                0
+                [ PLC.I edge
+                , PLC.B key
+                , PLC.B owner
+                , PLC.List [PLC.B destAddr, PLC.B destHash]
+                ]
+        requestAddr = requestAddrFromCfg cfg tid (network cfg)
+        datum = mkRequestDatumWith tid payerAddr key op tipVal now dest
+        reqOut =
+            mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
+                & datumTxOutL .~ mkInlineDatum datum
+        Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
+    when (change <= 0) $
+        error ("bookEdge: payer wallet too small (" <> show feeBal <> ")")
+    when (bond < minAda) $
+        error ("bookEdge: bond under min-ADA: " <> show bond)
+    let redeemers =
+            Redeemers
+                ( Map.singleton
+                    (ConwayMinting (AsIx 0))
+                    (toLedgerData (RawRedeemer approveRedeemer), generousUnits)
+                )
+        integrity = computeScriptIntegrity pp redeemers
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton feeIn
+                & referenceInputsTxBodyL .~ Set.fromList (map fst refIns)
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        [ reqOut
+                        , mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
+                        ]
+                & feeTxBodyL .~ Coin fee
+                & mintTxBodyL .~ approval
+                & collateralInputsTxBodyL .~ Set.singleton collateralIn
+                & reqSignerHashesTxBodyL
+                    .~ Set.singleton (addrWitnessKeyHash owner)
+                & scriptIntegrityHashTxBodyL .~ integrity
+    pure
+        ( mkBasicTx body
+            & witsTxL . scriptTxWitsL
+                .~ Map.singleton (hashScript appScript) appScript
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+        )
+  where
+    -- Ada-only and carrying no reference script: collateral must be the
+    -- first, and a transaction may not both spend and reference the second.
+    fundable out =
+        (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
+            && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
+
+{- | Build the transaction that publishes @script@ as a reference
+output, paid for from @payer@'s largest output and returning the change
+to the same address. The reference output is output 0.
+
+The state validator alone is fifteen kilobytes: a fold that attaches it
+beside the request script and a token policy does not fit in a
+transaction. Published once at a cage's boot and read back as a
+reference input, the same script hash runs without any of its bytes
+riding the fold — so this is a delivery change, never a semantic one.
+
+One script per transaction: a reference output CARRIES the script, so
+two of them in one publication run into the same ceiling the fold does.
+-}
+publishRefScriptTx ::
+    PParams ConwayEra ->
+    Provider IO ->
+    {- | Payer, who also receives the change and holds the reference
+    outputs
+    -}
+    Addr ->
+    -- | The scripts to publish, one reference output each, in order
+    [Script ConwayEra] ->
+    IO ConwayTx
+publishRefScriptTx pp prov payer scripts = do
+    utxos <- queryUTxOs prov payer
+    (fundIn, fundOut) <- case sortOn
+        (Down . (^. coinTxOutL) . snd)
+        (filter (adaOnlyOutput . snd) utxos) of
+        [] -> error "publishRefScript: the payer has no ada-only output"
+        (u : _) -> pure u
+    let refOut script =
+            let probe :: TxOut ConwayEra
+                probe =
+                    mkBasicTxOut payer (MaryValue (Coin 0) mempty)
+                        & referenceScriptTxOutL .~ SJust script
+                Coin minCoin = getMinCoinTxOut pp probe
+             in -- The coin field is part of the serialised size, so the
+                -- probe understates its own encoding; an ada of margin
+                -- is cheaper than measuring twice.
+                probe & coinTxOutL .~ Coin (minCoin + 1_000_000)
+        refOuts = map refOut scripts
+        locked = sum [c | o <- refOuts, let Coin c = o ^. coinTxOutL]
+        fee = 2_000_000
+        Coin inCoin = fundOut ^. coinTxOutL
+        change = inCoin - locked - fee
+    when (change <= 1_000_000) $
+        error
+            ( "publishRefScript: the payer's largest ada-only output holds "
+                <> show inCoin
+                <> " lovelace, too little for reference outputs of "
+                <> show locked
+                <> " plus fees"
+            )
+    pure $
+        mkBasicTx
+            ( mkBasicTxBody
+                & inputsTxBodyL .~ Set.singleton fundIn
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList
+                        ( refOuts
+                            <> [mkBasicTxOut payer (MaryValue (Coin change) mempty)]
+                        )
+                & feeTxBodyL .~ Coin fee
+            )
+
+{- | Group scripts into publishable transactions. A reference output
+CARRIES its script, so a publication meets the same MaxTxSize ceiling a
+fold does: the state validator alone is fifteen kilobytes and travels
+alone, while the request validator and the three token policies fit
+together. Grouping matters because each publication costs a submission
+and a confirmation wait, and a devnet's slot-forecast horizon is not
+generous.
+-}
+refScriptBatches :: [Script ConwayEra] -> [[Script ConwayEra]]
+refScriptBatches = go
+  where
+    budget = 12_000 :: Int
+    go [] = []
+    go (s : rest) = let (batch, left) = fill (sizeOf s) [s] rest in batch : go left
+    fill _ acc [] = (reverse acc, [])
+    fill used acc (s : rest)
+        | used + sizeOf s <= budget = fill (used + sizeOf s) (s : acc) rest
+        | otherwise = (reverse acc, s : rest)
+    sizeOf = BS.length . originalBytes
+
+{- | The duties context for one registry: its three token policies,
+derived from the same identity the boot datum pinned, its own cage
+script and UTxOs, and whatever reference outputs and destination datum
+preimages the caller has.
+
+The witness validator is applied here exactly as at boot — kind, then
+the registry's full asset identity — so a context that disagrees with
+the pins is a context whose mints the cage refuses, loudly, rather than
+one that quietly mints under the wrong policy.
+-}
+registryContextFor ::
+    CageConfig ->
+    Provider IO ->
+    TokenId ->
+    -- | the unapplied @witness(kind, registry)@ validator
+    SBS.ShortByteString ->
+    -- | preimages of the destination datums the bookings named
+    [(ByteString, PLC.Data)] ->
+    -- | outputs carrying the fold's scripts as reference scripts
+    [(TxIn, TxOut ConwayEra)] ->
+    IO RegistryContext
+registryContextFor cfg prov tid witnessBytes datums refUtxos = do
+    cageUtxos <- queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    pure
+        RegistryContext
+            { rcWitnessScripts =
+                Map.fromList
+                    [(k, witnessScriptFor cfg tid witnessBytes k) | k <- [0, 1, 2]]
+            , rcCageScript = Just (mkCageScript cfg)
+            , rcCageUtxos = cageUtxos
+            , rcDatums = datums
+            , rcAllowInadmissible = False
+            , rcRefUtxos = refUtxos
+            }
+
+{- | The @witness(kind, registry)@ validator this registry pinned at
+`kind`, applied exactly as it was at boot: the kind, then the registry's
+full native-asset identity (its state policy bytes followed by the token
+name).
+-}
+witnessScriptFor ::
+    CageConfig ->
+    TokenId ->
+    -- | the unapplied @witness(kind, registry)@ validator
+    SBS.ShortByteString ->
+    Integer ->
+    Script ConwayEra
+witnessScriptFor cfg tid witnessBytes kind =
+    let AssetName tokenName = unTokenId tid
+        registryId =
+            scriptHashBytes (cfgScriptHash cfg) <> SBS.fromShort tokenName
+     in scriptFromBytes
+            ("witness-" <> show kind)
+            (applyBytesParam registryId (applyIntParam kind witnessBytes))
+
+{- | Every script a fold of this registry can need: the cage, the
+request validator, and the three token policies.
+
+A fold that resolves its scripts from reference outputs resolves ALL of
+them that way — the builder attaches nothing once it is given
+references — so publishing a subset is the same as publishing none.
+-}
+foldRefScripts ::
+    CageConfig ->
+    TokenId ->
+    -- | the unapplied @witness(kind, registry)@ validator
+    SBS.ShortByteString ->
+    [Script ConwayEra]
+foldRefScripts cfg tid witnessBytes =
+    [mkCageScript cfg, mkRequestScript cfg tid]
+        <> map (witnessScriptFor cfg tid witnessBytes) [0, 1, 2]

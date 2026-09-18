@@ -129,6 +129,7 @@ fn certify(
   tx: Transaction,
 ) -> Bool {
   application.application.mint(
+    requestValidatorHash,
     Approve { edge, key, owner, destination },
     appPolicy,
     tx,
@@ -394,7 +395,7 @@ fn terminateApproval() -> assets.Value {
 /// approval that certifies it.
 fn completionRequestOutput() -> Output {
   Output {
-    address: address.from_script(naming.mpfs_state_hash),
+    address: address.from_script(requestValidatorHash),
     value: add(from_lovelace(3_000_000), appPolicy, approvalOf(3, registryKey, controllerKey, noDestination()), 1),
     datum: InlineDatum(
       naming.MRequestDatum(
@@ -454,6 +455,7 @@ fn retireShaped(
   withRequest: Bool,
 ) -> Bool {
   application.application.spend(
+    requestValidatorHash,
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: reveal },
     fixtures.self_ref,
@@ -586,7 +588,11 @@ fn completionRequestAt(
 ) -> Output {
   Output {
     address: address.from_script(validatorHash),
-    value: add(from_lovelace(3_000_000), appPolicy, boundName, 1),
+    value: if boundName == #"" {
+      from_lovelace(3_000_000)
+    } else {
+      add(from_lovelace(3_000_000), appPolicy, boundName, 1)
+    },
     datum: InlineDatum(
       naming.MRequestDatum(
         naming.MRequest {
@@ -606,6 +612,7 @@ fn completionRequestAt(
 
 fn retireProducing(request: Output) -> Bool {
   application.application.spend(
+    requestValidatorHash,
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: recoveryReveal },
     fixtures.self_ref,
@@ -718,7 +725,7 @@ test t157_n8_missing_bound_approval_refuses() fail {
     completionRequestAt(
       requestValidatorHash,
       fixtures.mock_registry_token,
-      #"00",
+      #"",
     ),
   )
 }
@@ -749,6 +756,7 @@ test t157_n7_record_with_its_single_active_token_accepts() {
 /// A record carrying a second asset is not a record.
 test t157_n7_record_with_a_second_asset_refuses() fail {
   application.application.spend(
+    requestValidatorHash,
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: recoveryReveal },
     fixtures.self_ref,
@@ -800,6 +808,7 @@ fn maintainTx(inputs: List<Input>) -> Transaction {
 
 fn maintain(inputs: List<Input>) -> Bool {
   application.application.spend(
+    requestValidatorHash,
     Some(fixtures.as_datum(maintainRecord())),
     Maintain,
     fixtures.self_ref,
@@ -821,6 +830,7 @@ test t157_n9_maintain_spending_the_registry_refuses() fail {
 /// Recovery is the same: it moves control, never the trie.
 test t157_n9_recover_without_the_registry_accepts() {
   application.application.spend(
+    requestValidatorHash,
     Some(fixtures.as_datum(maintainRecord())),
     Recover { revealed_control: recoveryReveal, registry: appPolicy },
     fixtures.self_ref,

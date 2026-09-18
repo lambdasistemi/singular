@@ -18,7 +18,7 @@ refuse the one it folds.
 module Naming.CompleteVerifySpec (spec) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
+import Data.ByteString qualified as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 import Naming.Register (overMarkerFor)
@@ -35,6 +35,7 @@ repA = BS.replicate 32 0x41
 liveLeaf, overLeaf :: ByteString
 liveLeaf = "\x01"
 overLeaf = "\x02"
+
 rootOld = BS.replicate 32 0x0a
 rootNew = BS.replicate 32 0x0b
 ctrlA = BS.replicate 28 0xaa

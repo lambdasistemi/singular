@@ -257,7 +257,7 @@ jobs:
         run: nix develop ./offchain --quiet --command bash offchain/naming/run-drift-check.sh
   li01:
     name: LI01 canonical initialization, packaged and hermetic
-    needs: blueprint
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -288,14 +288,20 @@ jobs:
       # checkpoint datum (decoded with the Naming.Datum codec against
       # the contract's vendored bytes) and the resulting state, and
       # exits non-zero on any mismatch (marker li01-state-matches-row).
+      # Since #157 the boot datum carries four derived pins — the
+      # naming application validator's own hash and
+      # witness(kind, registry) at kinds 0, 1 and 2 — so the naming
+      # blueprint is an input to this row too, and `needs:` orders this
+      # job after both blueprint jobs.
       - name: Run LI01 as a packaged app without a dev shell
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#li01
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#li01
   naming-rows:
-    name: The LM/LC maintenance and cancellation rows on a real devnet
-    needs: naming-validators
+    name: The LM maintenance rows on a real devnet
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -311,23 +317,27 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # Issue #56: the ten maintenance and cancellation rows (LM01..LM04,
-      # WR01, LC01..LC06) executed against a real devnet with Singular's
-      # own naming validators. `needs:` is ordering and fail-fast on the
-      # naming validator job: the runner consumes the naming-onchain
-      # blueprint (built here from that flake, so the consumed artifact is
-      # always built from the checked-out commit) and its pinned
-      # script-identity.json. Every refusal must come back as a phase-2
-      # PlutusFailure naming the application validator (LC06's replay is
-      # the honest exception: the ledger itself refuses the consumed
-      # output); LM01's preservation, LC01's approval consumption, LC04
-      # after a real fold and LC06 after a real LC01 are asserted from the
-      # chain, and the run fails non-zero on any mismatch.
-      - name: Run the LM/LC rows as a packaged app without a dev shell
+      # Issue #56: the four maintenance rows (LM01..LM04) executed
+      # against a real devnet with Singular's own naming validators.
+      # Since #157 the record they maintain is not placed by hand: the
+      # runner boots a cage from the registry blueprint, books the
+      # activation of one key under the naming application's policy and
+      # folds it, and the record is what that fold delivers. Both
+      # blueprints are therefore inputs, built here from their own
+      # flakes so the consumed artifacts are always built from the
+      # checked-out commit, and `needs:` orders this job after both
+      # blueprint jobs. WR01 and the LC claim-and-cancel rows are
+      # retired with the mechanism they described; the mapping is in
+      # offchain/journey/README.md. Every refusal must come back as a
+      # phase-2 PlutusFailure naming the application validator; LM01's
+      # preservation is asserted field by field from the chain, and the
+      # run fails non-zero on any mismatch.
+      - name: Run the LM rows as a packaged app without a dev shell
         working-directory: offchain
         run: |
-          blueprint="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          NAMING_BLUEPRINT="$blueprint" nix run --quiet .#naming-rows
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#naming-rows
   recovery-rows:
     name: The LR recovery rows on a real devnet
     needs: [blueprint, naming-validators]
@@ -454,7 +464,7 @@ jobs:
           REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#li-refusals
   repair-rows:
     name: The issue-79 repair rows on a real devnet
-    needs: blueprint
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -490,10 +500,11 @@ jobs:
         run: |
           mkdir -p /tmp/s79-devnet
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          TMPDIR=/tmp/s79-devnet REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#repair-rows
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          TMPDIR=/tmp/s79-devnet REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#repair-rows
   e2e:
     name: Devnet E2E on the fresh blueprint
-    needs: blueprint
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 60
     steps:
@@ -531,10 +542,11 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#cage-tests-e2e
   journey:
     name: The bounded registry journey, narrated end to end
-    needs: blueprint
+    needs: [blueprint, naming-validators]
     runs-on: nixos
     timeout-minutes: 45
     steps:
@@ -569,4 +581,5 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
+          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#journey

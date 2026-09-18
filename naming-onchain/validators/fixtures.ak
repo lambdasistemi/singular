@@ -119,6 +119,11 @@ pub const state_ref =
 /// exercise the registry-bound equation rather than a fixed string.
 pub const mock_registry_token = #"6d6f636b2d746f6b656e"
 
+/// Fixture for the ordinary applied request-validator hash
+/// (D-157-REQUEST-HOME). Distinct from `mpfs_state_hash`.
+pub const request_validator_hash =
+  #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+
 /// Second mock cage token (NOTE-009 §3 control): a state UTxO carrying two
 /// tokens under the state policy is not the registry and must be refused
 /// at the authentication boundary itself.

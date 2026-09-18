@@ -21,8 +21,8 @@ import Data.Aeson (Value, object, (.:), (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString (ByteString)
-import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Base16 qualified as Base16
+import Data.ByteString.Char8 qualified as BSC
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -39,7 +39,7 @@ import System.Exit (ExitCode (..), exitWith)
 import System.IO (BufferMode (..), hPutStrLn, hSetBuffering, stderr, stdout)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
-import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (
     ValidityInterval (..),
  )
@@ -65,6 +65,7 @@ import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     getMinCoinTxOut,
     mkBasicTxOut,
+    referenceScriptTxOutL,
     valueTxOutL,
  )
 import Cardano.Ledger.Api.Tx.Wits (
@@ -74,7 +75,7 @@ import Cardano.Ledger.Api.Tx.Wits (
     scriptTxWitsL,
     witVKeyHash,
  )
-import Cardano.Ledger.BaseTypes (Inject (..), Network (..), StrictMaybe (SJust), TxIx (..))
+import Cardano.Ledger.BaseTypes (Inject (..), Network (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose (..),
@@ -88,62 +89,6 @@ import Cardano.Slotting.Slot (SlotNo (..))
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
-import Singular.Registry.Blueprint (
-    extractCompiledCode,
-    loadBlueprint,
- )
-import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (
-    ConwayEra,
-    ConwayTxBody,
-    PParams,
-    Root (..),
-    TokenId (..),
- )
-import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.PureManager (mkPureTrieManager)
-import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Internal (
-    addrKeyHashBytes,
-    addrWitnessKeyHash,
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
-    computeScriptHash,
-    computeScriptIntegrity,
-    currentPosixMs,
-    evaluateAndBalance,
-    extractCageDatum,
-    findRequestUtxos,
-    findStateUtxo,
-    findUtxoByTxIn,
-    mkCageScript,
-    mkInlineDatum,
-    mkRequestDatum,
-    mkRequestScript,
-    onChainTokenId,
-    placeholderExUnits,
-    requestAddrFromCfg,
-    scriptHashBytes,
-    spendingIndex,
-    toLedgerData,
-    toPlcData,
-    trySlots,
-    txInToRef,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    Migration (..),
-    MintRedeemer (..),
-    OnChainOperation (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
-    ProofStep,
-    RequestAction (Update),
-    UpdateRedeemer (..),
- )
-import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     addKeyWitness,
@@ -167,6 +112,83 @@ import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyIntParam,
+    extractCompiledCode,
+    loadBlueprint,
+ )
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Ledger (
+    AssetName (..),
+    ConwayEra,
+    ConwayTxBody,
+    PParams,
+    Root (..),
+    TokenId (..),
+ )
+import Singular.Registry.Provider qualified as Cage
+import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManager)
+import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.ConnectedFold (
+    ConnectedMint (..),
+    ConnectedSpend (..),
+ )
+import Singular.Registry.TxBuilder.Internal (
+    addrKeyHashBytes,
+    addrWitnessKeyHash,
+    appliedApplicationBytes,
+    cageAddrFromCfg,
+    cagePolicyIdFromCfg,
+    computeScriptHash,
+    computeScriptIntegrity,
+    currentPosixMs,
+    evaluateAndBalance,
+    extractCageDatum,
+    findRequestUtxos,
+    findStateUtxo,
+    findUtxoByTxIn,
+    leafAbsent,
+    leafActive,
+    mkCageScript,
+    mkInlineDatum,
+    mkRequestDatum,
+    mkRequestScript,
+    onChainTokenId,
+    placeholderExUnits,
+    requestAddrFromCfg,
+    scriptFromBytes,
+    scriptHashBytes,
+    spendingIndex,
+    toLedgerData,
+    toPlcData,
+    trySlots,
+    txInToRef,
+ )
+import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
+import Singular.Registry.TxBuilder.Update (
+    RegistryDuties (..),
+    bookEdgeTx,
+    foldRefScripts,
+    publishRefScriptTx,
+    refScriptBatches,
+    registryContextFor,
+    registryDuties,
+ )
+import Singular.Registry.Types (
+    CageDatum (..),
+    Migration (..),
+    MintRedeemer (..),
+    OnChainOperation (..),
+    OnChainRequest (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
+    ProofStep,
+    RequestAction (Update),
+    UpdateRedeemer (..),
+ )
 
 folderSeed :: ByteString
 folderSeed = "s79-folder-permissionless0000000"
@@ -183,7 +205,17 @@ main = do
     path <- case mPath of
         Nothing -> failWith "REGISTRY_BLUEPRINT is not set"
         Just p -> pure p
-    outcome <- try (runRepair path) :: IO (Either SomeException ())
+    -- #157 D-BOOT: a cage boots with four pins derived from the naming
+    -- partition's script identities, and every fold below certifies its
+    -- edges under the application policy and witnesses them under a
+    -- token policy. The repair rows exercise the fold's
+    -- permissionlessness, not naming behaviour — what they need from
+    -- that partition are identities.
+    mNaming <- lookupEnv "NAMING_BLUEPRINT"
+    namingPath <- case mNaming of
+        Nothing -> failWith "NAMING_BLUEPRINT is not set"
+        Just p -> pure p
+    outcome <- try (runRepair path namingPath) :: IO (Either SomeException ())
     case outcome of
         Right () -> pure ()
         Left e -> do
@@ -198,8 +230,8 @@ failWith msg = do
     hPutStrLn stderr ("repair-rows: FAILED: " <> msg)
     exitWith (ExitFailure 1)
 
-runRepair :: FilePath -> IO ()
-runRepair blueprintPath = do
+runRepair :: FilePath -> FilePath -> IO ()
+runRepair blueprintPath namingPath = do
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
     stateBytes <- case extractCompiledCode "state.state" bp of
@@ -208,7 +240,19 @@ runRepair blueprintPath = do
     requestBytes <- case extractCompiledCode "request.request" bp of
         Just b -> pure b
         Nothing -> failWith "request.request compiled code not found in blueprint"
-    emit "identity" "loaded state.state and request.request from the repair blueprint"
+    enbp <- loadBlueprint namingPath
+    nbp <- either failWith pure enbp
+    appBytes <- case extractCompiledCode "application.application" nbp of
+        Just b -> pure b
+        Nothing -> failWith "application.application compiled code not found in the naming blueprint"
+    witnessBytes <- case extractCompiledCode "witness.witness.mint" nbp of
+        Just b -> pure b
+        Nothing -> failWith "witness.witness.mint compiled code not found in the naming blueprint"
+    emit
+        "identity"
+        "loaded state.state and request.request from the repair \
+        \blueprint, application.application and witness.witness.mint \
+        \from the naming blueprint"
     gDir <- genesisDir
     withCardanoNode gDir $ \sock _startMs -> do
         lsqCh <- newLSQChannel 16
@@ -224,10 +268,11 @@ runRepair blueprintPath = do
         fundFolder prov submit
         receiptRef <- newIORef []
         let record = recordRow receiptRef
-        (cfg1, tok1) <- bootRepairCage prov submit tm stateBytes requestBytes id
-        r1ok <- checkPermissionlessFold prov submit tm cfg1 tok1 record
+        (cfg1, tok1, kit1) <-
+            bootRepairCage prov submit tm stateBytes requestBytes appBytes witnessBytes id
+        r1ok <- checkPermissionlessFold prov submit tm cfg1 tok1 kit1 record
         unless r1ok $ failWith "R1 permissionless fold did not accept"
-        r2ok <- checkDefectiveFoldRefused prov submit tmFresh cfg1 tok1
+        r2ok <- checkDefectiveFoldRefused prov submit tmFresh cfg1 tok1 kit1
         unless r2ok $ failWith "R2 defective-fold control did not refuse"
         r3ok <- checkEndRefused prov submit cfg1 tok1 record False
         unless r3ok $ failWith "R3 ownerless End control did not refuse"
@@ -241,9 +286,10 @@ runRepair blueprintPath = do
         unless swOk $ failWith "ownerless Sweep control did not refuse"
         swSigOk <- checkSweepRefused prov submit cfg1 tok1 record True
         unless swSigOk $ failWith "creator-signed Sweep control did not refuse"
-        pfOk <- checkFoldProperty prov submit tm stateBytes requestBytes
+        pfOk <- checkFoldProperty prov submit tm stateBytes requestBytes appBytes witnessBytes
         unless pfOk $ failWith "P-fold generated property did not hold"
-        (cfgF, tokF, updIn, delIn, insIn) <- setupRetractBatch prov submit tm stateBytes requestBytes
+        (cfgF, tokF, updIn, delIn, insIn) <-
+            setupRetractBatch prov submit tm stateBytes requestBytes appBytes witnessBytes
         threadDelay 12_000_000
         r4ok <- retractExpectRefuse prov submit cfgF tokF updIn "Update"
         unless r4ok $ failWith "R4 Update-retract did not refuse"
@@ -300,15 +346,106 @@ fundFolder prov submit = do
                 Rejected reason ->
                     failWith ("fundFolder: tx rejected: " <> show reason)
 
+{- | What a registry-mode fold needs beyond the cage's own configuration:
+the application policy that certifies its bookings, the unapplied witness
+validator its three token policies come from, and the reference outputs
+its scripts resolve through.
+-}
+data RegKit = RegKit
+    { rkApp :: Script ConwayEra
+    , rkWitness :: SBS.ShortByteString
+    , rkRefs :: [(TxIn, TxOut ConwayEra)]
+    }
+
+{- | Sweep the genesis wallet's spendable ada back into two outputs: a
+large one the next boot takes as its seed, and a hundred ada behind it
+to pay fees and stand as collateral.
+
+A session fragments the wallet as it runs — every booking leaves change,
+every fold returns the approval it consumed to whoever booked it, every
+publication locks a reference output. A boot that then picks the largest
+output as its seed can be left with nothing but dust to collateralise
+itself, and collateral must be ada-only. Outputs holding tokens, and the
+published reference outputs, are left exactly where they are.
+-}
+consolidateGenesis :: Cage.Provider IO -> Submitter IO -> IO ()
+consolidateGenesis prov submit = do
+    walletUtxos <- Cage.queryUTxOs prov genesisAddr
+    let spendable =
+            [ u
+            | u@(_, o) <- walletUtxos
+            , o ^. referenceScriptTxOutL == SNothing
+            ]
+        total = sum [c | (_, o) <- spendable, let Coin c = o ^. coinTxOutL]
+        carried =
+            mconcat
+                [ ma
+                | (_, o) <- spendable
+                , let MaryValue _ ma = o ^. valueTxOutL
+                ]
+        fee = 1_000_000
+        funding = 100_000_000
+        atticCoin = 5_000_000
+        seedCoin = total - funding - atticCoin - fee
+    when (length spendable > 1 && seedCoin > funding) $ do
+        let body =
+                mkBasicTxBody
+                    & inputsTxBodyL .~ Set.fromList (map fst spendable)
+                    & outputsTxBodyL
+                        .~ StrictSeq.fromList
+                            [ mkBasicTxOut genesisAddr (inject (Coin seedCoin))
+                            , mkBasicTxOut genesisAddr (inject (Coin funding))
+                            , mkBasicTxOut atticAddr (MaryValue (Coin atticCoin) carried)
+                            ]
+                    & feeTxBodyL .~ Coin fee
+            signed = addKeyWitness genesisSignKey (mkBasicTx body)
+        result <- submitTx submit signed
+        case result of
+            Submitted _ -> do
+                awaitTx
+                emit
+                    "split"
+                    ( "swept "
+                        <> show (length spendable)
+                        <> " genesis outputs into a seed of "
+                        <> show seedCoin
+                        <> " lovelace, "
+                        <> show funding
+                        <> " behind it, and the spent approvals out to the \
+                           \attic, so the boot's collateral is ada and large \
+                           \enough"
+                    )
+            Rejected reason ->
+                failWith ("consolidateGenesis: tx rejected: " <> show reason)
+
+{- | Where spent approvals go. A fold does not burn the approval it
+consumed (D-APPROVAL): it returns it to whoever booked the edge, in an
+output of its own. Left in the funding wallet those outputs accumulate,
+and a builder that takes one for collateral is refused — collateral must
+be ada-only, and theirs is a token beside the minimum. Nothing reads the
+attic; it exists so the wallet stays fundable.
+-}
+atticAddr :: Addr
+atticAddr =
+    enterpriseAddr
+        (keyHashFromSignKey (mkSignKey "t79-attic-key-seed-00000000000001"))
+
 bootRepairCage ::
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    {- | naming application validator: no parameters, so its own hash is
+    the application-policy pin
+    -}
+    SBS.ShortByteString ->
+    -- | unapplied @witness(kind, registry)@ validator
+    SBS.ShortByteString ->
     (CageConfig -> CageConfig) ->
-    IO (CageConfig, TokenId)
-bootRepairCage prov submit tm stateBytes requestBytes adjust = do
+    IO (CageConfig, TokenId, RegKit)
+bootRepairCage prov submit tm stateBytes requestBytes appBytes witnessBytes adjust = do
+    consolidateGenesis prov submit
     utxos <- Cage.queryUTxOs prov genesisAddr
     -- Seed selection: the LARGEST wallet UTxO. The imported boot builder
     -- consumes the seed input plus one arbitrary further input and returns
@@ -319,6 +456,16 @@ bootRepairCage prov submit tm stateBytes requestBytes adjust = do
         [] -> failWith "bootRepairCage: genesis wallet has no UTxOs"
         (txIn, _) : _ -> pure (txInToRef txIn)
     let appliedStateBytes = stateBytes
+        registryId =
+            scriptHashBytes (computeScriptHash appliedStateBytes)
+                <> deriveAssetName seedRef
+        witnessPin kind =
+            SBS.toShort
+                ( scriptHashBytes
+                    ( computeScriptHash
+                        (applyBytesParam registryId (applyIntParam kind witnessBytes))
+                    )
+                )
         cfg0 =
             CageConfig
                 { cageScriptBytes = appliedStateBytes
@@ -328,13 +475,30 @@ bootRepairCage prov submit tm stateBytes requestBytes adjust = do
                 , defaultProcessTime = 30_000
                 , defaultRetractTime = 30_000
                 , defaultTip = Coin 1_000_000
-                -- #157 D-BOOT: the repair rows exercise the fold's
-                -- permissionlessness and its retract window, not the
-                -- naming partition, so the four pins are placeholders.
-                , cfgApplicationPolicy = SBS.pack (replicate 28 0)
-                , cfgActivePolicy = SBS.pack (replicate 28 0)
-                , cfgAbsentPolicy = SBS.pack (replicate 28 0)
-                , cfgTerminalPolicy = SBS.pack (replicate 28 0)
+                , -- #157 D-BOOT: all four pins derived for THIS registry
+                  -- identity — NYA applied to the ordinary request-validator
+                  -- hash, and `witness(kind, registry)` at kinds 0, 1 and 2.
+                  cfgApplicationPolicy =
+                    SBS.toShort
+                        ( scriptHashBytes
+                            ( computeScriptHash
+                                ( appliedApplicationBytes
+                                    (scriptHashBytes (computeScriptHash appliedStateBytes))
+                                    ( onChainTokenId
+                                        ( TokenId
+                                            ( AssetName
+                                                (SBS.toShort (deriveAssetName seedRef))
+                                            )
+                                        )
+                                    )
+                                    requestBytes
+                                    appBytes
+                                )
+                            )
+                        )
+                , cfgActivePolicy = witnessPin 1
+                , cfgAbsentPolicy = witnessPin 0
+                , cfgTerminalPolicy = witnessPin 2
                 , cfgConsumerScript = SBS.empty
                 , network = Testnet
                 }
@@ -343,12 +507,46 @@ bootRepairCage prov submit tm stateBytes requestBytes adjust = do
     signedBoot <- submitWithGenesis submit unsignedBoot
     let tok = extractTokenId cfg signedBoot
     createTrie tm tok
-    emit "boot" ("booted a repair cage (applied state script 0x" <> BSC.unpack (Base16.encode (scriptHashBytes (computeScriptHash appliedStateBytes))) <> ")")
-    pure (cfg, tok)
+    -- The state validator alone is fifteen kilobytes: a fold that
+    -- attaches it beside the request validator and a token policy is
+    -- over MaxTxSize before it carries a proof. Published once here,
+    -- every fold of this cage resolves all five scripts from reference
+    -- outputs instead.
+    pp <- Cage.queryProtocolParams prov
+    refs <-
+        concat
+            <$> mapM
+                (publishRef pp)
+                (refScriptBatches (foldRefScripts cfg tok witnessBytes))
+    emit "boot" ("booted a repair cage (applied state script 0x" <> BSC.unpack (Base16.encode (scriptHashBytes (computeScriptHash appliedStateBytes))) <> ", " <> show (length refs) <> " scripts published as reference outputs)")
+    pure
+        ( cfg
+        , tok
+        , RegKit
+            { rkApp = scriptFromBytes "naming-application" appBytes
+            , rkWitness = witnessBytes
+            , rkRefs = refs
+            }
+        )
+  where
+    publishRef pp scripts = do
+        unsigned <- publishRefScriptTx pp prov genesisAddr scripts
+        signed <- submitWithGenesis submit unsigned
+        utxos <- Cage.queryUTxOs prov genesisAddr
+        let txIns =
+                [ TxIn (txIdTx signed) (TxIx (fromIntegral i))
+                | i <- [0 .. length scripts - 1]
+                ]
+        mapM
+            ( \txIn -> case [o | (i, o) <- utxos, i == txIn] of
+                (o : _) -> pure (txIn, o)
+                [] -> failWith "boot: a published reference output is not on chain"
+            )
+            txIns
 
 fastRetractCfg :: CageConfig -> CageConfig
 fastRetractCfg cfg =
-    cfg { defaultProcessTime = 10_000, defaultRetractTime = 20_000 }
+    cfg{defaultProcessTime = 10_000, defaultRetractTime = 20_000}
 
 extractTokenId :: CageConfig -> ConwayTx -> TokenId
 extractTokenId cfg tx =
@@ -375,11 +573,12 @@ checkPermissionlessFold ::
     TrieManager IO ->
     CageConfig ->
     TokenId ->
+    RegKit ->
     (Value -> IO ()) ->
     IO Bool
-checkPermissionlessFold prov submit tm cfg tok record = do
-    emit "R1" "permissionless fold: submitting an Insert request, then folding with no owner signer"
-    reqIn <- submitInsertFrom prov submit cfg tok "r1-key" "r1-value" genesisAddr
+checkPermissionlessFold prov submit tm cfg tok kit record = do
+    emit "R1" "permissionless fold: booking an insertAbsent edge, then folding with no owner signer"
+    reqIn <- bookInsert kit prov submit cfg tok "r1-key" genesisAddr
     record $
         object
             [ "row" .= ("supported-action-control" :: String)
@@ -391,7 +590,7 @@ checkPermissionlessFold prov submit tm cfg tok record = do
     reqs <- pendingRequests prov cfg tok
     (stateIn, _) <- queryStateUtxo prov cfg tok
     rootBefore <- chainRootHex prov cfg tok
-    outcome <- try (permissionlessUpdateTx prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
+    outcome <- try (permissionlessUpdateTx kit prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
             emit "R1" ("permissionless fold BUILD failed (refused at build): " <> displayException err)
@@ -433,16 +632,17 @@ checkDefectiveFoldRefused ::
     TrieManager IO ->
     CageConfig ->
     TokenId ->
+    RegKit ->
     IO Bool
-checkDefectiveFoldRefused prov submit tm cfg tok = do
-    emit "R2" "defective-fold control: re-inserting the occupied key r1-key, then folding without the owner (must refuse)"
-    _reqIn <- submitInsertFrom prov submit cfg tok "r1-key" "r1-other-value" genesisAddr
+checkDefectiveFoldRefused prov submit tm cfg tok kit = do
+    emit "R2" "defective-fold control: re-booking an absence for the occupied key r1-key, then folding without the owner (must refuse)"
+    _reqIn <- bookInsert kit prov submit cfg tok "r1-key" genesisAddr
     -- Proofs computed against a FRESH empty trie for the occupied key, so
     -- the refusal happens ON-CHAIN (mpf.insert rejects the occupied key)
     -- rather than at local proof construction. tm here is the dedicated
     -- empty manager (caller passes tmFresh), never synced with this cage.
     createTrie tm tok
-    outcome <- try (permissionlessUpdateTx prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
+    outcome <- try (permissionlessUpdateTx kit prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
             _ <- requireValidatorRefusal "R2" err
@@ -459,8 +659,9 @@ checkDefectiveFoldRefused prov submit tm cfg tok = do
                     emit "R2" "CONTROL: defective fold refused by the ledger as expected (duplicate insert for an occupied key)"
                     pure True
 
--- | Ownerless End refusal, both signer variants: neither an ordinary
--- party nor the registry's creator can terminate through `End`.
+{- | Ownerless End refusal, both signer variants: neither an ordinary
+party nor the registry's creator can terminate through `End`.
+-}
 checkEndRefused ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -483,7 +684,8 @@ checkEndRefused prov submit cfg tok record creatorSigned = do
                 cfg
                 tok
                 folderAddr
-            ) :: IO (Either SomeException ConwayTx)
+            ) ::
+            IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
             _ <- requireValidatorRefusal "R3" err
@@ -497,9 +699,10 @@ checkEndRefused prov submit cfg tok record creatorSigned = do
             addKeyWitness genesisSignKey . addKeyWitness (mkSignKey folderSeed)
         | otherwise = addKeyWitness (mkSignKey folderSeed)
 
--- | Ownerless migration refusal: a `Migrating` mint is submitted and
--- must be refused by the state policy. Neither the creator nor any other
--- party can migrate.
+{- | Ownerless migration refusal: a `Migrating` mint is submitted and
+must be refused by the state policy. Neither the creator nor any other
+party can migrate.
+-}
 checkMigrationRefused ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -519,9 +722,10 @@ checkMigrationRefused prov submit cfg tok record = do
             pure True
         Right unsigned -> submitRefusal prov submit cfg tok record "migration" "ownerless-migration" "migration" stateIn rootBefore unsigned (addKeyWitness (mkSignKey folderSeed))
 
--- | Ownerless burning refusal: presenting the `Burning` redeemer is
--- submitted and must be refused (arm isolation; the realistic
--- termination shape is closed jointly with the `End` rows).
+{- | Ownerless burning refusal: presenting the `Burning` redeemer is
+submitted and must be refused (arm isolation; the realistic
+termination shape is closed jointly with the `End` rows).
+-}
 checkBurningRefused ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -541,8 +745,9 @@ checkBurningRefused prov submit cfg tok record = do
             pure True
         Right unsigned -> submitRefusal prov submit cfg tok record "burning" "ownerless-burning" "burning" stateIn rootBefore unsigned (addKeyWitness (mkSignKey folderSeed))
 
--- | Ownerless sweep refusal, both signer variants: spending garbage at
--- the request address with `Sweep` is submitted and must be refused.
+{- | Ownerless sweep refusal, both signer variants: spending garbage at
+the request address with `Sweep` is submitted and must be refused.
+-}
 checkSweepRefused ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -621,8 +826,9 @@ submitRefusal prov submit cfg tok record tag rowName operation stateIn rootBefor
                     ]
             pure True
 
--- | Which script refuses each destructive operation: End/migration/burn
--- run under the state policy; Sweep runs under the request policy.
+{- | Which script refuses each destructive operation: End/migration/burn
+run under the state policy; Sweep runs under the request policy.
+-}
 refusalScript ::
     Cage.Provider IO ->
     CageConfig ->
@@ -637,37 +843,46 @@ refusalScript _prov cfg tok operation = case operation of
         let h = mkCageScript cfg
          in pure (hexStr (scriptHashBytes (hashScript h)), "state validator")
 
--- | One fast cage serving every .withdraw-class check. Boots with a short
--- oracle window, folds one setup insert permissionlessly, then submits one
--- request per Operation class (Update, Delete, Insert) back-to-back so a
--- single phase-2 wait covers all three. Returns the cage plus the three
--- request inputs in submission order.
+{- | One fast cage serving every .withdraw-class check. Boots with a short
+oracle window, folds one setup insert permissionlessly, then submits one
+request per Operation class (Update, Delete, Insert) back-to-back so a
+single phase-2 wait covers all three. Returns the cage plus the three
+request inputs in submission order.
+-}
 setupRetractBatch ::
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO (CageConfig, TokenId, TxIn, TxIn, TxIn)
-setupRetractBatch prov submit tm stateBytes requestBytes = do
+setupRetractBatch prov submit tm stateBytes requestBytes appBytes witnessBytes = do
     emit "R4" "withdraw-class cage: boot, setup fold, then one Update, one Delete and one Insert request"
-    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes fastRetractCfg
-    _ <- submitInsertFrom prov submit cfg tok "rb-key" "rb-old" genesisAddr
+    (cfg, tok, kit) <-
+        bootRepairCage prov submit tm stateBytes requestBytes appBytes witnessBytes fastRetractCfg
+    _ <- bookInsert kit prov submit cfg tok "rb-key" genesisAddr
     setupReqs <- pendingRequests prov cfg tok
-    folded <- try (permissionlessUpdateTx prov tm cfg tok genesisAddr >>= submitWithGenesis submit) :: IO (Either SomeException ConwayTx)
+    folded <- try (permissionlessUpdateTx kit prov tm cfg tok genesisAddr >>= submitWithGenesis submit) :: IO (Either SomeException ConwayTx)
     case folded of
         Left err -> failWith ("retract-batch setup fold failed: " <> displayException err)
         Right _ -> syncFoldedRequests tm tok setupReqs
-    updIn <- submitUpdateFrom prov submit cfg tok "rb-key" "rb-old" "rb-new" genesisAddr
-    delIn <- submitDeleteFrom prov submit cfg tok "rb-key" "rb-new" genesisAddr
-    insIn <- submitInsertFrom prov submit cfg tok "rb-fresh" "rb-value" genesisAddr
+    -- The three withdraw-class requests are never folded: each is
+    -- retracted, or watched as its retraction refuses. An unfolded
+    -- request presents its approval to nobody, so these are built by
+    -- hand, and the rows stay about the retract rule alone.
+    updIn <- submitUpdateFrom prov submit cfg tok "rb-key" leafAbsent leafActive genesisAddr
+    delIn <- submitDeleteFrom prov submit cfg tok "rb-key" leafActive genesisAddr
+    insIn <- submitInsertWithTip prov submit cfg tok "rb-fresh" leafAbsent 1_000_000 genesisAddr
     emit "R4" "submitted Update, Delete and Insert requests back-to-back; one phase-2 wait covers all three"
     pure (cfg, tok, updIn, delIn, insIn)
 
--- | True when a build failure is the COMPILED VALIDATOR refusing (script
--- evaluation ran and failed), as opposed to a harness fault (slot horizon,
--- missing inputs, balance errors). Rows count only validator refusals as
--- refusal evidence; anything else fails loudly as a harness fault.
+{- | True when a build failure is the COMPILED VALIDATOR refusing (script
+evaluation ran and failed), as opposed to a harness fault (slot horizon,
+missing inputs, balance errors). Rows count only validator refusals as
+refusal evidence; anything else fails loudly as a harness fault.
+-}
 isValidatorRefusal :: SomeException -> Bool
 isValidatorRefusal e =
     let t = displayException e
@@ -678,14 +893,16 @@ requireValidatorRefusal tag e
     | isValidatorRefusal e = pure True
     | otherwise = failWith (tag <> ": build failed WITHOUT validator evidence (harness fault, not a refusal): " <> displayException e)
 
--- | Replay accepted fold inputs into the manager's PERSISTENT trie so later
--- proof computations start from the chain's root. Without this, proofs are
--- generated against a stale empty trie: fresh-key proofs then fail on-chain
--- for the wrong reason and shrinking misattributes. Call only with inputs
--- the ledger accepted, in fold order.
+{- | Replay accepted fold inputs into the manager's PERSISTENT trie so later
+proof computations start from the chain's root. Without this, proofs are
+generated against a stale empty trie: fresh-key proofs then fail on-chain
+for the wrong reason and shrinking misattributes. Call only with inputs
+the ledger accepted, in fold order.
+-}
 syncFoldedRequests :: TrieManager IO -> TokenId -> [(TxIn, TxOut ConwayEra)] -> IO ()
 syncFoldedRequests tm tok reqUtxos =
     withTrie tm tok $ \trie -> mapM_ (processOne trie) reqUtxos
+
 -- horizon only forecasts a bounded window; a phase-2 bound computed just
 -- past the forecast edge resolves a few seconds later as the tip advances.
 -- Retries PastHorizon failures only; every other failure propagates.
@@ -699,8 +916,9 @@ retryHorizon n act = do
                 then emit "retry" "slot forecast horizon not yet covering a phase-2 bound; retrying" >> threadDelay 2_000_000 >> retryHorizon (n - 1) act
                 else throwIO e
 
--- | Build (horizon-tolerant), sign and submit a Retract for one request.
--- Returns the submission outcome without failing: callers assert it.
+{- | Build (horizon-tolerant), sign and submit a Retract for one request.
+Returns the submission outcome without failing: callers assert it.
+-}
 submitRetract ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -770,13 +988,14 @@ retractExpectAccept prov submit cfg tok reqIn opLabel record = do
                     ]
             pure True
 
--- | Test-local Retract construction WITHOUT the request-owner entry in
--- required signers (every other field identical to the imported
--- 'retractRequestImpl': token binding, phase-2 window, state-token
--- reference). Lets the wrong-signer row discriminate the request
--- validator's own owner check rather than the ledger's required-signer
--- enforcement. Fee input is genesis-paid and genesis-witnessed, so a
--- refusal can only come from the validator.
+{- | Test-local Retract construction WITHOUT the request-owner entry in
+required signers (every other field identical to the imported
+'retractRequestImpl': token binding, phase-2 window, state-token
+reference). Lets the wrong-signer row discriminate the request
+validator's own owner check rather than the ledger's required-signer
+enforcement. Fee input is genesis-paid and genesis-witnessed, so a
+refusal can only come from the validator.
+-}
 retractWithoutOwnerSigTx ::
     Cage.Provider IO ->
     CageConfig ->
@@ -802,10 +1021,10 @@ retractWithoutOwnerSigTx prov cfg tid reqTxIn = do
     feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) walletUtxos of
         [] -> error "retractNoSig: no UTxOs"
         (u : _) -> pure u
-    let OnChainRequest { requestSubmittedAt = submAt } = case extractCageDatum reqOut of
+    let OnChainRequest{requestSubmittedAt = submAt} = case extractCageDatum reqOut of
             Just (RequestDatum r) -> r
             _ -> error "retractNoSig: invalid request datum"
-        OnChainTokenState { stateProcessTime = procTime, stateRetractTime = retrTime } = case extractCageDatum stateOut of
+        OnChainTokenState{stateProcessTime = procTime, stateRetractTime = retrTime} = case extractCageDatum stateOut of
             Just (StateDatum s) -> s
             _ -> error "retractNoSig: invalid state datum"
         phase2Start = submAt + procTime
@@ -837,9 +1056,10 @@ retractWithoutOwnerSigTx prov cfg tid reqTxIn = do
                 & witsTxL . rdmrsTxWitsL .~ redeemers
     evaluateAndBalance prov pp [feeUtxo, reqUtxoPair] genesisAddr tx
 
--- | Wrong-signer control: the same Insert retract with NO request-owner
--- entry in required signers must be refused by the request validator
--- itself (owner-signature clause retained), not merely by the ledger.
+{- | Wrong-signer control: the same Insert retract with NO request-owner
+entry in required signers must be refused by the request validator
+itself (owner-signature clause retained), not merely by the ledger.
+-}
 retractExpectWrongSigRefused ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -862,38 +1082,48 @@ retractExpectWrongSigRefused prov submit cfg tok reqIn = do
                 Rejected _ -> emit "WrongSig" "wrong-signer retract refused (missing request-owner signature; the request validator refuses, not the ledger)" >> pure True
                 Submitted _ -> emit "WrongSig" "WRONG-SIGNER FAILURE: an ownerless retract was ACCEPTED" >> pure False
 
--- | Seeded generator for the P-fold property. Tiny LCG over the seed; key
--- suffixes are distinct by construction, so the discard rate is 0 and every
--- generated case reaches the fold precondition (non-vacuous by assertion).
+{- | Seeded generator for the P-fold property. Tiny LCG over the seed; key
+suffixes are distinct by construction, so the discard rate is 0 and every
+generated case reaches the fold precondition (non-vacuous by assertion).
+-}
 lcgNext :: Int -> Int
 lcgNext s = (1103515245 * s + 12345) `mod` 2147483648
 
-genPairs :: Int -> Int -> [(ByteString, ByteString)]
-genPairs seed n = take n [ ("p79-k" <> BSC.pack (show s), "p79-v" <> BSC.pack (show s)) | s <- iterate lcgNext seed ]
+{- | The generated keys. The VALUE is not generated: a registry leaf is
+one of exactly three bytes (#157 C1), and every one of these bookings
+is the same edge — an absence anybody may witness. What the generator
+varies is the trie path, which is what the fold property is about.
+-}
+genKeys :: Int -> Int -> [ByteString]
+genKeys seed n = take n ["p79-k" <> BSC.pack (show s) | s <- iterate lcgNext seed]
 
--- | P-fold: generated permissionless-fold property against the actual
--- compiled state validator on a real ledger. Given (Lean .fold): nativeSpend
--- present, net-mint equality, representative/application mint witnesses as
--- required, and NO owner hypothesis. Folds six generated inserts in ONE
--- Modify, asserts all six are consumed, then runs a shrinking adversarial
--- (three fresh keys plus a duplicate of the first) and bisects to the
--- minimal refused singleton.
+{- | P-fold: generated permissionless-fold property against the actual
+compiled state validator on a real ledger. Given (Lean .fold): nativeSpend
+present, net-mint equality, representative/application mint witnesses as
+required, and NO owner hypothesis. Folds six generated inserts in ONE
+Modify, asserts all six are consumed, then runs a shrinking adversarial
+(three fresh keys plus a duplicate of the first) and bisects to the
+minimal refused singleton.
+-}
 checkFoldProperty ::
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    SBS.ShortByteString ->
+    SBS.ShortByteString ->
     IO Bool
-checkFoldProperty prov submit tm stateBytes requestBytes = do
-    emit "P-fold" "generated .fold property: seed=79, six inserts in one permissionless fold (no owner hypothesis)"
-    (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes id
-    let pairs = genPairs 79 6
-    submitInsertsBatch prov submit cfg tok pairs genesisAddr
+checkFoldProperty prov submit tm stateBytes requestBytes appBytes witnessBytes = do
+    emit "P-fold" "generated .fold property: seed=79, six absence bookings in one permissionless fold (no owner hypothesis)"
+    (cfg, tok, kit) <-
+        bootRepairCage prov submit tm stateBytes requestBytes appBytes witnessBytes id
+    let keys = genKeys 79 6
+    submitInsertsBatch kit prov submit cfg tok keys genesisAddr
     before <- pendingRequests prov cfg tok
     unless (length before == 6) $
         failWith ("P-fold: generator did not reach the precondition (pending=" <> show (length before) <> ", want 6)")
-    built <- try (permissionlessUpdateTx prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
+    built <- try (permissionlessUpdateTx kit prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
     case built of
         Left err -> emit "P-fold" ("P-fold FAILURE: generated batch refused at build: " <> displayException err) >> pure False
         Right unsigned -> do
@@ -907,32 +1137,34 @@ checkFoldProperty prov submit tm stateBytes requestBytes = do
                     unless (null after) $ failWith "P-fold: fold accepted but requests remain pending"
                     syncFoldedRequests tm tok before
                     emit "P-fold" "P-fold: 6/6 generated inserts accepted without the owner in one Modify (seed=79, count=6, discards=0)"
-                    tipOk <- wrongTipRefused prov submit tm cfg tok
+                    tipOk <- wrongTipRefused kit prov submit tm cfg tok
                     unless tipOk $ failWith "P-fold wrong-tip control did not refuse"
-                    tampOk <- tamperedRootRefused prov submit tm cfg tok
+                    tampOk <- tamperedRootRefused kit prov submit tm cfg tok
                     unless tampOk $ failWith "P-fold tampered-root control did not refuse"
-                    case pairs of
+                    case keys of
                         [] -> failWith "P-fold: empty generated batch"
-                        (k0, _) : _ -> adversarial cfg tok k0
+                        k0 : _ -> adversarial kit cfg tok k0
   where
-    adversarial cfg tok k0 = do
-        let fresh = take 2 (drop 6 (genPairs 79 99))
-        submitInsertsBatch prov submit cfg tok ((k0, "p79-dup") : fresh) genesisAddr
+    adversarial kit cfg tok k0 = do
+        let fresh = take 2 (drop 6 (genKeys 79 99))
+        submitInsertsBatch kit prov submit cfg tok (k0 : fresh) genesisAddr
         -- Fresh-first order forces the shrinker through BOTH branches:
         -- accepted probes consume and re-sync, the duplicate refuses.
-        candidates <- resolveRequestKeys prov cfg tok (map fst fresh <> [k0])
+        candidates <- resolveRequestKeys prov cfg tok (fresh <> [k0])
         emit "P-fold" "adversarial: two fresh keys plus a duplicate of the first; bisecting to the minimal refused fold"
-        minimal <- bisectRefused prov submit tm cfg tok folderAddr candidates
+        minimal <- bisectRefused kit prov submit tm cfg tok folderAddr candidates
         if minimal == k0
             then emit "P-fold" "P-fold adversarial: bisection isolated the duplicate key (shrink result = the re-inserted key); structural checks still refuse" >> pure True
             else emit "P-fold" "P-fold FAILURE: bisection isolated the wrong key" >> pure False
 
--- | Bisection shrinker over live request inputs. Each probe is a real
--- permissionless fold of the named subset: refused probes consume nothing,
--- accepted probes consume their requests (throwaway cage). Shrinking
--- preserves the Given (every probed subset is a set of well-formed
--- submitted requests); returns the minimal refused singleton key.
+{- | Bisection shrinker over live request inputs. Each probe is a real
+permissionless fold of the named subset: refused probes consume nothing,
+accepted probes consume their requests (throwaway cage). Shrinking
+preserves the Given (every probed subset is a set of well-formed
+submitted requests); returns the minimal refused singleton key.
+-}
 bisectRefused ::
+    RegKit ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
@@ -941,7 +1173,7 @@ bisectRefused ::
     Addr ->
     [(TxIn, ByteString)] ->
     IO ByteString
-bisectRefused prov submit tm cfg tok feeAddr candidates = go candidates
+bisectRefused kit prov submit tm cfg tok feeAddr candidates = go candidates
   where
     go [] = failWith "bisectRefused: empty candidate set"
     go [(i, k)] = do
@@ -955,11 +1187,11 @@ bisectRefused prov submit tm cfg tok feeAddr candidates = go candidates
         if refusedL then go l else go r
     liveSubset ins = do
         live <- pendingRequests prov cfg tok
-        pure [ u | u@(i, _) <- live, i `elem` ins ]
+        pure [u | u@(i, _) <- live, i `elem` ins]
     probeSubset [] = failWith "bisectRefused: probe subset has no live requests"
     probeSubset subset = do
         emit "P-fold" ("bisect probe: folding " <> show (length subset) <> " request(s)")
-        outcome <- try (foldSubsetTx prov tm cfg tok feeAddr subset) :: IO (Either SomeException ConwayTx)
+        outcome <- try (foldSubsetTx kit prov tm cfg tok feeAddr subset) :: IO (Either SomeException ConwayTx)
         case outcome of
             Left err -> do
                 let t = displayException err
@@ -980,19 +1212,32 @@ bisectRefused prov submit tm cfg tok feeAddr candidates = go candidates
                         emit "P-fold" ("bisect probe accepted (consumed " <> show (length subset) <> " request(s)), continuing")
                         pure False
 
--- | Wrong-tip control: a request whose tip disagrees with the state's tip
--- must be refused by the fold (mkAction tip binding retained). The request
--- stays pending; later subsets address their own inputs explicitly.
+{- | Wrong-tip control: a request whose tip disagrees with the state's tip
+must be refused by the fold (mkAction tip binding retained). The request
+stays pending; later subsets address their own inputs explicitly.
+-}
 wrongTipRefused ::
+    RegKit ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     CageConfig ->
     TokenId ->
     IO Bool
-wrongTipRefused prov submit tm cfg tok = do
-    _ <- submitInsertWithTip prov submit cfg tok "p79-wrongtip" "p79-wv" 2_000_000 genesisAddr
-    outcome <- try (permissionlessUpdateTx prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
+wrongTipRefused kit prov submit tm cfg tok = do
+    -- The booking is honest in every way but one: it names a tip the
+    -- state does not charge. Only `defaultTip` moves; the addresses and
+    -- policies the rest of the configuration decides are this cage's.
+    _ <-
+        bookInsert
+            kit
+            prov
+            submit
+            cfg{defaultTip = Coin 2_000_000}
+            tok
+            "p79-wrongtip"
+            genesisAddr
+    outcome <- try (permissionlessUpdateTx kit prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
             _ <- requireValidatorRefusal "NewTip" err
@@ -1005,18 +1250,51 @@ wrongTipRefused prov submit tm cfg tok = do
                 Rejected _ -> emit "NewTip" "wrong-tip fold refused (tip mismatch: request tip 2000000 against state tip 1000000)" >> pure True
                 Submitted _ -> emit "NewTip" "WRONG-TIP FAILURE: a mismatched-tip fold was ACCEPTED" >> pure False
 
-submitInsertFrom ::
+{- | Book one @insertAbsent@ of @key@ (edge 0 of C2): mint the approval
+that certifies it under the cage's pinned application policy and create
+the request that carries it. Edge 0 is the one edge that needs nobody's
+permission — anybody may witness that a name is free — so what the
+approval binds is the address the deposit goes back to.
+-}
+bookInsert ::
+    RegKit ->
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     TokenId ->
     ByteString ->
-    ByteString ->
     Addr ->
     IO TxIn
-submitInsertFrom prov submit cfg tok key val addr =
-    submitInsertWithTip prov submit cfg tok key val 1_000_000 addr
+bookInsert kit prov submit cfg tok key addr = do
+    unsigned <-
+        bookEdgeTx
+            cfg
+            prov
+            tok
+            (rkApp kit)
+            addr
+            key
+            (OpInsert leafAbsent)
+            (serialiseAddr addr, BSC.empty)
+            []
+            repairBond
+    signed <- submitWithGenesis submit unsigned
+    pure (TxIn (txIdTx signed) (TxIx 0))
 
+{- | What a booking locks: the tip the registry keeps plus the deposit
+that rides into custody, which carries the absent witness token and a
+datum naming the key and the refund address, so it must clear min-UTxO
+on its own.
+-}
+repairBond :: Integer
+repairBond = 5_000_000
+
+{- | A request built by hand, with no approval beside it. The
+withdraw-class rows below never fold their requests — they retract them,
+or watch a retraction refuse — and an unfolded request never presents an
+approval to anybody. Building them here keeps the retract propositions
+about the retract rule and nothing else.
+-}
 submitInsertWithTip ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -1118,71 +1396,54 @@ submitDeleteFrom prov submit cfg tok key oldV addr = do
                 Submitted _ -> awaitTx >> pure (TxIn (txIdTx signed) (TxIx 0))
                 Rejected reason -> failWith ("submitDeleteFrom: rejected: " <> show reason)
 
--- | Batch insert submission: one transaction carrying one request output
--- per (key, value) pair (amortizes query/balance/submit/await over the
--- batch). Returns the submission tx id; callers resolve per-request inputs
--- by key via 'resolveRequestKeys' rather than assuming output indices.
+{- | Book each key's absence edge. They cannot ride one transaction: the
+application policy certifies exactly one edge per transaction (its mint
+arm refuses any other count), so a batch of bookings is a batch of
+transactions.
+-}
 submitInsertsBatch ::
+    RegKit ->
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     TokenId ->
-    [(ByteString, ByteString)] ->
+    [ByteString] ->
     Addr ->
     IO ()
-submitInsertsBatch prov submit cfg tok pairs addr = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov addr
-    feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "submitInsertsBatch: no UTxOs"
-        (u : _) -> pure u
-    now <- currentPosixMs
-    let scriptAddr = requestAddrFromCfg cfg tok (network cfg)
-        mkOut (key, val) =
-            let datum = mkRequestDatum tok addr key (OpInsert val) 1_000_000 now
-                draftOut = mkBasicTxOut scriptAddr (inject (Coin 0)) & datumTxOutL .~ mkInlineDatum datum
-                refundDraft = mkBasicTxOut addr (inject (Coin 0))
-                minAda = requestLockedAda pp draftOut refundDraft 1_000_000
-             in mkBasicTxOut scriptAddr (inject minAda) & datumTxOutL .~ mkInlineDatum datum
-        body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList (map mkOut pairs)
-        tx = mkBasicTx body
-    case balanceTx pp [feeUtxo] [] addr tx of
-        Left err -> failWith ("submitInsertsBatch: balance failed: " <> show err)
-        Right br -> do
-            let signed = addKeyWitness genesisSignKey (balancedTx br)
-            result <- submitTx submit signed
-            case result of
-                Submitted _ -> awaitTx
-                Rejected reason -> failWith ("submitInsertsBatch: rejected: " <> show reason)
+submitInsertsBatch kit prov submit cfg tok keys addr =
+    mapM_ (\k -> bookInsert kit prov submit cfg tok k addr) keys
 
--- | Resolve live request inputs for exact keys (no output-index
--- assumptions): scans the token's pending requests and matches inline
--- datums by request key. Fails loudly on any missing key (non-vacuity).
--- | Corrupt a computed root by bumping its first byte (tampered-output row).
+{- | Resolve live request inputs for exact keys (no output-index
+assumptions): scans the token's pending requests and matches inline
+datums by request key. Fails loudly on any missing key (non-vacuity).
+| Corrupt a computed root by bumping its first byte (tampered-output row).
+-}
 corruptRoot :: Root -> Root
 corruptRoot (Root bs) = Root $ case BSC.uncons bs of
     Nothing -> bs
     Just (c, rest) -> BSC.cons (succ c) rest
 
--- | Tampered-root control: a fold whose output root differs from the
--- computed root must be refused (output/root binding retained). Uses an
--- explicit single-request subset so the pending wrong-tip request cannot
--- confound attribution.
+{- | Tampered-root control: a fold whose output root differs from the
+computed root must be refused (output/root binding retained). Uses an
+explicit single-request subset so the pending wrong-tip request cannot
+confound attribution.
+-}
 tamperedRootRefused ::
+    RegKit ->
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     CageConfig ->
     TokenId ->
     IO Bool
-tamperedRootRefused prov submit tm cfg tok = do
-    _ <- submitInsertFrom prov submit cfg tok "p79-tamp" "p79-tv" genesisAddr
+tamperedRootRefused kit prov submit tm cfg tok = do
+    _ <- bookInsert kit prov submit cfg tok "p79-tamp" genesisAddr
     live <- pendingRequests prov cfg tok
-    tkUtxo <- case [ u | u@(_, out) <- live, requestKeyOf out == Just "p79-tamp" ] of
+    tkUtxo <- case [u | u@(_, out) <- live, requestKeyOf out == Just "p79-tamp"] of
         (x : _) -> pure x
         [] -> failWith "tampered-root row: fresh request not pending"
     (stateUtxo, feeUtxo, pp) <- queryStateFee prov cfg tok folderAddr
-    outcome <- try (foldRequestsTx corruptRoot prov tm cfg tok folderAddr stateUtxo [tkUtxo] feeUtxo pp) :: IO (Either SomeException ConwayTx)
+    outcome <- try (foldRequestsTx corruptRoot kit prov tm cfg tok folderAddr stateUtxo [tkUtxo] feeUtxo pp) :: IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
             _ <- requireValidatorRefusal "TampRoot" err
@@ -1212,7 +1473,7 @@ resolveRequestKeys prov cfg tok keys = do
     let keyOf out = case extractCageDatum out of
             Just (RequestDatum r) -> Just (requestKey r)
             _ -> Nothing
-        findKey k = case [ (i, k) | (i, out) <- live, keyOf out == Just k ] of
+        findKey k = case [(i, k) | (i, out) <- live, keyOf out == Just k] of
             (x : _) -> x
             [] -> error ("resolveRequestKeys: key not pending: " <> show k)
     pure (map findKey keys)
@@ -1228,22 +1489,25 @@ requestLockedAda pp reqDraft refDraft tip =
 data NoCtx a
 
 permissionlessUpdateTx ::
+    RegKit ->
     Cage.Provider IO ->
     TrieManager IO ->
     CageConfig ->
     TokenId ->
     Addr ->
     IO ConwayTx
-permissionlessUpdateTx prov tm cfg tid feeAddr = do
+permissionlessUpdateTx kit prov tm cfg tid feeAddr = do
     (stateUtxo, feeUtxo, pp) <- queryStateFee prov cfg tid feeAddr
     reqUtxos <- pendingRequests prov cfg tid
     when (null reqUtxos) $ error "permissionlessUpdate: no pending requests"
-    foldRequestsTx id prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp
+    foldRequestsTx id kit prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp
 
--- | Permissionless fold over an EXPLICIT request set (subset folds for the
--- P-fold bisection shrinker). Same program as 'permissionlessUpdateTx',
--- restricted to the given request UTxOs.
+{- | Permissionless fold over an EXPLICIT request set (subset folds for the
+P-fold bisection shrinker). Same program as 'permissionlessUpdateTx',
+restricted to the given request UTxOs.
+-}
 foldSubsetTx ::
+    RegKit ->
     Cage.Provider IO ->
     TrieManager IO ->
     CageConfig ->
@@ -1251,13 +1515,14 @@ foldSubsetTx ::
     Addr ->
     [(TxIn, TxOut ConwayEra)] ->
     IO ConwayTx
-foldSubsetTx prov tm cfg tid feeAddr reqUtxos = do
+foldSubsetTx kit prov tm cfg tid feeAddr reqUtxos = do
     (stateUtxo, feeUtxo, pp) <- queryStateFee prov cfg tid feeAddr
     when (null reqUtxos) $ error "foldSubsetTx: empty request set"
-    foldRequestsTx id prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp
+    foldRequestsTx id kit prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp
 
 foldRequestsTx ::
     (Root -> Root) ->
+    RegKit ->
     Cage.Provider IO ->
     TrieManager IO ->
     CageConfig ->
@@ -1268,23 +1533,46 @@ foldRequestsTx ::
     (TxIn, TxOut ConwayEra) ->
     PParams ConwayEra ->
     IO ConwayTx
-foldRequestsTx adjustRoot prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp = do
+foldRequestsTx adjustRoot kit prov tm cfg tid feeAddr stateUtxo reqUtxos feeUtxo pp = do
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <- computeUpdateProofs tm tid reqUtxos
     let (oldState, newStateOut, script) = prepareUpdateState cfg stateOut (adjustRoot newRoot)
         requestScript = mkRequestScript cfg tid
     upperSlot <- computeUpdateUpperSlot prov oldState reqUtxos
+    -- #157 C5/C6: an edge is not folded by moving the root alone. The
+    -- token delta it owes has to be minted, the custody it creates has
+    -- to be written, and the approval it spent has to go back to
+    -- whoever booked it. The duties come from the same table the cage
+    -- reads, so a fold that cannot meet them fails here, in the
+    -- builder, naming why.
+    ctx <- registryContextFor cfg prov tid (rkWitness kit) [] (rkRefs kit)
+    duties <- case registryDuties cfg pp oldState ctx reqUtxos (map (const True) reqUtxos) of
+        Right d -> pure d
+        Left err -> error ("permissionlessUpdate: " <> err)
     let evalTx tx = do
             r <- Cage.evaluateTx prov tx
             pure $ Map.map (\case Left e -> Left (show e); Right eu -> Right eu) r
-        prog = buildPermissionlessProgram cfg stateIn reqUtxos feeUtxo oldState newStateOut script requestScript proofs upperSlot
+        prog =
+            buildPermissionlessProgram
+                cfg
+                stateIn
+                reqUtxos
+                feeUtxo
+                oldState
+                newStateOut
+                script
+                requestScript
+                proofs
+                upperSlot
+                duties
+                (rkRefs kit)
     result <-
         Tx.build
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
-            (feeUtxo : stateUtxo : reqUtxos)
-            []
+            (feeUtxo : stateUtxo : reqUtxos <> map csUtxo (rdSpends duties))
+            (rkRefs kit)
             feeAddr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
@@ -1359,7 +1647,7 @@ prepareUpdateState cfg stateOut newRoot =
         oldState = case extractCageDatum stateOut of
             Just (StateDatum s) -> s
             _ -> error "prepareUpdateState: invalid state datum"
-        newStateDatum = StateDatum oldState { stateRoot = OnChainRoot (unRoot newRoot) }
+        newStateDatum = StateDatum oldState{stateRoot = OnChainRoot (unRoot newRoot)}
         newStateOut = mkBasicTxOut scriptAddr (stateOut ^. valueTxOutL) & datumTxOutL .~ mkInlineDatum (toPlcData newStateDatum)
         script = mkCageScript cfg
      in (oldState, newStateOut, script)
@@ -1388,8 +1676,10 @@ buildPermissionlessProgram ::
     Script ConwayEra ->
     [[ProofStep]] ->
     SlotNo ->
+    RegistryDuties ->
+    [(TxIn, TxOut ConwayEra)] ->
     Tx.TxBuild NoCtx Void ()
-buildPermissionlessProgram _cfg stateIn reqUtxos feeUtxo _oldState newStateOut script requestScript proofs upperSlot = do
+buildPermissionlessProgram _cfg stateIn reqUtxos feeUtxo _oldState newStateOut script requestScript proofs upperSlot duties refUtxos = do
     let stateRef = txInToRef stateIn
         actions = map Update proofs
     _ <- Tx.spendScript stateIn (Modify actions)
@@ -1401,8 +1691,24 @@ buildPermissionlessProgram _cfg stateIn reqUtxos feeUtxo _oldState newStateOut s
     -- #157: the fold withdraws from nothing. The pinned-hook
     -- invocation (NOTE-021) went with the consumer it invoked; a
     -- coherent batch is now authenticated by the cage itself.
-    Tx.attachScript script
-    Tx.attachScript requestScript
+    mapM_
+        (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))
+        (rdSpends duties)
+    mapM_
+        (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
+        (rdMints duties)
+    mapM_ Tx.output (rdOutputs duties)
+    mapM_ Tx.requireSignature (rdSigners duties)
+    -- The state validator alone is fifteen kilobytes. When the cage's
+    -- scripts are published, every purpose resolves through the
+    -- reference outputs and the body carries none of them.
+    if null refUtxos
+        then do
+            Tx.attachScript script
+            Tx.attachScript requestScript
+            mapM_ (Tx.attachScript . csScript) (rdSpends duties)
+            mapM_ (Tx.attachScript . cmScript) (rdMints duties)
+        else mapM_ (Tx.reference . fst) refUtxos
     Tx.collateral (fst feeUtxo)
     Tx.validTo upperSlot
 
@@ -1439,9 +1745,10 @@ ownerlessEndTx prov cfg tid feeAddr = do
         Right tx -> pure tx
         Left err -> error ("ownerlessEnd: build failed: " <> show err)
 
--- | Creator-signed End: the registry's creator signs, and the validator
--- must still refuse — there is no owner role. Builds with skip-eval so
--- the LEDGER attributes the refusal.
+{- | Creator-signed End: the registry's creator signs, and the validator
+must still refuse — there is no owner role. Builds with skip-eval so
+the LEDGER attributes the refusal.
+-}
 ownerSignedEndTx :: Cage.Provider IO -> CageConfig -> TokenId -> Addr -> IO ConwayTx
 ownerSignedEndTx prov cfg tid feeAddr = do
     let scriptAddr = cageAddrFromCfg cfg (network cfg)
@@ -1486,9 +1793,10 @@ _unusedGuard _ = True
 -- Ownerless refusal rows with receipt (NOTE-028/A-003)
 -- ---------------------------------------------------------
 
--- | Generous per-purpose budget stated when local evaluation is skipped
--- (refusal rows only); the ledger re-executes every purpose for real, so
--- the refusal is attributed on-chain instead of at local estimation.
+{- | Generous per-purpose budget stated when local evaluation is skipped
+(refusal rows only); the ledger re-executes every purpose for real, so
+the refusal is attributed on-chain instead of at local estimation.
+-}
 generousUnits :: ExUnits
 generousUnits = ExUnits 3_000_000 200_000_000
 
@@ -1500,9 +1808,10 @@ skipEvalTx tx = do
     let Redeemers rdmrs = tx ^. witsTxL . rdmrsTxWitsL
     pure (Map.map (const (Right generousUnits)) rdmrs)
 
--- | Migration attempt: mint under the state policy with a `Migrating`
--- redeemer. No predecessor, no allowlist, no owner can authorize it —
--- the arm refuses unconditionally.
+{- | Migration attempt: mint under the state policy with a `Migrating`
+redeemer. No predecessor, no allowlist, no owner can authorize it —
+the arm refuses unconditionally.
+-}
 migrationTx ::
     Cage.Provider IO ->
     CageConfig ->
@@ -1539,11 +1848,12 @@ migrationTx prov cfg tid feeAddr = do
         Right tx -> pure tx
         Left err -> error ("migrationTx: build failed: " <> show err)
 
--- | Burning-arm isolation: mint `+1` under the state policy presenting
--- the `Burning` redeemer. No `Modify` can accompany a real burn (it
--- preserves the token by rule), so arm isolation plus the `End` rows
--- and the Aiken burn test jointly close termination-by-burn: the arm
--- refuses unconditionally.
+{- | Burning-arm isolation: mint `+1` under the state policy presenting
+the `Burning` redeemer. No `Modify` can accompany a real burn (it
+preserves the token by rule), so arm isolation plus the `End` rows
+and the Aiken burn test jointly close termination-by-burn: the arm
+refuses unconditionally.
+-}
 burningTx ::
     Cage.Provider IO ->
     CageConfig ->
@@ -1575,9 +1885,10 @@ burningTx prov cfg tid feeAddr = do
         Right tx -> pure tx
         Left err -> error ("burningTx: build failed: " <> show err)
 
--- | Seizure attempt: spend a garbage UTxO at the request address with a
--- `Sweep` redeemer, the state as reference input. Refused with or
--- without the creator's signature.
+{- | Seizure attempt: spend a garbage UTxO at the request address with a
+`Sweep` redeemer, the state as reference input. Refused with or
+without the creator's signature.
+-}
 sweepTx ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -1621,8 +1932,9 @@ sweepTx prov submit cfg tid feeAddr creatorSigned = do
         Right tx -> pure tx
         Left err -> error ("sweepTx: build failed: " <> show err)
 
--- | Park a datum-less garbage output at the request address: the classic
--- sweep target. Returns its input.
+{- | Park a datum-less garbage output at the request address: the classic
+sweep target. Returns its input.
+-}
 parkGarbage ::
     Cage.Provider IO ->
     Submitter IO ->

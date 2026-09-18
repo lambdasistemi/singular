@@ -90,13 +90,13 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , catch
-    , displayException
-    , throwIO
-    )
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    catch,
+    displayException,
+    throwIO,
+ )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
@@ -111,10 +111,10 @@ import Data.List (intercalate, sortBy)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Ord (comparing)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
@@ -159,8 +159,21 @@ import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
+    addKeyWitness,
+ )
+import Cardano.Node.Client.Ledger (ConwayTx)
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Data.Text (Text)
+import Naming.Datum
+import Naming.Register (registryAssetId)
+import Naming.Wire
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    applyBytesParam,
+    applyIntParam,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
@@ -183,6 +196,7 @@ import Singular.Registry.Node (
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
+    appliedApplicationBytes,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
@@ -205,45 +219,44 @@ import Singular.Registry.Types (
     OnChainRoot (..),
     OnChainTxOutRef (..),
  )
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
- )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Naming.Datum
-import Naming.Wire
-import Data.Text (Text)
 
 -- ---------------------------------------------------------
 -- Entry point
 -- ---------------------------------------------------------
 
 main :: IO ()
-main = li01 `catch` \(e :: SomeException) -> do
-    hPutStrLn stderr ("li01: FAILED: " <> displayException e)
-    exitWith (ExitFailure 1)
+main =
+    li01 `catch` \(e :: SomeException) -> do
+        hPutStrLn stderr ("li01: FAILED: " <> displayException e)
+        exitWith (ExitFailure 1)
 
 li01 :: IO ()
 li01 = do
     control <- readControl
     printRow control
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
+    -- #157 D-BOOT: the four pins the boot datum carries are derived
+    -- from the two partitions' script identities, so the naming
+    -- blueprint is as much an input to this row as the registry one.
+    namingPath <- requireEnv "NAMING_BLUEPRINT"
     identityPath <- identityPathFromEnv
     si <- readScriptIdentity identityPath
     ebp <- loadBlueprint blueprintPath
     bp <- either failWith pure ebp
-    case
-        ( extractCompiledCode "state.state" bp
-        , extractCompiledCode "request.request" bp
-        ) of
-        (Just stateBytes, Just requestBytes) ->
-            runLi01 control si stateBytes requestBytes
+    enbp <- loadBlueprint namingPath
+    nbp <- either failWith pure enbp
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         , extractCompiledCode "application.application" nbp
+         , extractCompiledCode "witness.witness.mint" nbp
+         ) of
+        (Just stateBytes, Just requestBytes, Just appBytes, Just witnessBytes) ->
+            runLi01 control si stateBytes requestBytes appBytes witnessBytes
         _ ->
             failWith
-                "state.state or request.request compiled code \
-                \not found in blueprint"
+                "state.state, request.request, application.application \
+                \or witness.witness.mint compiled code not found in the \
+                \blueprints"
 
 -- ---------------------------------------------------------
 -- Identity manifest
@@ -286,8 +299,9 @@ readScriptIdentity path = do
     bytes <- BS.readFile path
     either failWith pure (eitherDecode' (BSL.fromStrict bytes))
 
--- | Require every manifest entry under the prefix to pin exactly
--- @unappliedHex@, the hash of this run's blueprint raw code.
+{- | Require every manifest entry under the prefix to pin exactly
+@unappliedHex@, the hash of this run's blueprint raw code.
+-}
 checkPinnedUnapplied :: ScriptIdentity -> T.Text -> String -> IO ()
 checkPinnedUnapplied si prefix unappliedHex =
     case pins of
@@ -400,8 +414,16 @@ runLi01 ::
     ScriptIdentity ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    {- | the naming application validator, whose own hash is the
+    application policy pin
+    -}
+    SBS.ShortByteString ->
+    {- | the @witness(kind, registry)@ validator, applied at kinds 0, 1
+    and 2 for the three token-policy pins
+    -}
+    SBS.ShortByteString ->
     IO ()
-runLi01 control si stateBytes requestBytes = do
+runLi01 control si stateBytes requestBytes appBytes witnessBytes = do
     withNode $ \sess -> do
         let prov = nsProvider sess
             submit = nsSubmitter sess
@@ -421,8 +443,7 @@ runLi01 control si stateBytes requestBytes = do
         -- identity 400 realises as this concrete output reference,
         -- named here.
         utxos <- Cage.queryUTxOs prov genesisAddr
-        (seedUtxo, funders) <- case
-            sortBy (comparing (outRefSortKey . fst)) utxos of
+        (seedUtxo, funders) <- case sortBy (comparing (outRefSortKey . fst)) utxos of
             [] -> failWith "genesis wallet has no UTxOs"
             (s : rest) -> pure (s, take 1 rest)
         let seedIn = fst seedUtxo
@@ -452,7 +473,42 @@ runLi01 control si stateBytes requestBytes = do
                         (scriptHashBytes appliedHash)
                         (onChainTokenId tokenId)
                         requestBytes
+        -- #157 D-BOOT: the four pins this registry identity carries,
+        -- all derived — NYA applied to the ordinary request-validator
+        -- hash, and `witness(kind, registry)` applied at kinds 0, 1
+        -- and 2.
+        let appApplied =
+                appliedApplicationBytes
+                    (scriptHashBytes appliedHash)
+                    (onChainTokenId tokenId)
+                    requestBytes
+                    appBytes
+            appHash = computeScriptHash appApplied
+            registryId =
+                registryAssetId (scriptHashBytes appliedHash) seedName
+            witnessPin kind =
+                SBS.toShort
+                    ( scriptHashBytes
+                        ( computeScriptHash
+                            (applyBytesParam registryId (applyIntParam kind witnessBytes))
+                        )
+                    )
         checkPinnedUnapplied si "state.state" unappliedHex
+        emit
+            "derived-pins"
+            ( "applicationPolicy 0x"
+                <> hex (scriptHashBytes appHash)
+                <> " (NYA applied to the ordinary request-validator hash); \
+                   \absentPolicy 0x"
+                <> hex (SBS.fromShort (witnessPin 0))
+                <> "; activePolicy 0x"
+                <> hex (SBS.fromShort (witnessPin 1))
+                <> "; terminalPolicy 0x"
+                <> hex (SBS.fromShort (witnessPin 2))
+                <> " — witness(kind, registry) at kinds 0, 1 and 2 for \
+                   \registry 0x"
+                <> hex registryId
+            )
         emit
             "derived-applied-identity"
             ( "state applied hash 0x"
@@ -474,19 +530,12 @@ runLi01 control si stateBytes requestBytes = do
                     , defaultProcessTime = 30_000
                     , defaultRetractTime = 30_000
                     , defaultTip = Coin 1_000_000
-                    -- NOTE-020 / #157 D-BOOT: compile-only placeholders.
-                    -- This journey submits no `Modify` (bootstrap and
-                    -- refusal rows only), so nothing reads the four pins
-                    -- the state datum carries. Any future `Modify` path
-                    -- must derive all four from the two partitions' script
-                    -- identities for the registry it boots — the
-                    -- application validator's own hash and
-                    -- `witness(kind, registry)` at kinds 0, 1 and 2 (see
-                    -- register/recovery/retirement).
-                    , cfgApplicationPolicy = SBS.pack (replicate 28 0)
-                    , cfgActivePolicy = SBS.pack (replicate 28 0)
-                    , cfgAbsentPolicy = SBS.pack (replicate 28 0)
-                    , cfgTerminalPolicy = SBS.pack (replicate 28 0)
+                    , -- #157 D-BOOT: all four derived above for THIS
+                      -- registry identity, never typed.
+                      cfgApplicationPolicy = SBS.toShort (scriptHashBytes appHash)
+                    , cfgActivePolicy = witnessPin 1
+                    , cfgAbsentPolicy = witnessPin 0
+                    , cfgTerminalPolicy = witnessPin 2
                     , cfgConsumerScript = SBS.empty
                     , network = Testnet
                     }
@@ -564,8 +613,7 @@ runLi01 control si stateBytes requestBytes = do
             )
         -- Read the registry UTxO back from the chain.
         scriptUtxos <- Cage.queryUTxOs prov scriptAddr
-        registry <- case
-            findStateUtxo (cagePolicyIdFromCfg cfg) tokenId scriptUtxos of
+        registry <- case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId scriptUtxos of
             Just r -> pure r
             Nothing ->
                 failWith
@@ -592,13 +640,14 @@ runLi01 control si stateBytes requestBytes = do
 -- The initialization transaction
 -- ---------------------------------------------------------
 
--- | Build the LI01 initialization transaction: consume the
--- canonical seed, mint exactly one registry identity token named
--- by the seed (the bootstrap mint the applied state policy
--- enforces), and create the validator-prescribed registry state
--- UTxO plus the naming checkpoint output carrying the four-field
--- datum. Witness shape: seed spend present, everything else the
--- row calls absent stays absent.
+{- | Build the LI01 initialization transaction: consume the
+canonical seed, mint exactly one registry identity token named
+by the seed (the bootstrap mint the applied state policy
+enforces), and create the validator-prescribed registry state
+UTxO plus the naming checkpoint output carrying the four-field
+datum. Witness shape: seed spend present, everything else the
+row calls absent stays absent.
+-}
 buildLi01Tx ::
     CageConfig ->
     PParams ConwayEra ->
@@ -667,9 +716,10 @@ buildLi01Tx cfg pp prov seedUtxo funders namingDatum = do
     seedRef = txInToRef seedIn
     seedName = deriveAssetName seedRef
 
--- | The naming datum as on-chain Plutus data: exact structural
--- mirror of 'encodeNamingDatum'. The bytes on the chain are checked
--- against the codec's own serialisation when the datum is read back.
+{- | The naming datum as on-chain Plutus data: exact structural
+mirror of 'encodeNamingDatum'. The bytes on the chain are checked
+against the codec's own serialisation when the datum is read back.
+-}
 namingDatumToData :: NamingDatum -> PLC.Data
 namingDatumToData nd =
     PLC.Constr
@@ -693,9 +743,10 @@ namingDatumToData nd =
             , PLC.List (map PLC.B (quorumMembers q))
             ]
 
--- | The domain-separated commitment of docs\/naming-lifecycle.md:
--- @BLAKE2b-256(\"singular\/naming\/next-control\/v1\" || 0x00 ||
--- canonical-address-bytes)@.
+{- | The domain-separated commitment of docs\/naming-lifecycle.md:
+@BLAKE2b-256(\"singular\/naming\/next-control\/v1\" || 0x00 ||
+canonical-address-bytes)@.
+-}
 nextControlCommitmentOf :: ByteString -> ByteString
 nextControlCommitmentOf addressBytes0 =
     convert
@@ -703,19 +754,20 @@ nextControlCommitmentOf addressBytes0 =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> addressBytes0
-            )
-            :: Digest Blake2b_256
+            ) ::
+            Digest Blake2b_256
         )
 
 -- ---------------------------------------------------------
 -- Step: witness shape (marker li01-witness-shape, control C2)
 -- ---------------------------------------------------------
 
--- | Assert the submitted transaction's witness shape against the
--- row: the seed spend present (script-witnessed by the applied
--- state policy's mint branch); the mint exactly the one bootstrap
--- asset; no representative mint; no application spend; no
--- reference inputs; no native scripts; no required signers.
+{- | Assert the submitted transaction's witness shape against the
+row: the seed spend present (script-witnessed by the applied
+state policy's mint branch); the mint exactly the one bootstrap
+asset; no representative mint; no application spend; no
+reference inputs; no native scripts; no required signers.
+-}
 stepWitnessShape ::
     Control ->
     CageConfig ->
@@ -805,13 +857,14 @@ stepWitnessShape control cfg appliedHex seedName signed txid seedRef = do
 -- (marker li01-binding-from-chain)
 -- ---------------------------------------------------------
 
--- | Read the canonical binding back from the registry UTxO the
--- chain holds: the address credential is the applied state script
--- (validatorScript), the token name is the canonical seed's
--- fingerprint (canonicalSeed), the singleton UTxO is the registry.
--- The application policy is named by derivation from chain-read
--- values; the representative policy has no on-chain object at
--- initialization and is reported as absent rather than invented.
+{- | Read the canonical binding back from the registry UTxO the
+chain holds: the address credential is the applied state script
+(validatorScript), the token name is the canonical seed's
+fingerprint (canonicalSeed), the singleton UTxO is the registry.
+The application policy is named by derivation from chain-read
+values; the representative policy has no on-chain object at
+initialization and is reported as absent rather than invented.
+-}
 stepBindingFromChain ::
     CageConfig ->
     String ->
@@ -876,11 +929,12 @@ stepBindingFromChain cfg appliedHex derivedRequestHex seedName (regIn, regOut) =
 -- Step: the checkpoint datum, decoded from the chain (control C1)
 -- ---------------------------------------------------------
 
--- | Decode the initial checkpoint datum from what the chain holds
--- with the merged codec, compare all four fields with the expected
--- fixture, and compare the on-chain bytes with the codec's own
--- encoding. C1 mutates the expected commitment and must fail
--- naming expected vs decoded.
+{- | Decode the initial checkpoint datum from what the chain holds
+with the merged codec, compare all four fields with the expected
+fixture, and compare the on-chain bytes with the codec's own
+encoding. C1 mutates the expected commitment and must fail
+naming expected vs decoded.
+-}
 stepDatumFromChain ::
     Control ->
     NamingDatum ->
@@ -955,29 +1009,25 @@ stepDatumFromChain control expected scriptUtxos = do
 datumDiffs :: NamingDatum -> NamingDatum -> [String]
 datumDiffs e d =
     concat
-        [ [
-            "controlAddress expected 0x"
+        [ [ "controlAddress expected 0x"
                 <> hex (addressBytes (controlAddress e))
                 <> " but decoded 0x"
                 <> hex (addressBytes (controlAddress d))
           | controlAddress e /= controlAddress d
           ]
-        , [
-            "paymentDestination expected "
+        , [ "paymentDestination expected "
                 <> destText (paymentDestination e)
                 <> " but decoded "
                 <> destText (paymentDestination d)
           | paymentDestination e /= paymentDestination d
           ]
-        , [
-            "nextControlCommitment expected 0x"
+        , [ "nextControlCommitment expected 0x"
                 <> hex (nextControlCommitment e)
                 <> " but decoded 0x"
                 <> hex (nextControlCommitment d)
           | nextControlCommitment e /= nextControlCommitment d
           ]
-        , [
-            "retirementQuorum expected "
+        , [ "retirementQuorum expected "
                 <> quorumText (retirementQuorum e)
                 <> " but decoded "
                 <> quorumText (retirementQuorum d)
@@ -999,8 +1049,9 @@ quorumText q =
             (map (("0x" <>) . hex) (quorumMembers q))
         <> "]"
 
--- | On-chain Plutus data as the codec's wire value: the exact four
--- shapes the contract serialises; anything else refuses.
+{- | On-chain Plutus data as the codec's wire value: the exact four
+shapes the contract serialises; anything else refuses.
+-}
 wireOf :: PLC.Data -> Maybe WireData
 wireOf (PLC.Constr i fs)
     | i >= 0 && i <= 6 = Constr (fromInteger i) <$> traverse wireOf fs
@@ -1008,10 +1059,11 @@ wireOf (PLC.Constr i fs)
 wireOf (PLC.B b) = Just (WBytes b)
 wireOf (PLC.I n) = Just (WInt n)
 wireOf (PLC.List xs) = WList <$> traverse wireOf xs
-wireOf PLC.Map {} = Nothing
+wireOf PLC.Map{} = Nothing
 
--- | The raw on-chain Plutus data of an output, if it has an inline
--- datum.
+{- | The raw on-chain Plutus data of an output, if it has an inline
+datum.
+-}
 datumDataOf :: TxOut ConwayEra -> Maybe PLC.Data
 datumDataOf out = case out ^. datumTxOutL of
     Datum bd -> let Data d = binaryDataToData bd in Just d
@@ -1021,12 +1073,13 @@ datumDataOf out = case out ^. datumTxOutL of
 -- Step: the resulting state, read back from the chain (control C3)
 -- ---------------------------------------------------------
 
--- | Observe the resulting state from the chain and compare it with
--- the row's result.state. The canonical seed is gone from the
--- unspent set (checked by the caller) and the registry token is
--- live at the application validator (queried here): consumedSeeds
--- is [400]. C3 asserts a state that does not match result.state
--- and must fail naming both states.
+{- | Observe the resulting state from the chain and compare it with
+the row's result.state. The canonical seed is gone from the
+unspent set (checked by the caller) and the registry token is
+live at the application validator (queried here): consumedSeeds
+is [400]. C3 asserts a state that does not match result.state
+and must fail naming both states.
+-}
 stepStateMatchesRow ::
     Control ->
     CageConfig ->
@@ -1101,8 +1154,9 @@ hex = T.unpack . TE.decodeUtf8 . Base16.encode
 txIdHex :: ConwayTx -> String
 txIdHex tx = let TxId h = txIdTx tx in hex (hashToBytes (extractHash h))
 
--- | The (txid bytes, output index) sort key of an input, so the
--- canonical seed designation is deterministic.
+{- | The (txid bytes, output index) sort key of an input, so the
+canonical seed designation is deterministic.
+-}
 outRefSortKey :: TxIn -> (ByteString, Integer)
 outRefSortKey i =
     let r = txInToRef i

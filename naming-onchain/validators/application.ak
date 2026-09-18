@@ -140,7 +140,7 @@ pub type ApplicationMintRedeemer {
   }
 }
 
-validator application {
+validator application(request_validator_hash: ByteArray) {
   spend(
     maybe_datum: Option<Data>,
     redeemer: ApplicationRedeemer,
@@ -164,6 +164,7 @@ validator application {
               key,
               revealed_control,
               own_hash,
+              request_validator_hash,
               tx,
             )
           None -> {
@@ -601,6 +602,7 @@ fn retire(
   key: ByteArray,
   revealed_control: ByteArray,
   own_hash: ByteArray,
+  request_validator_hash: ByteArray,
   tx: Transaction,
 ) -> Bool {
   let Transaction { extra_signatories, outputs, .. } = tx
@@ -648,11 +650,8 @@ fn retire(
       // trie still says the name is live. Both halves are required here,
       // and the approval is checked against the request that carries it,
       // so neither can be satisfied by a stray token.
-      when retirement_completion(key, own_hash, tx) is {
-        None -> {
-          trace @"retirement-request-missing"
-          False
-        }
+      when retirement_completion(key, own_hash, request_validator_hash, tx) is {
+        None -> False
         Some(bound) ->
           if quantity_of(tx.mint, own_hash, bound) != 1 {
             trace @"retirement-approval-missing"
@@ -665,42 +664,63 @@ fn retire(
   }
 }
 
-/// The completion request this retirement creates: exactly one output at
-/// the cage, whose datum is a request for `key` folding `Update(0x01,
-/// 0x02)` — live to over — and which CARRIES the terminate approval bound
-/// to its own owner. Answers that approval's name, so the caller can
-/// require the matching mint. `None` when the obligation is unmet.
+/// The completion request this retirement creates: exactly one output
+/// at NYA's immutable applied ordinary request-validator hash, whose
+/// datum is a request for `key` folding `Update(0x01, 0x02)` with
+/// `requestToken` equal to this registry's cage token, carrying the
+/// terminate approval bound to its own owner.
 fn retirement_completion(
   key: ByteArray,
   own_hash: ByteArray,
+  request_validator_hash: ByteArray,
   tx: Transaction,
 ) -> Option<ByteArray> {
   when
     filter(
       tx.outputs,
-      fn(output) {
-        output.address.payment_credential == address.Script(mpfs_state_hash) && completion_owner_of(
-          output,
-          key,
-        ) != None
-      },
+      fn(output) { completion_owner_of(output, key) != None },
     )
   is {
     [request] ->
-      when completion_owner_of(request, key) is {
-        Some(owner) -> {
-          // The terminate edge names no destination (R-NM4 row 3), so the
-          // binding is over the key and its owner alone.
-          let bound = approval_name(3, key, owner, (#"", #""))
-          if quantity_of(request.value, own_hash, bound) == 1 {
-            Some(bound)
-          } else {
+      when request.address.payment_credential is {
+        address.Script(home) ->
+          if home != request_validator_hash {
+            trace @"retirement-request-validator-mismatch"
             None
+          } else {
+            expect InlineDatum(datum) = request.datum
+            if naming.mrequest(datum).requestToken.assetName != expected_registry_token(
+              tx,
+            ) {
+              trace @"retirement-request-token-mismatch"
+              None
+            } else {
+              when completion_owner_of(request, key) is {
+                Some(owner) -> {
+                  let bound = approval_name(3, key, owner, (#"", #""))
+                  if quantity_of(request.value, own_hash, bound) == 1 {
+                    Some(bound)
+                  } else if keys(tokens(request.value, own_hash)) == [] {
+                    trace @"retirement-approval-missing"
+                    None
+                  } else {
+                    trace @"retirement-approval-mismatch"
+                    None
+                  }
+                }
+                None -> None
+              }
+            }
           }
+        _ -> {
+          trace @"retirement-request-validator-mismatch"
+          None
         }
-        None -> None
       }
-    _ -> None
+    _ -> {
+      trace @"retirement-request-missing"
+      None
+    }
   }
 }
 

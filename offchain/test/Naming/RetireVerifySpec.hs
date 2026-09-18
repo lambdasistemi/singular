@@ -37,8 +37,9 @@ policyR = BS.replicate 28 0x52
 policyX = BS.replicate 28 0x58
 tokenT = "cage-token-name"
 
--- | The witness asset names: the registry keys themselves (#157
--- D-ASSET).
+{- | The witness asset names: the registry keys themselves (#157
+D-ASSET).
+-}
 repA, repB :: ByteString
 repA = "alice"
 repB = "bob"
@@ -49,6 +50,7 @@ the hashed representative name. Nothing on chain carries it since
 -}
 retiredRepA :: ByteString
 retiredRepA = representativeName "alice"
+
 quorum12 :: [ByteString]
 quorum12 = [BS.replicate 28 0x11, BS.replicate 28 0x12]
 
