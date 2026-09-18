@@ -204,7 +204,13 @@ jobs:
               and (.refusal.limit | type == "string" and length > 0)
             ' "$f" > /dev/null || { echo "FAIL: $row structural refusal evidence moved"; exit 1; }
           done
-          nix run --quiet nixpkgs#jq -- -e '.outcome == "refused" and .verdict == "held-q002" and .transactions == []' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 must remain refused/held-q002 with no accepted transactions'; exit 1; }
+          nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
+            .outcome == "refused" and .verdict == "held-q002"
+            and .transactions == [] and .venue == "node-submit"
+            and .refusal.phase == "phase-2" and .refusal.script == "state"
+            and (.refusal.hashes | index($state) != null)
+            and (.refusal.limit | type == "string" and length > 0)
+          ' "${CONFORMANCE_RECEIPTS}"/receipt-CG19.json > /dev/null || { echo 'FAIL: CG19 must remain refused/held-q002 with phase-2 state-script attribution and no accepted transactions'; exit 1; }
           grep -q '^control: CG11 control: nonempty fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG11 accepting control txid missing'; exit 1; }
           grep -q '^control: CG12 control: exact 1:1 fold accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG12 accepting control txid missing'; exit 1; }
           # 8. standalone rejected-floor control receipt mandatory:
