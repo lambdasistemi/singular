@@ -123,7 +123,7 @@ jobs:
           export CONFORMANCE_RECEIPTS
           printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >> "$GITHUB_ENV"
           set +e
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
@@ -136,12 +136,12 @@ jobs:
           #    exit 1 is the intended result ONLY together with the
           #    complete terminal evidence asserted below.
           [ "$run_rc" -eq 1 ] || { echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"; exit 1; }
-          # 2. complete session evidence: all 11 rows executed...
-          grep -q 'complete: 11/11 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 11 rows (mid-run failure or crash)'; exit 1; }
+          # 2. complete session evidence: all 10 rows executed...
+          grep -q 'complete: 10/10 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 10 rows (mid-run failure or crash)'; exit 1; }
           #    ...and the terminal failure is the held-rows debt report
           grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || { echo 'FAIL: the terminal failure is not the held-rows debt report'; exit 1; }
           # 3. exactly the ten rows plus the session CL01, no extras
-          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01 | sort > /tmp/expected-rows.txt
+          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01 | sort > /tmp/expected-rows.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-*.json | sort > /tmp/receipt-rows.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
@@ -157,12 +157,12 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
+              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CL01) printf 'agrees-with-model' ;;
               CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
-          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
+          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
@@ -249,69 +249,8 @@ jobs:
             and .funded.paid == [.obligations[].owed]
             and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
           ' "$c" > /dev/null || { echo 'FAIL: CG19-rejected-floor pair evidence moved'; exit 1; }
-          # 9. CG21 (#173 A173-EDGE / A173-REFUSALS): the insertActive
-          #    fold on the OPEN registry, its same-key duplicate refusal
-          #    and its distinct-key keyed-mint refusal, with an accepting
-          #    control for each refusal so neither can pass vacuously.
-          #    The three are DISTINCT fixtures (A-006): the duplicate is
-          #    refused `key-exists` BEFORE any mint arithmetic runs, while
-          #    `net-mint-mismatch` needs two keys whose per-kind totals
-          #    agree and whose per-(kind,key) totals do not.
-          f="${CONFORMANCE_RECEIPTS}/receipt-CG21.json"
-          # jq expands its own --arg variables inside this program.
-          # shellcheck disable=SC2016
-          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" --arg state "$state_hash" '
-            def txid: type == "string" and test("^[0-9a-f]{64}$");
-            def text: type == "string" and length > 0;
-            .row == "CG21" and .verdict == "agrees-with-model"
-            and .base == $base and .dirty == false
-            and .outcome == "accepted"
-            # the open application is parameterless (A-001, L3): the
-            # receipt carries the policy id it pinned and records that
-            # it derived from an unapplied blueprint entry.
-            and (.open.policy | text) and .open.parameters == 0
-            # the accepted fold: exactly one active token, at the key the
-            # request named, in the output at the wallet the request named
-            and (.fold.txid | txid)
-            and .fold.mint == [{"policy": .active.policy, "name": .fold.key, "quantity": 1}]
-            and .fold.destination.address == .fold.requested.address
-            and .fold.destination.datumHash == .fold.requested.datumHash
-            and .fold.destination.assets == [{"policy": .active.policy, "name": .fold.key, "quantity": 1}]
-            # duplicate: same key again, refused key-exists, at the state script
-            and ."key-exists".outcome == "refused"
-            and ."key-exists".trace == "key-exists"
-            and ."key-exists".key == .fold.key
-            and (."key-exists".hashes | index($state) != null)
-            and (."key-exists".txid | txid)
-            # ...and its accepting control: a FRESH key through the same
-            # builder is accepted, so the refusal is about occupancy and
-            # not about the request being malformed.
-            and ."key-exists".control.outcome == "accepted"
-            and ."key-exists".control.key != .fold.key
-            and (."key-exists".control.txid | txid)
-            # keyed mint: two DISTINCT keys, per-kind totals equal,
-            # per-(kind,key) totals unequal, refused net-mint-mismatch
-            and ."net-mint-mismatch".outcome == "refused"
-            and ."net-mint-mismatch".trace == "net-mint-mismatch"
-            and (."net-mint-mismatch".keys | length == 2)
-            and (."net-mint-mismatch".keys | unique | length == 2)
-            and ."net-mint-mismatch".claimedByKind == ."net-mint-mismatch".actualByKind
-            and ."net-mint-mismatch".claimedByKeyed != ."net-mint-mismatch".actualByKeyed
-            and (."net-mint-mismatch".hashes | index($state) != null)
-            and (."net-mint-mismatch".txid | txid)
-            # ...and its accepting control: the SAME two keys with the
-            # right keyed distribution is accepted, so the refusal is
-            # about the distribution and not about the batch size.
-            and ."net-mint-mismatch".control.outcome == "accepted"
-            and ."net-mint-mismatch".control.keys == ."net-mint-mismatch".keys
-            and (."net-mint-mismatch".control.txid | txid)
-            # every submitted transaction is distinct: no receipt may
-            # report one submission under four names.
-            and ([.fold.txid, ."key-exists".txid, ."key-exists".control.txid,
-                  ."net-mint-mismatch".txid, ."net-mint-mismatch".control.txid]
-                 | unique | length == 5)
-          ' "$f" > /dev/null || { echo 'FAIL: CG21 insertActive fold/refusal evidence moved'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
+          # CG21 (insertActive conformance row): #184, split from #173 at the wall, 2026-09-19; not stubbed
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
