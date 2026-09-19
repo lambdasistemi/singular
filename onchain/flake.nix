@@ -177,6 +177,7 @@
           nativeBuildInputs = [ pkgs.jq ];
           blueprint = plutus-blueprint;
           manifest = scriptIdentityManifest;
+          witnessSource = ./validators/witness.ak;
         } ''
           set -euo pipefail
           problems="$(jq -r -n \
@@ -212,6 +213,38 @@
             printf '%s\n' "$problems" >&2
             exit 1
           fi
+          # #177 I177-COPIES: the witness's registry pin, enforced here
+          # rather than left to whichever devnet row next moves a token.
+          #
+          # `witness.ak` names the state script's hash as a CONSTANT —
+          # Aiken cannot name a validator's own hash, and deriving it
+          # from the `registry` parameter would admit a witness
+          # parametrised against a fabricated script. A stale constant
+          # is silent at compile time and costs a whole devnet run to
+          # discover (muse finding F1).
+          #
+          # So the source pin is read out of the file and required to
+          # EQUAL the `state.state.spend` hash of the blueprint this
+          # derivation just built. Both sides fail closed: a pin that
+          # cannot be read at all, and a blueprint with no
+          # `state.state.spend`, are failures rather than a vacuous
+          # match.
+          pin="$(sed -n 's/^  #"\([0-9a-f]\{56\}\)"$/\1/p' "$witnessSource" | head -n1)"
+          if [ -z "$pin" ]; then
+            echo "FAIL: no registryStateHash pin found in witness.ak" >&2
+            exit 1
+          fi
+          built="$(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$blueprint")"
+          if [ -z "$built" ] || [ "$built" = "null" ]; then
+            echo "FAIL: the built blueprint carries no state.state.spend validator" >&2
+            exit 1
+          fi
+          if [ "$pin" != "$built" ]; then
+            echo "script-identity check FAILED:" >&2
+            echo "FAIL: witness.ak pins the registry state hash at $pin, the built state.state.spend is $built" >&2
+            exit 1
+          fi
+          echo "script-identity: witness.ak pin $pin equals the built state.state.spend"
           echo "script-identity: OK — $(jq '.validators | length' "$manifest") validators pinned, manifest matches the built blueprint (compiler $(jq -r '.compiler' "$manifest"))"
           touch $out
         '';

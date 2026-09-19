@@ -18,7 +18,8 @@ use lib.{
   approvalName, assetName, decodeState, deltaOf, destinationMatches,
   edgeDeleteAbsent, edgeInsertAbsent, edgeInsertActive, edgeOf,
   edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal, exactQuantity,
-  kindAbsent, kindActive, kindTerminal, leafTerminal, paysAddress,
+  kindAbsent, kindActive, kindTerminal, leafAbsent, leafTerminal,
+  paysAddress,
   statedBefore, tokenFromPolicy,
 }
 use shared.{in_phase1, is_rejectable}
@@ -161,6 +162,22 @@ type Duty {
   /// A burned active token must actually be an input; the cage does not
   /// care where it came from — the application's custody does.
   BurnFromInput { policy: PolicyId, key: ByteArray }
+  /// #177 I177-CHAIN: the RETIREMENT's burn, which is a stricter fact
+  /// than `BurnFromInput` and carries its own Lean name. The
+  /// transaction must present THIS key's one active witness — exactly
+  /// one input carrying exactly one of `(policy, key)` — for the burn
+  /// to destroy.
+  ///
+  /// That one fact also settles the Lean row's `kindCount t.state
+  /// .active r.key = 0`: with one unit on an input and the mint pinned
+  /// at `-1` by C5, ledger conservation leaves the outputs carrying
+  /// none. No separate output rule is needed, and inventing one would
+  /// be a second place for the two to disagree.
+  ///
+  /// `deleteActive` (edge 5) keeps `BurnFromInput` and its
+  /// `burn-from-input` trace unchanged: a shared guard renamed for one
+  /// edge changes the other edge's decision table.
+  RetireFromInput { policy: PolicyId, key: ByteArray }
 }
 
 /// The fold's accumulator. `ok` latches false on the first refusal and
@@ -290,7 +307,7 @@ fn dutiesOf(
       },
     ]
   } else if edge == edgeUpdateTerminal {
-    [BurnFromInput { policy: pins.active_policy, key }]
+    [RetireFromInput { policy: pins.active_policy, key }]
   } else if edge == edgeDeleteAbsent {
     [SpendCustody { key }]
   } else if edge == edgeWitnessTerminal {
@@ -538,8 +555,23 @@ fn applyEdge(
   // that it refused.
   let inserting =
     edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
+  // #177 I177-CHAIN: the same shape, one edge later. A retirement is a
+  // fault of the TRIE when the leaf it names is not `Active`, and the
+  // three ways that happens are the three reasons Lean gives. Read
+  // BEFORE `mpf.update`, because `mpf.update` CRASHES on a leaf that is
+  // not the one the request states — and a crash says only that the
+  // script died, never which fact it refused for.
+  let retirementFault =
+    if edge == edgeUpdateTerminal {
+      terminalRefusal(boundLeaf(acc.trie, key, proof))
+    } else {
+      None
+    }
   if inserting && !mpf.miss(acc.trie, key, proof) {
     expect Some(reason) = lib.occupiedRefusal()
+    halt(acc, reason)
+  } else if retirementFault != None {
+    expect Some(reason) = retirementFault
     halt(acc, reason)
   } else {
   let advanced =
@@ -684,9 +716,101 @@ fn dutyOk(
       } else {
         True
       }
+    RetireFromInput { policy, key } -> {
+      // #177 I177-CHAIN, Lean `token-missing`. One construction site,
+      // asserted directly by the compiled suite, because an Aiken test
+      // cannot read a `trace` back.
+      //
+      // The guard is "this key's ONE active witness is among the inputs
+      // for the burn to destroy". Both ways of failing it are the same
+      // fact about an unreachable state: under `Reachable`,
+      // `biconditional_supply_sync` makes a `Known Active` leaf and
+      // exactly one outstanding active token the same thing, so neither
+      // zero witnesses nor two is a story a user can tell.
+      expect Some(reason) = tokenMissingRefusal()
+      when
+        filter(
+          tx.inputs,
+          fn(i) { quantity_of(i.output.value, policy, key) != 0 },
+        )
+      is {
+        [source] ->
+          if quantity_of(source.output.value, policy, key) != 1 {
+            traceFalse(reason)
+          } else {
+            True
+          }
+        _ -> traceFalse(reason)
+      }
+    }
   }
 }
 
+
+/// The leaf the trie ACTUALLY binds at `key`, classified with the MPF
+/// library's own TOTAL checks against this request's own proof (#177
+/// I177-CHAIN).
+///
+/// `None` is exclusion. The three inclusion answers are read off `has`,
+/// which is total: it asks whether the key is present WITH a given
+/// value and returns a `Bool` either way, so a wrong leaf is an
+/// attributable refusal instead of a crash inside `mpf.update`.
+///
+/// The `Active` answer is the residue — the leaf the retirement moves —
+/// and it is also where an INVALID proof lands, because a proof that
+/// matches no root matches none of the three checks either. That case
+/// then dies in `mpf.update` exactly as it does on every other edge;
+/// the four leaves Lean names are what this classifies.
+fn boundLeaf(
+  trie: MerklePatriciaForestry,
+  key: ByteArray,
+  proof: mpf.Proof,
+) -> Option<Int> {
+  if mpf.miss(trie, key, proof) {
+    None
+  } else if mpf.has(trie, key, leafAbsent, proof) {
+    Some(kindAbsent)
+  } else if mpf.has(trie, key, leafTerminal, proof) {
+    Some(kindTerminal)
+  } else {
+    Some(kindActive)
+  }
+}
+
+/// Why the trie refuses this `updateTerminal`, or `None` when the leaf
+/// is the `Active` one the edge moves (#177 I177-CHAIN).
+///
+/// `before` is the leaf the trie ACTUALLY binds, from `boundLeaf` —
+/// never the leaf the REQUEST states, which `edgeOf` has already read
+/// and which says nothing about the trie. Total over the four answers,
+/// one construction site, so a test asserting the reason asserts the
+/// value this validator traces rather than a helper nothing calls
+/// (#173 A-006, applied to this edge).
+///
+/// The names are Lean's, from `update_terminal_transaction_row`.
+pub fn terminalRefusal(before: Option<Int>) -> Option<String> {
+  when before is {
+    None -> Some(@"key-unknown")
+    Some(kind) ->
+      if kind == kindAbsent {
+        Some(@"not-booked")
+      } else if kind == kindTerminal {
+        Some(@"terminal-immutable")
+      } else {
+        None
+      }
+  }
+}
+
+/// Why a retirement whose key IS `Active` still refuses: the
+/// transaction does not present that key's one active witness for the
+/// burn to destroy (#177 I177-CHAIN). Lean: `token-missing`.
+///
+/// Its own site, distinct from `deleteActive`'s generic
+/// `burn-from-input`, so edge 5's trace keeps meaning what it meant.
+pub fn tokenMissingRefusal() -> Option<String> {
+  Some(@"token-missing")
+}
 fn traceFalse(reason: String) -> Bool {
   trace reason
   False

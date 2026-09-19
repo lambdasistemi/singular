@@ -15,12 +15,19 @@ use types.{Modify, UpdateRedeemer}
 /// instead would admit a witness parametrised against a fabricated
 /// script whose hash merely prefixes the parameter.
 ///
-/// The pin has no compile-time check. It has an EXECUTABLE one: a stale
-/// pin makes `foldPresent` find no registry, so every mint under every
-/// kind refuses and the devnet rows (S04's E2E, CG21's fold) go red on
-/// the first token this registry tries to move. It cannot rot quietly.
+/// The pin has no compile-time check. It has two EXECUTABLE ones.
+///
+/// A stale pin makes `foldPresent` find no registry, so every mint
+/// under every kind refuses and the devnet rows go red on the first
+/// token this registry tries to move.
+///
+/// #177 I177-COPIES closes the gap that left: the `script-identity`
+/// check now reads THIS constant out of this file and requires it to
+/// equal the `state.state.spend` hash of the blueprint it just built,
+/// so a stale pin is a red identity check on every commit rather than
+/// a red devnet row on whichever ticket next moves a token.
 pub const registryStateHash: ByteArray =
-  #"ca29c827585e04b0363b1779bcb3915e8d8bd7aa38c9856bee678bcc"
+  #"fd4978fd2bb403470a20f2abe649e707935c6a93d23939709cc48f90"
 
 /// The three token policies of a registry instance (#157 N1).
 ///

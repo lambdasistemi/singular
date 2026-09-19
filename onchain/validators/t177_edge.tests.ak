@@ -1,5 +1,6 @@
 use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
+use lib
 use state
 use t157_fixtures as fx
 use types.{Delete, Modify, StateDatum, Update, UpdateAction}
@@ -276,3 +277,53 @@ test t177_delete_active_still_folds() {
   )
 }
 
+
+// ----------------------------------------------------------------------------
+// The reason each refusal gives
+// ----------------------------------------------------------------------------
+
+/// A-006's rule, applied to this edge: the reasons come from the
+/// construction sites the validator itself reads, so a test asserting a
+/// reason asserts the value the cage actually traces rather than a
+/// helper nothing calls. An Aiken test cannot read a `trace` back, and
+/// this is the repository's answer to that.
+test t177_unknown_key_reason_is_key_unknown() {
+  state.terminalRefusal(None) == Some(@"key-unknown")
+}
+
+test t177_absent_key_reason_is_not_booked() {
+  state.terminalRefusal(Some(lib.kindAbsent)) == Some(@"not-booked")
+}
+
+test t177_terminal_key_reason_is_terminal_immutable() {
+  state.terminalRefusal(Some(lib.kindTerminal)) == Some(@"terminal-immutable")
+}
+
+/// An `Active` leaf is NOT a trie fault: the retirement proceeds and the
+/// witness duty decides. Without this row every answer could have become
+/// a refusal and the accepting control would be the only thing left to
+/// notice it.
+test t177_an_active_leaf_is_not_a_trie_fault() {
+  state.terminalRefusal(Some(lib.kindActive)) == None
+}
+
+test t177_missing_witness_reason_is_token_missing() {
+  state.tokenMissingRefusal() == Some(@"token-missing")
+}
+
+/// The reasons are pairwise distinct, asserted by NAME rather than by
+/// inequality: two pre-#177 names are also distinct from each other, so
+/// an inequality alone would go green while this row stayed
+/// unimplemented.
+test t177_the_reasons_are_distinct_names() {
+  and {
+    state.terminalRefusal(None) == Some(@"key-unknown"),
+    state.terminalRefusal(Some(lib.kindAbsent)) == Some(@"not-booked"),
+    state.terminalRefusal(Some(lib.kindTerminal)) == Some(
+      @"terminal-immutable",
+    ),
+    state.tokenMissingRefusal() == Some(@"token-missing"),
+    lib.occupiedRefusal() == Some(@"key-exists"),
+    lib.mintRefusal() == Some(@"net-mint-mismatch"),
+  }
+}
