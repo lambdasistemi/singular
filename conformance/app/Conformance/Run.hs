@@ -2501,6 +2501,7 @@ controlFreshCage env = do
                 , rcCageUtxos = utxos
                 , rcDatums = [(recordDatumHash, recordDatum)]
                 , rcAllowInadmissible = False
+                , rcHolderUtxos = []
                 , rcRefUtxos = refs
                 }
     foldTx <-
@@ -7383,6 +7384,7 @@ registryContext env = do
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
+            , rcHolderUtxos = []
             , rcRefUtxos = refs
             }
 {- | CG03's own key, seeded at the absent leaf.
@@ -7773,6 +7775,7 @@ rowRegistryContext env cage tid = do
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
+            , rcHolderUtxos = []
             , rcRefUtxos = rcRefs cage
             }
 
@@ -7800,6 +7803,7 @@ foldSpecContext env fs = do
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
+            , rcHolderUtxos = []
             , -- A refusal row exists to watch the chain refuse a fold the
               -- builder cannot discharge duties for; it must still be built.
               rcAllowInadmissible = True
