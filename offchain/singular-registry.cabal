@@ -541,6 +541,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeSpec
@@ -551,6 +552,7 @@ test-suite cage-tests
     Naming.RetireVerifySpec
     Naming.RecordValueSpec
   build-depends:
+    , aeson
     , base               >=4.14 && <5
     , cardano-ledger-api
     , cardano-ledger-alonzo

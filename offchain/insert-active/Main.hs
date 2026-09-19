@@ -73,7 +73,9 @@ import Lens.Micro ((^.))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    Blueprint (..),
     NamingCodes,
+    Validator (..),
     extractCompiledCode,
     loadBlueprint,
     loadRegistryCodesFromEnv,
@@ -169,19 +171,27 @@ insertActive observedPath = do
     bp <- case loaded of
         Left err -> die ("registry blueprint does not parse: " <> err)
         Right b -> pure b
+    -- The parameter count is READ from the blueprint entry, never
+    -- written down here: it is the fact that makes the open policy's
+    -- compiled hash its policy id, so a blueprint that grew a parameter
+    -- must change this observation rather than be contradicted by it.
+    openParams <- case [v | v <- validators bp, vTitle v == "open.open.mint"] of
+        (v : _) -> pure (vParameters v)
+        [] -> die "open.open.mint not found in REGISTRY_BLUEPRINT"
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
         (Just stateBytes, Just requestBytes) ->
-            run observedPath stateBytes requestBytes
+            run observedPath stateBytes requestBytes openParams
         _ -> die "state.state or request.request not found in REGISTRY_BLUEPRINT"
 
 run ::
     Maybe FilePath ->
     SBS.ShortByteString ->
     SBS.ShortByteString ->
+    Int ->
     IO ()
-run observedPath stateBytes requestBytes = withNode $ \sess -> do
+run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
     let prov = nsProvider sess
         submit = nsSubmitter sess
     tm <- mkPureTrieManager
@@ -195,7 +205,13 @@ run observedPath stateBytes requestBytes = withNode $ \sess -> do
     let cfg = cageCfg stateBytes requestBytes codes seedRef
         openPolicy = hex (SBS.fromShort (cfgApplicationPolicy cfg))
         activePolicy = hex (SBS.fromShort (cfgActivePolicy cfg))
-    say ("open application policy " <> T.unpack openPolicy <> " (parameterless)")
+    say
+        ( "open application policy "
+            <> T.unpack openPolicy
+            <> " (parameters: "
+            <> show openParams
+            <> ")"
+        )
     say ("active witness policy   " <> T.unpack activePolicy)
 
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr
@@ -283,7 +299,7 @@ run observedPath stateBytes requestBytes = withNode $ \sess -> do
                 , "open"
                     .= object
                         [ "policy" .= openPolicy
-                        , "parameters" .= (0 :: Int)
+                        , "parameters" .= openParams
                         ]
                 , "active" .= object ["policy" .= activePolicy]
                 , "registry"

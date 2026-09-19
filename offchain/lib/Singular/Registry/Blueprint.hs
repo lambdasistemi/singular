@@ -58,6 +58,7 @@ module Singular.Registry.Blueprint (
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (
     FromJSON (..),
+    Value,
     withObject,
     (.:),
     (.:?),
@@ -142,6 +143,13 @@ data Validator = Validator
     -- ^ Hex-encoded script hash (28 bytes)
     , vCompiledCode :: Maybe Text
     -- ^ Hex-encoded double-CBOR PlutusV3 script
+    , vParameters :: Int
+    -- ^ How many parameters this validator applies. A blueprint omits
+    -- the array entirely for a parameterless validator, so an absent
+    -- `parameters` key reads as zero. This is what makes a
+    -- parameterless policy's compiled hash its policy id, with no
+    -- applied hash to derive, so a consumer that wants to state it
+    -- should READ it here rather than write the number down.
     }
     deriving stock (Show, Eq)
 
@@ -229,6 +237,7 @@ instance FromJSON Validator where
         redeemer <- redeemerObj .: "schema"
         h <- o .: "hash"
         code <- o .:? "compiledCode"
+        params <- o .:? "parameters"
         pure
             Validator
                 { vTitle = title
@@ -236,6 +245,7 @@ instance FromJSON Validator where
                 , vRedeemer = redeemer
                 , vHash = h
                 , vCompiledCode = code
+                , vParameters = maybe 0 length (params :: Maybe [Value])
                 }
 
 instance FromJSON Blueprint where
