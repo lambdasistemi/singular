@@ -2,34 +2,43 @@
 
 {- |
 Module      : Singular.Registry.E2E.InsertActiveSpec
-Description : #173 A173-EDGE / A173-REFUSALS on a real devnet
+Description : the open registry's insertActive edge on a real devnet
 License     : Apache-2.0
 
-The open registry's `insertActive` edge, folded on a real devnet, with
-its two refusals and an accepting control for each.
+Two cages, because the two things being shown need different conditions.
 
-Three DISTINCT fixtures, and the distinctness is the point (A-006):
+**The named-wallet story.** One `insertActive` folds and exactly one
+`(activePolicy, key)` token lands in the output at the address the
+request named — a WALLET, not the application's own script address. The
+open registry has no application that could ever spend a token back out
+of one: `open.ak` is a minting policy with no spending arm, so a token
+routed there is locked forever.
 
-The FOLD places exactly one `(activePolicy, key)` token in the output at
-the address the request named — a WALLET, not the application's own
-script address, because the open registry has no application that could
-ever spend it back out.
+**The refusal**, in a cage of its own. The same key is folded, a FRESH
+key is folded as the accepting control, and the same key again is
+REFUSED. The control runs first, so a broken control is reported rather
+than silently leaving the refusal vacuous — "refused" is otherwise
+consistent with "this builder cannot fold at all".
 
-This row is ONE fold on purpose. The refusals belong here too in
-principle, and they are not here, for a reason worth stating: this
-harness has exactly ONE wallet, and the folder pays fees from the same
-address the story delivers to. Once an active token sits there, the next
-fold sweeps it in as a fee input and the cage refuses a movement under a
-pinned policy that no consumed request entails — correctly. A second
-fold in this row would therefore refuse for THAT reason, and a refusal
-nobody can attribute is not evidence.
+That cage routes every delivery AWAY from the funding wallet. This
+harness has one wallet and the folder pays fees from it, so an active
+token sitting there would be swept into the next fold as a fee input
+and refused as a movement no consumed request entails. Keeping the
+refusal cage's tokens out of the fee wallet removes that from the
+picture.
 
-So the refusals are established where they ARE attributable: at the
-Aiken layer, `t173_duplicate_insert_active_refuses_cleanly` folds the
-duplicate through `state.state.spend` with nothing else wrong, and
-`t173_two_key_batch_with_the_wrong_distribution_refuses` carries its own
-accepting control. Their chain-level observation is CG21's row, which is
-not built yet and is named as a remainder rather than faked here.
+Refusal NAMES are not asserted here. The ledger's `EvalFailure` carries
+an empty Plutus log list, so the cage's trace is not recoverable from
+it; the names are asserted under `aiken check`, against the construction
+sites the validator reads.
+
+'foldAndMirror' commits each landed fold into the manager's trie and
+fails if the committed root does not move. That is not bookkeeping: the
+speculative session inside 'updateTokenWithDuties' starts from the
+committed trie and is discarded, so a caller that skips this re-proves
+the next fold against the BOOT state and fold 2 submits an empty proof.
+A stale root is otherwise invisible until a later fold fails for an
+unrelated-looking reason.
 -}
 module Singular.Registry.E2E.InsertActiveSpec (spec) where
 
