@@ -399,7 +399,7 @@ import Conformance.Refusal (
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
@@ -430,8 +430,17 @@ issue70AcceptingRows = ["CG11", "CG12", "CG14", "CG19"]
 -- `net-mint-mismatch`. Each refusal carries its own accepting control.
 issue173Rows = ["CG21"]
 
+-- The issue #177 row, listed by membership like every other family:
+-- CG22 is the updateTerminal retirement — insertActive then
+-- updateTerminal at the SAME key in one session — together with its two
+-- DISTINCT refusal fixtures, an Unknown key (`key-unknown`) and an
+-- Absent key (`not-booked`), each with its own accepting control. It
+-- shares no fixture, receipt or assertion with CG21.
+issue177Rows = ["CG22"]
+
 canonicalRows :: [String]
-canonicalRows = caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows
+canonicalRows =
+    caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows
 
 data Control
     = Normal
@@ -1323,6 +1332,16 @@ runRowIn env marker row = case row of
     "CG15" -> runCG15 env
     "CG19" -> runCG19 env
     "CG21" -> runCG21 env
+    -- #177 I177-CONFORMANCE. NOT YET IMPLEMENTED: the row is reached
+    -- inside a real session, on a real devnet, and fails here rather
+    -- than in `validateRows`, so the session, genesis, node and
+    -- partitioning subjects all execute before the absent fixture is
+    -- reported.
+    "CG22" ->
+        failWith
+            "CG22: the updateTerminal retirement, its receipt and its two \
+            \refusal fixtures (key-unknown, not-booked) are not yet \
+            \implemented"
     _ -> failWith ("run cannot execute row: " <> row)
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
