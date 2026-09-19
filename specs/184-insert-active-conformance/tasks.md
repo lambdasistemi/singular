@@ -30,7 +30,7 @@ not separate layer tasks.
 
 ## Ticket finalization
 
-- [ ] **T184-F — accept and publish the exact head.** Verify every persistent
+- [x] **T184-F — accept and publish the exact head.** Verify every persistent
   checkpoint approval at an ancestor of the head, run frozen Gate S once,
   push the exact SHA, update the PR body, require remote CI green and pass the
   finalization audit before marking PR #185 ready. The epic owner merges.
