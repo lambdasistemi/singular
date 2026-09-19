@@ -305,6 +305,8 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                             , receiptRejected = Just (T.pack rejectedTxid)
                             , receiptDirty = dirty
                             , receiptPartial = Nothing
+                            , receiptEdge = Nothing
+
                             , receiptDerivation = Nothing
                             }
             else pure ()

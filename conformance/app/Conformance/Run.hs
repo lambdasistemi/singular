@@ -5310,6 +5310,8 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptBase = T.pack (envBase env)
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
+            , receiptEdge = Nothing
+
             , receiptDerivation = derivation
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
@@ -5712,6 +5714,8 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptBase = T.pack base
             , receiptDirty = dirty
             , receiptPartial = partial
+            , receiptEdge = Nothing
+
             , receiptDerivation = Nothing
             , receiptNode = T.pack nodeVer
             , receiptBlueprint = T.pack blueprintIdStr
