@@ -1,0 +1,66 @@
+{
+  "status": [
+    {
+      "text": "Status.",
+      "pause": 500
+    },
+    {
+      "text": "The Lean-first slice is accepted. The current work is the compact mandate and slicing audit, with no open blocker.",
+      "pause": 400
+    }
+  ],
+  "vertical-cut": [
+    {
+      "text": "Vertical cut.",
+      "pause": 500
+    },
+    {
+      "text": "There is one remaining implementation task and one runnable: insert-active from the released archive across every required layer.",
+      "pause": 400
+    }
+  ],
+  "surface-map": [
+    {
+      "text": "Surface map.",
+      "pause": 500
+    },
+    {
+      "text": "The map binds Lean authority, this edge's on-chain request and behavior, off-chain builders, conformance, product packaging and every derived copy, while preserving update, delete and read G three rows.",
+      "pause": 400
+    }
+  ],
+  "implementation-sequence": [
+    {
+      "text": "Implementation sequence.",
+      "pause": 500
+    },
+    {
+      "text": "One Opus owner commits the red bundle, then boot and approvals, the edge and refusals, the packaged command and copies, with one decision record at every acceptance line.",
+      "pause": 400
+    }
+  ],
+  "verification-and-senior-review": [
+    {
+      "text": "Verification and senior review.",
+      "pause": 500
+    },
+    {
+      "text": "Grok and Codex author the C I table. A mute persistent senior vets decisions without rerunning gates, may add existing C I rows, and may escalate a wrong requirement. Push waits for every approval and one ticket-owner Gate S run.",
+      "pause": 400
+    }
+  ],
+  "release-and-remainder": [
+    {
+      "text": "Release and remainder.",
+      "pause": 500
+    },
+    {
+      "text": "Day zero is version zero point seven point zero. The epic owner tags the edge release after merge. Every enumerated copy remains inside the four-hour estimate; at the wall an incomplete task stays unchecked and unpushed, and only unrelated new work may become a remainder.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "c0a2a01d60b61416e3811cbb801d74f111fe72bb91dc118747ddcd18fc34047c"
+  }
+}

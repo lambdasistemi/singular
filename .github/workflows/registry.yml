@@ -306,8 +306,7 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#cage-tests-e2e
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#cage-tests-e2e
   journey:
     name: The bounded registry journey, narrated end to end
     needs: blueprint
@@ -345,5 +344,59 @@ jobs:
         working-directory: offchain
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-          naming="$(nix build --quiet --no-link --print-out-paths ../naming-onchain#plutus-blueprint)"
-          REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming" nix run --quiet .#journey
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#journey
+      # #173 A173-COMMAND (NOTE-014 ruling): the day-0 artifact rule made
+      # concrete. A documented command that does not exist in CI is the
+      # same defect as an unrun check, so the release archive the
+      # publishing pipeline builds is built HERE, extracted OUTSIDE the
+      # checkout, and its documented `insert-active` invocation is run
+      # against this job's devnet with no checkout and no naming
+      # blueprint in sight. The step asserts exit 0 and the active token
+      # at the wallet the command named.
+      #
+      # Falsification: on any ancestor where the verb is absent from the
+      # archive this step fails at the invocation itself — that is the
+      # RED this row was frozen with, and it is the reason the step
+      # extracts rather than running the verb from the worktree.
+      - name: Run insert-active from the extracted release archive
+        run: |
+          set -e
+          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
+          nix run --quiet .#release-artifacts -- "$release_dir"
+          version="$(cat version.txt)"
+          # Extracted OUTSIDE the checkout: a reviewer with the archive
+          # and nothing else must reach the same place.
+          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
+          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
+          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
+          # The archive's own run page is the authority for the command;
+          # the step runs exactly what the page documents.
+          test -f "$extracted/INSERT-ACTIVE.md" || { echo 'FAIL: the archive carries no insert-active run page'; exit 1; }
+          observed="$(mktemp "$RUNNER_TEMP/insert-active.XXXXXX.json")"
+          (
+            cd "$extracted/offchain"
+            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
+              nix run --quiet .#insert-active -- --observed "$observed"
+          )
+          # The observation, not the exit code: exactly one active token,
+          # at the key the command inserted, in the output at the wallet
+          # the command named.
+          #
+          # The duplicate is asserted by its OUTCOME and its accepting
+          # control, not by a trace name. The ledger's EvalFailure carries
+          # an EMPTY Plutus log list, so the cage's `key-exists` trace is
+          # not recoverable from it and the command emits null rather than
+          # a guess. The NAME is asserted at the Aiken layer, through
+          # `lib.occupiedRefusal`, the construction site the validator
+          # reads. Asserting it here would be asserting a literal the
+          # command wrote to make this step pass.
+          nix run --quiet nixpkgs#jq -- -e '
+            .edge == "insertActive"
+            and (.fold.txid | test("^[0-9a-f]{64}$"))
+            and .wallet.address == .requested.address
+            and .wallet.assets == [{"policy": .active.policy, "name": .key, "quantity": 1}]
+            and ."key-exists".outcome == "refused"
+            and (."key-exists".control.outcome == "accepted")
+            and (."key-exists".detail | type == "string" and length > 0)
+          ' "$observed" > /dev/null || { echo 'FAIL: insert-active did not observe one active token at the named wallet'; exit 1; }
+          echo "ARCHIVE = insert-active ran from $extracted with no checkout and observed the active token at the named wallet."

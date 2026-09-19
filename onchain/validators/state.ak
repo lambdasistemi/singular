@@ -208,9 +208,17 @@ fn codecOk(op: Operation) -> Bool {
 /// The reason this `(operation, before-leaf)` is not one of the seven
 /// rows (#157 C2, G3, N10). Total over the codec domain, and each arm is
 /// one trace: `edgeOf` says no, this says why.
+///
+/// #173 A-006: the INSERT reasons come from `lib.insertRefusal`, the one
+/// construction site, so a test asserting the reason asserts the value
+/// this validator actually traces rather than a helper nothing calls.
 fn refuseEdge(acc: Fold, op: Operation, before: Option<Int>) -> Fold {
   when op is {
-    Insert(_) -> halt(acc, @"insert-terminal")
+    Insert(value) -> {
+      expect Some(reason) =
+        lib.insertRefusal(insertEdgeOf(value), before)
+      halt(acc, reason)
+    }
     Read(_) ->
       // Lean distinguishes the facts (`read-absent` vs `read-active`), so
       // the cage does too: G3 keeps the traces pairwise distinct where
@@ -519,6 +527,21 @@ fn applyEdge(
   floor: Int,
   proof: mpf.Proof,
 ) -> Fold {
+  // #173 A-006/A-009: an insert on a key the trie already binds is a
+  // fault of the TRIE, refused `key-exists` BEFORE any mint arithmetic
+  // runs — a different fact from `refuseEdge`'s `insert-terminal`, which
+  // names a fault of the REQUEST's value.
+  //
+  // `mpf.miss` is the library's own TOTAL exclusion check, so an
+  // occupied key is an attributable refusal instead of a crash inside
+  // `mpf.insert` — and a crash says only that the script died, never
+  // that it refused.
+  let inserting =
+    edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
+  if inserting && !mpf.miss(acc.trie, key, proof) {
+    expect Some(reason) = lib.occupiedRefusal()
+    halt(acc, reason)
+  } else {
   let advanced =
     if edge == edgeWitnessTerminal {
       // C3: no new proof code. `mpf.has` is the library's own inclusion
@@ -567,6 +590,7 @@ fn applyEdge(
           dutiesOf(pins, edge, key, destination, floor),
         ),
       }
+  }
   }
 }
 
@@ -840,7 +864,12 @@ fn validModify(
       // equals the summed C2 column exactly — asset by asset, quantity
       // by quantity — and nothing else moves under them. A mint that
       // adds, omits, doubles or renames one asset is one delta mismatch.
-      traceFalse(@"delta-mismatch")
+      //
+      // The NAME of that refusal comes from `lib.mintRefusal`, the one
+      // construction site, so a test asserting the reason asserts the
+      // value this validator actually traces (#173 A-006).
+      expect Some(reason) = lib.mintRefusal()
+      traceFalse(reason)
     } else if !dutiesSatisfied(pins, input.output.address, folded.duties, tx) {
       False
     } else {
@@ -1072,4 +1101,16 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
   expect tokenRoot == root(empty)
   expect exactQuantity(policyId, output.value, tokenId, 1)
   True
+}
+
+/// The edge an `Insert(value)` intends, read off its leaf byte. An
+/// insert names its own edge: `0x00` is `insertAbsent`, `0x01` is
+/// `insertActive`. A value that is not a codec byte never reaches here
+/// — `codecOk` refuses it before the edge is asked for.
+fn insertEdgeOf(value: ByteArray) -> Int {
+  if decodeState(value) == Some(kindAbsent) {
+    lib.edgeInsertAbsent
+  } else {
+    lib.edgeInsertActive
+  }
 }

@@ -249,6 +249,7 @@ jobs:
             and .funded.paid == [.obligations[].owed]
             and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
           ' "$c" > /dev/null || { echo 'FAIL: CG19-rejected-floor pair evidence moved'; exit 1; }
+          # CG21 (insertActive conformance row): #184, split from #173 at the wall, 2026-09-19; not stubbed
           echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
@@ -397,9 +398,7 @@ jobs:
       # cage changes that wire by mandate, so the execution is removed
       # outright — no stub, no skip, no echo standing in for it — and
       # the row travels with its edge:
-      # CS03 CS04 CS05 CS07 CS08 re-cut per edge: #173 (CS04, CS07,
-      # CS08), #177/#179 (CS03, CS05) — issue #154 re-cut 2026-09-18;
-      # none stubbed
+      # CS03 CS05: #177/#179; CS04 CS07 CS08: #183 (final wire); CG21: #184 — none stubbed
       - name: Preserve candidate-bound conformance receipts
         if: always() && env.CONFORMANCE_RECEIPTS != ''
         uses: actions/upload-artifact@v4

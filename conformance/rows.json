@@ -352,6 +352,15 @@
       "requirement": "Hold a valid fold constant and remove only the state-owner required signer; the observation (accept or refuse) is recorded with its transaction — the regression property the independent verification (F-002) specified.",
       "source": "Singular.Statements.fold_iff sufficiency direction (Lean); observation history: FAILED against the pre-#79 candidate (owner gate), ACCEPTED against the repaired candidate by execution",
       "state": "bound-elsewhere"
+    },
+    {
+      "expected": "accept the fold; refuse the same-key duplicate `key-exists`; refuse the two-key wrong-distribution batch `net-mint-mismatch`; both refusals carry an accepting control",
+      "group": "CG",
+      "id": "CG21",
+      "note": "#173 A173-EDGE / A173-REFUSALS, added by the NOTE-014 ruling as this ticket's new generic row. The registry boots under the PARAMETERLESS open application (A-001 row 1, Lean `openPolicyParameters = []`): its admission is universal, and cross-registry separation is a NAMED NON-GOAL, not an omission. The three observations are DISTINCT fixtures (A-006): the duplicate is refused `key-exists` BEFORE any mint arithmetic runs, so it is NOT the keyed-mint witness; the keyed-mint witness needs two keys whose per-kind totals AGREE and whose per-(kind,key) totals do not (`2/0` claimed against `1/1` minted), which is the exact fault `Singular.Model.assetSame` catches and a per-kind sum does not. Each refusal carries an accepting control — a fresh key for the duplicate, the right distribution for the same two keys — so neither refusal can pass because the request was merely malformed.",
+      "requirement": "One `insertActive` request folds on the open registry and places exactly one `(activePolicy, key)` token in the output at the address and inline datum the request named. A second `insertActive` at the same known key is refused `key-exists`. A two-request batch at two DISTINCT keys whose claimed mint agrees per kind but disagrees per `(kind, key)` is refused `net-mint-mismatch`.",
+      "source": "Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; A-001, A-006, NOTE-014",
+      "state": "uncovered"
     }
   ]
 }

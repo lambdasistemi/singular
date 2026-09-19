@@ -541,6 +541,7 @@ test-suite cage-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
+    Singular.Registry.BlueprintParametersSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeSpec
@@ -551,6 +552,7 @@ test-suite cage-tests
     Naming.RetireVerifySpec
     Naming.RecordValueSpec
   build-depends:
+    , aeson
     , base               >=4.14 && <5
     , cardano-ledger-api
     , cardano-ledger-alonzo
@@ -579,6 +581,8 @@ test-suite e2e-tests
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
+    Singular.Registry.E2E.InsertActiveSpec
+    Singular.Registry.E2E.OpenBootSpec
   build-depends:
     , async
     , base
@@ -597,6 +601,36 @@ test-suite e2e-tests
     , microlens
     , mts:mpf-write
     , ouroboros-network
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- #173 A173-COMMAND: the packaged `insert-active` verb the release
+-- archive documents. A reviewer with the extracted archive and no
+-- checkout runs it against a devnet: the open registry boots, one
+-- certified insertActive folds, and the active token lands at the
+-- wallet the request named. Ships on the pre-#183 request wire.
+executable insert-active
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   insert-active
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N

@@ -31,9 +31,11 @@ module Singular.Registry.Blueprint (
     -- * Loading
     loadBlueprint,
 
-    -- * The naming partition's compiled code
+    -- * The compiled codes the four registry pins derive from
     NamingCodes (..),
-    loadNamingCodesFromEnv,
+
+    -- * The registry partition's own compiled code (#173 A173-BOOT)
+    loadRegistryCodesFromEnv,
 
     -- * Validation
     validateData,
@@ -56,6 +58,7 @@ module Singular.Registry.Blueprint (
 import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (
     FromJSON (..),
+    Value,
     withObject,
     (.:),
     (.:?),
@@ -140,6 +143,13 @@ data Validator = Validator
     -- ^ Hex-encoded script hash (28 bytes)
     , vCompiledCode :: Maybe Text
     -- ^ Hex-encoded double-CBOR PlutusV3 script
+    , vParameters :: Int
+    -- ^ How many parameters this validator applies. A blueprint omits
+    -- the array entirely for a parameterless validator, so an absent
+    -- `parameters` key reads as zero. This is what makes a
+    -- parameterless policy's compiled hash its policy id, with no
+    -- applied hash to derive, so a consumer that wants to state it
+    -- should READ it here rather than write the number down.
     }
     deriving stock (Show, Eq)
 
@@ -227,6 +237,7 @@ instance FromJSON Validator where
         redeemer <- redeemerObj .: "schema"
         h <- o .: "hash"
         code <- o .:? "compiledCode"
+        params <- o .:? "parameters"
         pure
             Validator
                 { vTitle = title
@@ -234,6 +245,7 @@ instance FromJSON Validator where
                 , vRedeemer = redeemer
                 , vHash = h
                 , vCompiledCode = code
+                , vParameters = maybe 0 length (params :: Maybe [Value])
                 }
 
 instance FromJSON Blueprint where
@@ -518,41 +530,62 @@ applyRequestParams statePolicyId (OnChainTokenId (BuiltinByteString token)) sbs 
     applyBytesParam token $
         applyBytesParam statePolicyId sbs
 
-{- | The naming partition's compiled code: the application whose mint arm
-certifies an edge, and the witness policy the three token kinds are
-derived from.
+{- | The compiled codes the four registry pins derive from: the
+application whose mint arm certifies an edge, and the witness policy the
+three token kinds are derived from.
 
 The four policy pins of a registry are derived from these two, so every
 consumer of the application — the conformance rows, the devnet E2E and the
 bounded journey — binds to one source and moves together.
+
+#173 I2: for the OPEN registry both now come from the registry
+partition's own blueprint. The record keeps its name because every
+consumer names its fields; renaming it is a sweep this ticket does not
+need.
 -}
 data NamingCodes = NamingCodes
     { ncApplication :: SBS.ShortByteString
     , ncWitness :: SBS.ShortByteString
     }
 
-{- | Read the naming blueprint @NAMING_BLUEPRINT@ names and extract the
-two compiled codes the pins derive from.
+{- | #173 A173-BOOT: the four pins of an OPEN registry, read from the
+registry partition's own blueprint and nothing else.
+
+The open registry's application is @open.open@ — parameterless, so its
+compiled hash IS its policy id, with no applied hash to derive (A-001
+row 1; Lean @openPolicyParameters = []@). Its three token witnesses are
+@witness.witness@ in the SAME blueprint, which moved here from the
+naming partition in this ticket (I2). A boot therefore consults
+@REGISTRY_BLUEPRINT@ alone: no naming blueprint participates, and
+@NAMING_BLUEPRINT@ need not be set at all.
+
+Both codes are read from the SAME blueprint, so a consumer cannot
+silently pair an open application from one build with witnesses from
+another.
 -}
-loadNamingCodesFromEnv :: IO NamingCodes
-loadNamingCodesFromEnv = do
-    mPath <- lookupEnv "NAMING_BLUEPRINT"
+loadRegistryCodesFromEnv :: IO NamingCodes
+loadRegistryCodesFromEnv = do
+    mPath <- lookupEnv "REGISTRY_BLUEPRINT"
     path <- case mPath of
         Just p | not (null p) -> pure p
-        _ -> die "NAMING_BLUEPRINT is not set"
+        _ -> die "REGISTRY_BLUEPRINT is not set"
     ebp <- loadBlueprint path
     bp <- case ebp of
-        Left err -> die ("naming blueprint does not parse: " <> err)
+        Left err -> die ("registry blueprint does not parse: " <> err)
         Right bp -> pure bp
-    case ( extractCompiledCode "application.application" bp
+    case ( extractCompiledCode "open.open" bp
          , extractCompiledCode "witness.witness" bp
          ) of
-        (Just appCode, Just witnessCode) ->
-            pure NamingCodes{ncApplication = appCode, ncWitness = witnessCode}
-        _ ->
+        (Just openCode, Just witnessCode) ->
+            pure NamingCodes{ncApplication = openCode, ncWitness = witnessCode}
+        (Nothing, _) ->
             die
-                "naming blueprint has no application.application/witness.witness \
-                \code (the four pins are derived from them)"
+                "registry blueprint has no open.open code: the open \
+                \application is not in the registry partition (#173 I1)"
+        (_, Nothing) ->
+            die
+                "registry blueprint has no witness.witness code: the three \
+                \witness policies have not moved here (#173 I2)"
   where
     die :: String -> IO a
     die = throwIO . ErrorCall

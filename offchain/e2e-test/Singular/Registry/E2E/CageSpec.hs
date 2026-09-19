@@ -78,7 +78,7 @@ import Singular.Registry.Blueprint (
     NamingCodes,
     extractCompiledCode,
     loadBlueprint,
-    loadNamingCodesFromEnv,
+    loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (
     CageConfig (..),
@@ -474,7 +474,7 @@ withE2E stateBytes requestBytes action = do
                     "withE2E: no UTxOs in genesis \
                     \wallet — cannot pick a seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
-        codes <- loadNamingCodesFromEnv
+        codes <- loadRegistryCodesFromEnv
         let cfg =
                 cageCfg
                     stateBytes
@@ -605,7 +605,7 @@ publishCageRefs ::
     TokenId ->
     IO [(TxIn, TxOut ConwayEra)]
 publishCageRefs cfg prov submit tokenId = do
-    codes <- loadNamingCodesFromEnv
+    codes <- loadRegistryCodesFromEnv
     Edges.publishCageRefs cfg codes prov (genesisSubmit submit) genesisAddr tokenId
 
 -- | The duties context a fold of tree edges discharges its obligations from.
@@ -616,7 +616,7 @@ registryContextFor ::
     [(TxIn, TxOut ConwayEra)] ->
     IO RegistryContext
 registryContextFor cfg prov _tokenId refs = do
-    codes <- loadNamingCodesFromEnv
+    codes <- loadRegistryCodesFromEnv
     Edges.registryContextFor cfg codes prov refs
 
 {- | Book one tree edge: the approval the naming application mints
@@ -631,7 +631,7 @@ bookEdge ::
     OnChainOperation ->
     IO TxIn
 bookEdge cfg prov submit tokenId key op = do
-    codes <- loadNamingCodesFromEnv
+    codes <- loadRegistryCodesFromEnv
     Edges.bookEdge cfg codes prov (genesisSubmit submit) genesisAddr tokenId key op
 
 -- | Book one edge and fold it, end to end on a real devnet.

@@ -187,6 +187,57 @@ Had the chain accepted the occupied insert, that would be a
 **finding** reported with the accepted transaction — never relabelled
 as a refusal.
 
+
+### The `insertActive` edge on the open registry (#173)
+
+One more generic row joins the session for the open registry's
+`insertActive` edge. It carries three observations, and they are three
+DISTINCT fixtures on purpose — conflating them is how a suite convinces
+itself it has tested a mint rule it never exercised.
+
+| row | outcome | evidence |
+|---|---|---|
+| CG21 `insertActive` fold | accept | one `(activePolicy, key)` token in the output at the address and inline datum the request named |
+| CG21 same-key duplicate | **refuse** `key-exists` | refused BEFORE any mint arithmetic; a FRESH key through the same builder is accepted in-run (control) — the refusal is the occupancy, not the request |
+| CG21 two-key wrong distribution | **refuse** `net-mint-mismatch` | two DISTINCT keys claiming `2/0` against `1/1` minted; the same two keys with the right distribution are accepted in-run (control) — the refusal is the distribution, not the batch size |
+
+The second and third are not the same row wearing two names. The
+duplicate is refused because the key is taken, before the mint is
+looked at; the keyed-mint witness needs a batch whose claimed mint
+**agrees per kind** and disagrees per `(kind, key)`, which is the exact
+fault a per-kind sum cannot see. A suite that only ever refused the
+duplicate would pass while the keyed guard was broken.
+
+#### A limit worth stating plainly
+
+The cage decides occupancy with `mpf.miss`, the Merkle-Patricia-Forestry
+library's own total exclusion check. It answers false **both** for a key
+the trie already binds **and** for a malformed exclusion proof, and the
+validator cannot tell the two apart. Both are refused, and both are
+refused under the name `key-exists`.
+
+So nothing the model refuses is admitted — the guard is conservative in
+the safe direction — but the trace name is imprecise for the
+malformed-proof case, and a `key-exists` refusal on its own does not
+establish that the key was occupied. Proof-failure behaviour keeps its
+existing verdicts in the MPFS proof rows elsewhere on this page; this
+row does not restate them.
+
+This is recorded rather than fixed because distinguishing the two would
+mean the cage verifying a second proof shape it has no reason to carry.
+
+#### The wire these rows and the archive verb speak
+
+Everything on this page, and the release archive's packaged
+`insert-active` command, runs on the request encoding as it stands
+today. Issue #183 re-cuts that encoding for every edge — the edge tag
+replaces the operation payload and the request's `tip` field goes away —
+and re-baselines these rows and that command when it lands.
+
+No claim is made here about the wire after #183. The re-cut carries its
+own enforcing check: a transitional checkpoint that folds every
+other-edge fixture under BOTH codecs and requires the same verdict,
+which is the evidence a one-commit rewrite cannot produce.
 ### The issue-70 generic rows
 
 The issue-#70 slice extends the generic session with eleven rows over

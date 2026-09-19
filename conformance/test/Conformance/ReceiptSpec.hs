@@ -357,6 +357,8 @@ smallReceipt =
         , receiptBlueprint = "blueprint"
         , receiptVenue = "node-submit"
         , receiptPartial = Nothing
+        , receiptEdge = Nothing
+
         , receiptDerivation = Nothing
         }
 

@@ -37,16 +37,6 @@
       "title": "retirement_custody.retirement_custody.else",
       "hash": "7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07",
       "parameters": 0
-    },
-    {
-      "title": "witness.witness.mint",
-      "hash": "b55d01beb97dbfc6c5de1919d28e1adb707fc7156292427d9f35a7ec",
-      "parameters": 2
-    },
-    {
-      "title": "witness.witness.else",
-      "hash": "b55d01beb97dbfc6c5de1919d28e1adb707fc7156292427d9f35a7ec",
-      "parameters": 2
     }
   ]
 }

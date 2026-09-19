@@ -21,6 +21,7 @@ import Test.Hspec (
 import Conformance.Rows (
     Row (..),
     RowState (..),
+    expectedRowCount,
     loadRows,
     ownedDenominator,
     rowId,
@@ -31,10 +32,13 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Rows" $ do
-    it "loads the committed inventory: 42 rows, 41 owned, unique ids" $ do
+    it "loads the committed inventory: every row present, owned counted, ids unique" $ do
         rows <- loadCommitted
-        length rows `shouldBe` 42
-        length (nub (map rowId rows)) `shouldBe` 42
+        -- Both sides are read, never written twice: `rows` is the
+        -- committed artifact, `expectedRowCount` the pinned count.
+        -- Adding a row therefore moves ONE literal, in Rows.hs.
+        length rows `shouldBe` expectedRowCount
+        length (nub (map rowId rows)) `shouldBe` expectedRowCount
         length
             (filter ((/= OutOfScope) . rowState) rows)
             `shouldBe` ownedDenominator
@@ -56,9 +60,10 @@ spec = describe "Rows" $ do
         rows <- loadCommitted
         case validateInventory (drop 1 rows) of
             Left err ->
-                err `shouldSatisfy` ("41" `isInfixOf`)
+                err `shouldSatisfy` (show (expectedRowCount - 1) `isInfixOf`)
             Right _ ->
-                expectationFailure "a 41-row inventory validated"
+                expectationFailure
+                    ("a " <> show (expectedRowCount - 1) <> "-row inventory validated")
 
     it "rejects duplicate row ids" $ do
         rows <- loadCommitted

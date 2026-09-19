@@ -541,6 +541,19 @@ const deltaSame=(a,b)=>[...a,...b].every(d=>deltaKind(a,d.kind)===deltaKind(b,d.
 const deltaPlus=(a,b)=>[...new Set([...a,...b].map(d=>d.kind))]
   .map(kind=>({kind,quantity:deltaKind(a,kind)+deltaKind(b,kind)}));
 
+// The fold's mint accounting is keyed by (kind, key), matching the Lean model's
+// assetDelta/requestClaim/assetSame. A per-kind sum accepts a batch that claims
+// one key's token twice and another's not at all; the keyed one refuses it.
+const assetDelta=r=>delta(r.edge).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+const requestClaim=r=>(r.claimed||[]).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+const assetKind=(ds,kind,key)=>
+  ds.reduce((n,d)=>d.kind===kind&&d.key===key?n+d.quantity:n,0);
+const assetPlus=(a,b)=>[...new Map([...a,...b]
+  .map(d=>[`${d.kind}@${d.key}`,{kind:d.kind,key:d.key}])).values()]
+  .map(x=>({kind:x.kind,key:x.key,quantity:assetKind(a,x.kind,x.key)+assetKind(b,x.kind,x.key)}));
+const assetSame=(a,b)=>[...a,...b]
+  .every(d=>assetKind(a,d.kind,d.key)===assetKind(b,d.kind,d.key));
+
 // ---- the R2 from→to column -------------------------------------------------
 const transition=(e,before)=>{
  const k=`${e}/${before===null?'unknown':before}`;
@@ -667,9 +680,9 @@ function foldBatch(s,batch){
   if(batch.length===0)return {accepted:false,reason:'empty-fold'};
   const r=foldActions(s,batch);
   if(!r.accepted)return r;
-  const claimed=batch.reduce((acc,b)=>deltaPlus(acc,b.claimed),[]);
-  const actual=batch.reduce((acc,b)=>deltaPlus(acc,delta(b.edge)),[]);
-  if(!deltaSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
+  const claimed=batch.reduce((acc,b)=>assetPlus(acc,requestClaim(b)),[]);
+  const actual=batch.reduce((acc,b)=>assetPlus(acc,assetDelta(b)),[]);
+  if(!assetSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
   return r;
  }catch(e){return {accepted:false,reason:e.message};}
 }
@@ -3977,7 +3990,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+  "corpusSourceSha256": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4010,6 +4023,83 @@ const STORIES=[
       }
     }
   ],
+  "keyedMintRows": [
+    {
+      "accepted": true,
+      "actual": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "claimed": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "id": "GK01-two-keys-accepted",
+      "perKindTotalsAgree": true,
+      "reason": "",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
+      "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+    },
+    {
+      "accepted": false,
+      "actual": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "claimed": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 2
+        }
+      ],
+      "id": "GK02-same-kind-wrong-key-refused",
+      "perKindTotalsAgree": true,
+      "reason": "net-mint-mismatch",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
+      "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+    }
+  ],
   "model": {
     "absentPolicy": 9,
     "activePolicy": 8,
@@ -4029,19 +4119,132 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
-  "payloadSha256": "1b12541a475c09269409ec827ba0031947690ed91e568afdea840917c12e953d",
+  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+  "payloadSha256": "ad1d193f1ba76d8156db1d013f4796bb76a6d40c737b195a7569e19e95fda098",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
-    "lean/Singular/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
-    "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
+    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
-  "statementsSha256": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
-  "theoremManifestSha256": "dbacef0b39b90bb5590c6f6ff47a379927effc8820558c30d10b3208b3600a4e"
+  "statementsSha256": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
+  "theoremManifestSha256": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
+  "tokenPolicies": {
+    "absent": 9,
+    "active": 8,
+    "terminal": 10
+  },
+  "transactions": [
+    {
+      "accepted": true,
+      "activeQuantity": 1,
+      "applicationPolicy": 7,
+      "claimed": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "destinationDatumBinds": true,
+      "lovelaceCoversTip": true,
+      "onlyRootChanges": true,
+      "openPolicy": {
+        "admitsAnyTuple": true,
+        "crossRegistrySeparation": false,
+        "hash": 7,
+        "parameters": []
+      },
+      "profile": "insertActive",
+      "secondInsert": {
+        "accepted": false,
+        "reason": "key-exists"
+      },
+      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "theorem": "Singular.Statements.insert_active_transaction_row",
+      "tip": 1,
+      "transaction": {
+        "inputs": [
+          {
+            "approvalQuantity": 0,
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "approvalQuantity": 1,
+            "datum": "inline",
+            "lovelace": 5,
+            "role": "request",
+            "stateToken": 0
+          }
+        ],
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "address": null,
+            "assets": [],
+            "commitment": null,
+            "datum": "inline",
+            "inlineConfig": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 1,
+              "processTime": 2,
+              "retractTime": 3,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "address": 555,
+            "assets": [
+              {
+                "assetName": 42,
+                "key": 42,
+                "kind": "active",
+                "policy": 8,
+                "quantity": 1
+              }
+            ],
+            "commitment": 1604014105,
+            "datum": "inline",
+            "inlineConfig": null,
+            "role": "destination",
+            "stateToken": 0
+          }
+        ],
+        "refunds": [],
+        "signers": []
+      }
+    }
+  ]
 }
 ;const THEOREMS=[
   {
@@ -4132,43 +4335,43 @@ const STORIES=[
     "name": "Singular.Statements.insert_absent_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "d65e823c9af112589f84fc65ef080a18d166478eb1765144682a5d9022b3f711"
+    "statementSha256": "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
   },
   {
     "name": "Singular.Statements.insert_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "1c492e72f96bd9676596c41015caffdf2bdbf4c6d79ae48c83204b81523cabf4"
+    "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b"
   },
   {
     "name": "Singular.Statements.update_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "4afa82ea2e3ed82bd530a2413a484a4fd32291f9e946bfe621e2309dadffa630"
+    "statementSha256": "fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982"
   },
   {
     "name": "Singular.Statements.update_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "4f7b5257414f293df032720fb952c04486160b6ad94a373782b54c62131d4683"
+    "statementSha256": "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
   },
   {
     "name": "Singular.Statements.delete_absent_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c9689a174e9c746e78fff3f5ee237875bce8f9f938333fefd3b3e18a73a1088b"
+    "statementSha256": "95b092734fc82923fd9c5eac37677fd70b84a95e4e11e72961383165acf07057"
   },
   {
     "name": "Singular.Statements.delete_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "9af5e32814773829e28a2db650f046f09059fe0b7f6ea0384ba2cceba2f2369b"
+    "statementSha256": "7ebff03121cd4b0ef44ed54a7ac71af32e142a3eadf60ef7eefa3fa40e49de90"
   },
   {
     "name": "Singular.Statements.witness_terminal_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3e0bf453fa69525e78120fcc02b8130a613ae65eaa09b0020644c19362069176"
+    "statementSha256": "1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288"
   },
   {
     "name": "Singular.Statements.empty_fold_error",
@@ -4180,13 +4383,25 @@ const STORIES=[
     "name": "Singular.Statements.fold_batch_cons",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "48e4c5dc2c48053d54f7e534a11432df0809f53f3eb99a8bdc51d05d0da6f3cb"
+    "statementSha256": "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
   },
   {
     "name": "Singular.Statements.read_changes_nothing",
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120"
+  },
+  {
+    "name": "Singular.Statements.insert_active_transaction_row",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+  },
+  {
+    "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
   }
 ]
 ;const IDENTITY={
@@ -4206,10 +4421,10 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
+    "formal/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
-    "formal/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+    "formal/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+    "formal/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4222,19 +4437,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
-    "formal/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
+    "formal/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "dbacef0b39b90bb5590c6f6ff47a379927effc8820558c30d10b3208b3600a4e",
+    "formal/theorem-debt.json": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "3e973e08e159cf9d1158a98f473ce27d788285255723f67368f370b3f3e9d073"
+    "corpus.json": "c73c88efb03311c5cd3a61b9d163b598b53b12d5652b9ccc02be7069f989cbe8"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 24,
+  "theorems": 26,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4276,9 +4491,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "7759bfbdfcd9266185e7296ea1a7ff77a1d6147925155174fa153ee871b11b6b",
+  "payloadSha256": "66c528b518fe5f3454edfa84c3cb6f6fa038acf0dd8eabd9717fc0ad579162f8",
   "queues": [
     {
       "actual": true,
@@ -4369,12 +4584,12 @@ const STORIES=[
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
-    "lean/Singular/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4385,7 +4600,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
   "spellings": [
     {
@@ -4503,7 +4718,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "1d242527a6093be9d1792eaefe4d97e5036903fd9174bd3ea8a21202eeec1111",
+  "payloadSha256": "c5cb4a43bbfa9d4ace8bcd772e3ac84fa759147b47781aed5b33494ba55d5a9f",
   "recovery": [
     {
       "detail": true,
@@ -4575,12 +4790,12 @@ const STORIES=[
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
-    "lean/Singular/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
+    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4591,7 +4806,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
   "steps": [
     {

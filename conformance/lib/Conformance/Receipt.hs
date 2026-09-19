@@ -29,7 +29,10 @@ module Conformance.Receipt (
     ConstructorEvidence (..),
     PartialInfo (..),
     DerivationOutcome (..),
+    AssetEntry (..),
     DerivationEvidence (..),
+    EdgeEvidence (..),
+    RefusalLeg (..),
     derivationMatches,
     Receipt (..),
     declaredConstructors,
@@ -372,6 +375,9 @@ data Receipt = Receipt
     , receiptPartial :: !(Maybe PartialInfo)
     -- ^ per-constructor accounting for partial rows (Nothing for
     -- every complete row; JSON-compatible: absent on old receipts).
+    , receiptEdge :: !(Maybe EdgeEvidence)
+    -- ^ what an insertActive row observed on chain (#173). Nothing
+    -- elsewhere; JSON-compatible with receipts written before it.
     , receiptDerivation :: !(Maybe [DerivationEvidence])
     -- ^ off-chain identity-derivation evidence (CA04 only; Nothing
     -- elsewhere; JSON-compatible).
@@ -396,6 +402,7 @@ instance FromJSON Receipt where
             <*> o .:? "rejected"
             <*> o .: "dirty"
             <*> o .:? "partial"
+            <*> o .:? "edge"
             <*> o .:? "derivation"
 
 instance ToJSON Receipt where
@@ -416,6 +423,7 @@ instance ToJSON Receipt where
             , "blueprint" .= receiptBlueprint r
             , "venue" .= receiptVenue r
             , "partial" .= receiptPartial r
+            , "edge" .= receiptEdge r
             , "derivation" .= receiptDerivation r
             ]
 
@@ -825,3 +833,140 @@ currentBase = do
                 "conformance list: git base unknown; \
                 \printing the declared plan"
             pure Nothing
+
+-- ---------------------------------------------------------
+-- Edge evidence (#173)
+-- ---------------------------------------------------------
+
+{- | One asset movement, named by its policy and asset name.
+
+The registry's token identity is @(policy, key)@ and nothing else, so a
+row about a keyed mint has to report both. A quantity alone cannot
+distinguish "one token at this key" from "one token at some other key".
+-}
+data AssetEntry = AssetEntry
+    { aePolicy :: !Text
+    , aeName :: !Text
+    , aeQuantity :: !Integer
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON AssetEntry where
+    parseJSON = withObject "AssetEntry" $ \o ->
+        AssetEntry <$> o .: "policy" <*> o .: "name" <*> o .: "quantity"
+
+instance ToJSON AssetEntry where
+    toJSON a =
+        object
+            ["policy" .= aePolicy a, "name" .= aeName a, "quantity" .= aeQuantity a]
+
+{- | A refusal observed on chain, together with the ACCEPTING control
+that makes it mean something.
+
+A refusal on its own is consistent with "this builder cannot produce an
+acceptable transaction at all". The control is the same shape through
+the same builder with the one thing under test changed back, accepted in
+the same run. A leg without its control is not evidence and the loader
+refuses it.
+
+'rlTrace' is 'Nothing' when the ledger did not surface the validator's
+trace. That is the normal case: a script-execution failure carries an
+EMPTY Plutus log list, so the name the validator traced is not
+recoverable from it. The field says so rather than guessing, and the
+refusal NAMES are asserted where the validator reads them, in the
+compiled test suite.
+-}
+data RefusalLeg = RefusalLeg
+    { rlTxid :: !Text
+    -- ^ the refused transaction, so the claim is checkable on chain
+    , rlHashes :: ![Text]
+    -- ^ script hashes the failure is attributed to
+    , rlTrace :: !(Maybe Text)
+    -- ^ the validator's own trace, when the ledger surfaces one
+    , rlControlTxid :: !Text
+    -- ^ the accepting control's transaction
+    , rlDistinguisher :: !Text
+    -- ^ what differs between the refused shape and its control, in one
+    -- phrase. The whole value of the pair is that exactly one thing does.
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON RefusalLeg where
+    parseJSON = withObject "RefusalLeg" $ \o ->
+        RefusalLeg
+            <$> o .: "txid"
+            <*> o .: "hashes"
+            <*> o .:? "trace"
+            <*> o .: "controlTxid"
+            <*> o .: "distinguisher"
+
+instance ToJSON RefusalLeg where
+    toJSON l =
+        object
+            [ "txid" .= rlTxid l
+            , "hashes" .= rlHashes l
+            , "trace" .= rlTrace l
+            , "controlTxid" .= rlControlTxid l
+            , "distinguisher" .= rlDistinguisher l
+            ]
+
+{- | What an @insertActive@ row observed on chain (#173).
+
+The open application is parameterless: its compiled hash IS its policy
+id, with no applied hash to derive. 'eeOpenParameters' is READ from the
+blueprint rather than written down, so a blueprint that grew a parameter
+changes this evidence instead of being contradicted by it.
+-}
+data EdgeEvidence = EdgeEvidence
+    { eeOpenPolicy :: !Text
+    , eeOpenParameters :: !Integer
+    , eeActivePolicy :: !Text
+    , eeKey :: !Text
+    , eeFoldTxid :: !Text
+    , eeMinted :: ![AssetEntry]
+    -- ^ what the fold actually minted
+    , eeRequestedAddress :: !Text
+    , eeObservedAddress :: !Text
+    -- ^ where the token was found, read back from chain
+    , eeDelivered :: ![AssetEntry]
+    -- ^ what that output actually holds
+    , eeDuplicate :: !RefusalLeg
+    -- ^ the same key again, refused before any mint arithmetic
+    , eeKeyedMint :: !(Maybe RefusalLeg)
+    -- ^ two DISTINCT keys whose claimed mint agrees per kind and
+    -- disagrees per (kind, key). 'Nothing' states the row did not
+    -- exercise it, which the loader treats as incomplete rather than
+    -- as absence of the requirement.
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON EdgeEvidence where
+    parseJSON = withObject "EdgeEvidence" $ \o ->
+        EdgeEvidence
+            <$> o .: "openPolicy"
+            <*> o .: "openParameters"
+            <*> o .: "activePolicy"
+            <*> o .: "key"
+            <*> o .: "foldTxid"
+            <*> o .: "minted"
+            <*> o .: "requestedAddress"
+            <*> o .: "observedAddress"
+            <*> o .: "delivered"
+            <*> o .: "duplicate"
+            <*> o .:? "keyedMint"
+
+instance ToJSON EdgeEvidence where
+    toJSON e =
+        object
+            [ "openPolicy" .= eeOpenPolicy e
+            , "openParameters" .= eeOpenParameters e
+            , "activePolicy" .= eeActivePolicy e
+            , "key" .= eeKey e
+            , "foldTxid" .= eeFoldTxid e
+            , "minted" .= eeMinted e
+            , "requestedAddress" .= eeRequestedAddress e
+            , "observedAddress" .= eeObservedAddress e
+            , "delivered" .= eeDelivered e
+            , "duplicate" .= eeDuplicate e
+            , "keyedMint" .= eeKeyedMint e
+            ]

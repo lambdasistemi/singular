@@ -6,6 +6,16 @@
   "compiler": "v1.1.21+unknown",
   "validators": [
     {
+      "title": "open.open.mint",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+      "parameters": 0
+    },
+    {
+      "title": "open.open.else",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+      "parameters": 0
+    },
+    {
       "title": "request.request.spend",
       "hash": "f9544ef6e278c31b0d349342cafb4fb30683149467924538a0da289f",
       "parameters": 2
@@ -27,18 +37,28 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "ca29c827585e04b0363b1779bcb3915e8d8bd7aa38c9856bee678bcc",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "ca29c827585e04b0363b1779bcb3915e8d8bd7aa38c9856bee678bcc",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "ca29c827585e04b0363b1779bcb3915e8d8bd7aa38c9856bee678bcc",
       "parameters": 0
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "ffa175e1671b938f877bfcffb89e3233a81bff6eb0c8c60607642524",
+      "parameters": 2
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "ffa175e1671b938f877bfcffb89e3233a81bff6eb0c8c60607642524",
+      "parameters": 2
     }
   ]
 }

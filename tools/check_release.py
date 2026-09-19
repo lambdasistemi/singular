@@ -130,6 +130,10 @@ if onchain_present:
         "RELEASE-COMMIT",
         "SHA256SUMS",
         "verify-identities.sh",
+        # #173 A173-COMMAND: the packaged verb's run page. Required, so
+        # the archive cannot ship the command without its authority.
+        "INSERT-ACTIVE.md",
+        "offchain/insert-active/Main.hs",
         "onchain/plutus.json",
         "onchain/script-identity.json",
         "onchain/aiken.toml",

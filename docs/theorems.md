@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 24 declarations of the registry's own statement module are **PROVED**
+All 26 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
-nothing else. The naming instance adds 7, its lifecycle 6
-and its wire encoding 5, for **42** in total, each with its own
+nothing else. The naming instance adds 7, its lifecycle 9
+and its wire encoding 5, for **47** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -43,12 +43,14 @@ consequences rather than as separate arguments.
 | `Singular.Statements.active_witness_unique` | W1 — the active witness is unique | `76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | PROVED |
 | `Singular.Statements.biconditional_supply_sync` | S3 — sync: biconditional supply is 1 iff the key is in that token's state | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | PROVED |
 | `Singular.Statements.booked_at_most_once` | L1 — a key is booked at most once at a time; the batch is atomic; a request is spent once | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | PROVED |
-| `Singular.Statements.delete_absent_inversion` | — | `c9689a174e9c746e78fff3f5ee237875bce8f9f938333fefd3b3e18a73a1088b` | PROVED |
-| `Singular.Statements.delete_active_inversion` | — | `9af5e32814773829e28a2db650f046f09059fe0b7f6ea0384ba2cceba2f2369b` | PROVED |
+| `Singular.Statements.delete_absent_inversion` | — | `95b092734fc82923fd9c5eac37677fd70b84a95e4e11e72961383165acf07057` | PROVED |
+| `Singular.Statements.delete_active_inversion` | — | `7ebff03121cd4b0ef44ed54a7ac71af32e142a3eadf60ef7eefa3fa40e49de90` | PROVED |
 | `Singular.Statements.empty_fold_error` | — | `8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | PROVED |
-| `Singular.Statements.fold_batch_cons` | — | `48e4c5dc2c48053d54f7e534a11432df0809f53f3eb99a8bdc51d05d0da6f3cb` | PROVED |
-| `Singular.Statements.insert_absent_inversion` | — | `d65e823c9af112589f84fc65ef080a18d166478eb1765144682a5d9022b3f711` | PROVED |
-| `Singular.Statements.insert_active_inversion` | — | `1c492e72f96bd9676596c41015caffdf2bdbf4c6d79ae48c83204b81523cabf4` | PROVED |
+| `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
+| `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
+| `Singular.Statements.insert_absent_inversion` | — | `b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d` | PROVED |
+| `Singular.Statements.insert_active_inversion` | — | `8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b` | PROVED |
+| `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the keyed mint, no refunds, no required signer — plus universal open admission and the duplicate-key refusal | `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737` | PROVED |
 | `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
 | `Singular.Statements.occupancy` | O1 — a booking edge succeeds only on a key that is not taken | `f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876` | PROVED |
 | `Singular.Statements.occupancy_free_key_succeeds` | O1, converse — a booking edge on an untaken key succeeds | `4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350` | PROVED |
@@ -59,10 +61,10 @@ consequences rather than as separate arguments.
 | `Singular.Statements.terminal_mint_only_by_read` | S1 — provenance: a terminal token is minted only by a folded, verified read | `287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639` | PROVED |
 | `Singular.Statements.terminal_witness_plural` | W3 — the terminal witness is plural | `68beea77527a148a61f7f055d065aec3d1d2c3acdb25231c5c8db851a747efff` | PROVED |
 | `Singular.Statements.termination` | T1 — a Terminal leaf is never moved, so the key is never re-booked | `daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027` | PROVED |
-| `Singular.Statements.update_active_inversion` | — | `4afa82ea2e3ed82bd530a2413a484a4fd32291f9e946bfe621e2309dadffa630` | PROVED |
-| `Singular.Statements.update_terminal_inversion` | — | `4f7b5257414f293df032720fb952c04486160b6ad94a373782b54c62131d4683` | PROVED |
+| `Singular.Statements.update_active_inversion` | — | `fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982` | PROVED |
+| `Singular.Statements.update_terminal_inversion` | — | `55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470` | PROVED |
 | `Singular.Statements.witness_kinds_exclude` | W4 — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
-| `Singular.Statements.witness_terminal_inversion` | — | `3e0bf453fa69525e78120fcc02b8130a613ae65eaa09b0020644c19362069176` | PROVED |
+| `Singular.Statements.witness_terminal_inversion` | — | `1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288` | PROVED |
 
 The naming, lifecycle and wire declarations are listed in their own manifests:
 [naming-theorem-debt.json](../lean/naming-theorem-debt.json),

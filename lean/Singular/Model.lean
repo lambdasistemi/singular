@@ -136,14 +136,31 @@ def delta (e : Edge) : List (TokenKind × Int) :=
 def deltaKind (ds : List (TokenKind × Int)) (k : TokenKind) : Int :=
   ds.foldl (fun n p => if p.1 == k then n + p.2 else n) 0
 
-/-- Merge two delta lists into their per-kind sum. -/
-def deltaPlus (a b : List (TokenKind × Int)) : List (TokenKind × Int) :=
-  ((a.map Prod.fst ++ b.map Prod.fst).eraseDups).map fun k =>
-    (k, deltaKind a k + deltaKind b k)
+/-- A minted asset's identity: the token kind and the key the token is about.
+On chain it is `(policy of the kind, asset name)`; the model pins the asset name
+to the key, so the pair `(kind, key)` names the asset exactly. Mint accounting
+is by this pair and never by the kind alone: two keys of one kind are two
+different assets, and a fold that swapped them would balance per kind. -/
+abbrev Asset := TokenKind × Key
 
-/-- Two delta lists carry the same per-kind sums. -/
-def deltaSame (a b : List (TokenKind × Int)) : Bool :=
-  (a.map Prod.fst ++ b.map Prod.fst).all fun k => deltaKind a k == deltaKind b k
+/-- Sum a keyed delta list along one asset. -/
+def assetKind (ds : List (Asset × Int)) (x : Asset) : Int :=
+  ds.foldl (fun n p => if p.1 == x then n + p.2 else n) 0
+
+/-- Merge two keyed delta lists into their per-asset sum. -/
+def assetPlus (a b : List (Asset × Int)) : List (Asset × Int) :=
+  ((a.map Prod.fst ++ b.map Prod.fst).eraseDups).map fun x =>
+    (x, assetKind a x + assetKind b x)
+
+/-- Two keyed delta lists carry the same per-asset sums. -/
+def assetSame (a b : List (Asset × Int)) : Bool :=
+  (a.map Prod.fst ++ b.map Prod.fst).all fun x => assetKind a x == assetKind b x
+
+/-- The per-kind total of a keyed delta list: the coarser accounting the keyed
+one refines. Two lists can agree at every kind and still differ at an asset,
+which is exactly the fault `assetSame` catches and a per-kind sum does not. -/
+def assetKindTotal (ds : List (Asset × Int)) (k : TokenKind) : Int :=
+  ds.foldl (fun n p => if p.1.1 == k then n + p.2 else n) 0
 
 /-- The R2 from→to column: `none` is refusal; every edge out of
 `known terminal` is `none`. -/
@@ -193,6 +210,16 @@ instance : FromJson Config where
     let terminalPolicy ← j.getObjVal? "terminalPolicy" >>= fromJson?
     pure { root, maxFee, processTime, retractTime, applicationPolicy
          , activePolicy, absentPolicy, terminalPolicy }
+
+/-- The policy a token kind is minted under, read off the registry's pins. -/
+def kindPolicy (c : Config) : TokenKind → Nat
+  | .active => c.activePolicy
+  | .absent => c.absentPolicy
+  | .terminal => c.terminalPolicy
+
+/-- The asset name of a witness token is the key it is about, so the token's
+identity is `(kindPolicy c kind, key)` and nothing else. -/
+def tokenAssetName (_kind : TokenKind) (key : Key) : Nat := key
 
 /-- FNV-1a over a byte list: the model's canonical commitment function. The
 executable consumer supplies the real BLAKE2b-256; the model fixes the complete
@@ -346,6 +373,25 @@ def requestDestination (r : Request) : Nat :=
 /-- One fold action is one request. -/
 def Action := Request
 
+/-- The keyed delta of one request: the edge's R2 delta, each entry named by the
+key the request moves. -/
+def assetDelta (a : Action) : List (Asset × Int) :=
+  (delta a.edge).map fun p => ((p.1, a.key), p.2)
+
+/-- The keyed mint one request claims. A request claims at the key it moves and
+at no other, so a claim naming a foreign key is only expressible by claiming the
+wrong quantity here — which is what the fold's per-asset guard then catches. -/
+def requestClaim (b : Action) : List (Asset × Int) :=
+  b.claimed.map fun p => ((p.1, b.key), p.2)
+
+/-- The whole batch's claimed mint, summed per asset. -/
+def claimedMint (batch : List Action) : List (Asset × Int) :=
+  batch.foldl (fun acc b => assetPlus acc (requestClaim b)) []
+
+/-- The whole batch's actual mint, summed per asset. -/
+def actualMint (batch : List Action) : List (Asset × Int) :=
+  batch.foldl (fun acc b => assetPlus acc (assetDelta b)) []
+
 /-- Where a minted token is routed (R6). -/
 inductive Destination where
   | cageCustody | requestOutput
@@ -451,7 +497,7 @@ def refusal (s : RegistryState) (a : Action) : Option String :=
 /-- The result of folding a batch. -/
 structure Result where
   state : RegistryState
-  mint : List (TokenKind × Int)
+  mint : List (Asset × Int)
   paid : List (Nat × Nat)
   deriving BEq
 
@@ -459,7 +505,7 @@ def emptyResult (s : RegistryState) : Result :=
   { state := s, mint := [], paid := [] }
 
 def combineResults (first rest : Result) : Result :=
-  { state := rest.state, mint := deltaPlus first.mint rest.mint, paid := first.paid ++ rest.paid }
+  { state := rest.state, mint := assetPlus first.mint rest.mint, paid := first.paid ++ rest.paid }
 
 /-- Apply an admitted edge. The trie change, the token ledgers and the mint are
 exactly the R2 row of the edge; consuming an absent token pays its value to the
@@ -507,7 +553,7 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
     | .updateActive, some c => [(c.refundAddress, c.value)]
     | .deleteAbsent, some c => [(c.refundAddress, c.value)]
     | _, _ => []
-  { state := state, mint := delta a.edge, paid := paid }
+  { state := state, mint := assetDelta a, paid := paid }
 
 /-- The step function: refuse every `(primitive, value, before-leaf)` triple
 outside the R2 table — the refused reads included — and otherwise apply the
@@ -529,14 +575,14 @@ def foldActions (s : RegistryState) (batch : List Action) : Except String Result
     pure (combineResults first rest)
 
 /-- The atomic fold: a zero-request batch is refused; every request applies or
-the whole batch refuses; any claimed mint differing from the summed delta of
-the folded edges is refused. -/
+the whole batch refuses; any claimed mint differing from the summed delta of the
+folded edges at any `(kind, key)` is refused. The guard is per asset, not per
+kind: a batch that claims one key's token twice and another's not at all
+balances per kind and is still refused. -/
 def foldBatch (s : RegistryState) (batch : List Action) : Except String Result := do
   if batch.isEmpty then throw "empty-fold"
   let r ← foldActions s batch
-  let claimed := batch.foldl (fun acc b => deltaPlus acc b.claimed) []
-  let actual := batch.foldl (fun acc b => deltaPlus acc (delta b.edge)) []
-  if deltaSame claimed actual then pure r else throw "net-mint-mismatch"
+  if assetSame (claimedMint batch) (actualMint batch) then pure r else throw "net-mint-mismatch"
 
 /-- The ledger/trie consistency invariant: the root commits to the map, the
 biconditional supply laws hold for active and absent tokens, and every terminal
@@ -561,6 +607,208 @@ inductive Reachable : RegistryState → Prop where
       Reachable { config := { c with root := rootOf [] }, trie := [], custody := [], held := [] }
   | next {s : RegistryState} {a : Action} {r : Result} :
       Reachable s → step s a = .ok r → Reachable r.state
+
+/-! ### The transaction row
+
+A fold is also a transaction, and the cage reads its inputs, outputs, datums and
+mint rather than the logical step. This section names the transaction-level
+obligations of an admitted fold so a consumer can check the shape it must build
+and so an exported row is computed rather than asserted.
+
+Three of them are modelling constants rather than derivations, and are named as
+such: the registry is a single state UTxO carrying one state token (`step`
+consumes one state and produces one), and both the state datum and the
+destination datum are inline because the cage reads them without a preimage.
+Everything else below is read off the model. -/
+
+/-- How an output presents its datum. -/
+inductive DatumForm where
+  | inline | hashed
+  deriving Repr, BEq, DecidableEq
+
+/-- The state token count of the registry's single state UTxO. -/
+def registryStateTokens : Nat := 1
+
+/-- The cage reads the state and the destination datum directly, so both are
+inline. -/
+def registryDatumForm : DatumForm := .inline
+
+/-- The approvals a request carries. An admitted tree edge carries exactly one;
+a request with none is refused `no-approval` before it can spend anything. -/
+def approvalsIn (r : Request) : Nat := r.approval.toList.length
+
+/-- The request input covers the fold's tip when its lovelace reaches the
+registry's pinned fee ceiling. -/
+def lovelaceCoversTip (c : Config) (lovelace : Nat) : Bool := c.maxFee ≤ lovelace
+
+/-- Every pin of the configuration except the root is unchanged: the state
+output carries the same eight-field datum with one field moved. -/
+def onlyRootChanged (before after : Config) : Bool :=
+  after.maxFee == before.maxFee && after.processTime == before.processTime &&
+  after.retractTime == before.retractTime &&
+  after.applicationPolicy == before.applicationPolicy &&
+  after.activePolicy == before.activePolicy &&
+  after.absentPolicy == before.absentPolicy &&
+  after.terminalPolicy == before.terminalPolicy
+
+/-- The datum the destination output carries: the scoping tuple of the request
+it settles. -/
+structure DestinationDatum where
+  edge : Edge
+  key : Key
+  owner : Nat
+  destination : Nat
+  deriving Repr, BEq, DecidableEq
+
+def destinationDatum (r : Request) : DestinationDatum :=
+  { edge := r.edge, key := r.key, owner := r.owner, destination := requestDestination r }
+
+/-- The canonical commitment of a destination datum, under the same function the
+approval's asset name commits with. The output's datum hash and the asset name
+admission verified are therefore the same value, or admission is not binding the
+output the fold produces. -/
+def datumHash (d : DestinationDatum) : Nat :=
+  approvalAssetName d.edge d.key d.owner d.destination
+
+/-- The destination output's inline datum hashes to the commitment the request's
+approval carries. False when the request carries no approval at all. -/
+def destinationDatumBinds (r : Request) : Bool :=
+  match r.approval with
+  | none => false
+  | some ap => datumHash (destinationDatum r) == ap.assetName
+
+/-- The signers a fold requires: none. The open registry's fold is
+permissionless — neither `refusal` nor `applyEdge` reads a signature, which is
+stated as invariance under the approval's signature set. -/
+def requiredSigners (_r : Request) : List Nat := []
+
+/-- The open application's parameters: none. The open registry protects nobody
+by design, so there is no registry identity to apply the policy to; one policy
+id, one blueprint, no applied hash to derive. -/
+def openPolicyParameters : List Nat := []
+
+/-- The approval anyone can mint under the open application for a tuple. Nothing
+guards its creation: that is what makes the open policy's admission universal. -/
+def openApproval (c : Config) (r : Request) : Approval :=
+  { policy := c.applicationPolicy, edge := r.edge, key := r.key, owner := r.owner
+  , destination := requestDestination r
+  , assetName := approvalAssetName r.edge r.key r.owner (requestDestination r) }
+
+/-- A bounded grid of scoping tuples, used to exhibit universal admission on a
+finite extent beside the quantified statement that proves it. -/
+def openTupleGrid : List Request :=
+  let edges : List Edge :=
+    [.insertAbsent, .insertActive, .updateActive, .updateTerminal,
+     .deleteAbsent, .deleteActive, .witnessTerminal]
+  let nums : List Nat := [0, 1, 42, 255]
+  edges.flatMap fun e => nums.flatMap fun k => nums.flatMap fun o => nums.map fun d =>
+    ({ edge := e, key := k, owner := o, output := d } : Request)
+
+/-- The open policy admits every tuple in the grid. -/
+def openAdmitsEveryTuple (c : Config) : Bool :=
+  openTupleGrid.all fun r => admitsFor c r (some (openApproval c r))
+
+/-- Cross-registry separation, observed between two registries. It would hold if
+an approval admitted by the first were refused by the second; under the open
+policy it never is, which is the named non-goal: replaying an approval into
+another registry pinning the same policy grants nothing that registry did not
+already grant everyone. -/
+def crossRegistrySeparation (c₁ c₂ : Config) (r : Request) : Bool :=
+  admitsFor c₁ r (some (openApproval c₁ r)) && !admitsFor c₂ r (some (openApproval c₁ r))
+
+/-! ### The transaction itself
+
+Everything above names one obligation at a time, and three of those names are
+nullary constants: a statement that `registryStateTokens = 1` is `rfl` and
+settles nothing about a transaction. This section builds the transaction, from
+the executed step, so a statement can quantify over a constructed value — every
+input, every output, the datums they present, the assets they carry, the exact
+mint, the destination the tokens are routed to, and the signatures required. -/
+
+/-- The part an input or output plays in a fold transaction. -/
+inductive TxRole where
+  | state | request | destination | cage
+  deriving Repr, BEq, DecidableEq
+
+/-- An input the fold spends: the registry's state UTxO, or a request UTxO
+carrying its approvals and the lovelace that pays the tip. -/
+structure TxInput where
+  role : TxRole
+  datum : DatumForm
+  stateTokens : Nat
+  approvals : Nat
+  lovelace : Nat
+  deriving BEq, DecidableEq
+
+/-- An output the fold produces. `address` is `none` for the state output: the
+model has no vocabulary for the registry's own address, and a constant invented
+here would be exactly the kind of non-derivation this section exists to remove.
+`commitment` is the hash the inline destination datum presents. -/
+structure TxOutput where
+  role : TxRole
+  datum : DatumForm
+  address : Option Nat
+  stateTokens : Nat
+  config : Option Config
+  commitment : Option Nat
+  assets : List (Asset × Int)
+  deriving BEq, DecidableEq
+
+/-- The transaction of an admitted fold. -/
+structure Tx where
+  inputs : List TxInput
+  outputs : List TxOutput
+  mint : List (Asset × Int)
+  signers : List Nat
+  refunds : List (Nat × Nat)
+  deriving BEq, DecidableEq
+
+/-- The minted assets this request routes to one destination, read off the
+executed result's mint through the model's own routing rule. -/
+def mintRoutedTo (t : Result) (r : Request) (d : Destination) : List (Asset × Int) :=
+  t.mint.filter fun p => route p.1.1 r == d
+
+/-- The state output: the registry's single state UTxO, moved, carrying the
+configuration the step produced under an inline datum. -/
+def txStateOutput (t : Result) : TxOutput :=
+  { role := .state, datum := registryDatumForm, address := none
+  , stateTokens := registryStateTokens, config := some t.state.config
+  , commitment := none, assets := [] }
+
+/-- The destination output: routed to the address the request named, carrying an
+inline datum whose commitment is the scoping tuple's, and holding exactly the
+tokens the edge routed to the requester. -/
+def txDestinationOutput (t : Result) (r : Request) : TxOutput :=
+  { role := .destination, datum := registryDatumForm
+  , address := some (requestDestination r), stateTokens := 0, config := none
+  , commitment := some (datumHash (destinationDatum r))
+  , assets := mintRoutedTo t r .requestOutput }
+
+/-- The cage output, present only when this edge routes a token to cage custody.
+`insertActive` routes none, so its transaction has exactly two outputs; the
+constructor is general so the shape is not special-cased to one edge. -/
+def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
+  let assets := mintRoutedTo t r .cageCustody
+  if assets.isEmpty then []
+  else [{ role := .cage, datum := registryDatumForm, address := some 0
+        , stateTokens := 0, config := none, commitment := none, assets := assets }]
+
+/-- The transaction an admitted single-request fold builds, or the model's own
+refusal. Every field is the executed step's answer or a definition applied to
+the request; nothing is asserted beside the model. -/
+def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
+  match step s r with
+  | .error why => .error why
+  | .ok t =>
+    .ok { inputs :=
+            [ { role := .state, datum := registryDatumForm
+              , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+            , { role := .request, datum := registryDatumForm
+              , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
+        , outputs := txStateOutput t :: txDestinationOutput t r :: txCageOutputs t r
+        , mint := t.mint
+        , signers := requiredSigners r
+        , refunds := t.paid }
 
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined

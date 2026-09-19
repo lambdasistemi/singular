@@ -191,8 +191,8 @@ theorem applyEdge_insertAbsent (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.custody =
       { key := a.key, refundAddress := a.refundAddress, value := a.deposit } :: s.custody ∧
     (applyEdge s a).state.held = s.held ∧
-    (applyEdge s a).mint = [(.absent, 1)] ∧ (applyEdge s a).paid = [] := by
-  simp [applyEdge, he, delta]
+    (applyEdge s a).mint = [((.absent, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
+  simp [applyEdge, he, delta, assetDelta]
 
 /-- Effects of an admitted `insertActive`. -/
 theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .insertActive) :
@@ -201,8 +201,8 @@ theorem applyEdge_insertActive (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .active, output := a.output } :: s.held ∧
-    (applyEdge s a).mint = [(.active, 1)] ∧ (applyEdge s a).paid = [] := by
-  simp [applyEdge, he, delta]
+    (applyEdge s a).mint = [((.active, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
+  simp [applyEdge, he, delta, assetDelta]
 
 /-- Effects of an admitted `updateActive`. -/
 theorem applyEdge_updateActive (s : RegistryState) (a : Action) (he : a.edge = .updateActive)
@@ -212,9 +212,9 @@ theorem applyEdge_updateActive (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .active, output := a.output } :: s.held ∧
-    (applyEdge s a).mint = [(.absent, -1), (.active, 1)] ∧
+    (applyEdge s a).mint = [((.absent, a.key), -1), ((.active, a.key), 1)] ∧
     (applyEdge s a).paid = [(c.refundAddress, c.value)] := by
-  simp [applyEdge, he, hc, delta]
+  simp [applyEdge, he, hc, delta, assetDelta]
 
 /-- Effects of an admitted `updateTerminal`. -/
 theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge = .updateTerminal) :
@@ -223,7 +223,7 @@ theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge =
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
-    (applyEdge s a).mint = [(.active, -1)] ∧ (applyEdge s a).paid = [] := by
+    (applyEdge s a).mint = [((.active, a.key), -1)] ∧ (applyEdge s a).paid = [] := by
   have h1 : (applyEdge s a).state.trie = trieSet s.trie a.key (.known .terminal) := by
     simp only [applyEdge, he]
   have h2 : (applyEdge s a).state.config =
@@ -234,7 +234,7 @@ theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge =
   have h4 : (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) := by
     simp only [applyEdge, he]
-  have h5 : (applyEdge s a).mint = [(.active, -1)] := by simp [applyEdge, he, delta]
+  have h5 : (applyEdge s a).mint = [((.active, a.key), -1)] := by simp [applyEdge, he, delta, assetDelta]
   have h6 : (applyEdge s a).paid = [] := by simp [applyEdge, he]
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
@@ -245,9 +245,9 @@ theorem applyEdge_deleteAbsent (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key .unknown) } ∧
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held = s.held ∧
-    (applyEdge s a).mint = [(.absent, -1)] ∧
+    (applyEdge s a).mint = [((.absent, a.key), -1)] ∧
     (applyEdge s a).paid = [(c.refundAddress, c.value)] := by
-  simp [applyEdge, he, hc, delta]
+  simp [applyEdge, he, hc, delta, assetDelta]
 
 /-- Effects of an admitted `deleteActive`. -/
 theorem applyEdge_deleteActive (s : RegistryState) (a : Action) (he : a.edge = .deleteActive) :
@@ -256,7 +256,7 @@ theorem applyEdge_deleteActive (s : RegistryState) (a : Action) (he : a.edge = .
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
-    (applyEdge s a).mint = [(.active, -1)] ∧ (applyEdge s a).paid = [] := by
+    (applyEdge s a).mint = [((.active, a.key), -1)] ∧ (applyEdge s a).paid = [] := by
   have h1 : (applyEdge s a).state.trie = trieSet s.trie a.key .unknown := by
     simp only [applyEdge, he]
   have h2 : (applyEdge s a).state.config =
@@ -267,7 +267,7 @@ theorem applyEdge_deleteActive (s : RegistryState) (a : Action) (he : a.edge = .
   have h4 : (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) := by
     simp only [applyEdge, he]
-  have h5 : (applyEdge s a).mint = [(.active, -1)] := by simp [applyEdge, he, delta]
+  have h5 : (applyEdge s a).mint = [((.active, a.key), -1)] := by simp [applyEdge, he, delta, assetDelta]
   have h6 : (applyEdge s a).paid = [] := by simp [applyEdge, he]
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
@@ -280,8 +280,8 @@ theorem applyEdge_witnessTerminal (s : RegistryState) (a : Action)
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       { key := a.key, kind := .terminal, output := a.output } :: s.held ∧
-    (applyEdge s a).mint = [(.terminal, 1)] ∧ (applyEdge s a).paid = [] := by
-  simp [applyEdge, he, delta]
+    (applyEdge s a).mint = [((.terminal, a.key), 1)] ∧ (applyEdge s a).paid = [] := by
+  simp [applyEdge, he, delta, assetDelta]
 
 /-- A present-key flag yields a findable custody entry with that key. -/
 theorem custody_entry_of_present_aux (key : Key) (custody : List Custody)
