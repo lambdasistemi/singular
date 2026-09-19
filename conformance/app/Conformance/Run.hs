@@ -223,7 +223,7 @@ import Singular.Registry.Blueprint (
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
-    loadNamingCodesFromEnv,
+    loadRegistryCodesFromEnv,
  )
 import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.Config (CageConfig (..))
@@ -796,7 +796,7 @@ two, and an applied hash cannot be recovered from an unapplied one.
 -}
 loadNamingCodes :: IO NamingCodes
 loadNamingCodes = do
-    codes <- loadNamingCodesFromEnv
+    codes <- loadRegistryCodesFromEnv
     checkNamingPins (ncApplication codes) (ncWitness codes)
     pure codes
 

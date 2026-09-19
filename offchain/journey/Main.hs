@@ -154,7 +154,7 @@ import Singular.Registry.Blueprint (
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
-    loadNamingCodesFromEnv,
+    loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
@@ -561,7 +561,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
                 failWith
                     "genesis wallet has no UTxOs; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
-        codes <- loadNamingCodesFromEnv
+        codes <- loadRegistryCodesFromEnv
         let cfg = cageCfg stateBytes requestBytes codes seedRef
         (tokenId, bootRoot, bootTx) <- stepBoot cfg prov submit tm
         -- The state validator alone is fifteen kilobytes: a fold that

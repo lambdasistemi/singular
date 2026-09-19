@@ -571,16 +571,33 @@ naming partition in this ticket (I2). A boot therefore consults
 @REGISTRY_BLUEPRINT@ alone: no naming blueprint participates, and
 @NAMING_BLUEPRINT@ need not be set at all.
 
-NOT YET IMPLEMENTED. It throws the named failure below so a caller
-executes the real boot entry point and fails on the absent derivation
-rather than on an unset environment variable belonging to a different
-partition.
+Both codes are read from the SAME blueprint, so a consumer cannot
+silently pair an open application from one build with witnesses from
+another.
 -}
 loadRegistryCodesFromEnv :: IO NamingCodes
-loadRegistryCodesFromEnv =
-    throwIO
-        ( ErrorCall
-            "A173-BOOT: the boot cannot derive the open application policy \
-            \and the three witness policies from REGISTRY_BLUEPRINT \
-            \(open.open / witness.witness) — not implemented"
-        )
+loadRegistryCodesFromEnv = do
+    mPath <- lookupEnv "REGISTRY_BLUEPRINT"
+    path <- case mPath of
+        Just p | not (null p) -> pure p
+        _ -> die "REGISTRY_BLUEPRINT is not set"
+    ebp <- loadBlueprint path
+    bp <- case ebp of
+        Left err -> die ("registry blueprint does not parse: " <> err)
+        Right bp -> pure bp
+    case ( extractCompiledCode "open.open" bp
+         , extractCompiledCode "witness.witness" bp
+         ) of
+        (Just openCode, Just witnessCode) ->
+            pure NamingCodes{ncApplication = openCode, ncWitness = witnessCode}
+        (Nothing, _) ->
+            die
+                "registry blueprint has no open.open code: the open \
+                \application is not in the registry partition (#173 I1)"
+        (_, Nothing) ->
+            die
+                "registry blueprint has no witness.witness code: the three \
+                \witness policies have not moved here (#173 I2)"
+  where
+    die :: String -> IO a
+    die = throwIO . ErrorCall
