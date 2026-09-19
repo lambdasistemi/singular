@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 26 declarations of the registry's own statement module are **PROVED**
+All 27 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **47** in total, each with its own
+and its wire encoding 5, for **48** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -63,6 +63,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.termination` | T1 — a Terminal leaf is never moved, so the key is never re-booked | `daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027` | PROVED |
 | `Singular.Statements.update_active_inversion` | — | `fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982` | PROVED |
 | `Singular.Statements.update_terminal_inversion` | — | `55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470` | PROVED |
+| `Singular.Statements.update_terminal_transaction_row` | T1 — the transaction an admitted `updateTerminal` builds: three inputs, the third spending the key's one active witness so the burn has a source, two outputs of which the destination holds no token, the keyed mint of `-1`, no refunds, no required signer — plus the `terminal-immutable`, `key-unknown`, `not-booked` and `token-missing` refusals, each exhibited | `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b` | PROVED |
 | `Singular.Statements.witness_kinds_exclude` | W4 — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
 | `Singular.Statements.witness_terminal_inversion` | — | `1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288` | PROVED |
 

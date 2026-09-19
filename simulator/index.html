@@ -3990,7 +3990,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+  "corpusSourceSha256": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4119,19 +4119,19 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
-  "payloadSha256": "ad1d193f1ba76d8156db1d013f4796bb76a6d40c737b195a7569e19e95fda098",
+  "modelSha256": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
+  "payloadSha256": "ec5e394ea8a85efda4c24a5d481a7e31741e2a59624dcf3665734db0b820d8c8",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+    "lean/Main.lean": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
-    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
+    "lean/Singular/Model.lean": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
+    "lean/Singular/Statements.lean": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab"
   },
-  "statementsSha256": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
-  "theoremManifestSha256": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
+  "statementsSha256": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab",
+  "theoremManifestSha256": "bbc2cdf90295fd2231b27fa85a0447161677feaeafa5987cb99afc92c49aef6c",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4172,6 +4172,7 @@ const STORIES=[
         "inputs": [
           {
             "approvalQuantity": 0,
+            "assets": [],
             "datum": "inline",
             "lovelace": 0,
             "role": "state",
@@ -4179,6 +4180,7 @@ const STORIES=[
           },
           {
             "approvalQuantity": 1,
+            "assets": [],
             "datum": "inline",
             "lovelace": 5,
             "role": "request",
@@ -4234,6 +4236,156 @@ const STORIES=[
               }
             ],
             "commitment": 1604014105,
+            "datum": "inline",
+            "inlineConfig": null,
+            "role": "destination",
+            "stateToken": 0
+          }
+        ],
+        "refunds": [],
+        "signers": []
+      }
+    },
+    {
+      "accepted": true,
+      "activeQuantityAfter": 0,
+      "activeQuantityBefore": 1,
+      "applicationPolicy": 7,
+      "burnSourced": true,
+      "burned": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": -1
+        }
+      ],
+      "claimed": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": -1
+        }
+      ],
+      "destinationDatumBinds": true,
+      "leafAfter": "terminal",
+      "lovelaceCoversTip": true,
+      "onlyRootChanges": true,
+      "outputsHoldOnlyPositiveQuantities": true,
+      "profile": "updateTerminal",
+      "refusals": [
+        {
+          "accepted": false,
+          "id": "GT01-update-terminal-unknown-refused",
+          "reason": "key-unknown"
+        },
+        {
+          "accepted": false,
+          "id": "GT02-update-terminal-absent-refused",
+          "reason": "not-booked"
+        },
+        {
+          "accepted": false,
+          "id": "GT03-update-terminal-terminal-refused",
+          "reason": "terminal-immutable"
+        },
+        {
+          "accepted": false,
+          "id": "GT04-update-terminal-without-token-refused",
+          "reason": "token-missing"
+        }
+      ],
+      "spentByInputs": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+      "theorem": "Singular.Statements.update_terminal_transaction_row",
+      "tip": 1,
+      "transaction": {
+        "inputs": [
+          {
+            "approvalQuantity": 0,
+            "assets": [],
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "approvalQuantity": 1,
+            "assets": [],
+            "datum": "inline",
+            "lovelace": 5,
+            "role": "request",
+            "stateToken": 0
+          },
+          {
+            "approvalQuantity": 0,
+            "assets": [
+              {
+                "assetName": 42,
+                "key": 42,
+                "kind": "active",
+                "policy": 8,
+                "quantity": 1
+              }
+            ],
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "witness",
+            "stateToken": 0
+          }
+        ],
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": -1
+          }
+        ],
+        "outputs": [
+          {
+            "address": null,
+            "assets": [],
+            "commitment": null,
+            "datum": "inline",
+            "inlineConfig": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 1,
+              "processTime": 2,
+              "retractTime": 3,
+              "root": [
+                26,
+                122,
+                121,
+                112,
+                0,
+                168,
+                235,
+                249
+              ],
+              "terminalPolicy": 10
+            },
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "address": 555,
+            "assets": [],
+            "commitment": 2958227895,
             "datum": "inline",
             "inlineConfig": null,
             "role": "destination",
@@ -4398,6 +4550,12 @@ const STORIES=[
     "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
   },
   {
+    "name": "Singular.Statements.update_terminal_transaction_row",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+  },
+  {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
     "status": "PROVED",
     "debt": "none",
@@ -4423,8 +4581,8 @@ const STORIES=[
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
-    "formal/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "formal/Main.lean": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
+    "formal/Model.lean": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4437,19 +4595,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
-    "formal/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
+    "formal/Statements.lean": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
+    "formal/theorem-debt.json": "bbc2cdf90295fd2231b27fa85a0447161677feaeafa5987cb99afc92c49aef6c",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "c73c88efb03311c5cd3a61b9d163b598b53b12d5652b9ccc02be7069f989cbe8"
+    "corpus.json": "ea044c381bea1c65526576e5d7c0676c3284d9f7a99b85c93e2adb360331ed2e"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 26,
+  "theorems": 27,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4491,9 +4649,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+  "modelSha256": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "66c528b518fe5f3454edfa84c3cb6f6fa038acf0dd8eabd9717fc0ad579162f8",
+  "payloadSha256": "e689aab7fee3e9d0d11e4179ab739324e96e15e449565aba75d0078d608b5d7d",
   "queues": [
     {
       "actual": true,
@@ -4584,12 +4742,12 @@ const STORIES=[
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+    "lean/Main.lean": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "lean/Singular/Model.lean": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4600,7 +4758,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
+    "lean/Singular/Statements.lean": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab"
   },
   "spellings": [
     {
@@ -4718,7 +4876,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "c5cb4a43bbfa9d4ace8bcd772e3ac84fa759147b47781aed5b33494ba55d5a9f",
+  "payloadSha256": "03050864da441aa2981887359cda7d1eb18a38a4deb9653c3633b3f0308e29fa",
   "recovery": [
     {
       "detail": true,
@@ -4790,12 +4948,12 @@ const STORIES=[
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+    "lean/Main.lean": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "lean/Singular/Model.lean": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4806,7 +4964,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
+    "lean/Singular/Statements.lean": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab"
   },
   "steps": [
     {
