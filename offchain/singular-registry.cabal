@@ -638,3 +638,35 @@ executable insert-active
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
+
+-- #177 I177-COMMAND: the packaged `update-terminal` verb the release
+-- archive documents, a sibling of `insert-active` rather than a mode
+-- bolted onto an unrelated tool. A reviewer with the extracted archive
+-- and no checkout runs it against a devnet: the open registry boots,
+-- one key is booked ACTIVE at a wallet, and that same key is retired —
+-- its witness burned out of the wallet that held it and its leaf
+-- committed Terminal. Ships on the pre-#183 request wire.
+executable update-terminal
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   update-terminal
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N

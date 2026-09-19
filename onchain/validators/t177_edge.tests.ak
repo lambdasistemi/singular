@@ -1,3 +1,4 @@
+use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
@@ -29,8 +30,8 @@ use types.{Delete, Modify, StateDatum, Update, UpdateAction}
 ///
 /// The refusal NAMES cannot be read back from an Aiken test — a `trace`
 /// is not observable — so each one is asserted at the single
-/// construction site the validator itself reads (`lib.terminalRefusal`,
-/// `lib.tokenMissingRefusal`), the pattern #173 fixed for
+/// construction site the validator itself reads (`state.terminalFault`,
+/// `state.tokenMissingRefusal`), the pattern #173 fixed for
 /// `lib.occupiedRefusal` and `lib.mintRefusal`.
 ///
 /// Each refusal carries an ACCEPTING control that repairs ONLY the named
@@ -180,43 +181,16 @@ test t177_the_witness_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
-/// The burn must destroy THE key's own witness, not merely find some
-/// input under the policy. Two witnesses ride in, the mint destroys one,
-/// and one SURVIVES in an output — the active asset the Lean row says no
-/// output carries (`kindCount t.state .active r.key = 0`). Nothing here
-/// is a mint fault: the mint is the exact `-1` the edge entails.
-fn leftoverCarrier() -> Bool {
-  retire(
-    fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
-    fx.keyA,
-    [
-      fx.tokenInput(0, fx.activePolicy, fx.keyA),
-      fx.tokenInput(1, fx.activePolicy, fx.keyA),
-    ],
-    [
-      fx.deliveryOutput(
-        fx.activePolicy,
-        fx.keyA,
-        fx.recordAddress,
-        InlineDatum(fx.recordDatum()),
-        fx.deposit,
-      ),
-    ],
-    theBurn(),
-  )
-}
-
-test t177_a_surviving_active_carrier_refuses_cleanly() {
-  leftoverCarrier() == False
-}
-
-/// The control for the row above: drop the second witness and the
-/// carrier output, change nothing else, and the retirement lands. The
-/// difference is exactly the surviving token.
-test t177_the_surviving_carrier_control_accepts() {
-  retireFrom(fx.activeLeaf)
-}
+// PARKED, not deleted, and not quietly weakened: the Lean row also
+// says no OUTPUT carries the retired asset
+// (`kindCount t.state .active r.key = 0`). Enforcing that here needs
+// the burn to require exactly one input at exactly one, and the
+// compiled validator does not have room for it — see
+// `questions/Q-001-state-script-size-ceiling.md`. Under `Reachable` the
+// state it would refuse is unreachable, but that is an argument for
+// parking the row, never for calling it covered. The rows below hold
+// the part that does fit: the key's own witness must be among the
+// inputs.
 
 /// A witness for ANOTHER key is not this key's witness. `keyB`'s token
 /// rides in and `keyA`'s does not; the mint is still `keyA: -1`.
@@ -288,15 +262,25 @@ test t177_delete_active_still_folds() {
 /// helper nothing calls. An Aiken test cannot read a `trace` back, and
 /// this is the repository's answer to that.
 test t177_unknown_key_reason_is_key_unknown() {
-  state.terminalRefusal(None) == Some(@"key-unknown")
+  state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+    @"key-unknown",
+  )
 }
 
 test t177_absent_key_reason_is_not_booked() {
-  state.terminalRefusal(Some(lib.kindAbsent)) == Some(@"not-booked")
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+    fx.keyA,
+    [],
+  ) == Some(@"not-booked")
 }
 
 test t177_terminal_key_reason_is_terminal_immutable() {
-  state.terminalRefusal(Some(lib.kindTerminal)) == Some(@"terminal-immutable")
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
+    fx.keyA,
+    [],
+  ) == Some(@"terminal-immutable")
 }
 
 /// An `Active` leaf is NOT a trie fault: the retirement proceeds and the
@@ -304,11 +288,15 @@ test t177_terminal_key_reason_is_terminal_immutable() {
 /// a refusal and the accepting control would be the only thing left to
 /// notice it.
 test t177_an_active_leaf_is_not_a_trie_fault() {
-  state.terminalRefusal(Some(lib.kindActive)) == None
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
+    fx.keyA,
+    [],
+  ) == None
 }
 
 test t177_missing_witness_reason_is_token_missing() {
-  state.tokenMissingRefusal() == Some(@"token-missing")
+  state.tokenMissingRefusal() == @"token-missing"
 }
 
 /// The reasons are pairwise distinct, asserted by NAME rather than by
@@ -317,12 +305,20 @@ test t177_missing_witness_reason_is_token_missing() {
 /// unimplemented.
 test t177_the_reasons_are_distinct_names() {
   and {
-    state.terminalRefusal(None) == Some(@"key-unknown"),
-    state.terminalRefusal(Some(lib.kindAbsent)) == Some(@"not-booked"),
-    state.terminalRefusal(Some(lib.kindTerminal)) == Some(
-      @"terminal-immutable",
+    state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+      @"key-unknown",
     ),
-    state.tokenMissingRefusal() == Some(@"token-missing"),
+    state.terminalFault(
+      mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+      fx.keyA,
+      [],
+    ) == Some(@"not-booked"),
+    state.terminalFault(
+      mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
+      fx.keyA,
+      [],
+    ) == Some(@"terminal-immutable"),
+    state.tokenMissingRefusal() == @"token-missing",
     lib.occupiedRefusal() == Some(@"key-exists"),
     lib.mintRefusal() == Some(@"net-mint-mismatch"),
   }

@@ -360,6 +360,7 @@ smallReceipt =
         , receiptVenue = "node-submit"
         , receiptPartial = Nothing
         , receiptEdge = Nothing
+        , receiptRetirement = Nothing
 
         , receiptDerivation = Nothing
         }

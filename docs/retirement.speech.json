@@ -1,0 +1,48 @@
+{
+  "who-this-is-for": [
+    {
+      "text": "You hold a Singular name and you want it over, permanently and publicly. This page covers one move: retirement, the edge the registry calls update terminal. It is the only edge that destroys a token instead of creating one.",
+      "pause": 400
+    }
+  ],
+  "what-you-can-do": [
+    {
+      "text": "Retire a name you hold. The registry takes the token out of your wallet and burns it, and the entry for that name becomes Terminal, its last state. Three things must be true: the entry reads Active, the transaction carries your own token as an input for the burn to destroy, and nothing else moves under the registry's three token policies.",
+      "pause": 400
+    },
+    {
+      "text": "Afterwards exactly one token is destroyed, named by your key, and no output anywhere carries it. The entry reads Terminal. There is no refund, no new token, and no application signature. No application can veto a retirement and none is asked to sign one: the registry decides from the entry and the token, and nothing else.",
+      "pause": 400
+    }
+  ],
+  "why-it-cannot-be-undone": [
+    {
+      "text": "Terminal is the end of the line by construction. A second retirement at the same key produces no transaction at all, refused terminal immutable. No edge leaves Terminal in the registry's table, so no sequence of folds returns the name to circulation. The token is destroyed rather than parked because while a token exists someone holds it, and who holds it is a question with consequences. After a retirement there is nothing to hold.",
+      "pause": 400
+    }
+  ],
+  "when-it-is-refused-and-why-the-reason-matters": [
+    {
+      "text": "Three situations look identical from outside: the retirement did not happen. The registry keeps them apart because the repair differs. A key it has never heard of is refused key unknown; book it first or check the key. A key only witnessed absent is refused not booked; somebody recorded that the name was free, but nobody took it. A key already Terminal is refused terminal immutable, and there is nothing to do.",
+      "pause": 400
+    },
+    {
+      "text": "A fourth case is an Active key whose token is not in the transaction, refused token missing. Every one of these is decided against the registry's own entry, never against what the request claims. A request saying this key is active does not make it so, and a retirement built on that claim is refused by name rather than dying inside a proof. The last case is unreachable under the registry's laws, where an Active entry and exactly one outstanding token are the same fact. It stays a guard because a guard never reached is cheap, and because being wrong about it would destroy nothing while claiming to.",
+      "pause": 400
+    }
+  ],
+  "seeing-it-happen": [
+    {
+      "text": "The release archive ships a command that performs the whole story against a throwaway network, from a fresh extraction with no source checkout. It boots a registry, books a name to a wallet, retires it, and writes what it saw to a file you name: the two transaction ids, the three registry roots, the token count going from one to zero, the exact burn, the input it came from, and the final entry.",
+      "pause": 400
+    },
+    {
+      "text": "The two refusals are in that file too, each beside a retirement that did work, because it was refused only means something when you can see the same machinery succeed on the next line. Every value is read back from the network or from the compiled contract. None of it is written by the command to make itself look right.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "retirement.md",
+    "sha256": "675140729740b60bc33ee48e0d9c330d5db85e2592c077111e8a2dc48e5f156f"
+  }
+}

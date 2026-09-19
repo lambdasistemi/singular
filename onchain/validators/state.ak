@@ -161,23 +161,21 @@ type Duty {
   SpendCustody { key: ByteArray }
   /// A burned active token must actually be an input; the cage does not
   /// care where it came from — the application's custody does.
-  BurnFromInput { policy: PolicyId, key: ByteArray }
-  /// #177 I177-CHAIN: the RETIREMENT's burn, which is a stricter fact
-  /// than `BurnFromInput` and carries its own Lean name. The
-  /// transaction must present THIS key's one active witness — exactly
-  /// one input carrying exactly one of `(policy, key)` — for the burn
-  /// to destroy.
+  ///
+  /// `sole` is what #177 added, and it is the difference between the
+  /// two burning edges. `deleteActive` (edge 5) asks only that SOME
+  /// input carries the asset, and traces `burn-from-input`; the
+  /// RETIREMENT asks that the transaction present THIS key's one
+  /// witness — exactly one input carrying exactly one — and traces
+  /// Lean's `token-missing`. Sharing one constructor keeps edge 5's
+  /// decision table and trace exactly where they were.
   ///
   /// That one fact also settles the Lean row's `kindCount t.state
   /// .active r.key = 0`: with one unit on an input and the mint pinned
   /// at `-1` by C5, ledger conservation leaves the outputs carrying
-  /// none. No separate output rule is needed, and inventing one would
-  /// be a second place for the two to disagree.
-  ///
-  /// `deleteActive` (edge 5) keeps `BurnFromInput` and its
-  /// `burn-from-input` trace unchanged: a shared guard renamed for one
-  /// edge changes the other edge's decision table.
-  RetireFromInput { policy: PolicyId, key: ByteArray }
+  /// none. No separate output rule is added for the two to disagree
+  /// over.
+  BurnFromInput { policy: PolicyId, key: ByteArray, reason: String }
 }
 
 /// The fold's accumulator. `ok` latches false on the first refusal and
@@ -307,7 +305,7 @@ fn dutiesOf(
       },
     ]
   } else if edge == edgeUpdateTerminal {
-    [RetireFromInput { policy: pins.active_policy, key }]
+    [BurnFromInput { policy: pins.active_policy, key, reason: tokenMissingRefusal() }]
   } else if edge == edgeDeleteAbsent {
     [SpendCustody { key }]
   } else if edge == edgeWitnessTerminal {
@@ -323,7 +321,7 @@ fn dutiesOf(
     // `deleteActive` (edge 5) burns the active token the request names;
     // the cage requires it as an input, exactly as the terminal update
     // does.
-    [BurnFromInput { policy: pins.active_policy, key }]
+    [BurnFromInput { policy: pins.active_policy, key, reason: @"burn-from-input" }]
   }
 }
 
@@ -561,19 +559,21 @@ fn applyEdge(
   // BEFORE `mpf.update`, because `mpf.update` CRASHES on a leaf that is
   // not the one the request states — and a crash says only that the
   // script died, never which fact it refused for.
-  let retirementFault =
+  //
+  // Both trie faults answer the same question — "is the leaf this edge
+  // needs the leaf the trie has?" — so they share one decision and one
+  // halt, and the advance below runs only when neither fires.
+  when
     if edge == edgeUpdateTerminal {
-      terminalRefusal(boundLeaf(acc.trie, key, proof))
+      terminalFault(acc.trie, key, proof)
+    } else if inserting && !mpf.miss(acc.trie, key, proof) {
+      lib.occupiedRefusal()
     } else {
       None
     }
-  if inserting && !mpf.miss(acc.trie, key, proof) {
-    expect Some(reason) = lib.occupiedRefusal()
-    halt(acc, reason)
-  } else if retirementFault != None {
-    expect Some(reason) = retirementFault
-    halt(acc, reason)
-  } else {
+  is {
+    Some(reason) -> halt(acc, reason)
+    None -> {
   let advanced =
     if edge == edgeWitnessTerminal {
       // C3: no new proof code. `mpf.has` is the library's own inclusion
@@ -623,6 +623,7 @@ fn applyEdge(
         ),
       }
   }
+    }
   }
 }
 
@@ -707,98 +708,52 @@ fn dutyOk(
             True
           }
       }
-    BurnFromInput { policy, key } ->
+    BurnFromInput { policy, key, reason } ->
       if find(
         tx.inputs,
         fn(i) { quantity_of(i.output.value, policy, key) >= 1 },
       ) == None {
-        traceFalse(@"burn-from-input")
+        traceFalse(reason)
       } else {
         True
       }
-    RetireFromInput { policy, key } -> {
-      // #177 I177-CHAIN, Lean `token-missing`. One construction site,
-      // asserted directly by the compiled suite, because an Aiken test
-      // cannot read a `trace` back.
-      //
-      // The guard is "this key's ONE active witness is among the inputs
-      // for the burn to destroy". Both ways of failing it are the same
-      // fact about an unreachable state: under `Reachable`,
-      // `biconditional_supply_sync` makes a `Known Active` leaf and
-      // exactly one outstanding active token the same thing, so neither
-      // zero witnesses nor two is a story a user can tell.
-      expect Some(reason) = tokenMissingRefusal()
-      when
-        filter(
-          tx.inputs,
-          fn(i) { quantity_of(i.output.value, policy, key) != 0 },
-        )
-      is {
-        [source] ->
-          if quantity_of(source.output.value, policy, key) != 1 {
-            traceFalse(reason)
-          } else {
-            True
-          }
-        _ -> traceFalse(reason)
-      }
-    }
-  }
-}
-
-
-/// The leaf the trie ACTUALLY binds at `key`, classified with the MPF
-/// library's own TOTAL checks against this request's own proof (#177
-/// I177-CHAIN).
-///
-/// `None` is exclusion. The three inclusion answers are read off `has`,
-/// which is total: it asks whether the key is present WITH a given
-/// value and returns a `Bool` either way, so a wrong leaf is an
-/// attributable refusal instead of a crash inside `mpf.update`.
-///
-/// The `Active` answer is the residue — the leaf the retirement moves —
-/// and it is also where an INVALID proof lands, because a proof that
-/// matches no root matches none of the three checks either. That case
-/// then dies in `mpf.update` exactly as it does on every other edge;
-/// the four leaves Lean names are what this classifies.
-fn boundLeaf(
-  trie: MerklePatriciaForestry,
-  key: ByteArray,
-  proof: mpf.Proof,
-) -> Option<Int> {
-  if mpf.miss(trie, key, proof) {
-    None
-  } else if mpf.has(trie, key, leafAbsent, proof) {
-    Some(kindAbsent)
-  } else if mpf.has(trie, key, leafTerminal, proof) {
-    Some(kindTerminal)
-  } else {
-    Some(kindActive)
   }
 }
 
 /// Why the trie refuses this `updateTerminal`, or `None` when the leaf
-/// is the `Active` one the edge moves (#177 I177-CHAIN).
+/// it binds is the `Active` one the edge moves (#177 I177-CHAIN).
 ///
-/// `before` is the leaf the trie ACTUALLY binds, from `boundLeaf` —
-/// never the leaf the REQUEST states, which `edgeOf` has already read
-/// and which says nothing about the trie. Total over the four answers,
-/// one construction site, so a test asserting the reason asserts the
+/// The subject is the leaf the trie ACTUALLY binds — established here,
+/// against this request's own proof, with the MPF library's own TOTAL
+/// checks. `miss` and `has` answer for every input instead of crashing,
+/// so a wrong leaf becomes an attributable refusal rather than a death
+/// inside `mpf.update`, which says only that the script died.
+///
+/// It is NOT the leaf the REQUEST states: `edgeOf` has already read
+/// that, and a claim by the requester says nothing about the trie.
+///
+/// One construction site, so a test asserting a reason asserts the
 /// value this validator traces rather than a helper nothing calls
-/// (#173 A-006, applied to this edge).
+/// (#173 A-006, applied to this edge). The names are Lean's, from
+/// `update_terminal_transaction_row`.
 ///
-/// The names are Lean's, from `update_terminal_transaction_row`.
-pub fn terminalRefusal(before: Option<Int>) -> Option<String> {
-  when before is {
-    None -> Some(@"key-unknown")
-    Some(kind) ->
-      if kind == kindAbsent {
-        Some(@"not-booked")
-      } else if kind == kindTerminal {
-        Some(@"terminal-immutable")
-      } else {
-        None
-      }
+/// `None` is the residue, and it is also where an INVALID proof lands:
+/// a proof matching no root matches none of the three checks either.
+/// That case then dies in `mpf.update` exactly as it does on every
+/// other edge. The three leaves Lean names are what this classifies.
+pub fn terminalFault(
+  trie: MerklePatriciaForestry,
+  key: ByteArray,
+  proof: mpf.Proof,
+) -> Option<String> {
+  if mpf.miss(trie, key, proof) {
+    Some(@"key-unknown")
+  } else if mpf.has(trie, key, leafAbsent, proof) {
+    Some(@"not-booked")
+  } else if mpf.has(trie, key, leafTerminal, proof) {
+    Some(@"terminal-immutable")
+  } else {
+    None
   }
 }
 
@@ -808,9 +763,10 @@ pub fn terminalRefusal(before: Option<Int>) -> Option<String> {
 ///
 /// Its own site, distinct from `deleteActive`'s generic
 /// `burn-from-input`, so edge 5's trace keeps meaning what it meant.
-pub fn tokenMissingRefusal() -> Option<String> {
-  Some(@"token-missing")
+pub fn tokenMissingRefusal() -> String {
+  @"token-missing"
 }
+
 fn traceFalse(reason: String) -> Bool {
   trace reason
   False

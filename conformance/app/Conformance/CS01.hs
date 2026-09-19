@@ -117,6 +117,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptDirty = dirty
                 , receiptPartial = Nothing
                 , receiptEdge = Nothing
+                , receiptRetirement = Nothing
 
                 , receiptDerivation = Nothing
                 , receiptNode = T.pack nodeVer

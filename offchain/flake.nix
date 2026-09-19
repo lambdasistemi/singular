@@ -119,6 +119,22 @@
             --prefix PATH : ${cardanoNode}/bin
         '';
 
+        # #177 I177-COMMAND: the packaged `update-terminal` verb, wrapped
+        # exactly like insert-active so the locked cardano-node rides on
+        # its own PATH. The blueprint comes from the caller at run time
+        # (REGISTRY_BLUEPRINT); no store path is baked in, which is what
+        # lets it run from an EXTRACTED ARCHIVE with no checkout.
+        update-terminal = pkgs.runCommand "update-terminal" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta = (components.exes.update-terminal.meta or { }) // {
+            mainProgram = "update-terminal";
+          };
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.update-terminal} $out/bin/update-terminal \
+            --prefix PATH : ${cardanoNode}/bin
+        '';
+
         # The LI01 canonical-initialization runner (issue #47),
         # wrapped the same way as journey: the locked cardano-node
         # on its own PATH, no store path baked in.
@@ -316,7 +332,7 @@
           inherit deployment devnet;
           # #173 A173-COMMAND: the packaged verb, exposed so the release
           # archive's documented invocation resolves without a checkout.
-          inherit insert-active;
+          inherit insert-active update-terminal;
           # Mechanical adapter (D-008): exposes the cardano-node already
           # locked as this flake's input, so the devnet recipe consumes the
           # locked identity instead of re-resolving a remote tag.
@@ -330,6 +346,10 @@
 
         apps = haskellApps // {
           # #173 A173-COMMAND.
+          update-terminal = {
+            type = "app";
+            program = pkgs.lib.getExe update-terminal;
+          };
           insert-active = {
             type = "app";
             program = pkgs.lib.getExe insert-active;
