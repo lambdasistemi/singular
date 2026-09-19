@@ -43,20 +43,21 @@ import Data.Text qualified as T
 
 import Conformance.Receipt (Receipt (..), Verdict (..))
 
-{- | Total rows in @rows.json@: the 42 owned consumer rows (including
-CG20, the F-002 permissionless-folder regression, and CG21, #173's
-insertActive fold and its two refusal fixtures) plus CK06,
+{- | Total rows in @rows.json@: the 43 owned consumer rows (including
+CG20, the F-002 permissionless-folder regression, CG21, #173's
+insertActive fold and its two refusal fixtures, and CG22, #177's
+updateTerminal retirement and its two refusal fixtures) plus CK06,
 cardano-keri's checkpoint policy, recorded as out-of-scope so the
 boundary is visible instead of forgotten.
 -}
 expectedRowCount :: Int
-expectedRowCount = 43
+expectedRowCount = 44
 
 {- | Rows Singular owns and must eventually evidence. Out-of-scope
 rows (CK06) are carried for the boundary, never counted.
 -}
 ownedDenominator :: Int
-ownedDenominator = 42
+ownedDenominator = 43
 
 {- | A row's declared coverage plan. @executed@ is unrepresentable
 here by construction: only a run receipt can establish it.

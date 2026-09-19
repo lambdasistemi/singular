@@ -400,3 +400,76 @@ jobs:
             and (."key-exists".detail | type == "string" and length > 0)
           ' "$observed" > /dev/null || { echo 'FAIL: insert-active did not observe one active token at the named wallet'; exit 1; }
           echo "ARCHIVE = insert-active ran from $extracted with no checkout and observed the active token at the named wallet."
+      # #177 A-002 row S03, CI change in this ticket: the focused
+      # off-chain suite carries the retirement's holder-selection,
+      # wrong-key and no-sweep controls. They are pure decisions of
+      # `registryDuties` — the one place the off-chain side decides what
+      # an edge owes — so they belong on the cheap job beside the
+      # devnet one, not inside it.
+      #
+      # Falsification: on any ancestor where `registryDuties` returns
+      # `mempty` for edge 3, the burn-without-source row fails here.
+      - name: Run the focused off-chain suite
+        working-directory: offchain
+        run: nix run --quiet .#cage-tests
+      # #177 I177-COMMAND (A-002 ruling), the sibling of the
+      # insert-active step above: the release archive is built HERE,
+      # extracted OUTSIDE the checkout, and its documented
+      # `update-terminal` invocation is run against this job's devnet
+      # with no checkout in sight. The step asserts the OBSERVATION, not
+      # the exit code.
+      #
+      # Falsification: on any ancestor where the verb or its page is
+      # absent from the archive this step fails at the required page or
+      # at the invocation itself.
+      - name: Run update-terminal from the extracted release archive
+        run: |
+          set -e
+          release_dir="$(mktemp -d "$RUNNER_TEMP/release.XXXXXX")"
+          nix run --quiet .#release-artifacts -- "$release_dir"
+          version="$(cat version.txt)"
+          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
+          tar -C "$extracted" -xzf "$release_dir/singular-onchain-$version.tar.gz"
+          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
+          test -f "$extracted/UPDATE-TERMINAL.md" || { echo 'FAIL: the archive carries no update-terminal run page'; exit 1; }
+          observed="$(mktemp "$RUNNER_TEMP/update-terminal.XXXXXX.json")"
+          (
+            cd "$extracted/offchain"
+            REGISTRY_BLUEPRINT="$extracted/onchain/plutus.json" \
+              nix run --quiet .#update-terminal -- --observed "$observed"
+          )
+          # The observation, not the exit code: the active quantity goes
+          # 1 -> 0, the exact keyed `-1` mint is burned from a
+          # token-bearing source input, the three roots are distinct and
+          # the committed leaf reads Terminal. The two refusals are
+          # asserted by OUTCOME and by their accepting controls; a trace
+          # name is accepted only when the ledger actually surfaced it,
+          # because an EvalFailure carries an empty Plutus log list and
+          # the exact names are enforced at the Aiken layer.
+          nix run --quiet nixpkgs#jq -- -e '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            .edge == "updateTerminal"
+            and (.retirement != null)
+            and (.retirement as $r |
+              ($r.activePolicy | text) and ($r.key | text)
+              and ($r.insertTxid | txid) and ($r.retireTxid | txid)
+              and $r.insertTxid != $r.retireTxid
+              and ([$r.roots.beforeInsert, $r.roots.active, $r.roots.terminal]
+                | all(.[]; text) and (unique | length == 3))
+              and $r.quantities == {"before": 1, "after": 0}
+              and $r.mint == [{"policy": $r.activePolicy, "name": $r.key, "quantity": -1}]
+              and ($r.source.outref | text)
+              and $r.source.policy == $r.activePolicy
+              and $r.source.name == $r.key
+              and $r.source.quantity == 1
+              and $r.leaf == "Terminal"
+              and ($r.unknown.detail | text)
+              and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
+              and ($r.unknown.controlTxid | txid)
+              and ($r.absent.detail | text)
+              and ($r.absent.trace == null or $r.absent.trace == "not-booked")
+              and ($r.absent.controlTxid | txid)
+            )
+          ' "$observed" > /dev/null || { echo 'FAIL: update-terminal observation moved'; exit 1; }
+          echo "ARCHIVE = update-terminal ran from $extracted with no checkout and observed the keyed burn and the Terminal leaf."

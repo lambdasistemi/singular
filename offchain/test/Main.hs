@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Singular.Registry.BlueprintParametersSpec qualified
+import Singular.Registry.TxBuilder.BurnSourceSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.NodeSpec qualified
@@ -15,6 +16,7 @@ import Test.Hspec (hspec)
 main :: IO ()
 main = hspec $ do
     Singular.Registry.BlueprintParametersSpec.spec
+    Singular.Registry.TxBuilder.BurnSourceSpec.spec
     Singular.Registry.CandidateSpec.spec
     Singular.Registry.FailureMatchSpec.spec
     Singular.Registry.NodeSpec.spec

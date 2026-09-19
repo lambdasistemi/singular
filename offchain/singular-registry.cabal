@@ -542,6 +542,7 @@ test-suite cage-tests
   main-is:          Main.hs
   other-modules:
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
     Singular.Registry.NodeSpec
@@ -558,6 +559,8 @@ test-suite cage-tests
     , cardano-ledger-alonzo
     , cardano-ledger-allegra
     , cardano-ledger-core
+    , cardano-ledger-mary
+    , containers
     , base16-bytestring
     , bytestring
     , singular-registry
@@ -582,6 +585,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.InsertActiveSpec
+    Singular.Registry.E2E.UpdateTerminalSpec
     Singular.Registry.E2E.OpenBootSpec
   build-depends:
     , async
