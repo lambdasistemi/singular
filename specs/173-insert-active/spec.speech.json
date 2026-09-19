@@ -1,0 +1,66 @@
+{
+  "the-runnable-story": [
+    {
+      "text": "The runnable story.",
+      "pause": 500
+    },
+    {
+      "text": "From the released archive, insert-active boots the parameterless open registry, folds one insertActive to the named wallet, and refuses a repeat with key-exists. A separate two-key wrong-mint batch refuses net-mint-mismatch.",
+      "pause": 400
+    }
+  ],
+  "accepted-behavioral-authority": [
+    {
+      "text": "Accepted behavioral authority.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted Lean revision constructs the full transaction, proves the reachable keyed-mint witness, fixes the open policy as parameterless, and distinguishes duplicate key-exists from the wrong-key mint refusal.",
+      "pause": 400
+    }
+  ],
+  "implementation-contract": [
+    {
+      "text": "Implementation contract.",
+      "pause": 500
+    },
+    {
+      "text": "The contract adds open dot A K, moves the witness policy home, updates the request wire shape, implements the cage edge and builders, and packages one checkout-free command.",
+      "pause": 400
+    }
+  ],
+  "acceptance-lines": [
+    {
+      "text": "Acceptance lines.",
+      "pause": 500
+    },
+    {
+      "text": "Boot, approval, edge, refusals, command and copies are the six decision-review checkpoints.",
+      "pause": 400
+    }
+  ],
+  "copies-and-published-contracts": [
+    {
+      "text": "Copies and published contracts.",
+      "pause": 500
+    },
+    {
+      "text": "Every Lean, Aiken, off-chain, conformance, workflow, coverage, identity, archive and documentation encoding is enumerated. The published contracts are the open policy, approval name, witness hashes and wire encodings.",
+      "pause": 400
+    }
+  ],
+  "non-goals-and-stop-conditions": [
+    {
+      "text": "Non-goals and stop conditions.",
+      "pause": 500
+    },
+    {
+      "text": "No other edge, custody, naming payload, escrow or tag is in scope. Lean conflicts, naming dependencies and missing C I commands stop the affected line for a ruling.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ad9af66ce02b3df919d9dd6727fe8adf202045a6bf789e1671ecbb309d5b8028"
+  }
+}
