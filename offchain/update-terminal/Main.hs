@@ -15,7 +15,12 @@ watches a name end: the open registry boots, a key is booked ACTIVE at a
 wallet, and that same key is then RETIRED — its witness burned out of the
 wallet that held it, its leaf committed as `Terminal`.
 
-> REGISTRY_BLUEPRINT=../onchain/plutus.json nix run .#update-terminal -- --observed out.json
+> REGISTRY_BLUEPRINT=../onchain/plutus.json nix run .#update-terminal -- | The Unknown leg's own accepting control, booked and retired in the
+-- second registry before the refusal it controls. The Absent leg has a
+-- different control: the story's own retirement, in the first registry.
+-- One control cannot serve both, because the two refusals cannot share
+-- a registry.
+controlKey :: ByteString--observed out.json
 
 What it observes, in order:
 
@@ -162,7 +167,15 @@ data Registry = Registry
 storyKey :: ByteString
 storyKey = "update-terminal-demo"
 
--- | The accepting control for both refusals: booked, then retired.
+{- | The Unknown leg's own accepting control, booked and retired in the
+second registry before the refusal it controls.
+
+The Absent leg has a DIFFERENT control: the story's own retirement, in
+the first registry. One control cannot serve both, because the two
+refusals cannot share a registry — a refused fold never consumes its
+request — and a control from the other registry would not be the same
+builder against the same state.
+-}
 controlKey :: ByteString
 controlKey = "update-terminal-demo-control"
 
