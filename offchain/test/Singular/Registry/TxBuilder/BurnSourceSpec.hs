@@ -36,7 +36,7 @@ import Test.Hspec
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Lens.Micro ((&), (.~))
 import PlutusTx.Builtins (toBuiltin)
@@ -47,6 +47,7 @@ import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     computeScriptHash,
+    policyIdFromPin,
     scriptFromBytes,
     leafAbsent,
     leafActive,
@@ -57,6 +58,7 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),
+    RegistryDuties (..),
     emptyRegistryContext,
     registryDuties,
  )
@@ -77,8 +79,13 @@ import Data.Text qualified as T
 -- Fixtures: one registry, two keys
 -- ---------------------------------------------------------
 
-keyA :: ByteString
+keyA, keyB :: ByteString
 keyA = "t177-key-a"
+keyB = "t177-key-b"
+
+-- | The edge under test, spelled once.
+retirement :: OnChainOperation
+retirement = OpUpdate leafActive leafTerminal
 
 {- | A 28-byte policy pin, one distinct byte per kind, so a row that
 swept the wrong policy could not accidentally agree with the right one.
@@ -180,13 +187,18 @@ decide op =
 -- ---------------------------------------------------------
 
 spec :: Spec
-spec = describe "#177 I177-BUILDER: updateTerminal sources its burn from a holder" $ do
+spec = do
+    holderSelection
+    burnSourceRequired
+
+burnSourceRequired :: Spec
+burnSourceRequired = describe "#177 I177-BUILDER: updateTerminal sources its burn from a holder" $ do
     -- The row under test. With nothing in hand that carries the key's
     -- active witness, the only transaction this edge could produce mints
     -- `-1` against no input — the shape the cage refuses `token-missing`.
     -- The builder must say so instead of handing back a fold.
     it "refuses to build the retirement when nothing holds the key's active witness" $
-        decide (OpUpdate leafActive leafTerminal) `shouldSatisfy` isLeft
+        decide retirement `shouldSatisfy` isLeft
 
     -- The control for the row above, and the reason it is not vacuous:
     -- `updateActive` at the same key, through the same call, with the
@@ -202,3 +214,81 @@ spec = describe "#177 I177-BUILDER: updateTerminal sources its burn from a holde
     -- attributable to the missing witness rather than to the fixture.
     it "still builds an edge that owes no external input (insertAbsent)" $
         decide (OpInsert leafAbsent) `shouldSatisfy` isRight
+
+{- | The candidate burn-source inventory the builder selects from: wallet
+outputs that actually hold registry witnesses.
+-}
+holding :: [(TxIn, TxOut ConwayEra)] -> RegistryContext
+holding utxos = witnessScripts{rcHolderUtxos = utxos}
+
+-- | One wallet UTxO holding `quantity` of the active witness for `key`.
+holderOf :: Int -> ByteString -> Integer -> (TxIn, TxOut ConwayEra)
+holderOf i key quantity =
+    ( holderIn i
+    , mkBasicTxOut
+        (cageAddrFromCfg cfg Testnet)
+        ( MaryValue
+            (Coin 2000000)
+            ( MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin (cfgActivePolicy cfg))
+                    (Map.singleton (AssetName (SBS.toShort key)) quantity)
+                )
+            )
+        )
+    )
+
+holderIn :: Int -> TxIn
+holderIn i = case parseOutRef (T.pack (replicate 63 '3' <> show i <> "#0")) of
+    Right r -> r
+    Left e -> error ("BurnSourceSpec fixture: " <> e)
+
+-- | What the builder decides, with a candidate inventory in hand.
+decideWith :: RegistryContext -> OnChainOperation -> Either String RegistryDuties
+decideWith ctx op =
+    registryDuties cfg emptyPParams tokenState ctx [requestFor op] [True]
+
+{- | The same decision with the duties discarded. `RegistryDuties` holds
+ledger values that have no `Show`, and a row that only asks WHETHER the
+builder refused does not need them.
+-}
+refusedWith :: RegistryContext -> OnChainOperation -> Either String ()
+refusedWith ctx op = () <$ decideWith ctx op
+
+{- | The rows that need the candidate inventory: selection is exact in
+both directions, and the selected UTxO is the one the fold consumes.
+-}
+holderSelection :: Spec
+holderSelection = describe "#177 I177-BUILDER: the burn source is selected exactly" $ do
+    it "takes the key's own holder as an input of the fold" $
+        case decideWith (holding [holderOf 1 keyA 1]) retirement of
+            Left err -> expectationFailure err
+            Right d -> map fst (rdInputs d) `shouldBe` [holderIn 1]
+
+    -- Non-vacuity, the direction that matters most here: a builder that
+    -- swept whatever it found would pass the row above and this one
+    -- too, so the wrong key is offered ALONE. Nothing else in the
+    -- inventory can rescue it.
+    it "does not sweep another key's holder" $
+        refusedWith (holding [holderOf 1 keyB 1]) retirement `shouldSatisfy` isLeft
+
+    -- And with both in hand it must still take exactly the right one,
+    -- which an inventory-order accident would not survive.
+    it "picks this key's holder out of an inventory that holds both" $
+        case decideWith (holding [holderOf 1 keyB 1, holderOf 2 keyA 1]) retirement of
+            Left err -> expectationFailure err
+            Right d -> map fst (rdInputs d) `shouldBe` [holderIn 2]
+
+    it "refuses an inventory carrying the witness twice over" $
+        refusedWith (holding [holderOf 1 keyA 1, holderOf 2 keyA 1]) retirement
+            `shouldSatisfy` isLeft
+
+    it "refuses a holder carrying more than one of the witness" $
+        refusedWith (holding [holderOf 1 keyA 2]) retirement `shouldSatisfy` isLeft
+
+    -- The retirement creates no carrier: the Lean row has the active
+    -- asset on an input and on no output at all.
+    it "creates no output carrying the asset it burns" $
+        case decideWith (holding [holderOf 1 keyA 1]) retirement of
+            Left err -> expectationFailure err
+            Right d -> rdOutputs d `shouldBe` []
