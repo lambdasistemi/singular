@@ -720,6 +720,13 @@ registryDuties cfg pp st ctx reqUtxos processed =
                 ]
          in case candidates of
                 [(u, 1)] -> Right mempty{rdInputs = [u]}
+                -- A row that exists to watch the CHAIN refuse this edge
+                -- needs the transaction built, not withheld: the cage
+                -- refuses `key-unknown` or `not-booked` before it ever
+                -- reaches the burn, and a builder failure here would
+                -- substitute its own reason for the one under test.
+                -- Same flag, same reason, as the inadmissible-edge arm.
+                _ | rcAllowInadmissible ctx -> Right mempty
                 [(_, q)] ->
                     Left
                         ( "registryDuties: the holder of the active witness \

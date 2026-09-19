@@ -61,6 +61,7 @@ import Cardano.Ledger.Conway.Scripts (
 import Cardano.Ledger.Api.PParams (PParams, ppCollateralPercentageL)
 import Cardano.Ledger.BaseTypes (Inject (inject))
 import Cardano.Ledger.Core (TxOut, hashScript)
+import Cardano.Ledger.Api.Tx.Out (valueTxOutL)
 import Cardano.Ledger.Mary.Value (
     MaryValue (..),
     MultiAsset (..),
@@ -154,12 +155,19 @@ bootTokenImpl cfg prov addr = do
         -- #177 A-003: the boot references a fifteen-kilobyte script and
         -- pays Conway's size tier for it, so its fee is an order of
         -- magnitude larger than before and its collateral must cover
-        -- 150%% of that. Fund from the wallet's LARGEST spendable
+        -- 150% of that. Fund from the wallet's LARGEST spendable
         -- output rather than whichever happens to come first.
+        -- The funding input doubles as COLLATERAL, and collateral must
+        -- be ada-only: an approval returned by an earlier fold rides in
+        -- this wallet, and a boot that collateralised with it is refused
+        -- `CollateralContainsNonADA`. It must also not be the reference
+        -- publication, which this transaction reads.
+        spendable u@(_, out) =
+            u /= seedUtxo
+                && out ^. referenceScriptTxOutL == SNothing
+                && (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
         rest =
-            sortOn
-                (Down . (^. coinTxOutL) . snd)
-                (filter (\u@(_, out) -> u /= seedUtxo && out ^. referenceScriptTxOutL == SNothing) utxos)
+            sortOn (Down . (^. coinTxOutL) . snd) (filter spendable utxos)
         allInputUtxos = case rest of
             [] -> [seedUtxo]
             (u : _) -> [seedUtxo, u]
