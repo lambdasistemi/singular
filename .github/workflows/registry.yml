@@ -381,12 +381,22 @@ jobs:
           # The observation, not the exit code: exactly one active token,
           # at the key the command inserted, in the output at the wallet
           # the command named.
+          #
+          # The duplicate is asserted by its OUTCOME and its accepting
+          # control, not by a trace name. The ledger's EvalFailure carries
+          # an EMPTY Plutus log list, so the cage's `key-exists` trace is
+          # not recoverable from it and the command emits null rather than
+          # a guess. The NAME is asserted at the Aiken layer, through
+          # `lib.occupiedRefusal`, the construction site the validator
+          # reads. Asserting it here would be asserting a literal the
+          # command wrote to make this step pass.
           nix run --quiet nixpkgs#jq -- -e '
             .edge == "insertActive"
             and (.fold.txid | test("^[0-9a-f]{64}$"))
             and .wallet.address == .requested.address
             and .wallet.assets == [{"policy": .active.policy, "name": .key, "quantity": 1}]
             and ."key-exists".outcome == "refused"
-            and ."key-exists".trace == "key-exists"
+            and (."key-exists".control.outcome == "accepted")
+            and (."key-exists".detail | type == "string" and length > 0)
           ' "$observed" > /dev/null || { echo 'FAIL: insert-active did not observe one active token at the named wallet'; exit 1; }
           echo "ARCHIVE = insert-active ran from $extracted with no checkout and observed the active token at the named wallet."

@@ -602,3 +602,33 @@ test-suite e2e-tests
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N
+
+-- #173 A173-COMMAND: the packaged `insert-active` verb the release
+-- archive documents. A reviewer with the extracted archive and no
+-- checkout runs it against a devnet: the open registry boots, one
+-- certified insertActive folds, and the active token lands at the
+-- wallet the request named. Ships on the pre-#183 request wire.
+executable insert-active
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   insert-active
+  main-is:          Main.hs
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , base               >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-api
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , singular-registry
+    , cardano-crypto-class
+    , cardano-node-clients
+    , cardano-node-clients:devnet
+    , cardano-tx-tools:tx-build
+    , containers
+    , microlens
+    , text
+
+  ghc-options:      -threaded -with-rtsopts=-N

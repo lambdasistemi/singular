@@ -225,6 +225,19 @@ row does not restate them.
 
 This is recorded rather than fixed because distinguishing the two would
 mean the cage verifying a second proof shape it has no reason to carry.
+
+#### The wire these rows and the archive verb speak
+
+Everything on this page, and the release archive's packaged
+`insert-active` command, runs on the request encoding as it stands
+today. Issue #183 re-cuts that encoding for every edge — the edge tag
+replaces the operation payload and the request's `tip` field goes away —
+and re-baselines these rows and that command when it lands.
+
+No claim is made here about the wire after #183. The re-cut carries its
+own enforcing check: a transitional checkpoint that folds every
+other-edge fixture under BOTH codecs and requires the same verdict,
+which is the evidence a one-commit rewrite cannot produce.
 ### The issue-70 generic rows
 
 The issue-#70 slice extends the generic session with eleven rows over
