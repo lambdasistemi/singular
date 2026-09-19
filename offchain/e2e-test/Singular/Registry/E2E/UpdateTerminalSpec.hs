@@ -80,13 +80,22 @@ import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal (
+    cageAddrFromCfg,
+    cagePolicyIdFromCfg,
+    extractCageDatum,
+    findStateUtxo,
     leafAbsent,
     leafActive,
     leafTerminal,
     policyIdFromPin,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (OnChainOperation (..))
+import Singular.Registry.Types (
+    CageDatum (..),
+    OnChainOperation (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
+ )
 
 import Singular.Registry.E2E.CageSpec (
     publishCageRefs,
@@ -116,14 +125,12 @@ forever and could never be retired.
 walletDestination :: (ByteString, ByteString)
 walletDestination = (serialiseAddr genesisAddr, "")
 
-{- | A destination that is NOT the funding wallet: a bare enterprise
-address that `lib.decodeAddress` accepts. The refusal cages deliver
-their control tokens here, so an active token sitting in the fee wallet
-cannot be swept into a later fold and refused for a reason that has
-nothing to do with the leaf under test.
+{- | A retirement delivers nothing, so it names nothing. The approval
+still binds this pair, and the cage recomputes it from the request, so it
+has to be the same on both sides — it is simply empty.
 -}
-elsewhereDestination :: (ByteString, ByteString)
-elsewhereDestination = (BS.pack (0x60 : replicate 28 0xcd), "")
+retireDestination :: (ByteString, ByteString)
+retireDestination = (BS.empty, BS.empty)
 
 spec :: Spec
 spec = describe "#177 updateTerminal on the open registry" $ do
@@ -155,8 +162,8 @@ updateTerminalSpec stateBytes requestBytes = do
             --    key becomes Active and the wallet holds its witness.
             _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
             _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            before <- activeHeldAt prov cfg storyKey
-            before `shouldBe` (1 :: Integer)
+            heldBefore <- activeHeldAt prov cfg storyKey
+            heldBefore `shouldBe` (1 :: Integer)
 
             -- 2. the edge under test, at the SAME key, in the SAME
             --    session, burning the witness step 1 delivered.
@@ -167,17 +174,27 @@ updateTerminalSpec stateBytes requestBytes = do
             --
             -- The wallet: a fold that silently did nothing leaves one,
             -- not zero.
-            after <- activeHeldAt prov cfg storyKey
-            after `shouldBe` (0 :: Integer)
+            heldAfter <- activeHeldAt prov cfg storyKey
+            heldAfter `shouldBe` (0 :: Integer)
 
             -- The transaction: exactly the keyed `-1` under the ACTIVE
             -- policy read off the BOOTED CONFIG, and nothing else under
             -- it. A burn of another key, or of two, fails here.
             mintedActive retireTx cfg `shouldBe` [(storyKey, -1)]
 
-            -- The trie: the committed leaf the next proof begins at.
-            leaf <- withTrie tm tokenId (`Singular.Registry.Trie.lookup` storyKey)
-            leaf `shouldBe` Just leafTerminal
+            -- The LEAF, observed where a leaf can actually be observed.
+            -- `Trie.lookup` answers with the key's hash, not its value, so
+            -- it cannot see a leaf at all. What can: the registry's own
+            -- committed root, read off the state UTxO on chain, against
+            -- the mirror root reached by committing `Terminal` at this
+            -- key. The chain got there through the validator's
+            -- `mpf.update(0x01, 0x02)` and the mirror through an
+            -- independent local trie; equality is the statement that the
+            -- leaf the next proof begins at is Terminal. Any other leaf
+            -- is a different root.
+            mirrorRoot <- withTrie tm tokenId getRoot
+            chainRoot <- committedRoot prov cfg tokenId
+            chainRoot `shouldBe` unRoot mirrorRoot
 
     it "refuses updateTerminal on a key the trie does not bind, with an accepting control" $
         withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
@@ -187,9 +204,9 @@ updateTerminalSpec stateBytes requestBytes = do
             -- in this very cage, through this very builder. A failure
             -- here is reported as a broken control rather than silently
             -- making the refusal below vacuous.
-            _ <- book cfg codes prov submit tokenId storyKey insertActive elsewhereDestination
+            _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
             _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            _ <- book cfg codes prov submit tokenId storyKey retire elsewhereDestination
+            _ <- book cfg codes prov submit tokenId storyKey retire retireDestination
             control <- try @SomeException (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
@@ -204,7 +221,7 @@ updateTerminalSpec stateBytes requestBytes = do
             -- The refusal. Everything is held constant against the
             -- control except the one fact under test: this key was
             -- never inserted, so the trie does not bind it.
-            _ <- book cfg codes prov submit tokenId unknownKey retire elsewhereDestination
+            _ <- book cfg codes prov submit tokenId unknownKey retire retireDestination
             outcome <- try @SomeException (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
@@ -218,9 +235,9 @@ updateTerminalSpec stateBytes requestBytes = do
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
             -- The control, again first and in this same cage.
-            _ <- book cfg codes prov submit tokenId storyKey insertActive elsewhereDestination
+            _ <- book cfg codes prov submit tokenId storyKey insertActive walletDestination
             _ <- foldAndMirror cfg prov submit tm tokenId refs storyKey insertActive
-            _ <- book cfg codes prov submit tokenId storyKey retire elsewhereDestination
+            _ <- book cfg codes prov submit tokenId storyKey retire retireDestination
             control <- try @SomeException (foldAndMirror cfg prov submit tm tokenId refs storyKey retire)
             case control of
                 Left e ->
@@ -237,7 +254,7 @@ updateTerminalSpec stateBytes requestBytes = do
             -- differs from the control is the leaf it is bound to.
             _ <- book cfg codes prov submit tokenId absentKey insertAbsent walletDestination
             _ <- foldAndMirror cfg prov submit tm tokenId refs absentKey insertAbsent
-            _ <- book cfg codes prov submit tokenId absentKey retire elsewhereDestination
+            _ <- book cfg codes prov submit tokenId absentKey retire retireDestination
             outcome <- try @SomeException (foldOnce cfg prov submit tm tokenId refs)
             case outcome of
                 Right _ ->
@@ -370,3 +387,22 @@ mintedActive tx cfg =
 -- | Hex for the receipt lines.
 hexBS :: ByteString -> String
 hexBS = T.unpack . TE.decodeUtf8 . Base16.encode
+
+{- | The registry's own committed root, read off the state UTxO on
+chain.
+
+This is how a LEAF is observed. `Trie.lookup` answers with the key's
+hash rather than its value and cannot see one; the root can, because a
+trie with a different leaf at this key has a different root. The chain
+reached this root through the validator's own `mpf.update`, and the
+mirror reaches it through an independent local trie, so their equality
+is a statement about the leaf and not about either implementation.
+-}
+committedRoot :: Cage.Provider IO -> CageConfig -> TokenId -> IO ByteString
+committedRoot prov cfg tokenId = do
+    utxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    case findStateUtxo (cagePolicyIdFromCfg cfg) tokenId utxos of
+        Just (_, out) -> case extractCageDatum out of
+            Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))
+            _ -> fail "the state UTxO carries no state datum"
+        Nothing -> fail "no state UTxO carrying the registry policy token"

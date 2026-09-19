@@ -33,6 +33,10 @@ module Conformance.Receipt (
     DerivationEvidence (..),
     EdgeEvidence (..),
     FoldStep (..),
+    RetirementEvidence (..),
+    RetirementRoots (..),
+    RetirementQuantities (..),
+    RetirementSource (..),
     RefusalLeg (..),
     derivationMatches,
     Receipt (..),
@@ -378,6 +382,9 @@ data Receipt = Receipt
     -- ^ per-constructor accounting for partial rows (Nothing for
     -- every complete row; JSON-compatible: absent on old receipts).
     , receiptEdge :: !(Maybe EdgeEvidence)
+    , receiptRetirement :: !(Maybe RetirementEvidence)
+    -- ^ what an updateTerminal row observed on chain (#177). Nothing
+    -- elsewhere; JSON-compatible with receipts written before it.
     -- ^ what an insertActive row observed on chain (#173). Nothing
     -- elsewhere; JSON-compatible with receipts written before it.
     , receiptDerivation :: !(Maybe [DerivationEvidence])
@@ -405,6 +412,7 @@ instance FromJSON Receipt where
             <*> o .: "dirty"
             <*> o .:? "partial"
             <*> o .:? "edge"
+            <*> o .:? "retirement"
             <*> o .:? "derivation"
 
 instance ToJSON Receipt where
@@ -426,6 +434,7 @@ instance ToJSON Receipt where
             , "venue" .= receiptVenue r
             , "partial" .= receiptPartial r
             , "edge" .= receiptEdge r
+            , "retirement" .= receiptRetirement r
             , "derivation" .= receiptDerivation r
             ]
 
@@ -991,6 +1000,141 @@ instance ToJSON FoldStep where
             , "rootBefore" .= fsRootBefore s
             , "rootAfter" .= fsRootAfter s
             , "committed" .= fsCommitted s
+            ]
+
+{- | What a @updateTerminal@ row observed on chain (#177).
+
+The retirement is the only registry edge that destroys a token it did
+not create, so the evidence is about the ASSET and about the two
+transactions that moved it. Every field is read back from the chain, the
+transaction, or the committed trie; nothing here is a value the row
+wrote about itself.
+
+The two refusal legs are DISTINCT facts — a key the trie does not bind
+at all, and a key it binds Absent — and each carries the accepting
+control that makes it mean something. 'rlTrace' is 'Nothing' in the
+normal case: a script-execution failure carries an empty Plutus log
+list, so the validator's own trace is not recoverable, and the exact
+names are asserted in the compiled Aiken suite instead of guessed here.
+-}
+data RetirementEvidence = RetirementEvidence
+    { rtActivePolicy :: !Text
+    , rtKey :: !Text
+    , rtInsertTxid :: !Text
+    -- ^ the fold that created the witness this row burns
+    , rtRetireTxid :: !Text
+    -- ^ the fold that burned it; never the same transaction
+    , rtRoots :: !RetirementRoots
+    , rtQuantities :: !RetirementQuantities
+    , rtMint :: ![AssetEntry]
+    -- ^ what the RETIREMENT moved under the active policy
+    , rtSource :: !RetirementSource
+    -- ^ the input the burn consumed, read off the chain before it was
+    -- spent. A mint of @-1@ with no such input is the shape the cage
+    -- refuses `token-missing`.
+    , rtLeaf :: !Text
+    -- ^ the committed leaf, read back from the trie the next proof
+    -- begins at
+    , rtUnknown :: !RefusalLeg
+    , rtAbsent :: !RefusalLeg
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON RetirementEvidence where
+    parseJSON = withObject "RetirementEvidence" $ \o ->
+        RetirementEvidence
+            <$> o .: "activePolicy"
+            <*> o .: "key"
+            <*> o .: "insertTxid"
+            <*> o .: "retireTxid"
+            <*> o .: "roots"
+            <*> o .: "quantities"
+            <*> o .: "mint"
+            <*> o .: "source"
+            <*> o .: "leaf"
+            <*> o .: "unknown"
+            <*> o .: "absent"
+
+instance ToJSON RetirementEvidence where
+    toJSON r =
+        object
+            [ "activePolicy" .= rtActivePolicy r
+            , "key" .= rtKey r
+            , "insertTxid" .= rtInsertTxid r
+            , "retireTxid" .= rtRetireTxid r
+            , "roots" .= rtRoots r
+            , "quantities" .= rtQuantities r
+            , "mint" .= rtMint r
+            , "source" .= rtSource r
+            , "leaf" .= rtLeaf r
+            , "unknown" .= rtUnknown r
+            , "absent" .= rtAbsent r
+            ]
+
+{- | The committed registry root at each step of the retirement. All
+three differ: a root that did not move is a fold that did not land, and
+the next proof would be built against a state the chain left behind.
+-}
+data RetirementRoots = RetirementRoots
+    { rrBeforeInsert :: !Text
+    , rrActive :: !Text
+    , rrTerminal :: !Text
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON RetirementRoots where
+    parseJSON = withObject "RetirementRoots" $ \o ->
+        RetirementRoots
+            <$> o .: "beforeInsert"
+            <*> o .: "active"
+            <*> o .: "terminal"
+
+instance ToJSON RetirementRoots where
+    toJSON r =
+        object
+            [ "beforeInsert" .= rrBeforeInsert r
+            , "active" .= rrActive r
+            , "terminal" .= rrTerminal r
+            ]
+
+-- | The holder's quantity of this key's active witness, before and after.
+data RetirementQuantities = RetirementQuantities
+    { rqBefore :: !Integer
+    , rqAfter :: !Integer
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON RetirementQuantities where
+    parseJSON = withObject "RetirementQuantities" $ \o ->
+        RetirementQuantities <$> o .: "before" <*> o .: "after"
+
+instance ToJSON RetirementQuantities where
+    toJSON q = object ["before" .= rqBefore q, "after" .= rqAfter q]
+
+-- | The exact input the burn consumed.
+data RetirementSource = RetirementSource
+    { rsOutref :: !Text
+    , rsPolicy :: !Text
+    , rsName :: !Text
+    , rsQuantity :: !Integer
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON RetirementSource where
+    parseJSON = withObject "RetirementSource" $ \o ->
+        RetirementSource
+            <$> o .: "outref"
+            <*> o .: "policy"
+            <*> o .: "name"
+            <*> o .: "quantity"
+
+instance ToJSON RetirementSource where
+    toJSON s =
+        object
+            [ "outref" .= rsOutref s
+            , "policy" .= rsPolicy s
+            , "name" .= rsName s
+            , "quantity" .= rsQuantity s
             ]
 
 {- | What an @insertActive@ row observed on chain (#173, completed in

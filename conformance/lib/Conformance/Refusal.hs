@@ -306,6 +306,7 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                             , receiptDirty = dirty
                             , receiptPartial = Nothing
                             , receiptEdge = Nothing
+                            , receiptRetirement = Nothing
 
                             , receiptDerivation = Nothing
                             }
