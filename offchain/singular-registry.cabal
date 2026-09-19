@@ -579,6 +579,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.CageSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
+    Singular.Registry.E2E.InsertActiveSpec
     Singular.Registry.E2E.OpenBootSpec
   build-depends:
     , async

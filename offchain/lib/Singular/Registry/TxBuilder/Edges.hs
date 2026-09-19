@@ -39,6 +39,7 @@ module Singular.Registry.TxBuilder.Edges (
 
     -- * Booking one edge
     bookEdge,
+    bookEdgeTo,
     edgeDeposit,
     edgeDestinationOf,
     edgeRecordDatum,
@@ -309,6 +310,9 @@ edgeDeposit = 3_000_000
 which edge this is, for whom and where it delivers, and the request
 carries that approval to the fold.
 -}
+{- | Book an edge, routing its minted token to the destination
+`edgeDestinationOf` chooses for it.
+-}
 bookEdge ::
     CageConfig ->
     NamingCodes ->
@@ -319,7 +323,43 @@ bookEdge ::
     ByteString ->
     OnChainOperation ->
     IO TxIn
-bookEdge cfg codes prov submit payerAddr tokenId key op = do
+bookEdge cfg codes prov submit payerAddr tokenId key op =
+    bookEdgeTo
+        cfg
+        codes
+        prov
+        submit
+        payerAddr
+        tokenId
+        key
+        op
+        (edgeDestinationOf cfg codes payerAddr op)
+
+{- | Book an edge, naming the destination explicitly (#173 I4, I5).
+
+`edgeDestinationOf` sends an `insertActive` to the APPLICATION's own
+script address, because the naming application is what creates the
+record the active token witnesses. The OPEN registry has no such
+application: `open.ak` is a minting policy with no spending arm at all,
+so a token routed there would be locked forever.
+
+The open story therefore names a WALLET, and the request carries that
+choice. Nothing on chain changes: the cage already checks the
+destination the request declares, and this is the off-chain builder
+learning to say something it could not say before.
+-}
+bookEdgeTo ::
+    CageConfig ->
+    NamingCodes ->
+    Cage.Provider IO ->
+    SubmitSigned ->
+    Addr ->
+    TokenId ->
+    ByteString ->
+    OnChainOperation ->
+    (ByteString, ByteString) ->
+    IO TxIn
+bookEdgeTo cfg codes prov submit payerAddr tokenId key op dest0 = do
     edge <- case edgeOf op (statedBefore op) of
         Just e -> pure e
         Nothing ->
@@ -343,7 +383,7 @@ bookEdge cfg codes prov submit payerAddr tokenId key op = do
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        dest@(destAddr, destHash) = edgeDestinationOf cfg codes payerAddr op
+        dest@(destAddr, destHash) = dest0
         name = approvalName edge key owner dest
         appScript = scriptFromBytes "naming-application" (ncApplication codes)
         appPolicy = PolicyID (hashScript appScript)
