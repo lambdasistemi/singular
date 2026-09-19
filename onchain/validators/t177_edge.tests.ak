@@ -181,16 +181,50 @@ test t177_the_witness_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
-// PARKED, not deleted, and not quietly weakened: the Lean row also
-// says no OUTPUT carries the retired asset
-// (`kindCount t.state .active r.key = 0`). Enforcing that here needs
-// the burn to require exactly one input at exactly one, and the
-// compiled validator does not have room for it — see
-// `questions/Q-001-state-script-size-ceiling.md`. Under `Reachable` the
-// state it would refuse is unreachable, but that is an argument for
-// parking the row, never for calling it covered. The rows below hold
-// the part that does fit: the key's own witness must be among the
-// inputs.
+/// The burn must destroy THE key's own witness, not merely find some
+/// input under the policy. Two witnesses ride in, the mint destroys
+/// one, and one SURVIVES in an output — the active asset the Lean row
+/// says no output carries (`kindCount t.state .active r.key = 0`).
+/// Nothing here is a mint fault: the mint is the exact `-1` the edge
+/// entails.
+///
+/// A-003: this row is not parked and not weakened. The guard that
+/// refuses it is what made the state validator outgrow the boot
+/// transaction, and the repair was to stop carrying that validator
+/// inline at boot rather than to drop the guard.
+fn leftoverCarrier() -> Bool {
+  retire(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [
+      fx.tokenInput(0, fx.activePolicy, fx.keyA),
+      fx.tokenInput(1, fx.activePolicy, fx.keyA),
+    ],
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+    theBurn(),
+  )
+}
+
+test t177_a_surviving_active_carrier_refuses_cleanly() {
+  leftoverCarrier() == False
+}
+
+/// The control for the row above: drop the second witness and the
+/// carrier output, change nothing else, and the retirement lands. The
+/// difference is exactly the surviving token.
+test t177_the_surviving_carrier_control_accepts() {
+  retireFrom(fx.activeLeaf)
+}
+
 
 /// A witness for ANOTHER key is not this key's witness. `keyB`'s token
 /// rides in and `keyA`'s does not; the mint is still `keyA: -1`.

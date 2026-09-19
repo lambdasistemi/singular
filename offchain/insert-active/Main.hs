@@ -60,7 +60,8 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.TxIn (TxId (..))
-import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Api.Tx.Out (referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
 import Cardano.Ledger.Core (valueTxOutL)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
@@ -93,6 +94,7 @@ import Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     computeScriptHash,
     extractCageDatum,
+    scriptFromBytes,
     findStateUtxo,
     leafActive,
     policyIdFromPin,
@@ -196,9 +198,22 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
         submit = nsSubmitter sess
     tm <- mkPureTrieManager
     _ <- Cage.queryProtocolParams prov
+    -- #177 A-003: publish the state validator as a reference output
+    -- BEFORE the seed is chosen. The publication spends the wallet's
+    -- largest ada-only output, which a seed picked first could be, and
+    -- boot would then look for a UTxO the publication had spent.
+    _ <-
+        Edges.publishRefScript
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            (scriptFromBytes "state" stateBytes)
     utxos <- Cage.queryUTxOs prov genesisAddr
-    seedRef <- case utxos of
-        [] -> die "the genesis wallet has no UTxO to seed the registry with"
+    -- #177 A-003: never seed from the reference publication. Boot
+    -- REFERENCES that output, and a transaction may not both spend and
+    -- reference the same one.
+    seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
+        [] -> die "the genesis wallet has no spendable UTxO to seed the registry with"
         ((txIn, _) : _) -> pure (txInToRef txIn)
 
     codes <- loadRegistryCodesFromEnv

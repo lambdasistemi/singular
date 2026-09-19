@@ -593,6 +593,7 @@ test-suite e2e-tests
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry
@@ -658,6 +659,7 @@ executable update-terminal
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
+    , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry

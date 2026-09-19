@@ -175,7 +175,7 @@ type Duty {
   /// at `-1` by C5, ledger conservation leaves the outputs carrying
   /// none. No separate output rule is added for the two to disagree
   /// over.
-  BurnFromInput { policy: PolicyId, key: ByteArray, reason: String }
+  BurnFromInput { policy: PolicyId, key: ByteArray, sole: Bool }
 }
 
 /// The fold's accumulator. `ok` latches false on the first refusal and
@@ -305,7 +305,7 @@ fn dutiesOf(
       },
     ]
   } else if edge == edgeUpdateTerminal {
-    [BurnFromInput { policy: pins.active_policy, key, reason: tokenMissingRefusal() }]
+    [BurnFromInput { policy: pins.active_policy, key, sole: True }]
   } else if edge == edgeDeleteAbsent {
     [SpendCustody { key }]
   } else if edge == edgeWitnessTerminal {
@@ -321,7 +321,7 @@ fn dutiesOf(
     // `deleteActive` (edge 5) burns the active token the request names;
     // the cage requires it as an input, exactly as the terminal update
     // does.
-    [BurnFromInput { policy: pins.active_policy, key, reason: @"burn-from-input" }]
+    [BurnFromInput { policy: pins.active_policy, key, sole: False }]
   }
 }
 
@@ -708,15 +708,42 @@ fn dutyOk(
             True
           }
       }
-    BurnFromInput { policy, key, reason } ->
-      if find(
-        tx.inputs,
-        fn(i) { quantity_of(i.output.value, policy, key) >= 1 },
-      ) == None {
-        traceFalse(reason)
+    BurnFromInput { policy, key, sole } -> {
+      // #177 I177-CHAIN. `sole` is the whole difference between the two
+      // burning edges, and the reason each gives.
+      //
+      // `deleteActive` (edge 5) asks only that SOME input carries the
+      // asset, and traces `burn-from-input`. The RETIREMENT asks that
+      // the transaction present THIS key's ONE witness — exactly one
+      // input carrying exactly one — and traces Lean's `token-missing`.
+      // Sharing one constructor keeps edge 5's decision table and trace
+      // exactly where they were.
+      //
+      // The strict form is what settles the Lean row's
+      // `kindCount t.state .active r.key = 0`: with one unit on an
+      // input and the mint pinned at `-1` by C5, ledger conservation
+      // leaves the outputs carrying none. No separate output rule is
+      // added for the two to disagree over.
+      //
+      // Both ways of failing the strict form are the same fact about an
+      // unreachable state: under `Reachable`,
+      // `biconditional_supply_sync` makes a `Known Active` leaf and
+      // exactly one outstanding active token the same thing, so neither
+      // zero witnesses nor two is a story a user can tell.
+      let carriers =
+        filter(tx.inputs, fn(i) { quantity_of(i.output.value, policy, key) != 0 })
+      if !sole {
+        carriers != [] || traceFalse(@"burn-from-input")
       } else {
-        True
+        when carriers is {
+          [source] ->
+            quantity_of(source.output.value, policy, key) == 1 || traceFalse(
+              tokenMissingRefusal(),
+            )
+          _ -> traceFalse(tokenMissingRefusal())
+        }
       }
+    }
   }
 }
 

@@ -21,8 +21,20 @@ module Singular.Registry.E2E.CageSpec (
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
 import Data.ByteString (ByteString)
+import Control.Monad (when)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Data.ByteString.Lazy qualified as BSL
+import Cardano.Ledger.Api.Tx (witsTxL)
+import Cardano.Ledger.Api.Tx.Body (
+    collateralInputsTxBodyL,
+    feeTxBodyL,
+    referenceInputsTxBodyL,
+ )
+import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
+import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Lens.Micro ((^.))
 import System.Environment (lookupEnv)
 import Test.Hspec (
@@ -39,8 +51,8 @@ import Cardano.Ledger.Api.Tx (
     txIdTx,
  )
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
+import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, referenceScriptTxOutL)
+import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (SNothing), TxIx (..))
 import Cardano.Ledger.Mary.Value (
     MultiAsset (..),
  )
@@ -104,6 +116,7 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     leafAbsent,
     requestAddrFromCfg,
+    scriptFromBytes,
     scriptHashBytes,
     txInToRef,
  )
@@ -338,11 +351,52 @@ bootCage ::
 bootCage cfg prov submit tm = do
     let stateAddr =
             cageAddrFromCfg cfg Testnet
+    bootWallet <- Cage.queryUTxOs prov genesisAddr
     unsignedBoot <-
         bootTokenImpl
             cfg
             prov
             genesisAddr
+    -- #177 A-003: the boot transaction must RESOLVE the state validator
+    -- through the published reference output, not carry it. The
+    -- validator is fifteen kilobytes against a sixteen-kilobyte cap, so
+    -- an inline boot leaves the registry no room to grow — that is what
+    -- the retirement guard ran out of. Asserted on the transaction the
+    -- chain accepted, and printed with its size so a reviewer can see
+    -- the budget rather than take it on trust.
+    let bootScripts = unsignedBoot ^. witsTxL . scriptTxWitsL
+        bootRefs = unsignedBoot ^. bodyTxL . referenceInputsTxBodyL
+        bootBytes =
+            BSL.length (serialize (eraProtVerHigh @ConwayEra) unsignedBoot)
+    putStrLn
+        ( "[boot] bytes="
+            <> show bootBytes
+            <> " inline-scripts="
+            <> show (Map.size bootScripts)
+            <> " reference-inputs="
+            <> show (Set.size bootRefs)
+            <> " fee="
+            <> show (unsignedBoot ^. bodyTxL . feeTxBodyL)
+            <> " collateral-coins="
+            <> show
+                [ c
+                | i <- Set.toList (unsignedBoot ^. bodyTxL . collateralInputsTxBodyL)
+                , (j, o) <- bootWallet
+                , i == j
+                , let Coin c = o ^. coinTxOutL
+                ]
+            <> " wallet-coins="
+            <> show [c | (_, o) <- bootWallet, let Coin c = o ^. coinTxOutL]
+        )
+    when (Map.member (cfgScriptHash cfg) bootScripts) $
+        expectationFailure
+            "#177 A-003: the boot transaction carries the state validator \
+            \INLINE. It must reference the published output instead; an \
+            \inline boot is what left no room for the retirement guard."
+    when (Set.null bootRefs) $
+        expectationFailure
+            "#177 A-003: the boot transaction resolves no reference input, \
+            \so the state validator was not published before it."
     signedBoot <- submitWithGenesis submit unsignedBoot
     let tokenId =
             extractTokenId cfg signedBoot
@@ -464,14 +518,29 @@ withE2E stateBytes requestBytes action = do
         tm <- mkPureTrieManager
         -- Verify connection works
         _ <- Cage.queryProtocolParams prov
+        -- #177 A-003: publish the state validator as a reference output
+        -- BEFORE the seed is chosen. The publication spends the
+        -- wallet's largest ada-only output, which is exactly the one a
+        -- seed picked first would have pinned — the boot would then
+        -- look for a UTxO the publication had already spent.
+        _ <-
+            Edges.publishRefScript
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                (scriptFromBytes "state" stateBytes)
         -- Pick the seed from the genesis wallet. The state script
         -- is unparameterized; boot carries the seed in the mint
         -- redeemer.
         utxos <- Cage.queryUTxOs prov genesisAddr
-        seedRef <- case utxos of
+        -- #177 A-003: never seed from the reference publication. Boot
+        -- REFERENCES that output, and a transaction may not both spend
+        -- and reference the same one — the ledger calls it
+        -- `BabbageNonDisjointRefInputs`.
+        seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
             [] ->
                 error
-                    "withE2E: no UTxOs in genesis \
+                    "withE2E: no spendable UTxO in the genesis \
                     \wallet — cannot pick a seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
         codes <- loadRegistryCodesFromEnv

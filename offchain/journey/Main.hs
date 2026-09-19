@@ -194,6 +194,7 @@ import Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     toLedgerData,
     toPlcData,
+    scriptFromBytes,
     txInToRef,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
@@ -552,14 +553,26 @@ runJourney si stateBytes requestBytes stakingBytes = do
         mirrorRef <- newIORef emptyMPFInMemoryDB
         -- Verify the connection carries queries before building on it.
         _ <- Cage.queryProtocolParams prov
+        -- #177 A-003: publish the state validator as a reference output
+        -- BEFORE the seed is chosen, so the publication cannot spend
+        -- the very output the seed pins. Boot then references the
+        -- fifteen-kilobyte script instead of carrying it inline.
+        _ <-
+            Edges.publishRefScript
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                (scriptFromBytes "state" stateBytes)
         -- Pick the boot seed from the genesis wallet. The state
         -- script is unparameterized; boot carries the seed in the
         -- mint redeemer.
         utxos <- Cage.queryUTxOs prov genesisAddr
-        seedRef <- case utxos of
+        -- #177 A-003: never seed from the reference publication; boot
+        -- references that output and cannot also spend it.
+        seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
             [] ->
                 failWith
-                    "genesis wallet has no UTxOs; cannot pick a boot seed"
+                    "genesis wallet has no spendable UTxO; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
         codes <- loadRegistryCodesFromEnv
         let cfg = cageCfg stateBytes requestBytes codes seedRef

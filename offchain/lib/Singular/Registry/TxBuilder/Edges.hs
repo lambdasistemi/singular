@@ -34,6 +34,7 @@ module Singular.Registry.TxBuilder.Edges (
 
     -- * Reference outputs
     publishRefScript,
+    publishStateRef,
     publishCageRefs,
     adaOnlyOut,
 
@@ -247,6 +248,39 @@ publishRefScript prov submit payerAddr script = do
                 & feeTxBodyL .~ Coin fee
     signed <- submit (mkBasicTx body)
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+
+
+{- | Publish the state validator as a reference output, once, before any
+boot (#177).
+
+The boot transaction carries the state validator inline unless the
+payer's wallet already holds a publication of it, and that validator is
+fifteen kilobytes against a sixteen-kilobyte transaction cap. A session
+calls this before its first boot and every boot after it references the
+script instead of carrying it, which is what leaves room for the
+retirement's guard.
+
+Idempotent by discovery: a wallet that already holds the publication
+gets it back rather than a second one, so a harness that boots several
+cages publishes once.
+-}
+publishStateRef ::
+    CageConfig ->
+    Cage.Provider IO ->
+    SubmitSigned ->
+    Addr ->
+    IO (TxIn, TxOut ConwayEra)
+publishStateRef cfg prov submit payerAddr = do
+    let script = mkCageScript cfg
+        wanted = hashScript script
+    utxos <- Cage.queryUTxOs prov payerAddr
+    case [ u
+         | u@(_, out) <- utxos
+         , SJust s <- [out ^. referenceScriptTxOutL]
+         , hashScript s == wanted
+         ] of
+        (u : _) -> pure u
+        [] -> publishRefScript prov submit payerAddr script
 
 {- | Publish this cage's scripts as reference outputs: the cage, the
 request validator and the three token policies.
