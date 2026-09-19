@@ -66,20 +66,19 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Re-frozen on #173's transaction row: 84 = 47 manifest-bound + 37
-        # unclassified. The 47 are the registry's 26 statements plus naming's 7,
+        # Re-frozen on #177's transaction row: 85 = 48 manifest-bound + 37
+        # unclassified. The 48 are the registry's 27 statements plus naming's 7,
         # its lifecycle's 9 and its wire encoding's 5; the 37 are the lemmas and
-        # effect equations they are proved from. The registry's 24 became 26
-        # with insert_active_transaction_row and
-        # fold_batch_claimed_mint_by_kind_key; the unclassified 37 is unchanged,
-        # because the slice added statements and no new lemma. The #157 base was
+        # effect equations they are proved from. The registry's 26 became 27
+        # with update_terminal_transaction_row; the unclassified 37 is unchanged,
+        # because the slice added one statement and no new lemma. The #157 base was
         # 82 = 45 + 37, the #156 base 79 = 42 + 37, and before it 196 = 113 + 83
         # — the disposition of all 44 of those base declarations is in
         # docs/model-ledger.md (1 carried, 3 renamed, 40 retired).
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 47)
+        self.assertEqual(inv.manifest_bound, 48)
         self.assertEqual(inv.unclassified, 37)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 84)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 85)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares

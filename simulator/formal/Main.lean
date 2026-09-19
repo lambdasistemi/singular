@@ -282,14 +282,16 @@ def otherRegistry : Config :=
 def txRoleName : TxRole → String
   | .state => "state" | .request => "request"
   | .destination => "destination" | .cage => "cage"
+  | .witness => "witness"
 
-def txInputJson (i : TxInput) : Json :=
+def txInputJson (c : Config) (i : TxInput) : Json :=
   Json.mkObj
     [ ("role", toJson (txRoleName i.role))
     , ("datum", toJson (datumFormName i.datum))
     , ("stateToken", toJson i.stateTokens)
     , ("approvalQuantity", toJson i.approvals)
-    , ("lovelace", toJson i.lovelace) ]
+    , ("lovelace", toJson i.lovelace)
+    , ("assets", assetsJson c i.assets) ]
 
 def txOutputJson (c : Config) (o : TxOutput) : Json :=
   Json.mkObj
@@ -305,7 +307,7 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
 constructed; nothing here is assembled beside it. -/
 def txJson (c : Config) (tx : Tx) : Json :=
   Json.mkObj
-    [ ("inputs", Json.arr ((tx.inputs.map txInputJson).toArray))
+    [ ("inputs", Json.arr ((tx.inputs.map (txInputJson c)).toArray))
     , ("outputs", Json.arr ((tx.outputs.map (txOutputJson c)).toArray))
     , ("mint", assetsJson c tx.mint)
     , ("signers", toJson tx.signers)
@@ -341,6 +343,101 @@ def transactionRowJson : Json :=
       , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
       , ("secondInsert", Json.mkObj [("accepted", toJson false), ("reason", toJson why)]) ]
   | _, _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
+
+/-! ### T1 — the `updateTerminal` transaction row (#177)
+
+Retirement is the first row in this corpus whose mint is negative, and a
+negative mint is the one thing a transaction cannot simply assert: the token has
+to be spent from somewhere. The state below is the one the accepted
+`insertActive` produced, so the active witness this fold burns is the very token
+that edge minted, and the verdicts read the built value rather than the logical
+step. -/
+
+def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
+def retirementRowStatement : String :=
+  "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+
+/-- The state an accepted `insertActive` at key 42 produced: the leaf reads
+`Active` and its one active token is held at output 555. -/
+def retireState : RegistryState := booked s0 42
+
+/-- The retirement this row folds: `updateTerminal` at key 42, claiming exactly
+the active token it burns. -/
+def retireRequest : Request :=
+  { req .updateTerminal 42 42 555 with claimed := [(.active, -1)] }
+
+def retireResult : Except String Result := step retireState retireRequest
+
+def retireTx : Except String Tx := txOf retireState retireRequest txLovelace
+
+/-- The assets the built transaction destroys, read off its own mint rather than
+off the edge — a row that counted the edge's delta would agree with itself. -/
+def retireBurned : List (Asset × Int) :=
+  match retireTx with
+  | .ok tx => tx.mint.filter (fun p => p.2 < 0)
+  | .error _ => []
+
+/-- The tokens the built transaction's inputs bring in. -/
+def retireSpent : List (Asset × Int) :=
+  match retireTx with
+  | .ok tx => tx.inputs.flatMap (·.assets)
+  | .error _ => []
+
+/-- Every burned asset is spent by an input, at the same `(kind, key)` and the
+same quantity: the burn's source, stated over the whole mint rather than over
+the one token this edge happens to destroy. -/
+def retireBurnSourced : Bool :=
+  !retireBurned.isEmpty && retireBurned.all fun p =>
+    assetKind retireSpent p.1 == -p.2
+
+/-- No output is left holding a quantity an output cannot hold. -/
+def retireOutputsPositive : Bool :=
+  match retireTx with
+  | .ok tx => tx.outputs.all fun o => o.assets.all fun p => 0 < p.2
+  | .error _ => false
+
+/-- The same retirement request folded from a state whose leaf for key 42 is
+elsewhere in its life, or whose active token is gone: the refusals, observed at
+the transaction the consumer would have to build. -/
+def retireRefusal (s : RegistryState) : String :=
+  match txOf s retireRequest txLovelace with
+  | .ok _ => "" | .error why => why
+
+def retireWithoutToken : RegistryState := { retireState with held := [] }
+
+def retirementRefusalRows : List (String × String × RegistryState) :=
+  [ ("GT01-update-terminal-unknown-refused", "key-unknown", s0)
+  , ("GT02-update-terminal-absent-refused", "not-booked", witnessed s0 42)
+  , ("GT03-update-terminal-terminal-refused", "terminal-immutable", retiredState)
+  , ("GT04-update-terminal-without-token-refused", "token-missing", retireWithoutToken) ]
+
+def retirementRowJson : Json :=
+  match retireTx, retireResult with
+  | .ok tx, .ok r =>
+    Json.mkObj
+      [ ("profile", "updateTerminal")
+      , ("accepted", toJson true)
+      , ("theorem", toJson retirementRowTheorem)
+      , ("statementSha256", toJson retirementRowStatement)
+      , ("applicationPolicy", toJson cfg.applicationPolicy)
+      , ("transaction", txJson cfg tx)
+      , ("tip", toJson cfg.maxFee)
+      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
+      , ("claimed", assetsJson cfg (requestClaim retireRequest))
+      , ("burned", assetsJson cfg retireBurned)
+      , ("spentByInputs", assetsJson cfg retireSpent)
+      , ("burnSourced", toJson retireBurnSourced)
+      , ("outputsHoldOnlyPositiveQuantities", toJson retireOutputsPositive)
+      , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
+          && r.state.config.root == rootOf r.state.trie))
+      , ("leafAfter", leafJson (trieGet r.state.trie retireRequest.key))
+      , ("destinationDatumBinds", toJson (destinationDatumBinds retireRequest))
+      , ("activeQuantityBefore", toJson (kindCount retireState .active retireRequest.key))
+      , ("activeQuantityAfter", toJson (kindCount r.state .active retireRequest.key))
+      , ("refusals", Json.arr ((retirementRefusalRows.map fun row =>
+          Json.mkObj [("id", toJson row.1), ("accepted", toJson false),
+            ("reason", toJson (retireRefusal row.2.2))]).toArray)) ]
+  | _, _ => Json.mkObj [("profile", "updateTerminal"), ("accepted", toJson false)]
 
 /-- Two booking requests at two distinct keys, each claiming its own token: the
 accepted row at `n > 1` keys. -/
@@ -426,6 +523,20 @@ def main : IO Unit := do
     throw (IO.userError "T1 keyed accepted row refused")
   unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do
     throw (IO.userError s!"T1 wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
+  -- #177: the transaction an admitted updateTerminal builds is a verdict too
+  unless (match retireResult with | .ok _ => true | .error _ => false) do
+    throw (IO.userError "T1 updateTerminal was refused at a booked key")
+  unless (match retireTx with | .ok _ => true | .error _ => false) do
+    throw (IO.userError "T1 the model built no transaction for an admitted updateTerminal")
+  unless retireBurnSourced do
+    throw (IO.userError s!"T1 updateTerminal burns {repr retireBurned} and its inputs spend {repr retireSpent}: the burn has no source")
+  unless retireOutputsPositive do
+    throw (IO.userError "T1 updateTerminal: an output is left holding a quantity an output cannot hold")
+  unless (match retireTx with | .ok tx => tx.refunds.isEmpty && tx.signers.isEmpty | .error _ => false) do
+    throw (IO.userError "T1 updateTerminal: refunds or required signers are not empty")
+  for (id, expected, before) in retirementRefusalRows do
+    unless retireRefusal before == expected do
+      throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")
   unless batchEmpty.isSome && batchMint.isSome do throw (IO.userError "fold rows failed")
   let foldJson := foldRows.map fun p =>
     Json.mkObj [("id", p.1), ("ok", p.2.1), ("reason", p.2.2),
@@ -444,7 +555,7 @@ def main : IO Unit := do
     , ("codec", toJson codecJson)
     , ("configRoundtrip", toJson configRow)
     , ("tokenPolicies", tokenPoliciesJson)
-    , ("transactions", Json.arr #[transactionRowJson])
+    , ("transactions", Json.arr #[transactionRowJson, retirementRowJson])
     , ("keyedMintRows", Json.arr
         #[ keyedMintRowJson "GK01-two-keys-accepted" keyedAccepted
          , keyedMintRowJson "GK02-same-kind-wrong-key-refused" keyedWrongKey ])

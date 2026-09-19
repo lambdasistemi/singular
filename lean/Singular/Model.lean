@@ -725,19 +725,24 @@ the executed step, so a statement can quantify over a constructed value — ever
 input, every output, the datums they present, the assets they carry, the exact
 mint, the destination the tokens are routed to, and the signatures required. -/
 
-/-- The part an input or output plays in a fold transaction. -/
+/-- The part an input or output plays in a fold transaction. `witness` is the
+UTxO a requester holds a witness token at: the place an active or terminal token
+lives between the fold that minted it and the fold that consumes it. -/
 inductive TxRole where
-  | state | request | destination | cage
+  | state | request | destination | cage | witness
   deriving Repr, BEq, DecidableEq
 
-/-- An input the fold spends: the registry's state UTxO, or a request UTxO
-carrying its approvals and the lovelace that pays the tip. -/
+/-- An input the fold spends: the registry's state UTxO, a request UTxO carrying
+its approvals and the lovelace that pays the tip, or a UTxO holding a token the
+fold destroys. `assets` is what the input brings in, so a burn has a source and
+not merely a negative number in the mint. -/
 structure TxInput where
   role : TxRole
   datum : DatumForm
   stateTokens : Nat
   approvals : Nat
   lovelace : Nat
+  assets : List (Asset × Int) := []
   deriving BEq, DecidableEq
 
 /-- An output the fold produces. `address` is `none` for the state output: the
@@ -768,6 +773,35 @@ executed result's mint through the model's own routing rule. -/
 def mintRoutedTo (t : Result) (r : Request) (d : Destination) : List (Asset × Int) :=
   t.mint.filter fun p => route p.1.1 r == d
 
+/-- What an output routed here actually holds. A routed delta is a payment only
+when it is positive: a burn pays nobody, and an output holding a negative
+quantity is not an output. The tokens a burn destroys enter through
+`txBurnInputs` instead. -/
+def routedPayment (t : Result) (r : Request) (d : Destination) : List (Asset × Int) :=
+  (mintRoutedTo t r d).filter fun p => 0 < p.2
+
+/-- Where a token of a kind already lives, and therefore which UTxO a fold
+spends to destroy one: cage custody holds the absent tokens, and a requester
+holds the active and terminal witnesses at the output the fold that minted them
+named. Read off `route`, so the token is consumed from the place the same rule
+sent it to. -/
+def burnSourceRole (d : Destination) : TxRole :=
+  match d with
+  | .cageCustody => .cage
+  | .requestOutput => .witness
+
+/-- The inputs that supply the tokens this fold destroys: one UTxO per burned
+asset, carrying exactly that asset in the quantity the mint takes away, at the
+place the model says that kind of token lives. A fold that burns nothing spends
+none of them, which is why `insertActive` still has two inputs. -/
+def txBurnInputs (t : Result) (r : Request) : List TxInput :=
+  t.mint.filterMap fun p =>
+    if p.2 < 0 then
+      some { role := burnSourceRole (route p.1.1 r), datum := registryDatumForm
+           , stateTokens := 0, approvals := 0, lovelace := 0
+           , assets := [(p.1, -p.2)] }
+    else none
+
 /-- The state output: the registry's single state UTxO, moved, carrying the
 configuration the step produced under an inline datum. -/
 def txStateOutput (t : Result) : TxOutput :=
@@ -782,13 +816,13 @@ def txDestinationOutput (t : Result) (r : Request) : TxOutput :=
   { role := .destination, datum := registryDatumForm
   , address := some (requestDestination r), stateTokens := 0, config := none
   , commitment := some (datumHash (destinationDatum r))
-  , assets := mintRoutedTo t r .requestOutput }
+  , assets := routedPayment t r .requestOutput }
 
 /-- The cage output, present only when this edge routes a token to cage custody.
 `insertActive` routes none, so its transaction has exactly two outputs; the
 constructor is general so the shape is not special-cased to one edge. -/
 def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
-  let assets := mintRoutedTo t r .cageCustody
+  let assets := routedPayment t r .cageCustody
   if assets.isEmpty then []
   else [{ role := .cage, datum := registryDatumForm, address := some 0
         , stateTokens := 0, config := none, commitment := none, assets := assets }]
@@ -805,6 +839,7 @@ def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :
               , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
             , { role := .request, datum := registryDatumForm
               , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
+            ++ txBurnInputs t r
         , outputs := txStateOutput t :: txDestinationOutput t r :: txCageOutputs t r
         , mint := t.mint
         , signers := requiredSigners r

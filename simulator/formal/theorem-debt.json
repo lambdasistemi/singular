@@ -150,6 +150,12 @@
     "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
   },
   {
+    "name": "Singular.Statements.update_terminal_transaction_row",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+  },
+  {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
     "status": "PROVED",
     "debt": "none",
