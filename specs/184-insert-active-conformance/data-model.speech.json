@@ -1,0 +1,30 @@
+{
+  "cg21-receipt-relationship": [
+    {
+      "text": "One CG21 receipt binds one accepted fold and two distinct refusal legs, each with its own accepted control.",
+      "pause": 400
+    }
+  ],
+  "fold-observation-fields": [
+    {
+      "text": "The fold observation names policies, key, transaction, mint, destination, delivered asset and each fine transaction conjunct.",
+      "pause": 400
+    }
+  ],
+  "refusal-leg-fields": [
+    {
+      "text": "Each refusal leg names its rejected transaction, failing hashes, optional trace, accepted control and distinguisher.",
+      "pause": 400
+    }
+  ],
+  "validation-invariants": [
+    {
+      "text": "CG21 fields are mandatory, keyed-mint keys are distinct, observations share the candidate-bound run and absent traces stay absent.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "7c637f4e9e8f65880d911e025b46091775ba445069967bb8cec664e13f3d5fc2"
+  }
+}
