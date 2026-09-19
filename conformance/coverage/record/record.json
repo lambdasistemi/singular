@@ -48,6 +48,7 @@
     "Singular.Statements.termination@daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027",
     "Singular.Statements.update_active_inversion@fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982",
     "Singular.Statements.update_terminal_inversion@55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470",
+    "Singular.Statements.update_terminal_transaction_row@3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
     "Singular.Statements.witness_kinds_exclude@7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a",
     "Singular.Statements.witness_terminal_inversion@1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288",
     "Singular.applyEdge_deleteAbsent@08dc6f28ffe37cb33903ce1caef6ea1c025a61dce47e0950bca849af35dece2f",
