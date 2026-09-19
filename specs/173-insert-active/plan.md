@@ -24,7 +24,7 @@ transaction and refusal order.
 | layer | owned surface | required copy / observation |
 |---|---|---|
 | Lean authority | accepted `lean/**` revision and generated consumers | no behavior change; identities and mirrors remain synchronized |
-| on-chain substrate | `open.ak`; moved `witness.ak`; request/state encodings; script identities | parameterless open policy, four boot pins, edge-tagged request, no request tip |
+| on-chain substrate | `open.ak`; moved `witness.ak`; this edge's request encoding; script identities | parameterless open policy, four boot pins, edge-tagged request, no request tip; existing update/delete/read G3 behavior stays executable |
 | on-chain edge | cage `insertActive`, keyed mint comparison and named tests | active token at named output; `key-exists`; separate `net-mint-mismatch` |
 | off-chain | boot/request/connected-fold builders; E2E and journey | same blueprint identities and wire fields as Aiken |
 | conformance | edge fold/refusal; CS01/02/04/07/08; `rows.json` | executed old/new field and verdict mapping |
@@ -49,7 +49,8 @@ source fence. It works inside one four-hour run:
    docs and archive assembly; make A173-COMMAND and A173-COPIES green as
    separate committed checkpoints.
 5. Regenerate only the enumerated identity/blueprint/coverage/page/speech
-   consumers and create the pre-push decision record.
+   consumers, preserving every update/delete/read G3 row and verdict, and create
+   the pre-push decision record.
 
 Each checkpoint records the invariant, the owner's single gate result, the
 approach and rejected alternative, reliance on existing code, assumptions,
@@ -86,7 +87,9 @@ epic owner owns the edge-scoped pre-release/tag that publishes the archive with
 `insert-active`; this ticket only proves the archive bytes and command locally
 and in CI.
 
-If the four-hour wall is reached, retain one complete runnable cut—boot,
-`insertActive`, packaged command—and list independent conformance/doc polish as
-a `COMPLETE` remainder. Never ship a layer-only partial, stub another edge, or
-weaken an accepted Lean meaning.
+The estimate is one four-hour owner run after excluding retirement of other-edge
+G3 rows. A173-COPIES is inside that estimate and cannot be deferred as polish.
+If the wall is reached before every accepted line and enumerated copy is green,
+T173-I remains unchecked and unpushed; only unrelated newly discovered work may
+be listed as a remainder. If the edge still does not fit, re-slice the edge story
+through a new ruling rather than parking documentation or consumer contracts.

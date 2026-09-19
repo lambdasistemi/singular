@@ -27,8 +27,10 @@ layer-shaped tasks.
   workflow assertions; coverage records; E2E; journey; command page, consumer
   conformance page, archive manifest and speech companions.
 
-  Size: one four-hour run, one final Gate S execution. At the cap, return only
-  a runnable boot + edge + packaged command and record independent remainder.
+  Size: one four-hour run after excluding retirement of other-edge G3 rows, one
+  final Gate S execution. Every listed copy is mandatory. At the cap, an
+  incomplete task remains unchecked and unpushed; only unrelated newly
+  discovered work can become a remainder.
 
 ## Gate-held, not a task
 

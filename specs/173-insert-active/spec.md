@@ -49,7 +49,7 @@ per-kind total agrees.
 |---|---|
 | I1 | Add parameterless `onchain/validators/open.ak`. `Approve { edge, key, owner, destination }` mints exactly one `+1` asset named `approvalName(edge,key,owner,destination)` for edges 0–5; a wrong name refuses `approval-binding`, edges 6–7 refuse, a two-asset mint refuses `approval-quantity`, and a pure burn accepts. |
 | I2 | Move `witness.ak` from `naming-onchain/validators/` to `onchain/validators/`, preserving the three applied kinds. Boot pins open, active, absent and terminal policy IDs from `onchain/script-identity.json`; no naming blueprint participates. Only the active witness is exercised by this edge. |
-| I3 | The request wire shape carries the edge tag in place of `Operation` and drops its `tip`; the fold checks request lovelace is at least `state.tip`. Retire G1, G3 and `tip-mismatch` only with an explicit old-to-new row mapping. |
+| I3 | The request shape used by this edge carries the edge tag in place of `Operation` and drops its `tip`; the fold checks request lovelace is at least `state.tip`. Map and retire only the old `insertActive` codec and `tip-mismatch` rows. Existing update/delete/read G3 rows and verdicts remain executable; their migrations belong to their own edges. Mechanical shared-wire fixture updates preserve those rows rather than retiring them. |
 | I4 | The cage's `insertActive` arm admits the bound approval, applies the unknown-to-active transition, compares mint per `(kind,key)`, and routes exactly one active token to the request's named address and inline datum. Same-key duplication refuses `key-exists`; the distinct-key wrong-mint fixture refuses `net-mint-mismatch`. |
 | I5 | `TxBuilder.Boot`, `TxBuilder.Request` and `TxBuilder.ConnectedFold` construct this exact boot/request/fold. The packaged `insert-active` command uses those builders against a devnet and reports the resulting token and both named refusals. |
 | I6 | The archive contains the command, its run page and every runtime input. Extraction plus the documented invocation requires no checkout and no naming blueprint. |
@@ -90,9 +90,12 @@ home and applied hashes, and the edge-tagged request/eight-field datum encodings
 No other edge arm or row is changed: #177 `updateTerminal`, #158
 `witnessTerminal`, #178 `insertAbsent`, #179 `updateActive`, both delete edges,
 custody, NYA/application record preimages, escrow, or a release tag. Cross-registry
-separation is not promised by the parameterless open policy.
+separation is not promised by the parameterless open policy. A173-COPIES is a
+mandatory part of this runnable, not optional documentation polish; no candidate
+is ready until every enumerated copy is synchronized.
 
 If an implementation choice contradicts the accepted Lean rows, invents a
 naming dependency, or needs a CI command that does not exist, stop that line and
-raise a question. At the four-hour owner wall, keep the boot + `insertActive` +
-archive command vertical slice and return any independent remainder explicitly.
+raise a question. At the four-hour owner wall, an incomplete T173-I remains
+unchecked and unpushed. Only unrelated newly discovered work may be returned as
+a remainder; the accepted edge story and A173-COPIES may not be split.
