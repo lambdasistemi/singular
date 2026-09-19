@@ -6,6 +6,16 @@
   "compiler": "v1.1.21+unknown",
   "validators": [
     {
+      "title": "open.open.mint",
+      "hash": "db584f3c26d0dbe9b66448b87c037e4df955b28cc6d9820813c51254",
+      "parameters": 0
+    },
+    {
+      "title": "open.open.else",
+      "hash": "db584f3c26d0dbe9b66448b87c037e4df955b28cc6d9820813c51254",
+      "parameters": 0
+    },
+    {
       "title": "request.request.spend",
       "hash": "f9544ef6e278c31b0d349342cafb4fb30683149467924538a0da289f",
       "parameters": 2
@@ -39,6 +49,16 @@
       "title": "state.state.else",
       "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
       "parameters": 0
+    },
+    {
+      "title": "witness.witness.mint",
+      "hash": "186e86015514f5948052f64f1b1d35a9c406273404d335b9280de382",
+      "parameters": 2
+    },
+    {
+      "title": "witness.witness.else",
+      "hash": "186e86015514f5948052f64f1b1d35a9c406273404d335b9280de382",
+      "parameters": 2
     }
   ]
 }

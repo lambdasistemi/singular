@@ -1,4 +1,5 @@
 use aiken/cbor
+use aiken/collection/dict
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list.{delete, find}
 use aiken/crypto.{Hash, Sha2_256, blake2b_256, sha2_256}
@@ -549,5 +550,50 @@ pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
   when decodeAddress(address) is {
     Some(expected) -> expected == out.address
     None -> False
+  }
+}
+
+/// Why an insert edge is refused at a leaf, or `None` when it is
+/// admitted (#173 A-006, Lean L4 `insert_active_transaction_row`).
+///
+/// This exists so the DISTINCTION between the two refusals of #173 is
+/// executable. An Aiken test cannot read a `trace` back, so a row that
+/// only observes "the fold refused" cannot tell `key-exists` from
+/// `insert-terminal` — and those are claims about different facts.
+/// `state.ak`'s `refuseEdge` delegates here, so there is one
+/// construction site for the reason and the tests assert the same value
+/// the validator traces.
+///
+/// NOT YET IMPLEMENTED: it answers `None` for everything, so every
+/// caller reads "admitted". `t173_edge.tests.ak` executes it and fails.
+pub fn insertRefusal(_edge: Int, _before: Option<Int>) -> Option<String> {
+  None
+}
+
+/// The reason a fold whose claimed mint disagrees with the summed delta
+/// of its edges is refused (#173 A-006, Lean L2
+/// `fold_batch_claimed_mint_by_kind_key`).
+///
+/// NOT YET IMPLEMENTED: answers `None`.
+pub fn mintRefusal() -> Option<String> {
+  None
+}
+
+/// The total quantity a value moves under one policy, summed across
+/// every asset name — the COARSER accounting the keyed guard refines.
+///
+/// It exists to make the keyed guard's row non-vacuous: without it, a
+/// test asserting that a wrong keyed distribution is refused cannot show
+/// that the distribution it used agrees per kind, and a batch that also
+/// disagreed per kind would be refused by the coarser rule for a reason
+/// that says nothing about keys.
+pub fn kindTotal(value: Value, policy: PolicyId) -> Int {
+  sumQuantities(dict.values(tokens(value, policy)))
+}
+
+fn sumQuantities(quantities: List<Int>) -> Int {
+  when quantities is {
+    [] -> 0
+    [q, ..rest] -> q + sumQuantities(rest)
   }
 }

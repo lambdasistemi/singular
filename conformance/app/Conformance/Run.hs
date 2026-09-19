@@ -392,7 +392,7 @@ import Conformance.Refusal (
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
@@ -415,8 +415,16 @@ issue70Rows =
 -- ran: every accepting fold in the session.
 issue70AcceptingRows = ["CG11", "CG12", "CG14", "CG19"]
 
+-- The issue #173 rows, listed by membership like every other family:
+-- CG21 is the insertActive fold together with its two DISTINCT refusal
+-- fixtures (A-006) — the same-key duplicate refused `key-exists` before
+-- any mint arithmetic, and the two-distinct-key batch whose claimed
+-- mint agrees per kind and disagrees per (kind, key), refused
+-- `net-mint-mismatch`. Each refusal carries its own accepting control.
+issue173Rows = ["CG21"]
+
 canonicalRows :: [String]
-canonicalRows = caRows <> cgRows <> csRows <> issue70Rows
+canonicalRows = caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows
 
 data Control
     = Normal
@@ -667,10 +675,10 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows)]
+        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -744,7 +752,7 @@ validateRows raw = do
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
         hasCa = any (`elem` caRows) requested
-        hasCg = any (`elem` (cgRows <> issue70Rows)) requested
+        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows)) requested
     when (hasCa && hasCg) $
         failWith
             ( "CA and CG rows run as separate sessions, one devnet \
@@ -1307,6 +1315,15 @@ runRowIn env marker row = case row of
     "CG14" -> runCG14 env
     "CG15" -> runCG15 env
     "CG19" -> runCG19 env
+    -- #173 A173-EDGE/A173-REFUSALS. NOT YET IMPLEMENTED: the row is
+    -- reached inside a real session, on a real devnet, and fails here
+    -- rather than in `validateRows`, so the session, genesis, node and
+    -- partitioning subjects all execute before the absent fixture is
+    -- reported.
+    "CG21" ->
+        failWith
+            "CG21: the insertActive fold and its two refusal fixtures \
+            \(key-exists, net-mint-mismatch) are not yet implemented"
     _ -> failWith ("run cannot execute row: " <> row)
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()

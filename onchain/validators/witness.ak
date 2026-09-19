@@ -1,12 +1,26 @@
 use aiken/collection/dict
 use aiken/collection/dict.{get, keys}
-use aiken/primitive/bytearray
-use aiken/collection/list.{find}
+use aiken/collection/list.{find, length}
 use aiken/collection/pairs
+use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{PolicyId, Value, tokens}
 use cardano/transaction.{Input, Spend, Transaction}
-use naming.{modify_action_count, mpfs_state_hash}
+use types.{Modify, UpdateRedeemer}
+
+/// The state script this registry family's witnesses co-locate with
+/// (#157 N1). It is the compiled hash of `state.ak` in this same
+/// partition, pinned rather than derived: Aiken cannot name a
+/// validator's own hash, and deriving it from the `registry` parameter
+/// instead would admit a witness parametrised against a fabricated
+/// script whose hash merely prefixes the parameter.
+///
+/// The pin has no compile-time check. It has an EXECUTABLE one: a stale
+/// pin makes `foldPresent` find no registry, so every mint under every
+/// kind refuses and the devnet rows (S04's E2E, CG21's fold) go red on
+/// the first token this registry tries to move. It cannot rot quietly.
+pub const registryStateHash: ByteArray =
+  #"47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00"
 
 /// The three token policies of a registry instance (#157 N1).
 ///
@@ -34,6 +48,12 @@ use naming.{modify_action_count, mpfs_state_hash}
 /// cage token — the state policy id followed by the token name — so an
 /// instance is bound to one registry and cannot be reused against
 /// another.
+///
+/// #173 I2: this validator MOVED here from `naming-onchain/validators/`
+/// with its decision table unchanged. Only its reading of the fold
+/// redeemer changed: it now decodes the registry's own
+/// `types.UpdateRedeemer` instead of naming's structural mirror of it,
+/// so no naming module participates in a registry fold.
 validator witness(kind: Int, registry: ByteArray) {
   mint(_redeemer: Data, policy_id: PolicyId, tx: Transaction) {
     if kind == 2 && pureBurn(policy_id, tx.mint) {
@@ -81,10 +101,24 @@ fn foldPresent(registry: ByteArray, tx: Transaction) -> Bool {
   when find(tx.inputs, fn(input) { isRegistry(registry, input) }) is {
     Some(state) ->
       when pairs.get_first(tx.redeemers, Spend(state.output_reference)) is {
-        Some(redeemer) -> modify_action_count(redeemer) >= 0
+        Some(redeemer) -> modifyActionCount(redeemer) >= 0
         None -> False
       }
     None -> False
+  }
+}
+
+/// How many per-request actions the spend redeemer carries, or `-1` when
+/// the redeemer is not a `Modify` at all. A `Modify` with an empty
+/// action list still counts as a fold here: how many requests a fold may
+/// carry is the cage's rule (it refuses an empty one), not this policy's,
+/// and re-deciding it in two scripts is exactly the disagreement the
+/// split exists to prevent.
+fn modifyActionCount(redeemer_data: Data) -> Int {
+  if redeemer_data is Modify(actions): UpdateRedeemer {
+    length(actions)
+  } else {
+    -1
   }
 }
 
@@ -94,12 +128,12 @@ fn foldPresent(registry: ByteArray, tx: Transaction) -> Bool {
 fn isRegistry(registry: ByteArray, input: Input) -> Bool {
   when input.output.address.payment_credential is {
     address.Script(hash) ->
-      hash == mpfs_state_hash && when keys(
-        tokens(input.output.value, mpfs_state_hash),
+      hash == registryStateHash && when keys(
+        tokens(input.output.value, registryStateHash),
       ) is {
         [name] ->
-          get(tokens(input.output.value, mpfs_state_hash), name) == Some(1) && bytearray.concat(
-            mpfs_state_hash,
+          get(tokens(input.output.value, registryStateHash), name) == Some(1) && bytearray.concat(
+            registryStateHash,
             name,
           ) == registry
         _ -> False

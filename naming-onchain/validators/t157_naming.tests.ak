@@ -14,7 +14,6 @@ use cardano/transaction.{
 use fixtures
 use naming
 use naming.{NamingRecord, RetirementQuorum}
-use witness
 
 /// Registry-mode rows for naming (#157 Gate S): the six approval arms,
 /// the fold-created record, retirement's authority, completion, and the
@@ -684,88 +683,17 @@ test t157_n9_recover_without_the_registry_accepts() {
 // ============================================================================
 // P1, P2 — the three token policies
 // ============================================================================
-
-fn foldRedeemers() -> Pairs<transaction.ScriptPurpose, Data> {
-  let modify: Data = naming.MirrorModify([naming.MAUpdate([])])
-  [Pair(Spend(fixtures.state_ref), modify)]
-}
-
-/// A movement under one witness policy, with or without the fold around
-/// it.
-fn moveWitness(kind: Int, quantity: Int, inFold: Bool) -> Bool {
-  let policy =
-    if kind == 0 {
-      absentPolicy
-    } else if kind == 1 {
-      activePolicy
-    } else {
-      terminalPolicy
-    }
-  let redeemer: Data = #""
-  witness.witness.mint(
-    kind,
-    registryId(),
-    redeemer,
-    policy,
-    Transaction {
-      ..transaction.placeholder,
-      mint: add(zero, policy, registryKey, quantity),
-      inputs: if inFold {
-        [fixtures.state_input()]
-      } else {
-        []
-      },
-      redeemers: if inFold {
-        foldRedeemers()
-      } else {
-        []
-      },
-    },
-  )
-}
-
-test t157_p1_absent_mint_outside_a_fold_refuses() fail {
-  moveWitness(0, 1, False)
-}
-
-test t157_p1_active_mint_outside_a_fold_refuses() fail {
-  moveWitness(1, 1, False)
-}
-
-test t157_p1_terminal_mint_outside_a_fold_refuses() fail {
-  moveWitness(2, 1, False)
-}
-
-test t157_p1_absent_mint_inside_a_fold_accepts() {
-  moveWitness(0, 1, True)
-}
-
-test t157_p1_active_mint_inside_a_fold_accepts() {
-  moveWitness(1, 1, True)
-}
-
-test t157_p1_terminal_mint_inside_a_fold_accepts() {
-  moveWitness(2, 1, True)
-}
-
-/// Every kind needs the fold to MINT; only the terminal kind may burn
-/// without one.
-test t157_p1_prop_minting_always_needs_the_fold(
-  kind via fuzz.int_between(0, 2),
-) {
-  !moveWitness(kind, 1, False) && moveWitness(kind, 1, True)
-}
-
-/// W3: a terminal witness says a name is over, forever. Letting its
-/// holder destroy their own copy costs the registry nothing.
-test t157_p2_terminal_burn_without_a_fold_accepts() {
-  moveWitness(2, -1, False)
-}
-
-test t157_p2_active_burn_without_a_fold_refuses() fail {
-  moveWitness(1, -1, False)
-}
-
-test t157_p2_absent_burn_without_a_fold_refuses() fail {
-  moveWitness(0, -1, False)
-}
+//
+// MOVED (#173 I2). `witness.ak` and its rows now live in
+// `onchain/validators/`, beside the cage whose fold they co-locate with,
+// and the rows there build the registry's REAL `Modify` redeemer instead
+// of the structural mirror this module used to hand them. Naming no
+// longer participates in a registry fold at all.
+//
+// Moved, not retired: the twelve rows (mint needs the fold at each of
+// the three kinds, the two-sided property over all three, the terminal
+// pure-burn exemption and the two non-terminal burns it does not cover)
+// execute unchanged in `onchain/validators/witness.tests.ak`, together
+// with three controls this module never had — a well-formed fold of
+// ANOTHER registry, a state spent with `Contribute`, and one spent with
+// `End`.

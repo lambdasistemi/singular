@@ -35,6 +35,9 @@ module Singular.Registry.Blueprint (
     NamingCodes (..),
     loadNamingCodesFromEnv,
 
+    -- * The registry partition's own compiled code (#173 A173-BOOT)
+    loadRegistryCodesFromEnv,
+
     -- * Validation
     validateData,
 
@@ -556,3 +559,28 @@ loadNamingCodesFromEnv = do
   where
     die :: String -> IO a
     die = throwIO . ErrorCall
+
+{- | #173 A173-BOOT: the four pins of an OPEN registry, read from the
+registry partition's own blueprint and nothing else.
+
+The open registry's application is @open.open@ — parameterless, so its
+compiled hash IS its policy id, with no applied hash to derive (A-001
+row 1; Lean @openPolicyParameters = []@). Its three token witnesses are
+@witness.witness@ in the SAME blueprint, which moved here from the
+naming partition in this ticket (I2). A boot therefore consults
+@REGISTRY_BLUEPRINT@ alone: no naming blueprint participates, and
+@NAMING_BLUEPRINT@ need not be set at all.
+
+NOT YET IMPLEMENTED. It throws the named failure below so a caller
+executes the real boot entry point and fails on the absent derivation
+rather than on an unset environment variable belonging to a different
+partition.
+-}
+loadRegistryCodesFromEnv :: IO NamingCodes
+loadRegistryCodesFromEnv =
+    throwIO
+        ( ErrorCall
+            "A173-BOOT: the boot cannot derive the open application policy \
+            \and the three witness policies from REGISTRY_BLUEPRINT \
+            \(open.open / witness.witness) — not implemented"
+        )
