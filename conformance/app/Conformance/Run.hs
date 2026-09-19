@@ -119,7 +119,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((&), (%~), (.~), (^.))
 import System.Directory (
     createDirectoryIfMissing,
     doesFileExist,
@@ -216,7 +216,9 @@ import MPF.Proof.Insertion (MPFProof (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    Blueprint (..),
     NamingCodes (..),
+    Validator (..),
     applyBytesParam,
     applyDataParam,
     applyPreviousPolicies,
@@ -249,6 +251,7 @@ import Singular.Registry.TxBuilder.Internal (
     approvalName,
     edgeOf,
     mkRequestDatumWith,
+    policyIdFromPin,
     statedBefore,
     addrFromKeyHashBytes,
     addrKeyHashBytes,
@@ -360,14 +363,18 @@ import Conformance.CS01 (runCS01)
 import Conformance.CS06 (runCS06)
 import Conformance.ForkKeys (findPresentForkKeys)
 import Conformance.Receipt (
+    AssetEntry (..),
     ConstructorEvidence (..),
     ConstructorStanding (..),
     DerivationEvidence (..),
     DerivationOutcome (..),
+    EdgeEvidence (..),
+    FoldStep (..),
     Outcome (..),
     PartialInfo (..),
     Receipt (..),
     RefusalInfo (..),
+    RefusalLeg (..),
     Verdict (..),
     derivationMatches,
     derivationVenue,
@@ -1315,15 +1322,7 @@ runRowIn env marker row = case row of
     "CG14" -> runCG14 env
     "CG15" -> runCG15 env
     "CG19" -> runCG19 env
-    -- #173 A173-EDGE/A173-REFUSALS. NOT YET IMPLEMENTED: the row is
-    -- reached inside a real session, on a real devnet, and fails here
-    -- rather than in `validateRows`, so the session, genesis, node and
-    -- partitioning subjects all execute before the absent fixture is
-    -- reported.
-    "CG21" ->
-        failWith
-            "CG21: the insertActive fold and its two refusal fixtures \
-            \(key-exists, net-mint-mismatch) are not yet implemented"
+    "CG21" -> runCG21 env
     _ -> failWith ("run cannot execute row: " <> row)
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
@@ -4528,6 +4527,654 @@ runCG19RejectedFloor env cage tid = do
             <> "); control receipt written"
         )
 
+
+-- ---------------------------------------------------------
+-- CG21 (#173 A173-EDGE/A173-REFUSALS, completed in #184)
+-- ---------------------------------------------------------
+
+{- | The keys CG21 books. Four, because the row's three observations are
+three DISTINCT fixtures (A-006) and none may stand in for another: the
+fold's own key, the fresh key that controls the duplicate, and the two
+keys the keyed-mint batch needs.
+-}
+cg21Key, cg21ControlKey, cg21KeyA, cg21KeyB :: ByteString
+cg21Key = "cg21-insert-active"
+cg21ControlKey = "cg21-insert-active-control"
+cg21KeyA = "cg21-keyed-mint-a"
+cg21KeyB = "cg21-keyed-mint-b"
+
+{- | CG21: one `insertActive` folds on the open registry and places
+exactly one @(activePolicy, key)@ token at the address the request
+named; a second insert at the same committed key is refused on chain at
+the state script; and a two-key batch whose claimed mint agrees per kind
+and disagrees per @(kind, key)@ is refused there too. Each refusal
+carries an accepting control, so neither can pass merely because the
+request was malformed.
+
+The destination is a WALLET the funder never spends from.
+'edgeDestinationFor' routes an `insertActive` to the naming
+APPLICATION's script address, which is right for naming and wrong here:
+@open.ak@ is a minting policy with no spending arm, so a token routed
+there is locked forever. It is also not the FUNDING wallet, whose
+non-ada outputs the session sweeps into the attic between rows — the
+delivered token would go with them.
+
+Order, and why it is this one. The duplicate's control is a FRESH key
+and folds BEFORE it, so a broken control is reported rather than
+silently leaving the refusal vacuous. The keyed-mint control is the SAME
+batch with the right distribution, so it can only fold AFTER: a refused
+transaction consumes nothing, and the batch has to still be pending for
+its control to fold it. The duplicate comes last because its request
+stays pending, and nothing after it folds.
+
+The row lands three folds and commits each into the manager's trie
+before the next proof is built. The receipt records the chain's root
+either side of every one of them beside the committed root, so a fold
+re-proved against a stale trie is visible in the evidence instead of
+surfacing later as an unrelated-looking failure.
+-}
+runCG21 :: Env -> IO ()
+runCG21 env = do
+    cage <- ensureRowCage env "cg21" 30_000 30_000
+    let cfg = rcCfg cage
+    tid <- cageTid cage
+    openParams <- cg21OpenParameters env
+    (_, destAddr) <- secondWallet env
+    let dest = (serialiseAddr destAddr, BS.empty)
+        bond = defaultTipCoin cfg + cgDeposit
+        activePolicy = policyIdFromPin (cfgActivePolicy cfg)
+        book key =
+            bookEdge
+                env
+                cfg
+                tid
+                genesisAddr
+                genesisSignKey
+                key
+                (OpInsert leafActive)
+                dest
+                []
+                bond
+
+    -- 1. The story fold. Every fine conjunct is read off this
+    --    transaction and the state datum either side of it.
+    (_, reqOut) <- book cg21Key
+    before <- cg21State env cage
+    (foldTx, step1, (mem, cpu, size)) <- cg21Fold env cage [cg21Key]
+    after <- cg21State env cage
+    emitMeasure env "CG21-fold" mem cpu size
+    (observedAddr, delivered) <- cg21Delivery activePolicy cg21Key foldTx
+    held <- cg21HeldAt env destAddr activePolicy cg21Key
+    require
+        ( "CG21: the named wallet holds "
+            <> show held
+            <> " active tokens at this key, not exactly one"
+        )
+        (held == 1)
+    approvalObserved <- cg21ApprovalOn cfg reqOut
+    (reqLovelace, approvalRecomputed) <- cg21RequestFacts reqOut
+    emit
+        "row"
+        ( "CG21: one insertActive folded (tx="
+            <> txIdHex foldTx
+            <> ") and exactly one active token landed at the named wallet"
+        )
+
+    -- 2. The duplicate's accepting control: a FRESH key through the
+    --    SAME builder, folded first so a failure here is reported as a
+    --    broken control rather than making step 4 vacuous.
+    _ <- book cg21ControlKey
+    (dupControlTx, step2) <- cg21HandFold env cage [cg21ControlKey]
+    emit
+        "control"
+        ( "CG21 control: a fresh key folded through the same builder (tx="
+            <> txIdHex dupControlTx
+            <> ") — the duplicate below is the occupancy, not the builder"
+        )
+
+    -- 3. The keyed-mint batch: two DISTINCT keys whose per-kind totals
+    --    agree and whose per-(kind, key) totals do not. The claim moves
+    --    key B's unit onto key A in the mint AND in the output that
+    --    carries it, so the ledger still balances and the STATE SCRIPT
+    --    is what refuses, rather than phase 1 on an unbalanced value.
+    _ <- book cg21KeyA
+    _ <- book cg21KeyB
+    honest <- cg21BatchFold env cage
+    let nameA = AssetName (SBS.toShort cg21KeyA)
+        nameB = AssetName (SBS.toShort cg21KeyB)
+        policyHexT = hexT (cg21PolicyBytes activePolicy)
+        entailed =
+            [ AssetEntry policyHexT (hexT cg21KeyA) 1
+            , AssetEntry policyHexT (hexT cg21KeyB) 1
+            ]
+        claimedTx = cg21MoveAsset activePolicy nameB nameA honest
+    mintLeg <-
+        cg21ExpectRefused
+            env
+            cage
+            "keyed-mint"
+            [cg21KeyA, cg21KeyB]
+            (Just (cg21MintedOf activePolicy claimedTx))
+            (Just entailed)
+            "claimed both units at one key; the edges entail one at each"
+            (addKeyWitness genesisSignKey claimedTx)
+    (mintControlTx, step3, _) <- cg21Fold env cage [cg21KeyA, cg21KeyB]
+    emit
+        "control"
+        ( "CG21 control: the same two keys with the distribution their "
+            <> "edges entail accepted (tx="
+            <> txIdHex mintControlTx
+            <> ")"
+        )
+
+    -- 4. The duplicate, last: its request stays pending and nothing
+    --    after it folds.
+    _ <- book cg21Key
+    duplicateTx <- cg21HandBuild env cage
+    dupLeg <-
+        cg21ExpectRefused
+            env
+            cage
+            "duplicate"
+            [cg21Key]
+            Nothing
+            Nothing
+            "the committed trie already binds this key"
+            (addKeyWitness genesisSignKey duplicateTx)
+
+    let edge =
+            EdgeEvidence
+                { eeOpenPolicy = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
+                , eeOpenParameters = openParams
+                , eeActivePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
+                , eeKey = hexT cg21Key
+                , eeFoldTxid = T.pack (txIdHex foldTx)
+                , eeMinted = cg21MintedOf activePolicy foldTx
+                , eeRequestedAddress = hexT (serialiseAddr destAddr)
+                , eeObservedAddress = observedAddr
+                , eeDelivered = delivered
+                , eeMaxFee = stateMaxFee before
+                , eeRequestLovelace = reqLovelace
+                , eeApprovalName = approvalObserved
+                , eeApprovalRecomputed = approvalRecomputed
+                , eeRefunds = cg21RefundsOf foldTx
+                , eeSigners = cg21SignersOf foldTx
+                , eeConfigBefore = cg21Pins before
+                , eeConfigAfter = cg21Pins after
+                , eeSequence = [step1, step2, step3]
+                , eeDuplicate =
+                    dupLeg{rlControlTxid = T.pack (txIdHex dupControlTx)}
+                , eeKeyedMint =
+                    Just
+                        mintLeg
+                            { rlControlTxid = T.pack (txIdHex mintControlTx)
+                            , rlControlMint =
+                                Just (cg21MintedOf activePolicy mintControlTx)
+                            }
+                }
+    writeCG21Receipt env foldTx mem cpu size edge
+
+-- ---------------------------------------------------------
+-- CG21 helpers (#184)
+-- ---------------------------------------------------------
+
+-- | Hex, as the receipt records it.
+hexT :: ByteString -> T.Text
+hexT = T.pack . hex
+
+-- | The raw 28 bytes a policy id is.
+cg21PolicyBytes :: PolicyID -> ByteString
+cg21PolicyBytes (PolicyID sh) = scriptHashBytes sh
+
+{- | The open application's declared parameter count, READ from the
+blueprint entry rather than written down here. A parameterless policy's
+compiled hash IS its policy id, so a blueprint that grew a parameter
+must change this observation instead of being contradicted by it.
+-}
+cg21OpenParameters :: Env -> IO Integer
+cg21OpenParameters env = do
+    ebp <- loadBlueprint (envBlueprintPath env)
+    bp <- case ebp of
+        Left err -> failWith ("CG21: blueprint does not parse: " <> err)
+        Right b -> pure b
+    case [v | v <- validators bp, vTitle v == "open.open.mint"] of
+        (v : _) -> pure (fromIntegral (vParameters v))
+        [] -> failWith "CG21: open.open.mint is not in this blueprint"
+
+-- | The cage's live eight-field state datum.
+cg21State :: Env -> RowCage -> IO OnChainTokenState
+cg21State env cage = do
+    (_, out) <- cageStateUtxo env cage
+    extractState out
+
+{- | The seven non-root pins of the state datum. The eighth field is
+the root, and the fold is allowed to move exactly that one.
+-}
+cg21Pins :: OnChainTokenState -> [T.Text]
+cg21Pins s =
+    [ T.pack (show (stateMaxFee s))
+    , T.pack (show (stateProcessTime s))
+    , T.pack (show (stateRetractTime s))
+    , pin (stateAppPolicy s)
+    , pin (stateActivePolicy s)
+    , pin (stateAbsentPolicy s)
+    , pin (stateTerminalPolicy s)
+    ]
+  where
+    pin (BuiltinByteString b) = hexT b
+
+-- | The registry root the chain currently carries.
+cg21ChainRoot :: Env -> RowCage -> IO T.Text
+cg21ChainRoot env cage = do
+    s <- cg21State env cage
+    pure (hexT (unOnChainRoot (stateRoot s)))
+
+{- | Fold every pending request through the library builder, commit each
+landed key into the manager's trie, and record what the roots did.
+
+The commit is not bookkeeping. The speculative session inside
+'updateTokenWithDuties' starts from the COMMITTED trie and is discarded,
+so a caller that skips it re-proves the next fold against the boot state
+and that fold submits an empty proof. The root either side is recorded
+and a root that did not move fails the row here, where the cause is
+still visible.
+-}
+cg21Fold ::
+    Env -> RowCage -> [ByteString] -> IO (ConwayTx, FoldStep, (Integer, Integer, Integer))
+cg21Fold env cage keys = do
+    tid <- cageTid cage
+    let cfg = rcCfg cage
+    rootBefore <- cg21ChainRoot env cage
+    ctx <- rowRegistryContext env cage tid
+    unsigned <- updateTokenWithDuties cfg (envProv env) (envTm env) tid genesisAddr ctx
+    -- Measured BEFORE the submission: evaluation resolves the spending
+    -- script through the UTxO the fold is about to consume, and once it
+    -- is consumed the node cannot point the redeemer at anything.
+    (mem, cpu) <- measureUnits env unsigned
+    signed <- submitWithGenesis (envSubmit env) unsigned
+    -- The measured fold is what `declaredSpec` doubles for the hand
+    -- assembly below, so the duplicate pair declares a budget that
+    -- reaches the occupancy check rather than a guess.
+    writeIORef (rcUnits cage) (mem, cpu)
+    mapM_ (\k -> rowCommit env cage k (OpInsert leafActive)) keys
+    rootAfter <- cg21ChainRoot env cage
+    committed <- withTrie (envTm env) tid CageTrie.getRoot
+    require
+        ( "CG21: a landed fold left the registry root where it found it (0x"
+            <> T.unpack rootBefore
+            <> "); the next proof would be built against a stale trie"
+        )
+        (rootBefore /= rootAfter)
+    pure
+        ( signed
+        , FoldStep
+            { fsTxid = T.pack (txIdHex signed)
+            , fsRootBefore = rootBefore
+            , fsRootAfter = rootAfter
+            , fsCommitted = hexT (unRoot committed)
+            }
+        , (mem, cpu, txSizeBytes signed)
+        )
+
+{- | Assemble a fold of whatever is pending, WITHOUT evaluating it.
+
+The library builder evaluates every fold against the node before it
+returns one, so a fold the state script refuses never becomes a
+transaction at all: `updateTokenWithDuties` raises the evaluation
+failure and there is nothing to submit and nothing for the chain to
+reject. The harness's own assembly builds the same shape and leaves the
+verdict to the node — which is what a refusal on chain means.
+
+This is the builder BOTH halves of the duplicate pair use, so the pair
+differs in the key's occupancy and in nothing else.
+-}
+cg21HandBuild :: Env -> RowCage -> IO ConwayTx
+cg21HandBuild env cage = do
+    tid <- cageTid cage
+    state <- cageStateUtxo env cage
+    reqs <- pendingRequests env cage
+    require "CG21: the hand fold has no pending request to fold" (not (null reqs))
+    (proofs, root) <- cg21Proofs env cage tid reqs
+    units <- declaredSpec env cage
+    pot <- collateralPot env
+    assembleFoldWithFee
+        env
+        (rowSpec cage tid state reqs (map Update proofs) root units)
+            { fsCollateral = Just pot
+            }
+
+{- | Proof steps for the pending requests, and the root they reach.
+
+The speculative insert is the normal path. On a key the trie ALREADY
+binds it cannot apply — which is the whole duplicate fixture — so the
+fallback proves the key where it sits and leaves the root alone. Either
+proof reaches the same place on chain: `mpf.miss` answers false for an
+occupied key and the state script halts `key-exists` before any mint
+arithmetic runs.
+-}
+cg21Proofs ::
+    Env ->
+    RowCage ->
+    TokenId ->
+    [(TxIn, TxOut ConwayEra)] ->
+    IO ([[ProofStep]], Root)
+cg21Proofs env cage tid reqs = do
+    attempt <- try @SomeException (speculativeApplyAll env cage tid reqs)
+    case attempt of
+        Right ok -> pure ok
+        Left _ -> withSpeculativeTrie (envTm env) tid $ \trie -> do
+            steps <-
+                mapM
+                    ( \(_, o) ->
+                        fromMaybe []
+                            <$> CageTrie.getProofSteps trie (fst (fst (requestDatumOf o)))
+                    )
+                    reqs
+            root <- CageTrie.getRoot trie
+            pure (steps, root)
+
+{- | Fold through the harness's own assembly, submit, commit, and record
+what the roots did — the accepting half of the duplicate pair.
+-}
+cg21HandFold :: Env -> RowCage -> [ByteString] -> IO (ConwayTx, FoldStep)
+cg21HandFold env cage keys = do
+    tid <- cageTid cage
+    rootBefore <- cg21ChainRoot env cage
+    hand <- cg21HandBuild env cage
+    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
+    mapM_ (\k -> rowCommit env cage k (OpInsert leafActive)) keys
+    rootAfter <- cg21ChainRoot env cage
+    committed <- withTrie (envTm env) tid CageTrie.getRoot
+    require
+        ( "CG21: a landed fold left the registry root where it found it (0x"
+            <> T.unpack rootBefore
+            <> "); the next proof would be built against a stale trie"
+        )
+        (rootBefore /= rootAfter)
+    pure
+        ( signed
+        , FoldStep
+            { fsTxid = T.pack (txIdHex signed)
+            , fsRootBefore = rootBefore
+            , fsRootAfter = rootAfter
+            , fsCommitted = hexT (unRoot committed)
+            }
+        )
+
+{- | The honest fold of whatever is pending, built and not submitted.
+The keyed-mint fixture derives its claim from this one, so the two
+differ in the mint distribution and in nothing else.
+-}
+cg21BatchFold :: Env -> RowCage -> IO ConwayTx
+cg21BatchFold env cage = do
+    tid <- cageTid cage
+    let cfg = rcCfg cage
+    ctx <- rowRegistryContext env cage tid
+    updateTokenWithDuties cfg (envProv env) (envTm env) tid genesisAddr ctx
+
+{- | Move one asset name's whole quantity onto another, under one
+policy, in the mint AND in every output that carries it.
+
+Both halves matter. Moving only the mint leaves the transaction
+unbalanced and the LEDGER refuses it in phase 1, where no script speaks;
+moving both keeps it balanced so the state script runs and refuses the
+claim itself. The script integrity hash covers redeemers, datums and
+cost models, none of which this touches.
+-}
+cg21MoveAsset :: PolicyID -> AssetName -> AssetName -> ConwayTx -> ConwayTx
+cg21MoveAsset policy from to tx =
+    tx
+        & bodyTxL . mintTxBodyL %~ (\(MultiAsset ma) -> MultiAsset (moveMap ma))
+        & bodyTxL . outputsTxBodyL %~ fmap moveOut
+  where
+    moveOut o =
+        o
+            & valueTxOutL
+                %~ ( \v -> case v of
+                        MaryValue c (MultiAsset ma) ->
+                            MaryValue c (MultiAsset (moveMap ma))
+                   )
+    moveMap ma = case Map.lookup policy ma of
+        Nothing -> ma
+        Just names -> case Map.lookup from names of
+            Nothing -> ma
+            Just q ->
+                Map.insert
+                    policy
+                    (Map.insertWith (+) to q (Map.delete from names))
+                    ma
+
+{- | The trace the ledger actually surfaced, or nothing.
+
+A script-execution failure carries an EMPTY Plutus log list, so the
+validator's own trace is usually not recoverable from the node's text.
+This reads it where it IS there and records absence where it is not; the
+refusal NAMES are asserted where the validator reads them, in the
+compiled suite.
+-}
+cg21TraceIn :: String -> Maybe T.Text
+cg21TraceIn text =
+    case [n | n <- ["key-exists", "net-mint-mismatch"], n `isInfixOf` text] of
+        (n : _) -> Just (T.pack n)
+        [] -> Nothing
+
+{- | Submit a transaction that must be refused, and attribute the
+refusal to the state script before recording it.
+
+An accepted transaction here is a FINDING and fails the run; a refusal
+that does not attribute fails the run naming the mismatch. Neither can
+pass quietly as "refused".
+-}
+cg21ExpectRefused ::
+    Env ->
+    RowCage ->
+    String ->
+    -- | the keys the refused batch named
+    [ByteString] ->
+    -- | what it claimed to mint
+    Maybe [AssetEntry] ->
+    -- | what its edges entail
+    Maybe [AssetEntry] ->
+    -- | what differs between it and its control
+    String ->
+    ConwayTx ->
+    IO RefusalLeg
+cg21ExpectRefused env cage label keys claimed entailed distinguisher signed = do
+    let marker = stateMarkerOf (rcCfg cage)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted txid ->
+            failWith
+                ( "CG21 FINDING: the node ACCEPTED the "
+                    <> label
+                    <> " transaction expected to refuse (txid "
+                    <> txInHex txid
+                    <> ") — reported, not relabelled"
+                )
+        Rejected reason -> do
+            let text = T.unpack (TE.decodeUtf8Lenient reason)
+            case matchRefusal marker text of
+                Left mismatch ->
+                    failWith
+                        ( "CG21 "
+                            <> label
+                            <> ": the refusal did not attribute to the state "
+                            <> "script ("
+                            <> show mismatch
+                            <> "): "
+                            <> take 2000 text
+                        )
+                Right () -> do
+                    emit
+                        "row"
+                        ( "CG21 "
+                            <> label
+                            <> ": REFUSED at submit, attributed to state "
+                            <> "(phase-2, marker 0x"
+                            <> shortMarker marker
+                            <> ")"
+                        )
+                    pure
+                        RefusalLeg
+                            { rlTxid = T.pack (txIdHex signed)
+                            , rlHashes = map T.pack (refusalScriptHashes text)
+                            , rlTrace = cg21TraceIn text
+                            , -- The control belongs to the refusal it
+                              -- controls and is filled in when it lands.
+                              rlControlTxid = ""
+                            , rlDistinguisher = T.pack distinguisher
+                            , rlKeys = map hexT keys
+                            , rlClaimed = claimed
+                            , rlEntailed = entailed
+                            , rlControlMint = Nothing
+                            }
+
+{- | What the fold minted under one policy at one key, read off the
+transaction the chain accepted.
+-}
+cg21MintedOf :: PolicyID -> ConwayTx -> [AssetEntry]
+cg21MintedOf policy tx = case tx ^. bodyTxL . mintTxBodyL of
+    MultiAsset ma ->
+        [ AssetEntry (hexT (cg21PolicyBytes policy)) (hexT (SBS.fromShort an)) q
+        | (p, names) <- Map.toList ma
+        , p == policy
+        , (AssetName an, q) <- Map.toList names
+        ]
+
+{- | Where the fold actually delivered, and what that output holds.
+
+Read off the accepted transaction's own outputs rather than off the
+address the harness queried: querying by address and then reporting that
+address back would compare a value with itself.
+-}
+cg21Delivery ::
+    PolicyID -> ByteString -> ConwayTx -> IO (T.Text, [AssetEntry])
+cg21Delivery policy key tx =
+    case [o | o <- toList (tx ^. bodyTxL . outputsTxBodyL), holds o] of
+        [o] ->
+            pure
+                ( hexT (serialiseAddr (o ^. addrTxOutL))
+                , [ AssetEntry (hexT (cg21PolicyBytes policy)) (hexT key) q
+                  | (p, names) <- Map.toList (rawAssets o)
+                  , p == policy
+                  , (AssetName an, q) <- Map.toList names
+                  , SBS.fromShort an == key
+                  ]
+                )
+        outs ->
+            failWith
+                ( "CG21: the fold has "
+                    <> show (length outs)
+                    <> " outputs carrying the active token at this key, want one"
+                )
+  where
+    holds o =
+        or
+            [ SBS.fromShort an == key
+            | (p, names) <- Map.toList (rawAssets o)
+            , p == policy
+            , (AssetName an, _) <- Map.toList names
+            ]
+
+{- | The quantity the destination address actually holds at this key,
+queried from the chain. The fold's own output says where the token went;
+this says it is still there and spendable from that address.
+-}
+cg21HeldAt :: Env -> Addr -> PolicyID -> ByteString -> IO Integer
+cg21HeldAt env addr policy key = do
+    utxos <- Cage.queryUTxOs (envProv env) addr
+    pure
+        ( sum
+            [ q
+            | (_, out) <- utxos
+            , (p, names) <- Map.toList (rawAssets out)
+            , p == policy
+            , (AssetName an, q) <- Map.toList names
+            , SBS.fromShort an == key
+            ]
+        )
+
+-- | The approval asset the request UTxO actually carries.
+cg21ApprovalOn :: CageConfig -> TxOut ConwayEra -> IO T.Text
+cg21ApprovalOn cfg out =
+    case [ SBS.fromShort an
+         | (p, names) <- Map.toList (rawAssets out)
+         , p == policyIdFromPin (cfgApplicationPolicy cfg)
+         , (AssetName an, _) <- Map.toList names
+         ] of
+        [n] -> pure (hexT n)
+        ns ->
+            failWith
+                ( "CG21: the request UTxO carries "
+                    <> show (length ns)
+                    <> " approvals, want one"
+                )
+
+{- | What the request's OWN datum says: the lovelace it carries, and the
+approval name its edge, key, owner and destination pair hash to.
+
+The recomputation is the destination binding. The approval's asset name
+IS the hash of the scoping tuple the request names, so a fold delivering
+somewhere the approval did not bind makes the recomputed name differ
+from the one the chain shows on the request.
+-}
+cg21RequestFacts :: TxOut ConwayEra -> IO (Integer, T.Text)
+cg21RequestFacts out = do
+    rq <- case extractCageDatum out of
+        Just (RequestDatum r) -> pure r
+        _ -> failWith "CG21: the request UTxO carries no request datum"
+    edgeIx <- case edgeOf (requestValue rq) (statedBefore (requestValue rq)) of
+        Just e -> pure e
+        Nothing -> failWith "CG21: the request names no admissible edge"
+    let BuiltinByteString owner = requestOwner rq
+        Coin lovelace = out ^. coinTxOutL
+    pure
+        ( lovelace
+        , hexT (approvalName edgeIx (requestKey rq) owner (requestDestination rq))
+        )
+
+{- | The refund obligations this fold creates, read off its own
+redeemer.
+
+The state script derives refunds from the fold's ACTIONS: only a
+`Rejected` action (constructor 1) owes anything, and `sumRefunds` is the
+rule that checks them. A batch whose actions are all `Update`
+(constructor 0) owes none, which is the model's @refunds := []@ — read
+from the transaction the node validated rather than from what the
+harness meant to build.
+-}
+cg21RefundsOf :: ConwayTx -> [Integer]
+cg21RefundsOf tx = [c | c <- requestActionConstrs tx, c /= 0]
+
+-- | The signers the fold declares it requires. The model says none.
+cg21SignersOf :: ConwayTx -> [T.Text]
+cg21SignersOf tx =
+    map (T.pack . show) (Set.toList (tx ^. bodyTxL . reqSignerHashesTxBodyL))
+
+-- | CG21's receipt: an accepted row carrying its edge observation.
+writeCG21Receipt ::
+    Env -> ConwayTx -> Integer -> Integer -> Integer -> EdgeEvidence -> IO ()
+writeCG21Receipt env foldTx mem cpu size edge =
+    writeReceiptFile (envReceiptsDir env) $
+        Receipt
+            { receiptRow = "CG21"
+            , receiptOutcome = Accepted
+            , receiptVerdict = AgreesWithModel
+            , receiptTransactions = [T.pack (txIdHex foldTx)]
+            , receiptRefusal = Nothing
+            , receiptRejected = Nothing
+            , receiptMem = Just mem
+            , receiptCpu = Just cpu
+            , receiptTxSize = Just size
+            , receiptBase = T.pack (envBase env)
+            , receiptDirty = envDirty env
+            , receiptPartial = Nothing
+            , receiptEdge = Just edge
+            , receiptDerivation = Nothing
+            , receiptNode = T.pack (envNode env)
+            , receiptBlueprint = T.pack (envBlueprint env)
+            , receiptVenue = "node-submit"
+            }
 {- | One row cage's request-and-fold cycle through the library
 builder, with the calibration the hand-built shapes inherit their
 credibility from: submit the request, build the library fold over

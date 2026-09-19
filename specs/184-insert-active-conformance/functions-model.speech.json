@@ -1,0 +1,30 @@
+{
+  "runner-entry-point": [
+    {
+      "text": "Run CG21 executes the complete fold, refusal and control story in the current open-registry session and writes one receipt.",
+      "pause": 400
+    }
+  ],
+  "receipt-validation": [
+    {
+      "text": "CG21 receipt validation rejects missing or incomplete edge evidence without changing unrelated rows.",
+      "pause": 400
+    }
+  ],
+  "existing-boundaries-retained": [
+    {
+      "text": "The dispatcher, receipt codec and packaged generic-row workflow keep their existing boundaries.",
+      "pause": 400
+    }
+  ],
+  "no-new-public-production-api": [
+    {
+      "text": "No validator, off-chain transaction-builder or Lean API is added.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "4afc90e734b45e98a969a6493fbd6d2bb3fbf2307ff9a8ff6e4ecdf0142825bb"
+  }
+}

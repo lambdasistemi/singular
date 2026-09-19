@@ -1,0 +1,42 @@
+{
+  "runnable-story": [
+    {
+      "text": "The runnable story is one generic conformance session that executes CG21 and emits a complete candidate-bound receipt.",
+      "pause": 400
+    }
+  ],
+  "accepted-behavioral-authority": [
+    {
+      "text": "Four accepted Lean statements govern the fold transaction, keyed mint refusal, fresh-key control and active witness uniqueness.",
+      "pause": 400
+    }
+  ],
+  "acceptance-lines": [
+    {
+      "text": "The blocking lines cover the fold, fine transaction conjuncts, duplicate refusal, keyed-mint refusal, committed sequence and workflow wiring. Copies are required and have no authorized residual.",
+      "pause": 400
+    }
+  ],
+  "receipt-truth-contract": [
+    {
+      "text": "CG21 must carry complete edge evidence and honest transaction observations. The loader rejects missing fields and never invents a trace the ledger did not surface.",
+      "pause": 400
+    }
+  ],
+  "copies-and-non-goals": [
+    {
+      "text": "The inventory, runner, receipt, workflow and consumer page are synchronized. Lean, validators, simulator, request wire, naming and other edges are outside this ticket.",
+      "pause": 400
+    }
+  ],
+  "stop-conditions": [
+    {
+      "text": "A Lean conflict, missing CI command, forbidden-surface need or the four-hour wall stops affected acceptance. Nothing is stubbed and the ticket owner does not merge.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "b553e14fb88a1cc6cafb063c16f75799d5decba67251917e386f8a3888271171"
+  }
+}

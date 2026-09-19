@@ -1,0 +1,42 @@
+{
+  "status-and-vertical-cut": [
+    {
+      "text": "One implementation task makes the generic conformance session execute CG21 and emit its complete receipt across all required layers.",
+      "pause": 400
+    }
+  ],
+  "surface-map": [
+    {
+      "text": "Lean is read-only. The owned layers are conformance execution, receipt evidence, inventory and CI, and the reader-facing copy.",
+      "pause": 400
+    }
+  ],
+  "owner-sequence": [
+    {
+      "text": "The owner commits RED, then fold, duplicate, keyed-mint sequence, workflow and copy checkpoints while the persistent auditor reviews decisions asynchronously.",
+      "pause": 400
+    }
+  ],
+  "gate-and-review": [
+    {
+      "text": "Two independent authors map the lines to existing CI commands. The ticket owner freezes their union, and push waits for all checkpoint approvals and one final gate run.",
+      "pause": 400
+    }
+  ],
+  "copies-and-release-boundary": [
+    {
+      "text": "Inventory, workflow, receipt schema and tests, consumer page and speech move together. Remote CI gates readiness and the epic owner merges.",
+      "pause": 400
+    }
+  ],
+  "budget-and-remainder": [
+    {
+      "text": "The owner has four hours and one final Gate S. Only a green coherent vertical can be pushed at the cap.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "ab688fe302ef640c113d713c0ab36d23e171498471add8fdbe90cc939141110e"
+  }
+}

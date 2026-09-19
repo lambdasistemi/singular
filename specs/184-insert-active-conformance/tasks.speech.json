@@ -1,0 +1,24 @@
+{
+  "planning-and-gate": [
+    {
+      "text": "Freeze the mandate, pass blind slicing review and synthesize Gate S from two independent CI-command tables.",
+      "pause": 400
+    }
+  ],
+  "implementation-vertical-one-runnable": [
+    {
+      "text": "One owner run executes CG21, emits the complete receipt, restores workflow wiring and synchronizes every copy.",
+      "pause": 400
+    }
+  ],
+  "ticket-finalization": [
+    {
+      "text": "Verify the checkpoint trail, run Gate S once, push the exact head and require remote CI and finalization audit before readiness. The epic owner merges.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "95a85b404dac7dafd5fb32871dc0cbe5083201ded811446c5750e22fcc7c655f"
+  }
+}

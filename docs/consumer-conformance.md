@@ -188,25 +188,51 @@ Had the chain accepted the occupied insert, that would be a
 as a refusal.
 
 
-### The `insertActive` edge on the open registry (#173)
+### The `insertActive` edge on the open registry (#173, executed in #184)
 
-One more generic row joins the session for the open registry's
-`insertActive` edge. It carries three observations, and they are three
-DISTINCT fixtures on purpose — conflating them is how a suite convinces
-itself it has tested a mint rule it never exercised.
+CG21 runs in the generic session on a registry booted under the
+**parameterless** open application. One `insertActive` folds, and the row's
+receipt carries what the chain did with it: the open policy and the parameter
+count read from the blueprint, the fold transaction, the active policy and
+key, the mint, the address the request named beside the address the token was
+found at, and the single token that landed there.
 
-| row | outcome | evidence |
+The row makes three DISTINCT observations. They are not one row wearing three
+names — conflating them is how a suite convinces itself it tested a mint rule
+it never exercised.
+
+| observation | outcome | what the receipt records |
 |---|---|---|
-| CG21 `insertActive` fold | accept | one `(activePolicy, key)` token in the output at the address and inline datum the request named |
-| CG21 same-key duplicate | **refuse** `key-exists` | refused BEFORE any mint arithmetic; a FRESH key through the same builder is accepted in-run (control) — the refusal is the occupancy, not the request |
-| CG21 two-key wrong distribution | **refuse** `net-mint-mismatch` | two DISTINCT keys claiming `2/0` against `1/1` minted; the same two keys with the right distribution are accepted in-run (control) — the refusal is the distribution, not the batch size |
+| CG21 `insertActive` fold | accept | one `(activePolicy, key)` token in the output at the address the request named, with empty refunds and signers, the approval binding that destination, a covered tip, the seven non-root configuration pins unchanged and the resulting root committed |
+| CG21 same-key duplicate | **refuse**, at the state script | refused BEFORE any mint arithmetic; a FRESH key through the same builder is accepted in-run (control) — the refusal is the occupancy, not the builder |
+| CG21 two-key wrong distribution | **refuse**, at the state script | two DISTINCT keys claiming both units at one of them against the one-each their edges entail; the same two keys with the right distribution are accepted in-run (control) — the refusal is the distribution, not the batch size |
 
-The second and third are not the same row wearing two names. The
-duplicate is refused because the key is taken, before the mint is
-looked at; the keyed-mint witness needs a batch whose claimed mint
-**agrees per kind** and disagrees per `(kind, key)`, which is the exact
-fault a per-kind sum cannot see. A suite that only ever refused the
-duplicate would pass while the keyed guard was broken.
+The second and third are different facts. The duplicate is refused because the
+key is taken, before the mint is looked at, so its leg carries no mint
+arithmetic at all. The keyed-mint witness needs a batch whose claimed mint
+**agrees per kind** and disagrees per `(kind, key)`, which is the exact fault a
+per-kind sum cannot see; its leg carries both mints and the loader compares
+them. A runner that only refused the duplicate would pass while the keyed
+guard was broken.
+
+Each refusal carries its own accepting control, and the receipt binds the
+control to a fold that actually landed in the same run. Without that, "refused"
+is consistent with "this builder cannot fold at all".
+
+#### The refusal names are asserted elsewhere, and this page says where
+
+The two refusals above are observed **on chain**, in phase 2, attributed to
+the state script by its hash. What the receipt does **not** carry is the name
+the validator traced: a script-execution failure reaches the node with an
+EMPTY Plutus log list, so `key-exists` and `net-mint-mismatch` are not
+recoverable from the ledger's error text. The receipt records the absence
+rather than guessing, and the NAMES are asserted where the validator reads
+them — in the compiled Aiken suite, against the single construction site each
+one has.
+
+So this row establishes that the chain refused those two shapes and accepted
+their controls. It does not establish which branch of the state script named
+them.
 
 #### A limit worth stating plainly
 

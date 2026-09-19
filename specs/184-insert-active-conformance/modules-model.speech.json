@@ -1,0 +1,30 @@
+{
+  "changed-responsibilities": [
+    {
+      "text": "The runner executes CG21, the receipt library validates it, the workflow asserts it and the consumer page describes what ran.",
+      "pause": 400
+    }
+  ],
+  "dependency-direction": [
+    {
+      "text": "Lean governs the runner; chain observations feed the receipt; the workflow consumes the receipt; documentation describes the workflow result.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "Execution remains in the existing runner and shared evidence remains in the receipt library. No new cross-edge framework is introduced.",
+      "pause": 400
+    }
+  ],
+  "outside-this-ticket": [
+    {
+      "text": "Lean, validators, the request encoding, the simulator and other edges retain their existing owners.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "241e76af98e5e1d1dd12a6ebdf65d18af628897b9234da3214b70155ea480d48"
+  }
+}

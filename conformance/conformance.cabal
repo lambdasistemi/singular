@@ -132,6 +132,7 @@ test-suite conformance-tests
   main-is:          Main.hs
   other-modules:
     Conformance.AuthenticateSpec
+    Conformance.EdgeSpec
     Conformance.ReceiptSpec
     Conformance.RefusalSpec
     Conformance.RowsSpec
