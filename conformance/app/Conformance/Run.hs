@@ -1316,6 +1316,10 @@ runRow env marker row = do
     -- is left exactly as the designation left it. Every other row wants
     -- one ada-only output to fund from.
     unless (take 2 row == "CA") (consolidateFunding env)
+    -- #177 A-003: every boot in this session references the state
+    -- validator instead of carrying it inline. Idempotent, so it is
+    -- established before the first row and found by every later one.
+    ensureStateRef env
     runRowIn env marker row
 
 runRowIn :: Env -> String -> String -> IO ()
@@ -7900,6 +7904,41 @@ transaction for a collateral shortfall. One output, one choice.
 Reference outputs are left alone: they are what the folds resolve their
 scripts through.
 -}
+
+{- | Publish the state validator as a reference output once per session,
+before any boot (#177, A-003).
+
+The boot transaction carries the state validator INLINE unless the
+funding wallet already holds a publication of it, and that validator is
+fifteen kilobytes against a sixteen-kilobyte transaction cap. #177's
+retirement guard does not fit in what is left. Referencing the script
+returns the whole fifteen kilobytes to the budget.
+
+Every cage in a session shares the same state script — only the seed
+differs — so one publication serves every boot. Idempotent by
+discovery, and the funding sweep already spares outputs carrying
+reference scripts, so it publishes once and finds it thereafter.
+-}
+ensureStateRef :: Env -> IO ()
+ensureStateRef env = do
+    let cfg = envCfg env
+        wanted = cfgScriptHash cfg
+    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+    let published =
+            [ ()
+            | (_, out) <- utxos
+            , SJust s <- [out ^. referenceScriptTxOutL]
+            , hashScript s == wanted
+            ]
+    case published of
+        (_ : _) -> pure ()
+        [] -> do
+            _ <- publishRefScript env (mkCageScript cfg)
+            emit
+                "state-ref"
+                "published the state validator as a reference output; \
+                \boots reference it instead of carrying it inline"
+
 consolidateFunding :: Env -> IO ()
 consolidateFunding env = consolidateWallet (envProv env) (envSubmit env)
 
