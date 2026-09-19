@@ -5439,10 +5439,16 @@ runCG22 env = do
         env
         "CG22"
         -- Every transaction this row put on chain, so the gate can find
-        -- the two folds and both accepting controls in it. The control
-        -- txid the two legs carry IS this one: a single accepting
-        -- retirement controls both refusals, because both differ from it
-        -- in their leaf and in nothing else.
+        -- the two folds and BOTH accepting controls in it.
+        --
+        -- The two legs carry DIFFERENT controls, because they run in
+        -- different cages: the Absent leg is controlled by `retireTx`,
+        -- the story retirement in its own cage, and the Unknown leg by
+        -- `controlTx`, folded in the second cage before it. A single
+        -- control could not serve both — a refused fold never consumes
+        -- its request, so the two refusals cannot share a cage, and a
+        -- control from the other cage would not be the same builder
+        -- against the same state.
         [ txIdHex insertTx
         , txIdHex retireTx
         , txIdHex controlTx
