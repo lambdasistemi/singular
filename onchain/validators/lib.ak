@@ -564,19 +564,26 @@ pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
 /// construction site for the reason and the tests assert the same value
 /// the validator traces.
 ///
-/// NOT YET IMPLEMENTED: it answers `None` for everything, so every
-/// caller reads "admitted". `t173_edge.tests.ak` executes it and fails.
+/// The #173 VALUES are not implemented. `refuseEdge` calls this only
+/// when the edge is already inadmissible, so the answer is always
+/// `Some`, and it is the one UNDIFFERENTIATED reason the pre-#173 cage
+/// gives for every refused insert. A-006 needs it to distinguish the
+/// occupied key (`key-exists`) from the terminal leaf
+/// (`insert-terminal`); until it does, every A-006 row fails, and fails
+/// through the real spend path that now reads its trace here.
 pub fn insertRefusal(_edge: Int, _before: Option<Int>) -> Option<String> {
-  None
+  Some(@"insert-terminal")
 }
 
 /// The reason a fold whose claimed mint disagrees with the summed delta
 /// of its edges is refused (#173 A-006, Lean L2
 /// `fold_batch_claimed_mint_by_kind_key`).
 ///
-/// NOT YET IMPLEMENTED: answers `None`.
+/// The #173 VALUE is not implemented: it answers the name the pre-#173
+/// cage traces, so `t173_keyed_mint_reason_is_net_mint_mismatch` still
+/// fails — through the real fold, which now reads its reason here.
 pub fn mintRefusal() -> Option<String> {
-  None
+  Some(@"delta-mismatch")
 }
 
 /// The total quantity a value moves under one policy, summed across

@@ -106,12 +106,29 @@ fn duplicateInsertActive() -> Bool {
     [bookingRequest(0, fx.keyA)],
     [bookingOutput(fx.keyA)],
     fx.mintOf(fx.activePolicy, fx.keyA, 1),
-    [UpdateAction(fx.siblingProof(fx.keyA, fx.activeLeaf, fx.keyA))],
+    // The edge is refused BEFORE the proof is used, so the action
+    // carries no steps. A sibling proof of a key against ITSELF has no
+    // common-prefix bound and crashes the fixture rather than the
+    // validator — a crash says only that the script died, never that
+    // it refused.
+    [UpdateAction([])],
   )
 }
 
-test t173_duplicate_insert_active_refuses() fail {
-  duplicateInsertActive()
+/// The fold must REFUSE the duplicate — return `False` — not die on
+/// it. This row is `== False` rather than `fail` deliberately: Aiken's
+/// `fail` is satisfied by a crash, and a crash says only that the
+/// script died, never that it refused. The repository's own rule for
+/// these rows is that every refusal returns False through ONE named
+/// trace.
+///
+/// Today it CRASHES: `edgeOf` reads the leaf the REQUEST states, and an
+/// insert states none, so the edge is ADMITTED and `applyEdge` reaches
+/// `excluding(key, proof)` on a key that is present. There is no
+/// `key-exists` path in the cage at all — that is the A173-REFUSALS
+/// gap, and it is not a string to rename.
+test t173_duplicate_insert_active_refuses_cleanly() {
+  duplicateInsertActive() == False
 }
 
 /// A-006 and Lean L4: the reason is `key-exists`, and it is reached
@@ -131,12 +148,6 @@ test t173_insert_on_a_terminal_leaf_is_still_insert_terminal() {
   lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindTerminal)) == Some(
     @"insert-terminal",
   )
-}
-
-/// ...and it must refuse NOTHING on a free key, or the accepting fold
-/// above could not have been admitted.
-test t173_insert_active_on_a_free_key_has_no_refusal() {
-  lib.insertRefusal(lib.edgeInsertActive, None) == None
 }
 
 // ----------------------------------------------------------------------------
@@ -207,8 +218,11 @@ test t173_keyed_mint_reason_is_net_mint_mismatch() {
 }
 
 test t173_the_two_refusals_are_distinct_reasons() {
-  lib.mintRefusal() != lib.insertRefusal(
-    lib.edgeInsertActive,
-    Some(lib.kindActive),
-  )
+  // Asserted by NAME, not merely by inequality: two pre-#173 names are
+  // also distinct from each other, so an inequality alone would go
+  // green while A-006 stayed unimplemented.
+  let duplicate = lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindActive))
+  lib.mintRefusal() == Some(@"net-mint-mismatch") && duplicate == Some(
+    @"key-exists",
+  ) && lib.mintRefusal() != duplicate
 }
