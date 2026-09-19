@@ -2,12 +2,16 @@
 #
 # Self-test for tools/rename-registry.sh (#108).
 #
-# Drives the rename twice on a throwaway detached worktree cut from main
+# Drives the rename twice on a throwaway detached worktree cut from the commit
+# under test (#180 - never from a remote-tracking ref, which made a branch
+# green while main was red on the identical tree),
 # and asserts, in order:
+#   0. the rename completes on the seeded tree; an aborted run is reported as
+#      such, with its output, and never as a missing rewrite;
 #   1. seeded whole-word MPFS mentions in a tracked .lean and a tracked
 #      .html file are rewritten to the expected registry wording (positive;
 #      forbids passing because no matching input existed);
-#   2. the first run completes and its gate passes on a clean main;
+#   2. the first run completes and its gate passes on that clean tree;
 #   3. the second run is a no-op (index state and tracked file contents
 #      unchanged) and its gate passes again;
 #   4. the gate alone FAILS when residuals are seeded in a tracked .lean
@@ -29,13 +33,14 @@ fail() {
   exit 1
 }
 
-# The script's identity diff requires an origin/main ref; depth-1 CI
-# checkouts (nix develop -c just ci) do not have one, so materialize it at
-# the commit under test. A normal checkout uses the real origin/main.
-base=origin/main
-git -C "$src" rev-parse --verify --quiet "$base" >/dev/null || base=HEAD
-git -C "$src" rev-parse --verify --quiet origin/main >/dev/null \
-  || git -C "$src" update-ref refs/remotes/origin/main "$base"
+# Cut the scratch worktree from the commit under test, and pin the rename
+# script's identity baseline to that same commit (#180). Cutting it from
+# origin/main meant this test exercised whatever main happened to be at the
+# time rather than the tree it was run against: a PR that broke the rename
+# stayed green on its own branch, because that branch's origin/main still
+# carried the path the PR itself deleted, and main went red on merge.
+base="$(git -C "$src" rev-parse --verify HEAD)"
+export RENAME_REGISTRY_BASE="$base"
 
 workdir="$(mktemp -d)"
 scratch="$workdir/tree"
@@ -75,17 +80,26 @@ set +e
 pos_out="$(run_rename 2>&1)"
 pos_rc=$?
 set -e
+# Order matters (#180). A rename that aborted is reported as an aborted
+# rename, with the output the run produced, so that the rewrite assertion
+# below can fail for exactly one reason: the subject ran to completion and
+# did not turn the seeded line into the expected registry wording.
+if [ "$pos_rc" -ne 0 ]; then
+  echo "$pos_out" >&2
+  fail "positive: rename failed on seeded tree (rc=$pos_rc)"
+fi
 lean_ok=0
 html_ok=0
 grep -q 'registry positive control lean' "$pos_lean" && lean_ok=1 || true
 grep -q 'registry positive control html' "$pos_html" && html_ok=1 || true
-[ "$lean_ok" -eq 1 ] && [ "$html_ok" -eq 1 ] \
-  || fail "positive: tracked rewrite missing lean=$lean_ok html=$html_ok (expected both 1)"
+if [ "$lean_ok" -ne 1 ] || [ "$html_ok" -ne 1 ]; then
+  echo "$pos_out" >&2
+  fail "positive: tracked rewrite missing lean=$lean_ok html=$html_ok (expected both 1)"
+fi
 grep -q 'MPFS positive control lean' "$pos_lean" \
   && fail "positive: seeded MPFS remains in .lean" || true
 grep -q 'MPFS positive control html' "$pos_html" \
   && fail "positive: seeded MPFS remains in .html" || true
-[ "$pos_rc" -eq 0 ] || fail "positive: rename failed on seeded tree"
 # Reset to a clean main for the canonical run 1 / run 2 below; the positive
 # scratch has already proven the rewrite and must not pollute the no-op check.
 git -C "$src" worktree remove --force "$scratch" >/dev/null
