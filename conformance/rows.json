@@ -361,6 +361,15 @@
       "requirement": "One `insertActive` request folds on the open registry and places exactly one `(activePolicy, key)` token in the output at the address and inline datum the request named. A second `insertActive` at the same known key is refused `key-exists`. A two-request batch at two DISTINCT keys whose claimed mint agrees per kind but disagrees per `(kind, key)` is refused `net-mint-mismatch`.",
       "source": "Singular.Statements.insert_active_transaction_row and Singular.Statements.fold_batch_claimed_mint_by_kind_key (Lean 854f56f); issue #173; A-001, A-006, NOTE-014",
       "state": "uncovered"
+    },
+    {
+      "expected": "accept the insert and the retirement; the active quantity goes 1 -> 0 with the exact keyed `-1` mint burned from its token-bearing source input and the committed leaf reading `Terminal`; refuse `updateTerminal` on an Unknown key `key-unknown` and on an Absent key `not-booked`, each with an accepting control",
+      "group": "CG",
+      "id": "CG22",
+      "note": "#177 I177-CONFORMANCE. One real open-registry session performs `insertActive` and then `updateTerminal` on the SAME key, commits both landed folds, and records the retirement evidence the gate reads back: policy and key, both txids, the three distinct roots (pre-insert, active, terminal), the 1 -> 0 quantity transition, the exact `[{policy, name, quantity: -1}]` mint, the token-bearing source input by outref, and the `Terminal` leaf. The two refusal legs are DISTINCT facts, not one: a key the trie does not bind at all is `key-unknown`, a key witnessed Absent is `not-booked`, and each carries an accepting control differing only in the named bad fact. The node's `EvalFailure` carries an empty Plutus log list, so a leg's `trace` is honest `null` with script-hash attribution rather than a manufactured reason; the exact names are enforced in the compiled Aiken suite through `lib.terminalRefusal`. Additive to CG21: this row shares no fixture, receipt or assertion with it.",
+      "requirement": "On a real devnet, `insertActive` then `updateTerminal` at one key: the active witness the insert delivered is the exact input the retirement burns, exactly one `(activePolicy, key)` is destroyed, no output carries it afterwards, and the committed trie leaf becomes Terminal. `updateTerminal` on an Unknown key and on an Absent key are refused with their own named reasons, each against an accepting control.",
+      "source": "Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; A-002",
+      "state": "uncovered"
     }
   ]
 }

@@ -68,10 +68,18 @@ def assemble(root: Path, docs_dir: Path, onchain_bp: Path, naming_bp: Path, out:
     farm = work / "farm"
     farm.mkdir()
     copy_tracked_partitions(root, farm, ("onchain", "naming-onchain", "offchain"))
-    # #173 A173-COMMAND: INSERT-ACTIVE.md is the archive's own authority
-    # for the packaged verb — the page a reviewer with no checkout reads
-    # before running it. It ships beside README and RELEASE.
-    for relative in ("README.md", "RELEASE.md", "verify-identities.sh", "INSERT-ACTIVE.md"):
+    # #173 A173-COMMAND / #177 I177-COMMAND: each packaged verb has its
+    # own page — the authority a reviewer with no checkout reads before
+    # running it. They ship beside README and RELEASE.
+    for relative in (
+        "README.md",
+        "RELEASE.md",
+        "verify-identities.sh",
+        "INSERT-ACTIVE.md",
+        # #177 I177-COMMAND: the retirement verb's own authority page,
+        # beside the insert verb's.
+        "UPDATE-TERMINAL.md",
+    ):
         shutil.copyfile(root / "onchain-release" / relative, farm / relative)
     (farm / "fixtures").mkdir()
     shutil.copyfile(root / "onchain-release" / "fixtures" / "README.md", farm / "fixtures" / "README.md")

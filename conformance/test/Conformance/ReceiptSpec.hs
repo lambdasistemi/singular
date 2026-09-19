@@ -10,6 +10,7 @@ matches the base. The fixture receipts carry base @fixture-base@;
 module Conformance.ReceiptSpec (spec) where
 
 import Data.Aeson (eitherDecode, encode)
+import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
 import Data.List (isInfixOf)
@@ -45,6 +46,7 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Receipt" $ do
+    retirementRoundTrip
     it "round-trips every verdict class" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
@@ -393,3 +395,58 @@ loadCommitted = do
     case result of
         Left err -> fail err
         Right rows -> pure rows
+
+{- | #177 I177-CONFORMANCE: the retirement evidence a CG22 receipt
+carries.
+
+Gate S names the vocabulary exactly — policy and key, both txids, the
+three distinct roots, the 1 -> 0 quantity transition, the exact keyed
+`-1` mint, the token-bearing source input, the `Terminal` leaf, and the
+two refusal legs with their accepting controls — and the CI step reads
+those fields back out of the written file. A receipt type that PARSES
+such a file and then drops the object on the way out would satisfy every
+loader test in this suite and still hand CI an empty observation.
+
+So the assertion is a ROUND TRIP through the real `Receipt` codec: what
+comes back out must still carry the retirement the row observed. This is
+the schema half of the row; the values are established by the live run.
+-}
+retirementRoundTrip :: Spec
+retirementRoundTrip = describe "CG22 retirement evidence" $
+    it "survives a decode/encode round trip through the receipt codec" $ do
+        let decoded = eitherDecode cg22Receipt :: Either String Receipt
+        case decoded of
+            Left err -> fail ("CG22 receipt does not parse: " <> err)
+            Right r -> do
+                let out = show (encode r)
+                mapM_
+                    (\field -> out `shouldSatisfy` isInfixOf field)
+                    [ "retirement"
+                    , "insertTxid"
+                    , "retireTxid"
+                    , "beforeInsert"
+                    , "terminal"
+                    , "quantities"
+                    , "Terminal"
+                    ]
+
+{- | A CG22 receipt in the exact shape Gate S reads. Every value here is
+a placeholder standing in for one the live row observes; the point of
+the fixture is the SHAPE, which the codec must preserve.
+-}
+cg22Receipt :: BSL.ByteString
+cg22Receipt =
+    "{\"row\":\"CG22\",\"outcome\":\"accepted\",\"verdict\":\"agrees-with-model\"\
+    \,\"transactions\":[\"aa\"],\"base\":\"fixture-base\",\"dirty\":false\
+    \,\"node\":\"node\",\"blueprint\":\"bp\",\"venue\":\"node-submit\"\
+    \,\"retirement\":{\"activePolicy\":\"p\",\"key\":\"k\"\
+    \,\"insertTxid\":\"a1\",\"retireTxid\":\"a2\"\
+    \,\"roots\":{\"beforeInsert\":\"r0\",\"active\":\"r1\",\"terminal\":\"r2\"}\
+    \,\"quantities\":{\"before\":1,\"after\":0}\
+    \,\"mint\":[{\"policy\":\"p\",\"name\":\"k\",\"quantity\":-1}]\
+    \,\"source\":{\"outref\":\"o#0\",\"policy\":\"p\",\"name\":\"k\",\"quantity\":1}\
+    \,\"leaf\":\"Terminal\"\
+    \,\"unknown\":{\"txid\":\"b1\",\"hashes\":[\"h\"],\"trace\":null\
+    \,\"controlTxid\":\"b2\",\"distinguisher\":\"the key is not bound\"}\
+    \,\"absent\":{\"txid\":\"c1\",\"hashes\":[\"h\"],\"trace\":null\
+    \,\"controlTxid\":\"c2\",\"distinguisher\":\"the leaf is Absent\"}}}"
