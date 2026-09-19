@@ -527,6 +527,21 @@ fn applyEdge(
   floor: Int,
   proof: mpf.Proof,
 ) -> Fold {
+  // #173 A-006/A-009: an insert on a key the trie already binds is a
+  // fault of the TRIE, refused `key-exists` BEFORE any mint arithmetic
+  // runs — a different fact from `refuseEdge`'s `insert-terminal`, which
+  // names a fault of the REQUEST's value.
+  //
+  // `mpf.miss` is the library's own TOTAL exclusion check, so an
+  // occupied key is an attributable refusal instead of a crash inside
+  // `mpf.insert` — and a crash says only that the script died, never
+  // that it refused.
+  let inserting =
+    edge == lib.edgeInsertAbsent || edge == lib.edgeInsertActive
+  if inserting && !mpf.miss(acc.trie, key, proof) {
+    expect Some(reason) = lib.occupiedRefusal()
+    halt(acc, reason)
+  } else {
   let advanced =
     if edge == edgeWitnessTerminal {
       // C3: no new proof code. `mpf.has` is the library's own inclusion
@@ -575,6 +590,7 @@ fn applyEdge(
           dutiesOf(pins, edge, key, destination, floor),
         ),
       }
+  }
   }
 }
 

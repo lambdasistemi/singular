@@ -564,26 +564,43 @@ pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
 /// construction site for the reason and the tests assert the same value
 /// the validator traces.
 ///
-/// The #173 VALUES are not implemented. `refuseEdge` calls this only
-/// when the edge is already inadmissible, so the answer is always
-/// `Some`, and it is the one UNDIFFERENTIATED reason the pre-#173 cage
-/// gives for every refused insert. A-006 needs it to distinguish the
-/// occupied key (`key-exists`) from the terminal leaf
-/// (`insert-terminal`); until it does, every A-006 row fails, and fails
-/// through the real spend path that now reads its trace here.
+/// `before` is the leaf the REQUEST STATES, so this site names a fault
+/// of the REQUEST — an insert whose value byte is not a leaf this edge
+/// can create. `refuseEdge` calls it only for an already inadmissible
+/// edge, so the answer is always `Some`.
+///
+/// Occupancy is a fault of the TRIE, not of the request, and has its
+/// own construction site: see `occupiedRefusal` (A-009).
 pub fn insertRefusal(_edge: Int, _before: Option<Int>) -> Option<String> {
   Some(@"insert-terminal")
+}
+
+/// The reason an insert on a key the trie already binds is refused
+/// (#173 A-006, A-009; interface §2; Lean `refusal`, which answers
+/// `key-exists` for every occupied key). The primitive refuses BEFORE
+/// any mint arithmetic runs, so this is not the keyed-mint witness and
+/// must not be confused with it.
+///
+/// Called where `mpf.miss(trie, key, proof)` answers false on an insert.
+/// KNOWN LIMIT, accepted in A-009: `mpf.miss` answers false both for an
+/// occupied key and for a malformed exclusion proof, and the cage
+/// cannot tell them apart. Both are REFUSED, so nothing the model
+/// refuses is admitted; the trace name is imprecise for the
+/// malformed-proof case.
+pub fn occupiedRefusal() -> Option<String> {
+  Some(@"key-exists")
 }
 
 /// The reason a fold whose claimed mint disagrees with the summed delta
 /// of its edges is refused (#173 A-006, Lean L2
 /// `fold_batch_claimed_mint_by_kind_key`).
 ///
-/// The #173 VALUE is not implemented: it answers the name the pre-#173
-/// cage traces, so `t173_keyed_mint_reason_is_net_mint_mismatch` still
-/// fails — through the real fold, which now reads its reason here.
+/// One construction site, so a test asserting the reason asserts the
+/// value the fold actually traces. The name is the model's
+/// (`net-mint-mismatch`); it replaces the pre-#173 `delta-mismatch` at
+/// this one site, for every edge, because there is one mint guard.
 pub fn mintRefusal() -> Option<String> {
-  Some(@"delta-mismatch")
+  Some(@"net-mint-mismatch")
 }
 
 /// The total quantity a value moves under one policy, summed across

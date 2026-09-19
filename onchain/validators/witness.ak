@@ -20,7 +20,7 @@ use types.{Modify, UpdateRedeemer}
 /// kind refuses and the devnet rows (S04's E2E, CG21's fold) go red on
 /// the first token this registry tries to move. It cannot rot quietly.
 pub const registryStateHash: ByteArray =
-  #"945d93f0fc96c48432fd4f766ef09bb2a3e05a95bd7696b5b3fe48f2"
+  #"ca29c827585e04b0363b1779bcb3915e8d8bd7aa38c9856bee678bcc"
 
 /// The three token policies of a registry instance (#157 N1).
 ///

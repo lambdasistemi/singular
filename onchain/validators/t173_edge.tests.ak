@@ -26,9 +26,12 @@ use types.{
 ///   catches and a per-kind sum does not, and NOTHING in this tree
 ///   exercised it before this row.
 ///
-/// The refusal ROWS below establish only that the fold refuses. Which
-/// reason it gives is decided by `lib.insertRefusal`, asserted directly,
-/// because an Aiken test cannot read back a `trace`.
+/// The refusal ROWS below establish that the fold REFUSES — returns
+/// `False` rather than crashing. Which reason it gives is decided by
+/// two separate construction sites the validator reads from
+/// (`lib.occupiedRefusal` for the trie fault, `lib.insertRefusal` for
+/// the request fault), asserted directly, because an Aiken test cannot
+/// read back a `trace`.
 
 // ----------------------------------------------------------------------------
 // The driver
@@ -131,19 +134,18 @@ test t173_duplicate_insert_active_refuses_cleanly() {
   duplicateInsertActive() == False
 }
 
-/// A-006 and Lean L4: the reason is `key-exists`, and it is reached
-/// BEFORE the mint is compared. `insert-terminal` — the reason the
-/// pre-#173 cage gives for every inadmissible insert — is a different
-/// claim about a different fact.
+/// A-006, A-009 and Lean `refusal`: occupancy is a fault of the TRIE
+/// and has its own construction site, reached BEFORE the mint is
+/// compared. `insert-terminal` names a fault of the REQUEST's value and
+/// is a different claim about a different fact — the two are asserted
+/// separately below so neither can stand in for the other.
 test t173_duplicate_insert_active_reason_is_key_exists() {
-  lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindActive)) == Some(
-    @"key-exists",
-  )
+  lib.occupiedRefusal() == Some(@"key-exists")
 }
 
-/// The same function must still say `insert-terminal` where that IS the
-/// fact, so the row above is not passing because every answer became
-/// `key-exists`.
+/// The OTHER site must still say `insert-terminal` where that is the
+/// fact — an insert whose VALUE byte is a terminal leaf. Without this,
+/// the row above could pass because every answer became `key-exists`.
 test t173_insert_on_a_terminal_leaf_is_still_insert_terminal() {
   lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindTerminal)) == Some(
     @"insert-terminal",
@@ -221,7 +223,7 @@ test t173_the_two_refusals_are_distinct_reasons() {
   // Asserted by NAME, not merely by inequality: two pre-#173 names are
   // also distinct from each other, so an inequality alone would go
   // green while A-006 stayed unimplemented.
-  let duplicate = lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindActive))
+  let duplicate = lib.occupiedRefusal()
   lib.mintRefusal() == Some(@"net-mint-mismatch") && duplicate == Some(
     @"key-exists",
   ) && lib.mintRefusal() != duplicate
