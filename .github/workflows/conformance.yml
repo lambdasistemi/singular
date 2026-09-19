@@ -90,7 +90,7 @@ jobs:
       # row must never read as a pass). Per the A-001 ruling this step
       # never treats that exit — or any error label — as success: the
       # expected-debt assertion below reads the session's ACTUAL
-      # results and demands exactly the ten rows, exactly the
+      # results and demands exactly the eleven rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
       # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
@@ -123,7 +123,7 @@ jobs:
           export CONFORMANCE_RECEIPTS
           printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >> "$GITHUB_ENV"
           set +e
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
@@ -136,12 +136,12 @@ jobs:
           #    exit 1 is the intended result ONLY together with the
           #    complete terminal evidence asserted below.
           [ "$run_rc" -eq 1 ] || { echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"; exit 1; }
-          # 2. complete session evidence: all 10 rows executed...
-          grep -q 'complete: 10/10 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 10 rows (mid-run failure or crash)'; exit 1; }
+          # 2. complete session evidence: all 11 rows executed...
+          grep -q 'complete: 11/11 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 11 rows (mid-run failure or crash)'; exit 1; }
           #    ...and the terminal failure is the held-rows debt report
           grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || { echo 'FAIL: the terminal failure is not the held-rows debt report'; exit 1; }
-          # 3. exactly the ten rows plus the session CL01, no extras
-          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01 | sort > /tmp/expected-rows.txt
+          # 3. exactly the eleven rows plus the session CL01, no extras
+          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01 | sort > /tmp/expected-rows.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-*.json | sort > /tmp/receipt-rows.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
@@ -157,12 +157,12 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CL01) printf 'agrees-with-model' ;;
+              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
               CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
-          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CL01; do
+          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
@@ -249,8 +249,97 @@ jobs:
             and .funded.paid == [.obligations[].owed]
             and (.funded | .mem > 0 and .cpu > 0 and .size > 0)
           ' "$c" > /dev/null || { echo 'FAIL: CG19-rejected-floor pair evidence moved'; exit 1; }
-          # CG21 (insertActive conformance row): #184, split from #173 at the wall, 2026-09-19; not stubbed
-          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, held debt exactly CG11 CG12 CG19, nothing failing.'
+          # 9. CG21 (#184): the insertActive edge observation, complete or
+          #    the step fails. The loader already refuses an incomplete
+          #    CG21 receipt; this asserts the same promises at the CI
+          #    boundary, against the compiled blueprint's own hashes, so a
+          #    loader that stopped checking cannot make the row pass here.
+          open_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "open.open.mint") | .hash' "$blueprint")"
+          open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title == "open.open.mint") | (.parameters // []) | length] | first' "$blueprint")"
+          [ "$open_params" -eq 0 ] || { echo "FAIL: open.open.mint declares $open_params parameters; CG21 reports a parameterless open application"; exit 1; }
+          e="${CONFORMANCE_RECEIPTS}/receipt-CG21.json"
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg open "$open_hash" --arg state "$state_hash" '
+            . as $r
+            | def txid: type == "string" and test("^[0-9a-f]{64}$");
+              def hex28: type == "string" and test("^[0-9a-f]{56}$");
+              def text: type == "string" and length > 0;
+              def perKind($m): $m | group_by(.policy)
+                | map({policy: .[0].policy, q: (map(.quantity) | add)}) | sort;
+              def perKeyed($m): $m | map({policy, name, quantity}) | sort;
+              def landed: [$r.edge.sequence[].txid];
+              def leg($l; $n):
+                    ($l.txid | txid) and ($l.controlTxid | txid)
+                and ($l.txid != $l.controlTxid)
+                and (($l.hashes | index($state)) != null)
+                and ($l.hashes | all(.[]; text))
+                and ($l.distinguisher | text)
+                and (($l.trace == null) or ($l.trace | text))
+                and (($l.keys | length) == $n)
+                and ($l.keys | all(.[]; text))
+                and (($l.keys | unique | length) == $n)
+                and ((landed | index($l.controlTxid)) != null)
+                and ((landed | index($l.txid)) == null);
+              ($r.row == "CG21") and ($r.outcome == "accepted")
+              and ($r.verdict == "agrees-with-model") and ($r.venue == "node-submit")
+              and ($r.rejected == null) and ($r.refusal == null)
+              and ($r.mem > 0) and ($r.cpu > 0) and ($r.txSize > 0)
+              and ($r.edge | type == "object")
+              # identity: the parameterless open application, the active
+              # policy, the key and the fold, all populated
+              and ($r.edge.openPolicy == $open) and ($r.edge.openParameters == 0)
+              and ($r.edge.activePolicy | hex28) and ($r.edge.key | text)
+              and ($r.edge.foldTxid | txid)
+              and ($r.transactions == [$r.edge.foldTxid])
+              # exactly one active token at that key, minted and delivered,
+              # at the address the request named
+              and ($r.edge.minted == [{policy: $r.edge.activePolicy, name: $r.edge.key, quantity: 1}])
+              and ($r.edge.delivered == [{policy: $r.edge.activePolicy, name: $r.edge.key, quantity: 1}])
+              and ($r.edge.requestedAddress | text)
+              and ($r.edge.observedAddress == $r.edge.requestedAddress)
+              # the fine conjuncts, each separately observable
+              and ($r.edge.maxFee > 0) and ($r.edge.requestLovelace >= $r.edge.maxFee)
+              and ($r.edge.approvalName | text)
+              and ($r.edge.approvalRecomputed == $r.edge.approvalName)
+              and ($r.edge.refunds == []) and ($r.edge.signers == [])
+              and (($r.edge.configBefore | length) == 7)
+              and ($r.edge.configAfter == $r.edge.configBefore)
+              # every landed fold advances the committed trie, the chain and
+              # the manager agree, and the boot root is reached once
+              and (($r.edge.sequence | length) > 0)
+              and ($r.edge.sequence | all(.[]; (.txid | txid) and (.rootBefore | txid) and (.rootAfter | txid)))
+              and ($r.edge.sequence | all(.[]; .rootBefore != .rootAfter))
+              and ($r.edge.sequence | all(.[]; .committed == .rootAfter))
+              and ($r.edge.sequence[0].txid == $r.edge.foldTxid)
+              and ((landed | unique | length) == ($r.edge.sequence | length))
+              and ((([$r.edge.sequence[].rootBefore]) | unique | length) == ($r.edge.sequence | length))
+              and ([$r.edge.sequence | to_entries[] | select(.key > 0) | .value.rootBefore]
+                   == [$r.edge.sequence[:-1][].rootAfter])
+              # two DISTINCT refusals, each with its own accepting control
+              and leg($r.edge.duplicate; 1) and leg($r.edge.keyedMint; 2)
+              and ($r.edge.duplicate.keys == [$r.edge.key])
+              and ($r.edge.duplicate.claimedMint == null)
+              and ($r.edge.duplicate.entailedMint == null)
+              and (($r.edge.keyedMint.keys | index($r.edge.key)) == null)
+              and ($r.edge.duplicate.txid != $r.edge.keyedMint.txid)
+              and ($r.edge.duplicate.controlTxid != $r.edge.keyedMint.controlTxid)
+              # the keyed fault: the claim agrees per kind and disagrees per
+              # (kind, key), and the control minted what the batch entails
+              and (($r.edge.keyedMint.claimedMint | length) > 0)
+              and (($r.edge.keyedMint.entailedMint | length) > 0)
+              and (perKind($r.edge.keyedMint.claimedMint) == perKind($r.edge.keyedMint.entailedMint))
+              and (perKeyed($r.edge.keyedMint.claimedMint) != perKeyed($r.edge.keyedMint.entailedMint))
+              and (perKeyed($r.edge.keyedMint.controlMint) == perKeyed($r.edge.keyedMint.entailedMint))
+              and ($r.edge.keyedMint.claimedMint | all(.[]; .policy == $r.edge.activePolicy))
+              and ($r.edge.keyedMint.entailedMint | all(.[]; .policy == $r.edge.activePolicy))
+          ' "$e" > /dev/null || { echo 'FAIL: CG21 insertActive edge evidence missing or incomplete'; exit 1; }
+          grep -q '^row: CG21: one insertActive folded (tx=[0-9a-f]\{64\}) and exactly one active token landed at the named wallet' /tmp/generic-rows.log || { echo 'FAIL: CG21 accepted fold line missing'; exit 1; }
+          grep -q '^row: CG21 duplicate: REFUSED at submit, attributed to state' /tmp/generic-rows.log || { echo 'FAIL: CG21 duplicate refusal missing'; exit 1; }
+          grep -q '^row: CG21 keyed-mint: REFUSED at submit, attributed to state' /tmp/generic-rows.log || { echo 'FAIL: CG21 keyed-mint refusal missing'; exit 1; }
+          grep -q '^control: CG21 control: a fresh key folded through the same builder (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG21 duplicate accepting control missing'; exit 1; }
+          grep -q '^control: CG21 control: the same two keys with the distribution their edges entail accepted (tx=[0-9a-f]\{64\})' /tmp/generic-rows.log || { echo 'FAIL: CG21 keyed-mint accepting control missing'; exit 1; }
+          echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, verdicts and CL01 measurement evidence as declared, CG21 carrying its complete insertActive edge observation, held debt exactly CG11 CG12 CG19, nothing failing.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second
@@ -398,7 +487,7 @@ jobs:
       # cage changes that wire by mandate, so the execution is removed
       # outright — no stub, no skip, no echo standing in for it — and
       # the row travels with its edge:
-      # CS03 CS05: #177/#179; CS04 CS07 CS08: #183 (final wire); CG21: #184 — none stubbed
+      # CS03 CS05: #177/#179; CS04 CS07 CS08: #183 (final wire) — none stubbed
       - name: Preserve candidate-bound conformance receipts
         if: always() && env.CONFORMANCE_RECEIPTS != ''
         uses: actions/upload-artifact@v4

@@ -16,7 +16,7 @@ not separate layer tasks.
 
 ## Implementation vertical — one runnable
 
-- [ ] **T184-I — execute CG21 and emit its receipt.** In one commit-owner run,
+- [x] **T184-I — execute CG21 and emit its receipt.** In one commit-owner run,
   implement A184-FOLD, A184-CONJUNCTS, A184-DUPLICATE,
   A184-KEYED-MINT, A184-SEQUENCE, A184-WIRING and A184-COPIES across the
   exact surface in `plan.md`. After merge, the conformance generic-row step

@@ -32,6 +32,7 @@ module Conformance.Receipt (
     AssetEntry (..),
     DerivationEvidence (..),
     EdgeEvidence (..),
+    FoldStep (..),
     RefusalLeg (..),
     derivationMatches,
     Receipt (..),
@@ -60,6 +61,7 @@ import Data.Aeson (
     (.=),
  )
 import Data.ByteString.Lazy qualified as BSL
+import Data.Char (isHexDigit)
 import Data.List (isPrefixOf, isSuffixOf, sort)
 import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
@@ -535,7 +537,11 @@ loadReceipts dir = do
         pure $ case eitherDecode content of
             Left err ->
                 Left (path <> " does not parse: " <> err)
-            Right r -> checkOne path r >>= checkPartial path >>= checkDerivation path
+            Right r ->
+                checkOne path r
+                    >>= checkPartial path
+                    >>= checkDerivation path
+                    >>= checkEdge path
     checkDerivation path r = case receiptDerivation r of
         Nothing ->
             if receiptRow r == "CA04"
@@ -576,6 +582,19 @@ loadReceipts dir = do
                         <> ": derivation reference provenance mislabelled (match/refused want chain-observed plus outref, distinct wants pinned-unapplied)"
                     )
             | otherwise -> Right r
+    -- #184: the edge observation is optional for every other row and
+    -- MANDATORY and COMPLETE for CG21.
+    checkEdge path r = case (receiptRow r == "CG21", receiptEdge r) of
+        (False, Nothing) -> Right r
+        (False, Just _) ->
+            Left (path <> ": only CG21 carries edge evidence")
+        (True, Nothing) ->
+            Left
+                ( path
+                    <> ": CG21 receipt names no edge observation — unknown or incomplete, never covered"
+                )
+        (True, Just e) -> edgeComplete path r e
+
     checkPartial path r = case (receiptVerdict r, receiptPartial r) of
         (_, Nothing) -> case declaredConstructors (receiptRow r) of
             Nothing -> Right r
@@ -888,6 +907,21 @@ data RefusalLeg = RefusalLeg
     , rlDistinguisher :: !Text
     -- ^ what differs between the refused shape and its control, in one
     -- phrase. The whole value of the pair is that exactly one thing does.
+    , rlKeys :: ![Text]
+    {- ^ the registry keys the refused batch actually named (#184). A
+    phrase saying "two distinct keys" leaves nothing to reject a
+    same-key batch with; these are the subjects the loader checks.
+    -}
+    , rlClaimed :: !(Maybe [AssetEntry])
+    -- ^ the mint the refused transaction claimed, where the refusal is
+    -- about mint arithmetic at all
+    , rlEntailed :: !(Maybe [AssetEntry])
+    -- ^ what the edges it consumed actually entail
+    , rlControlMint :: !(Maybe [AssetEntry])
+    {- ^ what the accepting control actually minted. A mint refusal's
+    control is the SAME batch with the right distribution, so this must
+    be the entailment: the pair then differs in exactly one thing.
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -899,6 +933,10 @@ instance FromJSON RefusalLeg where
             <*> o .:? "trace"
             <*> o .: "controlTxid"
             <*> o .: "distinguisher"
+            <*> o .: "keys"
+            <*> o .:? "claimedMint"
+            <*> o .:? "entailedMint"
+            <*> o .:? "controlMint"
 
 instance ToJSON RefusalLeg where
     toJSON l =
@@ -908,14 +946,68 @@ instance ToJSON RefusalLeg where
             , "trace" .= rlTrace l
             , "controlTxid" .= rlControlTxid l
             , "distinguisher" .= rlDistinguisher l
+            , "keys" .= rlKeys l
+            , "claimedMint" .= rlClaimed l
+            , "entailedMint" .= rlEntailed l
+            , "controlMint" .= rlControlMint l
             ]
 
-{- | What an @insertActive@ row observed on chain (#173).
+{- | One landed fold, and what the committed trie did across it (#184).
+
+The speculative session inside the fold builder starts from the
+COMMITTED trie and is discarded, so a caller that does not commit each
+landed fold re-proves the next one against the boot state. A stale root
+is otherwise invisible until a later fold fails for an unrelated-looking
+reason, which is what makes this a receipt field rather than a comment.
+
+'fsCommitted' is the manager's own root after the fold; it must equal
+'fsRootAfter', which is read from the chain's state datum. Two
+independent observations of the same fact: one from the trie the next
+proof will be built against, one from the ledger.
+-}
+data FoldStep = FoldStep
+    { fsTxid :: !Text
+    , fsRootBefore :: !Text
+    -- ^ the registry root on chain before this fold landed
+    , fsRootAfter :: !Text
+    -- ^ the registry root on chain after it
+    , fsCommitted :: !Text
+    -- ^ the manager's committed root after it
+    }
+    deriving stock (Show, Eq)
+
+instance FromJSON FoldStep where
+    parseJSON = withObject "FoldStep" $ \o ->
+        FoldStep
+            <$> o .: "txid"
+            <*> o .: "rootBefore"
+            <*> o .: "rootAfter"
+            <*> o .: "committed"
+
+instance ToJSON FoldStep where
+    toJSON s =
+        object
+            [ "txid" .= fsTxid s
+            , "rootBefore" .= fsRootBefore s
+            , "rootAfter" .= fsRootAfter s
+            , "committed" .= fsCommitted s
+            ]
+
+{- | What an @insertActive@ row observed on chain (#173, completed in
+#184).
 
 The open application is parameterless: its compiled hash IS its policy
 id, with no applied hash to derive. 'eeOpenParameters' is READ from the
 blueprint rather than written down, so a blueprint that grew a parameter
 changes this evidence instead of being contradicted by it.
+
+The second block of fields is the fine print of
+@Singular.Statements.insert_active_transaction_row@: the tip the request
+covers, the destination the approval binds, the refunds and signers the
+fold does NOT have, the seven configuration pins it must not move, and
+the landed-fold sequence. Each is recorded as an OBSERVATION with the
+value it was compared against, never as a boolean, so a receipt cannot
+assert a conjunct it did not actually read.
 -}
 data EdgeEvidence = EdgeEvidence
     { eeOpenPolicy :: !Text
@@ -930,6 +1022,27 @@ data EdgeEvidence = EdgeEvidence
     -- ^ where the token was found, read back from chain
     , eeDelivered :: ![AssetEntry]
     -- ^ what that output actually holds
+    , eeMaxFee :: !Integer
+    -- ^ the tip the registry's own configuration charges
+    , eeRequestLovelace :: !Integer
+    -- ^ what the request UTxO actually carried, which must cover it
+    , eeApprovalName :: !Text
+    -- ^ the approval asset the request carried, read from chain
+    , eeApprovalRecomputed :: !Text
+    -- ^ the same name recomputed from the request's OWN datum: edge,
+    -- key, owner and the destination pair it names. Equality is the
+    -- destination-datum binding; a fold delivering somewhere the
+    -- approval did not bind makes the two differ.
+    , eeRefunds :: ![Integer]
+    -- ^ refunds the fold paid. The model says none.
+    , eeSigners :: ![Text]
+    -- ^ signers the fold required. The model says none.
+    , eeConfigBefore :: ![Text]
+    -- ^ the seven non-root pins of the state datum before the fold
+    , eeConfigAfter :: ![Text]
+    -- ^ and after: only the root may move
+    , eeSequence :: ![FoldStep]
+    -- ^ every fold this row landed, in the order it landed them
     , eeDuplicate :: !RefusalLeg
     -- ^ the same key again, refused before any mint arithmetic
     , eeKeyedMint :: !(Maybe RefusalLeg)
@@ -952,6 +1065,15 @@ instance FromJSON EdgeEvidence where
             <*> o .: "requestedAddress"
             <*> o .: "observedAddress"
             <*> o .: "delivered"
+            <*> o .: "maxFee"
+            <*> o .: "requestLovelace"
+            <*> o .: "approvalName"
+            <*> o .: "approvalRecomputed"
+            <*> o .: "refunds"
+            <*> o .: "signers"
+            <*> o .: "configBefore"
+            <*> o .: "configAfter"
+            <*> o .: "sequence"
             <*> o .: "duplicate"
             <*> o .:? "keyedMint"
 
@@ -967,6 +1089,183 @@ instance ToJSON EdgeEvidence where
             , "requestedAddress" .= eeRequestedAddress e
             , "observedAddress" .= eeObservedAddress e
             , "delivered" .= eeDelivered e
+            , "maxFee" .= eeMaxFee e
+            , "requestLovelace" .= eeRequestLovelace e
+            , "approvalName" .= eeApprovalName e
+            , "approvalRecomputed" .= eeApprovalRecomputed e
+            , "refunds" .= eeRefunds e
+            , "signers" .= eeSigners e
+            , "configBefore" .= eeConfigBefore e
+            , "configAfter" .= eeConfigAfter e
+            , "sequence" .= eeSequence e
             , "duplicate" .= eeDuplicate e
             , "keyedMint" .= eeKeyedMint e
             ]
+
+{- | Every promise a CG21 observation makes, checked against what it
+actually recorded (#184).
+
+The outer @edge@ field stays optional so every other row keeps writing
+@null@ and receipts written before this ticket still parse. For CG21 it
+is mandatory and COMPLETE: a receipt that omits the field, either
+refusal control, any identity or delivery field, or any fine-conjunct
+observation is refused here rather than counted.
+
+Each promise is stated as the thing it refuses for, so a defect is
+reported as the guarantee it breaks and not as a parse error two layers
+down. Nothing here derives a value from another value in the same
+receipt: every comparison is between two observations the runner made
+separately, which is what stops a conjunct being satisfied by the
+receipt agreeing with itself.
+-}
+edgeComplete :: FilePath -> Receipt -> EdgeEvidence -> Either String Receipt
+edgeComplete path r e =
+    case [msg | (False, msg) <- promises] of
+        [] -> Right r
+        (msg : _) -> Left (path <> ": CG21 " <> msg)
+  where
+    landed = map fsTxid (eeSequence e)
+    provedAgainst = map fsRootBefore (eeSequence e)
+    hexOf n t = T.length t == n && T.all isHexDigit t
+    -- Local, because this module already binds `nub` inside another
+    -- where-block and `-Wname-shadowing` is an error here.
+    allDistinct xs = let s = sort xs in and (zipWith (/=) s (drop 1 s))
+    dedup = foldr (\x acc -> if x `elem` acc then acc else x : acc) []
+    -- One token, under the active policy, named by the key the row
+    -- inserted. The registry's token identity is (policy, key) and
+    -- nothing else, so a quantity alone cannot say this.
+    oneActive as = case as of
+        [a] ->
+            aePolicy a == eeActivePolicy e
+                && aeName a == eeKey e
+                && aeQuantity a == 1
+        _ -> False
+    -- A mint observation is present or absent; when present it is
+    -- nonempty and every entry names both halves of a token identity.
+    mintsWellFormed m = case m of
+        Nothing -> True
+        Just as ->
+            not (null as)
+                && not (any (\a -> T.null (aePolicy a) || T.null (aeName a)) as)
+    -- Every mint it records is at a key its own batch named.
+    mintsAtKeys l m = case m of
+        Nothing -> True
+        Just as -> all (\a -> aeName a `elem` rlKeys l) as
+    perPolicy as =
+        sort
+            [ (p, sum [aeQuantity a | a <- as, aePolicy a == p])
+            | p <- dedup (map aePolicy as)
+            ]
+    perKeyed as = sort [(aePolicy a, aeName a, aeQuantity a) | a <- as]
+    perPolicyAgrees l = case (rlClaimed l, rlEntailed l) of
+        (Just c, Just e2) -> perPolicy c == perPolicy e2
+        _ -> True
+    perKeyDisagrees l = case (rlClaimed l, rlEntailed l) of
+        (Just c, Just e2) -> perKeyed c /= perKeyed e2
+        _ -> True
+    controlMintsTheEntailment l = case (rlControlMint l, rlEntailed l) of
+        (Just c, Just e2) -> perKeyed c == perKeyed e2
+        (Just _, Nothing) -> False
+        (Nothing, Just _) -> False
+        _ -> True
+    legPromises what l =
+        [ (hexOf 64 (rlTxid l), what <> " names no refused transaction")
+        , (hexOf 64 (rlControlTxid l), what <> " names no accepting control transaction")
+        , (rlTxid l /= rlControlTxid l, what <> " is its own accepting control")
+        , (not (null (rlHashes l)), what <> " names no failing script")
+        , (not (any T.null (rlHashes l)), what <> " names an empty failing script")
+        , (not (T.null (rlDistinguisher l)), what <> " states nothing that distinguishes it from its control")
+        , -- An absent trace is the normal case and legal; an EMPTY one
+          -- is a guess dressed as an observation.
+          (maybe True (not . T.null) (rlTrace l), what <> " carries an empty trace instead of recording its absence")
+        , (rlControlTxid l `elem` landed, what <> " names a control that landed no fold in this run")
+        , (rlTxid l `notElem` landed, what <> " names a refused transaction that also landed a fold")
+        , -- The subjects of the relations the leg claims. A batch that
+          -- names no key cannot be said to have named two distinct ones.
+          (not (null (rlKeys l)), what <> " names no key its batch consumed")
+        , (not (any T.null (rlKeys l)), what <> " names an empty key")
+        , (allDistinct (rlKeys l), what <> " names one key twice")
+        , (mintsWellFormed (rlClaimed l), what <> " claims a malformed mint")
+        , (mintsWellFormed (rlEntailed l), what <> " entails a malformed mint")
+        , (mintsWellFormed (rlControlMint l), what <> " records a malformed control mint")
+        , (mintsAtKeys l (rlClaimed l), what <> " claims a mint at a key its batch never named")
+        , (mintsAtKeys l (rlEntailed l), what <> " entails a mint at a key its batch never named")
+        , (mintsAtKeys l (rlControlMint l), what <> " records a control mint at a key its batch never named")
+        , -- Mint arithmetic comes as a pair or not at all: a claim with
+          -- nothing to compare it against is not an observation.
+          (isJust (rlClaimed l) == isJust (rlEntailed l), what <> " records one half of a mint comparison")
+        , -- What makes this a KEYED fault and not a net one, checked the
+          -- two ways at once: the totals per kind agree, and the totals
+          -- per (kind, key) do not. A per-kind sum cannot see the second.
+          (perPolicyAgrees l, what <> " claims a mint that also disagrees per kind, which is a net mismatch and not a keyed one")
+        , (perKeyDisagrees l, what <> " claims exactly what its edges entail, so nothing distinguishes it from its control")
+        , -- The control is the same batch with the right distribution.
+          (controlMintsTheEntailment l, what <> " records a control that did not mint what its batch entails")
+        ]
+    promises =
+        [ (hexOf 56 (eeOpenPolicy e), "names no open application policy")
+        , -- Lean `openPolicyParameters = []`: the open policy's compiled
+          -- hash IS its policy id, and a blueprint that grew a parameter
+          -- must change this observation rather than be contradicted by it.
+          (eeOpenParameters e == 0, "observes a parameterised open application")
+        , (hexOf 56 (eeActivePolicy e), "names no active witness policy")
+        , (not (T.null (eeKey e)), "names no inserted key")
+        , (hexOf 64 (eeFoldTxid e), "names no fold transaction")
+        , (oneActive (eeMinted e), "did not mint exactly one active token at the inserted key")
+        , (oneActive (eeDelivered e), "did not deliver exactly one active token at the inserted key")
+        , (not (T.null (eeRequestedAddress e)), "names no requested destination")
+        , (eeObservedAddress e == eeRequestedAddress e, "observed the token somewhere other than the address the request named")
+        , (eeMaxFee e > 0, "records no tip for the registry to charge")
+        , (eeRequestLovelace e >= eeMaxFee e, "records a request whose lovelace does not cover the tip")
+        , (not (T.null (eeApprovalName e)), "names no approval on the request")
+        , (eeApprovalName e == eeApprovalRecomputed e, "carries an approval that does not bind the destination its own request names")
+        , (null (eeRefunds e), "records a fold that paid a refund")
+        , (null (eeSigners e), "records a fold that required a signer")
+        , (length (eeConfigBefore e) == 7, "does not observe the seven non-root configuration pins before the fold")
+        , (eeConfigAfter e == eeConfigBefore e, "records a fold that moved a non-root configuration pin")
+        , (not (null (eeSequence e)), "landed no fold at all")
+        , (all (hexOf 64 . fsTxid) (eeSequence e), "names a landed fold with no transaction")
+        , (allDistinct landed, "lands one transaction twice")
+        , (take 1 landed == [eeFoldTxid e], "does not open its landed sequence with the fold it reports")
+        , (all (\s -> hexOf 64 (fsRootBefore s) && hexOf 64 (fsRootAfter s)) (eeSequence e), "records a malformed registry root")
+        , (all (\s -> fsRootBefore s /= fsRootAfter s) (eeSequence e), "lands a fold that did not advance the registry root")
+        , -- Two independent readings of the same fact: the chain's root
+          -- after the fold, and the root the NEXT proof will be built
+          -- against. A disagreement is the stale-root defect.
+          (all (\s -> fsRootAfter s == fsCommitted s) (eeSequence e), "commits a root the chain does not carry")
+        , (and (zipWith (\a b -> fsRootAfter a == fsRootBefore b) (eeSequence e) (drop 1 (eeSequence e))), "proves a fold against a root an earlier fold had already moved past")
+        , (allDistinct provedAgainst, "proves two folds against the same root")
+        ]
+            <> legPromises "duplicate leg" (eeDuplicate e)
+            <> [ -- A-006: the duplicate is refused BEFORE any mint
+                 -- arithmetic runs, so it names the one occupied key and
+                 -- carries no mint comparison. A duplicate leg carrying
+                 -- one is claiming to be the other fixture.
+                 ( rlKeys (eeDuplicate e) == [eeKey e]
+                 , "duplicate leg does not name the one key the fold inserted"
+                 )
+               ,
+                 ( all
+                    isNothing
+                    [rlClaimed (eeDuplicate e), rlEntailed (eeDuplicate e), rlControlMint (eeDuplicate e)]
+                 , "duplicate leg carries mint arithmetic, which it is refused before reaching"
+                 )
+               ]
+            <> case eeKeyedMint e of
+                Nothing ->
+                    [
+                        ( False
+                        , "exercises no keyed-mint refusal; an absent leg is an \
+                          \incomplete row, never an absent requirement"
+                        )
+                    ]
+                Just km ->
+                    legPromises "keyed-mint leg" km
+                        <> [ (length (rlKeys km) == 2, "keyed-mint leg does not name exactly two keys")
+                           , (eeKey e `notElem` rlKeys km, "keyed-mint leg reuses the key the fold inserted, so it is not a batch of its own")
+                           , (isJust (rlClaimed km), "keyed-mint leg records no claimed mint")
+                           , (isJust (rlEntailed km), "keyed-mint leg records no entailed mint")
+                           , (isJust (rlControlMint km), "keyed-mint leg records nothing its accepting control minted")
+                           , (rlTxid km /= rlTxid (eeDuplicate e), "reuses one refusal as the other")
+                           , (rlControlTxid km /= rlControlTxid (eeDuplicate e), "gives both refusals the same accepting control")
+                           ]
