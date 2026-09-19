@@ -79,12 +79,12 @@ import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Core (eraProtVerHigh)
 import Data.Set qualified as Set
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
 import Cardano.Ledger.Core (valueTxOutL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Ledger.TxIn (TxId (..), txInToText)
+import Cardano.Ledger.TxIn (TxId (..), TxIn, txInToText)
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -125,7 +125,10 @@ import Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     txInToRef,
  )
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
+import Singular.Registry.TxBuilder.Update (
+    RegistryContext (..),
+    updateTokenWithDuties,
+ )
 import Singular.Registry.Types (
     CageDatum (..),
     OnChainOperation (..),
@@ -137,6 +140,23 @@ import Singular.Registry.Types (
 -- ---------------------------------------------------------
 -- The story's fixed inputs
 -- ---------------------------------------------------------
+
+
+{- | One booted registry: its config, its token, the reference outputs
+its folds resolve through, and the boot transaction itself.
+
+There is more than one per run because a refused fold never consumes the
+request that caused it. That request stays pending, the next fold picks
+it up, and the second refusal becomes evidence about the first. Each
+refusal therefore gets a registry of its own.
+-}
+data Registry = Registry
+    { regCfg :: CageConfig
+    , regTid :: TokenId
+    , regRefs :: [(TxIn, TxOut ConwayEra)]
+    , regBootTx :: ConwayTx
+    , regTidBytes :: ByteString
+    }
 
 -- | The key the documented run books and then retires.
 storyKey :: ByteString
@@ -233,7 +253,7 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
     tm <- mkPureTrieManager
     _ <- Cage.queryProtocolParams prov
     -- #177 A-003: publish the state validator as a reference output
-    -- BEFORE the seed is chosen. The publication spends the wallet's
+    -- BEFORE any seed is chosen. The publication spends the wallet's
     -- largest ada-only output, which a seed picked first could be, and
     -- boot would then look for a UTxO the publication had spent.
     _ <-
@@ -242,16 +262,98 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
             (submitWithGenesis submit)
             genesisAddr
             (scriptFromBytes "state" stateBytes)
-    utxos <- Cage.queryUTxOs prov genesisAddr
-    -- #177 A-003: never seed from the reference publication. Boot
-    -- REFERENCES that output, and a transaction may not both spend and
-    -- reference the same one.
-    seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
-        [] -> die "the genesis wallet has no spendable UTxO to seed the registry with"
-        ((txIn, _) : _) -> pure (txInToRef txIn)
-
     codes <- loadRegistryCodesFromEnv
-    let cfg = cageCfg stateBytes requestBytes codes seedRef
+
+    {- One registry cannot carry two refusals.
+
+    A refused fold never consumes the request that caused it, so that
+    request stays pending and the NEXT fold picks it up — and refuses
+    again, for the first request's reason rather than its own. The
+    second refusal would then be evidence about the first.
+
+    So each refusal gets a registry of its own, with its own accepting
+    control folded in it before the bad one. Three boots, one node
+    session, one wallet. -}
+    let bootRegistry label = do
+            utxos <- Cage.queryUTxOs prov genesisAddr
+            -- Never seed from the reference publication: boot REFERENCES
+            -- that output and may not also spend it.
+            seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
+                [] -> die "the genesis wallet has no spendable UTxO to seed a registry with"
+                ((txIn, _) : _) -> pure (txInToRef txIn)
+            let cfg = cageCfg stateBytes requestBytes codes seedRef
+            unsignedBoot <- bootTokenImpl cfg prov genesisAddr
+            signedBoot <- submitWithGenesis submit unsignedBoot
+            (tid, tidBytes) <- extractTokenId cfg signedBoot
+            createTrie tm tid
+            refs <-
+                Edges.publishCageRefs
+                    cfg
+                    codes
+                    prov
+                    (submitWithGenesis submit)
+                    genesisAddr
+                    tid
+            say (label <> ": booted registry token 0x" <> T.unpack (hex tidBytes))
+            pure (Registry cfg tid refs signedBoot tidBytes)
+
+        book reg key op =
+            Edges.bookEdgeTo
+                (regCfg reg)
+                codes
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                (regTid reg)
+                key
+                op
+                walletDestination
+        {- The mirroring below is not bookkeeping. The speculative
+        session inside `updateTokenWithDuties` starts from the committed
+        trie and is discarded, so a caller that does not commit each
+        landed fold re-proves the next one against the BOOT state: the
+        retirement would submit a proof for a root the chain left
+        behind. -}
+        foldOnce reg = foldWith reg False
+        {- `inadmissible` is what lets a REFUSAL leg reach the chain. An
+        honest builder refuses to construct a fold it can see the cage
+        will reject, which is right for the story and wrong for a row
+        whose whole point is the cage's own reason: without this the
+        observation would record the BUILDER's message instead. -}
+        foldWith reg inadmissible = do
+            ctx0 <- Edges.registryContextFor (regCfg reg) codes prov (regRefs reg)
+            let ctx = ctx0{rcAllowInadmissible = inadmissible}
+            tx <-
+                updateTokenWithDuties
+                    (regCfg reg)
+                    prov
+                    tm
+                    (regTid reg)
+                    genesisAddr
+                    ctx
+            submitWithGenesis submit tx
+        mirror reg key op = withTrie tm (regTid reg) $ \t -> case op of
+            OpInsert v -> () <$ insert t key v
+            OpUpdate _ v -> do
+                _ <- Singular.Registry.Trie.delete t key
+                () <$ insert t key v
+            _ -> pure ()
+        foldAndMirror reg key op = do
+            tx <- foldOnce reg
+            mirror reg key op
+            pure tx
+        rootNow reg = withTrie tm (regTid reg) getRoot
+
+    -- ---------------------------------------------------------
+    -- Registry one: the story, and the Absent refusal it controls
+    -- ---------------------------------------------------------
+    {- Both registries are booted HERE, before any fold. A fold returns
+    its approval to this wallet, and a boot needs an ada-only output to
+    fund and collateralise from; booting the second one after the story
+    would find every remaining output carrying a token. -}
+    story <- bootRegistry "story"
+    unknownReg <- bootRegistry "unknown-leg"
+    let cfg = regCfg story
         openPolicy = hex (SBS.fromShort (cfgApplicationPolicy cfg))
         activePolicy = hex (SBS.fromShort (cfgActivePolicy cfg))
     say
@@ -262,67 +364,19 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
             <> ")"
         )
     say ("active witness policy   " <> T.unpack activePolicy)
-
-    unsignedBoot <- bootTokenImpl cfg prov genesisAddr
-    signedBoot <- submitWithGenesis submit unsignedBoot
-    (tid, tidBytes) <- extractTokenId cfg signedBoot
-    createTrie tm tid
     stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg Testnet)
-    bootState <- case findStateUtxo (cagePolicyIdFromCfg cfg) tid stateUtxos of
+    bootState <- case findStateUtxo (cagePolicyIdFromCfg cfg) (regTid story) stateUtxos of
         Just (_, out) -> case extractCageDatum out of
             Just (StateDatum s) -> pure s
             _ -> die "boot: the state UTxO carries no eight-field state datum"
         Nothing -> die "boot: no state UTxO carrying the registry policy token"
-    say ("booted registry token 0x" <> T.unpack (hex tidBytes))
-    let bootObs = bootObservation cfg signedBoot
-
-    refs <-
-        Edges.publishCageRefs
-            cfg
-            codes
-            prov
-            (submitWithGenesis submit)
-            genesisAddr
-            tid
-
-    let book key op =
-            Edges.bookEdgeTo
-                cfg
-                codes
-                prov
-                (submitWithGenesis submit)
-                genesisAddr
-                tid
-                key
-                op
-                walletDestination
-        {- The mirroring below is not bookkeeping. The speculative
-        session inside `updateTokenWithDuties` starts from the committed
-        trie and is discarded, so a caller that does not commit each
-        landed fold re-proves the next one against the BOOT state: the
-        retirement would submit a proof for a root the chain left
-        behind. -}
-        foldOnce = do
-            ctx <- Edges.registryContextFor cfg codes prov refs
-            tx <- updateTokenWithDuties cfg prov tm tid genesisAddr ctx
-            submitWithGenesis submit tx
-        mirror key op = withTrie tm tid $ \t -> case op of
-            OpInsert v -> () <$ insert t key v
-            OpUpdate _ v -> do
-                _ <- Singular.Registry.Trie.delete t key
-                () <$ insert t key v
-            _ -> pure ()
-        foldAndMirror key op = do
-            tx <- foldOnce
-            mirror key op
-            pure tx
-        rootNow = withTrie tm tid getRoot
+    let bootObs = bootObservation cfg (regBootTx story)
 
     -- 1. the prerequisite, executed rather than fabricated.
-    rootBeforeInsert <- rootNow
-    _ <- book storyKey insertOp
-    insertTx <- foldAndMirror storyKey insertOp
-    rootActive <- rootNow
+    rootBeforeInsert <- rootNow story
+    _ <- book story storyKey insertOp
+    insertTx <- foldAndMirror story storyKey insertOp
+    rootActive <- rootNow story
     heldBefore <- activeHeldAt prov cfg storyKey
     say ("active tokens at the named wallet after the insert: " <> show heldBefore)
 
@@ -331,45 +385,23 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
     source <- activeSourceOf prov cfg storyKey
 
     -- 2. the edge under test, at the same key, in the same session.
-    _ <- book storyKey retireOp
-    retireTx <- foldAndMirror storyKey retireOp
-    rootTerminal <- rootNow
+    --    This retirement is also the ACCEPTING CONTROL for the Absent
+    --    refusal below: same registry, same builder, and the only thing
+    --    that differs there is the leaf.
+    _ <- book story storyKey retireOp
+    retireTx <- foldAndMirror story storyKey retireOp
+    rootTerminal <- rootNow story
     heldAfter <- activeHeldAt prov cfg storyKey
-    chainRoot <- committedRoot prov cfg tid
+    chainRoot <- committedRoot prov cfg (regTid story)
     say ("active tokens at the named wallet after the retirement: " <> show heldAfter)
 
-    -- 3. the accepting control for both refusals, taken BEFORE them: a
-    --    refused request is never consumed and would otherwise poison
-    --    the fold that follows it.
-    _ <- book controlKey insertOp
-    _ <- foldAndMirror controlKey insertOp
-    _ <- book controlKey retireOp
-    controlOutcome <- try @SomeException (foldAndMirror controlKey retireOp)
-    controlTxid <- case controlOutcome of
-        Right tx -> pure (hex (txIdOf tx))
-        Left e ->
-            die
-                ( "control: a key that IS active was refused retirement, so \
-                  \the refusals below would prove nothing about the leaf: "
-                    <> displayException e
-                )
-
-    -- 4. the unknown key: never inserted, so the trie does not bind it.
-    _ <- book unknownKey retireOp
-    unknownOutcome <- try @SomeException foldOnce
-    unknownDetail <- case unknownOutcome of
-        Right _ ->
-            die
-                "the fold ACCEPTED updateTerminal on a key the trie does not \
-                \bind — reported, not relabelled"
-        Left e -> pure (displayException e)
-    say "a key the trie does not bind: REFUSED"
-
-    -- 5. the absent key: bound by a real insertAbsent fold, never booked.
-    _ <- book absentKey absentOp
-    _ <- foldAndMirror absentKey absentOp
-    _ <- book absentKey retireOp
-    absentOutcome <- try @SomeException foldOnce
+    -- 3. the Absent key: bound by a real insertAbsent fold, never
+    --    booked. Its refusal poisons this registry, so nothing follows
+    --    it here.
+    _ <- book story absentKey absentOp
+    _ <- foldAndMirror story absentKey absentOp
+    _ <- book story absentKey retireOp
+    absentOutcome <- try @SomeException (foldWith story True)
     absentDetail <- case absentOutcome of
         Right _ ->
             die
@@ -378,6 +410,33 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
         Left e -> pure (displayException e)
     say "a key witnessed Absent: REFUSED"
 
+    -- ---------------------------------------------------------
+    -- Registry two: the Unknown refusal, with its own control
+    -- ---------------------------------------------------------
+    _ <- book unknownReg controlKey insertOp
+    _ <- foldAndMirror unknownReg controlKey insertOp
+    _ <- book unknownReg controlKey retireOp
+    controlOutcome <- try @SomeException (foldAndMirror unknownReg controlKey retireOp)
+    controlTxid <- case controlOutcome of
+        Right tx -> pure (hex (txIdOf tx))
+        Left e ->
+            die
+                ( "control: a key that IS active was refused retirement, so \
+                  \the refusal below would prove nothing about the leaf: "
+                    <> displayException e
+                )
+    _ <- book unknownReg unknownKey retireOp
+    unknownOutcome <- try @SomeException (foldWith unknownReg True)
+    unknownDetail <- case unknownOutcome of
+        Right _ ->
+            die
+                "the fold ACCEPTED updateTerminal on a key the trie does not \
+                \bind — reported, not relabelled"
+        Left e -> pure (displayException e)
+    say "a key the trie does not bind: REFUSED"
+
+    let tidBytes = regTidBytes story
+        absentControlTxid = hex (txIdOf retireTx)
     let traceOf name detail
             | name `isInfixOf` detail = String (T.pack name)
             | otherwise = Null
@@ -446,8 +505,9 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
                                 , "detail" .= T.pack (take 2000 unknownDetail)
                                 , "controlTxid" .= controlTxid
                                 , "distinguisher"
-                                    .= ( "the control's key was inserted Active; \
-                                         \this one was never inserted at all" ::
+                                    .= ( "the control retired a key that IS \
+                                         \Active in this same registry; this \
+                                         \one was never inserted at all" ::
                                             T.Text
                                        )
                                 ]
@@ -456,10 +516,11 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
                                 [ "outcome" .= ("refused" :: T.Text)
                                 , "trace" .= traceOf "not-booked" absentDetail
                                 , "detail" .= T.pack (take 2000 absentDetail)
-                                , "controlTxid" .= controlTxid
+                                , "controlTxid" .= absentControlTxid
                                 , "distinguisher"
-                                    .= ( "the control's key was inserted Active; \
-                                         \this one was witnessed Absent" ::
+                                    .= ( "the control retired a key that IS \
+                                         \Active in this same registry; this \
+                                         \one was witnessed Absent" ::
                                             T.Text
                                        )
                                 ]

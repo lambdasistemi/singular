@@ -4735,7 +4735,8 @@ runCG22 env = do
     unknownLeg <-
         refusedRetirement
             env
-            buildFold
+            cage
+            tid
             (txIdHex controlTx)
             "the control's key was inserted Active; this one was never \
             \inserted at all"
@@ -4749,7 +4750,8 @@ runCG22 env = do
     absentLeg <-
         refusedRetirement
             env
-            buildFold
+            cage
+            tid
             (txIdHex controlTx)
             "the control's key was inserted Active; this one was \
             \witnessed Absent"
@@ -4829,11 +4831,19 @@ transaction's id, the script hashes the failure is attributed to, the
 honest trace (`Nothing` unless the ledger surfaced one), the accepting
 control, and what differs between the two.
 
+The fold is HAND-ASSEMBLED rather than taken from
+`updateTokenWithDuties`. That builder evaluates on the node and raises
+the failure as its own error, so it produces no transaction — and a row
+whose claim is "the chain refused this, here is the transaction" needs
+one to point at. Assembling it directly is the same path every other
+refusal row in this suite uses.
+
 An ACCEPTANCE here is reported as a finding, never relabelled.
 -}
 refusedRetirement ::
     Env ->
-    IO ConwayTx ->
+    RowCage ->
+    TokenId ->
     -- | the accepting control's txid
     String ->
     -- | the one fact that differs from the control
@@ -4841,8 +4851,16 @@ refusedRetirement ::
     -- | what to say if the chain accepts
     String ->
     IO RefusalLeg
-refusedRetirement env buildFold controlTxid distinguisher acceptedMsg = do
-    unsigned <- buildFold
+refusedRetirement env cage tid controlTxid distinguisher acceptedMsg = do
+    state <- cageStateUtxo env cage
+    reqUtxos <- pendingRequests env cage
+    (proofs, newRoot) <- speculativeApplyAll env cage tid reqUtxos
+    pp <- Cage.queryProtocolParams (envProv env)
+    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+    unsigned <-
+        assembleFoldWithFee
+            env
+            (rowSpec cage tid state reqUtxos (map Update proofs) newRoot (ExUnits maxMem maxSteps))
     let signed = addKeyWitness genesisSignKey unsigned
     result <- submitTxResilient (envSubmit env) signed
     case result of
@@ -4850,8 +4868,15 @@ refusedRetirement env buildFold controlTxid distinguisher acceptedMsg = do
         Rejected reason -> do
             let text = T.unpack (TE.decodeUtf8Lenient reason)
                 hashes = refusalScriptHashes text
+            -- A phase-2 failure names the script that refused. A phase-1
+            -- rejection names none, and would mean the chain refused
+            -- this transaction for its shape rather than for the leaf
+            -- under test — so the reason travels with the complaint.
             require
-                "CG22: the refusal carries no script-hash attribution"
+                ( "CG22: the refusal carries no script-hash attribution, so \
+                  \it is not the cage refusing: "
+                    <> take 600 text
+                )
                 (not (null hashes))
             pure
                 RefusalLeg
