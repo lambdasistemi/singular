@@ -190,23 +190,29 @@ as a refusal.
 
 ### The `insertActive` edge on the open registry (#173)
 
-One more generic row joins the session for the open registry's
-`insertActive` edge. It carries three observations, and they are three
-DISTINCT fixtures on purpose — conflating them is how a suite convinces
-itself it has tested a mint rule it never exercised.
+CG21 is defined in the row inventory, and its receipt schema has a field for
+an `insertActive` observation. It does **not** join the current generic
+session: its runner is not implemented, so `conformance/rows.json` correctly
+keeps it `uncovered`. [Issue #184](https://github.com/lambdasistemi/singular/issues/184)
+owns that runner and the receipt it will produce.
 
-| row | outcome | evidence |
+The runner in #184 must execute the following three distinct observations.
+They are obligations, not observations already made by this branch —
+conflating them is how a suite convinces itself it tested a mint rule it never
+exercised.
+
+| planned observation | required outcome | evidence #184 must record |
 |---|---|---|
 | CG21 `insertActive` fold | accept | one `(activePolicy, key)` token in the output at the address and inline datum the request named |
 | CG21 same-key duplicate | **refuse** `key-exists` | refused BEFORE any mint arithmetic; a FRESH key through the same builder is accepted in-run (control) — the refusal is the occupancy, not the request |
 | CG21 two-key wrong distribution | **refuse** `net-mint-mismatch` | two DISTINCT keys claiming `2/0` against `1/1` minted; the same two keys with the right distribution are accepted in-run (control) — the refusal is the distribution, not the batch size |
 
-The second and third are not the same row wearing two names. The
-duplicate is refused because the key is taken, before the mint is
-looked at; the keyed-mint witness needs a batch whose claimed mint
-**agrees per kind** and disagrees per `(kind, key)`, which is the exact
-fault a per-kind sum cannot see. A suite that only ever refused the
-duplicate would pass while the keyed guard was broken.
+The future second and third observations are not the same row wearing two
+names. The duplicate must be refused because the key is taken, before the mint
+is looked at; the keyed-mint witness needs a batch whose claimed mint
+**agrees per kind** and disagrees per `(kind, key)`, which is the exact fault a
+per-kind sum cannot see. A runner that only refuses the duplicate would pass
+while the keyed guard was broken.
 
 #### A limit worth stating plainly
 

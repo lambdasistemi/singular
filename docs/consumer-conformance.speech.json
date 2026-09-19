@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "1132299255698add13f2a3a0ca9e54f85e7c58ff1ed738d3dc2d395ca1ae24d0"
+    "sha256": "ab39283946d6321d1a97bdc4509836703dc7c5a9426b0b1e2c0c81e2ffb970c7"
   },
   "historical-execution-reports": [
     {
@@ -219,11 +219,15 @@
   ],
   "the-insertactive-edge-on-the-open-registry-173": [
     {
-      "text": "The open registry gains one generic row for the insertActive edge, and it carries three observations that are deliberately three distinct fixtures. The fold places exactly one active token in the output at the address and inline datum the request named. A second insert for the same key is refused key-exists, before any mint arithmetic runs, with a fresh key accepted in the same run as the control. A two-key batch claiming the wrong distribution is refused net-mint-mismatch, with the same two keys and the right distribution accepted as its control.",
+      "text": "CG21 is defined in the row inventory, and its receipt schema has a field for an insertActive observation. It does not join the current generic session because its runner is not implemented, so the row correctly remains uncovered. Issue 184 owns the runner and the receipt it will produce.",
       "pause": 400
     },
     {
-      "text": "Conflating the last two is how a suite convinces itself it has tested a mint rule it never exercised. The duplicate is refused because the key is taken. The keyed-mint witness needs a batch whose claimed mint agrees per kind and disagrees per kind and key, which is the exact fault a per-kind sum cannot see.",
+      "text": "The runner in issue 184 must execute three distinct observations. First, an accepted fold places exactly one active token at the address and inline datum the request named. Second, a same-key duplicate is refused key-exists before mint arithmetic, with a fresh key accepted as its control. Third, a two-key batch with the wrong per-key distribution is refused net-mint-mismatch, with the correctly distributed batch accepted as its control. These are future obligations, not observations already made by this branch.",
+      "pause": 400
+    },
+    {
+      "text": "The last two observations must remain distinct. The duplicate must be refused because the key is taken. The keyed-mint witness needs a batch whose claimed mint agrees per kind and disagrees per kind and key, which is the exact fault a per-kind sum cannot see. A runner that tests only the duplicate could pass while the keyed guard was broken.",
       "pause": 400
     },
     {
