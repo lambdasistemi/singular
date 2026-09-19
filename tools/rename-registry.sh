@@ -29,7 +29,8 @@
 #   5. onchain/aiken.toml name -> singular/registry,
 #      naming-onchain/aiken.toml name -> singular/naming-app; rebuild both
 #      script-identity derivations (a rename must not move a hash) and diff
-#      both script-identity.json manifests against origin/main (must be empty).
+#      both script-identity.json manifests against the identity baseline
+#      (RENAME_REGISTRY_BASE, default origin/main; must be empty).
 #   6. Prose: remaining whole-word MPFS product mentions become registry.
 #      Untouched: PROVENANCE.md, docs/prior-art.md (+ its bound speech
 #      companion docs/prior-art.speech.json, which cannot be edited without
@@ -47,6 +48,15 @@
 #   7. Final gate: git grep -iw mpfs (with the exclusions above) may only
 #      leave hits sitting on the two upstream citation lines. Allowed files
 #      are derived from that same grep, never a hand list.
+#
+# Targeted step-6 fixups name exact paths. A path another PR deleted is
+# reported as `skip (absent)` instead of aborting the run (#180); step 7's
+# gate is what still fails on any product name left behind.
+#
+# RENAME_REGISTRY_BASE overrides the commit the script-identity manifests are
+# compared against (default origin/main). tools/rename-registry.test.sh sets
+# it to the commit under test so the self-test never depends on where a
+# remote-tracking ref happens to point.
 #
 # `--gate-only` runs just step 7 against the current tree: for re-checking
 # an already-renamed tree without re-running the renames (this is also how
@@ -147,8 +157,14 @@ step4_workflow() {
 
 step5_aiken_and_identities() {
   echo "step 5: Aiken project names and script identities"
-  git rev-parse --verify --quiet origin/main >/dev/null \
-    || { echo "error: origin/main is required for the identity diff" >&2; exit 1; }
+  # Identity baseline. Normal use compares against origin/main, as the recovery
+  # recipe at the top of this file does. tools/rename-registry.test.sh pins it
+  # to the commit its scratch worktree was cut from (#180), so the self-test
+  # compares the rebuilt manifests against the tree they were built from
+  # instead of against a remote-tracking ref that has moved since.
+  local base_ref="${RENAME_REGISTRY_BASE:-origin/main}"
+  git rev-parse --verify --quiet "$base_ref" >/dev/null \
+    || { echo "error: $base_ref is required for the identity diff" >&2; exit 1; }
   sed -i -e 's/^name = "hal\/mpf"$/name = "singular\/registry"/' onchain/aiken.toml
   sed -i -e 's/^name = "singular\/naming-onchain"$/name = "singular\/naming-app"/' \
     naming-onchain/aiken.toml
@@ -159,51 +175,77 @@ step5_aiken_and_identities() {
   # The repository's own derivations: a moved hash fails the build.
   nix build ./onchain#script-identity ./naming-onchain#script-identity
   echo "  script-identity derivations build: hashes unmoved"
-  # The committed manifests must be byte-identical to origin/main.
-  diff <(git show origin/main:onchain/script-identity.json) \
+  # The committed manifests must be byte-identical to the baseline commit.
+  diff <(git show "$base_ref:onchain/script-identity.json") \
        onchain/script-identity.json
-  diff <(git show origin/main:naming-onchain/script-identity.json) \
+  diff <(git show "$base_ref:naming-onchain/script-identity.json") \
        naming-onchain/script-identity.json
-  echo "  script-identity.json manifests byte-identical to origin/main"
+  echo "  script-identity.json manifests byte-identical to $base_ref"
+}
+
+# The targeted fixups in step 6 name exact paths, and any PR may delete one of
+# them: #157 removed onchain/validators/consumer.ak, sed exited 2 on the
+# missing file, and under `set -e` that aborted the whole rename before the
+# general sweep below had run (#180). Apply each expression to the paths that
+# are present and name the ones that are gone, so the drift is visible in the
+# output. Skipping a fixup is not a licence to leave the product name behind:
+# step 7's gate greps the whole tracked tree and still fails on any residual.
+sed_present() {
+  local exprs=() present=() p
+  while [ $# -ge 2 ] && [ "$1" = "-e" ]; do
+    exprs+=(-e "$2")
+    shift 2
+  done
+  for p in "$@"; do
+    if [ -e "$p" ]; then
+      present+=("$p")
+    else
+      echo "  skip (absent): $p"
+    fi
+  done
+  [ ${#present[@]} -gt 0 ] || return 0
+  sed -i "${exprs[@]}" "${present[@]}"
 }
 
 step6_prose() {
   echo "step 6: prose product mentions become registry"
   # Case-sensitive fixups first (idempotent: each matches the pre-state only).
-  sed -i -e 's/"MPFS off-chain/"Registry off-chain/' offchain/flake.nix
-  sed -i -e 's/"MPFS on-chain/"Registry on-chain/' onchain/flake.nix
-  sed -i -e 's/for the MPFS cage validator/for the registry validator/' \
+  sed_present -e 's/"MPFS off-chain/"Registry off-chain/' offchain/flake.nix
+  sed_present -e 's/"MPFS on-chain/"Registry on-chain/' onchain/flake.nix
+  sed_present -e 's/for the MPFS cage validator/for the registry validator/' \
     offchain/app/test-vectors/Main.hs \
     offchain/lib/Singular/Registry/Types.hs
-  sed -i -e 's/as an MPFS cage datum/as a registry datum/' \
+  sed_present -e 's/as an MPFS cage datum/as a registry datum/' \
     onchain/validators/consumer.ak
-  sed -i -e 's/decodes as an MPFS state/decodes as a registry state/' \
+  sed_present -e 's/decodes as an MPFS state/decodes as a registry state/' \
     offchain/journey/retire-verify/Main.hs
-  sed -i -e 's/the imported MPFS cage partition/the imported registry partition/' \
+  sed_present -e 's/the imported MPFS cage partition/the imported registry partition/' \
     onchain-release/README.md
-  sed -i -e 's/MPFS cage validator types, tx builders/Registry validator types, tx builders/' \
+  sed_present -e 's/MPFS cage validator types, tx builders/Registry validator types, tx builders/' \
     offchain/singular-registry.cabal
-  sed -i -e 's/Existing MPFS is a separate application/The product it was imported from is a separate application/' \
+  sed_present -e 's/Existing MPFS is a separate application/The product it was imported from is a separate application/' \
     README.md
-  sed -i -e 's|`docs/design/registry-as-mpfs.md`|the registry design rulings|' \
-         -e 's/Upstream cardano-mpfs-onchain$/Upstream/' \
+  sed_present -e 's|`docs/design/registry-as-mpfs.md`|the registry design rulings|' \
+              -e 's/Upstream cardano-mpfs-onchain$/Upstream/' \
     docs/consumer-conformance.md
-  sed -i -e 's/^MPFS has no concept of/The registry has no concept of/' \
+  sed_present -e 's/^MPFS has no concept of/The registry has no concept of/' \
     offchain/naming-correspondence.md
-  sed -i -e 's/The MPFS registry state hash/The registry state hash/' \
+  sed_present -e 's/The MPFS registry state hash/The registry state hash/' \
     naming-onchain/validators/naming.ak
-  sed -i -e 's|/// MPFS state address|/// Registry state address|' \
+  sed_present -e 's|/// MPFS state address|/// Registry state address|' \
     naming-onchain/validators/fixtures.ak
-  sed -i -e 's/, an MPFS insert request/, a registry insert request/' \
-         -e 's/-- MPFS side consumes/-- The registry side consumes/' \
+  sed_present -e 's/, an MPFS insert request/, a registry insert request/' \
+              -e 's/-- MPFS side consumes/-- The registry side consumes/' \
     offchain/journey/register/Main.hs
   # CLI surface follows the rename (flag verified against its --help text).
-  sed -i -e 's/--mpfs-blueprint/--registry-blueprint/g' \
-         -e 's/argMpfsBlueprint/argRegistryBlueprint/g' \
+  sed_present -e 's/--mpfs-blueprint/--registry-blueprint/g' \
+              -e 's/argMpfsBlueprint/argRegistryBlueprint/g' \
     offchain/journey/verifier/Main.hs
-  sed -i -e 's/mpfs_bp/registry_bp/g' nix/release.nix
+  sed_present -e 's/mpfs_bp/registry_bp/g' nix/release.nix
   # General rules, whole-word only (MPF trie names, camelCase/snake_case
-  # locals and Cage identifiers are untouched), citations guarded.
+  # locals and Cage identifiers are untouched), citations guarded. The extent
+  # comes from scan_files (git ls-files), never a hand list, so a tracked file
+  # of a scanned kind cannot fall out of it.
   # GNU sed \< \> are word boundaries: _ is a word char (- and / are not),
   # so MPFS_BLUEPRINT, MPFStandalone and mpfsPath never match.
   scan_files | xargs -0 -r sed -i \
