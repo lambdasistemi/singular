@@ -7,12 +7,12 @@
   "validators": [
     {
       "title": "open.open.mint",
-      "hash": "db584f3c26d0dbe9b66448b87c037e4df955b28cc6d9820813c51254",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
       "parameters": 0
     },
     {
       "title": "open.open.else",
-      "hash": "db584f3c26d0dbe9b66448b87c037e4df955b28cc6d9820813c51254",
+      "hash": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
       "parameters": 0
     },
     {
@@ -37,27 +37,27 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "945d93f0fc96c48432fd4f766ef09bb2a3e05a95bd7696b5b3fe48f2",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "945d93f0fc96c48432fd4f766ef09bb2a3e05a95bd7696b5b3fe48f2",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "47e4b609af3a8ddd8c7f8c242c0c0c18ae27b054ee60f13a8c054c00",
+      "hash": "945d93f0fc96c48432fd4f766ef09bb2a3e05a95bd7696b5b3fe48f2",
       "parameters": 0
     },
     {
       "title": "witness.witness.mint",
-      "hash": "186e86015514f5948052f64f1b1d35a9c406273404d335b9280de382",
+      "hash": "743c295556e8c252006b73539955c9048d9502b64e85348fe1c2bfef",
       "parameters": 2
     },
     {
       "title": "witness.witness.else",
-      "hash": "186e86015514f5948052f64f1b1d35a9c406273404d335b9280de382",
+      "hash": "743c295556e8c252006b73539955c9048d9502b64e85348fe1c2bfef",
       "parameters": 2
     }
   ]

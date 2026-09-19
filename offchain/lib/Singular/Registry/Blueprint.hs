@@ -31,9 +31,8 @@ module Singular.Registry.Blueprint (
     -- * Loading
     loadBlueprint,
 
-    -- * The naming partition's compiled code
+    -- * The compiled codes the four registry pins derive from
     NamingCodes (..),
-    loadNamingCodesFromEnv,
 
     -- * The registry partition's own compiled code (#173 A173-BOOT)
     loadRegistryCodesFromEnv,
@@ -521,44 +520,23 @@ applyRequestParams statePolicyId (OnChainTokenId (BuiltinByteString token)) sbs 
     applyBytesParam token $
         applyBytesParam statePolicyId sbs
 
-{- | The naming partition's compiled code: the application whose mint arm
-certifies an edge, and the witness policy the three token kinds are
-derived from.
+{- | The compiled codes the four registry pins derive from: the
+application whose mint arm certifies an edge, and the witness policy the
+three token kinds are derived from.
 
 The four policy pins of a registry are derived from these two, so every
 consumer of the application — the conformance rows, the devnet E2E and the
 bounded journey — binds to one source and moves together.
+
+#173 I2: for the OPEN registry both now come from the registry
+partition's own blueprint. The record keeps its name because every
+consumer names its fields; renaming it is a sweep this ticket does not
+need.
 -}
 data NamingCodes = NamingCodes
     { ncApplication :: SBS.ShortByteString
     , ncWitness :: SBS.ShortByteString
     }
-
-{- | Read the naming blueprint @NAMING_BLUEPRINT@ names and extract the
-two compiled codes the pins derive from.
--}
-loadNamingCodesFromEnv :: IO NamingCodes
-loadNamingCodesFromEnv = do
-    mPath <- lookupEnv "NAMING_BLUEPRINT"
-    path <- case mPath of
-        Just p | not (null p) -> pure p
-        _ -> die "NAMING_BLUEPRINT is not set"
-    ebp <- loadBlueprint path
-    bp <- case ebp of
-        Left err -> die ("naming blueprint does not parse: " <> err)
-        Right bp -> pure bp
-    case ( extractCompiledCode "application.application" bp
-         , extractCompiledCode "witness.witness" bp
-         ) of
-        (Just appCode, Just witnessCode) ->
-            pure NamingCodes{ncApplication = appCode, ncWitness = witnessCode}
-        _ ->
-            die
-                "naming blueprint has no application.application/witness.witness \
-                \code (the four pins are derived from them)"
-  where
-    die :: String -> IO a
-    die = throwIO . ErrorCall
 
 {- | #173 A173-BOOT: the four pins of an OPEN registry, read from the
 registry partition's own blueprint and nothing else.

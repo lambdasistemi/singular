@@ -207,7 +207,10 @@ loadCompiled = do
     stateBytes <- need "registry" mbp "state.state"
     requestBytes <- need "registry" mbp "request.request"
     appBytes <- need "naming" nbp "application.application"
-    witnessBytes <- need "naming" nbp "witness.witness"
+    -- #173 I2: the three witness policies moved to the REGISTRY
+    -- partition, beside the cage whose fold they co-locate with. The
+    -- naming application itself stays where it is.
+    witnessBytes <- need "registry" mbp "witness.witness"
     custodyBytes <- need "naming" nbp "retirement_custody.retirement_custody"
     stakingBytes <- need "registry" mbp "staking.staking"
     pure
