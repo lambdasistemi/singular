@@ -5364,31 +5364,22 @@ runCG22 env = do
         "CG22: the three roots are not distinct"
         (length (nub [rootBeforeInsert, rootActive, rootTerminal]) == 3)
 
-    -- 3. the accepting control for BOTH refusals, taken first: a refused
-    --    request is never consumed and would poison the fold after it.
-    _ <- book cg22ControlKey insertActiveOp walletDest
-    _ <- land cg22ControlKey insertActiveOp
-    _ <- book cg22ControlKey retireOp retireDest
-    controlTx <- land cg22ControlKey retireOp
-    emit
-        "control"
-        "CG22 control: a key that IS active retired in this cage — the \
-        \refusals below discriminate the leaf"
+    {- Each refusal needs a cage of its own.
 
-    -- 4. a key the trie does not bind at all.
-    _ <- book cg22UnknownKey retireOp retireDest
-    unknownLeg <-
-        refusedRetirement
-            env
-            cage
-            tid
-            (txIdHex controlTx)
-            "the control's key was inserted Active; this one was never \
-            \inserted at all"
-            "CG22: the chain ACCEPTED updateTerminal on a key the trie \
-            \does not bind — reported, not relabelled"
+    A refused fold never consumes the request that caused it. That
+    request stays pending, the next fold sweeps it up, and the second
+    refusal becomes the chain re-refusing the first — or, worse, a
+    builder failure naming the first key while the row claims the
+    second. Ordering does not help: whichever refusal runs first poisons
+    everything after it.
 
-    -- 5. a key bound by a real insertAbsent fold and never booked.
+    So the Absent leg runs LAST in this cage, controlled by the story's
+    own retirement above — same cage, same builder, and the only thing
+    that differs is the leaf. The Unknown leg gets a second cage with a
+    control folded in it first. -}
+
+    -- 3. a key bound by a real insertAbsent fold and never booked. Its
+    --    control is the retirement that has just landed here.
     _ <- book cg22AbsentKey insertAbsentOp (serialiseAddr genesisAddr, BS.empty)
     _ <- land cg22AbsentKey insertAbsentOp
     _ <- book cg22AbsentKey retireOp retireDest
@@ -5397,11 +5388,51 @@ runCG22 env = do
             env
             cage
             tid
-            (txIdHex controlTx)
-            "the control's key was inserted Active; this one was \
-            \witnessed Absent"
+            (txIdHex retireTx)
+            "the control retired a key that IS Active in this same cage; \
+            \this one was witnessed Absent"
             "CG22: the chain ACCEPTED updateTerminal on a key witnessed \
             \Absent — reported, not relabelled"
+
+    -- 4. a key the trie does not bind at all, in a cage of its own so
+    --    the Absent refusal above cannot be what refuses it.
+    unknownCage <- ensureRowCage env "cg22-unknown" 30_000 30_000
+    unknownTid <- cageTid unknownCage
+    let unknownCfg = rcCfg unknownCage
+        bookU key op dest =
+            bookEdge env unknownCfg unknownTid genesisAddr genesisSignKey key op dest [] bond
+        landU key op = do
+            ctx <- rowRegistryContext env unknownCage unknownTid
+            unsigned <-
+                updateTokenWithDuties
+                    unknownCfg
+                    prov
+                    (envTm env)
+                    unknownTid
+                    genesisAddr
+                    ctx
+            signed <- submitWithGenesis (envSubmit env) unsigned
+            rowCommit env unknownCage key op
+            pure signed
+    _ <- bookU cg22ControlKey insertActiveOp walletDest
+    _ <- landU cg22ControlKey insertActiveOp
+    _ <- bookU cg22ControlKey retireOp retireDest
+    controlTx <- landU cg22ControlKey retireOp
+    emit
+        "control"
+        "CG22 control: a key that IS active retired in the Unknown leg's \
+        \own cage — the refusal below discriminates the leaf"
+    _ <- bookU cg22UnknownKey retireOp retireDest
+    unknownLeg <-
+        refusedRetirement
+            env
+            unknownCage
+            unknownTid
+            (txIdHex controlTx)
+            "the control retired a key that IS Active in this same cage; \
+            \this one was never inserted at all"
+            "CG22: the chain ACCEPTED updateTerminal on a key the trie \
+            \does not bind — reported, not relabelled"
 
     (mem, cpu) <- readIORef (rcUnits cage)
     writeRetirementReceipt
@@ -5501,11 +5532,17 @@ refusedRetirement env cage tid controlTxid distinguisher acceptedMsg = do
     reqUtxos <- pendingRequests env cage
     (proofs, newRoot) <- speculativeApplyAll env cage tid reqUtxos
     pp <- Cage.queryProtocolParams (envProv env)
+    -- The budget is per REDEEMER and the ledger caps their SUM, so the
+    -- transaction maximum handed to each one over-subscribes it by the
+    -- number of purposes (`ExUnitsTooBigUTxO`). A quarter each leaves
+    -- room for the state spend, the request spends and the mints, and
+    -- is far more than a fold needs to reach the refusal under test.
     let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+        share = ExUnits (maxMem `div` 4) (maxSteps `div` 4)
     unsigned <-
         assembleFoldWithFee
             env
-            (rowSpec cage tid state reqUtxos (map Update proofs) newRoot (ExUnits maxMem maxSteps))
+            (rowSpec cage tid state reqUtxos (map Update proofs) newRoot share)
     let signed = addKeyWitness genesisSignKey unsigned
     result <- submitTxResilient (envSubmit env) signed
     case result of
