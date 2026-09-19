@@ -1,5 +1,6 @@
-"""Inventory reconciliation controls: manifest drift, collision, and the
-reuse of tools/check_model.py's extraction as the identity source."""
+"""Inventory reconciliation controls: manifest drift, collision, the reuse of
+tools/check_model.py's extraction as the identity source, and the binding of
+every exported corpus row to the theorem identity it cites."""
 
 from __future__ import annotations
 
@@ -11,26 +12,74 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from singular_coverage.inventory import InventoryError, build_inventory
+from singular_coverage.inventory import InventoryError, Obligation, build_inventory
 from tests.fixtures import REPO_ROOT, build_base_tree, export_manifests
+
+CORPUS = "lean/corpus.json"
+
+
+def corpus_theorem_rows(node: object, path: str = "$") -> list[tuple[str, dict]]:
+    """Every object anywhere in a corpus that cites a theorem, with its path.
+
+    Discovery, not enumeration: a row family added to the corpus later is
+    covered the day it is exported, without this file being edited to keep
+    covering its own subject.
+    """
+    rows: list[tuple[str, dict]] = []
+    if isinstance(node, dict):
+        if "theorem" in node:
+            rows.append((path, node))
+        for key, value in node.items():
+            rows.extend(corpus_theorem_rows(value, f"{path}.{key}"))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            rows.extend(corpus_theorem_rows(value, f"{path}[{index}]"))
+    return rows
+
+
+def binding_violations(
+    rows: list[tuple[str, dict]], by_name: dict[str, Obligation]
+) -> list[str]:
+    """Rows citing an unknown theorem, no digest, or a digest that has moved.
+
+    A row that names a theorem but carries no ``statementSha256`` is a
+    violation, never a skip: dropping it would turn an occurrence into a
+    silently smaller denominator.
+    """
+    violations: list[str] = []
+    for path, row in rows:
+        name = row["theorem"]
+        obligation = by_name.get(name)
+        if obligation is None:
+            violations.append(f"{path}: {name} is not a declared obligation")
+            continue
+        pinned = row.get("statementSha256")
+        if pinned is None:
+            violations.append(f"{path}: {name} cites no statementSha256")
+        elif pinned != obligation.statementSha256:
+            violations.append(
+                f"{path}: {name} pins {pinned} but its live identity is "
+                f"{obligation.statementSha256}"
+            )
+    return violations
 
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Re-frozen on #157's retirement split: 82 = 45 manifest-bound + 37
-        # unclassified. The 45 are the registry's 24 statements plus naming's 7,
+        # Re-frozen on #173's transaction row: 84 = 47 manifest-bound + 37
+        # unclassified. The 47 are the registry's 26 statements plus naming's 7,
         # its lifecycle's 9 and its wire encoding's 5; the 37 are the lemmas and
-        # effect equations they are proved from. The lifecycle's 6 became 9 with
-        # retirement_pending_inversion, retirement_completion_inversion and
-        # retirement_completion_refusals; the unclassified 37 is unchanged,
-        # because the split added statements and no new lemma. The #156 base was
-        # 79 = 42 + 37, and before it 196 = 113 + 83 — the disposition of all 44
-        # of those base declarations is in docs/model-ledger.md (1 carried,
-        # 3 renamed, 40 retired).
+        # effect equations they are proved from. The registry's 24 became 26
+        # with insert_active_transaction_row and
+        # fold_batch_claimed_mint_by_kind_key; the unclassified 37 is unchanged,
+        # because the slice added statements and no new lemma. The #157 base was
+        # 82 = 45 + 37, the #156 base 79 = 42 + 37, and before it 196 = 113 + 83
+        # — the disposition of all 44 of those base declarations is in
+        # docs/model-ledger.md (1 carried, 3 renamed, 40 retired).
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 45)
+        self.assertEqual(inv.manifest_bound, 47)
         self.assertEqual(inv.unclassified, 37)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 82)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 84)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
@@ -89,6 +138,86 @@ class FixtureInventoryTest(unittest.TestCase):
                 before.statementSha256, after.statementSha256,
                 "editing a statement must produce a new obligation identity",
             )
+
+
+class CorpusTheoremBindingTest(unittest.TestCase):
+    """Exported corpus rows cite the theorem identity the source has today.
+
+    The digests the corpus carries are written into lean/Main.lean by hand:
+    the corpus binary runs under nix/model.nix with an arbitrary cwd and
+    cannot read lean/theorem-debt.json to derive them. Without a permanent
+    check they are pinned only by whichever ticket gate happened to be frozen
+    when they were added, and that gate retires with its ticket. Here they are
+    compared against tools/check_model.py's own extraction from the source, so
+    a statement edit that leaves a row behind fails rather than shipping a
+    stale proof identity beside a changed theorem.
+    """
+
+    def live(self) -> tuple[list[tuple[str, dict]], dict[str, Obligation]]:
+        corpus = json.loads((REPO_ROOT / CORPUS).read_text())
+        return corpus_theorem_rows(corpus), build_inventory(REPO_ROOT).by_name()
+
+    def test_every_corpus_theorem_row_binds_the_live_statement_identity(self):
+        rows, by_name = self.live()
+        self.assertGreater(
+            len(rows), 0,
+            "no corpus row cites a theorem: the quantifier has nothing to range "
+            "over and would report success having compared nothing",
+        )
+        self.assertEqual(binding_violations(rows, by_name), [])
+
+    def test_control_a_drifted_digest_is_caught_in_every_row(self):
+        """Per row, so a comparator that only reads the first one dies here."""
+        rows, by_name = self.live()
+        self.assertGreater(len(rows), 0)
+        for path, row in rows:
+            with self.subTest(row=path):
+                held = row["statementSha256"]
+                row["statementSha256"] = "0" * 64
+                try:
+                    violations = binding_violations(rows, by_name)
+                finally:
+                    row["statementSha256"] = held
+                self.assertTrue(
+                    any(v.startswith(f"{path}: ") for v in violations),
+                    f"a moved digest at {path} was not reported",
+                )
+
+    def test_control_a_row_without_a_digest_is_caught_in_every_row(self):
+        rows, by_name = self.live()
+        self.assertGreater(len(rows), 0)
+        for path, row in rows:
+            with self.subTest(row=path):
+                held = row.pop("statementSha256")
+                try:
+                    violations = binding_violations(rows, by_name)
+                finally:
+                    row["statementSha256"] = held
+                self.assertIn(f"{path}: {row['theorem']} cites no statementSha256", violations)
+
+    def test_control_a_row_citing_an_undeclared_theorem_is_caught(self):
+        rows, by_name = self.live()
+        self.assertGreater(len(rows), 0)
+        path, row = rows[0]
+        held = row["theorem"]
+        row["theorem"] = "Singular.Statements.no_such_theorem"
+        try:
+            violations = binding_violations(rows, by_name)
+        finally:
+            row["theorem"] = held
+        self.assertIn(
+            f"{path}: Singular.Statements.no_such_theorem is not a declared obligation",
+            violations,
+        )
+
+    def test_control_the_extent_guard_can_fire(self):
+        """The non-empty guard is itself falsified: a corpus citing no theorem
+        must discover nothing, so the guard above would fail rather than pass
+        over an empty range."""
+        self.assertEqual(
+            corpus_theorem_rows({"schema": "x", "cases": [{"id": "C1"}], "folds": []}),
+            [],
+        )
 
 
 if __name__ == "__main__":

@@ -2582,7 +2582,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+  "corpusSourceSha256": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2615,6 +2615,79 @@
       }
     }
   ],
+  "keyedMintRows": [
+    {
+      "accepted": true,
+      "actual": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "claimed": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "id": "GK01-two-keys-accepted",
+      "reason": "",
+      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+    },
+    {
+      "accepted": false,
+      "actual": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        },
+        {
+          "assetName": 6,
+          "key": 6,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "claimed": [
+        {
+          "assetName": 5,
+          "key": 5,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 2
+        }
+      ],
+      "id": "GK02-same-kind-wrong-key-refused",
+      "reason": "net-mint-mismatch",
+      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+    }
+  ],
   "model": {
     "absentPolicy": 9,
     "activePolicy": 8,
@@ -2634,17 +2707,92 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
-  "payloadSha256": "1b12541a475c09269409ec827ba0031947690ed91e568afdea840917c12e953d",
+  "modelSha256": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+  "payloadSha256": "0f7410eab41ef30ff337b791b4b429d6e81626f750efaef2fcae7f172063b367",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "a4ede59c77e07fb0c1e0e6d341f3bd3b230a35b39bb5220035d88d787b89d567",
+    "lean/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Lemmas.lean": "140304f12064d8865a2e4552f5fb1cb644774671783476a889daf52894505209",
-    "lean/Singular/Model.lean": "c951e4bd7a0037431238affac3e85aa07f3c505d1a7fde4b15c9d86df7669cc8",
-    "lean/Singular/Statements.lean": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb"
+    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
+    "lean/Singular/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+    "lean/Singular/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533"
   },
-  "statementsSha256": "f9a539ef56e9157f2fe6594b9e308eba3548fac2f42896eee6ea4a97f00761bb",
-  "theoremManifestSha256": "dbacef0b39b90bb5590c6f6ff47a379927effc8820558c30d10b3208b3600a4e"
+  "statementsSha256": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533",
+  "theoremManifestSha256": "22e3e240ea7e8bfa5da6ba4895b7e89152a05b55483b0a2a941cae27098c5615",
+  "tokenPolicies": {
+    "absent": 9,
+    "active": 8,
+    "terminal": 10
+  },
+  "transactions": [
+    {
+      "accepted": true,
+      "applicationPolicy": 7,
+      "claimed": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "inputs": [
+        {
+          "datum": "inline",
+          "role": "state",
+          "stateToken": 1
+        },
+        {
+          "approvalQuantity": 1,
+          "datum": "inline",
+          "lovelace": 5,
+          "lovelaceCoversTip": true,
+          "role": "request",
+          "tip": 1
+        }
+      ],
+      "mint": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "active",
+          "policy": 8,
+          "quantity": 1
+        }
+      ],
+      "openPolicy": {
+        "admitsAnyTuple": true,
+        "crossRegistrySeparation": false,
+        "hash": 7,
+        "parameters": []
+      },
+      "outputs": [
+        {
+          "datum": "inline",
+          "onlyRootChanges": true,
+          "role": "state",
+          "stateToken": 1
+        },
+        {
+          "activeQuantity": 1,
+          "assetName": 42,
+          "datum": "inline",
+          "datumHashMatchesRequest": true,
+          "key": 42,
+          "policy": 8,
+          "role": "destination"
+        }
+      ],
+      "profile": "insertActive",
+      "requiredSigners": [],
+      "secondInsert": {
+        "accepted": false,
+        "reason": "key-exists"
+      },
+      "statementSha256": "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681",
+      "theorem": "Singular.Statements.insert_active_transaction_row"
+    }
+  ]
 }

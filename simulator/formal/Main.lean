@@ -8,14 +8,20 @@ read bound to the intermediate root, custody and R-ADA value flow, the mint
 check and the zero-request rule. Expectations are authored from the mandate;
 results are computed from the model. -/
 
+/-- The open application's policy id. It is unparameterised: one policy id, one
+blueprint, no applied hash to derive, and therefore no cross-registry
+separation to promise. -/
+def openPolicyHash : Nat := 7
+
 def cfg : Config :=
   { root := rootOf [], maxFee := 1, processTime := 2, retractTime := 3
-  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
+  , applicationPolicy := openPolicyHash, activePolicy := 8, absentPolicy := 9
+  , terminalPolicy := 10 }
 
 def s0 : RegistryState := { config := cfg, trie := [], custody := [], held := [] }
 
 def apFor (e : Edge) (k o d : Nat) : Option Approval :=
-  some { policy := 7, edge := e, key := k, owner := o, destination := d
+  some { policy := openPolicyHash, edge := e, key := k, owner := o, destination := d
        , assetName := approvalAssetName e k o d }
 
 /-- A canonical booked key: known active, one active token at output 555. -/
@@ -214,6 +220,141 @@ def configRow : Bool :=
   | .ok c => c == cfg
   | .error _ => false
 
+/-! ### T1 — the `insertActive` transaction row and the keyed mint rows (#173)
+
+Every field of the rows below is read off a fold this file executes or off the
+model definition `Singular.Statements.insert_active_transaction_row` and
+`Singular.Statements.fold_batch_claimed_mint_by_kind_key` constrain. The two
+statement identities are the compiled ones; the coverage suite reconciles them
+against `lean/theorem-debt.json`, so a statement edited without re-exporting the
+manifest detaches the row from its proof and is caught there. -/
+
+def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
+def transactionRowStatement : String :=
+  "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681"
+def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
+def keyedMintStatement : String :=
+  "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150"
+
+def datumFormName : DatumForm → String
+  | .inline => "inline"
+  | .hashed => "hashed"
+
+/-- One keyed asset, spelled with the on-chain identity the model pins: the
+kind's policy and the asset name, which is the key. -/
+def assetJson (c : Config) (p : Asset × Int) : Json :=
+  Json.mkObj
+    [ ("kind", toJson p.1.1), ("key", toJson p.1.2)
+    , ("policy", toJson (kindPolicy c p.1.1))
+    , ("assetName", toJson (tokenAssetName p.1.1 p.1.2))
+    , ("quantity", toJson p.2) ]
+
+def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
+  Json.arr ((ds.map (assetJson c)).toArray)
+
+/-- The lovelace the request input carries, above the registry's tip ceiling. -/
+def txLovelace : Nat := 5
+
+/-- The request this row folds: one `insertActive` at key 42 routed to output
+555, claiming exactly the active token it mints. -/
+def txRequest : Request :=
+  { req .insertActive 42 42 555 with claimed := [(.active, 1)] }
+
+def txResult : Except String Result := step s0 txRequest
+
+/-- A second `insertActive` at the same key, folded against the state the first
+produced. -/
+def txSecond : Except String Result :=
+  match txResult with
+  | .ok r => step r.state txRequest
+  | .error why => .error why
+
+def txSecondReason : String :=
+  match txSecond with | .ok _ => "" | .error why => why
+
+/-- A second registry pinning the same open policy and differing in every other
+field it may differ in: the frame in which cross-registry separation is observed
+to be absent. -/
+def otherRegistry : Config :=
+  { cfg with maxFee := 9, processTime := 20, retractTime := 30
+           , activePolicy := 80, absentPolicy := 90, terminalPolicy := 100 }
+
+def transactionRowJson : Json :=
+  match txResult, txSecond with
+  | .ok r, .error why =>
+    Json.mkObj
+      [ ("profile", "insertActive")
+      , ("accepted", toJson true)
+      , ("theorem", toJson transactionRowTheorem)
+      , ("statementSha256", toJson transactionRowStatement)
+      , ("applicationPolicy", toJson cfg.applicationPolicy)
+      , ("openPolicy", Json.mkObj
+          [ ("hash", toJson openPolicyHash)
+          , ("parameters", toJson openPolicyParameters)
+          , ("admitsAnyTuple", toJson (openAdmitsEveryTuple cfg))
+          , ("crossRegistrySeparation",
+              toJson (crossRegistrySeparation cfg otherRegistry txRequest)) ])
+      , ("inputs", Json.arr #[
+          Json.mkObj
+            [ ("role", "state"), ("datum", datumFormName registryDatumForm)
+            , ("stateToken", toJson registryStateTokens) ],
+          Json.mkObj
+            [ ("role", "request"), ("datum", datumFormName registryDatumForm)
+            , ("approvalQuantity", toJson (approvalsIn txRequest))
+            , ("lovelace", toJson txLovelace), ("tip", toJson cfg.maxFee)
+            , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace)) ] ])
+      , ("outputs", Json.arr #[
+          Json.mkObj
+            [ ("role", "state"), ("datum", datumFormName registryDatumForm)
+            , ("stateToken", toJson registryStateTokens)
+            , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
+                && r.state.config.root == rootOf r.state.trie)) ],
+          Json.mkObj
+            [ ("role", "destination"), ("datum", datumFormName registryDatumForm)
+            , ("datumHashMatchesRequest", toJson (destinationDatumBinds txRequest))
+            , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
+            , ("key", toJson txRequest.key)
+            , ("policy", toJson (kindPolicy cfg .active))
+            , ("assetName", toJson (tokenAssetName .active txRequest.key)) ] ])
+      , ("mint", assetsJson cfg r.mint)
+      , ("claimed", assetsJson cfg (requestClaim txRequest))
+      , ("requiredSigners", toJson (requiredSigners txRequest))
+      , ("secondInsert", Json.mkObj [("accepted", toJson false), ("reason", toJson why)]) ]
+  | _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
+
+/-- Two booking requests at two distinct keys, each claiming its own token: the
+accepted row at `n > 1` keys. -/
+def keyedAccepted : List Request :=
+  [ { req .insertActive 5 42 555 with claimed := [(.active, 1)] }
+  , { req .insertActive 6 42 555 with claimed := [(.active, 1)] } ]
+
+/-- The same two keys and the same per-kind total, at the wrong key: the first
+request claims both active tokens and the second claims none. A per-kind guard
+accepts this batch; the keyed guard refuses it. -/
+def keyedWrongKey : List Request :=
+  [ { req .insertActive 5 42 555 with claimed := [(.active, 2)] }
+  , { req .insertActive 6 42 555 with claimed := [] } ]
+
+def foldReason (v : Except String Result) : String :=
+  match v with | .ok _ => "" | .error why => why
+
+def keyedMintRowJson (id : String) (batch : List Request) : Json :=
+  let verdict := foldBatch s0 batch
+  Json.mkObj
+    [ ("id", id)
+    , ("theorem", toJson keyedMintTheorem)
+    , ("statementSha256", toJson keyedMintStatement)
+    , ("accepted", toJson (match verdict with | .ok _ => true | .error _ => false))
+    , ("reason", toJson (foldReason verdict))
+    , ("claimed", assetsJson cfg (claimedMint batch))
+    , ("actual", assetsJson cfg (actualMint batch)) ]
+
+def tokenPoliciesJson : Json :=
+  Json.mkObj
+    [ ("active", toJson (kindPolicy cfg .active))
+    , ("absent", toJson (kindPolicy cfg .absent))
+    , ("terminal", toJson (kindPolicy cfg .terminal)) ]
+
 def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
   accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
 
@@ -241,6 +382,21 @@ def main : IO Unit := do
     let ok := if expectSome then res.isSome else res.isNone
     unless ok do throw (IO.userError s!"{id} failed")
   unless configRow do throw (IO.userError "GD-config roundtrip failed")
+  -- T1: the transaction row and the keyed mint rows are verdicts, not claims
+  unless (match txResult with | .ok _ => true | .error _ => false) do
+    throw (IO.userError "T1 insertActive transaction was refused")
+  unless txSecondReason == "key-exists" do
+    throw (IO.userError s!"T1 second insertActive: {txSecondReason}")
+  unless approvalsIn txRequest == 1 do throw (IO.userError "T1 approval count")
+  unless lovelaceCoversTip cfg txLovelace do throw (IO.userError "T1 tip not covered")
+  unless destinationDatumBinds txRequest do throw (IO.userError "T1 destination datum")
+  unless openAdmitsEveryTuple cfg do throw (IO.userError "T1 open policy admission")
+  unless !crossRegistrySeparation cfg otherRegistry txRequest do
+    throw (IO.userError "T1 cross-registry separation is a non-goal, not a promise")
+  unless foldReason (foldBatch s0 keyedAccepted) == "" do
+    throw (IO.userError "T1 keyed accepted row refused")
+  unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do
+    throw (IO.userError s!"T1 wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
   unless batchEmpty.isSome && batchMint.isSome do throw (IO.userError "fold rows failed")
   let foldJson := foldRows.map fun p =>
     Json.mkObj [("id", p.1), ("ok", p.2.1), ("reason", p.2.2),
@@ -258,5 +414,10 @@ def main : IO Unit := do
     , ("ada", toJson adaJson)
     , ("codec", toJson codecJson)
     , ("configRoundtrip", toJson configRow)
+    , ("tokenPolicies", tokenPoliciesJson)
+    , ("transactions", Json.arr #[transactionRowJson])
+    , ("keyedMintRows", Json.arr
+        #[ keyedMintRowJson "GK01-two-keys-accepted" keyedAccepted
+         , keyedMintRowJson "GK02-same-kind-wrong-key-refused" keyedWrongKey ])
     , ("model", toJson cfg) ]
   stdout.putStrLn json.compress

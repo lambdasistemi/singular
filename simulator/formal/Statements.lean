@@ -424,7 +424,7 @@ theorem insert_absent_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .absent)) } ∧
     t.state.custody =
       { key := r.key, refundAddress := r.refundAddress, value := r.deposit } :: s.custody ∧
-    t.state.held = s.held ∧ t.mint = [(.absent, 1)] ∧ t.paid = [] := by
+    t.state.held = s.held ∧ t.mint = [((.absent, r.key), 1)] ∧ t.paid = [] := by
   constructor
   · intro hok
     obtain ⟨href, ht⟩ := step_eq_ok s r t hok
@@ -485,7 +485,7 @@ theorem insert_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
-    t.mint = [(.active, 1)] ∧ t.paid = [] := by
+    t.mint = [((.active, r.key), 1)] ∧ t.paid = [] := by
   constructor
   · intro hok
     obtain ⟨href, ht⟩ := step_eq_ok s r t hok
@@ -548,7 +548,7 @@ theorem update_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .active)) } ∧
     t.state.custody = s.custody.filter (·.key != r.key) ∧
     t.state.held = { key := r.key, kind := .active, output := r.output } :: s.held ∧
-    t.mint = [(.absent, -1), (.active, 1)] ∧
+    t.mint = [((.absent, r.key), -1), ((.active, r.key), 1)] ∧
     t.paid = [(c.refundAddress, c.value)] := by
   constructor
   · intro hok
@@ -614,7 +614,7 @@ theorem update_terminal_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key (.known .terminal)) } ∧
     t.state.custody = s.custody ∧
     t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
-    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+    t.mint = [((.active, r.key), -1)] ∧ t.paid = [] := by
   constructor
   · intro hok
     obtain ⟨href, ht⟩ := step_eq_ok s r t hok
@@ -676,7 +676,7 @@ theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
     t.state.custody = s.custody.filter (·.key != r.key) ∧
     t.state.held = s.held ∧
-    t.mint = [(.absent, -1)] ∧ t.paid = [(c.refundAddress, c.value)] := by
+    t.mint = [((.absent, r.key), -1)] ∧ t.paid = [(c.refundAddress, c.value)] := by
   constructor
   · intro hok
     obtain ⟨href, ht⟩ := step_eq_ok s r t hok
@@ -742,7 +742,7 @@ theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
     t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
     t.state.custody = s.custody ∧
     t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
-    t.mint = [(.active, -1)] ∧ t.paid = [] := by
+    t.mint = [((.active, r.key), -1)] ∧ t.paid = [] := by
   constructor
   · intro hok
     obtain ⟨href, ht⟩ := step_eq_ok s r t hok
@@ -797,7 +797,7 @@ theorem witness_terminal_inversion (s : RegistryState) (r : Request) (t : Result
     trieGet s.trie r.key = .known .terminal ∧ s.config.root = rootOf s.trie ∧
     t.state.trie = s.trie ∧ t.state.config = s.config ∧ t.state.custody = s.custody ∧
     t.state.held = { key := r.key, kind := .terminal, output := r.output } :: s.held ∧
-    t.mint = [(.terminal, 1)] ∧ t.paid = [] := by
+    t.mint = [((.terminal, r.key), 1)] ∧ t.paid = [] := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := applyEdge_witnessTerminal s r he
   constructor
   · intro hok
@@ -840,14 +840,12 @@ matches the summed delta of the folded edges. -/
 theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
     foldBatch s (b :: bs) = .ok t ↔
     ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
-      t = { state := r.state, mint := deltaPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
-      deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
-        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+      t = { state := r.state, mint := assetPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
+      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
   constructor
   · intro hok
     have hacts := (foldBatch_inv s (b :: bs) t hok).2
-    have hdelta : deltaSame ((b :: bs).foldl (fun acc x => deltaPlus acc x.claimed) [])
-        ((b :: bs).foldl (fun acc x => deltaPlus acc (delta x.edge)) []) := by
+    have hdelta : assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
       unfold foldBatch at hok
       rw [if_neg (by simp)] at hok
       rw [hacts] at hok
@@ -893,6 +891,156 @@ theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
   subst ht
   obtain ⟨h1, h2, h3, _, _, _⟩ := applyEdge_witnessTerminal s r he
   exact ⟨h1, h2, h3⟩
+
+/-- **#173 T1** — the transaction row of an admitted `insertActive`.
+
+Inputs: one state input, the registry's single state UTxO carrying its state
+token under an inline datum, and one request input carrying exactly one approval
+and enough lovelace for the tip. Outputs: one state output, still one state
+token under an inline datum, whose eight-field configuration differs from the
+input's in the root alone and whose root commits the map the fold produced; and
+one destination output whose inline datum hashes to the very commitment the
+approval the fold verified carries, holding exactly one active token, named
+`(activePolicy, key)`. The mint is `+1` at that one asset and nothing else.
+No signature is required: the verdict and the effect are invariant under the
+approval's signature set, so the fold is permissionless. A second `insertActive`
+at the same key is refused `key-exists`. The open application is unparameterised
+and admits every tuple, and cross-registry separation is a named non-goal:
+registries pinning the same open policy reach the same verdict on the same
+approval. -/
+theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Result)
+    (ap : Approval) (h : Reachable s) (he : r.edge = .insertActive)
+    (hap : r.approval = some ap) (hok : step s r = .ok t) :
+    (registryStateTokens = 1 ∧ registryDatumForm = .inline ∧
+      requiredSigners r = [] ∧ openPolicyParameters = []) ∧
+    approvalsIn r = 1 ∧
+    (∀ lovelace, s.config.maxFee ≤ lovelace → lovelaceCoversTip s.config lovelace = true) ∧
+    onlyRootChanged s.config t.state.config = true ∧
+    t.state.config.root = rootOf t.state.trie ∧
+    t.state.custody = s.custody ∧
+    destinationDatumBinds r = true ∧
+    datumHash (destinationDatum r) = ap.assetName ∧
+    kindCount t.state .active r.key = 1 ∧
+    ({ key := r.key, kind := .active, output := r.output } : Holding) ∈ t.state.held ∧
+    kindPolicy s.config .active = s.config.activePolicy ∧
+    tokenAssetName .active r.key = r.key ∧
+    t.mint = [((.active, r.key), 1)] ∧
+    (∀ sigs : List (List Nat),
+        step s { r with approval := some { ap with signatures := sigs } } = .ok t) ∧
+    (∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
+        admitsFor t.state.config r₂ r₂.approval = true →
+        step t.state r₂ = .error "key-exists") ∧
+    (∀ (c : Config) (q : Request), admitsFor c q (some (openApproval c q)) = true) ∧
+    (∀ (c₁ c₂ : Config) (q : Request) (a : Option Approval),
+        c₁.applicationPolicy = c₂.applicationPolicy →
+        admitsFor c₁ q a = admitsFor c₂ q a) := by
+  obtain ⟨hfree, ⟨ap', hap', hpol, hedge, hkey, hown, hdst, hasset⟩, htrie, hcfg, hcust,
+    hheld, hmint, hpaid⟩ := (insert_active_inversion s r t he).mp hok
+  have hapeq : ap' = ap := Option.some.inj (hap'.symm.trans hap)
+  rw [hapeq] at hpol hedge hkey hown hdst hasset
+  have hadmits : ∀ (c : Config) (q : Request), admitsFor c q (some (openApproval c q)) = true := by
+    intro c q
+    unfold admitsFor openApproval
+    cases hq : q.edge <;> simp [hq, requestDestination, approvalAssetName]
+  have hcross : ∀ (c₁ c₂ : Config) (q : Request) (a : Option Approval),
+      c₁.applicationPolicy = c₂.applicationPolicy → admitsFor c₁ q a = admitsFor c₂ q a := by
+    intro c₁ c₂ q a hc
+    unfold admitsFor
+    cases q.edge <;> cases a <;> simp [hc]
+  have hbind : datumHash (destinationDatum r) = ap.assetName := by
+    unfold datumHash destinationDatum
+    rw [hasset, hedge, hkey, hown, hdst]
+  have hzero : kindCount s .active r.key = 0 := by
+    obtain ⟨hle, hiff⟩ := active_witness_unique s h r.key
+    rcases Nat.lt_or_ge (kindCount s .active r.key) 1 with hlt | hge
+    · omega
+    · exfalso
+      have h1 : kindCount s .active r.key = 1 := by omega
+      rw [hfree] at hiff
+      exact Leaf.noConfusion (hiff.mp h1)
+  have hcount : kindCount t.state .active r.key = 1 := by
+    unfold kindCount
+    rw [hheld, countHeld_cons]
+    simp only [beq_self_eq_true, Bool.and_self, if_pos]
+    have hz : (s.held.filter fun x => x.key == r.key && x.kind == TokenKind.active).length = 0 := hzero
+    omega
+  have hsig : ∀ sigs : List (List Nat),
+      step s { r with approval := some { ap with signatures := sigs } } = .ok t := by
+    intro sigs
+    refine (insert_active_inversion s _ t (by simpa using he)).mpr ?_
+    refine ⟨by simpa using hfree,
+      ⟨{ ap with signatures := sigs }, rfl, by simpa using hpol, by simpa using hedge,
+        by simpa using hkey, by simpa using hown, by simpa using hdst, by simpa using hasset⟩,
+      by simpa using htrie, by simpa using hcfg, hcust, by simpa using hheld,
+      by simpa using hmint, hpaid⟩
+  have hsecond : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
+      admitsFor t.state.config r₂ r₂.approval = true →
+      step t.state r₂ = .error "key-exists" := by
+    intro r₂ he₂ hk₂ hadm₂
+    have hbefore : trieGet t.state.trie r₂.key = .known .active := by
+      rw [hk₂, htrie, trieGet_set_eq]
+    cases hopt : r₂.approval with
+    | none =>
+      rw [hopt] at hadm₂
+      unfold admitsFor at hadm₂
+      simp [he₂] at hadm₂
+    | some a₂ =>
+      have hadm₂' : admitsFor t.state.config r₂ (some a₂) = true := by rw [← hopt]; exact hadm₂
+      have hpol₂ : a₂.policy = t.state.config.applicationPolicy := by
+        unfold admitsFor at hadm₂'
+        simp only [he₂, Bool.and_eq_true, beq_iff_eq] at hadm₂'
+        exact hadm₂'.1.1.1.1.1
+      refine error_of_refusal _ _ _ ?_
+      unfold refusal
+      simp only [he₂, hopt, hbefore, hadm₂', hpol₂, bne_self_eq_false, Bool.not_true,
+        Bool.false_eq_true, if_false, reduceIte]
+      simp
+  exact ⟨⟨rfl, rfl, rfl, rfl⟩, by rw [approvalsIn, hap]; rfl,
+    fun l hl => by simpa [lovelaceCoversTip] using hl,
+    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust,
+    by simp [destinationDatumBinds, hap, hbind], hbind, hcount,
+    by rw [hheld]; exact List.mem_cons_self,
+    rfl, rfl, hmint, hsig, hsecond, hadmits, hcross⟩
+
+/-- **#173 T1** — the fold's mint guard is per `(TokenKind, Key)`. An accepted
+fold's claimed and actual keyed sums agree; a batch whose every request applies
+but whose keyed sums differ is refused `net-mint-mismatch`; and the guard is
+strictly finer than a per-kind one — two booking requests at two distinct keys,
+one claiming both tokens and the other none, agree at every kind and still fail
+the keyed comparison, so by the second clause such a batch is refused. -/
+theorem fold_batch_claimed_mint_by_kind_key :
+    (∀ (s : RegistryState) (batch : List Request) (t : Result),
+        foldBatch s batch = .ok t → assetSame (claimedMint batch) (actualMint batch) = true) ∧
+    (∀ (s : RegistryState) (batch : List Request) (m : Result),
+        batch ≠ [] → foldActions s batch = .ok m →
+        assetSame (claimedMint batch) (actualMint batch) = false →
+        foldBatch s batch = .error "net-mint-mismatch") ∧
+    (∃ b₁ b₂ : Request,
+        b₁.edge = .insertActive ∧ b₂.edge = .insertActive ∧ b₁.key ≠ b₂.key ∧
+        (∀ k : TokenKind, assetKindTotal (claimedMint [b₁, b₂]) k
+                        = assetKindTotal (actualMint [b₁, b₂]) k) ∧
+        assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro s batch t hok
+    obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
+    unfold foldBatch at hok
+    rw [if_neg (by simpa using hne)] at hok
+    rw [hacts] at hok
+    simp only [bind, Except.bind, pure, Except.pure] at hok
+    split at hok
+    · assumption
+    · exact Except.noConfusion hok
+  · intro s batch m hne hacts hfalse
+    unfold foldBatch
+    rw [if_neg (by simpa using hne)]
+    rw [hacts]
+    simp only [bind, Except.bind, pure, Except.pure]
+    rw [if_neg (by simp [hfalse])]
+    rfl
+  · refine ⟨{ edge := .insertActive, key := 5, claimed := [(.active, 2)] },
+      { edge := .insertActive, key := 6, claimed := [] }, rfl, rfl, by decide, ?_, rfl⟩
+    intro k
+    cases k <;> rfl
 
 end Statements
 end Singular
