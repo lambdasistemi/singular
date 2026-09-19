@@ -231,10 +231,10 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681"
+  "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
-  "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150"
+  "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
 
 def datumFormName : DatumForm → String
   | .inline => "inline"
@@ -279,9 +279,46 @@ def otherRegistry : Config :=
   { cfg with maxFee := 9, processTime := 20, retractTime := 30
            , activePolicy := 80, absentPolicy := 90, terminalPolicy := 100 }
 
+def txRoleName : TxRole → String
+  | .state => "state" | .request => "request"
+  | .destination => "destination" | .cage => "cage"
+
+def txInputJson (i : TxInput) : Json :=
+  Json.mkObj
+    [ ("role", toJson (txRoleName i.role))
+    , ("datum", toJson (datumFormName i.datum))
+    , ("stateToken", toJson i.stateTokens)
+    , ("approvalQuantity", toJson i.approvals)
+    , ("lovelace", toJson i.lovelace) ]
+
+def txOutputJson (c : Config) (o : TxOutput) : Json :=
+  Json.mkObj
+    [ ("role", toJson (txRoleName o.role))
+    , ("datum", toJson (datumFormName o.datum))
+    , ("address", match o.address with | none => Json.null | some a => toJson a)
+    , ("stateToken", toJson o.stateTokens)
+    , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
+    , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
+    , ("assets", assetsJson c o.assets) ]
+
+/-- The built transaction, serialized. Every field comes from the `Tx` the model
+constructed; nothing here is assembled beside it. -/
+def txJson (c : Config) (tx : Tx) : Json :=
+  Json.mkObj
+    [ ("inputs", Json.arr ((tx.inputs.map txInputJson).toArray))
+    , ("outputs", Json.arr ((tx.outputs.map (txOutputJson c)).toArray))
+    , ("mint", assetsJson c tx.mint)
+    , ("signers", toJson tx.signers)
+    , ("refunds", Json.arr ((tx.refunds.map fun p =>
+        Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray)) ]
+
+/-- The transaction this row is about, built by the model from the executed
+step. -/
+def txBuilt : Except String Tx := txOf s0 txRequest txLovelace
+
 def transactionRowJson : Json :=
-  match txResult, txSecond with
-  | .ok r, .error why =>
+  match txBuilt, txResult, txSecond with
+  | .ok tx, .ok r, .error why =>
     Json.mkObj
       [ ("profile", "insertActive")
       , ("accepted", toJson true)
@@ -294,33 +331,16 @@ def transactionRowJson : Json :=
           , ("admitsAnyTuple", toJson (openAdmitsEveryTuple cfg))
           , ("crossRegistrySeparation",
               toJson (crossRegistrySeparation cfg otherRegistry txRequest)) ])
-      , ("inputs", Json.arr #[
-          Json.mkObj
-            [ ("role", "state"), ("datum", datumFormName registryDatumForm)
-            , ("stateToken", toJson registryStateTokens) ],
-          Json.mkObj
-            [ ("role", "request"), ("datum", datumFormName registryDatumForm)
-            , ("approvalQuantity", toJson (approvalsIn txRequest))
-            , ("lovelace", toJson txLovelace), ("tip", toJson cfg.maxFee)
-            , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace)) ] ])
-      , ("outputs", Json.arr #[
-          Json.mkObj
-            [ ("role", "state"), ("datum", datumFormName registryDatumForm)
-            , ("stateToken", toJson registryStateTokens)
-            , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
-                && r.state.config.root == rootOf r.state.trie)) ],
-          Json.mkObj
-            [ ("role", "destination"), ("datum", datumFormName registryDatumForm)
-            , ("datumHashMatchesRequest", toJson (destinationDatumBinds txRequest))
-            , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
-            , ("key", toJson txRequest.key)
-            , ("policy", toJson (kindPolicy cfg .active))
-            , ("assetName", toJson (tokenAssetName .active txRequest.key)) ] ])
-      , ("mint", assetsJson cfg r.mint)
+      , ("transaction", txJson cfg tx)
+      , ("tip", toJson cfg.maxFee)
+      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
       , ("claimed", assetsJson cfg (requestClaim txRequest))
-      , ("requiredSigners", toJson (requiredSigners txRequest))
+      , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
+          && r.state.config.root == rootOf r.state.trie))
+      , ("destinationDatumBinds", toJson (destinationDatumBinds txRequest))
+      , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
       , ("secondInsert", Json.mkObj [("accepted", toJson false), ("reason", toJson why)]) ]
-  | _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
+  | _, _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
 
 /-- Two booking requests at two distinct keys, each claiming its own token: the
 accepted row at `n > 1` keys. -/
@@ -340,8 +360,13 @@ def foldReason (v : Except String Result) : String :=
 
 def keyedMintRowJson (id : String) (batch : List Request) : Json :=
   let verdict := foldBatch s0 batch
+  let applied := match foldActions s0 batch with | .ok _ => true | .error _ => false
   Json.mkObj
     [ ("id", id)
+    , ("requestsApplied", toJson applied)
+    , ("perKindTotalsAgree", toJson
+        ([TokenKind.active, .absent, .terminal].all fun k =>
+          assetKindTotal (claimedMint batch) k == assetKindTotal (actualMint batch) k))
     , ("theorem", toJson keyedMintTheorem)
     , ("statementSha256", toJson keyedMintStatement)
     , ("accepted", toJson (match verdict with | .ok _ => true | .error _ => false))
@@ -385,6 +410,8 @@ def main : IO Unit := do
   -- T1: the transaction row and the keyed mint rows are verdicts, not claims
   unless (match txResult with | .ok _ => true | .error _ => false) do
     throw (IO.userError "T1 insertActive transaction was refused")
+  unless (match txBuilt with | .ok _ => true | .error _ => false) do
+    throw (IO.userError "T1 the model built no transaction for an admitted insertActive")
   unless txSecondReason == "key-exists" do
     throw (IO.userError s!"T1 second insertActive: {txSecondReason}")
   unless approvalsIn txRequest == 1 do throw (IO.userError "T1 approval count")
@@ -393,6 +420,8 @@ def main : IO Unit := do
   unless openAdmitsEveryTuple cfg do throw (IO.userError "T1 open policy admission")
   unless !crossRegistrySeparation cfg otherRegistry txRequest do
     throw (IO.userError "T1 cross-registry separation is a non-goal, not a promise")
+  unless (match foldActions s0 keyedWrongKey with | .ok _ => true | .error _ => false) do
+    throw (IO.userError "T1 wrong-key batch: a request failed to apply, so the refusal is not the keyed guard's")
   unless foldReason (foldBatch s0 keyedAccepted) == "" do
     throw (IO.userError "T1 keyed accepted row refused")
   unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do

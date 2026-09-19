@@ -892,44 +892,62 @@ theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
   obtain ⟨h1, h2, h3, _, _, _⟩ := applyEdge_witnessTerminal s r he
   exact ⟨h1, h2, h3⟩
 
-/-- **#173 T1** — the transaction row of an admitted `insertActive`.
+/-- **#173 T1** — the transaction an admitted `insertActive` builds.
 
-Inputs: one state input, the registry's single state UTxO carrying its state
-token under an inline datum, and one request input carrying exactly one approval
-and enough lovelace for the tip. Outputs: one state output, still one state
-token under an inline datum, whose eight-field configuration differs from the
-input's in the root alone and whose root commits the map the fold produced; and
-one destination output whose inline datum hashes to the very commitment the
-approval the fold verified carries, holding exactly one active token, named
-`(activePolicy, key)`. The mint is `+1` at that one asset and nothing else.
-No signature is required: the verdict and the effect are invariant under the
-approval's signature set, so the fold is permissionless. A second `insertActive`
-at the same key is refused `key-exists`. The open application is unparameterised
-and admits every tuple, and cross-registry separation is a named non-goal:
-registries pinning the same open policy reach the same verdict on the same
-approval. -/
+The conclusion is one equation on the transaction `txOf` constructs from the
+executed step, so every clause quantifies over a built value rather than over a
+nullary constant. It spends two inputs — the registry's single state UTxO under
+an inline datum, and a request UTxO carrying exactly one approval and the
+lovelace that covers the tip — and produces exactly two outputs: the state UTxO
+moved, still carrying one state token under an inline datum, whose eight-field
+configuration differs from the input's in the root alone and whose root commits
+the map the fold produced; and a destination output routed to the address the
+request named, whose inline datum presents the very commitment the approval the
+fold verified carries, holding exactly one active token. The mint is `+1` at
+`(activePolicy, key)` and nothing else, there are no refunds, and the signer set
+is empty.
+
+No signature is required, stated as invariance of the whole transaction under
+the approval's signature set. A second `insertActive` at the same key builds no
+transaction at all: it is refused `key-exists`. The open application is
+unparameterised and admits every tuple, and cross-registry separation is a named
+non-goal — registries pinning the same open policy reach the same verdict on the
+same approval. -/
 theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Result)
-    (ap : Approval) (h : Reachable s) (he : r.edge = .insertActive)
-    (hap : r.approval = some ap) (hok : step s r = .ok t) :
-    (registryStateTokens = 1 ∧ registryDatumForm = .inline ∧
-      requiredSigners r = [] ∧ openPolicyParameters = []) ∧
-    approvalsIn r = 1 ∧
-    (∀ lovelace, s.config.maxFee ≤ lovelace → lovelaceCoversTip s.config lovelace = true) ∧
+    (ap : Approval) (lovelace : Nat) (h : Reachable s) (he : r.edge = .insertActive)
+    (hap : r.approval = some ap) (hok : step s r = .ok t)
+    (hfee : s.config.maxFee ≤ lovelace) :
+    txOf s r lovelace =
+      .ok { inputs :=
+              [ { role := .state, datum := .inline, stateTokens := 1
+                , approvals := 0, lovelace := 0 }
+              , { role := .request, datum := .inline, stateTokens := 0
+                , approvals := 1, lovelace := lovelace } ]
+          , outputs :=
+              [ { role := .state, datum := .inline, address := none, stateTokens := 1
+                , config := some t.state.config, commitment := none, assets := [] }
+              , { role := .destination, datum := .inline, address := some r.output
+                , stateTokens := 0, config := none, commitment := some ap.assetName
+                , assets := [((.active, r.key), 1)] } ]
+          , mint := [((.active, r.key), 1)]
+          , signers := []
+          , refunds := [] } ∧
+    lovelaceCoversTip s.config lovelace = true ∧
+    destinationDatumBinds r = true ∧
     onlyRootChanged s.config t.state.config = true ∧
     t.state.config.root = rootOf t.state.trie ∧
     t.state.custody = s.custody ∧
-    destinationDatumBinds r = true ∧
-    datumHash (destinationDatum r) = ap.assetName ∧
     kindCount t.state .active r.key = 1 ∧
     ({ key := r.key, kind := .active, output := r.output } : Holding) ∈ t.state.held ∧
     kindPolicy s.config .active = s.config.activePolicy ∧
     tokenAssetName .active r.key = r.key ∧
-    t.mint = [((.active, r.key), 1)] ∧
+    openPolicyParameters = [] ∧
     (∀ sigs : List (List Nat),
-        step s { r with approval := some { ap with signatures := sigs } } = .ok t) ∧
+        txOf s { r with approval := some { ap with signatures := sigs } } lovelace
+          = txOf s r lovelace) ∧
     (∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
         admitsFor t.state.config r₂ r₂.approval = true →
-        step t.state r₂ = .error "key-exists") ∧
+        txOf t.state r₂ lovelace = .error "key-exists") ∧
     (∀ (c : Config) (q : Request), admitsFor c q (some (openApproval c q)) = true) ∧
     (∀ (c₁ c₂ : Config) (q : Request) (a : Option Approval),
         c₁.applicationPolicy = c₂.applicationPolicy →
@@ -964,7 +982,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
     simp only [beq_self_eq_true, Bool.and_self, if_pos]
     have hz : (s.held.filter fun x => x.key == r.key && x.kind == TokenKind.active).length = 0 := hzero
     omega
-  have hsig : ∀ sigs : List (List Nat),
+  have hstep : ∀ sigs : List (List Nat),
       step s { r with approval := some { ap with signatures := sigs } } = .ok t := by
     intro sigs
     refine (insert_active_inversion s _ t (by simpa using he)).mpr ?_
@@ -995,19 +1013,80 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       simp only [he₂, hopt, hbefore, hadm₂', hpol₂, bne_self_eq_false, Bool.not_true,
         Bool.false_eq_true, if_false, reduceIte]
       simp
-  exact ⟨⟨rfl, rfl, rfl, rfl⟩, by rw [approvalsIn, hap]; rfl,
-    fun l hl => by simpa [lovelaceCoversTip] using hl,
-    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust,
-    by simp [destinationDatumBinds, hap, hbind], hbind, hcount,
+  -- the transaction itself
+  have hdest : requestDestination r = r.output := by
+    unfold requestDestination; simp [he]
+  have happrovals : approvalsIn r = 1 := by rw [approvalsIn, hap]; rfl
+  have hrouted : mintRoutedTo t r .requestOutput = [((TokenKind.active, r.key), 1)] := by
+    unfold mintRoutedTo; rw [hmint]; simp [route] <;> decide
+  have hcage : txCageOutputs t r = [] := by
+    unfold txCageOutputs mintRoutedTo; rw [hmint]; simp [route] <;> decide
+  have htx : txOf s r lovelace =
+      .ok { inputs :=
+              [ { role := .state, datum := .inline, stateTokens := 1
+                , approvals := 0, lovelace := 0 }
+              , { role := .request, datum := .inline, stateTokens := 0
+                , approvals := 1, lovelace := lovelace } ]
+          , outputs :=
+              [ { role := .state, datum := .inline, address := none, stateTokens := 1
+                , config := some t.state.config, commitment := none, assets := [] }
+              , { role := .destination, datum := .inline, address := some r.output
+                , stateTokens := 0, config := none, commitment := some ap.assetName
+                , assets := [((.active, r.key), 1)] } ]
+          , mint := [((.active, r.key), 1)]
+          , signers := []
+          , refunds := [] } := by
+    unfold txOf
+    rw [hok]
+    simp only [txStateOutput, txDestinationOutput, hcage, happrovals, hdest, hrouted,
+      hbind, hpaid, hmint, requiredSigners, registryDatumForm, registryStateTokens,
+      List.cons_append, List.nil_append]
+  have hsigtx : ∀ sigs : List (List Nat),
+      txOf s { r with approval := some { ap with signatures := sigs } } lovelace
+        = txOf s r lovelace := by
+    intro sigs
+    rw [htx]
+    unfold txOf
+    rw [hstep sigs]
+    have ha : approvalsIn { r with approval := some { ap with signatures := sigs } } = 1 := by
+      rw [approvalsIn]; rfl
+    have hd : requestDestination { r with approval := some { ap with signatures := sigs } }
+        = r.output := by unfold requestDestination; simp [he]
+    have hr : mintRoutedTo t { r with approval := some { ap with signatures := sigs } }
+        .requestOutput = [((TokenKind.active, r.key), 1)] := by
+      unfold mintRoutedTo; rw [hmint]; simp [route] <;> decide
+    have hc : txCageOutputs t { r with approval := some { ap with signatures := sigs } } = [] := by
+      unfold txCageOutputs mintRoutedTo; rw [hmint]; simp [route] <;> decide
+    have hb : datumHash (destinationDatum
+        { r with approval := some { ap with signatures := sigs } }) = ap.assetName := by
+      unfold datumHash destinationDatum
+      simp only [hd]
+      rw [hasset, hedge, hkey, hown, hdst, hdest]
+    simp only [txStateOutput, txDestinationOutput, hc, ha, hd, hr, hb, hpaid, hmint,
+      requiredSigners, registryDatumForm, registryStateTokens,
+      List.cons_append, List.nil_append]
+  have hsecondtx : ∀ r₂ : Request, r₂.edge = .insertActive → r₂.key = r.key →
+      admitsFor t.state.config r₂ r₂.approval = true →
+      txOf t.state r₂ lovelace = .error "key-exists" := by
+    intro r₂ he₂ hk₂ hadm₂
+    unfold txOf
+    rw [hsecond r₂ he₂ hk₂ hadm₂]
+  exact ⟨htx, by simpa [lovelaceCoversTip] using hfee,
+    by simp [destinationDatumBinds, hap, hbind],
+    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hcount,
     by rw [hheld]; exact List.mem_cons_self,
-    rfl, rfl, hmint, hsig, hsecond, hadmits, hcross⟩
+    rfl, rfl, rfl, hsigtx, hsecondtx, hadmits, hcross⟩
 
-/-- **#173 T1** — the fold's mint guard is per `(TokenKind, Key)`. An accepted
-fold's claimed and actual keyed sums agree; a batch whose every request applies
-but whose keyed sums differ is refused `net-mint-mismatch`; and the guard is
-strictly finer than a per-kind one — two booking requests at two distinct keys,
-one claiming both tokens and the other none, agree at every kind and still fail
-the keyed comparison, so by the second clause such a batch is refused. -/
+/-- **#173 T1** — the fold's mint guard is per `(TokenKind, Key)`.
+
+An accepted fold's claimed and actual keyed sums agree; a nonempty batch whose
+every request applies but whose keyed sums differ is refused
+`net-mint-mismatch`; and the guard is strictly finer than a per-kind one. The
+third clause is not a bare existential mismatch: it exhibits a reachable state
+and two booking requests that both apply there, whose per-kind totals agree at
+every kind, whose keyed sums differ, and whose fold is *observed* to be
+`.error "net-mint-mismatch"` from that state. The bridge from "the sums differ"
+to "the batch is refused" is inside the statement, not left to the reader. -/
 theorem fold_batch_claimed_mint_by_kind_key :
     (∀ (s : RegistryState) (batch : List Request) (t : Result),
         foldBatch s batch = .ok t → assetSame (claimedMint batch) (actualMint batch) = true) ∧
@@ -1015,11 +1094,14 @@ theorem fold_batch_claimed_mint_by_kind_key :
         batch ≠ [] → foldActions s batch = .ok m →
         assetSame (claimedMint batch) (actualMint batch) = false →
         foldBatch s batch = .error "net-mint-mismatch") ∧
-    (∃ b₁ b₂ : Request,
+    (∃ (s : RegistryState) (b₁ b₂ : Request) (m : Result),
+        Reachable s ∧
         b₁.edge = .insertActive ∧ b₂.edge = .insertActive ∧ b₁.key ≠ b₂.key ∧
+        foldActions s [b₁, b₂] = .ok m ∧
         (∀ k : TokenKind, assetKindTotal (claimedMint [b₁, b₂]) k
                         = assetKindTotal (actualMint [b₁, b₂]) k) ∧
-        assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false) := by
+        assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false ∧
+        foldBatch s [b₁, b₂] = .error "net-mint-mismatch") := by
   refine ⟨?_, ?_, ?_⟩
   · intro s batch t hok
     obtain ⟨hne, hacts⟩ := foldBatch_inv s batch t hok
@@ -1037,8 +1119,19 @@ theorem fold_batch_claimed_mint_by_kind_key :
     simp only [bind, Except.bind, pure, Except.pure]
     rw [if_neg (by simp [hfalse])]
     rfl
-  · refine ⟨{ edge := .insertActive, key := 5, claimed := [(.active, 2)] },
-      { edge := .insertActive, key := 6, claimed := [] }, rfl, rfl, by decide, ?_, rfl⟩
+  · refine ⟨{ config := { Oracle.referenceConfig with root := rootOf [] }
+            , trie := [], custody := [], held := [] },
+      { edge := .insertActive, key := 5, owner := 0, output := 555
+      , approval := some { policy := 7, edge := .insertActive, key := 5, owner := 0
+                         , destination := 555
+                         , assetName := approvalAssetName .insertActive 5 0 555 }
+      , claimed := [(.active, 2)] },
+      { edge := .insertActive, key := 6, owner := 0, output := 555
+      , approval := some { policy := 7, edge := .insertActive, key := 6, owner := 0
+                         , destination := 555
+                         , assetName := approvalAssetName .insertActive 6 0 555 }
+      , claimed := [] },
+      _, Reachable.initial _, rfl, rfl, by decide, rfl, ?_, by decide, rfl⟩
     intro k
     cases k <;> rfl
 

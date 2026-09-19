@@ -716,6 +716,100 @@ already grant everyone. -/
 def crossRegistrySeparation (c₁ c₂ : Config) (r : Request) : Bool :=
   admitsFor c₁ r (some (openApproval c₁ r)) && !admitsFor c₂ r (some (openApproval c₁ r))
 
+/-! ### The transaction itself
+
+Everything above names one obligation at a time, and three of those names are
+nullary constants: a statement that `registryStateTokens = 1` is `rfl` and
+settles nothing about a transaction. This section builds the transaction, from
+the executed step, so a statement can quantify over a constructed value — every
+input, every output, the datums they present, the assets they carry, the exact
+mint, the destination the tokens are routed to, and the signatures required. -/
+
+/-- The part an input or output plays in a fold transaction. -/
+inductive TxRole where
+  | state | request | destination | cage
+  deriving Repr, BEq, DecidableEq
+
+/-- An input the fold spends: the registry's state UTxO, or a request UTxO
+carrying its approvals and the lovelace that pays the tip. -/
+structure TxInput where
+  role : TxRole
+  datum : DatumForm
+  stateTokens : Nat
+  approvals : Nat
+  lovelace : Nat
+  deriving BEq, DecidableEq
+
+/-- An output the fold produces. `address` is `none` for the state output: the
+model has no vocabulary for the registry's own address, and a constant invented
+here would be exactly the kind of non-derivation this section exists to remove.
+`commitment` is the hash the inline destination datum presents. -/
+structure TxOutput where
+  role : TxRole
+  datum : DatumForm
+  address : Option Nat
+  stateTokens : Nat
+  config : Option Config
+  commitment : Option Nat
+  assets : List (Asset × Int)
+  deriving BEq, DecidableEq
+
+/-- The transaction of an admitted fold. -/
+structure Tx where
+  inputs : List TxInput
+  outputs : List TxOutput
+  mint : List (Asset × Int)
+  signers : List Nat
+  refunds : List (Nat × Nat)
+  deriving BEq, DecidableEq
+
+/-- The minted assets this request routes to one destination, read off the
+executed result's mint through the model's own routing rule. -/
+def mintRoutedTo (t : Result) (r : Request) (d : Destination) : List (Asset × Int) :=
+  t.mint.filter fun p => route p.1.1 r == d
+
+/-- The state output: the registry's single state UTxO, moved, carrying the
+configuration the step produced under an inline datum. -/
+def txStateOutput (t : Result) : TxOutput :=
+  { role := .state, datum := registryDatumForm, address := none
+  , stateTokens := registryStateTokens, config := some t.state.config
+  , commitment := none, assets := [] }
+
+/-- The destination output: routed to the address the request named, carrying an
+inline datum whose commitment is the scoping tuple's, and holding exactly the
+tokens the edge routed to the requester. -/
+def txDestinationOutput (t : Result) (r : Request) : TxOutput :=
+  { role := .destination, datum := registryDatumForm
+  , address := some (requestDestination r), stateTokens := 0, config := none
+  , commitment := some (datumHash (destinationDatum r))
+  , assets := mintRoutedTo t r .requestOutput }
+
+/-- The cage output, present only when this edge routes a token to cage custody.
+`insertActive` routes none, so its transaction has exactly two outputs; the
+constructor is general so the shape is not special-cased to one edge. -/
+def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
+  let assets := mintRoutedTo t r .cageCustody
+  if assets.isEmpty then []
+  else [{ role := .cage, datum := registryDatumForm, address := some 0
+        , stateTokens := 0, config := none, commitment := none, assets := assets }]
+
+/-- The transaction an admitted single-request fold builds, or the model's own
+refusal. Every field is the executed step's answer or a definition applied to
+the request; nothing is asserted beside the model. -/
+def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
+  match step s r with
+  | .error why => .error why
+  | .ok t =>
+    .ok { inputs :=
+            [ { role := .state, datum := registryDatumForm
+              , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+            , { role := .request, datum := registryDatumForm
+              , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
+        , outputs := txStateOutput t :: txDestinationOutput t r :: txCageOutputs t r
+        , mint := t.mint
+        , signers := requiredSigners r
+        , refunds := t.paid }
+
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined
 in terms of the real model: they delegate to it, or execute it, never restate

@@ -2582,7 +2582,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+  "corpusSourceSha256": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2651,8 +2651,10 @@
         }
       ],
       "id": "GK01-two-keys-accepted",
+      "perKindTotalsAgree": true,
       "reason": "",
-      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
       "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
     },
     {
@@ -2683,8 +2685,10 @@
         }
       ],
       "id": "GK02-same-kind-wrong-key-refused",
+      "perKindTotalsAgree": true,
       "reason": "net-mint-mismatch",
-      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
       "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
     }
   ],
@@ -2707,19 +2711,19 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
-  "payloadSha256": "0f7410eab41ef30ff337b791b4b429d6e81626f750efaef2fcae7f172063b367",
+  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+  "payloadSha256": "ad1d193f1ba76d8156db1d013f4796bb76a6d40c737b195a7569e19e95fda098",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
-    "lean/Singular/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533"
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
-  "statementsSha256": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533",
-  "theoremManifestSha256": "22e3e240ea7e8bfa5da6ba4895b7e89152a05b55483b0a2a941cae27098c5615",
+  "statementsSha256": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
+  "theoremManifestSha256": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -2728,6 +2732,7 @@
   "transactions": [
     {
       "accepted": true,
+      "activeQuantity": 1,
       "applicationPolicy": 7,
       "claimed": [
         {
@@ -2738,61 +2743,98 @@
           "quantity": 1
         }
       ],
-      "inputs": [
-        {
-          "datum": "inline",
-          "role": "state",
-          "stateToken": 1
-        },
-        {
-          "approvalQuantity": 1,
-          "datum": "inline",
-          "lovelace": 5,
-          "lovelaceCoversTip": true,
-          "role": "request",
-          "tip": 1
-        }
-      ],
-      "mint": [
-        {
-          "assetName": 42,
-          "key": 42,
-          "kind": "active",
-          "policy": 8,
-          "quantity": 1
-        }
-      ],
+      "destinationDatumBinds": true,
+      "lovelaceCoversTip": true,
+      "onlyRootChanges": true,
       "openPolicy": {
         "admitsAnyTuple": true,
         "crossRegistrySeparation": false,
         "hash": 7,
         "parameters": []
       },
-      "outputs": [
-        {
-          "datum": "inline",
-          "onlyRootChanges": true,
-          "role": "state",
-          "stateToken": 1
-        },
-        {
-          "activeQuantity": 1,
-          "assetName": 42,
-          "datum": "inline",
-          "datumHashMatchesRequest": true,
-          "key": 42,
-          "policy": 8,
-          "role": "destination"
-        }
-      ],
       "profile": "insertActive",
-      "requiredSigners": [],
       "secondInsert": {
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681",
-      "theorem": "Singular.Statements.insert_active_transaction_row"
+      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "theorem": "Singular.Statements.insert_active_transaction_row",
+      "tip": 1,
+      "transaction": {
+        "inputs": [
+          {
+            "approvalQuantity": 0,
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "approvalQuantity": 1,
+            "datum": "inline",
+            "lovelace": 5,
+            "role": "request",
+            "stateToken": 0
+          }
+        ],
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "address": null,
+            "assets": [],
+            "commitment": null,
+            "datum": "inline",
+            "inlineConfig": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 1,
+              "processTime": 2,
+              "retractTime": 3,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "address": 555,
+            "assets": [
+              {
+                "assetName": 42,
+                "key": 42,
+                "kind": "active",
+                "policy": 8,
+                "quantity": 1
+              }
+            ],
+            "commitment": 1604014105,
+            "datum": "inline",
+            "inlineConfig": null,
+            "role": "destination",
+            "stateToken": 0
+          }
+        ],
+        "refunds": [],
+        "signers": []
+      }
     }
   ]
 }

@@ -541,6 +541,19 @@ const deltaSame=(a,b)=>[...a,...b].every(d=>deltaKind(a,d.kind)===deltaKind(b,d.
 const deltaPlus=(a,b)=>[...new Set([...a,...b].map(d=>d.kind))]
   .map(kind=>({kind,quantity:deltaKind(a,kind)+deltaKind(b,kind)}));
 
+// The fold's mint accounting is keyed by (kind, key), matching the Lean model's
+// assetDelta/requestClaim/assetSame. A per-kind sum accepts a batch that claims
+// one key's token twice and another's not at all; the keyed one refuses it.
+const assetDelta=r=>delta(r.edge).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+const requestClaim=r=>(r.claimed||[]).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+const assetKind=(ds,kind,key)=>
+  ds.reduce((n,d)=>d.kind===kind&&d.key===key?n+d.quantity:n,0);
+const assetPlus=(a,b)=>[...new Map([...a,...b]
+  .map(d=>[`${d.kind}@${d.key}`,{kind:d.kind,key:d.key}])).values()]
+  .map(x=>({kind:x.kind,key:x.key,quantity:assetKind(a,x.kind,x.key)+assetKind(b,x.kind,x.key)}));
+const assetSame=(a,b)=>[...a,...b]
+  .every(d=>assetKind(a,d.kind,d.key)===assetKind(b,d.kind,d.key));
+
 // ---- the R2 from→to column -------------------------------------------------
 const transition=(e,before)=>{
  const k=`${e}/${before===null?'unknown':before}`;
@@ -667,9 +680,9 @@ function foldBatch(s,batch){
   if(batch.length===0)return {accepted:false,reason:'empty-fold'};
   const r=foldActions(s,batch);
   if(!r.accepted)return r;
-  const claimed=batch.reduce((acc,b)=>deltaPlus(acc,b.claimed),[]);
-  const actual=batch.reduce((acc,b)=>deltaPlus(acc,delta(b.edge)),[]);
-  if(!deltaSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
+  const claimed=batch.reduce((acc,b)=>assetPlus(acc,requestClaim(b)),[]);
+  const actual=batch.reduce((acc,b)=>assetPlus(acc,assetDelta(b)),[]);
+  if(!assetSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
   return r;
  }catch(e){return {accepted:false,reason:e.message};}
 }
@@ -3977,7 +3990,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+  "corpusSourceSha256": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4046,8 +4059,10 @@ const STORIES=[
         }
       ],
       "id": "GK01-two-keys-accepted",
+      "perKindTotalsAgree": true,
       "reason": "",
-      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
       "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
     },
     {
@@ -4078,8 +4093,10 @@ const STORIES=[
         }
       ],
       "id": "GK02-same-kind-wrong-key-refused",
+      "perKindTotalsAgree": true,
       "reason": "net-mint-mismatch",
-      "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150",
+      "requestsApplied": true,
+      "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988",
       "theorem": "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
     }
   ],
@@ -4102,19 +4119,19 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
-  "payloadSha256": "0f7410eab41ef30ff337b791b4b429d6e81626f750efaef2fcae7f172063b367",
+  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+  "payloadSha256": "ad1d193f1ba76d8156db1d013f4796bb76a6d40c737b195a7569e19e95fda098",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
-    "lean/Singular/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533"
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
-  "statementsSha256": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533",
-  "theoremManifestSha256": "22e3e240ea7e8bfa5da6ba4895b7e89152a05b55483b0a2a941cae27098c5615",
+  "statementsSha256": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
+  "theoremManifestSha256": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4123,6 +4140,7 @@ const STORIES=[
   "transactions": [
     {
       "accepted": true,
+      "activeQuantity": 1,
       "applicationPolicy": 7,
       "claimed": [
         {
@@ -4133,61 +4151,98 @@ const STORIES=[
           "quantity": 1
         }
       ],
-      "inputs": [
-        {
-          "datum": "inline",
-          "role": "state",
-          "stateToken": 1
-        },
-        {
-          "approvalQuantity": 1,
-          "datum": "inline",
-          "lovelace": 5,
-          "lovelaceCoversTip": true,
-          "role": "request",
-          "tip": 1
-        }
-      ],
-      "mint": [
-        {
-          "assetName": 42,
-          "key": 42,
-          "kind": "active",
-          "policy": 8,
-          "quantity": 1
-        }
-      ],
+      "destinationDatumBinds": true,
+      "lovelaceCoversTip": true,
+      "onlyRootChanges": true,
       "openPolicy": {
         "admitsAnyTuple": true,
         "crossRegistrySeparation": false,
         "hash": 7,
         "parameters": []
       },
-      "outputs": [
-        {
-          "datum": "inline",
-          "onlyRootChanges": true,
-          "role": "state",
-          "stateToken": 1
-        },
-        {
-          "activeQuantity": 1,
-          "assetName": 42,
-          "datum": "inline",
-          "datumHashMatchesRequest": true,
-          "key": 42,
-          "policy": 8,
-          "role": "destination"
-        }
-      ],
       "profile": "insertActive",
-      "requiredSigners": [],
       "secondInsert": {
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681",
-      "theorem": "Singular.Statements.insert_active_transaction_row"
+      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "theorem": "Singular.Statements.insert_active_transaction_row",
+      "tip": 1,
+      "transaction": {
+        "inputs": [
+          {
+            "approvalQuantity": 0,
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "approvalQuantity": 1,
+            "datum": "inline",
+            "lovelace": 5,
+            "role": "request",
+            "stateToken": 0
+          }
+        ],
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "address": null,
+            "assets": [],
+            "commitment": null,
+            "datum": "inline",
+            "inlineConfig": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 1,
+              "processTime": 2,
+              "retractTime": 3,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "address": 555,
+            "assets": [
+              {
+                "assetName": 42,
+                "key": 42,
+                "kind": "active",
+                "policy": 8,
+                "quantity": 1
+              }
+            ],
+            "commitment": 1604014105,
+            "datum": "inline",
+            "inlineConfig": null,
+            "role": "destination",
+            "stateToken": 0
+          }
+        ],
+        "refunds": [],
+        "signers": []
+      }
     }
   ]
 }
@@ -4340,13 +4395,13 @@ const STORIES=[
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681"
+    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150"
+    "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
   }
 ]
 ;const IDENTITY={
@@ -4368,8 +4423,8 @@ const STORIES=[
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "formal/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
-    "formal/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+    "formal/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
+    "formal/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4382,12 +4437,12 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
-    "formal/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533",
+    "formal/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "22e3e240ea7e8bfa5da6ba4895b7e89152a05b55483b0a2a941cae27098c5615",
+    "formal/theorem-debt.json": "12f63fc96586e33d8faaa32990a230ed0911256df5a76dd6a92b28b7922d9a9c",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "647c684e15b01c35a861ae3b8c985514cf609f258905954831e003f1c1fff7f3"
+    "corpus.json": "c73c88efb03311c5cd3a61b9d163b598b53b12d5652b9ccc02be7069f989cbe8"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
@@ -4436,9 +4491,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+  "modelSha256": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "cdcc6f9faba5e62a2158f65ce02075375e2a3540d8de13ecacf288427af59aba",
+  "payloadSha256": "66c528b518fe5f3454edfa84c3cb6f6fa038acf0dd8eabd9717fc0ad579162f8",
   "queues": [
     {
       "actual": true,
@@ -4529,12 +4584,12 @@ const STORIES=[
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4545,7 +4600,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533"
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
   "spellings": [
     {
@@ -4663,7 +4718,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "511a15020dcc435d51d0b7cacbadb821ba5ed9150aaa60993f12d337ee39903f",
+  "payloadSha256": "c5cb4a43bbfa9d4ace8bcd772e3ac84fa759147b47781aed5b33494ba55d5a9f",
   "recovery": [
     {
       "detail": true,
@@ -4735,12 +4790,12 @@ const STORIES=[
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "acd97c43ee9eab29ba7a1542d6557c6d0d74bc8a458a7d363588769be3e37826",
+    "lean/Main.lean": "da21c45084993bcf0f95124a29f319ac774f563940d3f6f881cb1c359f4934a2",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "ff4cf54cb1a957bc98d6019a24a2fea85eeceda35353644929b52230d531b96f",
+    "lean/Singular/Model.lean": "1f39e5706a5682c6ccc9f4d168d3b404de3b4da4a8749018303a8a162c589060",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4751,7 +4806,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "836254162c8b8d73e1862e1b628d76ad69f4336553d0aab0a3e0f1a6e252c533"
+    "lean/Singular/Statements.lean": "5c05669fdae3e1922db70092998269257784f92424257145b38179c997663098"
   },
   "steps": [
     {

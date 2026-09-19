@@ -147,12 +147,12 @@
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681"
+    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150"
+    "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
   }
 ]

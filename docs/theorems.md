@@ -46,11 +46,11 @@ consequences rather than as separate arguments.
 | `Singular.Statements.delete_absent_inversion` | — | `95b092734fc82923fd9c5eac37677fd70b84a95e4e11e72961383165acf07057` | PROVED |
 | `Singular.Statements.delete_active_inversion` | — | `7ebff03121cd4b0ef44ed54a7ac71af32e142a3eadf60ef7eefa3fa40e49de90` | PROVED |
 | `Singular.Statements.empty_fold_error` | — | `8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | PROVED |
-| `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one | `8ee88a9359f84877e757f672407b47327f5dafb19f4bb3575a22ceb1cfc5c150` | PROVED |
+| `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
 | `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
 | `Singular.Statements.insert_absent_inversion` | — | `b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d` | PROVED |
 | `Singular.Statements.insert_active_inversion` | — | `8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b` | PROVED |
-| `Singular.Statements.insert_active_transaction_row` | T1 — the transaction row of an admitted `insertActive`: inputs, outputs, inline datums, the keyed mint, no required signer, and the duplicate-key refusal | `fc6722afee259664fbf8227bed5433a93539b9f0b70a361aea9bd3ee334d2681` | PROVED |
+| `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the keyed mint, no refunds, no required signer — plus universal open admission and the duplicate-key refusal | `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737` | PROVED |
 | `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
 | `Singular.Statements.occupancy` | O1 — a booking edge succeeds only on a key that is not taken | `f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876` | PROVED |
 | `Singular.Statements.occupancy_free_key_succeeds` | O1, converse — a booking edge on an untaken key succeeds | `4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350` | PROVED |

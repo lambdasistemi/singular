@@ -115,6 +115,23 @@ assert.equal(foldBatch(initial(),[]).reason,'empty-fold','empty batch');
  assert.ok(foldBatch(initial(),[a,b]).accepted,'two-request batch');
  const wrong={...b,claimed:[{kind:'active',quantity:5}]};
  assert.equal(foldBatch(initial(),[a,wrong]).reason,'net-mint-mismatch','mint check');
+ // The keyed control. Two booking requests at two distinct keys whose per-kind
+ // totals agree exactly — active +2 claimed, active +2 actual — and whose keyed
+ // sums do not: key 17 claims both tokens, key 99 claims none. A per-kind guard
+ // accepts this batch; the model's (kind, key) guard refuses it. This is the
+ // production boundary, not a unit: it goes through foldBatch itself.
+ const k17=approved('insertActive',17,{owner:42,output:555,
+   claimed:[{kind:'active',quantity:2}]});
+ const k99=approved('insertActive',99,{owner:42,output:555,claimed:[]});
+ // The control is only meaningful while the per-kind totals really do agree: if
+ // they ever diverge, the coarse guard would refuse this batch too and the
+ // assertion below would pass without testing the keyed one.
+ const activeTotal=rs=>rs.reduce((n,r)=>n+(r.claimed||[])
+   .reduce((m,d)=>d.kind==='active'?m+d.quantity:m,0),0);
+ assert.equal(activeTotal([k17,k99]),2,'claimed active total');
+ assert.equal([k17,k99].length,2,'actual active total is one per insertActive');
+ assert.equal(foldBatch(initial(),[k17,k99]).reason,'net-mint-mismatch',
+   'equal per kind, wrong key: the fold must key its mint by (kind, key)');
  const bad=approved('updateTerminal',9,{owner:42,output:555});
  const r=foldBatch(initial(),[a,bad]);
  assert.ok(!r.accepted,'a refusal refuses the whole batch');

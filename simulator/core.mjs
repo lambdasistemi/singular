@@ -74,6 +74,19 @@ export const deltaSame=(a,b)=>[...a,...b].every(d=>deltaKind(a,d.kind)===deltaKi
 const deltaPlus=(a,b)=>[...new Set([...a,...b].map(d=>d.kind))]
   .map(kind=>({kind,quantity:deltaKind(a,kind)+deltaKind(b,kind)}));
 
+// The fold's mint accounting is keyed by (kind, key), matching the Lean model's
+// assetDelta/requestClaim/assetSame. A per-kind sum accepts a batch that claims
+// one key's token twice and another's not at all; the keyed one refuses it.
+export const assetDelta=r=>delta(r.edge).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+export const requestClaim=r=>(r.claimed||[]).map(d=>({kind:d.kind,key:r.key,quantity:d.quantity}));
+export const assetKind=(ds,kind,key)=>
+  ds.reduce((n,d)=>d.kind===kind&&d.key===key?n+d.quantity:n,0);
+export const assetPlus=(a,b)=>[...new Map([...a,...b]
+  .map(d=>[`${d.kind}@${d.key}`,{kind:d.kind,key:d.key}])).values()]
+  .map(x=>({kind:x.kind,key:x.key,quantity:assetKind(a,x.kind,x.key)+assetKind(b,x.kind,x.key)}));
+export const assetSame=(a,b)=>[...a,...b]
+  .every(d=>assetKind(a,d.kind,d.key)===assetKind(b,d.kind,d.key));
+
 // ---- the R2 from→to column -------------------------------------------------
 export const transition=(e,before)=>{
  const k=`${e}/${before===null?'unknown':before}`;
@@ -200,9 +213,9 @@ export function foldBatch(s,batch){
   if(batch.length===0)return {accepted:false,reason:'empty-fold'};
   const r=foldActions(s,batch);
   if(!r.accepted)return r;
-  const claimed=batch.reduce((acc,b)=>deltaPlus(acc,b.claimed),[]);
-  const actual=batch.reduce((acc,b)=>deltaPlus(acc,delta(b.edge)),[]);
-  if(!deltaSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
+  const claimed=batch.reduce((acc,b)=>assetPlus(acc,requestClaim(b)),[]);
+  const actual=batch.reduce((acc,b)=>assetPlus(acc,assetDelta(b)),[]);
+  if(!assetSame(claimed,actual))return {accepted:false,reason:'net-mint-mismatch'};
   return r;
  }catch(e){return {accepted:false,reason:e.message};}
 }
