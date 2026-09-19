@@ -9,7 +9,7 @@ not separate layer tasks.
 - [x] **T184-P — freeze the compact mandate.** Bind issue #184, Lean
   `854f56f`, base `698c403`, the owned surface, acceptance lines, copies,
   four-hour wall and no-merge authority.
-- [ ] **T184-S — pass blind slicing review and freeze Gate S.** Another family
+- [x] **T184-S — pass blind slicing review and freeze Gate S.** Another family
   audits this task list against the parent criterion; two independent authors
   then map all lines to verbatim CI commands and the ticket owner freezes their
   synthesized union.
