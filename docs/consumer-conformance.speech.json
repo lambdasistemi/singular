@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "f9f2e755a730c72097d49bbdfab5ca3b67a0c7c4fc722dd961bd2b3939c43285"
+    "sha256": "72e3533212c5fb471f023e5624526bb5ae06e6912af950ae16b150239a7f22da"
   },
   "historical-execution-reports": [
     {
@@ -187,10 +187,22 @@
       "text": "The operation type gains a fourth constructor, read, at index three. The three published indices do not move. A read leaves its key exactly where it is, and on chain only the terminal codec byte is admitted for it."
     }
   ],
-  "the-request-a-destination": [
+  "the-request-a-destination-then-an-edge-index": [
     {
       "pause": 400,
-      "text": "The request gains one field, appended last: a destination, which is the binary address bytes the minted token must land at together with the hash of the inline datum that output must carry. An empty datum hash means a datum-less output, and a request that mints nothing names no destination."
+      "text": "The request gained one field, appended last: a destination, which is the binary address bytes the minted token must land at together with the hash of the inline datum that output must carry. An empty datum hash means a datum-less output, and a request that mints nothing names no destination."
+    },
+    {
+      "pause": 400,
+      "text": "Issue one eight three then re-cut the request itself. The constructor index does not move and four of the seven fields keep their positions. What changes is fields three and four: where the request used to carry an operation payload it now carries an edge index, zero through six, and where it used to carry a tip it now carries a deposit."
+    },
+    {
+      "pause": 400,
+      "text": "The edge names its own leaf bytes. Edge zero inserts absent, edge one inserts active, edge two updates absent to active, edge three updates active to terminal, edge four deletes absent, edge five deletes active, and edge six reads terminal. A consumer no longer chooses those bytes, so it can no longer get them wrong."
+    },
+    {
+      "pause": 400,
+      "text": "The deposit is the lovelace the request output holds, less the state's tip. Six refusals go away because no request can express them any more: leaf codec, insert terminal, tip mismatch, update to absent, update absent to terminal, and update active to active. Two are new: edge inadmissible for a tag outside zero through six, and deposit mismatch."
     }
   ],
   "the-cage-datum-a-third-constructor": [

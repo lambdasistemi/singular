@@ -1332,7 +1332,7 @@ findPendingInsert env ks = do
         isRequest (_, out) = case extractCageDatum out of
             Just (RequestDatum r) ->
                 requestKey r == keySpelling ks
-                    && requestValue r == OpInsert (keyRepName ks)
+                    && requestEdge r == edgeInsertActive
             _ -> False
     case (List.find isClaim claims, List.find isRequest requests) of
         (Just claim, Just request) -> pure (Just (claim, request))

@@ -444,39 +444,46 @@ jobs:
       # Issue #68: the serialization boundary — Haskell datum, redeemer
       # and parameter encodings against the compiled blueprint plus
       # compiled execution evidence, rather than a codec agreeing with
-      # itself. Issue #157 splits this family by edge: the seven-edge
-      # registry-mode cage changes the wire, and this session runs the
-      # three rows that survive it unchanged — CS01 and CS06 check the
-      # blueprint locally and need no node, CS02 executes on the devnet
-      # with one fresh cage. All three are accepted rows: this session
-      # carries NO partial and NO held row, so it ends ZERO and any
-      # partial or held report in it is a failure, not expected debt.
-      # The five byte-level rows against the previous cage wire are NOT
-      # run here and are NOT stubbed; they are re-cut per edge, mapped
-      # in the comment at the retired CS07 control below.
+      # itself. Issue #157 split this family by edge; issue #183 cuts
+      # the request wire to its edge index and RETURNS the three rows
+      # that were waiting on that final wire. The session is now six:
+      # CS01 and CS06 check the blueprint locally and need no node;
+      # CS02, CS04, CS07 and CS08 execute on the devnet.
+      #
+      # Five agree with the model by being ACCEPTED. CS04 agrees with
+      # it by being REFUSED — a tampered Modify index the cage must
+      # reject — so the assertions below bind the VERDICT
+      # (agrees-with-model) for every row and never the outcome. This
+      # session still carries NO partial and NO held row, so it ends
+      # ZERO, and any partial or held report in it is a failure rather
+      # than expected debt.
+      #
+      # CS03 and CS05 stay out and stay unstubbed; they travel with
+      # #177/#179.
       #
       # The assertion binds the terminal state this exact session
       # really prints — the devnet leg's own completion line and the
-      # runner's exit line — then requires exactly the three CS
-      # receipt IDs with no missing or extra receipt, each with its
-      # real accepted verdict, on a clean tree, bound to the candidate.
+      # runner's exit line — then requires exactly the six CS receipt
+      # IDs with no missing or extra receipt, each with its real
+      # verdict, on a clean tree, bound to the candidate.
       - name: Run the serialization rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           set +e
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS01 CS02 CS06 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CS01 CS02 CS04 CS06 CS07 CS08 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/serialization-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
-          echo "serialization session exit: $run_rc (expected: exactly 0, the all-accepted status)"
+          echo "serialization session exit: $run_rc (expected: exactly 0 — every row agrees with the model, CS04 by refusing)"
           head_sha="$(git rev-parse HEAD)"
           # 1. the EXACT status of an all-accepted session, never a
           #    tolerated range: a partial or held session exits 1, and
           #    any other exit is an unexamined build/setup/crash.
-          [ "$run_rc" -eq 0 ] || { echo "FAIL: serialization exit $run_rc is not the all-accepted exit 0"; exit 1; }
+          [ "$run_rc" -eq 0 ] || { echo "FAIL: serialization exit $run_rc is not the agrees-with-model exit 0"; exit 1; }
           # 2. complete terminal evidence for the session actually run:
-          #    the CS devnet leg completes its one devnet row (CS02)...
-          grep -q 'complete: 1/1 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: the CS devnet leg did not complete its one devnet row (mid-run failure or crash)'; exit 1; }
+          #    the CS devnet leg completes its four devnet rows
+          #    (CS02, CS04, CS07, CS08)...
+          grep -q 'complete: 4/4 rows ok' /tmp/serialization-rows.log || { echo 'FAIL: the CS devnet leg did not complete its four devnet rows (mid-run failure or crash)'; exit 1; }
           #    ...and the runner reports its own success status line
           grep -q '^exit_status: 0$' /tmp/serialization-rows.log || { echo 'FAIL: the runner did not report exit_status: 0'; exit 1; }
           #    ...with neither debt report present: a partial or a held
@@ -489,8 +496,8 @@ jobs:
             echo 'FAIL: a row reported held or failing in a session whose rows are all accepted'
             exit 1
           fi
-          # 3. exactly the three CS receipt IDs, no missing and no extra
-          printf '%s\n' CS01 CS02 CS06 | sort > /tmp/expected-cs.txt
+          # 3. exactly the six CS receipt IDs, no missing and no extra
+          printf '%s\n' CS01 CS02 CS04 CS06 CS07 CS08 | sort > /tmp/expected-cs.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-CS*.json | sort > /tmp/receipt-cs.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
@@ -502,32 +509,37 @@ jobs:
             echo '--- receipts ---'; while IFS= read -r l; do echo "$l"; done < /tmp/receipt-cs.txt
             exit 1
           fi
-          # 4. every row its real accepted verdict — never partial and
-          #    never held — on a clean tree, bound to this candidate
-          for row in CS01 CS02 CS06; do
+          # 4. every row its real verdict — agrees-with-model, whether
+          #    the row agrees by accepting or, for CS04, by refusing —
+          #    never partial and never held, on a clean tree, bound to
+          #    this candidate
+          for row in CS01 CS02 CS04 CS06 CS07 CS08; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")" = "agrees-with-model" ] || { echo "FAIL: unexpected verdict for $row"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.dirty' "$f")" = "false" ] || { echo "FAIL: $row receipt records a dirty tree"; exit 1; }
             [ "$(nix run --quiet nixpkgs#jq -- -r '.base' "$f")" = "$head_sha" ] || { echo "FAIL: $row not bound to $head_sha"; exit 1; }
           done
-          echo 'GREEN = all-accepted assertion held: CS01 CS02 CS06 executed on a clean candidate-bound tree, every verdict agrees-with-model, no partial and no held row in the session.'
+          echo 'GREEN = agrees-with-model assertion held: CS01 CS02 CS04 CS06 CS07 CS08 executed on a clean candidate-bound tree, every verdict agrees-with-model (CS04 by refusing), no partial and no held row in the session.'
       # Loader and inventory enforcement over the session receipts:
       # the loader validates every receipt (constructor accounting
       # included — a false success or an omitted constructor fails
-      # here), and the inventory must render each of this ticket's
-      # three serialization rows executed. Neither an arbitrary exit1
-      # nor grep alone is acceptance: the assertions above bind the
+      # here), and the inventory must render each of this ticket's six
+      # serialization rows executed. Neither an arbitrary exit1 nor
+      # grep alone is acceptance: the assertions above bind the
       # verdicts. NOTE-058: the state assertion parses the TSV
       # (column 4), never a substring. Non-vacuity is two-sided —
-      # CS01, CS02 and CS06 must each appear exactly once and read
-      # executed, and no other CS row may render executed or partial,
-      # so a missing, duplicated or extra receipt fails here.
+      # CS01, CS02, CS04, CS06, CS07 and CS08 must each appear exactly
+      # once and read executed, and no other CS row may render executed
+      # or partial, so a missing, duplicated or extra receipt fails
+      # here. The quantity is what the assertion is over: the counters
+      # are per id so one row rendering twice cannot pay for another
+      # rendering not at all.
       - name: Enforce receipt accounting and inventory rendering
         working-directory: conformance
         run: |
           nix run --quiet .#conformance -- list --receipts "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/inventory-render.log
-          c1=0 c2=0 c6=0 extra=""
+          c1=0 c2=0 c4=0 c6=0 c7=0 c8=0 extra=""
           while IFS= read -r row || [[ -n "$row" ]]; do
             id=${row%%$'\t'*}
             [[ "$id" == CS* ]] || continue
@@ -540,22 +552,31 @@ jobs:
             case "$id" in
               CS01) c1=$((c1 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS01 state: $state"; exit 1; } ;;
               CS02) c2=$((c2 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS02 state: $state"; exit 1; } ;;
+              CS04) c4=$((c4 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS04 state: $state"; exit 1; } ;;
               CS06) c6=$((c6 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS06 state: $state"; exit 1; } ;;
+              CS07) c7=$((c7 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS07 state: $state"; exit 1; } ;;
+              CS08) c8=$((c8 + 1)); [[ "$state" == executed ]] || { echo "FAIL: CS08 state: $state"; exit 1; } ;;
               *) if [[ "$state" == executed || "$state" == partial ]]; then extra="$extra $id"; fi ;;
             esac
           done < /tmp/inventory-render.log
           [[ "$c1" == 1 ]] || { echo "FAIL: CS01 rows: $c1"; exit 1; }
           [[ "$c2" == 1 ]] || { echo "FAIL: CS02 rows: $c2"; exit 1; }
+          [[ "$c4" == 1 ]] || { echo "FAIL: CS04 rows: $c4"; exit 1; }
           [[ "$c6" == 1 ]] || { echo "FAIL: CS06 rows: $c6"; exit 1; }
+          [[ "$c7" == 1 ]] || { echo "FAIL: CS07 rows: $c7"; exit 1; }
+          [[ "$c8" == 1 ]] || { echo "FAIL: CS08 rows: $c8"; exit 1; }
           [[ -z "$extra" ]] || { echo "FAIL: serialization rows outside this ticket's set render as run:$extra"; exit 1; }
-          echo 'INVENTORY = CS01/CS02/CS06 executed (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
-      # RETIRED here, not stubbed: the step "CS07 missing-Fork control
-      # fails" executed an armed control over a row whose byte-level
-      # shape is the previous cage wire. The seven-edge registry-mode
-      # cage changes that wire by mandate, so the execution is removed
-      # outright — no stub, no skip, no echo standing in for it — and
-      # the row travels with its edge:
-      # CS03 CS05: #177/#179; CS04 CS07 CS08: #183 (final wire) — none stubbed
+          echo 'INVENTORY = CS01/CS02/CS04/CS06/CS07/CS08 executed (column 4, each exactly once), no other CS row run, loader accepted the accounting.'
+      # CS04, CS07 and CS08 are back in the run list above, re-cut on
+      # the final request wire (#183). CS03 and CS05 still travel with
+      # #177/#179 and are still not stubbed.
+      #
+      # STILL RETIRED, still not stubbed: the step "CS07 missing-Fork
+      # control fails". It armed a control over the byte-level shape of
+      # the PREVIOUS cage wire — a request value the edge wire cannot
+      # express — so returning CS07 does not return that control. It is
+      # removed outright: no stub, no skip, no echo standing in for it.
+      # What CS07 asserts now is the proof shape its own row builds.
       - name: Preserve candidate-bound conformance receipts
         if: always() && env.CONFORMANCE_RECEIPTS != ''
         uses: actions/upload-artifact@v4

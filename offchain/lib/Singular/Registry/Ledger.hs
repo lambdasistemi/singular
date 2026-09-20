@@ -35,10 +35,6 @@ module Singular.Registry.Ledger (
 
     -- * Merkle Patricia Forestry
     Root (..),
-    Operation (..),
-
-    -- * Requests
-    Request (..),
 
     -- * Token state
     TokenState (..),
@@ -83,40 +79,10 @@ newtype Root = Root
     }
     deriving (Eq, Show)
 
--- | An operation to perform on a key in the trie.
-data Operation
-    = -- | Insert a new key-value pair
-      Insert
-        -- | Value to insert
-        !ByteString
-    | -- | Delete a key
-      Delete
-        -- | Old value being deleted (needed for proof)
-        !ByteString
-    | -- | Update an existing key with a new value
-      Update
-        -- | Old value being replaced
-        !ByteString
-        -- | New value to store
-        !ByteString
-    deriving (Eq, Show)
-
--- | A request to modify a token's trie.
-data Request = Request
-    { requestToken :: !TokenId
-    -- ^ The token whose trie is being modified
-    , requestOwner :: !(KeyHash Payment)
-    -- ^ The owner's payment key hash
-    , requestKey :: !ByteString
-    -- ^ The key to operate on
-    , requestValue :: !Operation
-    -- ^ The operation to perform
-    , requestFee :: !Coin
-    -- ^ Fee the requester agrees to pay
-    , requestSubmittedAt :: !Integer
-    -- ^ POSIXTime (ms) when the request was created
-    }
-    deriving (Eq, Show)
+-- #183: the `Operation` domain type and the `Request` record that
+-- carried it are gone with the wire they described. Nothing read them —
+-- the encoders work on `Singular.Registry.Types.OnChainRequest`, whose
+-- request states an edge index and a deposit.
 
 -- | Current on-chain state of a token.
 data TokenState = TokenState

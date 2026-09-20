@@ -246,14 +246,13 @@ import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
+    walkEdge,
     leafAbsent,
     leafActive,
     leafTerminal,
     approvalName,
-    edgeOf,
     mkRequestDatumWith,
     policyIdFromPin,
-    statedBefore,
     addrFromKeyHashBytes,
     addrKeyHashBytes,
     addrWitnessKeyHash,
@@ -282,8 +281,7 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
 import Singular.Registry.TxBuilder.Request (
-    requestInsertImpl,
-    requestUpdateImpl,
+    requestEdgeImpl,
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),
@@ -300,7 +298,13 @@ import Singular.Registry.TxBuilder.ConnectedFold (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    Edge,
+    edgeDeleteAbsent,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
+    edgeWitnessTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -2173,8 +2177,8 @@ runCG02 :: Env -> IO ()
 runCG02 env = do
     ensurePresentV1 env
     (foldTx, mem, cpu, size) <-
-        requestAndFold env "CG02" (OpUpdate cgV1 cgV2)
-    commitTm env (OpUpdate cgV1 cgV2)
+        requestAndFold env "CG02" edgeUpdateActive
+    commitTm env edgeUpdateActive
     verifyPresentValue
         (envCfg env)
         (envProv env)
@@ -2205,8 +2209,8 @@ runCG03 env = do
     (_, cur) <- readIORef (envDeleteKey env)
     (preProof, preRoot) <- capturePreProofKey env cgDeleteKey
     (foldTx, mem, cpu, size) <-
-        requestAndFoldKey env "CG03" cgDeleteKey (OpDelete cur)
-    commitTmKey env cgDeleteKey (OpDelete cur)
+        requestAndFoldKey env "CG03" cgDeleteKey edgeDeleteAbsent
+    commitTmKey env cgDeleteKey edgeDeleteAbsent
     verifyAbsentKey
         (envCfg env)
         (envProv env)
@@ -2240,8 +2244,8 @@ runCG04 env = do
         emit "setup" "delete key present; deleting as setup for re-Insert"
         setupDelete env
     (foldTx, mem, cpu, size) <-
-        requestAndFoldKey env "CG04" cgDeleteKey (OpInsert cgV3)
-    commitTmKey env cgDeleteKey (OpInsert cgV3)
+        requestAndFoldKey env "CG04" cgDeleteKey edgeInsertAbsent
+    commitTmKey env cgDeleteKey edgeInsertAbsent
     verifyPresentValue
         (envCfg env)
         (envProv env)
@@ -2476,7 +2480,7 @@ controlFreshCage env = do
     -- submissions, and a request booked before them would spend its
     -- phase-1 window waiting for them.
     refs <- cageRefUtxos env cfg tid
-    dest <- edgeDestination env (OpInsert controlVal)
+    dest <- edgeDestination env edgeInsertAbsent
     _ <-
         bookEdge
             env
@@ -2485,7 +2489,7 @@ controlFreshCage env = do
             genesisAddr
             genesisSignKey
             controlKey
-            (OpInsert controlVal)
+            edgeInsertAbsent
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
@@ -3296,7 +3300,7 @@ rowRequestInsert :: Env -> RowCage -> ByteString -> ByteString -> IO (TxIn, TxOu
 rowRequestInsert env cage key _val = do
     let cfg = rcCfg cage
     tid <- cageTid cage
-    dest <- edgeDestination env (OpInsert leafAbsent)
+    dest <- edgeDestination env edgeInsertAbsent
     (reqIn, reqOut) <-
         bookEdge
             env
@@ -3305,7 +3309,7 @@ rowRequestInsert env cage key _val = do
             genesisAddr
             genesisSignKey
             key
-            (OpInsert leafAbsent)
+            edgeInsertAbsent
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
@@ -3344,46 +3348,23 @@ speculativeApplyAll env _cage tid reqs =
         r <- CageTrie.getRoot trie
         pure (ps, r)
   where
-    applyOne trie (_, out) = do
-        let (key, op) = case extractCageDatum out of
-                Just (RequestDatum rq) ->
-                    (requestKey rq, requestValue rq)
-                _ -> error "speculative: pending UTxO has no request datum"
-        steps <- case op of
-            OpInsert v -> do
-                _ <- CageTrie.insert trie key v
-                fromMaybe [] <$> CageTrie.getProofSteps trie key
-            OpDelete _ -> do
-                m <- CageTrie.getProofSteps trie key
-                _ <- CageTrie.delete trie key
-                pure (fromMaybe [] m)
-            OpUpdate _ v -> do
-                m <- CageTrie.getProofSteps trie key
-                _ <- CageTrie.delete trie key
-                _ <- CageTrie.insert trie key v
-                pure (fromMaybe [] m)
-            -- #157 C3: a read proves its key and leaves it alone.
-            OpRead _ ->
-                fromMaybe [] <$> CageTrie.getProofSteps trie key
-        pure steps
+    applyOne trie (_, out) =
+        -- #183: the edge names the move and its leaf bytes, from the
+        -- table the cage reads (#157 C3: a read proves its key and
+        -- leaves it alone).
+        walkEdge trie key edge
+      where
+        (key, edge) = case extractCageDatum out of
+            Just (RequestDatum rq) ->
+                (requestKey rq, requestEdge rq)
+            _ -> error "speculative: pending UTxO has no request datum"
 
--- | Commit a landed op to a row cage's trie.
-rowCommit :: Env -> RowCage -> ByteString -> OnChainOperation -> IO ()
-rowCommit env cage key op = do
+-- | Commit a landed edge to a row cage's trie (#157 C3: a read
+-- commits nothing, which `walkEdge` already knows).
+rowCommit :: Env -> RowCage -> ByteString -> Edge -> IO ()
+rowCommit env cage key edge = do
     tid <- cageTid cage
-    withTrie (envTm env) tid $ \t -> case op of
-        OpInsert v -> do
-            _ <- CageTrie.insert t key v
-            pure ()
-        OpDelete _ -> do
-            _ <- CageTrie.delete t key
-            pure ()
-        OpUpdate _ n -> do
-            _ <- CageTrie.delete t key
-            _ <- CageTrie.insert t key n
-            pure ()
-        -- #157 C3: a read commits nothing.
-        OpRead _ -> pure ()
+    withTrie (envTm env) tid $ \t -> () <$ walkEdge t key edge
 
 {- | Book one absence on a row cage at an explicit bond (#157 A-009).
 
@@ -3405,7 +3386,7 @@ paddedRequest ::
 paddedRequest env cage payerAddr payerSk key _val bond = do
     let cfg = rcCfg cage
     tid <- cageTid cage
-    dest <- edgeDestinationFor env payerAddr (OpInsert leafAbsent)
+    dest <- edgeDestinationFor env payerAddr edgeInsertAbsent
     bookEdge
         env
         cfg
@@ -3413,17 +3394,17 @@ paddedRequest env cage payerAddr payerSk key _val bond = do
         payerAddr
         payerSk
         key
-        (OpInsert leafAbsent)
+        edgeInsertAbsent
         dest
         []
         bond
-{- | Request datum's (key, value) and submitted-at, read from a
+{- | Request datum's (key, edge) and submitted-at, read from a
 live request UTxO.
 -}
-requestDatumOf :: TxOut ConwayEra -> ((ByteString, OnChainOperation), Integer)
+requestDatumOf :: TxOut ConwayEra -> ((ByteString, Edge), Integer)
 requestDatumOf out = case extractCageDatum out of
     Just (RequestDatum rq) ->
-        ((requestKey rq, requestValue rq), requestSubmittedAt rq)
+        ((requestKey rq, requestEdge rq), requestSubmittedAt rq)
     _ -> error "requestDatumOf: not a request UTxO"
 
 {- | A FoldSpec with this cage's defaults: derive refunds and
@@ -3692,7 +3673,7 @@ runCG10 env = do
             "CG10"
             "cg10-key-a"
             "cg10-value-a"
-            (OpInsert "cg10-value-a")
+            edgeInsertAbsent
     reqC <- rowRequestInsert env cage "cg10-key-c" "cg10-value-c"
     state <- cageStateUtxo env cage
     pot <- collateralPot env
@@ -3742,7 +3723,7 @@ runCG10 env = do
         submitExpectAccepted env (addKeyWitness genesisSignKey handFresh)
     let size = txSizeBytes signed
     emitMeasure env "CG10-control" mem cpu size
-    rowCommit env cage "cg10-key-c" (OpInsert leafAbsent)
+    rowCommit env cage "cg10-key-c" edgeInsertAbsent
     emit
         "control"
         "CG10 control: the same request folded against the live root \
@@ -3832,7 +3813,7 @@ runCG11 env = do
     signedC <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
     let sizeC = txSizeBytes signedC
     emitMeasure env "CG11-control" memC cpuC sizeC
-    rowCommit env cage "cg11-key" (OpInsert leafAbsent)
+    rowCommit env cage "cg11-key" edgeInsertAbsent
     emit
         "control"
         ( "CG11 control: nonempty fold accepted (tx="
@@ -3912,10 +3893,11 @@ runCG12 env = do
         [a, b] -> pure (a, b)
         _ -> failWith "CG12 control: expected exactly two requests"
     (firstSteps, rootFirst) <- case extractCageDatum (snd firstSorted) of
-        Just (RequestDatum rq) -> case requestValue rq of
-            OpInsert v ->
-                speculativeInsert env cage tid (requestKey rq) v
-            _ -> failWith "CG12 control: expected an insert request"
+        Just (RequestDatum rq)
+            | requestEdge rq == edgeInsertAbsent ->
+                speculativeInsert env cage tid (requestKey rq) leafAbsent
+        Just (RequestDatum _) ->
+            failWith "CG12 control: expected an insertAbsent request"
         _ -> failWith "CG12 control: no request datum"
     pot2 <- collateralPot env
     let (firstSorted2, secondSorted2) = case sortOn fst [reqB, reqC] of
@@ -3970,7 +3952,7 @@ runCG12 env = do
     signedD <- submitExpectAccepted env (addKeyWitness genesisSignKey exactTx)
     let sizeD = txSizeBytes signedD
     emitMeasure env "CG12-exact" memD cpuD sizeD
-    rowCommit env cage "cg12-key-d" (OpInsert leafAbsent)
+    rowCommit env cage "cg12-key-d" edgeInsertAbsent
     emit
         "control"
         ( "CG12 control: exact 1:1 fold accepted (tx="
@@ -4151,7 +4133,7 @@ runCG19 env = do
     -- #157 A-009: both bookings are edges, each binding the address its
     -- own payer gets the deposit back at, and the bonds stay unequal so
     -- the row still has two different amounts to cross.
-    destA <- edgeDestinationFor env genesisAddr (OpInsert leafAbsent)
+    destA <- edgeDestinationFor env genesisAddr edgeInsertAbsent
     reqA <-
         bookEdge
             env
@@ -4160,11 +4142,11 @@ runCG19 env = do
             genesisAddr
             genesisSignKey
             "cg19-key-a"
-            (OpInsert leafAbsent)
+            edgeInsertAbsent
             destA
             []
             5_000_000
-    destB <- edgeDestinationFor env addr2 (OpInsert leafAbsent)
+    destB <- edgeDestinationFor env addr2 edgeInsertAbsent
     reqB <-
         bookEdge
             env
@@ -4173,7 +4155,7 @@ runCG19 env = do
             addr2
             sk2
             "cg19-key-b"
-            (OpInsert leafAbsent)
+            edgeInsertAbsent
             destB
             []
             3_000_000
@@ -4617,7 +4599,7 @@ runCG21 env = do
                 genesisAddr
                 genesisSignKey
                 key
-                (OpInsert leafActive)
+                edgeInsertActive
                 dest
                 []
                 bond
@@ -4822,7 +4804,7 @@ cg21Fold env cage keys = do
     -- assembly below, so the duplicate pair declares a budget that
     -- reaches the occupancy check rather than a guess.
     writeIORef (rcUnits cage) (mem, cpu)
-    mapM_ (\k -> rowCommit env cage k (OpInsert leafActive)) keys
+    mapM_ (\k -> rowCommit env cage k edgeInsertActive) keys
     rootAfter <- cg21ChainRoot env cage
     committed <- withTrie (envTm env) tid CageTrie.getRoot
     require
@@ -4908,7 +4890,7 @@ cg21HandFold env cage keys = do
     rootBefore <- cg21ChainRoot env cage
     hand <- cg21HandBuild env cage
     signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
-    mapM_ (\k -> rowCommit env cage k (OpInsert leafActive)) keys
+    mapM_ (\k -> rowCommit env cage k edgeInsertActive) keys
     rootAfter <- cg21ChainRoot env cage
     committed <- withTrie (envTm env) tid CageTrie.getRoot
     require
@@ -5149,9 +5131,14 @@ cg21RequestFacts out = do
     rq <- case extractCageDatum out of
         Just (RequestDatum r) -> pure r
         _ -> failWith "CG21: the request UTxO carries no request datum"
-    edgeIx <- case edgeOf (requestValue rq) (statedBefore (requestValue rq)) of
-        Just e -> pure e
-        Nothing -> failWith "CG21: the request names no admissible edge"
+    -- #183: the request states its C2 row itself; there is nothing to
+    -- derive. A tag outside the table names no approval binding, so a
+    -- row that reads one would be reading a fact that does not exist.
+    edgeIx <- do
+        let e = requestEdge rq
+        if e >= edgeInsertAbsent && e <= edgeWitnessTerminal
+            then pure e
+            else failWith "CG21: the request names no admissible edge"
     let BuiltinByteString owner = requestOwner rq
         Coin lovelace = out ^. coinTxOutL
     pure
@@ -5214,7 +5201,7 @@ rowRequestAndFold ::
     String ->
     ByteString ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO (ConwayTx, Integer, Integer, Integer)
 rowRequestAndFold env cage label key _val _op = do
     let cfg = rcCfg cage
@@ -5223,7 +5210,7 @@ rowRequestAndFold env cage label key _val _op = do
     -- #157 A-009: the row books an edge. The absence witness is the one
     -- edge that needs no signature, and it is what every issue-70 row
     -- asks of the trie.
-    dest <- edgeDestination env (OpInsert leafAbsent)
+    dest <- edgeDestination env edgeInsertAbsent
     _ <-
         bookEdge
             env
@@ -5232,7 +5219,7 @@ rowRequestAndFold env cage label key _val _op = do
             genesisAddr
             genesisSignKey
             key
-            (OpInsert leafAbsent)
+            edgeInsertAbsent
             dest
             []
             (defaultTipCoin cfg + cgDeposit)
@@ -5266,7 +5253,7 @@ rowRequestAndFold env cage label key _val _op = do
     -- Commit what was FOLDED, which is the absence this row booked: the
     -- caller.s value never reached the chain, and a trie holding it
     -- would prove against a root the chain does not have.
-    rowCommit env cage key (OpInsert leafAbsent)
+    rowCommit env cage key edgeInsertAbsent
     pure (signed, mem, cpu, size)
 
 
@@ -5514,10 +5501,10 @@ cg22ControlKey = "cg22-retire-control"
 cg22UnknownKey = "cg22-retire-unknown"
 cg22AbsentKey = "cg22-retire-absent"
 
-insertActiveOp, insertAbsentOp, retireOp :: OnChainOperation
-insertActiveOp = OpInsert leafActive
-insertAbsentOp = OpInsert leafAbsent
-retireOp = OpUpdate leafActive leafTerminal
+insertActiveOp, insertAbsentOp, retireOp :: Edge
+insertActiveOp = edgeInsertActive
+insertAbsentOp = edgeInsertAbsent
+retireOp = edgeUpdateTerminal
 
 {- | Submit a fold the chain must REFUSE, and record the leg: the refused
 transaction's id, the script hashes the failure is attributed to, the
@@ -5718,8 +5705,8 @@ ensurePresentV3 env = do
         else do
             emit "setup" "key absent; witnessing its absence as setup"
             (_, _, _, _) <-
-                requestAndFold env "CG05-setup" (OpInsert cgV1)
-            commitTm env (OpInsert cgV1)
+                requestAndFold env "CG05-setup" edgeInsertAbsent
+            commitTm env edgeInsertAbsent
             verifyPresentValue
                 (envCfg env)
                 (envProv env)
@@ -5736,8 +5723,8 @@ setupDelete env = do
     require "setup delete needs the delete key present" present
     (preProof, preRoot) <- capturePreProofKey env cgDeleteKey
     (_, _, _, _) <-
-        requestAndFoldKey env "CG04-setup" cgDeleteKey (OpDelete cur)
-    commitTmKey env cgDeleteKey (OpDelete cur)
+        requestAndFoldKey env "CG04-setup" cgDeleteKey edgeDeleteAbsent
+    commitTmKey env cgDeleteKey edgeDeleteAbsent
     verifyAbsentKey
         (envCfg env)
         (envProv env)
@@ -5889,28 +5876,15 @@ validProofs env reqUtxos =
         r <- CageTrie.getRoot trie
         pure (ps, r)
   where
-    processOne trie (_, txOut) = do
-        -- The key is the request's own, read from its datum exactly as
-        -- the library builder reads it: the rows no longer share one.
-        let (key, op) = case extractCageDatum txOut of
-                Just (RequestDatum rq) -> (requestKey rq, requestValue rq)
-                _ -> error "hand-build: pending UTxO has no request datum"
-        case op of
-            OpInsert v -> do
-                _ <- CageTrie.insert trie key v
-                mSteps <- CageTrie.getProofSteps trie key
-                pure (fromMaybe [] mSteps)
-            OpDelete _ -> do
-                mSteps <- CageTrie.getProofSteps trie key
-                _ <- CageTrie.delete trie key
-                pure (fromMaybe [] mSteps)
-            -- #157 C3: a read proves its key and leaves it alone.
-            OpRead _ -> fromMaybe [] <$> CageTrie.getProofSteps trie key
-            OpUpdate _ v -> do
-                mSteps <- CageTrie.getProofSteps trie key
-                _ <- CageTrie.delete trie key
-                _ <- CageTrie.insert trie key v
-                pure (fromMaybe [] mSteps)
+    -- The key and the edge are the request's own, read from its datum
+    -- exactly as the library builder reads them: the rows no longer
+    -- share one (#157 C3: a read proves its key and leaves it alone,
+    -- which `walkEdge` already knows).
+    processOne trie (_, txOut) = walkEdge trie key edge
+      where
+        (key, edge) = case extractCageDatum txOut of
+            Just (RequestDatum rq) -> (requestKey rq, requestEdge rq)
+            _ -> error "hand-build: pending UTxO has no request datum"
 
 {- | Assemble a fold transaction by hand: the library fold's shape
 with hand-computed fee, change and declared units. Two-pass fee
@@ -6209,7 +6183,7 @@ inputs, state output, refund destinations and Modify proofs, or
 the hand model drifted and the run fails before reading verdicts.
 -}
 requestAndFold ::
-    Env -> String -> OnChainOperation -> IO (ConwayTx, Integer, Integer, Integer)
+    Env -> String -> Edge -> IO (ConwayTx, Integer, Integer, Integer)
 requestAndFold env label = requestAndFoldKey env label cgKey
 
 -- | `requestAndFold` on a named key: the delete and re-insert rows own
@@ -6218,7 +6192,7 @@ requestAndFoldKey ::
     Env ->
     String ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO (ConwayTx, Integer, Integer, Integer)
 requestAndFoldKey env label key op = do
     let cfg = envCfg env
@@ -6267,24 +6241,12 @@ cgDeposit = 3_000_000
 commit ('withSpeculativeTrie' discards), so the caller keeps the
 trie in step or the next fold proves against a stale root.
 -}
-commitTm :: Env -> OnChainOperation -> IO ()
+commitTm :: Env -> Edge -> IO ()
 commitTm env = commitTmKey env cgKey
 
-commitTmKey :: Env -> ByteString -> OnChainOperation -> IO ()
-commitTmKey env cgKey' op =
-    withTrie (envTm env) (envTid env) $ \t -> case op of
-        -- #157 C3: a read commits nothing.
-        OpRead _ -> pure ()
-        OpInsert v -> do
-            _ <- CageTrie.insert t cgKey' v
-            pure ()
-        OpDelete _ -> do
-            _ <- CageTrie.delete t cgKey'
-            pure ()
-        OpUpdate _ n -> do
-            _ <- CageTrie.delete t cgKey'
-            _ <- CageTrie.insert t cgKey' n
-            pure ()
+commitTmKey :: Env -> ByteString -> Edge -> IO ()
+commitTmKey env cgKey' edge =
+    withTrie (envTm env) (envTid env) $ \t -> () <$ walkEdge t cgKey' edge
 
 -- | The claimed value under test; false-claim mode binds the forgery.
 claimValue :: Env -> ByteString -> ByteString
@@ -6532,9 +6494,8 @@ txInHex (TxId h) =
 -- CS devnet session (serialization boundary)
 -- ---------------------------------------------------------
 
-cs02Key, cs02Val :: ByteString
+cs02Key :: ByteString
 cs02Key = "cs02-key"
-cs02Val = "cs02-value"
 
 runCSSession ::
     [String] ->
@@ -6662,13 +6623,13 @@ runCS02 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     unsignedReq <-
-        requestInsertImpl
+        requestEdgeImpl
             cfg
             prov
             (defaultTip cfg)
             tid
             cs02Key
-            cs02Val
+            edgeInsertActive
             genesisAddr
     let submittedReqDatum = findRequestDatum cs02Key unsignedReq
     signedReq <- submitWithGenesis submit unsignedReq
@@ -7071,7 +7032,7 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     emit "row" "CS07: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded"
   where
     insertWitness cfg tm tid (key, val, expectedSteps) = do
-        unsignedReq <- requestInsertImpl cfg prov (defaultTip cfg) tid key val genesisAddr
+        unsignedReq <- requestEdgeImpl cfg prov (defaultTip cfg) tid key edgeInsertAbsent genesisAddr
         _ <- submitWithGenesis submit unsignedReq
         unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
         require
@@ -7090,11 +7051,9 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         emit "CS07-fold" (show key <> " steps=" <> show expectedSteps <> " txid=" <> txIdHex signedFold)
         pure (signedFold, mem, cpu)
 
-cs03KeyA, cs03ValA, cs03KeyB, cs03ValB :: ByteString
+cs03KeyA, cs03KeyB :: ByteString
 cs03KeyA = "cs03-modify-key"
-cs03ValA = "cs03-modify-val"
 cs03KeyB = "cs03-retract-key"
-cs03ValB = "cs03-retract-val"
 
 fastRetractCfgLocal :: CageConfig -> CageConfig
 fastRetractCfgLocal cfg =
@@ -7133,13 +7092,13 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidA <- extractTokenId cfgA signedBootA
     createTrie tm tidA
     unsignedReqA <-
-        requestInsertImpl
+        requestEdgeImpl
             cfgA
             prov
             (defaultTip cfgA)
             tidA
             cs03KeyA
-            cs03ValA
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReqA
     unsignedFoldA <- updateTokenImpl cfgA prov tm tidA genesisAddr
@@ -7151,9 +7110,8 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         (1 `elem` spendingConstrs unsignedFoldA)
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldA
     signedFoldA <- submitWithGenesis submit unsignedFoldA
-    _ <- withTrie tm tidA $ \t -> do
-        _ <- CageTrie.insert t cs03KeyA cs03ValA
-        pure ()
+    _ <- withTrie tm tidA $ \t ->
+        () <$ walkEdge t cs03KeyA edgeInsertActive
     (seedB, _) <- largestWalletUtxo prov
     let cfgB = fastRetractCfgLocal (cageCfg stateBytes requestBytes namingCodes (txInToRef seedB))
     unsignedBootB <- bootTokenImpl cfgB prov genesisAddr
@@ -7162,13 +7120,13 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidB <- extractTokenId cfgB signedBootB
     createTrie tm tidB
     unsignedReqB <-
-        requestInsertImpl
+        requestEdgeImpl
             cfgB
             prov
             (defaultTip cfgB)
             tidB
             cs03KeyB
-            cs03ValB
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReqB
     reqTxInB <- findRequestTxIn prov cfgB tidB cs03KeyB
@@ -7255,13 +7213,13 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
     unsignedReq <-
-        requestInsertImpl
+        requestEdgeImpl
             cfg
             prov
             (defaultTip cfg)
             tid
             "cs04-key"
-            "cs04-val"
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReq
     unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
@@ -7298,13 +7256,13 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidC <- extractTokenId cfgC signedBootC
     createTrie tm tidC
     unsignedReqC <-
-        requestInsertImpl
+        requestEdgeImpl
             cfgC
             prov
             (defaultTip cfgC)
             tidC
             "cs04-control-key"
-            "cs04-control-val"
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReqC
     unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
@@ -7384,13 +7342,13 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     createTrie tm tidC
     require "CS05: Minting witness missing Constr 0" (0 `elem` mintConstrs signedBootC)
     unsignedReqC <-
-        requestInsertImpl
+        requestEdgeImpl
             cfgC
             prov
             (defaultTip cfgC)
             tidC
             "cs05-update-key"
-            "cs05-update-val"
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReqC
     unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
@@ -7407,13 +7365,13 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidD <- extractTokenId cfgD signedBootD
     createTrie tm tidD
     unsignedReqD <-
-        requestInsertImpl
+        requestEdgeImpl
             cfgD
             prov
             (defaultTip cfgD)
             tidD
             "cs05-reject-key"
-            "cs05-reject-val"
+            edgeInsertActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedReqD
     threadDelay 3_000_000
@@ -7520,28 +7478,27 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
     createTrie tm tid
     (keyK, keyP, keyQ, _, _, _) <- findPresentForkKeys
     emit "probe-keys" (show (keyK, keyP, keyQ))
-    (_, unsigned1) <- insertProbe tm cfg prov submit tid keyK "t81-v1"
+    (_, unsigned1) <- insertProbe tm cfg prov submit tid keyK
     require
         "probe setup unexpectedly carries Fork"
         (1 `notElem` proofStepConstrs unsigned1)
-    (_, unsignedP) <- insertProbe tm cfg prov submit tid keyP "t81-vp"
+    (_, unsignedP) <- insertProbe tm cfg prov submit tid keyP
     require
         ("probe setup P proof unexpected: " <> show (proofStepConstrs unsignedP))
         (2 `elem` proofStepConstrs unsignedP)
-    (_, unsignedQ) <- insertProbe tm cfg prov submit tid keyQ "t81-vq"
+    (_, unsignedQ) <- insertProbe tm cfg prov submit tid keyQ
     require
         ("probe setup Q unexpectedly carries Fork: " <> show (proofStepConstrs unsignedQ))
         (1 `notElem` proofStepConstrs unsignedQ)
     emit "probe" "update fold for present K1 (inclusion path, no excluding)"
     unsignedProbeReq <-
-        requestUpdateImpl
+        requestEdgeImpl
             cfg
             prov
             (defaultTip cfg)
             tid
             keyK
-            "t81-v1"
-            "t81-v1-upd"
+            edgeUpdateActive
             genesisAddr
     _ <- submitWithGenesis submit unsignedProbeReq
     probeResult <- try @SomeException (updateTokenImpl cfg prov tm tid genesisAddr)
@@ -7561,22 +7518,21 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             emit "complete" "probe done: inclusion-path Fork ACCEPTED (falsification)"
     cancel nodeThread
   where
-    insertProbe tmInner cfgInner provInner submitInner tidInner key val = do
+    insertProbe tmInner cfgInner provInner submitInner tidInner key = do
         unsignedReq <-
-            requestInsertImpl
+            requestEdgeImpl
                 cfgInner
                 provInner
                 (defaultTip cfgInner)
                 tidInner
                 key
-                val
+                edgeInsertAbsent
                 genesisAddr
         _ <- submitWithGenesis submitInner unsignedReq
         unsignedFold <- updateTokenImpl cfgInner provInner tmInner tidInner genesisAddr
         signedFold <- submitWithGenesis submitInner unsignedFold
-        _ <- withTrie tmInner tidInner $ \t -> do
-            _ <- CageTrie.insert t key val
-            pure ()
+        _ <- withTrie tmInner tidInner $ \t ->
+            () <$ walkEdge t key edgeInsertAbsent
         emit ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key)) (show (proofStepConstrs unsignedFold))
         pure (signedFold, unsignedFold)
 
@@ -7603,7 +7559,7 @@ bookEdge ::
     SignKeyDSIGN Ed25519DSIGN ->
     -- | Registry key
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     -- | Destination: address bytes and datum hash
     (ByteString, ByteString) ->
     -- | Reference inputs the certifying arm reads (custody, for a deletion)
@@ -7611,19 +7567,20 @@ bookEdge ::
     -- | Bond: the tip plus the deposit that rides to the destination
     Integer ->
     IO (TxIn, TxOut ConwayEra)
-bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
+bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
     let (_, _, codes) = envCodes env
         prov = envProv env
-    edge <- case edgeOf op (statedBefore op) of
-        Just e -> pure e
-        Nothing ->
-            failWith
-                ( "bookEdge: "
-                    <> show op
-                    <> " on key "
-                    <> show key
-                    <> " is not one of the seven admissible edges"
-                )
+    -- #183: the tag IS the edge. A row that books one outside the table
+    -- is booking something the cage refuses `edge-inadmissible`, which
+    -- no row here asks for, so it is caught at the booking.
+    unless (edge >= edgeInsertAbsent && edge <= edgeWitnessTerminal) $
+        failWith
+            ( "bookEdge: edge "
+                <> show edge
+                <> " on key "
+                <> show key
+                <> " is not one of the seven admissible edges"
+            )
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     (feeIn, feeOut) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
@@ -7660,7 +7617,12 @@ bookEdge env cfg tid payerAddr payerSk key op dest refIns bond = do
                 , PLC.List [PLC.B destAddr, PLC.B destHash]
                 ]
         requestAddr = requestAddrFromCfg cfg tid (network cfg)
-        datum = mkRequestDatumWith tid payerAddr key op tipVal now dest
+        -- #183: the datum binds the DEPOSIT, not the tip. The output
+        -- holds `bond` = tip + deposit and the fold checks
+        -- `deposit == held - tip`; the min-ADA check below is what
+        -- keeps the two equal, because a bond raised to meet min-ADA
+        -- would break the equality silently.
+        datum = mkRequestDatumWith tid payerAddr key edge (bond - tipVal) now dest
         reqOut =
             mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
                 & datumTxOutL .~ mkInlineDatum datum
@@ -7741,20 +7703,17 @@ activation names the naming application's own address and the record datum
 it will carry — that is what `record_destination` demands of it. A deletion
 and a termination name nothing at all.
 -}
-edgeDestination :: Env -> OnChainOperation -> IO (ByteString, ByteString)
+edgeDestination :: Env -> Edge -> IO (ByteString, ByteString)
 edgeDestination env = edgeDestinationFor env genesisAddr
 
 -- | `edgeDestination` for a named payer: an absence binds the address its
 -- deposit comes back to, and that is the payer's own.
 edgeDestinationFor ::
-    Env -> Addr -> OnChainOperation -> IO (ByteString, ByteString)
-edgeDestinationFor env payerAddr op = do
+    Env -> Addr -> Edge -> IO (ByteString, ByteString)
+edgeDestinationFor env payerAddr edge = do
     let (_, _, codes) = envCodes env
         appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network (envCfg env)) (ScriptHashObj appHash) StakeRefNull
-    edge <- case edgeOf op (statedBefore op) of
-        Just e -> pure e
-        Nothing -> failWith ("edgeDestination: " <> show op <> " is not an edge")
     pure $ case edge of
         0 -> (serialiseAddr payerAddr, BS.empty)
         1 -> (serialiseAddr appAddr, recordDatumHash)
@@ -7767,9 +7726,9 @@ custody's own refund address, which naming reads from the custody UTxO as a
 reference input.
 -}
 edgeReferences ::
-    Env -> ByteString -> OnChainOperation -> IO [(TxIn, TxOut ConwayEra)]
-edgeReferences env key op = case edgeOf op (statedBefore op) of
-    Just 4 -> do
+    Env -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
+edgeReferences env key edge = case edge of
+    4 -> do
         utxos <- cageUtxos env
         case
             [ u
@@ -7836,8 +7795,8 @@ seedDeleteKey env = do
         else do
             emit "setup" "delete key absent; witnessing its absence as setup"
             (_, _, _, _) <-
-                requestAndFoldKey env "CG03-setup" cgDeleteKey (OpInsert cgV1)
-            commitTmKey env cgDeleteKey (OpInsert cgV1)
+                requestAndFoldKey env "CG03-setup" cgDeleteKey edgeInsertAbsent
+            commitTmKey env cgDeleteKey edgeInsertAbsent
             verifyPresentValue
                 (envCfg env)
                 (envProv env)
@@ -7959,8 +7918,8 @@ ensurePresentV1 env = do
         _ -> do
             emit "setup" "key absent; inserting v1 as setup"
             (_, _, _, _) <-
-                requestAndFold env "CG02-setup" (OpInsert cgV1)
-            commitTm env (OpInsert cgV1)
+                requestAndFold env "CG02-setup" edgeInsertAbsent
+            commitTm env edgeInsertAbsent
             verifyPresentValue
                 (envCfg env)
                 (envProv env)
