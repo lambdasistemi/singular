@@ -923,7 +923,10 @@ data RefusalLeg = RefusalLeg
     -}
     , rlClaimed :: !(Maybe [AssetEntry])
     -- ^ the mint the refused transaction claimed, where the refusal is
-    -- about mint arithmetic at all
+    -- about mint arithmetic at all. a #177 retirement refusal leg does
+    -- not observe the keyed-mint delta; CG21 (#184) is the row that
+    -- observes it. An empty `rlClaimed`/`rlEntailed` on such a leg
+    -- means not-observed, never observed-empty.
     , rlEntailed :: !(Maybe [AssetEntry])
     -- ^ what the edges it consumed actually entail
     , rlControlMint :: !(Maybe [AssetEntry])
