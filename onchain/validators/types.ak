@@ -84,8 +84,8 @@ pub type TokenId {
 /// - All datum variants can be serialized/deserialized as inline datums
 /// - Pattern matching on `CageDatum` correctly distinguishes `RequestDatum`
 ///   from `StateDatum`
-/// - The `Operation` variants carry the right payloads (Insert has 1 value,
-///   Delete has 1 value, Update has 2 values)
+/// - The seven `edge` row indices land on their C2 rows (0 insertAbsent
+///   through 6 witnessTerminal)
 /// - `MintRedeemer` and `UpdateRedeemer` cover all action types exhaustively
 /// Parameters for migrating a caged token from an old validator to a new one.
 ///
@@ -244,59 +244,41 @@ pub type State {
   terminal_policy: PolicyId,
 }
 
-/// Operations that can be performed on the MPF.
+/// The C2 row index of a request (#183, Lean `Request.edge`). An edge names
+/// its own leaf bytes, so no value bytes travel with the request:
 ///
-/// Each operation modifies the MPF in a specific way and requires
-/// a corresponding proof to validate the transition. The proof
-/// demonstrates that the operation is valid given the current MPF state.
+/// | edge | name              | trie move            |
+/// |------|-------------------|----------------------|
+/// | 0    | insertAbsent      | insert `0x00`        |
+/// | 1    | insertActive      | insert `0x01`        |
+/// | 2    | updateActive      | update `0x00`→`0x01` |
+/// | 3    | updateTerminal    | update `0x01`→`0x02` |
+/// | 4    | deleteAbsent      | delete `0x00`        |
+/// | 5    | deleteActive      | delete `0x01`        |
+/// | 6    | witnessTerminal   | read `0x02`          |
 ///
-/// These operations map directly to the `merkle_patricia_forestry` library
-/// functions: `mpf.insert`, `mpf.delete`, and `mpf.update`.
+/// The constants live in `lib.ak` (`edgeInsertAbsent` …
+/// `edgeWitnessTerminal`). A tag outside `0..6` is refused
+/// `edge-inadmissible` before approval and before any proof is checked.
 ///
-/// ## Proof Requirements
+/// Each edge maps directly to a `merkle_patricia_forestry` step with the
+/// leaf bytes above; the proof demonstrates the transition given the
+/// current trie. Illegal value-byte shapes of the old `Operation` wire
+/// (G1/G3) are not expressible in this encoding and retired with the
+/// wire; see the slice-(b) decision record for the per-trace mapping.
 ///
-/// Each operation requires a Merkle proof that demonstrates:
-/// - `Insert(value)`: The key does NOT exist in the current trie.
-///   The proof shows the absence of the key, and after insertion
-///   the new root includes the key-value pair.
-/// - `Delete(value)`: The key EXISTS with the given value.
-///   The proof shows the key's current value, and after deletion
-///   the new root excludes the key.
-/// - `Update(old, new)`: The key EXISTS with value `old`.
-///   The proof shows the key's current value, and after update
-///   the new root maps the key to `new`.
+/// A request to modify a caged token's MPF, on the Lean wire (#183).
 ///
-/// ## Test Hints
-/// - Insert on empty MPF with valid proof -> should succeed
-/// - Insert on key that already exists -> should fail (MPF library rejects)
-/// - Delete on non-existent key -> should fail
-/// - Delete with wrong expected value -> should fail
-/// - Update with wrong old value -> should fail
-/// - Multiple operations in sequence (Insert then Update on same key across
-///   two separate Modify transactions) -> should succeed
-pub type Operation {
-  /// Insert a new key-value pair. Fails if key already exists.
-  /// The ByteArray is the value to associate with the request's key.
-  Insert(ByteArray)
-  /// Delete an existing key-value pair. The ByteArray is the expected
-  /// current value -- must match what's in the MPF or the proof fails.
-  Delete(ByteArray)
-  /// Update an existing key's value. First ByteArray is the expected
-  /// current value (old_value), second is the new value (new_value).
-  /// Both must be correct for the proof to verify.
-  Update(ByteArray, ByteArray)
-  /// Read an existing key's value, leaving it unchanged (#157 C1/C3;
-  /// `Read` is appended at index 3 — the published indices 0/1/2 never
-  /// move). The ByteArray is the expected current value; only `0x02`
-  /// (Terminal) is admitted (C2), and the fold verifies it with the
-  /// existing verifier at the read's own position in the batch, so the
-  /// proof is checked against the intermediate root there. A read
-  /// carries no approval (C4), mints `+1 terminal` (C5) and is
-  /// retractable by its owner in phase 2 (C9, D-RETRACT).
-  Read(ByteArray)
-}
-
-/// A request to modify a caged token's MPF.
+/// The request carries the C2 row index (`edge` 0-6, Lean `Request.edge`)
+/// instead of value bytes: the edge names its own leaf bytes (see above),
+/// so illegal value-byte shapes are inexpressible. No `tip` field: the
+/// fold requires the input lovelace to reach `state.tip`
+/// (Lean `lovelaceCoversTip`); `deposit` is the value above the tip the
+/// request rides with (`held - state.tip`). `approval` (Lean) is the
+/// carried asset under the application policy, not a datum field;
+/// `claimed` (Lean) is the transaction mint, not a datum field;
+/// `refundAddress` (Lean) is `destination`'s first component for the
+/// absent edges and the custody refund otherwise.
 ///
 /// Requests are created by users who want to contribute data to
 /// someone else's caged token. Anyone can then fold the request by
@@ -313,13 +295,13 @@ pub type Operation {
 ///    at `tokenRef`. This step is permissionless.
 ///
 /// 3. **Processing**: The request UTxO appears as an input in a `Modify`
-///    transaction. The validator reads the `requestKey` and `requestValue`,
-///    applies the operation to the MPF using the provided proof, and
+///    transaction. The validator reads the request's `edge` and `requestKey`,
+///    applies the edge's trie move with the provided proof, and
 ///    advances the root hash.
 ///
 /// 4. **Retraction** (alternative to 2-3): If the request is still
 ///    pending, the request creator can spend it back with `Retract`
-///    when it is an insert request (`Update`/`Delete` requests are not
+///    when it is an insert or read request (update/delete requests are not
 ///    retractable since issue #79), which requires `requestOwner`'s
 ///    signature.
 ///
@@ -332,9 +314,9 @@ pub type Operation {
 /// - Request targeting token A processed in Modify for token A -> should succeed
 /// - Request targeting token A included in Modify for token B -> should be skipped
 ///   (mkUpdate checks requestToken == tokenId and skips non-matching requests)
-/// - Request with Insert("foo") for key "bar" -> inserts key "bar" with value "foo"
-/// - Two requests for same key in same Modify tx -> depends on order and operation
-///   type (e.g., Insert then Delete would insert then immediately delete)
+/// - Request with edge 1 for key "bar" -> inserts `0x01` at "bar"
+/// - Two requests for same key in same Modify tx -> depends on order and edge
+///   type (e.g., edge 1 then edge 5 would insert then immediately delete)
 pub type Request {
   /// The token this request targets (by asset name).
   /// Must match the TokenId of the caged NFT for the request to be processed.
@@ -345,12 +327,13 @@ pub type Request {
   /// The key to insert/update/delete in the MPF.
   /// This is an arbitrary ByteArray that becomes a key in the Merkle trie.
   requestKey: ByteArray,
-  /// The operation to perform on the key.
-  /// See `Operation` type for details on Insert, Delete, and Update.
-  requestValue: Operation,
-  /// The oracle tip (in lovelace) the requester agrees to pay.
-  /// Must match `state.tip` at Modify time.
-  tip: Int,
+  /// The C2 row index of this request (0-6; see above).
+  /// The edge names the trie move and its leaf bytes.
+  edge: Int,
+  /// The deposit (in lovelace) the request rides with, over and above the tip.
+  /// Must equal the input lovelace less `state.tip` at Modify time.
+  /// The fold returns it to the destination (#157 T6, want-ledger R4).
+  deposit: Int,
   /// The POSIXTime (in milliseconds) when the request was submitted.
   /// Used for time-gated phase enforcement: Phase 1 (oracle-only),
   /// Phase 2 (requester retract), Phase 3 (oracle reject/cleanup).
@@ -366,11 +349,15 @@ pub type Request {
   /// it could create her record with a controller of its own choosing.
   /// The cage requires exactly one output matching both and carrying
   /// the minted token, holding at least this request's value minus the
-  /// tip (C6, T6). For `Insert(0x00)` the token goes to the cage's own
+  /// tip (C6, T6). For edge 0 the token goes to the cage's own
   /// custody instead and the first component is the refund address
-  /// (D-CUSTODY); for `Read` it is where the terminal token goes.
+  /// (D-CUSTODY); for edge 6 it is where the terminal token goes.
   destination: (ByteArray, ByteArray),
 }
+
+// #183 slice b: `RequestDatum` at index 0 now carries the edge-only
+// `Request`. The old `Operation` wire and the S20 transient are gone;
+// the dual-codec checkpoint stands in history.
 
 /// Datum for UTxOs locked at the cage script address.
 ///
@@ -407,15 +394,15 @@ pub type CageDatum {
   StateDatum(State)
   /// The cage's own custody of an absent token (#157 D-CUSTODY;
   /// appended at index 2, so `RequestDatum` 0 and `StateDatum` 1 never
-  /// move). A fold of `Insert(0x00)` mints the absent token and locks
+  /// move). A fold of edge 0 mints the absent token and locks
   /// it here, at the cage's own address, beside the key it witnesses
   /// and the address the inserter named for their refund. Its lovelace
   /// is the request's residual after the tip — the min-ADA that R-ADA
   /// returns.
   ///
   /// The cage's spending path for it is exactly one shape: spent in a
-  /// `Modify` that consumes a request for this key with
-  /// `Update(0x00, 0x01)` or `Delete(0x00)`, paying its lovelace to an
+  /// `Modify` that consumes a request for this key with edge 2
+  /// (`updateActive`) or edge 4 (`deleteAbsent`), paying its lovelace to an
   /// output at `refund`. Whoever books the name later, the deposit goes
   /// back to whoever witnessed the absence.
   AbsentCustody { key: ByteArray, refund: ByteArray }

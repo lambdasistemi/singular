@@ -52,7 +52,7 @@ import Singular.Registry.TxBuilder.Update (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    edgeInsertAbsent,
     OnChainRoot (..),
     OnChainTokenState (..),
  )
@@ -220,7 +220,7 @@ fork81Spec stateBytes requestBytes = do
                         submit
                         tokenId
                         "cs07-fork-C11"
-                        (OpInsert leafAbsent)
+                        edgeInsertAbsent
                 ctx <- registryContextFor cfg prov tokenId refs
                 res <- try (updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx)
                 case res of
@@ -266,7 +266,7 @@ fork81Spec stateBytes requestBytes = do
     -- every fold would re-prove against the boot state (fold 2 would
     -- submit an empty proof and fail).
     foldInsert cfg prov submit tm tokenId refs k = do
-        _ <- bookEdge cfg prov submit tokenId k (OpInsert leafAbsent)
+        _ <- bookEdge cfg prov submit tokenId k edgeInsertAbsent
         ctx <- registryContextFor cfg prov tokenId refs
         unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
         _ <- submitWithGenesis submit unsigned

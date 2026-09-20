@@ -27,7 +27,6 @@ import Control.Exception (SomeException, try)
 import Control.Monad (when)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Ord (Down (..))
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (
@@ -94,7 +93,8 @@ import Singular.Registry.TxBuilder.Internal
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    edgeInsertAbsent,
+    edgeWitnessTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -471,41 +471,15 @@ processRequest ::
     Trie m ->
     (TxIn, TxOut ConwayEra) ->
     m [ProofStep]
-processRequest trie (_txIn, txOut) = do
-    let OnChainRequest
-            { requestKey = key
-            , requestValue = op
-            } = case extractCageDatum txOut of
-                Just (RequestDatum r) -> r
-                _ ->
-                    error
-                        "processRequest: \
-                        \invalid request datum"
-    case op of
-        OpInsert v -> do
-            _ <- insert trie key v
-            mSteps <- getProofSteps trie key
-            pure (fromMaybe [] mSteps)
-        OpDelete _ -> do
-            mSteps <- getProofSteps trie key
-            _ <-
-                Singular.Registry.Trie.delete
-                    trie
-                    key
-            pure (fromMaybe [] mSteps)
-        OpUpdate _ v -> do
-            mSteps <- getProofSteps trie key
-            _ <-
-                Singular.Registry.Trie.delete
-                    trie
-                    key
-            _ <- insert trie key v
-            pure (fromMaybe [] mSteps)
-        -- #157 C3: a read leaves the leaf exactly where it is, so the
-        -- builder walks the proof for it and changes nothing.
-        OpRead _ -> do
-            mSteps <- getProofSteps trie key
-            pure (fromMaybe [] mSteps)
+processRequest trie (_txIn, txOut) =
+    walkEdge trie (requestKey req) (requestEdge req)
+  where
+    req = case extractCageDatum txOut of
+        Just (RequestDatum r) -> r
+        _ ->
+            error
+                "processRequest: \
+                \invalid request datum"
 
 -- ---------------------------------------------------------
 -- Registry-mode obligations (#157 C5, C6, T1-T6)
@@ -609,26 +583,31 @@ registryDuties cfg pp st ctx reqUtxos processed =
             Just (RequestDatum r) -> Right r
             _ -> Left "registryDuties: a request input carries no request datum"
         let key = requestKey req
-            op = requestValue req
+            edge = requestEdge req
             dest@(destAddr, destHash) = requestDestination req
             Coin held = reqOut ^. coinTxOutL
             floorAda = held - tip
-        case edgeOf op (statedBefore op) of
-            Nothing
-                | rcAllowInadmissible ctx ->
-                    -- The cage will refuse this, which is the point: a row
-                    -- that exists to watch the refusal needs the
-                    -- transaction built, not withheld.
-                    approvalReturn req reqOut
-            Nothing ->
-                Left
-                    ( "registryDuties: "
-                        <> show op
-                        <> " on key "
-                        <> show key
-                        <> " is not one of the seven admissible edges"
-                    )
-            Just edge -> do
+        -- #183: the tag IS the edge, so admissibility is a range and
+        -- nothing is derived from bytes. A tag outside the table owes
+        -- the fold no mint and no destination, because the cage refuses
+        -- it `edge-inadmissible` before either is read.
+        if edge < edgeInsertAbsent || edge > edgeWitnessTerminal
+            then
+                if rcAllowInadmissible ctx
+                    then
+                        -- The cage will refuse this, which is the point:
+                        -- a row that exists to watch the refusal needs
+                        -- the transaction built, not withheld.
+                        approvalReturn req reqOut
+                    else
+                        Left
+                            ( "registryDuties: edge "
+                                <> show edge
+                                <> " on key "
+                                <> show key
+                                <> " is not one of the seven admissible edges"
+                            )
+            else do
                 mints <- mintsFor edge key
                 rest <- dutiesFor edge key dest destAddr destHash floorAda
                 back <- approvalReturn req reqOut

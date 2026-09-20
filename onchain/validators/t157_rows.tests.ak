@@ -2,7 +2,7 @@ use aiken/collection/list
 use aiken/fuzz
 use aiken/merkle_patricia_forestry.{Proof}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
+use cardano/assets.{Value, from_asset, merge, zero}
 use cardano/transaction.{
   Spend,
   InlineDatum, Input, NoDatum, Output, Transaction,
@@ -13,8 +13,7 @@ use state
 use cardano/transaction
 use t157_fixtures as fx
 use types.{
-  Delete, Insert, Modify, Operation, Read, RequestAction, StateDatum, Update,
-  UpdateAction,
+  Modify, RequestAction, StateDatum, UpdateAction,
 }
 
 /// Registry-mode rows for the cage (#157 Gate S): codec, admissibility,
@@ -51,7 +50,7 @@ fn foldOne(
   root: ByteArray,
   nextRoot: ByteArray,
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -64,7 +63,7 @@ fn foldOne(
   fold(
     root,
     nextRoot,
-    [fx.requestInput(0, key, operation, owner, destination, carried, lovelace)],
+    [fx.requestInput(0, key, edge, owner, destination, carried, lovelace)],
     extraInputs,
     outputs,
     mint,
@@ -76,18 +75,18 @@ fn foldOne(
 // The seven admitted rows of C2, each as a complete accepting fold
 // ----------------------------------------------------------------------------
 
-/// `Insert(0x00)`: the absence witness. The token goes to the cage's own
+/// Edge 0: the absence witness. The token goes to the cage's own
 /// custody with the inserter's refund address beside it.
 fn insertAbsent(mint: Value, outputs: List<Output>) -> Bool {
   foldOne(
     fx.emptyRoot(),
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.keyA,
-    Insert(fx.absentLeaf),
+    0,
     fx.inserterKey,
     fx.refundDestination(),
     fx.approval(0, fx.keyA, fx.inserterKey, fx.refundDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     [],
     outputs,
@@ -99,17 +98,17 @@ fn insertAbsentOutputs() -> List<Output> {
   [fx.custodyOutput(fx.keyA, fx.inserterAddress, fx.deposit)]
 }
 
-/// `Insert(0x01)`: a booking on a key nobody has witnessed.
+/// Edge 1: a booking on a key nobody has witnessed.
 fn insertActive(mint: Value, outputs: List<Output>) -> Bool {
   foldOne(
     fx.emptyRoot(),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.keyA,
-    Insert(fx.activeLeaf),
+    1,
     fx.bookerKey,
     fx.bookingDestination(),
     fx.approval(1, fx.keyA, fx.bookerKey, fx.bookingDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     [],
     outputs,
@@ -129,18 +128,18 @@ fn bookingOutputs(policy: ByteArray) -> List<Output> {
   ]
 }
 
-/// `Update(0x00, 0x01)`: booking a key somebody witnessed absent. The
+/// Edge 2: booking a key somebody witnessed absent. The
 /// custody UTxO is spent and its lovelace goes back to the inserter.
 fn updateActive(mint: Value, outputs: List<Output>, custody: List<Input>) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.keyA,
-    Update(fx.absentLeaf, fx.activeLeaf),
+    2,
     fx.bookerKey,
     fx.bookingDestination(),
     fx.approval(2, fx.keyA, fx.bookerKey, fx.bookingDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     custody,
     outputs,
@@ -159,18 +158,18 @@ fn updateActiveOutputs() -> List<Output> {
   )
 }
 
-/// `Update(0x01, 0x02)`: the name is over. The active token rides an
+/// Edge 3: the name is over. The active token rides an
 /// input and burns.
 fn updateTerminal(mint: Value, outputs: List<Output>, held: List<Input>) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.keyA,
-    Update(fx.activeLeaf, fx.terminalLeaf),
+    3,
     fx.bookerKey,
     fx.noDestination(),
     fx.approval(3, fx.keyA, fx.bookerKey, fx.noDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     held,
     outputs,
@@ -182,17 +181,17 @@ fn activeHeld() -> List<Input> {
   [fx.tokenInput(0, fx.activePolicy, fx.keyA)]
 }
 
-/// `Delete(0x00)`: the inserter takes their witness back.
+/// Edge 4: the inserter takes their witness back.
 fn deleteAbsent(mint: Value, outputs: List<Output>, custody: List<Input>) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.emptyRoot(),
     fx.keyA,
-    Delete(fx.absentLeaf),
+    4,
     fx.inserterKey,
     fx.noDestination(),
     fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     custody,
     outputs,
@@ -200,17 +199,17 @@ fn deleteAbsent(mint: Value, outputs: List<Output>, custody: List<Input>) -> Boo
   )
 }
 
-/// `Delete(0x01)`: the key returns to absence from a live registration.
+/// Edge 5: the key returns to absence from a live registration.
 fn deleteActive(mint: Value, outputs: List<Output>, held: List<Input>) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.emptyRoot(),
     fx.keyA,
-    Delete(fx.activeLeaf),
+    5,
     fx.bookerKey,
     fx.noDestination(),
     fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     held,
     outputs,
@@ -218,18 +217,18 @@ fn deleteActive(mint: Value, outputs: List<Output>, held: List<Input>) -> Bool {
   )
 }
 
-/// `Read(0x02)`: the sole operation a terminal leaf admits. It carries
+/// Edge 6: the sole edge a terminal leaf admits. It carries
 /// no approval, leaves the leaf alone and mints the terminal witness.
 fn readTerminal(mint: Value, outputs: List<Output>) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.keyA,
-    Read(fx.terminalLeaf),
+    6,
     fx.bookerKey,
     fx.readDestination(),
     zero,
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     [],
     outputs,
@@ -250,58 +249,15 @@ fn readOutputs() -> List<Output> {
 }
 
 // ============================================================================
-// G1 — the leaf codec
+// G1 — the leaf codec, retired with the `Operation` wire (#183 slice b)
 // ============================================================================
 
-/// Any value byte that is not `0x00`, `0x01` or `0x02` has no leaf at
-/// all, and the request is refused before any proof is checked.
-fn noncodec(operation: Operation) -> Bool {
-  foldOne(
-    fx.emptyRoot(),
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.keyA,
-    operation,
-    fx.inserterKey,
-    fx.refundDestination(),
-    fx.approval(0, fx.keyA, fx.inserterKey, fx.refundDestination()),
-    fx.requestValue,
-    [],
-    [],
-    insertAbsentOutputs(),
-    fx.mintOf(fx.absentPolicy, fx.keyA, 1),
-  )
-}
-
-test t157_g1_insert_noncodec_byte_refuses() fail {
-  noncodec(Insert(#"03"))
-}
-
-test t157_g1_insert_empty_value_refuses() fail {
-  noncodec(Insert(#""))
-}
-
-test t157_g1_update_over_marker_refuses() fail {
-  noncodec(Update(fx.absentLeaf, #"6f766572"))
-}
-
-test t157_g1_delete_spelling_bytes_refuses() fail {
-  noncodec(
-    Delete(#"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-  )
-}
-
-/// The codec is total and admits exactly three bytes: for any other
-/// byte string the decoder says `None`, whatever its length.
-test t157_g1_prop_codec_admits_three_bytes(
-  bytes via fuzz.bytearray_between(0, 4),
-) {
-  let decoded = lib.decodeState(bytes)
-  if bytes == fx.absentLeaf || bytes == fx.activeLeaf || bytes == fx.terminalLeaf {
-    decoded != None
-  } else {
-    decoded == None
-  }
-}
+/// The leaf codec retired with value bytes: edge-only requests state no
+/// bytes, so non-codec bytes are inexpressible and `leaf-codec` is gone.
+/// Mapping: `leaf-codec`, `insert-empty`, `update-over-marker`,
+/// `delete-spelling` traces retire; the codec check (`codecOk`) is removed
+/// and `lib.decodeState` goes with it. The three leaf bytes remain as the
+/// edge table's trie moves (`types.ak`, `lib.leafAbsent/Active/Terminal`).
 
 // ============================================================================
 // G2 — the seven rows accept, and each refuses with its delta off by one
@@ -412,68 +368,85 @@ test t157_g2_prop_delta_reads_off_the_edge(edge via fuzz.int_between(-2, 9)) {
 }
 
 // ============================================================================
-// G3 — every other (operation, bytes) shape refuses, before the proof
+// G3 — every shape that is not one of the seven rows refuses, before the
+// proof and before the approval
 // ============================================================================
 
-/// The edge is judged before the approval and before the proof, so these
-/// rows carry neither: what refuses them is the shape itself.
-fn refuseShape(root: ByteArray, operation: Operation) -> Bool {
+/// Edge-only, the shape of a request IS its tag, so G3 recuts from the
+/// `(operation, bytes)` domain to the tag domain: everything outside
+/// `0..6` refuses `edge-inadmissible`. Mapping of the retired traces:
+/// `update-to-absent` ×2, `update-absent-to-terminal` and
+/// `update-active-to-active` are inexpressible and retire with the wire;
+/// `read-absent` / `read-non-terminal` survive as TRIE faults of edge 6
+/// (`state.readFault`, M3 below); `edge-from-terminal` survives for a
+/// tree-changing edge on a terminal leaf (N10 below). Preservation of
+/// these verdicts across the recut stands in history: the S20 dual-codec
+/// checkpoint folded every retired row under both encodings with
+/// identical outcomes and traces.
+///
+/// The rows below mutate ONLY the tag of `t157_g2_insert_absent_accepts`,
+/// so what refuses them is the tag and nothing else.
+fn insertAbsentTagged(edge: Int) -> Bool {
   foldOne(
-    root,
-    root,
+    fx.emptyRoot(),
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.keyA,
-    operation,
+    edge,
+    fx.inserterKey,
+    fx.refundDestination(),
+    fx.approval(0, fx.keyA, fx.inserterKey, fx.refundDestination()),
+    fx.requestLovelace,
+    [],
+    [],
+    insertAbsentOutputs(),
+    fx.mintOf(fx.absentPolicy, fx.keyA, 1),
+  )
+}
+
+/// The control: at the admitted tag the very same fold accepts, so the
+/// three refusals below cannot be passing on some other defect.
+test t157_g3_tagged_insert_absent_accepts() {
+  insertAbsentTagged(0)
+}
+
+test t157_g3_edge_tag_just_above_the_table_refuses() fail {
+  insertAbsentTagged(7)
+}
+
+test t157_g3_edge_tag_negative_refuses() fail {
+  insertAbsentTagged(-1)
+}
+
+test t157_g3_edge_tag_far_outside_the_table_refuses() fail {
+  insertAbsentTagged(999)
+}
+
+/// The rows above establish that an out-of-range tag does not fold, but
+/// not that the ADMISSION is what stops it: a tag nothing admits also
+/// moves no tokens, so the mint would refuse it a step later anyway.
+///
+/// This row binds the guard itself. The fold below is built so that
+/// EVERY later check passes for tag 7 — the approval is `approvalName(7,
+/// …)`, the tag's delta is empty so the zero mint agrees, it owes no
+/// destination — and the continuation root is the one the trie walk's
+/// final branch would produce, which deletes the live leaf. Without the
+/// admission the fold ACCEPTS and a tag outside the table has silently
+/// deleted a registration; with it the request never reaches the trie.
+test t157_g3_an_unadmitted_tag_never_walks_the_trie() fail {
+  foldOne(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.emptyRoot(),
+    fx.keyA,
+    7,
     fx.bookerKey,
     fx.noDestination(),
+    fx.approval(7, fx.keyA, fx.bookerKey, fx.noDestination()),
+    fx.requestLovelace,
+    [],
+    activeHeld(),
+    [],
     zero,
-    fx.requestValue,
-    [],
-    [],
-    [],
-    zero,
   )
-}
-
-test t157_g3_insert_terminal_refuses() fail {
-  refuseShape(fx.emptyRoot(), Insert(fx.terminalLeaf))
-}
-
-test t157_g3_update_absent_to_absent_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.absentLeaf), Update(fx.absentLeaf, fx.absentLeaf))
-}
-
-test t157_g3_update_active_to_absent_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.activeLeaf), Update(fx.activeLeaf, fx.absentLeaf))
-}
-
-test t157_g3_update_absent_to_terminal_refuses() fail {
-  refuseShape(
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    Update(fx.absentLeaf, fx.terminalLeaf),
-  )
-}
-
-test t157_g3_update_active_to_active_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.activeLeaf), Update(fx.activeLeaf, fx.activeLeaf))
-}
-
-test t157_g3_update_from_terminal_refuses() fail {
-  refuseShape(
-    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
-    Update(fx.terminalLeaf, fx.activeLeaf),
-  )
-}
-
-test t157_g3_delete_terminal_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.terminalLeaf), Delete(fx.terminalLeaf))
-}
-
-test t157_g3_read_absent_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.absentLeaf), Read(fx.absentLeaf))
-}
-
-test t157_g3_read_active_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.activeLeaf), Read(fx.activeLeaf))
 }
 
 // ============================================================================
@@ -506,29 +479,29 @@ fn readInBatch(readProof: Proof) -> Bool {
       fx.requestInput(
         0,
         fx.keyB,
-        Insert(fx.absentLeaf),
+        0,
         fx.inserterKey,
         fx.refundDestination(),
         fx.approval(0, fx.keyB, fx.inserterKey, fx.refundDestination()),
-        fx.requestValue,
+        fx.requestLovelace,
       ),
       fx.requestInput(
         1,
         fx.keyA,
-        Read(fx.terminalLeaf),
+        6,
         fx.bookerKey,
         fx.readDestination(),
         zero,
-        fx.requestValue,
+        fx.requestLovelace,
       ),
       fx.requestInput(
         2,
         fx.keyC,
-        Insert(fx.absentLeaf),
+        0,
         fx.inserterKey,
         fx.refundDestination(),
         fx.approval(0, fx.keyC, fx.inserterKey, fx.refundDestination()),
-        fx.requestValue,
+        fx.requestLovelace,
       ),
     ],
     [],
@@ -616,20 +589,20 @@ fn twoReads(mint: Value, outputs: List<Output>) -> Bool {
       fx.requestInput(
         0,
         fx.keyA,
-        Read(fx.terminalLeaf),
+        6,
         fx.bookerKey,
         fx.readDestination(),
         zero,
-        fx.requestValue,
+        fx.requestLovelace,
       ),
       fx.requestInput(
         1,
         fx.keyA,
-        Read(fx.terminalLeaf),
+        6,
         fx.bookerKey,
         fx.readDestination(),
         zero,
-        fx.requestValue,
+        fx.requestLovelace,
       ),
     ],
     [],
@@ -664,50 +637,127 @@ test t157_g5_zero_consumed_requests_refuses() fail {
 // M3 — only a terminal leaf may be read
 // ============================================================================
 
-test t157_m3_read_of_active_leaf_refuses() fail {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.activeLeaf), Read(fx.activeLeaf))
+/// A read names no value, so which leaf the key binds is a fact of the
+/// TRIE and the refusal is read off it (`state.readFault`) against the
+/// action's own proof. The rows below mutate ONLY that leaf: the request,
+/// the outputs and the minted terminal witness are the accepting read's,
+/// so what refuses them is the leaf and nothing else.
+fn readAt(root: ByteArray) -> Bool {
+  foldOne(
+    root,
+    root,
+    fx.keyA,
+    6,
+    fx.bookerKey,
+    fx.readDestination(),
+    zero,
+    fx.requestLovelace,
+    [],
+    [],
+    readOutputs(),
+    fx.mintOf(fx.terminalPolicy, fx.keyA, 1),
+  )
 }
 
 test t157_m3_read_of_terminal_leaf_accepts() {
-  readTerminal(fx.mintOf(fx.terminalPolicy, fx.keyA, 1), readOutputs())
+  readAt(fx.oneLeaf(fx.keyA, fx.terminalLeaf))
+}
+
+test t157_m3_read_of_active_leaf_refuses() fail {
+  readAt(fx.oneLeaf(fx.keyA, fx.activeLeaf))
+}
+
+test t157_m3_read_of_absent_leaf_refuses() fail {
+  readAt(fx.oneLeaf(fx.keyA, fx.absentLeaf))
+}
+
+/// A key the trie does not bind at all is a third fact, and it did not
+/// exist on the old wire: `Read(0x02)` on an empty trie stated a leaf
+/// the shape gate could judge, where edge 6 states none.
+test t157_m3_read_of_an_unbound_key_refuses() fail {
+  readAt(fx.emptyRoot())
+}
+
+/// A-006's rule: the three reasons come from the construction site the
+/// validator itself reads, because an Aiken test cannot read a `trace`
+/// back. Asserted by NAME, so a site that collapsed to one answer for
+/// every leaf could not go green here.
+test t157_m3_the_read_faults_are_distinct_names() {
+  and {
+    state.readFault(
+      mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+      fx.keyA,
+      [],
+    ) == Some(@"read-absent"),
+    state.readFault(
+      mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
+      fx.keyA,
+      [],
+    ) == Some(@"read-non-terminal"),
+    state.readFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+      @"key-unknown",
+    ),
+  }
 }
 
 // ============================================================================
 // N10 — a terminal leaf admits the read and nothing else
 // ============================================================================
 
-/// Every tree-changing request for a key whose leaf is `0x02`, with any
-/// value, is refused; `Read(0x02)` is the one operation that is not.
-fn onTerminal(operation: Operation) -> Bool {
-  refuseShape(fx.oneLeaf(fx.keyA, fx.terminalLeaf), operation)
+/// The old shape rows retired with the wire: an insert, update or delete
+/// naming `0x02` in its value bytes is inexpressible edge-only. What
+/// survives is the fact those rows were really about — a tree-changing
+/// edge whose key binds `0x02` is refused off the TRIE, against the
+/// action's own proof, before the trie is advanced. Edge 3 has its own
+/// site (`terminalFault`, #177) and inserts on a bound key refuse
+/// `key-exists` (t173), so the rows here are the remaining three:
+/// edges 2, 4 and 5.
+fn onTerminal(edge: Int, owner: ByteArray, carried: Value) -> Bool {
+  foldOne(
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    edge,
+    owner,
+    fx.noDestination(),
+    carried,
+    fx.requestLovelace,
+    [],
+    [],
+    [],
+    zero,
+  )
 }
 
-test t157_n10_update_terminal_to_absent_refuses() fail {
-  onTerminal(Update(fx.terminalLeaf, fx.absentLeaf))
+test t157_n10_update_active_on_terminal_refuses() fail {
+  onTerminal(
+    2,
+    fx.bookerKey,
+    fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+  )
 }
 
-test t157_n10_update_terminal_to_active_refuses() fail {
-  onTerminal(Update(fx.terminalLeaf, fx.activeLeaf))
+test t157_n10_delete_absent_on_terminal_refuses() fail {
+  onTerminal(
+    4,
+    fx.inserterKey,
+    fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
+  )
 }
 
-test t157_n10_update_terminal_to_terminal_refuses() fail {
-  onTerminal(Update(fx.terminalLeaf, fx.terminalLeaf))
+test t157_n10_delete_active_on_terminal_refuses() fail {
+  onTerminal(
+    5,
+    fx.bookerKey,
+    fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
+  )
 }
 
-test t157_n10_delete_terminal_refuses() fail {
-  onTerminal(Delete(fx.terminalLeaf))
-}
-
-test t157_n10_insert_terminal_refuses() fail {
-  onTerminal(Insert(fx.terminalLeaf))
-}
-
-test t157_n10_update_terminal_to_noncodec_refuses() fail {
-  onTerminal(Update(fx.terminalLeaf, #"03"))
-}
-
-test t157_n10_update_terminal_to_empty_refuses() fail {
-  onTerminal(Update(fx.terminalLeaf, #""))
+/// A-006 again: the reason comes from the site the fold reads, since the
+/// rows above can only establish THAT the fold refused. Without it a
+/// guard that halted with some other reason would go unnoticed.
+test t157_n10_terminal_edge_reason_is_edge_from_terminal() {
+  state.terminalEdgeRefusal() == Some(@"edge-from-terminal")
 }
 
 /// The accepting half: the terminal read is the sole operation a `0x02`
@@ -721,24 +771,6 @@ test t157_n10_read_terminal_accepts() {
 // The generic edge driver: one canonical accepting fold per C2 row, with
 // every part of it open to a row's single mutation
 // ============================================================================
-
-fn edgeOperation(edge: Int) -> Operation {
-  if edge == 0 {
-    Insert(fx.absentLeaf)
-  } else if edge == 1 {
-    Insert(fx.activeLeaf)
-  } else if edge == 2 {
-    Update(fx.absentLeaf, fx.activeLeaf)
-  } else if edge == 3 {
-    Update(fx.activeLeaf, fx.terminalLeaf)
-  } else if edge == 4 {
-    Delete(fx.absentLeaf)
-  } else if edge == 5 {
-    Delete(fx.activeLeaf)
-  } else {
-    Read(fx.terminalLeaf)
-  }
-}
 
 fn edgeOwner(edge: Int) -> ByteArray {
   if edge == 0 || edge == 4 {
@@ -863,7 +895,7 @@ fn foldEdgeWith(
     edgeRoot(edge),
     edgeNextRoot(edge),
     fx.keyA,
-    edgeOperation(edge),
+    edge,
     edgeOwner(edge),
     edgeDestination(edge),
     carried,
@@ -880,7 +912,7 @@ fn foldEdge(edge: Int) -> Bool {
   foldEdgeWith(
     edge,
     edgeApproval(edge),
-    fx.requestValue,
+    fx.requestLovelace,
     edgeInputs(edge),
     edgeOutputs(edge),
     edgeMint(edge),
@@ -892,7 +924,7 @@ fn foldEdgeMinting(edge: Int, mint: Value) -> Bool {
   foldEdgeWith(
     edge,
     edgeApproval(edge),
-    fx.requestValue,
+    fx.requestLovelace,
     edgeInputs(edge),
     edgeOutputs(edge),
     mint,
@@ -904,7 +936,7 @@ fn foldEdgeOutputs(edge: Int, outputs: List<Output>) -> Bool {
   foldEdgeWith(
     edge,
     edgeApproval(edge),
-    fx.requestValue,
+    fx.requestLovelace,
     edgeInputs(edge),
     outputs,
     edgeMint(edge),
@@ -916,7 +948,7 @@ fn foldEdgeCarrying(edge: Int, carried: Value) -> Bool {
   foldEdgeWith(
     edge,
     carried,
-    fx.requestValue,
+    fx.requestLovelace,
     edgeInputs(edge),
     edgeOutputs(edge),
     edgeMint(edge),
@@ -1068,11 +1100,11 @@ fn foldAltering(altered: types.State) -> Bool {
         fx.requestInput(
           0,
           fx.keyA,
-          edgeOperation(1),
+          1,
           edgeOwner(1),
           edgeDestination(1),
           edgeApproval(1),
-          fx.requestValue,
+          fx.requestLovelace,
         ),
       ],
       [],
@@ -1229,7 +1261,7 @@ test t157_t1_active_token_in_two_outputs_refuses() fail {
   foldEdgeWith(
     1,
     edgeApproval(1),
-    fx.requestValue,
+    fx.requestLovelace,
     [fx.tokenInput(0, fx.activePolicy, fx.keyA)],
     [
       fx.deliveryOutput(
@@ -1361,7 +1393,7 @@ test t157_t4_custody_left_unspent_refuses() fail {
   foldEdgeWith(
     2,
     edgeApproval(2),
-    fx.requestValue,
+    fx.requestLovelace,
     [],
     edgeOutputs(2),
     edgeMint(2),
@@ -1422,15 +1454,15 @@ fn spendCustody(
   spendCustodyIn(key, refund, True, otherInputs, outputs)
 }
 
-fn consumingRequest(key: ByteArray, operation: Operation) -> Input {
+fn consumingRequest(key: ByteArray, edge: Int) -> Input {
   fx.requestInput(
     0,
     key,
-    operation,
+    edge,
     fx.bookerKey,
     fx.bookingDestination(),
     zero,
-    fx.requestValue,
+    fx.requestLovelace,
   )
 }
 
@@ -1447,7 +1479,7 @@ test t157_t5_fold_for_another_key_refuses() fail {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
-    [consumingRequest(fx.keyB, Update(fx.absentLeaf, fx.activeLeaf))],
+    [consumingRequest(fx.keyB, 2)],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
   )
 }
@@ -1456,7 +1488,7 @@ test t157_t5_fold_whose_request_is_a_read_refuses() fail {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
-    [consumingRequest(fx.keyA, Read(fx.terminalLeaf))],
+    [consumingRequest(fx.keyA, 6)],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
   )
 }
@@ -1471,7 +1503,7 @@ test t157_t5_request_without_authenticated_state_modify_refuses() fail {
     fx.keyA,
     fx.inserterAddress,
     False,
-    [consumingRequest(fx.keyA, Update(fx.absentLeaf, fx.activeLeaf))],
+    [consumingRequest(fx.keyA, 2)],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
   )
 }
@@ -1480,7 +1512,7 @@ test t157_t5_fold_consuming_this_key_accepts() {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
-    [consumingRequest(fx.keyA, Update(fx.absentLeaf, fx.activeLeaf))],
+    [consumingRequest(fx.keyA, 2)],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
   )
 }
@@ -1546,12 +1578,12 @@ test t157_v1_funded_request_accepts() {
 // V2 — reads retract, exactly as inserts do
 // ============================================================================
 
-fn retract(operation: Operation, signer: ByteArray) -> Bool {
+fn retract(edge: Int, signer: ByteArray) -> Bool {
   let root = fx.oneLeaf(fx.keyA, fx.terminalLeaf)
   request.request.spend(
     fx.cagePolicy,
     fx.cageTokenName(),
-    Some(fx.requestDatum(fx.keyA, operation, fx.bookerKey, fx.readDestination())),
+    Some(fx.requestDatum(fx.keyA, edge, fx.bookerKey, fx.readDestination())),
     types.Retract(fx.stateRef),
     fx.requestRef(0),
     Transaction {
@@ -1563,11 +1595,11 @@ fn retract(operation: Operation, signer: ByteArray) -> Bool {
         fx.requestInput(
           0,
           fx.keyA,
-          operation,
+          edge,
           fx.bookerKey,
           fx.readDestination(),
           zero,
-          fx.requestValue,
+          fx.requestLovelace,
         ),
       ],
     },
@@ -1575,16 +1607,16 @@ fn retract(operation: Operation, signer: ByteArray) -> Bool {
 }
 
 test t157_v2_read_retracted_by_its_owner_accepts() {
-  retract(Read(fx.terminalLeaf), fx.bookerKey)
+  retract(6, fx.bookerKey)
 }
 
 test t157_v2_read_retracted_by_a_stranger_refuses() fail {
-  retract(Read(fx.terminalLeaf), fx.inserterKey)
+  retract(6, fx.inserterKey)
 }
 
 /// The completion-only custody still binds updates: they do not retract.
 test t157_v2_update_retract_refuses() fail {
-  retract(Update(fx.activeLeaf, fx.terminalLeaf), fx.bookerKey)
+  retract(3, fx.bookerKey)
 }
 
 /// NOTE-004: two registries share the state script. The neighbour being
@@ -1604,7 +1636,7 @@ test t157_t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
       inputs: [
         fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit),
         fx.foreignStateInput(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
-        consumingRequest(fx.keyA, Update(fx.absentLeaf, fx.activeLeaf)),
+        consumingRequest(fx.keyA, 2),
       ],
       outputs: [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
       redeemers: [Pair(Spend(fx.foreignStateRef), modify)],
@@ -1632,11 +1664,11 @@ test t157_t5_request_at_the_request_script_accepts() {
         fx.deployedRequestInput(
           0,
           fx.keyA,
-          Update(fx.absentLeaf, fx.activeLeaf),
+          2,
           fx.bookerKey,
           fx.bookingDestination(),
           zero,
-          fx.requestValue,
+          fx.requestLovelace,
         ),
       ],
       outputs: [fx.paymentOutput(fx.inserterAddress, fx.deposit)],

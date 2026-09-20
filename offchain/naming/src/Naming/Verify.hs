@@ -27,7 +27,7 @@ module Naming.Verify (
 
 import Data.ByteString (ByteString)
 
-import Naming.Register (overMarkerFor, representativeName)
+import Naming.Register (representativeName)
 
 -- | Read one naming token from complete non-ADA value triples. The caller
 -- supplies the deployment's allowed approval and representative policies.
@@ -170,14 +170,16 @@ data CompleteEvidence = CompleteEvidence
     Co-creation (NOTE-029): these two must be equal — the folded
     request is the retire's own, not one queued anywhere else.
     -}
-    , ceReqOld :: ByteString
-    {- ^ Folded request's old value (request datum bytes): the key's
-    pre-update value, which must be the burned asset itself.
+    , ceReqKey :: ByteString
+    {- ^ Folded request's registry key (request datum bytes): must be
+    the burned asset's own name (#157 D-ASSET, the asset name IS the
+    key).
     -}
-    , ceReqNew :: ByteString
-    {- ^ Folded request's new value (request datum bytes): must be
-    exactly the Over marker for the burned asset (NOTE-031 — the
-    value relation scripts check on ledger).
+    , ceReqEdge :: Integer
+    {- ^ Folded request's C2 row index (request datum bytes): must be
+    the retirement, edge 3 `updateTerminal` (#183). The request states
+    no values any more, so the move it asks for is the tag itself, and
+    that tag is what the cage reads and the scripts check on ledger.
     -}
     , ceRepPolicy :: ByteString
     -- ^ Verified representative policy (from the retire unit).
@@ -235,13 +237,15 @@ verifyCompletion ev = do
     -- transaction as the spent custody (a request queued anywhere
     -- else, or no request at all, refuses).
     unlessEq "folded request is not the retire's own (creator mismatch)" (ceRequestTxid ev) (ceCustodyTxid ev)
-    -- Value relation: the folded Update moves the burned asset to
-    -- its Over marker (what the scripts check on ledger).
-    unlessEq "folded request old value is not the burned asset" (ceReqOld ev) (ceRepName ev)
+    -- Edge relation (#183): the folded request retires the burned
+    -- asset's own key, and the move it names is the retirement. The
+    -- request carries no values, so this is the whole of what it
+    -- states about the move.
+    unlessEq "folded request is not for the burned asset's key" (ceReqKey ev) (ceRepName ev)
     unlessEq
-        "folded request does not write the Over marker"
-        (ceReqNew ev)
-        (overMarkerFor (ceRepName ev))
+        "folded request does not name the retirement edge"
+        (ceReqEdge ev)
+        3
     -- Burn: the spent custody triple is the verified pair, and the
     -- mint field burns exactly it once.
     unlessEq "spent custody policy is not the verified rep policy" (ceCustodyPolicy ev) (ceRepPolicy ev)

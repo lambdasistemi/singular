@@ -33,7 +33,6 @@ module Singular.Registry.TxBuilder.ConnectedFold (
 
 import Control.Exception (SomeException, try)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Void (Void)
@@ -75,7 +74,6 @@ import Singular.Registry.Trie (
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -233,29 +231,12 @@ processRequest ::
     Trie m ->
     (TxIn, TxOut ConwayEra) ->
     m [ProofStep]
-processRequest trie (_txIn, txOut) = do
-    let req = case extractCageDatum txOut of
-            Just (RequestDatum r) -> r
-            _ -> error "connectedFold: invalid request datum"
-    case requestValue req of
-        OpInsert v -> do
-            _ <- insert trie (requestKey req) v
-            mSteps <- getProofSteps trie (requestKey req)
-            pure (fromMaybe [] mSteps)
-        OpDelete _ -> do
-            mSteps <- getProofSteps trie (requestKey req)
-            _ <- Singular.Registry.Trie.delete trie (requestKey req)
-            pure (fromMaybe [] mSteps)
-        OpUpdate _ v -> do
-            mSteps <- getProofSteps trie (requestKey req)
-            _ <- Singular.Registry.Trie.delete trie (requestKey req)
-            _ <- insert trie (requestKey req) v
-            pure (fromMaybe [] mSteps)
-        -- #157 C3: a read leaves the leaf exactly where it is, so the
-        -- builder walks the proof for it and changes nothing.
-        OpRead _ -> do
-            mSteps <- getProofSteps trie (requestKey req)
-            pure (fromMaybe [] mSteps)
+processRequest trie (_txIn, txOut) =
+    walkEdge trie (requestKey req) (requestEdge req)
+  where
+    req = case extractCageDatum txOut of
+        Just (RequestDatum r) -> r
+        _ -> error "connectedFold: invalid request datum"
 
 -- | Extract old state, build the new state output and the cage script.
 prepareState ::

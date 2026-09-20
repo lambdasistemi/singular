@@ -16,7 +16,7 @@ use cardano/transaction
 use lib
 use lib.{approvalName}
 use types.{
-  AbsentCustody, CageDatum, Operation, Request, RequestDatum, State,
+  AbsentCustody, CageDatum, Request, RequestDatum, State,
   StateDatum, TokenId,
 }
 
@@ -61,7 +61,7 @@ pub const tip: Int = 1_000_000
 /// returns it to the destination (#157 T6, want-ledger R4).
 pub const deposit: Int = 2_000_000
 
-pub const requestValue: Int = tip + deposit
+pub const requestLovelace: Int = tip + deposit
 
 pub const stateLovelace: Int = 5_000_000
 
@@ -369,9 +369,12 @@ pub fn requestRef(index: Int) -> OutputReference {
   OutputReference { transaction_id: #"52455155455354", output_index: index }
 }
 
+/// The request datum on the final wire (#183 slice b): the C2 row index
+/// (`edge` 0-6) with no value bytes and no `tip`; `deposit` is the value
+/// above the tip the request rides with (`held - state.tip`).
 pub fn requestDatum(
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
 ) -> CageDatum {
@@ -380,19 +383,22 @@ pub fn requestDatum(
       requestToken: cageToken,
       requestOwner: owner,
       requestKey: key,
-      requestValue: operation,
-      tip,
+      edge,
       submitted_at: 0,
       destination,
+      deposit,
     },
   )
 }
 
 /// A request UTxO carrying its approval and its deposit.
+/// `lovelace` must be `tip + deposit`; the fold checks `held >= tip` and
+/// `deposit == held - tip`. Non-read rows must carry their approval;
+/// reads carry none (C4).
 pub fn requestInput(
   index: Int,
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -403,7 +409,7 @@ pub fn requestInput(
     output: Output {
       address: cageAddress(),
       value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(requestDatum(key, operation, owner, destination)),
+      datum: InlineDatum(requestDatum(key, edge, owner, destination)),
       reference_script: None,
     },
   }
@@ -633,7 +639,7 @@ pub fn requestAddress() -> address.Address {
 pub fn deployedRequestInput(
   index: Int,
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -644,7 +650,7 @@ pub fn deployedRequestInput(
     output: Output {
       address: requestAddress(),
       value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(requestDatum(key, operation, owner, destination)),
+      datum: InlineDatum(requestDatum(key, edge, owner, destination)),
       reference_script: None,
     },
   }

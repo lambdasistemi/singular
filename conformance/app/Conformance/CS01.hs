@@ -63,10 +63,10 @@ import Singular.Registry.TxBuilder.Internal (
 
 import Singular.Registry.Types (
     CageDatum (..),
+    edgeInsertActive,
     Migration (..),
     MintRedeemer (..),
     Neighbor (..),
-    OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenId (..),
@@ -175,7 +175,7 @@ checkAll defs titles spoil = do
             [ ("OnChainTokenId", checkTokenId defs)
             , ("OnChainTxOutRef", checkTxOutRef defs)
             , ("OnChainRoot", checkRoot defs)
-            , ("OnChainOperation", checkOperation defs)
+            , ("Request edge", checkEdge defs)
             , ("OnChainRequest", checkRequest defs)
             , ("OnChainTokenState", checkState defs)
             , ("CageDatum", checkCageDatum defs)
@@ -217,8 +217,8 @@ sampleRequest =
         { requestToken = sampleToken
         , requestOwner = BuiltinByteString (BS.replicate 28 0)
         , requestKey = "cs01-key"
-        , requestValue = OpInsert "cs01-value"
-        , requestFee = 1000000
+        , requestEdge = edgeInsertActive
+        , requestDeposit = 1000000
         , requestSubmittedAt = 1234567890
         , requestDestination = ("cs01-address", "cs01-datum-hash")
         }
@@ -316,26 +316,36 @@ checkRoot defs = do
         B _ -> emit "index-OnChainRoot" "bytes ok (no constructor)"
         other -> failWith ("CS01: OnChainRoot is not bytes: " <> show other)
 
-checkOperation :: Map.Map Text Schema -> IO ()
-checkOperation defs = do
-    let ins = OpInsert "v1"
-        del = OpDelete "v1"
-        upd = OpUpdate "old" "new"
-        rd = OpRead "\x02"
-    requireRoundTripReal ins "OpInsert"
-    requireRoundTripReal del "OpDelete"
-    requireRoundTripReal upd "OpUpdate"
-    requireRoundTripReal rd "OpRead"
-    requireSchema defs "types/Operation" (toD ins) "OpInsert"
-    requireSchema defs "types/Operation" (toD del) "OpDelete"
-    requireSchema defs "types/Operation" (toD upd) "OpUpdate"
-    requireSchema defs "types/Operation" (toD rd) "OpRead"
-    requireIndex (toD ins) 0 "OpInsert"
-    requireIndex (toD del) 1 "OpDelete"
-    requireIndex (toD upd) 2 "OpUpdate"
-    -- #157 C1: the read is APPENDED at index 3; the three published
-    -- indices do not move, and this row is what says so.
-    requireIndex (toD rd) 3 "OpRead"
+{- | The C2 row index on the wire (#183). There is no standalone
+operation type any more: the edge is an integer field of the request,
+and what a consumer has to agree about is WHERE it sits and that any
+tag travels — including one the cage refuses.
+-}
+checkEdge :: Map.Map Text Schema -> IO ()
+checkEdge defs = do
+    let at n r = case toD r of
+            Constr 0 fields | length fields > n -> Just (fields !! n)
+            _ -> Nothing
+    case at 3 sampleRequest of
+        Just (I e)
+            | e == requestEdge sampleRequest ->
+                emit "edge-field" "the edge is the integer at request field 3"
+        other -> failWith ("CS01: request field 3 is not the edge: " <> show other)
+    case at 4 sampleRequest of
+        Just (I d)
+            | d == requestDeposit sampleRequest ->
+                emit "deposit-field" "the deposit is the integer at request field 4"
+        other -> failWith ("CS01: request field 4 is not the deposit: " <> show other)
+    -- Every admitted row, and one the cage refuses: a consumer that
+    -- could not encode an inadmissible tag could not exercise the
+    -- refusal that answers it.
+    mapM_
+        ( \e -> do
+            let r = sampleRequest{requestEdge = e}
+            requireRoundTripReal r ("OnChainRequest-edge-" <> show e)
+            requireSchema defs "types/Request" (toD r) ("OnChainRequest-edge-" <> show e)
+        )
+        ([0 .. 6] <> [7])
 
 checkRequest :: Map.Map Text Schema -> IO ()
 checkRequest defs = do
@@ -486,25 +496,17 @@ instance RealFromData OnChainRoot where
     realFromData (B bs) = Just (OnChainRoot bs)
     realFromData _ = Nothing
 
-instance RealFromData OnChainOperation where
-    realFromData (Constr 0 [B v]) = Just (OpInsert v)
-    realFromData (Constr 1 [B v]) = Just (OpDelete v)
-    realFromData (Constr 2 [B o, B n]) = Just (OpUpdate o n)
-    realFromData (Constr 3 [B v]) = Just (OpRead v)
-    realFromData _ = Nothing
-
 instance RealFromData OnChainRequest where
     realFromData
-        (Constr 0 [tok, B own, B k, val, I fee, I sub, List [B da, B dh]]) = do
+        (Constr 0 [tok, B own, B k, I edge, I dep, I sub, List [B da, B dh]]) = do
             tk <- realFromData tok :: Maybe OnChainTokenId
-            vv <- realFromData val :: Maybe OnChainOperation
             Just
                 OnChainRequest
                     { requestToken = tk
                     , requestOwner = BuiltinByteString own
                     , requestKey = k
-                    , requestValue = vv
-                    , requestFee = fee
+                    , requestEdge = edge
+                    , requestDeposit = dep
                     , requestSubmittedAt = sub
                     , -- #157 D-DEST: appended last, and a two-element list
                       -- exactly as Aiken encodes a tuple.
@@ -605,7 +607,7 @@ extractTitles val =
 checkFieldTitles :: TitleMap -> IO ()
 checkFieldTitles titles = do
     expectFields titles "types/State" "State" ["root", "tip", "process_time", "retract_time", "application_policy", "active_policy", "absent_policy", "terminal_policy"]
-    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "requestValue", "tip", "submitted_at", "destination"]
+    expectFields titles "types/Request" "Request" ["requestToken", "requestOwner", "requestKey", "edge", "deposit", "submitted_at", "destination"]
     expectFields titles "types/Migration" "Migration" ["oldPolicy", "tokenId"]
     expectFields titles "types/TokenId" "TokenId" ["assetName"]
     expectFields titles "cardano/transaction/OutputReference" "OutputReference" ["transaction_id", "output_index"]

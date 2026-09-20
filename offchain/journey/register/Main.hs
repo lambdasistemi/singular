@@ -247,12 +247,11 @@ import Singular.Registry.TxBuilder.Internal (
     toPlcData,
     txInToRef,
  )
-import Singular.Registry.TxBuilder.Request (requestInsertImpl)
+import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.Retract (retractRequestAtTipImpl)
 import Singular.Registry.Types (
-    OnChainOperation (..),
     OnChainTxOutRef,
     CageDatum (..),
     OnChainRequest (..),
@@ -818,7 +817,7 @@ fundPublicLifecycle env = do
         tokens = MultiAsset (Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1))
         claim = scriptOut pp (envAppAddr env) 0 tokens (keyDatum key)
         deposit = Lifecycle.minimumCoin pp claim
-        request = Lifecycle.requestDeposit pp (envCfg env) (envTok env) (envFolderAddr env) (envSpelling env) (OpInsert (representativeName (envSpelling env))) now
+        request = Lifecycle.requestLockedCoin pp (envCfg env) (envTok env) (envFolderAddr env) (envSpelling env) edgeInsertActive now
         outs =
             [ Lifecycle.fundedOutput pp refs (envPartyAddr env) deposit
             , Lifecycle.collateralOutput pp refs (envPartyAddr env)
@@ -1114,7 +1113,7 @@ submitRegistryRequest env spelling value = do
     let cfg = envCfg env
         tok = envTok env
     unsigned <-
-        requestInsertImpl cfg (envProv env) (Coin 1_000_000) tok spelling value (envFolderAddr env)
+        requestEdgeImpl cfg (envProv env) (Coin 1_000_000) tok spelling edgeInsertActive (envFolderAddr env)
     let signed = addKeyWitness (mkSignKey folderSeed) unsigned
     result <- submitRetain env ("blueprint-request-" <> show spelling) signed
     case result of
@@ -1333,7 +1332,7 @@ findPendingInsert env ks = do
         isRequest (_, out) = case extractCageDatum out of
             Just (RequestDatum r) ->
                 requestKey r == keySpelling ks
-                    && requestValue r == OpInsert (keyRepName ks)
+                    && requestEdge r == edgeInsertActive
             _ -> False
     case (List.find isClaim claims, List.find isRequest requests) of
         (Just claim, Just request) -> pure (Just (claim, request))

@@ -10,7 +10,7 @@ use cardano/assets.{PolicyId, Value, from_asset, policies, tokens}
 use cardano/transaction.{
   Datum, InlineDatum, Input, NoDatum, Output, OutputReference,
 }
-use types.{Delete, Insert, Operation, Read, TokenId, Update}
+use types.{TokenId}
 
 /// Helper functions for token handling in the MPF Cage validator.
 ///
@@ -309,103 +309,12 @@ pub const kindActive: Int = 1
 
 pub const kindTerminal: Int = 2
 
-/// The leaf codec (#157 C1, D-CODEC): the value of every known leaf is
-/// exactly one byte — `0x00` Absent, `0x01` Active, `0x02` Terminal.
-/// Total, and the ONLY codec: a request whose value bytes are anything
-/// else has no leaf at all and is refused `leaf-codec` before any proof
-/// is checked. The naming-era values — a representative name, the `over`
-/// marker — are not leaves and decode to `None` here.
-pub fn decodeState(bytes: ByteArray) -> Option<Int> {
-  if bytes == leafAbsent {
-    Some(kindAbsent)
-  } else if bytes == leafActive {
-    Some(kindActive)
-  } else if bytes == leafTerminal {
-    Some(kindTerminal)
-  } else {
-    None
-  }
-}
-
-/// The before-leaf a request states for itself: `None` for an insert
-/// (which claims the key is absent from the trie, and whose proof is
-/// what establishes that), the stated old value for every other
-/// operation. The proof, not this function, ties the claim to the trie.
-pub fn statedBefore(op: Operation) -> Option<ByteArray> {
-  when op is {
-    Insert(_) -> None
-    Delete(value) -> Some(value)
-    Update(old, _) -> Some(old)
-    Read(value) -> Some(value)
-  }
-}
-
-/// The C2 row index of `(operation, before-leaf)`, or `None` for every
-/// shape the cage refuses (#157 C2). `before` is the DECODED before-leaf
-/// — `statedBefore` piped through `decodeState` — so a non-codec byte
-/// never reaches here; `state.ak` refuses it first with its own reason.
-///
-/// The seven rows, and nothing else:
-///
-/// | request            | before | after  | edge |
-/// |--------------------|--------|--------|------|
-/// | `Insert(0x00)`     | none   | `0x00` | 0    |
-/// | `Insert(0x01)`     | none   | `0x01` | 1    |
-/// | `Update(0x00,0x01)`| `0x00` | `0x01` | 2    |
-/// | `Update(0x01,0x02)`| `0x01` | `0x02` | 3    |
-/// | `Delete(0x00)`     | `0x00` | none   | 4    |
-/// | `Delete(0x01)`     | `0x01` | none   | 5    |
-/// | `Read(0x02)`       | `0x02` | `0x02` | 6    |
-pub fn edgeOf(op: Operation, before: Option<Int>) -> Option<Int> {
-  when op is {
-    Insert(value) ->
-      when (before, decodeState(value)) is {
-        (None, Some(kind)) ->
-          if kind == kindAbsent {
-            Some(edgeInsertAbsent)
-          } else if kind == kindActive {
-            Some(edgeInsertActive)
-          } else {
-            None
-          }
-        _ -> None
-      }
-    Update(_, new) ->
-      when (before, decodeState(new)) is {
-        (Some(from), Some(to)) ->
-          if from == kindAbsent && to == kindActive {
-            Some(edgeUpdateActive)
-          } else if from == kindActive && to == kindTerminal {
-            Some(edgeUpdateTerminal)
-          } else {
-            None
-          }
-        _ -> None
-      }
-    Delete(_) ->
-      when before is {
-        Some(kind) ->
-          if kind == kindAbsent {
-            Some(edgeDeleteAbsent)
-          } else if kind == kindActive {
-            Some(edgeDeleteActive)
-          } else {
-            None
-          }
-        None -> None
-      }
-    Read(_) ->
-      when before is {
-        Some(kind) ->
-          if kind == kindTerminal {
-            Some(edgeWitnessTerminal)
-          } else {
-            None
-          }
-        None -> None
-      }
-  }
-}
+// #183 slice b: requests carry an edge index, not value bytes. The leaf
+// bytes above are what each edge's trie move reads and writes, and the
+// seven C2 rows (table in `types.ak`) are named by the request's own tag,
+// admitted `0..6` by the fold before approval. Nothing derives an edge
+// from bytes any more, so `decodeState`, `statedBefore` and `edgeOf`
+// retire with the `Operation` wire.
 
 /// The token column of C2, read off the edge and nothing else (#157 C5):
 /// `(kind, quantity)` pairs the fold sums per key and the mint must then
@@ -553,27 +462,11 @@ pub fn paysAddress(address: ByteArray, out: Output) -> Bool {
   }
 }
 
-/// Why an insert edge is refused at a leaf, or `None` when it is
-/// admitted (#173 A-006, Lean L4 `insert_active_transaction_row`).
-///
-/// This exists so the DISTINCTION between the two refusals of #173 is
-/// executable. An Aiken test cannot read a `trace` back, so a row that
-/// only observes "the fold refused" cannot tell `key-exists` from
-/// `insert-terminal` — and those are claims about different facts.
-/// `state.ak`'s `refuseEdge` delegates here, so there is one
-/// construction site for the reason and the tests assert the same value
-/// the validator traces.
-///
-/// `before` is the leaf the REQUEST STATES, so this site names a fault
-/// of the REQUEST — an insert whose value byte is not a leaf this edge
-/// can create. `refuseEdge` calls it only for an already inadmissible
-/// edge, so the answer is always `Some`.
-///
-/// Occupancy is a fault of the TRIE, not of the request, and has its
-/// own construction site: see `occupiedRefusal` (A-009).
-pub fn insertRefusal(_edge: Int, _before: Option<Int>) -> Option<String> {
-  Some(@"insert-terminal")
-}
+// #183 slice b: `insertRefusal` retires with the `Operation` wire. An
+// insert carries no value byte, so the request fault `insert-terminal`
+// is inexpressible; an insert on a key the trie already binds is refused
+// `key-exists` at `occupiedRefusal` below, which is now the only insert
+// refusal left to name.
 
 /// The reason an insert on a key the trie already binds is refused
 /// (#173 A-006, A-009; interface §2; Lean `refusal`, which answers

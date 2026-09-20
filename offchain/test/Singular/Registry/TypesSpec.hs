@@ -53,13 +53,16 @@ genTxOutRef =
 genRoot :: Gen OnChainRoot
 genRoot = OnChainRoot <$> genBS32
 
-genOperation :: Gen OnChainOperation
-genOperation =
-    oneof
-        [ OpInsert <$> genBS
-        , OpDelete <$> genBS
-        , OpUpdate <$> genBS <*> genBS
-        , OpRead <$> genBS
+{- | A C2 row index (#183). The seven admitted rows most of the time,
+and a tag outside the table some of the time: the wire is a plain
+integer, and a request the cage will refuse `edge-inadmissible` still
+has to encode and decode, or no row could ever build one.
+-}
+genEdge :: Gen Edge
+genEdge =
+    frequency
+        [ (7, chooseInteger (0, 6))
+        , (3, chooseInteger (-4, 40))
         ]
 
 genNeighbor :: Gen Neighbor
@@ -90,7 +93,7 @@ genRequest =
         <$> genTokenId
         <*> genBBS28
         <*> genBS
-        <*> genOperation
+        <*> genEdge
         <*> genNonNeg
         <*> genNonNeg
         <*> genDestination
@@ -159,6 +162,15 @@ roundtrips ::
 roundtrips x =
     fromBuiltinData (toBuiltinData x) === Just x
 
+-- | The nth field of a value's own Constr encoding, if it has one.
+fieldAt :: (ToData a) => Int -> a -> Maybe Data
+fieldAt n x =
+    let BuiltinData d = toBuiltinData x
+     in case d of
+            Constr _ fields
+                | length fields > n -> Just (fields !! n)
+            _ -> Nothing
+
 -- | Extract constructor index from Data encoding.
 constrIndex :: (ToData a) => a -> Integer
 constrIndex x =
@@ -196,27 +208,27 @@ spec = do
             property $
                 forAll genRoot roundtrips
 
-    describe "OnChainOperation" $ do
-        it "roundtrips via ToData/FromData" $
+    describe "Request edge and deposit (#183)" $ do
+        -- The cage reads the tag out of field 3 and the deposit out of
+        -- field 4 of the request's own Constr 0. A builder that wrote
+        -- them anywhere else would make every fold refuse, so the
+        -- POSITION is the claim, not just the roundtrip.
+        it "the edge is the integer at field 3" $
             property $
-                forAll genOperation roundtrips
-        it "OpInsert uses constructor 0" $
+                forAll genRequest $
+                    \r -> fieldAt 3 r === Just (I (requestEdge r))
+        it "the deposit is the integer at field 4" $
             property $
-                forAll (OpInsert <$> genBS) $
-                    \x -> constrIndex x === 0
-        it "OpDelete uses constructor 1" $
+                forAll genRequest $
+                    \r -> fieldAt 4 r === Just (I (requestDeposit r))
+        -- A tag the cage refuses must still travel: a row that watches
+        -- `edge-inadmissible` has to be able to build one.
+        it "an inadmissible tag roundtrips like any other" $
             property $
-                forAll (OpDelete <$> genBS) $
-                    \x -> constrIndex x === 1
-        it "OpUpdate uses constructor 2" $
-            property $
-                forAll (OpUpdate <$> genBS <*> genBS) $
-                    \x -> constrIndex x === 2
-        -- #157 C1: the read is APPENDED; 0, 1 and 2 do not move.
-        it "OpRead uses constructor 3" $
-            property $
-                forAll (OpRead <$> genBS) $
-                    \x -> constrIndex x === 3
+                forAll (chooseInteger (7, 40)) $
+                    \e ->
+                        forAll genRequest $
+                            \r -> roundtrips r{requestEdge = e}
 
     describe "Neighbor" $ do
         it "roundtrips via ToData/FromData" $

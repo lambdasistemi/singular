@@ -14,7 +14,7 @@ use lib.{assetName, valueFromToken}
 use request
 use state
 use types.{
-  Burning, CageDatum, Contribute, End, Insert, Migrating, Migration, MintRedeemer,
+  Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
   TokenId,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
   Sweep, UpdateAction, UpdateRedeemer,
@@ -43,7 +43,7 @@ use types.{
 /// - **State UTxO** (`update`): holds `testToken` at `testScriptAddress` with
 ///   an empty MPF root (no owner field exists).
 ///
-/// - **Request UTxO** (`request`): an Insert("42") request targeting `testToken`,
+/// - **Request UTxO** (`request`): an edge-1 (insertActive) request targeting `testToken`,
 ///   submitted at time 0.
 ///
 /// - **Expected output** (`output`): the State UTxO after processing the Insert,
@@ -174,9 +174,9 @@ const rawStateDatum = StateDatum(state)
 // Option-wrapped datum for the validator's maybeDatum parameter
 const stateDatum = Some(rawStateDatum)
 
-// Test constants: a Request that inserts key "42" with value "42"
+// Test constants: a Request that inserts key "42" (edge 1, value `0x01`)
 /// Registry-mode shape for this module's shared fold fixture (#157):
-/// the request books `"42"` — `Insert(0x01)` — so the fixture describes
+/// the request books `"42"` at edge 1 — so the fixture describes
 /// a real edge of C2 instead of the pre-#157 "any bytes" registry. Every
 /// `Modify` row below therefore refuses for ITS OWN reason rather than
 /// at the leaf codec.
@@ -243,9 +243,9 @@ const aRequest =
     Request {
       requestToken: testToken,
       requestKey: legacyKey,
-      requestValue: Insert(#"01"),
+      edge: 1,
       requestOwner: "owner",
-      tip: 0,
+      deposit: 0,
       submitted_at: 0,
       destination: legacyDestination,
     },
@@ -500,9 +500,9 @@ test mint_request_datum() fail {
           Request {
             requestToken: token,
             requestKey: "k",
-            requestValue: Insert("v"),
+            edge: 1,
             requestOwner: "owner",
-            tip: 0,
+            deposit: 0,
             submitted_at: 0,
             destination: noDestination,
           },
@@ -632,9 +632,9 @@ test contribute_wrong_token() fail {
       Request {
         requestToken: TokenId { assetName: "different_asset" },
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "owner",
-        tip: 0,
+        deposit: 0,
         submitted_at: 0,
         destination: noDestination,
       },
@@ -941,9 +941,9 @@ test modify_skip_other_token() fail {
       Request {
         requestToken: TokenId { assetName: "other_token" },
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "someone",
-        tip: 0,
+        deposit: 0,
         submitted_at: 0,
         destination: noDestination,
       },
@@ -1413,9 +1413,9 @@ test prop_retract_requires_owner(signer via owner_fuzzer()) fail once {
       Request {
         requestToken: testToken,
         requestKey: "k",
-        requestValue: Insert("v"),
+        edge: 1,
         requestOwner: "the_real_owner_key_aaaaaaaaaa",
-        tip: 0,
+        deposit: 0,
         submitted_at: 0,
         destination: noDestination,
       },
@@ -1883,9 +1883,9 @@ const feeRequest =
     Request {
       requestToken: testToken,
       requestKey: legacyKey,
-      requestValue: Insert(#"01"),
+      edge: 1,
       requestOwner: feeOwner,
-      tip: testFee,
+      deposit: 1_500_000,
       submitted_at: 0,
       destination: legacyDestination,
     },
@@ -1998,9 +1998,26 @@ const capturedRefundRequest =
     Request {
       requestToken: testToken,
       requestKey: "42",
-      requestValue: Insert("42"),
+      edge: 1,
       requestOwner: "requester_key_aaaaaaaaaaaaaaa",
-      tip: capturedRefundTip,
+      deposit: 3_020_709,
+      submitted_at: 0,
+      destination: noDestination,
+    },
+  )
+
+/// Top-up twin of the captured-refund datum for the small-lodger row
+/// (#183 slice b): the same 2M-tip state with 2.5M lovelace, so 500k is
+/// owed. The datum binds the deposit, so each held amount needs its own
+/// datum — unlike the old tip field, one datum cannot ride two holdings.
+const topupRefundRequest =
+  RequestDatum(
+    Request {
+      requestToken: testToken,
+      requestKey: "42",
+      edge: 1,
+      requestOwner: "requester_key_aaaaaaaaaaaaaaa",
+      deposit: 500_000,
       submitted_at: 0,
       destination: noDestination,
     },
@@ -2034,7 +2051,7 @@ const topupSmallRequestInput =
     output: Output {
       address: testScriptAddress,
       value: from_lovelace(2_500_000),
-      datum: InlineDatum(capturedRefundRequest),
+      datum: InlineDatum(topupRefundRequest),
       reference_script: None,
     },
   }
@@ -2051,9 +2068,9 @@ const crossedRequest =
     Request {
       requestToken: testToken,
       requestKey: "43",
-      requestValue: Insert("43"),
+      edge: 1,
       requestOwner: "requester_key_bbbbbbbbbbbbbbb",
-      tip: testFee,
+      deposit: 2_500_000,
       submitted_at: 0,
       destination: noDestination,
     },
@@ -2216,9 +2233,9 @@ test modify_zero_fee() {
       Request {
         requestToken: testToken,
         requestKey: legacyKey,
-        requestValue: Insert(#"01"),
+        edge: 1,
         requestOwner: feeOwner,
-        tip: 0,
+        deposit: 2_000_000,
         submitted_at: 0,
         destination: legacyDestination,
       },
@@ -2285,17 +2302,19 @@ test modify_zero_fee() {
   )
 }
 
-/// The request's tip must match the state's tip. A mismatch means the
-/// request was created for a different fee tier and must be rejected.
-test modify_fee_mismatch() fail {
+/// The request's deposit must match its holding less the state's tip.
+/// `tip-mismatch` retired with the tip field (#183 slice b): a request
+/// created for a different fee tier is refused `deposit-mismatch` (or
+/// `tip-coverage` when its holding does not even reach the tip).
+test modify_deposit_mismatch() fail {
   let mismatch_request =
     RequestDatum(
       Request {
         requestToken: testToken,
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "requester_key_aaaaaaaaaaaaaaa",
-        tip: 100_000,
+        deposit: 100_000,
         submitted_at: 0,
         destination: noDestination,
       },
@@ -2320,6 +2339,46 @@ test modify_fee_mismatch() fail {
       outputs: [feeStateOutput, refundOutput],
       extra_signatories: ["owner"],
       inputs: [feeStateInput, mismatch_input],
+    },
+  )
+}
+
+/// A request whose holding does not reach the state's tip is refused
+/// `tip-coverage`: costless fabricated requests would otherwise fold
+/// for free.
+test modify_tip_coverage() fail {
+  let thin_request =
+    RequestDatum(
+      Request {
+        requestToken: testToken,
+        requestKey: "42",
+        edge: 1,
+        requestOwner: "requester_key_aaaaaaaaaaaaaaa",
+        deposit: 0,
+        submitted_at: 0,
+        destination: noDestination,
+      },
+    )
+  let thin_input =
+    Input {
+      output_reference: testRequestRef,
+      output: Output {
+        address: testScriptAddress,
+        value: from_lovelace(0),
+        datum: InlineDatum(thin_request),
+        reference_script: None,
+      },
+    }
+  spend(
+    feeStateDatum,
+    Modify([UpdateAction([])]),
+    testStateRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: phase1Range,
+      outputs: [feeStateOutput, refundOutput],
+      extra_signatories: ["owner"],
+      inputs: [feeStateInput, thin_input],
     },
   )
 }
@@ -2448,9 +2507,9 @@ test reject_future_submitted_at() {
       Request {
         requestToken: testToken,
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "requester_key_aaaaaaaaaaaaaaa",
-        tip: testFee,
+        deposit: 1_500_000,
         submitted_at: 100_000,
         destination: noDestination,
       },
@@ -2652,9 +2711,9 @@ const sweepWrongTokenRequest =
     Request {
       requestToken: TokenId { assetName: "different_asset" },
       requestKey: "k",
-      requestValue: Insert("v"),
+      edge: 1,
       requestOwner: "other_owner",
-      tip: 0,
+      deposit: 0,
       submitted_at: 0,
       destination: noDestination,
     },
@@ -2825,17 +2884,20 @@ test sweep_legitimate_request() fail {
   )
 }
 
-/// A mismatched-tip request — refused under the wholesale `Sweep`
-/// refusal (the spam-collection premise is gone with the owner).
-test sweep_mismatched_tip_request() fail {
+/// A request whose deposit does not match its holding less the state's
+/// tip — 2 ADA held against a 0.5 ADA tip owes 1.5 ADA, not 0.1 — and so
+/// is not processable by `Modify`. It is refused here under the wholesale
+/// `Sweep` refusal (the spam-collection premise is gone with the owner).
+/// `tip-mismatch` retired with the tip field (#183 slice b).
+test sweep_mismatched_deposit_request() fail {
   let mismatch_request =
     RequestDatum(
       Request {
         requestToken: testToken,
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "requester_key_aaaaaaaaaaaaaaa",
-        tip: 100_000,
+        deposit: 100_000,
         submitted_at: 0,
         destination: noDestination,
       },
@@ -2870,9 +2932,9 @@ test sweep_underfunded_matching_request() fail {
       Request {
         requestToken: testToken,
         requestKey: "42",
-        requestValue: Insert("42"),
+        edge: 1,
         requestOwner: "requester_key_aaaaaaaaaaaaaaa",
-        tip: testFee,
+        deposit: 0,
         submitted_at: 0,
         destination: noDestination,
       },

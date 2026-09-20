@@ -92,12 +92,60 @@ policies are the one parametrised witness script applied at kinds 0, 1 and 2.
 The three published indices do not move. A read leaves its key exactly where
 it is, and on chain only the terminal codec byte is admitted for it.
 
-### The request: a destination
+### The request: a destination, then an edge index
 
-`Request` gains one field, appended last: `destination`, a pair of the binary
+`Request` gained one field, appended last: `destination`, a pair of the binary
 address bytes the minted token must land at and the hash of the inline datum
 that output must carry. An empty datum hash means a datum-less output. A
 request that mints nothing names no destination.
+
+Issue #183 then re-cut the request itself. Field for field, old wire beside
+new:
+
+| field | old wire | final wire (#183) |
+| --- | --- | --- |
+| 0 | `requestToken` | `requestToken` |
+| 1 | `requestOwner` | `requestOwner` |
+| 2 | `requestKey` | `requestKey` |
+| 3 | `requestValue: Operation` — `Insert v` / `Delete v` / `Update old new` / `Read v` | `edge: Int` — the C2 row index, `0`-`6` |
+| 4 | `tip: Int` — must equal `state.tip` | `deposit: Int` — must equal the request output's lovelace less `state.tip` |
+| 5 | `submitted_at` | `submitted_at` |
+| 6 | `destination` | `destination` |
+
+The constructor index does not move: `RequestDatum` is 0 before and after,
+and the four unchanged fields keep their positions. What changes is what
+fields 3 and 4 mean.
+
+The seven edges, with the trie move each names and the value bytes that used
+to carry it:
+
+| edge | name | trie move | old wire |
+| --- | --- | --- | --- |
+| 0 | `insertAbsent` | insert `0x00` | `Insert 0x00` |
+| 1 | `insertActive` | insert `0x01` | `Insert 0x01` |
+| 2 | `updateActive` | update `0x00`→`0x01` | `Update 0x00 0x01` |
+| 3 | `updateTerminal` | update `0x01`→`0x02` | `Update 0x01 0x02` |
+| 4 | `deleteAbsent` | delete `0x00` | `Delete 0x00` |
+| 5 | `deleteActive` | delete `0x01` | `Delete 0x01` |
+| 6 | `witnessTerminal` | read `0x02` | `Read 0x02` |
+
+**What a consumer has to change.** Write the edge index where the operation
+payload used to go, and the deposit — the lovelace the request output holds,
+less the state's tip — where the tip used to go. An edge names its own leaf
+bytes, so a consumer no longer chooses them and can no longer get them wrong.
+
+**Refusals that go away, because no request can express them.** `leaf-codec`
+(a value byte outside the three-byte codec), `insert-terminal`,
+`tip-mismatch`, `update-to-absent`, `update-absent-to-terminal` and
+`update-active-to-active` are all faults of value bytes that the edge wire
+does not carry.
+
+**Refusals that remain, and the two that are new.** A read whose key does not
+bind `0x02` is refused `read-absent`, `read-non-terminal` or `key-unknown`,
+and a tree-changing edge whose key binds `0x02` is refused
+`edge-from-terminal` — all read off the trie rather than off the request. New
+with this wire: `edge-inadmissible` for a tag outside `0`-`6`, and
+`deposit-mismatch` for a deposit that is not the holding less the tip.
 
 ### The cage datum: a third constructor
 
@@ -255,15 +303,17 @@ mean the cage verifying a second proof shape it has no reason to carry.
 #### The wire these rows and the archive verb speak
 
 Everything on this page, and the release archive's packaged
-`insert-active` command, runs on the request encoding as it stands
-today. Issue #183 re-cuts that encoding for every edge — the edge tag
-replaces the operation payload and the request's `tip` field goes away —
-and re-baselines these rows and that command when it lands.
+`insert-active` command, runs on the final request encoding: the edge
+index at field 3 and the deposit at field 4, as set out above.
 
-No claim is made here about the wire after #183. The re-cut carries its
-own enforcing check: a transitional checkpoint that folds every
-other-edge fixture under BOTH codecs and requires the same verdict,
-which is the evidence a one-commit rewrite cannot produce.
+The re-cut carried its own enforcing check rather than being asserted.
+For exactly one commit the cage compiled BOTH encodings, and every
+other-edge fixture was folded under each of them and required to give
+the same verdict with the same refusal reason, receipted per fixture.
+The commit after it removed the old codec. That pair — the receipt at
+the dual-codec commit, the removal at its successor — is the evidence a
+one-commit rewrite cannot produce, and it is what stands behind the
+side-by-side table above.
 ### The issue-70 generic rows
 
 The issue-#70 slice extends the generic session with eleven rows over

@@ -140,7 +140,6 @@ import Singular.Registry.Types (
     ConsumerRedeemer (..),
     Migration (..),
     MintRedeemer (..),
-    OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
@@ -407,7 +406,7 @@ checkPermissionlessFold ::
     IO Bool
 checkPermissionlessFold prov submit tm cfg tok record = do
     emit "R1" "permissionless fold: submitting an Insert request, then folding with no owner signer"
-    reqIn <- submitInsertFrom prov submit cfg tok "r1-key" "r1-value" genesisAddr
+    reqIn <- submitRequestFrom prov submit cfg tok "r1-key" edgeInsertActive genesisAddr
     record $
         object
             [ "row" .= ("supported-action-control" :: String)
@@ -464,7 +463,7 @@ checkDefectiveFoldRefused ::
     IO Bool
 checkDefectiveFoldRefused prov submit tm cfg tok = do
     emit "R2" "defective-fold control: re-inserting the occupied key r1-key, then folding without the owner (must refuse)"
-    _reqIn <- submitInsertFrom prov submit cfg tok "r1-key" "r1-other-value" genesisAddr
+    _reqIn <- submitRequestFrom prov submit cfg tok "r1-key" edgeInsertActive genesisAddr
     -- Proofs computed against a FRESH empty trie for the occupied key, so
     -- the refusal happens ON-CHAIN (mpf.insert rejects the occupied key)
     -- rather than at local proof construction. tm here is the dedicated
@@ -681,15 +680,15 @@ setupRetractBatch ::
 setupRetractBatch prov submit tm stateBytes requestBytes consumerBytes = do
     emit "R4" "withdraw-class cage: boot, setup fold, then one Update, one Delete and one Insert request"
     (cfg, tok) <- bootRepairCage prov submit tm stateBytes requestBytes consumerBytes fastRetractCfg
-    _ <- submitInsertFrom prov submit cfg tok "rb-key" "rb-old" genesisAddr
+    _ <- submitRequestFrom prov submit cfg tok "rb-key" edgeInsertAbsent genesisAddr
     setupReqs <- pendingRequests prov cfg tok
     folded <- try (permissionlessUpdateTx prov tm cfg tok genesisAddr >>= submitWithGenesis submit) :: IO (Either SomeException ConwayTx)
     case folded of
         Left err -> failWith ("retract-batch setup fold failed: " <> displayException err)
         Right _ -> syncFoldedRequests tm tok setupReqs
-    updIn <- submitUpdateFrom prov submit cfg tok "rb-key" "rb-old" "rb-new" genesisAddr
-    delIn <- submitDeleteFrom prov submit cfg tok "rb-key" "rb-new" genesisAddr
-    insIn <- submitInsertFrom prov submit cfg tok "rb-fresh" "rb-value" genesisAddr
+    updIn <- submitRequestFrom prov submit cfg tok "rb-key" edgeUpdateActive genesisAddr
+    delIn <- submitRequestFrom prov submit cfg tok "rb-key" edgeDeleteActive genesisAddr
+    insIn <- submitRequestFrom prov submit cfg tok "rb-fresh" edgeInsertActive genesisAddr
     emit "R4" "submitted Update, Delete and Insert requests back-to-back; one phase-2 wait covers all three"
     pure (cfg, tok, updIn, delIn, insIn)
 
@@ -897,8 +896,8 @@ retractExpectWrongSigRefused prov submit cfg tok reqIn = do
 lcgNext :: Int -> Int
 lcgNext s = (1103515245 * s + 12345) `mod` 2147483648
 
-genPairs :: Int -> Int -> [(ByteString, ByteString)]
-genPairs seed n = take n [ ("p79-k" <> BSC.pack (show s), "p79-v" <> BSC.pack (show s)) | s <- iterate lcgNext seed ]
+genPairs :: Int -> Int -> [ByteString]
+genPairs seed n = take n [ "p79-k" <> BSC.pack (show s) | s <- iterate lcgNext seed ]
 
 -- | P-fold: generated permissionless-fold property against the actual
 -- compiled state validator on a real ledger. Given (Lean .fold): nativeSpend
@@ -937,20 +936,20 @@ checkFoldProperty prov submit tm stateBytes requestBytes consumerBytes = do
                     unless (null after) $ failWith "P-fold: fold accepted but requests remain pending"
                     syncFoldedRequests tm tok before
                     emit "P-fold" "P-fold: 6/6 generated inserts accepted without the owner in one Modify (seed=79, count=6, discards=0)"
-                    tipOk <- wrongTipRefused prov submit tm cfg tok
-                    unless tipOk $ failWith "P-fold wrong-tip control did not refuse"
+                    depositOk <- wrongDepositRefused prov submit tm cfg tok
+                    unless depositOk $ failWith "P-fold wrong-deposit control did not refuse"
                     tampOk <- tamperedRootRefused prov submit tm cfg tok
                     unless tampOk $ failWith "P-fold tampered-root control did not refuse"
                     case pairs of
                         [] -> failWith "P-fold: empty generated batch"
-                        (k0, _) : _ -> adversarial cfg tok k0
+                        k0 : _ -> adversarial cfg tok k0
   where
     adversarial cfg tok k0 = do
         let fresh = take 2 (drop 6 (genPairs 79 99))
-        submitInsertsBatch prov submit cfg tok ((k0, "p79-dup") : fresh) genesisAddr
+        submitInsertsBatch prov submit cfg tok (k0 : fresh) genesisAddr
         -- Fresh-first order forces the shrinker through BOTH branches:
         -- accepted probes consume and re-sync, the duplicate refuses.
-        candidates <- resolveRequestKeys prov cfg tok (map fst fresh <> [k0])
+        candidates <- resolveRequestKeys prov cfg tok (fresh <> [k0])
         emit "P-fold" "adversarial: two fresh keys plus a duplicate of the first; bisecting to the minimal refused fold"
         minimal <- bisectRefused prov submit tm cfg tok folderAddr candidates
         if minimal == k0
@@ -1010,157 +1009,116 @@ bisectRefused prov submit tm cfg tok feeAddr candidates = go candidates
                         emit "P-fold" ("bisect probe accepted (consumed " <> show (length subset) <> " request(s)), continuing")
                         pure False
 
--- | Wrong-tip control: a request whose tip disagrees with the state's tip
--- must be refused by the fold (mkAction tip binding retained). The request
--- stays pending; later subsets address their own inputs explicitly.
-wrongTipRefused ::
+-- | Wrong-deposit control (#183): `tip-mismatch` retired with the tip
+-- field, so the fold's binding is now `deposit == held - tip`, and a
+-- request that states a deposit its output does not hold must be
+-- refused. The request stays pending; later subsets address their own
+-- inputs explicitly.
+wrongDepositRefused ::
     Cage.Provider IO ->
     Submitter IO ->
     TrieManager IO ->
     CageConfig ->
     TokenId ->
     IO Bool
-wrongTipRefused prov submit tm cfg tok = do
-    _ <- submitInsertWithTip prov submit cfg tok "p79-wrongtip" "p79-wv" 2_000_000 genesisAddr
+wrongDepositRefused prov submit tm cfg tok = do
+    _ <- submitRequestWith prov submit cfg tok "p79-wrongdeposit" edgeInsertActive (Just 2_000_000) genesisAddr
     outcome <- try (permissionlessUpdateTx prov tm cfg tok folderAddr) :: IO (Either SomeException ConwayTx)
     case outcome of
         Left err -> do
-            _ <- requireValidatorRefusal "NewTip" err
-            emit "NewTip" "wrong-tip fold refused by the validator (tip mismatch: request tip 2000000 against state tip 1000000)"
+            _ <- requireValidatorRefusal "NewDeposit" err
+            emit "NewDeposit" "wrong-deposit fold refused by the validator (request states deposit 2000000 against a holding that owes a different one)"
             pure True
         Right unsigned -> do
             let signed = addKeyWitness (mkSignKey folderSeed) unsigned
             result <- submitTx submit signed
             case result of
-                Rejected _ -> emit "NewTip" "wrong-tip fold refused (tip mismatch: request tip 2000000 against state tip 1000000)" >> pure True
-                Submitted _ -> emit "NewTip" "WRONG-TIP FAILURE: a mismatched-tip fold was ACCEPTED" >> pure False
+                Rejected _ -> emit "NewDeposit" "wrong-deposit fold refused (request states deposit 2000000 against a holding that owes a different one)" >> pure True
+                Submitted _ -> emit "NewDeposit" "WRONG-DEPOSIT FAILURE: a mismatched-deposit fold was ACCEPTED" >> pure False
 
-submitInsertFrom ::
+{- | Submit one request at a C2 edge (#183), from the given address.
+
+The three shapes this journey used to need — insert, update, delete —
+differ only in the edge now, so they are one function. The datum's
+deposit is the locked lovelace less the tip, which is what the fold
+checks.
+-}
+submitRequestFrom ::
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     TokenId ->
     ByteString ->
-    ByteString ->
+    Edge ->
     Addr ->
     IO TxIn
-submitInsertFrom prov submit cfg tok key val addr =
-    submitInsertWithTip prov submit cfg tok key val 1_000_000 addr
+submitRequestFrom prov submit cfg tok key edge addr =
+    submitRequestWith prov submit cfg tok key edge Nothing addr
 
-submitInsertWithTip ::
+{- | The same submission, with the datum's deposit STATED rather than
+settled. A stated deposit that disagrees with the locked lovelace is
+what the cage refuses `deposit-mismatch`, and a row that watches that
+refusal needs to be able to write one.
+-}
+submitRequestWith ::
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     TokenId ->
     ByteString ->
-    ByteString ->
-    Integer ->
+    Edge ->
+    -- | A deposit to state, or 'Nothing' to settle the honest one
+    Maybe Integer ->
     Addr ->
     IO TxIn
-submitInsertWithTip prov submit cfg tok key val tipInt addr = do
+submitRequestWith prov submit cfg tok key edge stated addr = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov addr
     feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "submitInsertFrom: no UTxOs"
+        [] -> failWith "submitRequestFrom: no UTxOs"
         (u : _) -> pure u
     now <- currentPosixMs
-    let datum = mkRequestDatum tok addr key (OpInsert val) tipInt now
+    let tipInt = 1_000_000
         scriptAddr = requestAddrFromCfg cfg tok (network cfg)
-        draftOut = mkBasicTxOut scriptAddr (inject (Coin 0)) & datumTxOutL .~ mkInlineDatum datum
         refundDraft = mkBasicTxOut addr (inject (Coin 0))
-        minAda = requestLockedAda pp draftOut refundDraft tipInt
-        txOut = mkBasicTxOut scriptAddr (inject minAda) & datumTxOutL .~ mkInlineDatum datum
+        build locked deposit =
+            mkBasicTxOut scriptAddr (inject (Coin locked))
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        ( mkRequestDatum
+                            tok
+                            addr
+                            key
+                            edge
+                            (fromMaybe deposit stated)
+                            now
+                        )
+        Coin start = requestLockedAda pp (build 0 0) refundDraft tipInt
+        txOut = settleRequestOutput pp tipInt build start
         body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.singleton txOut
         tx = mkBasicTx body
     case balanceTx pp [feeUtxo] [] addr tx of
-        Left err -> failWith ("submitInsertFrom: balance failed: " <> show err)
+        Left err -> failWith ("submitRequestFrom: balance failed: " <> show err)
         Right br -> do
             let signed = addKeyWitness genesisSignKey (balancedTx br)
             result <- submitTx submit signed
             case result of
                 Submitted _ -> awaitTx >> pure (TxIn (txIdTx signed) (TxIx 0))
-                Rejected reason -> failWith ("submitInsertFrom: rejected: " <> show reason)
-
-submitUpdateFrom ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    CageConfig ->
-    TokenId ->
-    ByteString ->
-    ByteString ->
-    ByteString ->
-    Addr ->
-    IO TxIn
-submitUpdateFrom prov submit cfg tok key oldV newV addr = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov addr
-    feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "submitUpdateFrom: no UTxOs"
-        (u : _) -> pure u
-    now <- currentPosixMs
-    let datum = mkRequestDatum tok addr key (OpUpdate oldV newV) 1_000_000 now
-        scriptAddr = requestAddrFromCfg cfg tok (network cfg)
-        draftOut = mkBasicTxOut scriptAddr (inject (Coin 0)) & datumTxOutL .~ mkInlineDatum datum
-        refundDraft = mkBasicTxOut addr (inject (Coin 0))
-        minAda = requestLockedAda pp draftOut refundDraft 1_000_000
-        txOut = mkBasicTxOut scriptAddr (inject minAda) & datumTxOutL .~ mkInlineDatum datum
-        body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.singleton txOut
-        tx = mkBasicTx body
-    case balanceTx pp [feeUtxo] [] addr tx of
-        Left err -> failWith ("submitUpdateFrom: balance failed: " <> show err)
-        Right br -> do
-            let signed = addKeyWitness genesisSignKey (balancedTx br)
-            result <- submitTx submit signed
-            case result of
-                Submitted _ -> awaitTx >> pure (TxIn (txIdTx signed) (TxIx 0))
-                Rejected reason -> failWith ("submitUpdateFrom: rejected: " <> show reason)
-
-submitDeleteFrom ::
-    Cage.Provider IO ->
-    Submitter IO ->
-    CageConfig ->
-    TokenId ->
-    ByteString ->
-    ByteString ->
-    Addr ->
-    IO TxIn
-submitDeleteFrom prov submit cfg tok key oldV addr = do
-    pp <- Cage.queryProtocolParams prov
-    utxos <- Cage.queryUTxOs prov addr
-    feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
-        [] -> failWith "submitDeleteFrom: no UTxOs"
-        (u : _) -> pure u
-    now <- currentPosixMs
-    let datum = mkRequestDatum tok addr key (OpDelete oldV) 1_000_000 now
-        scriptAddr = requestAddrFromCfg cfg tok (network cfg)
-        draftOut = mkBasicTxOut scriptAddr (inject (Coin 0)) & datumTxOutL .~ mkInlineDatum datum
-        refundDraft = mkBasicTxOut addr (inject (Coin 0))
-        minAda = requestLockedAda pp draftOut refundDraft 1_000_000
-        txOut = mkBasicTxOut scriptAddr (inject minAda) & datumTxOutL .~ mkInlineDatum datum
-        body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.singleton txOut
-        tx = mkBasicTx body
-    case balanceTx pp [feeUtxo] [] addr tx of
-        Left err -> failWith ("submitDeleteFrom: balance failed: " <> show err)
-        Right br -> do
-            let signed = addKeyWitness genesisSignKey (balancedTx br)
-            result <- submitTx submit signed
-            case result of
-                Submitted _ -> awaitTx >> pure (TxIn (txIdTx signed) (TxIx 0))
-                Rejected reason -> failWith ("submitDeleteFrom: rejected: " <> show reason)
+                Rejected reason -> failWith ("submitRequestFrom: rejected: " <> show reason)
 
 -- | Batch insert submission: one transaction carrying one request output
--- per (key, value) pair (amortizes query/balance/submit/await over the
--- batch). Returns the submission tx id; callers resolve per-request inputs
+-- per key (amortizes query/balance/submit/await over the batch).
+-- Returns the submission tx id; callers resolve per-request inputs
 -- by key via 'resolveRequestKeys' rather than assuming output indices.
 submitInsertsBatch ::
     Cage.Provider IO ->
     Submitter IO ->
     CageConfig ->
     TokenId ->
-    [(ByteString, ByteString)] ->
+    [ByteString] ->
     Addr ->
     IO ()
-submitInsertsBatch prov submit cfg tok pairs addr = do
+submitInsertsBatch prov submit cfg tok keys addr = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov addr
     feeUtxo <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
@@ -1168,13 +1126,16 @@ submitInsertsBatch prov submit cfg tok pairs addr = do
         (u : _) -> pure u
     now <- currentPosixMs
     let scriptAddr = requestAddrFromCfg cfg tok (network cfg)
-        mkOut (key, val) =
-            let datum = mkRequestDatum tok addr key (OpInsert val) 1_000_000 now
-                draftOut = mkBasicTxOut scriptAddr (inject (Coin 0)) & datumTxOutL .~ mkInlineDatum datum
-                refundDraft = mkBasicTxOut addr (inject (Coin 0))
-                minAda = requestLockedAda pp draftOut refundDraft 1_000_000
-             in mkBasicTxOut scriptAddr (inject minAda) & datumTxOutL .~ mkInlineDatum datum
-        body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList (map mkOut pairs)
+        refundDraft = mkBasicTxOut addr (inject (Coin 0))
+        mkOut key =
+            let build locked deposit =
+                    mkBasicTxOut scriptAddr (inject (Coin locked))
+                        & datumTxOutL
+                            .~ mkInlineDatum
+                                (mkRequestDatum tok addr key edgeInsertActive deposit now)
+                Coin start = requestLockedAda pp (build 0 0) refundDraft 1_000_000
+             in settleRequestOutput pp 1_000_000 build start
+        body = mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList (map mkOut keys)
         tx = mkBasicTx body
     case balanceTx pp [feeUtxo] [] addr tx of
         Left err -> failWith ("submitInsertsBatch: balance failed: " <> show err)
@@ -1206,7 +1167,7 @@ tamperedRootRefused ::
     TokenId ->
     IO Bool
 tamperedRootRefused prov submit tm cfg tok = do
-    _ <- submitInsertFrom prov submit cfg tok "p79-tamp" "p79-tv" genesisAddr
+    _ <- submitRequestFrom prov submit cfg tok "p79-tamp" edgeInsertActive genesisAddr
     live <- pendingRequests prov cfg tok
     tkUtxo <- case [ u | u@(_, out) <- live, requestKeyOf out == Just "p79-tamp" ] of
         (x : _) -> pure x
@@ -1359,24 +1320,12 @@ computeUpdateProofs tm tid reqUtxos =
         pure (ps, r)
 
 processOne :: (Monad m) => Trie m -> (TxIn, TxOut ConwayEra) -> m [ProofStep]
-processOne trie (_txIn, txOut) = do
-    let req = case extractCageDatum txOut of
-            Just (RequestDatum r) -> r
-            _ -> error "processOne: invalid request datum"
-    case requestValue req of
-        OpInsert v -> do
-            _ <- insert trie (requestKey req) v
-            mSteps <- getProofSteps trie (requestKey req)
-            pure (fromMaybe [] mSteps)
-        OpDelete _ -> do
-            mSteps <- getProofSteps trie (requestKey req)
-            _ <- Singular.Registry.Trie.delete trie (requestKey req)
-            pure (fromMaybe [] mSteps)
-        OpUpdate _ v -> do
-            mSteps <- getProofSteps trie (requestKey req)
-            _ <- Singular.Registry.Trie.delete trie (requestKey req)
-            _ <- insert trie (requestKey req) v
-            pure (fromMaybe [] mSteps)
+processOne trie (_txIn, txOut) =
+    walkEdge trie (requestKey req) (requestEdge req)
+  where
+    req = case extractCageDatum txOut of
+        Just (RequestDatum r) -> r
+        _ -> error "processOne: invalid request datum"
 
 prepareUpdateState :: CageConfig -> TxOut ConwayEra -> Root -> (OnChainTokenState, TxOut ConwayEra, Script ConwayEra)
 prepareUpdateState cfg stateOut newRoot =

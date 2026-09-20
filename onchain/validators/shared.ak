@@ -79,17 +79,17 @@ pub fn is_rejectable(
 }
 
 /// A request is protected from owner sweep only when it can be processed by
-/// state Modify. Matching token alone is not enough: mismatched-tip or
+/// state Modify. Matching token alone is not enough: mismatched-deposit or
 /// underfunded spam would otherwise be locked at the request address forever.
+/// (#183 slice b: the datum binds `deposit`, not `tip`.)
 pub fn processableRequest(
   request: Request,
   cageToken: TokenId,
   state: State,
   input: Input,
 ) -> Bool {
-  let Request { requestToken, tip, .. } = request
+  let Request { requestToken, deposit, .. } = request
   let State { tip: stateTip, .. } = state
-  requestToken == cageToken && tip == stateTip && assets.lovelace_of(
-    input.output.value,
-  ) >= stateTip
+  let held = assets.lovelace_of(input.output.value)
+  requestToken == cageToken && held >= stateTip && deposit == held - stateTip
 }

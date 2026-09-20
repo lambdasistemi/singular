@@ -4,7 +4,7 @@ use cardano/transaction.{InlineDatum, Input, Output}
 use lib
 use state
 use t157_fixtures as fx
-use types.{Delete, Modify, StateDatum, Update, UpdateAction}
+use types.{Modify, StateDatum, UpdateAction}
 
 /// #177 I177-CHAIN — the `updateTerminal` edge (ordinal 3) against the
 /// REAL compiled cage: the retirement that lands, and the four refusals
@@ -65,11 +65,11 @@ fn retire(
         fx.requestInput(
           0,
           key,
-          Update(fx.activeLeaf, fx.terminalLeaf),
+          3,
           fx.bookerKey,
           fx.noDestination(),
           fx.approval(3, key, fx.bookerKey, fx.noDestination()),
-          fx.requestValue,
+          fx.requestLovelace,
         ),
       ],
       held,
@@ -271,11 +271,11 @@ test t177_delete_active_still_folds() {
         fx.requestInput(
           0,
           fx.keyA,
-          Delete(fx.activeLeaf),
+          5,
           fx.bookerKey,
           fx.noDestination(),
           fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
-          fx.requestValue,
+          fx.requestLovelace,
         ),
       ],
       witnessHeld(),

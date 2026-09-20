@@ -84,15 +84,16 @@ import Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     extractCageDatum,
     findStateUtxo,
-    leafAbsent,
-    leafActive,
-    leafTerminal,
     policyIdFromPin,
+    walkEdge,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    Edge,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateTerminal,
     OnChainRoot (..),
     OnChainTokenState (..),
  )
@@ -264,13 +265,13 @@ updateTerminalSpec stateBytes requestBytes = do
                 Left _ -> pure ()
 
 -- ---------------------------------------------------------
--- The three operations this spec books
+-- The three edges this spec books
 -- ---------------------------------------------------------
 
-insertActive, insertAbsent, retire :: OnChainOperation
-insertActive = OpInsert leafActive
-insertAbsent = OpInsert leafAbsent
-retire = OpUpdate leafActive leafTerminal
+insertActive, insertAbsent, retire :: Edge
+insertActive = edgeInsertActive
+insertAbsent = edgeInsertAbsent
+retire = edgeUpdateTerminal
 
 -- | Book one edge at an explicitly named destination.
 book ::
@@ -280,10 +281,10 @@ book ::
     Submitter IO ->
     TokenId ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     (ByteString, ByteString) ->
     IO TxIn
-book cfg codes prov submit tokenId key op dest =
+book cfg codes prov submit tokenId key edge dest =
     Edges.bookEdgeTo
         cfg
         codes
@@ -292,7 +293,7 @@ book cfg codes prov submit tokenId key op dest =
         genesisAddr
         tokenId
         key
-        op
+        edge
         dest
 
 {- | Build and submit the fold of whatever is pending, WITHOUT mirroring.
@@ -327,18 +328,14 @@ foldAndMirror ::
     TokenId ->
     [(TxIn, TxOut ConwayEra)] ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO ConwayTx
-foldAndMirror cfg prov submit tm tokenId refs key op = do
+foldAndMirror cfg prov submit tm tokenId refs key edge = do
     rootBefore <- withTrie tm tokenId getRoot
     signed <- foldOnce cfg prov submit tm tokenId refs
-    withTrie tm tokenId $ \t -> case op of
-        OpInsert v -> () <$ insert t key v
-        OpUpdate _ v -> do
-            _ <- Singular.Registry.Trie.delete t key
-            () <$ insert t key v
-        OpDelete _ -> () <$ Singular.Registry.Trie.delete t key
-        OpRead _ -> pure ()
+    -- #183: the edge names the leaf bytes the mirror writes, from the
+    -- same table the cage walks.
+    _ <- withTrie tm tokenId $ \t -> walkEdge t key edge
     rootAfter <- withTrie tm tokenId getRoot
     putStrLn
         ( "[t177] fold key="

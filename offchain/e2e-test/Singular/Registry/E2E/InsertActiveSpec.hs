@@ -78,7 +78,7 @@ import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal (leafActive, policyIdFromPin)
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
-import Singular.Registry.Types (OnChainOperation (..))
+import Singular.Registry.Types (edgeInsertActive)
 
 import Singular.Registry.E2E.CageSpec (
     publishCageRefs,
@@ -222,7 +222,7 @@ bookTo cfg codes prov submit tokenId key dest =
         genesisAddr
         tokenId
         key
-        (OpInsert leafActive)
+        edgeInsertActive
         dest
 
 {- | Fold the pending requests, submit, and MIRROR the landed fold into

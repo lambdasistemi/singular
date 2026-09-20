@@ -9,7 +9,7 @@ module Singular.Registry.Lifecycle (
     minimumCoin,
     fundedOutput,
     collateralOutput,
-    requestDeposit,
+    requestLockedCoin,
     sizedOutput,
     verifyLifecycleBudget,
     fundingRequirement,
@@ -56,7 +56,7 @@ import Singular.Registry.Node (ExternalNode (..), NodeMode (..), NodeSession (..
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal (computeScriptIntegrity, mkInlineDatum, mkRequestDatum, requestAddrFromCfg)
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
-import Singular.Registry.Types (OnChainOperation)
+import Singular.Registry.Types (Edge)
 
 {- | Public external nodes use the lifecycle automatically. The explicit flag
 also exercises that path on the factory devnet (network magic 42).
@@ -110,11 +110,14 @@ sizedOutput :: Bool -> PParams ConwayEra -> TxOut ConwayEra -> TxOut ConwayEra
 sizedOutput False _ out = out
 sizedOutput True pp out = out & coinTxOutL .~ minimumCoin pp out
 
-requestDeposit :: PParams ConwayEra -> CageConfig -> TokenId -> Addr -> ByteString -> OnChainOperation -> Integer -> Coin
-requestDeposit pp cfg tok addr spelling operation now =
+-- | The lovelace one request output must lock: the tip plus the
+-- deposit the fold returns. Named for what it locks, not for the datum
+-- field, which is the deposit alone (#183).
+requestLockedCoin :: PParams ConwayEra -> CageConfig -> TokenId -> Addr -> ByteString -> Edge -> Integer -> Coin
+requestLockedCoin pp cfg tok addr spelling edge now =
     let draft =
             mkBasicTxOut (requestAddrFromCfg cfg tok (network cfg)) (MaryValue (Coin 0) mempty)
-                & datumTxOutL .~ mkInlineDatum (mkRequestDatum tok addr spelling operation 1000000 now)
+                & datumTxOutL .~ mkInlineDatum (mkRequestDatum tok addr spelling edge 1000000 now)
      in requestLockedAda pp draft (mkBasicTxOut addr (MaryValue (Coin 0) mempty)) 1000000
 
 {- | Connected-fold builders already balance node-evaluated budgets. Check
