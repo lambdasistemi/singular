@@ -123,12 +123,10 @@ import Singular.Registry.TxBuilder.Internal (
     extractCageDatum,
     scriptFromBytes,
     findStateUtxo,
-    leafAbsent,
-    leafActive,
-    leafTerminal,
     policyIdFromPin,
     scriptHashBytes,
     txInToRef,
+    walkEdge,
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),
@@ -136,7 +134,10 @@ import Singular.Registry.TxBuilder.Update (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    Edge,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateTerminal,
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
@@ -345,12 +346,10 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
                     genesisAddr
                     ctx
             submitWithGenesis submit tx
-        mirror reg key op = withTrie tm (regTid reg) $ \t -> case op of
-            OpInsert v -> () <$ insert t key v
-            OpUpdate _ v -> do
-                _ <- Singular.Registry.Trie.delete t key
-                () <$ insert t key v
-            _ -> pure ()
+        -- #183: the edge names the leaf bytes the local mirror must
+        -- write, exactly as it names the ones the cage walks.
+        mirror reg key edge = withTrie tm (regTid reg) $ \t ->
+            () <$ walkEdge t key edge
         foldAndMirror reg key op = do
             tx <- foldOnce reg
             mirror reg key op
@@ -561,10 +560,11 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
                     <> T.unpack (hex (unRoot rootTerminal))
                 )
 
-insertOp, absentOp, retireOp :: OnChainOperation
-insertOp = OpInsert leafActive
-absentOp = OpInsert leafAbsent
-retireOp = OpUpdate leafActive leafTerminal
+-- | The three C2 rows this story walks (#183).
+insertOp, absentOp, retireOp :: Edge
+insertOp = edgeInsertActive
+absentOp = edgeInsertAbsent
+retireOp = edgeUpdateTerminal
 
 -- | Exactly the quantity held under the ACTIVE policy at this key.
 activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer

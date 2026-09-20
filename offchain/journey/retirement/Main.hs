@@ -220,13 +220,12 @@ import Singular.Registry.TxBuilder.Internal (
     spendingIndex,
     txInToRef,
  )
-import Singular.Registry.TxBuilder.Request (requestInsertImpl, requestLockedAda)
+import Singular.Registry.TxBuilder.Request (requestEdgeImpl, requestLockedAda)
 import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.Types (
     OnChainRequest (..),
     OnChainTxOutRef,
     CageDatum (..),
-    OnChainOperation (..),
     OnChainRoot (..),
     OnChainTokenState (..),
  )
@@ -689,10 +688,10 @@ fundPublicLifecycle env = do
         approval = insertApprovalName (addressBytes (controlAddress datum)) (nextControlCommitment datum)
         tokens = Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1)
         deposit = Lifecycle.minimumCoin pp (scriptOut pp (envAppAddr env) 0 tokens datum)
-        insertDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rt-over" (OpInsert (representativeName "rt-over")) now
+        insertDeposit = Lifecycle.requestLockedCoin pp (envCfg env) (envTok env) genesisAddr "rt-over" edgeInsertActive now
         fund = Lifecycle.fundedOutput pp refs genesisAddr
         collateral = Lifecycle.collateralOutput pp refs genesisAddr
-        retireDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rt-over" (OpUpdate (representativeName "rt-over") (overMarkerFor (representativeName "rt-over"))) now
+        retireDeposit = Lifecycle.requestLockedCoin pp (envCfg env) (envTok env) genesisAddr "rt-over" edgeUpdateTerminal now
         -- Claim, connected fold, recovery, then retirement.
         outs = [fund deposit, collateral, fund (Coin 0), fund (Coin 0), collateral, fund retireDeposit, collateral]
         -- The insert request spends the wallet change, outside the manual pool.
@@ -2921,7 +2920,7 @@ submitRetirementRequest env spelling value = do
     pool <- readIORef (envPool env)
     let prov = if envLifecycle env then Lifecycle.fundingProvider (map fst pool) (envProv env) else envProv env
     unsigned <-
-        requestInsertImpl cfg prov (Coin 1_000_000) tok spelling value genesisAddr
+        requestEdgeImpl cfg prov (Coin 1_000_000) tok spelling edgeInsertActive genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
     tag <- retainTx env ("blueprint-request-" <> show spelling) signed
     result <- submitTx (envSubmit env) signed

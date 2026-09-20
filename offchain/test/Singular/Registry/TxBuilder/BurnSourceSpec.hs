@@ -49,9 +49,6 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     policyIdFromPin,
     scriptFromBytes,
-    leafAbsent,
-    leafActive,
-    leafTerminal,
     mkInlineDatum,
     toPlcData,
     txInToRef,
@@ -64,7 +61,10 @@ import Singular.Registry.TxBuilder.Update (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    Edge,
+    edgeInsertAbsent,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenId (..),
@@ -84,8 +84,8 @@ keyA = "t177-key-a"
 keyB = "t177-key-b"
 
 -- | The edge under test, spelled once.
-retirement :: OnChainOperation
-retirement = OpUpdate leafActive leafTerminal
+retirement :: Edge
+retirement = edgeUpdateTerminal
 
 {- | A 28-byte policy pin, one distinct byte per kind, so a row that
 swept the wrong policy could not accidentally agree with the right one.
@@ -138,8 +138,8 @@ requestIn = case parseOutRef (T.pack (replicate 64 '2' <> "#0")) of
 approval-return leg is not what these rows are about, and a request
 carrying none leaves it untouched.
 -}
-requestFor :: OnChainOperation -> (TxIn, TxOut ConwayEra)
-requestFor op =
+requestFor :: Edge -> (TxIn, TxOut ConwayEra)
+requestFor edge =
     ( requestIn
     , mkBasicTxOut (cageAddrFromCfg cfg Testnet) (MaryValue (Coin 3000000) mempty)
         & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
@@ -150,8 +150,8 @@ requestFor op =
             { requestToken = OnChainTokenId (toBuiltin ("t177-registry" :: ByteString))
             , requestOwner = toBuiltin (BS.replicate 28 0x5a)
             , requestKey = keyA
-            , requestValue = op
-            , requestFee = 1000000
+            , requestEdge = edge
+            , requestDeposit = 2000000
             , requestSubmittedAt = 0
             , requestDestination = ("", "")
             }
@@ -171,15 +171,15 @@ witnessScripts =
         }
 
 -- | What the builder decides this single request owes.
-decide :: OnChainOperation -> Either String ()
-decide op =
+decide :: Edge -> Either String ()
+decide edge =
     ()
         <$ registryDuties
             cfg
             emptyPParams
             tokenState
             witnessScripts
-            [requestFor op]
+            [requestFor edge]
             [True]
 
 -- ---------------------------------------------------------
@@ -207,13 +207,13 @@ burnSourceRequired = describe "#177 I177-BUILDER: updateTerminal sources its bur
     -- and a green row above is about the retirement, not about the
     -- harness.
     it "already refuses updateActive with no custody in hand (the harness can fail)" $
-        decide (OpUpdate leafAbsent leafActive) `shouldSatisfy` isLeft
+        decide edgeUpdateActive `shouldSatisfy` isLeft
 
     -- The other direction: an edge that owes nothing beyond its mint
     -- must still build from the same empty context, so `Left` above is
     -- attributable to the missing witness rather than to the fixture.
     it "still builds an edge that owes no external input (insertAbsent)" $
-        decide (OpInsert leafAbsent) `shouldSatisfy` isRight
+        decide edgeInsertAbsent `shouldSatisfy` isRight
 
 {- | The candidate burn-source inventory the builder selects from: wallet
 outputs that actually hold registry witnesses.
@@ -244,16 +244,16 @@ holderIn i = case parseOutRef (T.pack (replicate 63 '3' <> show i <> "#0")) of
     Left e -> error ("BurnSourceSpec fixture: " <> e)
 
 -- | What the builder decides, with a candidate inventory in hand.
-decideWith :: RegistryContext -> OnChainOperation -> Either String RegistryDuties
-decideWith ctx op =
-    registryDuties cfg emptyPParams tokenState ctx [requestFor op] [True]
+decideWith :: RegistryContext -> Edge -> Either String RegistryDuties
+decideWith ctx edge =
+    registryDuties cfg emptyPParams tokenState ctx [requestFor edge] [True]
 
 {- | The same decision with the duties discarded. `RegistryDuties` holds
 ledger values that have no `Show`, and a row that only asks WHETHER the
 builder refused does not need them.
 -}
-refusedWith :: RegistryContext -> OnChainOperation -> Either String ()
-refusedWith ctx op = () <$ decideWith ctx op
+refusedWith :: RegistryContext -> Edge -> Either String ()
+refusedWith ctx edge = () <$ decideWith ctx edge
 
 {- | The rows that need the candidate inventory: selection is exact in
 both directions, and the selected UTxO is the one the fold consumes.

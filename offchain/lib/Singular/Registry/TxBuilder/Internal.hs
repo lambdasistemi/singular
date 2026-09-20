@@ -26,11 +26,9 @@ module Singular.Registry.TxBuilder.Internal (
     leafAbsent,
     leafActive,
     leafTerminal,
-    decodeLeaf,
-    statedBefore,
+    walkEdge,
     policyIdFromPin,
     addrFromBytes,
-    edgeOf,
     deltaOf,
     policyOfKind,
     approvalName,
@@ -98,6 +96,7 @@ module Singular.Registry.TxBuilder.Internal (
 ) where
 
 import Data.ByteString (ByteString)
+import Data.Maybe (fromMaybe)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isHexDigit)
@@ -212,9 +211,17 @@ import Singular.Registry.Ledger (
     TokenId (..),
  )
 import Singular.Registry.Provider (Provider (..))
+import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    Edge,
+    edgeDeleteAbsent,
+    edgeDeleteActive,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
+    ProofStep,
     OnChainRequest (..),
     OnChainTokenId (..),
     OnChainTxOutRef (..),
@@ -422,17 +429,26 @@ scriptHashBytes :: ScriptHash -> ByteString
 scriptHashBytes (ScriptHash h) =
     hashToBytes h
 
--- | Build a 'CageDatum' for a request.
+-- | Build a 'CageDatum' for a request at one C2 edge (#183).
 mkRequestDatum ::
     TokenId ->
     Addr ->
     ByteString ->
-    OnChainOperation ->
+    -- | The C2 row index the request names
+    Edge ->
+    -- | The deposit the request rides with, over and above the tip
     Integer ->
     Integer ->
     PLC.Data
-mkRequestDatum tid addr key op fee submittedAt =
-    mkRequestDatumWith tid addr key op fee submittedAt (BS.empty, BS.empty)
+mkRequestDatum tid addr key edge deposit submittedAt =
+    mkRequestDatumWith
+        tid
+        addr
+        key
+        edge
+        deposit
+        submittedAt
+        (BS.empty, BS.empty)
 
 {- | A request datum naming where the edge it books delivers (#157
 D-DEST). The cage reads the destination for every edge that mints an
@@ -444,12 +460,14 @@ mkRequestDatumWith ::
     TokenId ->
     Addr ->
     ByteString ->
-    OnChainOperation ->
+    -- | The C2 row index the request names
+    Edge ->
+    -- | The deposit the request rides with, over and above the tip
     Integer ->
     Integer ->
     (ByteString, ByteString) ->
     PLC.Data
-mkRequestDatumWith tid addr key op fee submittedAt destination =
+mkRequestDatumWith tid addr key edge deposit submittedAt destination =
     let datum =
             OnChainRequest
                 { requestToken = onChainTokenId tid
@@ -457,8 +475,8 @@ mkRequestDatumWith tid addr key op fee submittedAt destination =
                     BuiltinByteString
                         (addrKeyHashBytes addr)
                 , requestKey = key
-                , requestValue = op
-                , requestFee = fee
+                , requestEdge = edge
+                , requestDeposit = deposit
                 , requestSubmittedAt = submittedAt
                 , requestDestination = destination
                 }
@@ -844,46 +862,56 @@ isBudgetFailure s = "overspending the budget" `isInfixOf` s
 -- Registry-mode edges (#157 C2)
 -- ---------------------------------------------------------
 
-{- | The three leaf states the registry admits. Every other value byte is
-refused by the cage before a proof is checked, so a builder that wants a
-fold to land has exactly these to choose from.
+{- | The three leaf states the registry admits (#157 D-CODEC). Requests
+carry an edge, not a value, so these are no longer something a builder
+chooses: they are the bytes each edge's trie move reads and writes, and
+'walkEdge' below is the one place that pairs them with their edge.
 -}
 leafAbsent, leafActive, leafTerminal :: ByteString
 leafAbsent = BS.singleton 0x00
 leafActive = BS.singleton 0x01
 leafTerminal = BS.singleton 0x02
 
--- | The leaf a value byte denotes, or `Nothing` for anything else.
-decodeLeaf :: ByteString -> Maybe Integer
-decodeLeaf bs
-    | bs == leafAbsent = Just 0
-    | bs == leafActive = Just 1
-    | bs == leafTerminal = Just 2
-    | otherwise = Nothing
+{- | Walk one request's edge through a speculative trie and return the
+proof steps the fold states for it (#183).
 
-{- | The C2 row this operation takes against the key's current leaf, if it
-is one of the seven at all. The same table the cage's `edgeOf` reads,
-transcribed once here so both builders and the runner agree with it.
+The edge names the move and its leaf bytes, from the table `types.ak`
+publishes. The proof is the one the cage verifies at this request's own
+position in the batch, so it is read BEFORE a delete or a replacement
+and AFTER an insert, exactly as the cage's own walk does.
 
-`Nothing` for the key means absent from the trie.
+A tag outside the table names no move: the cage refuses it
+`edge-inadmissible` before touching the trie, so the builder walks
+nothing either and states the proof the refusal will be judged against.
+A read (edge 6) leaves the leaf where it is (#157 C3).
+
+One site, so the connected fold and the update builder cannot drift
+apart about what an edge does to the trie.
 -}
-edgeOf :: OnChainOperation -> Maybe ByteString -> Maybe Integer
-edgeOf op before = case op of
-    OpInsert v -> case (before, decodeLeaf v) of
-        (Nothing, Just 0) -> Just 0
-        (Nothing, Just 1) -> Just 1
-        _ -> Nothing
-    OpUpdate _ new -> case (before >>= decodeLeaf, decodeLeaf new) of
-        (Just 0, Just 1) -> Just 2
-        (Just 1, Just 2) -> Just 3
-        _ -> Nothing
-    OpDelete _ -> case before >>= decodeLeaf of
-        Just 0 -> Just 4
-        Just 1 -> Just 5
-        _ -> Nothing
-    OpRead _ -> case before >>= decodeLeaf of
-        Just 2 -> Just 6
-        _ -> Nothing
+walkEdge :: (Monad m) => Trie m -> ByteString -> Edge -> m [ProofStep]
+walkEdge trie key edge
+    | edge == edgeInsertAbsent = inserting leafAbsent
+    | edge == edgeInsertActive = inserting leafActive
+    | edge == edgeUpdateActive = replacing leafActive
+    | edge == edgeUpdateTerminal = replacing leafTerminal
+    | edge == edgeDeleteAbsent = deleting
+    | edge == edgeDeleteActive = deleting
+    | otherwise = steps
+  where
+    steps = fromMaybe [] <$> getProofSteps trie key
+    inserting leaf = do
+        _ <- insert trie key leaf
+        steps
+    deleting = do
+        before <- steps
+        _ <- delete trie key
+        pure before
+    replacing leaf = do
+        before <- steps
+        _ <- delete trie key
+        _ <- insert trie key leaf
+        pure before
+
 
 {- | What an edge owes the mint, as @(kind, quantity)@ over the three token
 policies: kind 0 absent, 1 active, 2 terminal.
@@ -933,17 +961,6 @@ approvalName edge key owner (destAddr, datumHash) =
 
 blake2b256 :: ByteString -> ByteString
 blake2b256 = hashToBytes . hashWith @Blake2b_256 id
-
-{- | The leaf an operation states the key held before it (#157 C2). The
-cage reads the request's own claim rather than the trie, and so does every
-builder, or the two would disagree about which edge is being taken.
--}
-statedBefore :: OnChainOperation -> Maybe ByteString
-statedBefore op = case op of
-    OpInsert _ -> Nothing
-    OpDelete old -> Just old
-    OpUpdate old _ -> Just old
-    OpRead v -> Just v
 
 {- | The policy id a 28-byte pin names. The four pins the state datum
 carries are raw script hashes; this is the one place that turns one back

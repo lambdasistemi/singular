@@ -98,7 +98,6 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenId (..),
@@ -552,17 +551,16 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
                     <> ": expected exactly one request-datum input in completion, found "
                     <> show (length reqIns)
                 )
-    -- Request value relation (NOTE-031): the folded Update moves
-    -- the burned asset to its Over marker (decoded from the retained
-    -- request datum — the value proof mirror lookup cannot give).
+    -- Request edge relation (#183): the folded request names the
+    -- retirement of the burned asset's own key, read off the retained
+    -- request datum.
     (_, reqOut) <- lookupTx index (outRefTx reqIn) "folded request"
     reqOutTx <- case outRefIx reqIn < length (txOutputs reqOut) of
         True -> pure (txOutputs reqOut !! outRefIx reqIn)
         False -> failWith (label <> ": request outref index out of range")
-    (reqOld, reqNew) <- case extractCageDatum reqOutTx of
-        Just (RequestDatum req) -> case requestValue req of
-            OpUpdate old new -> pure (old, new)
-            _ -> failWith (label <> ": folded request is not an Update")
+    (reqKey, reqEdge) <- case extractCageDatum reqOutTx of
+        Just (RequestDatum req) ->
+            pure (requestKey req, requestEdge req)
         _ -> failWith (label <> ": folded request input carries no request datum")
     -- Fee owner: every payment-key input shares one owner, and the
     -- witness set is exactly that key (fee ownership mechanics — the
@@ -602,8 +600,8 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
                 , ceActionCount = actionCount
                 , ceRootBefore = rootBefore
                 , ceRootAfter = rootAfter
-                , ceReqOld = reqOld
-                , ceReqNew = reqNew
+                , ceReqKey = reqKey
+                , ceReqEdge = reqEdge
                 , ceReqSigners = txSignatories tx
                 , ceWitnesses = txWitnesses tx
                 , ceFeeOwner = feeOwner

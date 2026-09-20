@@ -104,7 +104,7 @@ import Singular.Registry.TxBuilder.Internal (
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    edgeInsertActive,
     OnChainTokenState (..),
     OnChainTxOutRef,
  )
@@ -259,7 +259,7 @@ run observedPath stateBytes requestBytes openParams = withNode $ \sess -> do
                 genesisAddr
                 tid
                 key
-                (OpInsert leafActive)
+                edgeInsertActive
                 walletDestination
         {- The mirroring below is not bookkeeping. The speculative
         session inside `updateTokenWithDuties` starts from the

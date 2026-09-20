@@ -2,22 +2,21 @@
 
 {- |
 Module      : Singular.Registry.TxBuilder.Request
-Description : Request insert/delete/update transactions
+Description : Request transactions, one per C2 edge
 License     : Apache-2.0
 
-Builds request transactions for inserting, deleting,
-or updating a key in a token's trie. No script
-execution occurs -- the transaction simply pays to
-the per-cage request address with an inline
-'RequestDatum'.
-The locked ADA includes the token's @tip@ plus a
-fee buffer for the oracle's update transaction.
+Builds the request transaction for one C2 edge (#183). No script
+execution occurs -- the transaction simply pays to the per-cage
+request address with an inline 'RequestDatum' naming the edge.
+
+The locked ADA includes the token's @tip@ plus a fee buffer for the
+oracle's update transaction, and the datum's deposit is exactly that
+lovelace less the tip, which is what the fold checks.
 -}
 module Singular.Registry.TxBuilder.Request (
-    requestInsertImpl,
-    requestDeleteImpl,
-    requestUpdateImpl,
+    requestEdgeImpl,
     requestLockedAda,
+    settleRequestOutput,
 ) where
 
 import Data.ByteString (ByteString)
@@ -56,7 +55,7 @@ import Singular.Registry.Ledger (
 import Singular.Registry.Provider (Provider (..))
 import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types (
-    OnChainOperation (..),
+    Edge,
  )
 import Cardano.Tx.Balance (
     BalanceResult (..),
@@ -64,125 +63,59 @@ import Cardano.Tx.Balance (
  )
 import Cardano.Tx.Ledger (ConwayTx)
 
--- | Build a request-insert transaction.
-requestInsertImpl ::
+{- | Build the request transaction for one C2 edge (#183).
+
+The edge is the whole shape of the request: it names the trie move and
+its leaf bytes, so no value travels here. The datum's deposit is the
+output's lovelace less the tip, settled with the sizing below because
+the deposit is itself a datum field.
+-}
+requestEdgeImpl ::
     CageConfig ->
     Provider IO ->
     -- | Token tip (lovelace)
     Coin ->
     TokenId ->
-    -- | Key to insert
+    -- | Key the edge moves
     ByteString ->
-    -- | Value to insert
-    ByteString ->
+    -- | The C2 row index (0-6)
+    Edge ->
     Addr ->
     IO ConwayTx
-requestInsertImpl cfg prov tip tid key value =
-    requestImpl
-        cfg
-        prov
-        tip
-        tid
-        key
-        (OpInsert value)
-
--- | Build a request-delete transaction.
-requestDeleteImpl ::
-    CageConfig ->
-    Provider IO ->
-    -- | Token tip (lovelace)
-    Coin ->
-    TokenId ->
-    -- | Key to delete
-    ByteString ->
-    -- | Old value (for on-chain proof)
-    ByteString ->
-    Addr ->
-    IO ConwayTx
-requestDeleteImpl cfg prov tip tid key val =
-    requestImpl
-        cfg
-        prov
-        tip
-        tid
-        key
-        (OpDelete val)
-
--- | Build a request-update transaction.
-requestUpdateImpl ::
-    CageConfig ->
-    Provider IO ->
-    -- | Token tip (lovelace)
-    Coin ->
-    TokenId ->
-    -- | Key to update
-    ByteString ->
-    -- | Old value (must match current)
-    ByteString ->
-    -- | New value
-    ByteString ->
-    Addr ->
-    IO ConwayTx
-requestUpdateImpl
-    cfg
-    prov
-    tip
-    tid
-    key
-    oldVal
-    newVal =
-        requestImpl
-            cfg
-            prov
-            tip
-            tid
-            key
-            (OpUpdate oldVal newVal)
-
--- | Generic request transaction builder.
-requestImpl ::
-    CageConfig ->
-    Provider IO ->
-    -- | Token tip
-    Coin ->
-    TokenId ->
-    ByteString ->
-    OnChainOperation ->
-    Addr ->
-    IO ConwayTx
-requestImpl cfg prov (Coin mf) tid key op addr = do
+requestEdgeImpl cfg prov (Coin mf) tid key edge addr = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov addr
     feeUtxo <- case sortOn
         (Down . (^. coinTxOutL) . snd)
         utxos of
-        [] -> error "requestImpl: no UTxOs"
+        [] -> error "requestEdgeImpl: no UTxOs"
         (u : _) -> pure u
     now <- currentPosixMs
-    let datum =
-            mkRequestDatum tid addr key op mf now
-        scriptAddr =
+    let scriptAddr =
             requestAddrFromCfg cfg tid (network cfg)
-        draftOut =
-            mkBasicTxOut
-                scriptAddr
-                (inject (Coin 0))
-                & datumTxOutL
-                    .~ mkInlineDatum datum
         refundDraft =
             mkBasicTxOut addr (inject (Coin 0))
-        minAda =
-            requestLockedAda
-                pp
-                draftOut
-                refundDraft
-                mf
-        txOut =
+        build locked deposit =
             mkBasicTxOut
                 scriptAddr
-                (inject minAda)
+                (inject (Coin locked))
                 & datumTxOutL
-                    .~ mkInlineDatum datum
+                    .~ mkInlineDatum
+                        ( mkRequestDatum
+                            tid
+                            addr
+                            key
+                            edge
+                            deposit
+                            now
+                        )
+        Coin start =
+            requestLockedAda
+                pp
+                (build 0 0)
+                refundDraft
+                mf
+        txOut = settleRequestOutput pp mf build start
         body =
             mkBasicTxBody
                 & outputsTxBodyL
@@ -191,8 +124,43 @@ requestImpl cfg prov (Coin mf) tid key op addr = do
     case balanceTx pp [feeUtxo] [] addr tx of
         Left err ->
             error $
-                "requestImpl: " <> show err
+                "requestEdgeImpl: " <> show err
         Right br -> pure (balancedTx br)
+
+{- | Settle a request output against the invariant the fold checks: the
+datum's deposit is exactly the output's lovelace less the tip.
+
+Writing the deposit into the datum can itself raise the output's
+minimum ada, so the two are a fixpoint rather than one computation.
+Each round rebuilds the output at the minimum the previous round
+demanded; the minimum is monotone in the lovelace and the datum grows
+by at most a few bytes, so it settles in one or two rounds. The bound
+is there so that a ledger whose minimum never stabilises fails loudly
+instead of looping.
+-}
+settleRequestOutput ::
+    PParams ConwayEra ->
+    -- | Token tip (lovelace)
+    Integer ->
+    -- | Output for a given (locked lovelace, deposit)
+    (Integer -> Integer -> TxOut ConwayEra) ->
+    -- | Starting locked lovelace
+    Integer ->
+    TxOut ConwayEra
+settleRequestOutput pp tip build = go (8 :: Int)
+  where
+    go rounds locked =
+        let out = build locked (locked - tip)
+            Coin need = getMinCoinTxOut pp out
+         in if need <= locked
+                then out
+                else
+                    if rounds <= 0
+                        then
+                            error
+                                "settleRequestOutput: the minimum ada\
+                                \ for a request output did not settle"
+                        else go (rounds - 1) need
 
 -- | Compute the ADA to lock in a request output.
 requestLockedAda ::

@@ -25,7 +25,15 @@ module Singular.Registry.Types (
 
     -- * On-chain domain types
     OnChainTokenId (..),
-    OnChainOperation (..),
+    Edge,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
+    edgeDeleteAbsent,
+    edgeDeleteActive,
+    edgeWitnessTerminal,
+    edgeName,
     RequestPhase (..),
     requestPhase,
     OnChainRoot (..),
@@ -89,31 +97,61 @@ newtype OnChainRoot = OnChainRoot
     }
     deriving stock (Show, Eq)
 
-{- | On-chain operation on a key in the trie.
-Matches Aiken @types\/Operation@.
+{- | The C2 row index a request names (#183, Lean @Request.edge@,
+Aiken @lib\/edgeInsertAbsent@ … @edgeWitnessTerminal@).
+
+An edge names its own leaf bytes, so no value bytes travel with a
+request and an illegal value-byte shape is not expressible:
+
+@
+0  insertAbsent     insert 0x00
+1  insertActive     insert 0x01
+2  updateActive     update 0x00 -> 0x01
+3  updateTerminal   update 0x01 -> 0x02
+4  deleteAbsent     delete 0x00
+5  deleteActive     delete 0x01
+6  witnessTerminal  read   0x02
+@
+
+It is a plain 'Integer', exactly as it is a plain @Int@ on chain, so a
+tag outside @0..6@ can still be encoded and sent — which is what the
+cage's @edge-inadmissible@ refusal is there to answer, and what a row
+that exercises that refusal needs to be able to build.
 -}
-data OnChainOperation
-    = -- | Insert a new key-value pair (Constr 0)
-      OpInsert
-        -- | Value to insert
-        !ByteString
-    | -- | Delete a key (Constr 1)
-      OpDelete
-        -- | Old value being removed (needed for proof)
-        !ByteString
-    | -- | Update an existing key (Constr 2)
-      OpUpdate
-        -- | Old value being replaced
-        !ByteString
-        -- | New value
-        !ByteString
-    | -- | Read an existing key, leaving it unchanged (Constr 3, #157 C1/C3).
-      -- Appended: the published indices 0/1/2 never move. Only the
-      -- terminal codec byte is admitted on chain.
-      OpRead
-        -- | Expected current value; `0x02` and nothing else
-        !ByteString
-    deriving stock (Show, Eq)
+type Edge = Integer
+
+edgeInsertAbsent :: Edge
+edgeInsertAbsent = 0
+
+edgeInsertActive :: Edge
+edgeInsertActive = 1
+
+edgeUpdateActive :: Edge
+edgeUpdateActive = 2
+
+edgeUpdateTerminal :: Edge
+edgeUpdateTerminal = 3
+
+edgeDeleteAbsent :: Edge
+edgeDeleteAbsent = 4
+
+edgeDeleteActive :: Edge
+edgeDeleteActive = 5
+
+edgeWitnessTerminal :: Edge
+edgeWitnessTerminal = 6
+
+-- | The name of an admitted edge, for diagnostics and receipts.
+edgeName :: Edge -> String
+edgeName e = case e of
+    0 -> "insertAbsent"
+    1 -> "insertActive"
+    2 -> "updateActive"
+    3 -> "updateTerminal"
+    4 -> "deleteAbsent"
+    5 -> "deleteActive"
+    6 -> "witnessTerminal"
+    _ -> "edge-" <> show e
 
 {- | On-chain request to modify a token's trie.
 Matches Aiken @types\/Request@.
@@ -125,10 +163,13 @@ data OnChainRequest = OnChainRequest
     -- ^ Payment key hash of the requester (28 bytes)
     , requestKey :: !ByteString
     -- ^ Trie key to operate on
-    , requestValue :: !OnChainOperation
-    -- ^ The insert\/delete\/update operation
-    , requestFee :: !Integer
-    -- ^ Fee (in lovelace) the requester agrees to pay
+    , requestEdge :: !Edge
+    -- ^ The C2 row index this request names (#183). The edge names the
+    -- trie move and its leaf bytes; no value bytes travel here.
+    , requestDeposit :: !Integer
+    -- ^ The deposit (lovelace) the request rides with, over and above
+    -- the tip. Must equal the request output's lovelace less
+    -- @state.tip@ at fold time; the fold returns it to the destination.
     , requestSubmittedAt :: !Integer
     -- ^ POSIX time (ms) when the request was submitted
     , requestDestination :: !(ByteString, ByteString)
@@ -136,7 +177,7 @@ data OnChainRequest = OnChainRequest
     -- inline datum the receiving output must carry (#157 D-DEST;
     -- appended last). Encoded as a two-element list, exactly as Aiken
     -- encodes a tuple. Empty datum hash means a datum-less output; for
-    -- `OpInsert "\x00"` the address component is the refund address.
+    -- edge 0 the address component is the refund address.
     }
     deriving stock (Show, Eq)
 
@@ -435,35 +476,6 @@ instance UnsafeFromData OnChainTxOutRef where
             error
                 "unsafeFromBuiltinData: OnChainTxOutRef"
 
-instance ToData OnChainOperation where
-    toBuiltinData (OpInsert v) =
-        mkD $ Constr 0 [bsToD v]
-    toBuiltinData (OpDelete v) =
-        mkD $ Constr 1 [bsToD v]
-    toBuiltinData (OpUpdate old new) =
-        mkD $ Constr 2 [bsToD old, bsToD new]
-    toBuiltinData (OpRead v) =
-        mkD $ Constr 3 [bsToD v]
-
-instance FromData OnChainOperation where
-    fromBuiltinData bd = case unD bd of
-        Constr 0 [v] -> OpInsert <$> bsFromD v
-        Constr 1 [v] -> OpDelete <$> bsFromD v
-        Constr 2 [o, n] ->
-            OpUpdate <$> bsFromD o <*> bsFromD n
-        Constr 3 [v] -> OpRead <$> bsFromD v
-        _ -> Nothing
-
-instance UnsafeFromData OnChainOperation where
-    unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [B v] -> OpInsert v
-        Constr 1 [B v] -> OpDelete v
-        Constr 2 [B o, B n] -> OpUpdate o n
-        Constr 3 [B v] -> OpRead v
-        _ ->
-            error
-                "unsafeFromBuiltinData: OnChainOperation"
-
 instance ToData OnChainRoot where
     toBuiltinData (OnChainRoot bs) = mkD $ bsToD bs
 
@@ -486,8 +498,8 @@ instance ToData OnChainRequest where
                 [ unD (toBuiltinData requestToken)
                 , bbsToD requestOwner
                 , bsToD requestKey
-                , unD (toBuiltinData requestValue)
-                , I requestFee
+                , I requestEdge
+                , I requestDeposit
                 , I requestSubmittedAt
                 , List
                     [ bsToD (fst requestDestination)
@@ -499,16 +511,15 @@ instance FromData OnChainRequest where
     fromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, own, k, val, I fee, I sub, List [da, dh]] -> do
+            [tok, own, k, I edge, I dep, I sub, List [da, dh]] -> do
                 requestToken <-
                     fromBuiltinData (mkD tok)
                 requestOwner <- bbsFromD own
                 requestKey <- bsFromD k
-                requestValue <-
-                    fromBuiltinData (mkD val)
                 destAddress <- bsFromD da
                 destDatum <- bsFromD dh
-                let requestFee = fee
+                let requestEdge = edge
+                    requestDeposit = dep
                     requestSubmittedAt = sub
                     requestDestination = (destAddress, destDatum)
                 Just OnChainRequest{..}
@@ -518,16 +529,15 @@ instance UnsafeFromData OnChainRequest where
     unsafeFromBuiltinData bd = case unD bd of
         Constr
             0
-            [tok, B own, B k, val, I fee, I sub, List [B da, B dh]] ->
+            [tok, B own, B k, I edge, I dep, I sub, List [B da, B dh]] ->
                 OnChainRequest
                     { requestToken =
                         unsafeFromBuiltinData (mkD tok)
                     , requestOwner =
                         BuiltinByteString own
                     , requestKey = k
-                    , requestValue =
-                        unsafeFromBuiltinData (mkD val)
-                    , requestFee = fee
+                    , requestEdge = edge
+                    , requestDeposit = dep
                     , requestSubmittedAt = sub
                     , requestDestination = (da, dh)
                     }

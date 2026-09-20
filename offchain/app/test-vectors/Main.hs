@@ -346,8 +346,8 @@ datumEncodingVectors =
                 , requestOwner =
                     BuiltinByteString $ BS.replicate 28 0xdd
                 , requestKey = BS.pack [0x01, 0x02, 0x03]
-                , requestValue = OpInsert $ BS.pack [0x04, 0x05]
-                , requestFee = 1000000
+                , requestEdge = edgeInsertActive
+                , requestDeposit = 1000000
                 , requestSubmittedAt = 1700000000000
                 , -- #157 D-DEST: the appended destination — where the minted
                   -- token goes, and the inline datum the receiving output
@@ -356,7 +356,7 @@ datumEncodingVectors =
                     (BS.replicate 29 0x60, BS.empty)
                 }
        in Aeson.object
-            [ "description" .= txt "RequestDatum with OpInsert"
+            [ "description" .= txt "RequestDatum at edge 1 (insertActive)"
             , "type" .= txt "CageDatum"
             , "plutusData" .= toDataJson (RequestDatum req)
             ]
@@ -417,17 +417,43 @@ datumEncodingVectors =
             .= toDataJson
                 (Modify [Rejected, Rejected])
         ]
-    , Aeson.object
-        [ "description" .= txt "OpUpdate encoding"
-        , "type" .= txt "OnChainOperation"
-        , "plutusData" .= toDataJson (OpUpdate "\x01\x02" "\x03\x04")
-        ]
-    , Aeson.object
-        [ "description" .= txt "OpDelete encoding"
-        , "type" .= txt "OnChainOperation"
-        , "plutusData" .= toDataJson (OpDelete "\xaa\xbb")
-        ]
+    , -- #183: there is no standalone operation on the wire any more.
+      -- What used to be an `OpUpdate` / `OpDelete` vector is a request
+      -- at the edge that names that move, so the vectors cover the
+      -- integer tag in the position the cage reads it from.
+      edgeVector "RequestDatum at edge 3 (updateTerminal)" edgeUpdateTerminal
+    , edgeVector "RequestDatum at edge 5 (deleteActive)" edgeDeleteActive
+    , edgeVector "RequestDatum at edge 6 (witnessTerminal)" edgeWitnessTerminal
     ]
+
+{- | One request-datum vector at a named edge (#183). The token, owner,
+key, deposit, time and destination are the ones the insertActive vector
+above carries, so the tag is the only thing that differs between them.
+-}
+edgeVector :: Text -> Edge -> Aeson.Value
+edgeVector description edge =
+    Aeson.object
+        [ "description" .= txt description
+        , "type" .= txt "CageDatum"
+        , "plutusData"
+            .= toDataJson
+                ( RequestDatum
+                    OnChainRequest
+                        { requestToken =
+                            OnChainTokenId $
+                                BuiltinByteString $
+                                    BS.replicate 32 0xcc
+                        , requestOwner =
+                            BuiltinByteString $ BS.replicate 28 0xdd
+                        , requestKey = BS.pack [0x01, 0x02, 0x03]
+                        , requestEdge = edge
+                        , requestDeposit = 1000000
+                        , requestSubmittedAt = 1700000000000
+                        , requestDestination =
+                            (BS.replicate 29 0x60, BS.empty)
+                        }
+                )
+        ]
 
 -- | All JSON vectors.
 allJsonVectors :: [Aeson.Value]

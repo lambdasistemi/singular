@@ -114,7 +114,6 @@ import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
     computeScriptHash,
-    leafAbsent,
     requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
@@ -124,7 +123,7 @@ import Singular.Registry.TxBuilder.Reject (
     rejectRequestsWithRefs,
  )
 import Singular.Registry.TxBuilder.Request (
-    requestInsertImpl,
+    requestEdgeImpl,
  )
 import Singular.Registry.TxBuilder.Retract (
     retractRequestImpl,
@@ -133,7 +132,7 @@ import Singular.Registry.TxBuilder.Update (
     RegistryContext,
     updateTokenWithDuties,
  )
-import Singular.Registry.Types (OnChainOperation (..), OnChainTxOutRef)
+import Singular.Registry.Types (Edge, edgeInsertAbsent, edgeInsertActive, OnChainTxOutRef)
 
 {- | Full cage protocol E2E test spec.
 Skips when @REGISTRY_BLUEPRINT@ is not set.
@@ -211,7 +210,7 @@ cageFlowSpec stateBytes requestBytes = do
                     submit
                     tokenId
                     "hello"
-                    (OpInsert leafAbsent)
+                    edgeInsertAbsent
             reqUtxosBefore <-
                 Cage.queryUTxOs prov requestAddr
             length reqUtxosBefore
@@ -251,7 +250,7 @@ cageFlowSpec stateBytes requestBytes = do
                     submit
                     tokenId
                     "bye"
-                    "moon"
+                    edgeInsertActive
             reqUtxosBefore <-
                 Cage.queryUTxOs prov requestAddr
             length reqUtxosBefore
@@ -291,7 +290,7 @@ cageFlowSpec stateBytes requestBytes = do
                     submit
                     tokenId
                     "stale"
-                    "value"
+                    edgeInsertActive
             reqUtxosBefore <-
                 Cage.queryUTxOs prov requestAddr
             length reqUtxosBefore
@@ -413,17 +412,17 @@ submitInsertRequest ::
     Submitter IO ->
     TokenId ->
     ByteString ->
-    ByteString ->
+    Edge ->
     IO TxIn
-submitInsertRequest cfg prov submit tokenId key value = do
+submitInsertRequest cfg prov submit tokenId key edge = do
     unsignedReq <-
-        requestInsertImpl
+        requestEdgeImpl
             cfg
             prov
             (Coin 1_000_000)
             tokenId
             key
-            value
+            edge
             genesisAddr
     signedReq <- submitWithGenesis submit unsignedReq
     pure $
@@ -697,7 +696,7 @@ bookEdge ::
     Submitter IO ->
     TokenId ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO TxIn
 bookEdge cfg prov submit tokenId key op = do
     codes <- loadRegistryCodesFromEnv
@@ -712,7 +711,7 @@ foldEdge ::
     TokenId ->
     [(TxIn, TxOut ConwayEra)] ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO ConwayTx
 foldEdge cfg prov submit tm tokenId refs key op = do
     _ <- bookEdge cfg prov submit tokenId key op

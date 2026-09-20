@@ -194,9 +194,8 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     connectedFoldTx,
     syncFoldedRequests,
  )
-import Singular.Registry.TxBuilder.Request (requestInsertImpl)
+import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.Types (
-    OnChainOperation (..),
     OnChainTxOutRef,
     CageDatum (..),
     OnChainRoot (..),
@@ -628,7 +627,7 @@ fundPublicLifecycle env = do
         approval = insertApprovalName (addressBytes (controlAddress datum)) (nextControlCommitment datum)
         tokens = Map.singleton (envAppPolicy env) (Map.singleton (AssetName (SBS.toShort approval)) 1)
         deposit = Lifecycle.minimumCoin pp (scriptOut pp (envAppAddr env) 0 tokens datum)
-        insertDeposit = Lifecycle.requestDeposit pp (envCfg env) (envTok env) genesisAddr "rc-main" (OpInsert (representativeName "rc-main")) now
+        insertDeposit = Lifecycle.requestLockedCoin pp (envCfg env) (envTok env) genesisAddr "rc-main" edgeInsertActive now
         fund = Lifecycle.fundedOutput pp refs genesisAddr
         collateral = Lifecycle.collateralOutput pp refs genesisAddr
         lastDeposit = Coin 0
@@ -1580,7 +1579,7 @@ submitRecoveryRequest env spelling value = do
     pool <- readIORef (envPool env)
     let prov = if envLifecycle env then Lifecycle.fundingProvider (map fst pool) (envProv env) else envProv env
     unsigned <-
-        requestInsertImpl cfg prov (Coin 1_000_000) tok spelling value genesisAddr
+        requestEdgeImpl cfg prov (Coin 1_000_000) tok spelling edgeInsertActive genesisAddr
     let signed = addKeyWitness genesisSignKey unsigned
     result <- submitTx (envSubmit env) signed
     case result of

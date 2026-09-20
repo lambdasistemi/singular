@@ -34,7 +34,7 @@ nothing this runner prints describes a name as claimed, registered
 or maintained. It exercises the registry protocol only.
 
 It uses the same code path as the E2E suite — 'bootTokenImpl',
-'requestInsertImpl', 'updateTokenImpl' and a real node-to-client
+'requestEdgeImpl', 'updateTokenImpl' and a real node-to-client
 connection to a real 'cardano-node' spawned as a subprocess. No
 mocks, no stubbed node.
 
@@ -200,7 +200,7 @@ import Singular.Registry.TxBuilder.Internal (
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
-    OnChainOperation (..),
+    edgeInsertAbsent,
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
@@ -678,7 +678,7 @@ stepRequest cfg codes prov submit tid = do
             genesisAddr
             tid
             journeyKey
-            (OpInsert journeyValue)
+            edgeInsertAbsent
     after <- Cage.queryUTxOs prov reqAddr
     require
         "request: request UTxO observed at the request address"
@@ -827,7 +827,7 @@ stepReject cfg codes prov submit tm tid refs stateBeforeRejects = do
             genesisAddr
             tid
             negativeKey
-            (OpInsert negativeValue)
+            edgeInsertAbsent
     reqUtxos <- Cage.queryUTxOs prov reqAddr
     require "reject: exactly one request UTxO after the second request" $
         length reqUtxos == 1

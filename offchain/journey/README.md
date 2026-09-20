@@ -37,7 +37,7 @@ this document.
    the cage address. It reads the boot state datum and records the
    trie root.
 3. **request.** Builds an insert request (`key=hello`, `value=world`,
-   fee 1,000,000 lovelace) with `requestInsertImpl`, signs, submits,
+   tip 1,000,000 lovelace) with `requestEdgeImpl`, signs, submits,
    and observes exactly one request UTxO at the token's request
    address.
 4. **verify-absent.** Before the insert is applied, proves the key is

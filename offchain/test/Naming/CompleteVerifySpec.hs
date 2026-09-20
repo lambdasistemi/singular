@@ -14,7 +14,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
-import Naming.Register (overMarkerFor)
 import Naming.Verify (
     CompleteEvidence (..),
     verifyCompletion,
@@ -39,8 +38,8 @@ validComplete =
         , ceCompleteTx = "TxC"
         , ceCustodyTxid = "TxR"
         , ceRequestTxid = "TxR"
-        , ceReqOld = repA
-        , ceReqNew = overMarkerFor repA
+        , ceReqKey = repA
+        , ceReqEdge = 3
         , ceRepPolicy = policyR
         , ceRepName = repA
         , ceCustodyPolicy = policyR
@@ -68,11 +67,14 @@ spec = describe "Completion evidence" $ do
     it "refuses a missing request (empty creator)" $
         verifyCompletion validComplete{ceRequestTxid = ""}
             `shouldSatisfy` isLeft
-    it "refuses a folded request from the wrong old value" $
-        verifyCompletion validComplete{ceReqOld = BS.replicate 32 0x42}
+    it "refuses a folded request for another key" $
+        verifyCompletion validComplete{ceReqKey = BS.replicate 32 0x42}
             `shouldSatisfy` isLeft
-    it "refuses a folded request not writing the marker" $
-        verifyCompletion validComplete{ceReqNew = BS.replicate 36 0x43}
+    it "refuses a folded request that is not the retirement edge" $
+        verifyCompletion validComplete{ceReqEdge = 2}
+            `shouldSatisfy` isLeft
+    it "refuses a folded request whose edge is not admissible at all" $
+        verifyCompletion validComplete{ceReqEdge = 7}
             `shouldSatisfy` isLeft
     it "refuses a wrong custody policy" $
         verifyCompletion validComplete{ceCustodyPolicy = BS.replicate 28 0x58}

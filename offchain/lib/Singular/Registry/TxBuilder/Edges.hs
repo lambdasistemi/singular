@@ -121,7 +121,6 @@ import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
-    edgeOf,
     mkCageScript,
     mkInlineDatum,
     mkRequestDatumWith,
@@ -129,14 +128,19 @@ import Singular.Registry.TxBuilder.Internal (
     requestAddrFromCfg,
     scriptFromBytes,
     scriptHashBytes,
-    statedBefore,
     toLedgerData,
  )
 import Singular.Registry.TxBuilder.Update (
     RegistryContext (..),
     emptyRegistryContext,
  )
-import Singular.Registry.Types (OnChainOperation)
+import Singular.Registry.Types (
+    Edge,
+    edgeInsertActive,
+    edgeUpdateActive,
+    edgeInsertAbsent,
+    edgeWitnessTerminal,
+ )
 
 {- | Sign a built transaction with the payer's key, submit it, and wait
 for it. The caller owns its own signing key and its own confirmation
@@ -323,15 +327,14 @@ edgeDestinationOf ::
     CageConfig ->
     NamingCodes ->
     Addr ->
-    OnChainOperation ->
+    Edge ->
     (ByteString, ByteString)
-edgeDestinationOf cfg codes payerAddr op =
+edgeDestinationOf cfg codes payerAddr edge =
     let appHash = computeScriptHash (ncApplication codes)
         appAddr = Addr (network cfg) (ScriptHashObj appHash) StakeRefNull
-     in case edgeOf op (statedBefore op) of
-            Just 1 -> (serialiseAddr appAddr, edgeRecordDatumHash)
-            Just 2 -> (serialiseAddr appAddr, edgeRecordDatumHash)
-            _ -> (serialiseAddr payerAddr, BS.empty)
+     in if edge == edgeInsertActive || edge == edgeUpdateActive
+            then (serialiseAddr appAddr, edgeRecordDatumHash)
+            else (serialiseAddr payerAddr, BS.empty)
 
 {- | The deposit a booking rides with, over and above the tip. The fold
 returns it to the destination the request named, or locks it in the
@@ -355,9 +358,9 @@ bookEdge ::
     Addr ->
     TokenId ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     IO TxIn
-bookEdge cfg codes prov submit payerAddr tokenId key op =
+bookEdge cfg codes prov submit payerAddr tokenId key edge =
     bookEdgeTo
         cfg
         codes
@@ -366,8 +369,8 @@ bookEdge cfg codes prov submit payerAddr tokenId key op =
         payerAddr
         tokenId
         key
-        op
-        (edgeDestinationOf cfg codes payerAddr op)
+        edge
+        (edgeDestinationOf cfg codes payerAddr edge)
 
 {- | Book an edge, naming the destination explicitly (#173 I4, I5).
 
@@ -390,20 +393,24 @@ bookEdgeTo ::
     Addr ->
     TokenId ->
     ByteString ->
-    OnChainOperation ->
+    Edge ->
     (ByteString, ByteString) ->
     IO TxIn
-bookEdgeTo cfg codes prov submit payerAddr tokenId key op dest0 = do
-    edge <- case edgeOf op (statedBefore op) of
-        Just e -> pure e
-        Nothing ->
+bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
+    -- #183: the tag IS the edge. A booking states its own C2 row, and a
+    -- row outside the table is one only an adversarial caller wants, so
+    -- it is refused here rather than carried to a fold that would refuse
+    -- it `edge-inadmissible` anyway.
+    if edge < edgeInsertAbsent || edge > edgeWitnessTerminal
+        then
             error
-                ( "bookEdge: "
-                    <> show op
+                ( "bookEdge: edge "
+                    <> show edge
                     <> " on key "
                     <> show key
                     <> " is not one of the seven admissible edges"
                 )
+        else pure ()
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     (feeIn, feeOut) <-
@@ -436,7 +443,13 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key op dest0 = do
                 , PLC.List [PLC.B destAddr, PLC.B destHash]
                 ]
         requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
-        datum = mkRequestDatumWith tokenId payerAddr key op tipVal now dest
+        -- #183: the datum binds the DEPOSIT, not the tip. The output
+        -- holds `bond` = tip + deposit, and the fold checks
+        -- `deposit == held - tip`, so the two are the same number
+        -- written once each. The min-ADA check below is what keeps
+        -- them equal: a bond raised to meet min-ADA would break the
+        -- equality silently, so the booking refuses instead.
+        datum = mkRequestDatumWith tokenId payerAddr key edge edgeDeposit now dest
         reqOut =
             mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
                 & datumTxOutL .~ mkInlineDatum datum
