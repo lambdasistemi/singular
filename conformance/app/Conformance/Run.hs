@@ -7282,12 +7282,17 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
                         )
                     )
                 )
+        activeWitnessMarker =
+            hex
+                ( scriptHashBytes
+                    (hashScript (RegistryEdges.witnessScriptOf cfg namingCodes 1))
+                )
         marker = case control of
             WrongReason -> wrongReasonMarker
             _ -> stateMarker
     case result of
         Rejected reason ->
-            attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker (T.unpack (TE.decodeUtf8Lenient reason)) (txIdHex signedBad)
+            attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker (T.unpack (TE.decodeUtf8Lenient reason)) (txIdHex signedBad)
         Submitted txid ->
             failWith
                 ("CS04 FINDING: wrong-index fold accepted (txid " <> txInHex txid <> ") — reported, not relabelled")
@@ -7342,14 +7347,14 @@ tamperModifyToBadIndex prov tx = do
     pure (mkBasicTx newBody & witsTxL . scriptTxWitsL .~ scripts & witsTxL . rdmrsTxWitsL .~ badRedeemers)
 
 {- | Attribute a CS04 refusal. The tampered fold breaks fold consistency
-shared by both cage scripts, so both can refuse in one submission and
-the ledger's failure-list order is not stable. The invariant the row
-asserts is that the state script — whose redeemer was tampered —
-refused; the recorded script set is derived from the observed hashes
-in ledger order, never tuned to a run.
+shared by the state, request and active-witness scripts, so more than one
+can refuse in one submission and the ledger's failure-list order is not
+stable. The invariant the row asserts is that the state script — whose
+redeemer was tampered — refused; the recorded script set is derived from
+the observed hashes in ledger order, never tuned to a run.
 -}
-attributeCS04Refusal :: FilePath -> String -> Bool -> String -> String -> String -> String -> String -> String -> String -> IO ()
-attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker text rejectedTxid =
+attributeCS04Refusal :: FilePath -> String -> Bool -> String -> String -> String -> String -> String -> String -> String -> String -> IO ()
+attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateMarker requestMarker activeWitnessMarker text rejectedTxid =
     case matchRefusal marker text of
         Right () -> do
             let hashes = refusalScriptHashes text
@@ -7368,6 +7373,7 @@ attributeCS04Refusal receiptsDir base dirty nodeVer blueprintIdStr marker stateM
     toRole h
         | h == stateMarker = pure "state"
         | h == requestMarker = pure "request"
+        | h == activeWitnessMarker = pure "witness-active"
         | otherwise = failWith ("CS04: refusal names unknown script " <> h)
 
 -- | CS05: RequestAction + MintRedeemer coverage, Migrating as gap.
