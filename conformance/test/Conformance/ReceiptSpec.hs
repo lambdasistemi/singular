@@ -448,6 +448,8 @@ cg22Receipt =
     \,\"source\":{\"outref\":\"o#0\",\"policy\":\"p\",\"name\":\"k\",\"quantity\":1}\
     \,\"leaf\":\"Terminal\"\
     \,\"unknown\":{\"txid\":\"b1\",\"hashes\":[\"h\"],\"trace\":null\
-    \,\"controlTxid\":\"b2\",\"distinguisher\":\"the key is not bound\"}\
+    \,\"controlTxid\":\"b2\",\"distinguisher\":\"the key is not bound\"\
+    \,\"keys\":[\"k\"]}\
     \,\"absent\":{\"txid\":\"c1\",\"hashes\":[\"h\"],\"trace\":null\
-    \,\"controlTxid\":\"c2\",\"distinguisher\":\"the leaf is Absent\"}}}"
+    \,\"controlTxid\":\"c2\",\"distinguisher\":\"the leaf is Absent\"\
+    \,\"keys\":[\"k\"]}}}"

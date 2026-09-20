@@ -139,6 +139,8 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG22.json"
           test -f "$f" || { echo 'FAIL: missing CG22 receipt'; exit 1; }
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;

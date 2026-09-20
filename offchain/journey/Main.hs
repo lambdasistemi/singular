@@ -327,8 +327,9 @@ takes none, so its two layers coincide. This step
   * applies this instance's parameters to the unapplied
     code, hashes the result, and requires it to equal the
     hash of the script the run actually carried to the
-    node: the boot transaction's witness holds exactly the
-    derived state script, the update transaction's witness
+    node: the boot transaction carries exactly the
+    derived state script in its witness set or through a
+    reference output, the update transaction carries
     exactly the derived state and request scripts.
 
 Any mismatch fails the run naming both hashes and the
@@ -385,7 +386,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> ") but the run's state policy hash is 0x"
                 <> hashHex (cfgScriptHash cfg)
     -- The scripts the run actually carried to the node.
-    let bootWitness = witnessScriptHashes bootTx
+    let bootWitness = carriedScriptHashes refs bootTx
         updateWitness = carriedScriptHashes refs updateTx
         pinHex p = hex (SBS.fromShort p)
         -- The fold spends the state and the request and mints under the
@@ -409,7 +410,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> stateHex
                 <> " (parameters "
                 <> stateParams
-                <> ") but its script witness held "
+                <> ") but the scripts it carried held "
                 <> show (Set.toList bootWitness)
     -- #157: the fold withdraws from nothing, so the update transaction
     -- carries exactly the two derived scripts it spends — the retired
@@ -557,7 +558,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
         -- BEFORE the seed is chosen, so the publication cannot spend
         -- the very output the seed pins. Boot then references the
         -- fifteen-kilobyte script instead of carrying it inline.
-        _ <-
+        stateRef <-
             Edges.publishRefScript
                 prov
                 (submitWithGenesis submit)
@@ -606,7 +607,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             tokenId
             bootTx
             appliedTx
-            refs
+            (stateRef : refs)
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
         stepReject cfg codes prov submit tm tokenId refs appliedState
