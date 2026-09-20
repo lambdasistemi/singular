@@ -245,6 +245,7 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
+import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
 import Singular.Registry.TxBuilder.Internal (
     walkEdge,
     leafAbsent,
@@ -3990,7 +3991,9 @@ runCG14 env = do
         prov = envProv env
     tid <- cageTid cage
     _ <- rowRequestInsert env cage "cg14-key" "cg14-value"
-    unsigned <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    ctx <- rowRegistryContext env cage tid
+    unsigned <-
+        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
     evalMap <- Cage.evaluateTx (envProv env) unsigned
     mapM_ (\(p, r) -> emit "diag" (show p <> " => " <> either show (\(ExUnits m c) -> show (m, c)) r)) (Map.toList evalMap)
     (mem, cpu) <- measureUnits env unsigned
@@ -4096,7 +4099,9 @@ runCG15 env = do
     submitExpectRefused env "CG15" AgreesWithModel (stateMarkerOf cfg) hand
     -- Control: the library fold carries the withdrawal; it consumes
     -- this request and CG14's parked control request together.
-    libFold <- updateTokenImpl cfg prov (envTm env) tid genesisAddr
+    ctx <- rowRegistryContext env cage tid
+    libFold <-
+        updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
     (mem, cpu) <- measureUnits env libFold
     signed <- submitExpectAccepted env libFold
     let size = txSizeBytes signed
@@ -6994,14 +6999,22 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
+    refs <-
+        RegistryEdges.publishCageRefs
+            cfg
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            tid
     folds <-
         mapM
-            (insertWitness cfg tm tid)
-            [ ("cs07-fork-A", "va", [])
-            , ("cs07-fork-B1294", "vb", [2])
-            , ("cs07-fork-C11", "vc", [1])
-            , ("cs07-fork-D127", "vd", [2, 1])
-            , ("cs07-fork-E400", "ve", [2, 0])
+            (insertWitness cfg tm tid refs)
+            [ ("cs07-fork-A", [])
+            , ("cs07-fork-B1294", [2])
+            , ("cs07-fork-C11", [1])
+            , ("cs07-fork-D127", [2, 1])
+            , ("cs07-fork-E400", [2, 0])
             ]
     let observed = concat [proofStepConstrs tx | (tx, _, _) <- folds]
         witnessed = case control of
@@ -7031,10 +7044,20 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         Nothing
     emit "row" "CS07: ACCEPTED Branch/Fork/Leaf and Neighbor; C-over-{A,B} absence folded"
   where
-    insertWitness cfg tm tid (key, val, expectedSteps) = do
-        unsignedReq <- requestEdgeImpl cfg prov (defaultTip cfg) tid key edgeInsertAbsent genesisAddr
-        _ <- submitWithGenesis submit unsignedReq
-        unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
+    insertWitness cfg tm tid refs (key, expectedSteps) = do
+        _ <-
+            RegistryEdges.bookEdge
+                cfg
+                namingCodes
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                tid
+                key
+                edgeInsertAbsent
+        ctx <- RegistryEdges.registryContextFor cfg namingCodes prov refs
+        unsignedFold <-
+            updateTokenWithDuties cfg prov tm tid genesisAddr ctx
         require
             ("CS07: unexpected proof for " <> show key <> ": " <> show (proofStepConstrs unsignedFold))
             (proofStepConstrs unsignedFold == expectedSteps)
@@ -7042,7 +7065,7 @@ runCS07 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
         (mem, cpu) <- measureUnitsProv prov unsignedFold
         signedFold <- submitWithGenesis submit unsignedFold
         root <- withTrie tm tid $ \trie -> do
-            _ <- CageTrie.insert trie key val
+            _ <- walkEdge trie key edgeInsertAbsent
             CageTrie.getRoot trie
         observed <- readChainState cfg prov tid
         require
@@ -7091,17 +7114,27 @@ runCS03 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     signedBootA <- submitWithGenesis submit unsignedBootA
     tidA <- extractTokenId cfgA signedBootA
     createTrie tm tidA
-    unsignedReqA <-
-        requestEdgeImpl
+    refsA <-
+        RegistryEdges.publishCageRefs
             cfgA
+            namingCodes
             prov
-            (defaultTip cfgA)
+            (submitWithGenesis submit)
+            genesisAddr
+            tidA
+    _ <-
+        RegistryEdges.bookEdge
+            cfgA
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
             tidA
             cs03KeyA
             edgeInsertActive
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedReqA
-    unsignedFoldA <- updateTokenImpl cfgA prov tm tidA genesisAddr
+    ctxA <- RegistryEdges.registryContextFor cfgA namingCodes prov refsA
+    unsignedFoldA <-
+        updateTokenWithDuties cfgA prov tm tidA genesisAddr ctxA
     require
         "CS03: Modify witness missing Constr 2"
         (2 `elem` spendingConstrs unsignedFoldA)
@@ -7212,17 +7245,27 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
-    unsignedReq <-
-        requestEdgeImpl
+    refs <-
+        RegistryEdges.publishCageRefs
             cfg
+            namingCodes
             prov
-            (defaultTip cfg)
+            (submitWithGenesis submit)
+            genesisAddr
+            tid
+    _ <-
+        RegistryEdges.bookEdge
+            cfg
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
             tid
             "cs04-key"
             edgeInsertActive
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedReq
-    unsignedFold <- updateTokenImpl cfg prov tm tid genesisAddr
+    ctx <- RegistryEdges.registryContextFor cfg namingCodes prov refs
+    unsignedFold <-
+        updateTokenWithDuties cfg prov tm tid genesisAddr ctx
     badTx <- tamperModifyToBadIndex prov unsignedFold
     let signedBad = addKeyWitness genesisSignKey badTx
     result <- submitTx submit signedBad
@@ -7255,17 +7298,27 @@ runCS04 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     signedBootC <- submitWithGenesis submit unsignedBootC
     tidC <- extractTokenId cfgC signedBootC
     createTrie tm tidC
-    unsignedReqC <-
-        requestEdgeImpl
+    refsC <-
+        RegistryEdges.publishCageRefs
             cfgC
+            namingCodes
             prov
-            (defaultTip cfgC)
+            (submitWithGenesis submit)
+            genesisAddr
+            tidC
+    _ <-
+        RegistryEdges.bookEdge
+            cfgC
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
             tidC
             "cs04-control-key"
             edgeInsertActive
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedReqC
-    unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
+    ctxC <- RegistryEdges.registryContextFor cfgC namingCodes prov refsC
+    unsignedFoldC <-
+        updateTokenWithDuties cfgC prov tm tidC genesisAddr ctxC
     _ <- submitWithGenesis submit unsignedFoldC
     emit "control" "CS04 control: fresh cage accepted a valid fold"
 
@@ -7341,23 +7394,32 @@ runCS05 prov submit stateBytes requestBytes namingCodes nodeVer base dirty recei
     tidC <- extractTokenId cfgC signedBootC
     createTrie tm tidC
     require "CS05: Minting witness missing Constr 0" (0 `elem` mintConstrs signedBootC)
-    unsignedReqC <-
-        requestEdgeImpl
+    refsC <-
+        RegistryEdges.publishCageRefs
             cfgC
+            namingCodes
             prov
-            (defaultTip cfgC)
+            (submitWithGenesis submit)
+            genesisAddr
+            tidC
+    _ <-
+        RegistryEdges.bookEdge
+            cfgC
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
             tidC
             "cs05-update-key"
             edgeInsertActive
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedReqC
-    unsignedFoldC <- updateTokenImpl cfgC prov tm tidC genesisAddr
+    ctxC <- RegistryEdges.registryContextFor cfgC namingCodes prov refsC
+    unsignedFoldC <-
+        updateTokenWithDuties cfgC prov tm tidC genesisAddr ctxC
     require "CS05: Update witness missing Constr 0" (0 `elem` requestActionConstrs unsignedFoldC)
     (memFold, cpuFold) <- measureUnitsProv prov unsignedFoldC
     signedFoldC <- submitWithGenesis submit unsignedFoldC
-    _ <- withTrie tm tidC $ \t -> do
-        _ <- CageTrie.insert t "cs05-update-key" "cs05-update-val"
-        pure ()
+    _ <- withTrie tm tidC $ \t ->
+        () <$ walkEdge t "cs05-update-key" edgeInsertActive
     (seedD, _) <- largestWalletUtxo prov
     let cfgD = fastRejectCfgLocal (cageCfg stateBytes requestBytes namingCodes (txInToRef seedD))
     unsignedBootD <- bootTokenImpl cfgD prov genesisAddr
@@ -7476,32 +7538,43 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
     signedBoot <- submitWithGenesis submit unsignedBoot
     tid <- extractTokenId cfg signedBoot
     createTrie tm tid
+    refs <-
+        RegistryEdges.publishCageRefs
+            cfg
+            namingCodes
+            prov
+            (submitWithGenesis submit)
+            genesisAddr
+            tid
     (keyK, keyP, keyQ, _, _, _) <- findPresentForkKeys
     emit "probe-keys" (show (keyK, keyP, keyQ))
-    (_, unsigned1) <- insertProbe tm cfg prov submit tid keyK
+    (_, unsigned1) <- insertProbe tm cfg prov submit tid refs keyK
     require
         "probe setup unexpectedly carries Fork"
         (1 `notElem` proofStepConstrs unsigned1)
-    (_, unsignedP) <- insertProbe tm cfg prov submit tid keyP
+    (_, unsignedP) <- insertProbe tm cfg prov submit tid refs keyP
     require
         ("probe setup P proof unexpected: " <> show (proofStepConstrs unsignedP))
         (2 `elem` proofStepConstrs unsignedP)
-    (_, unsignedQ) <- insertProbe tm cfg prov submit tid keyQ
+    (_, unsignedQ) <- insertProbe tm cfg prov submit tid refs keyQ
     require
         ("probe setup Q unexpectedly carries Fork: " <> show (proofStepConstrs unsignedQ))
         (1 `notElem` proofStepConstrs unsignedQ)
     emit "probe" "update fold for present K1 (inclusion path, no excluding)"
-    unsignedProbeReq <-
-        requestEdgeImpl
+    _ <-
+        RegistryEdges.bookEdge
             cfg
+            namingCodes
             prov
-            (defaultTip cfg)
+            (submitWithGenesis submit)
+            genesisAddr
             tid
             keyK
             edgeUpdateActive
-            genesisAddr
-    _ <- submitWithGenesis submit unsignedProbeReq
-    probeResult <- try @SomeException (updateTokenImpl cfg prov tm tid genesisAddr)
+    ctx <- RegistryEdges.registryContextFor cfg namingCodes prov refs
+    probeResult <-
+        try @SomeException
+            (updateTokenWithDuties cfg prov tm tid genesisAddr ctx)
     case probeResult of
         Left err -> do
             emit "verdict" "REFUSED as predicted"
@@ -7518,18 +7591,26 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
             emit "complete" "probe done: inclusion-path Fork ACCEPTED (falsification)"
     cancel nodeThread
   where
-    insertProbe tmInner cfgInner provInner submitInner tidInner key = do
-        unsignedReq <-
-            requestEdgeImpl
+    insertProbe tmInner cfgInner provInner submitInner tidInner refs key = do
+        _ <-
+            RegistryEdges.bookEdge
                 cfgInner
+                namingCodes
                 provInner
-                (defaultTip cfgInner)
+                (submitWithGenesis submitInner)
+                genesisAddr
                 tidInner
                 key
                 edgeInsertAbsent
+        ctx <- RegistryEdges.registryContextFor cfgInner namingCodes provInner refs
+        unsignedFold <-
+            updateTokenWithDuties
+                cfgInner
+                provInner
+                tmInner
+                tidInner
                 genesisAddr
-        _ <- submitWithGenesis submitInner unsignedReq
-        unsignedFold <- updateTokenImpl cfgInner provInner tmInner tidInner genesisAddr
+                ctx
         signedFold <- submitWithGenesis submitInner unsignedFold
         _ <- withTrie tmInner tidInner $ \t ->
             () <$ walkEdge t key edgeInsertAbsent
