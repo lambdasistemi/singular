@@ -15,8 +15,12 @@ use types.{Delete, Modify, Read, RequestAction, StateDatum, Update, UpdateAction
 /// under BOTH encodings with the SAME outcome and, for refusals, the SAME
 /// trace compared as a value via `state.shapeTrace`. Non-read rows carry their
 /// approval under both (well-formed); reads carry none (C4) and keep their
-/// pairwise traces. One mutation per class shows the comparison able to
-/// disagree. Receipted in `t183_dual_receipt.md` (path+sha256 in review-003).
+/// pairwise traces. One disagreement control per class (NOTE-007): the SAME
+/// scenario with contradictory encodings — old Operation says one edge, new
+/// tag says another — folded under both with DIFFERENT reasons (old accepts
+/// from the Operation, new refuses `edge-mismatch` from the tag). Nothing
+/// mutates `nextRoot`, proofs, or anything both encodings read the same way.
+/// Receipted in `t183_dual_receipt.md` (path+sha256 in review-005).
 
 fn foldOld(
   root: ByteArray,
@@ -499,12 +503,16 @@ test t183_dual_update_valid_new_accepts() {
   )
 }
 
-/// Mutation (update class): same valid bytes, wrong tag — new refuses
-/// `edge-mismatch` while old accepts. The comparison can disagree.
+/// Disagreement control (update class, NOTE-007): the SAME valid scenario —
+/// same roots, custody, outputs, mint, approval, and Operation bytes — with
+/// contradictory encodings: Operation Update(00,01) says edge 2, tag says 5.
+/// Old folds the Operation and accepts; new reads the tag and refuses
+/// `edge-mismatch`. Same scenario, different reasons; equal reasons here
+/// would mean the new codec still reads the old field.
 test t183_dual_update_wrong_tag_disagrees() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.edgeRequestInput(
       0,
       fx.keyA,
@@ -563,11 +571,15 @@ test t183_dual_delete_valid_new_accepts() {
   )
 }
 
-/// Mutation (delete class): same valid bytes, wrong tag.
+/// Disagreement control (delete class, NOTE-007): the SAME valid scenario —
+/// same roots, custody, outputs, mint, approval, and Operation bytes — with
+/// contradictory encodings: Operation Delete(00) says edge 4, tag says 5.
+/// Old folds the Operation and accepts; new reads the tag and refuses
+/// `edge-mismatch`. Same scenario, different reasons.
 test t183_dual_delete_wrong_tag_disagrees() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.emptyRoot(),
     fx.edgeRequestInput(
       0,
       fx.keyA,
@@ -635,7 +647,11 @@ test t183_dual_read_valid_new_accepts() {
   )
 }
 
-/// Mutation (read class): same valid bytes, wrong tag.
+/// Disagreement control (read class, NOTE-007): the SAME valid scenario —
+/// same roots, outputs, mint, and Operation bytes, no approval (C4) — with
+/// contradictory encodings: Operation Read(02) says edge 6, tag says 2.
+/// Old folds the Operation and accepts; new reads the tag and refuses
+/// `edge-mismatch`. Same scenario, different reasons.
 test t183_dual_read_wrong_tag_disagrees() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
@@ -976,8 +992,11 @@ fn retireNewWrongTag(root: ByteArray, nextRoot: ByteArray) -> Bool {
   )
 }
 
-/// Mutation (terminal class): same valid retirement bytes, wrong tag — old
-/// accepts, new refuses `edge-mismatch`. The comparison can disagree.
+/// Disagreement control (terminal class, NOTE-007): the SAME valid
+/// retirement scenario — same roots, witness, burn, approval, and Operation
+/// bytes — with contradictory encodings: Operation Update(01,02) says edge 3,
+/// tag says 5. Old folds the Operation and accepts; new reads the tag and
+/// refuses `edge-mismatch`. Same scenario, different reasons.
 test t183_dual_update_terminal_wrong_tag_disagrees() {
   retireNewWrongTag(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
