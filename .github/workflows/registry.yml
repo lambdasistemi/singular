@@ -446,6 +446,11 @@ jobs:
           # name is accepted only when the ledger actually surfaced it,
           # because an EvalFailure carries an empty Plutus log list and
           # the exact names are enforced at the Aiken layer.
+          # The jq program below is single-quoted ON PURPOSE: every `$`
+          # in it is a JQ variable, not a shell one, and the body is
+          # byte-identical to the frozen gate.sh. shellcheck cannot tell
+          # the two languages apart.
+          # shellcheck disable=SC2016
           nix run --quiet nixpkgs#jq -- -e '
             def txid: type == "string" and test("^[0-9a-f]{64}$");
             def text: type == "string" and length > 0;
