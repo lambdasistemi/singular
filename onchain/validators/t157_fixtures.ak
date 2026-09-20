@@ -16,7 +16,7 @@ use cardano/transaction
 use lib
 use lib.{approvalName}
 use types.{
-  AbsentCustody, CageDatum, EdgeRequest, EdgeRequestDatum, Operation, Request, RequestDatum, State,
+  AbsentCustody, CageDatum, Request, RequestDatum, State,
   StateDatum, TokenId,
 }
 
@@ -61,7 +61,7 @@ pub const tip: Int = 1_000_000
 /// returns it to the destination (#157 T6, want-ledger R4).
 pub const deposit: Int = 2_000_000
 
-pub const requestValue: Int = tip + deposit
+pub const requestLovelace: Int = tip + deposit
 
 pub const stateLovelace: Int = 5_000_000
 
@@ -369,9 +369,12 @@ pub fn requestRef(index: Int) -> OutputReference {
   OutputReference { transaction_id: #"52455155455354", output_index: index }
 }
 
+/// The request datum on the final wire (#183 slice b): the C2 row index
+/// (`edge` 0-6) with no value bytes and no `tip`; `deposit` is the value
+/// above the tip the request rides with (`held - state.tip`).
 pub fn requestDatum(
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
 ) -> CageDatum {
@@ -380,53 +383,7 @@ pub fn requestDatum(
       requestToken: cageToken,
       requestOwner: owner,
       requestKey: key,
-      requestValue: operation,
-      tip,
-      submitted_at: 0,
-      destination,
-    },
-  )
-}
-
-/// A request UTxO carrying its approval and its deposit.
-pub fn requestInput(
-  index: Int,
-  key: ByteArray,
-  operation: Operation,
-  owner: ByteArray,
-  destination: (ByteArray, ByteArray),
-  carried: Value,
-  lovelace: Int,
-) -> Input {
-  Input {
-    output_reference: requestRef(index),
-    output: Output {
-      address: cageAddress(),
-      value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(requestDatum(key, operation, owner, destination)),
-      reference_script: None,
-    },
-  }
-}
-
-/// The edge-tagged datum (#183 S20 dual-codec, transitional NOTE-002): the C2
-/// row index AND the same value bytes as the old codec, no `tip` field,
-/// explicit `deposit` (`held - tip`). The next commit removes the old
-/// `Request`/`Operation`/`RequestDatum` AND this transient `requestValue`.
-pub fn edgeRequestDatum(
-  key: ByteArray,
-  edge: Int,
-  operation: Operation,
-  owner: ByteArray,
-  destination: (ByteArray, ByteArray),
-) -> CageDatum {
-  EdgeRequestDatum(
-    EdgeRequest {
-      requestToken: cageToken,
-      requestOwner: owner,
-      requestKey: key,
       edge,
-      requestValue: operation,
       submitted_at: 0,
       destination,
       deposit,
@@ -434,15 +391,14 @@ pub fn edgeRequestDatum(
   )
 }
 
-/// A request UTxO in the new encoding, carrying its approval and its deposit.
+/// A request UTxO carrying its approval and its deposit.
 /// `lovelace` must be `tip + deposit`; the fold checks `held >= tip` and
-/// `deposit == held - tip`. Non-read rows must carry their approval (NOTE-002
-/// well-formedness); reads carry none.
-pub fn edgeRequestInput(
+/// `deposit == held - tip`. Non-read rows must carry their approval;
+/// reads carry none (C4).
+pub fn requestInput(
   index: Int,
   key: ByteArray,
   edge: Int,
-  operation: Operation,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -453,7 +409,7 @@ pub fn edgeRequestInput(
     output: Output {
       address: cageAddress(),
       value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(edgeRequestDatum(key, edge, operation, owner, destination)),
+      datum: InlineDatum(requestDatum(key, edge, owner, destination)),
       reference_script: None,
     },
   }
@@ -683,7 +639,7 @@ pub fn requestAddress() -> address.Address {
 pub fn deployedRequestInput(
   index: Int,
   key: ByteArray,
-  operation: Operation,
+  edge: Int,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -694,7 +650,7 @@ pub fn deployedRequestInput(
     output: Output {
       address: requestAddress(),
       value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(requestDatum(key, operation, owner, destination)),
+      datum: InlineDatum(requestDatum(key, edge, owner, destination)),
       reference_script: None,
     },
   }

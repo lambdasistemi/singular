@@ -6,8 +6,9 @@ use shared.{
   carriesStateToken, in_phase1, in_phase2, inputByRef, inputOrReferenceByRef,
   is_rejectable, readState,
 }
+use lib.{edgeInsertAbsent, edgeInsertActive, edgeWitnessTerminal}
 use types.{
-  CageDatum, Contribute, Insert, Modify, Read, Request, RequestDatum, Retract, State,
+  CageDatum, Contribute, Modify, Request, RequestDatum, Retract, State,
   Sweep, TokenId,
   UpdateRedeemer,
 }
@@ -88,24 +89,21 @@ fn validateRetract(
   stateRef: OutputReference,
   tx: Transaction,
 ) {
-  let Request { requestOwner, requestToken, requestValue, submitted_at, .. } =
+  let Request { requestOwner, requestToken, edge, submitted_at, .. } =
     request
   let Transaction { extra_signatories, validity_range, .. } = tx
   expect requestToken == cageToken
   // Insert-and-read retraction (issue #79 Defect 2; #157 C9, D-RETRACT):
   // Lean `step .withdraw` throws `withdraw-insert-only` for any request
   // that is neither, and `step .escape` throws
-  // `completion-only-custody`. An Update (retirement) or Delete request
+  // `completion-only-custody`. An update (retirement) or delete request
   // must NOT be retractable — the completion-only custody binds them.
-  // A `Read` carries no custody argument at all, so it retracts exactly
+  // A read carries no custody argument at all, so it retracts exactly
   // as an insert does, and is the only new retractable class. Owner sig,
   // phase-2 window and state-token binding below are retained.
+  // (#183 slice b: edges, not value bytes — 0/1 insert, 6 read.)
   let retractable =
-    when requestValue is {
-      Insert(_) -> True
-      Read(_) -> True
-      _ -> False
-    }
+    edge == edgeInsertAbsent || edge == edgeInsertActive || edge == edgeWitnessTerminal
   if !retractable {
     trace @"withdraw-insert-only"
     False

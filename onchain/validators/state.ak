@@ -15,17 +15,17 @@ use cardano/transaction.{
   Datum, InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
 use lib.{
-  approvalName, assetName, decodeState, deltaOf, destinationMatches,
-  edgeDeleteAbsent, edgeDeleteActive, edgeInsertAbsent, edgeInsertActive, edgeOf,
+  approvalName, assetName, deltaOf, destinationMatches,
+  edgeDeleteAbsent, edgeDeleteActive, edgeInsertAbsent, edgeInsertActive,
   edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal, exactQuantity,
-  kindAbsent, kindActive, kindTerminal, leafAbsent, leafActive, leafTerminal, paysAddress,
-  statedBefore, tokenFromPolicy,
+  kindAbsent, kindActive, leafAbsent, leafActive, leafTerminal, paysAddress,
+  tokenFromPolicy,
 }
 use shared.{in_phase1, is_rejectable}
 use types.{
-  AbsentCustody, Burning, CageDatum, Delete, EdgeRequest, EdgeRequestDatum, End, Insert, Migrating,
-  MintRedeemer, Minting, Modify, Operation, Read, Rejected, Request,
-  RequestAction, RequestDatum, State, StateDatum, TokenId, Update,
+  AbsentCustody, Burning, CageDatum, End, Migrating,
+  MintRedeemer, Minting, Modify, Rejected, Request,
+  RequestAction, RequestDatum, State, StateDatum, TokenId,
   UpdateAction, UpdateRedeemer,
 }
 
@@ -39,14 +39,14 @@ use types.{
 //
 // What a `Modify` must satisfy:
 //
-// - **C1/C2 admissibility** — the value of every known leaf is one codec
-//   byte, and only the seven `(operation, before-leaf)` rows change or
-//   read the trie. Every other shape refuses with its own trace, before
-//   any proof is checked.
-// - **C3 the read** — `Read(0x02)` is verified with the existing verifier
+// - **C1/C2 admissibility** — the request's tag is one of the seven C2
+//   edges (`0..6`), admitted before approval and before any proof is
+//   checked; anything else refuses `edge-inadmissible`. The trie move
+//   and its leaf bytes come from the edge table, never from request bytes.
+// - **C3 the read** — edge 6 is verified with the existing verifier
 //   at its own position in the batch, so its proof is checked against the
 //   intermediate root there. The leaf is unchanged.
-// - **C4 admission** — a request whose operation changes the trie is
+// - **C4 admission** — a request whose edge changes the trie is
 //   folded only if its UTxO carries exactly one asset under the pins's
 //   `application_policy` whose asset name is the approval binding of that
 //   request. No application script runs at fold time; the cage recomputes
@@ -204,67 +204,6 @@ fn policyOfKind(pins: State, kind: Int) -> PolicyId {
     pins.active_policy
   } else {
     pins.terminal_policy
-  }
-}
-
-/// Does every value byte this operation names decode as a leaf (#157
-/// C1)? Checked before the edge and before any proof: a request whose
-/// bytes are not a codec byte has no leaf at all.
-fn codecOk(op: Operation) -> Bool {
-  when op is {
-    Insert(value) -> is_some(decodeState(value))
-    Delete(value) -> is_some(decodeState(value))
-    Update(old, new) -> is_some(decodeState(old)) && is_some(decodeState(new))
-    Read(value) -> is_some(decodeState(value))
-  }
-}
-
-/// The reason this `(operation, before-leaf)` is not one of the seven
-/// rows (#157 C2, G3, N10). Total over the codec domain, and each arm is
-/// one trace: `edgeOf` says no, this says why.
-///
-/// #173 A-006: the INSERT reasons come from `lib.insertRefusal`, the one
-/// construction site, so a test asserting the reason asserts the value
-/// this validator actually traces rather than a helper nothing calls.
-fn refuseEdge(acc: Fold, op: Operation, before: Option<Int>) -> Fold {
-  when op is {
-    Insert(value) -> {
-      expect Some(reason) =
-        lib.insertRefusal(insertEdgeOf(value), before)
-      halt(acc, reason)
-    }
-    Read(_) ->
-      // Lean distinguishes the facts (`read-absent` vs `read-active`), so
-      // the cage does too: G3 keeps the traces pairwise distinct where
-      // R3 says the facts differ, and M3 keeps its own named trace for
-      // the read of a LIVE name.
-      if before == Some(kindAbsent) {
-        halt(acc, @"read-absent")
-      } else {
-        halt(acc, @"read-non-terminal")
-      }
-    Delete(_) ->
-      if before == Some(kindTerminal) {
-        halt(acc, @"edge-from-terminal")
-      } else {
-        halt(acc, @"edge-inadmissible")
-      }
-    Update(old, new) ->
-      if before == Some(kindTerminal) {
-        halt(acc, @"edge-from-terminal")
-      } else if decodeState(new) == Some(kindAbsent) {
-        halt(acc, @"update-to-absent")
-      } else if decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
-        kindTerminal,
-      ) {
-        halt(acc, @"update-absent-to-terminal")
-      } else if decodeState(old) == Some(kindActive) && decodeState(new) == Some(
-        kindActive,
-      ) {
-        halt(acc, @"update-active-to-active")
-      } else {
-        halt(acc, @"edge-inadmissible")
-      }
   }
 }
 
@@ -430,19 +369,12 @@ fn mkAction(pins: State, tokenId: TokenId, validity_range) {
       when input.output.datum is {
         InlineDatum(datum) ->
           if datum is RequestDatum(request): CageDatum {
+            // #183 slice b: the edge-only request is the only request.
+            // The dual-codec checkpoint stands in history (reviews 002–005).
             if request.requestToken == tokenId {
               stepRequest(acc, pins, request, input, validity_range)
             } else {
               // A request for another cage token is not ours to fold.
-              acc
-            }
-          } else if datum is EdgeRequestDatum(request): CageDatum {
-            // #183 S20 dual-codec: the edge-tagged request folds beside the
-            // old Operation request for exactly one commit, with identical
-            // verdicts on the G3 shapes (receipted in t183_dual).
-            if request.requestToken == tokenId {
-              stepEdgeRequest(acc, pins, request, input, validity_range)
-            } else {
               acc
             }
           } else {
@@ -454,6 +386,11 @@ fn mkAction(pins: State, tokenId: TokenId, validity_range) {
   }
 }
 
+/// One step of the fold over an edge-only request (#183 slice b, Lean
+/// `Request.edge`). The tag IS the edge: admitted `0..6` before approval
+/// and before any proof, then the same admission and MPF walk every edge
+/// takes. No `tip` field (`tip-mismatch` retired): `held >= state.tip`
+/// (`tip-coverage`) plus `deposit == held - state.tip` (`deposit-mismatch`).
 fn stepRequest(
   acc: Fold,
   pins: State,
@@ -461,16 +398,16 @@ fn stepRequest(
   input: Input,
   validity_range,
 ) -> Fold {
-  let Request { requestOwner, requestKey, requestValue, tip, submitted_at, destination, .. } =
+  let Request { requestOwner, requestKey, edge: tag, submitted_at, destination, deposit, .. } =
     request
   let held = lovelace_of(input.output.value)
-  if tip != pins.tip {
-    halt(acc, @"tip-mismatch")
-  } else if held < tip {
-    // C8 (was the pinned consumer's R1): the cage checks carriage now,
-    // beside `tip == pins.tip`. Costless fabricated requests would
-    // otherwise fold for free — trie spam at zero price.
+  if held < pins.tip {
+    // C8 (was the pinned consumer's R1): the cage checks carriage now.
+    // Costless fabricated requests would otherwise fold for free —
+    // trie spam at zero price.
     halt(acc, @"tip-coverage")
+  } else if deposit != held - pins.tip {
+    halt(acc, @"deposit-mismatch")
   } else {
     when acc.actions is {
       [] -> halt(acc, @"missing-action")
@@ -490,202 +427,36 @@ fn stepRequest(
               // only REJECTED rows are owed refunds, at `input − tip`.
               Fold {
                 ..popped,
-                refunds: [Pair(requestOwner, held - tip), ..popped.refunds],
-              }
-            }
-          UpdateAction(proof) ->
-            if !in_phase1(validity_range, submitted_at, pins.process_time) {
-              halt(popped, @"not-phase1")
-            } else if !codecOk(requestValue) {
-              halt(popped, @"leaf-codec")
-            } else {
-              let before =
-                when statedBefore(requestValue) is {
-                  None -> None
-                  Some(bytes) -> decodeState(bytes)
-                }
-              when edgeOf(requestValue, before) is {
-                None -> refuseEdge(popped, requestValue, before)
-                Some(edge) -> {
-                  let checked =
-                    if edge == edgeWitnessTerminal {
-                      // A read carries no approval and needs none (C4).
-                      popped
-                    } else {
-                      admitted(popped, pins, edge, request, input.output.value)
-                    }
-                  if !checked.ok {
-                    checked
-                  } else {
-                    applyEdge(
-                      checked,
-                      pins,
-                      edge,
-                      requestKey,
-                      requestValue,
-                      destination,
-                      held - tip,
-                      proof,
-                    )
-                  }
-                }
-              }
-            }
-        }
-      }
-    }
-  }
-}
-
-/// Admission by approval for the edge-tagged request (#183 S20): identical
-/// to `admitted`, read off `EdgeRequest` instead of `Request`.
-fn admittedEdge(
-  acc: Fold,
-  pins: State,
-  edge: Int,
-  request: EdgeRequest,
-  value: Value,
-) -> Fold {
-  let carried = assets.tokens(value, pins.application_policy)
-  when dict.keys(carried) is {
-    [name] ->
-      if dict.get(carried, name) != Some(1) {
-        halt(acc, @"no-approval")
-      } else if name != approvalName(
-        edge,
-        request.requestKey,
-        request.requestOwner,
-        request.destination,
-      ) {
-        halt(acc, @"approval-binding")
-      } else {
-        acc
-      }
-    _ -> halt(acc, @"no-approval")
-  }
-}
-
-/// The G3 trace of an illegal shape, as a value (#183 NOTE-002).
-///
-/// Mirrors `refuseEdge` arm for arm (including `lib.insertRefusal`), so a test
-/// asserting this string asserts the value the fold actually traces. Total
-/// over illegal shapes; call only when `edgeOf(op, before)` is `None`.
-pub fn shapeTrace(op: Operation, before: Option<Int>) -> String {
-  when op is {
-    Insert(value) ->
-      when lib.insertRefusal(insertEdgeOf(value), before) is {
-        Some(reason) -> reason
-        None -> @"edge-inadmissible"
-      }
-    Read(_) ->
-      if before == Some(kindAbsent) {
-        @"read-absent"
-      } else {
-        @"read-non-terminal"
-      }
-    Delete(_) ->
-      if before == Some(kindTerminal) {
-        @"edge-from-terminal"
-      } else {
-        @"edge-inadmissible"
-      }
-    Update(old, new) ->
-      if before == Some(kindTerminal) {
-        @"edge-from-terminal"
-      } else if decodeState(new) == Some(kindAbsent) {
-        @"update-to-absent"
-      } else if decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
-        kindTerminal,
-      ) {
-        @"update-absent-to-terminal"
-      } else if decodeState(old) == Some(kindActive) && decodeState(new) == Some(
-        kindActive,
-      ) {
-        @"update-active-to-active"
-      } else {
-        @"edge-inadmissible"
-      }
-  }
-}
-
-fn stepEdgeRequest(
-  acc: Fold,
-  pins: State,
-  request: EdgeRequest,
-  input: Input,
-  validity_range,
-) -> Fold {
-  // #183 S20/NOTE-002: the transient carries the SAME value bytes as the old
-  // codec plus the edge tag. Shape is checked with the same
-  // `codecOk`/`edgeOf`/`refuseEdge` before approval (identical traces, tag
-  // unchecked); then the tag must equal the derived edge (`edge-mismatch`);
-  // then admission and the MPF walk run on the same bytes. No `tip` field:
-  // `held >= state.tip` + `deposit == held - tip` (`tip-mismatch` retires).
-  let EdgeRequest { requestOwner, requestKey, edge: tag, requestValue, submitted_at, destination, deposit, .. } =
-    request
-  let held = lovelace_of(input.output.value)
-  if held < pins.tip {
-    halt(acc, @"tip-coverage")
-  } else if deposit != held - pins.tip {
-    halt(acc, @"deposit-mismatch")
-  } else {
-    when acc.actions is {
-      [] -> halt(acc, @"missing-action")
-      [action, ..tail] -> {
-        let popped = Fold { ..acc, actions: tail, consumed: acc.consumed + 1 }
-        when action is {
-          Rejected ->
-            if !is_rejectable(
-              validity_range,
-              submitted_at,
-              pins.process_time,
-              pins.retract_time,
-            ) {
-              halt(popped, @"not-rejectable")
-            } else {
-              Fold {
-                ..popped,
                 refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
               }
             }
           UpdateAction(proof) ->
             if !in_phase1(validity_range, submitted_at, pins.process_time) {
               halt(popped, @"not-phase1")
-            } else if !codecOk(requestValue) {
-              halt(popped, @"leaf-codec")
+            } else if tag < 0 || tag > edgeWitnessTerminal {
+              // The tag is the whole shape: outside `0..6` there is no
+              // edge to admit, approve, or walk.
+              halt(popped, @"edge-inadmissible")
             } else {
-              let before =
-                when statedBefore(requestValue) is {
-                  None -> None
-                  Some(bytes) -> decodeState(bytes)
+              let checked =
+                if tag == edgeWitnessTerminal {
+                  // A read carries no approval and needs none (C4).
+                  popped
+                } else {
+                  admitted(popped, pins, tag, request, input.output.value)
                 }
-              when edgeOf(requestValue, before) is {
-                None -> refuseEdge(popped, requestValue, before)
-                Some(derived) ->
-                  if tag != derived {
-                    halt(popped, @"edge-mismatch")
-                  } else {
-                    let checked =
-                      if derived == edgeWitnessTerminal {
-                        popped
-                      } else {
-                        admittedEdge(popped, pins, derived, request, input.output.value)
-                      }
-                    if !checked.ok {
-                      checked
-                    } else {
-                      applyEdge(
-                        checked,
-                        pins,
-                        derived,
-                        requestKey,
-                        requestValue,
-                        destination,
-                        held - pins.tip,
-                        proof,
-                      )
-                    }
-                  }
+              if !checked.ok {
+                checked
+              } else {
+                applyEdge(
+                  checked,
+                  pins,
+                  tag,
+                  requestKey,
+                  destination,
+                  held - pins.tip,
+                  proof,
+                )
               }
             }
         }
@@ -702,15 +473,13 @@ fn applyEdge(
   pins: State,
   edge: Int,
   key: ByteArray,
-  op: Operation,
   destination: (ByteArray, ByteArray),
   floor: Int,
   proof: mpf.Proof,
 ) -> Fold {
   // #173 A-006/A-009: an insert on a key the trie already binds is a
   // fault of the TRIE, refused `key-exists` BEFORE any mint arithmetic
-  // runs — a different fact from `refuseEdge`'s `insert-terminal`, which
-  // names a fault of the REQUEST's value.
+  // runs.
   //
   // `mpf.miss` is the library's own TOTAL exclusion check, so an
   // occupied key is an attributable refusal instead of a crash inside
@@ -722,17 +491,30 @@ fn applyEdge(
   // fault of the TRIE when the leaf it names is not `Active`, and the
   // three ways that happens are the three reasons Lean gives. Read
   // BEFORE `mpf.update`, because `mpf.update` CRASHES on a leaf that is
-  // not the one the request states — and a crash says only that the
+  // not the one the edge moves — and a crash says only that the
   // script died, never which fact it refused for.
   //
-  // Both trie faults answer the same question — "is the leaf this edge
-  // needs the leaf the trie has?" — so they share one decision and one
-  // halt, and the advance below runs only when neither fires.
+  // #183 slice b: the leaf bytes come from the edge table in `types.ak`,
+  // never from request bytes. A tree-changing edge on a terminal leaf
+  // is refused `edge-from-terminal`: the terminal leaf admits the read
+  // and nothing else (N10). Both trie faults answer the same question —
+  // "is the leaf this edge needs the leaf the trie has?" — so they
+  // share one decision and one halt, and the advance below runs only
+  // when neither fires.
   when
     if edge == edgeUpdateTerminal {
       terminalFault(acc.trie, key, proof)
     } else if inserting && !mpf.miss(acc.trie, key, proof) {
       lib.occupiedRefusal()
+    } else if edge == edgeWitnessTerminal && !mpf.has(acc.trie, key, leafTerminal, proof) {
+      readFault(acc.trie, key, proof)
+    } else if (edge == edgeUpdateActive || edge == edgeDeleteAbsent || edge == edgeDeleteActive) && mpf.has(
+      acc.trie,
+      key,
+      leafTerminal,
+      proof,
+    ) {
+      terminalEdgeRefusal()
     } else {
       None
     }
@@ -743,28 +525,35 @@ fn applyEdge(
     if edge == edgeWitnessTerminal {
       // C3: no new proof code. `mpf.has` is the library's own inclusion
       // check and is total, so a proof against the wrong root is an
-      // attributable refusal rather than a crash inside the library;
-      // the mandated `update(root, key, proof, v, v) == root` then runs
-      // on the verified proof and must leave the root alone.
-      if !mpf.has(acc.trie, key, leafTerminal, proof) {
-        None
+      // attributable refusal rather than a crash inside the library —
+      // and `readFault` above has already run it and halted with the
+      // fact when it answered false, so inclusion holds here (#183
+      // slice b). The mandated `update(root, key, proof, v, v) == root`
+      // then runs on the verified proof and must leave the root alone.
+      let after = mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
+      if mpf.root(after) == mpf.root(acc.trie) {
+        Some(acc.trie)
       } else {
-        let after = mpf.update(acc.trie, key, proof, leafTerminal, leafTerminal)
-        if mpf.root(after) == mpf.root(acc.trie) {
-          Some(acc.trie)
-        } else {
-          None
-        }
+        None
       }
     } else {
+      // The trie move named by the edge, with the edge table's own leaf
+      // bytes (`types.ak`): no value bytes travel with the request.
       Some(
-        when op is {
-          Insert(value) -> mpf.insert(acc.trie, key, value, proof)
-          Delete(value) -> mpf.delete(acc.trie, key, value, proof)
-          Update(old, new) -> mpf.update(acc.trie, key, proof, old, new)
-          // Unreachable: the read is handled above and `edgeOf` admits
-          // nothing else.
-          Read(_) -> acc.trie
+        if edge == edgeInsertAbsent {
+          mpf.insert(acc.trie, key, leafAbsent, proof)
+        } else if edge == edgeInsertActive {
+          mpf.insert(acc.trie, key, leafActive, proof)
+        } else if edge == edgeUpdateActive {
+          mpf.update(acc.trie, key, proof, leafAbsent, leafActive)
+        } else if edge == edgeUpdateTerminal {
+          mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
+        } else if edge == edgeDeleteAbsent {
+          mpf.delete(acc.trie, key, leafAbsent, proof)
+        } else {
+          // `edgeDeleteActive`: admitted `0..6` above and the read is
+          // handled in its own branch, so only edge 5 reaches here.
+          mpf.delete(acc.trie, key, leafActive, proof)
         },
       )
     }
@@ -921,8 +710,8 @@ fn dutyOk(
 /// so a wrong leaf becomes an attributable refusal rather than a death
 /// inside `mpf.update`, which says only that the script died.
 ///
-/// It is NOT the leaf the REQUEST states: `edgeOf` has already read
-/// that, and a claim by the requester says nothing about the trie.
+/// It is NOT a leaf the request states — edge-only requests state none:
+/// a claim by the requester says nothing about the trie.
 ///
 /// One construction site, so a test asserting a reason asserts the
 /// value this validator traces rather than a helper nothing calls
@@ -957,6 +746,41 @@ pub fn terminalFault(
 /// `burn-from-input`, so edge 5's trace keeps meaning what it meant.
 pub fn tokenMissingRefusal() -> String {
   @"token-missing"
+}
+
+/// The reason a tree-changing edge whose key binds `Terminal` is refused
+/// (#183 slice b, N10). The terminal leaf admits the read and nothing
+/// else, and the fault is one of the TRIE: the request states no bytes
+/// to be wrong about.
+///
+/// Own site, so a test asserting the reason asserts the value the cage
+/// traces rather than a string a helper nobody calls happens to hold
+/// (A-006 pattern, as `occupiedRefusal`).
+pub fn terminalEdgeRefusal() -> Option<String> {
+  Some(@"edge-from-terminal")
+}
+
+/// Why a read whose key does NOT bind `Terminal` refuses (#183 slice b, M3). The read carries no value
+/// byte, so the fault is read off the TRIE against the action's own
+/// proof, with the MPF library's own TOTAL checks: a terminal leaf
+/// proceeds (verified by the caller), anything else names its fact.
+/// A key the trie does not bind at all is `key-unknown` — neither
+/// `read-absent` (bound `Absent`) nor `read-non-terminal` (bound live).
+///
+/// Own site, so a test asserting a reason asserts the value the cage
+/// traces (A-006 pattern).
+pub fn readFault(
+  trie: MerklePatriciaForestry,
+  key: ByteArray,
+  proof: mpf.Proof,
+) -> Option<String> {
+  if mpf.has(trie, key, leafAbsent, proof) {
+    Some(@"read-absent")
+  } else if mpf.has(trie, key, leafActive, proof) {
+    Some(@"read-non-terminal")
+  } else {
+    Some(@"key-unknown")
+  }
 }
 
 fn traceFalse(reason: String) -> Bool {
@@ -1195,8 +1019,8 @@ fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
 // ----------------------------------------------------------------------------
 
 /// The cage's own spending path for a custody UTxO: spent in a `Modify`
-/// of THIS registry that consumes a request for ITS key with
-/// `Update(0x00, 0x01)` or `Delete(0x00)`, and nothing else. A plain
+/// of THIS registry that consumes a request for ITS key with edge 2
+/// (`updateActive`) or edge 4 (`deleteAbsent`), and nothing else. A plain
 /// spend, a fold for another key, a fold whose request for this key is a
 /// read, and a fold of another registry sharing the state script all
 /// refuse here. The refund leg is the fold's duty (`refund`), checked by
@@ -1313,8 +1137,9 @@ fn spentModifying(reference: OutputReference, tx: Transaction) -> Bool {
   }
 }
 
-/// A request datum of THIS registry, for this key, whose operation
-/// consumes the absent token: `Update(0x00, 0x01)` or `Delete(0x00)`.
+/// A request datum of THIS registry, for this key, whose edge consumes
+/// the absent token: edge 2 (`updateActive`) or edge 4 (`deleteAbsent`;
+/// #183 slice b).
 ///
 /// The `requestToken` binding (NOTE-004) is what makes the authenticated
 /// fold above conclusive rather than circumstantial: `validModify`
@@ -1326,16 +1151,9 @@ fn consumesAbsent(datum: Datum, key: ByteArray, cageToken: TokenId) -> Bool {
   when datum is {
     InlineDatum(inline) ->
       if inline is RequestDatum(request): CageDatum {
-        request.requestKey == key && request.requestToken == cageToken && when
-          request.requestValue
-        is {
-          Update(old, new) ->
-            decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
-              kindActive,
-            )
-          Delete(old) -> decodeState(old) == Some(kindAbsent)
-          _ -> False
-        }
+        request.requestKey == key && request.requestToken == cageToken && (
+          request.edge == edgeUpdateActive || request.edge == edgeDeleteAbsent
+        )
       } else {
         False
       }
@@ -1375,14 +1193,5 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
   True
 }
 
-/// The edge an `Insert(value)` intends, read off its leaf byte. An
-/// insert names its own edge: `0x00` is `insertAbsent`, `0x01` is
-/// `insertActive`. A value that is not a codec byte never reaches here
-/// — `codecOk` refuses it before the edge is asked for.
-fn insertEdgeOf(value: ByteArray) -> Int {
-  if decodeState(value) == Some(kindAbsent) {
-    lib.edgeInsertAbsent
-  } else {
-    lib.edgeInsertActive
-  }
-}
+// #183 slice b: `insertEdgeOf` is gone with the `Operation` wire —
+// an insert names its edge in the request's own tag.

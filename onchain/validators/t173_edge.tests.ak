@@ -5,7 +5,7 @@ use lib
 use state
 use t157_fixtures as fx
 use types.{
-  Insert, Modify, RequestAction, StateDatum, UpdateAction,
+  Modify, RequestAction, StateDatum, UpdateAction,
 }
 
 /// #173 A173-EDGE / A173-REFUSALS — the `insertActive` edge, its
@@ -28,10 +28,9 @@ use types.{
 ///
 /// The refusal ROWS below establish that the fold REFUSES — returns
 /// `False` rather than crashing. Which reason it gives is decided by
-/// two separate construction sites the validator reads from
-/// (`lib.occupiedRefusal` for the trie fault, `lib.insertRefusal` for
-/// the request fault), asserted directly, because an Aiken test cannot
-/// read back a `trace`.
+/// the construction site the validator reads from
+/// (`lib.occupiedRefusal` for the trie fault), asserted directly, because
+/// an Aiken test cannot read back a `trace`.
 
 // ----------------------------------------------------------------------------
 // The driver
@@ -58,11 +57,11 @@ fn bookingRequest(index: Int, key: ByteArray) -> Input {
   fx.requestInput(
     index,
     key,
-    Insert(fx.activeLeaf),
+    1,
     fx.bookerKey,
     fx.bookingDestination(),
     fx.approval(1, key, fx.bookerKey, fx.bookingDestination()),
-    fx.requestValue,
+    fx.requestLovelace,
   )
 }
 
@@ -136,20 +135,12 @@ test t173_duplicate_insert_active_refuses_cleanly() {
 
 /// A-006, A-009 and Lean `refusal`: occupancy is a fault of the TRIE
 /// and has its own construction site, reached BEFORE the mint is
-/// compared. `insert-terminal` names a fault of the REQUEST's value and
-/// is a different claim about a different fact — the two are asserted
-/// separately below so neither can stand in for the other.
+/// compared. `insert-terminal` named a fault of the REQUEST's value and
+/// retired with value bytes in slice b — there is no second fact left
+/// to name, so the row above stands on the trie fault alone. The retired
+/// distinction stands in history (reviews 002–005).
 test t173_duplicate_insert_active_reason_is_key_exists() {
   lib.occupiedRefusal() == Some(@"key-exists")
-}
-
-/// The OTHER site must still say `insert-terminal` where that is the
-/// fact — an insert whose VALUE byte is a terminal leaf. Without this,
-/// the row above could pass because every answer became `key-exists`.
-test t173_insert_on_a_terminal_leaf_is_still_insert_terminal() {
-  lib.insertRefusal(lib.edgeInsertActive, Some(lib.kindTerminal)) == Some(
-    @"insert-terminal",
-  )
 }
 
 // ----------------------------------------------------------------------------

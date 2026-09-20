@@ -17,12 +17,12 @@
     },
     {
       "title": "request.request.spend",
-      "hash": "f9544ef6e278c31b0d349342cafb4fb30683149467924538a0da289f",
+      "hash": "c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa",
       "parameters": 2
     },
     {
       "title": "request.request.else",
-      "hash": "f9544ef6e278c31b0d349342cafb4fb30683149467924538a0da289f",
+      "hash": "c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa",
       "parameters": 2
     },
     {
@@ -37,27 +37,27 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "ff383aac74c3ce8d5c43d35fe1ef0673d884e60864c76f58b8495da6",
+      "hash": "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "ff383aac74c3ce8d5c43d35fe1ef0673d884e60864c76f58b8495da6",
+      "hash": "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "ff383aac74c3ce8d5c43d35fe1ef0673d884e60864c76f58b8495da6",
+      "hash": "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
       "parameters": 0
     },
     {
       "title": "witness.witness.mint",
-      "hash": "2650c84f096d0462f26d038e2efad2ad62eced27ef9ea096fe4f5c8f",
+      "hash": "99f1435c155eb0ec3f1c00e3895be141450c47dcfacfb44b348c9ccf",
       "parameters": 2
     },
     {
       "title": "witness.witness.else",
-      "hash": "2650c84f096d0462f26d038e2efad2ad62eced27ef9ea096fe4f5c8f",
+      "hash": "99f1435c155eb0ec3f1c00e3895be141450c47dcfacfb44b348c9ccf",
       "parameters": 2
     }
   ]
