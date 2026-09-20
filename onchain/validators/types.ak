@@ -372,24 +372,33 @@ pub type Request {
   destination: (ByteArray, ByteArray),
 }
 
-/// The edge-tagged request (#183, dual-codec S20).
+/// The edge-tagged request (#183, dual-codec S20, transitional).
 ///
 /// The same registry binding, owner, key, time and destination as `Request`,
-/// but carrying the C2 row index (`edge` 0-6) in place of `Operation`, and no
-/// `tip` field: the fold requires the input lovelace to reach `state.tip`
+/// carrying BOTH the C2 row index (`edge` 0-6) AND the value bytes
+/// (`requestValue: Operation`) for exactly one commit, and no `tip` field:
+/// the fold requires the input lovelace to reach `state.tip`
 /// (Lean `lovelaceCoversTip`, `c.maxFee <= lovelace`). `deposit` is the value
 /// above the tip the request rides with (`held - state.tip`); `approval`
 /// (Lean) is the carried asset under the application policy, not a datum
 /// field; `claimed` (Lean) is the transaction mint, not a datum field;
 /// `refundAddress` (Lean) is `destination`'s first component for the absent
-/// edges and the custody refund otherwise. Transitional: `Operation` and the
-/// old `Request` stay for exactly one commit (S20); the next commit removes
-/// them and renames this to `Request`.
+/// edges and the custody refund otherwise.
+///
+/// Why both: S20 preservation (NOTE-002) requires the SAME G3 scenario — the
+/// same value bytes on the same trie — folded under both encodings with the
+/// SAME trace compared as a value. An edge-only encoding cannot express an
+/// illegal value-byte shape, so the transient carries both; the fold checks
+/// the shape with the same `codecOk`/`edgeOf`/`refuseEdge` before approval
+/// (identical traces) and then checks the tag equals the derived edge
+/// (`edge-mismatch`). The next commit removes the old `Request`/`Operation`/
+/// `RequestDatum` AND the transient `requestValue`, leaving edge-only.
 pub type EdgeRequest {
   requestToken: TokenId,
   requestOwner: VerificationKeyHash,
   requestKey: ByteArray,
   edge: Int,
+  requestValue: Operation,
   submitted_at: Int,
   destination: (ByteArray, ByteArray),
   deposit: Int,

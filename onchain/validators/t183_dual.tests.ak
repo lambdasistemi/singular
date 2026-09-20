@@ -1,34 +1,21 @@
 use aiken/collection/list
-use cardano/assets.{Value, zero}
+use cardano/assets.{Value, merge, zero}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output}
+use lib
 use state
 use t157_fixtures as fx
 use types.{Delete, Modify, Read, RequestAction, StateDatum, Update, UpdateAction}
 
-/// #183 S20 — dual-codec preservation checkpoint.
+/// #183 S20 — dual-codec preservation checkpoint (NOTE-002 standard).
 ///
-/// For exactly one commit both codecs exist: the old `Request` (`Operation` +
-/// `tip`) and the new `EdgeRequest` (`edge`, no `tip`, `held >= state.tip`).
-/// Every other-edge G3 fixture (update, delete, read) is folded under BOTH
-/// encodings with identical verdicts (all refuse here), plus one valid
-/// read-terminal control that accepts under both (proving the new codec is
-/// not a trivial refuser). Receipted in `t183_dual_receipt.md`.
-///
-/// Mapping (old trace -> new trace, both refuse):
-/// - update_absent_to_absent (`update-to-absent`) -> `no-approval` (new refuses
-///   before the trie gate; the edge-shape gate is `edge-inadmissible` when an
-///   approval is carried)
-/// - update_active_to_absent (`update-to-absent`) -> `no-approval`
-/// - update_absent_to_terminal (`update-absent-to-terminal`) -> `no-approval`
-/// - update_active_to_active (`update-active-to-active`) -> `no-approval`
-/// - update_from_terminal (`edge-from-terminal`) -> `no-approval`
-/// - delete_terminal (`edge-from-terminal`) -> `no-approval`
-/// - read_absent (`read-absent`) -> `edge-inadmissible` (admission skipped for
-///   reads; the trie gate refuses)
-/// - read_active (`read-non-terminal`) -> `edge-inadmissible`
-/// G1 (`leaf-codec`) and `tip-mismatch` retire: the new wire carries no value
-/// bytes and no tip field. MPFS proof failures keep their verdicts (the MPF
-/// walk is reused via `canonicalOp`).
+/// The transient `EdgeRequest` carries the SAME value bytes as the old `Request`
+/// plus the edge tag and no `tip`. For every other-edge G3 fixture (update,
+/// delete, read) the SAME scenario — same trie, same key, same bytes — folds
+/// under BOTH encodings with the SAME outcome and, for refusals, the SAME
+/// trace compared as a value via `state.shapeTrace`. Non-read rows carry their
+/// approval under both (well-formed); reads carry none (C4) and keep their
+/// pairwise traces. One mutation per class shows the comparison able to
+/// disagree. Receipted in `t183_dual_receipt.md` (path+sha256 in review-003).
 
 fn foldOld(
   root: ByteArray,
@@ -70,11 +57,9 @@ fn foldOneNew(
 }
 
 // ----------------------------------------------------------------------------
-// Dual G3: each row folds the same trie under both encodings
+// G3 pair 1: Update(0x00,0x00) on absent — `update-to-absent`
 // ----------------------------------------------------------------------------
 
-/// Update(0x00,0x00) on absent refuses; new edge 5 (deleteActive) on absent
-/// refuses (no approval carried; with approval it would be edge-inadmissible).
 test t183_dual_update_absent_to_absent_old_refuses() {
   foldOneOld(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
@@ -85,7 +70,7 @@ test t183_dual_update_absent_to_absent_old_refuses() {
       Update(fx.absentLeaf, fx.absentLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -98,12 +83,29 @@ test t183_dual_update_absent_to_absent_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 5, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.absentLeaf, fx.absentLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_update_absent_to_absent_same_trace() {
+  state.shapeTrace(Update(fx.absentLeaf, fx.absentLeaf), Some(lib.kindAbsent)) == @"update-to-absent"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 2: Update(0x01,0x00) on active — `update-to-absent`
+// ----------------------------------------------------------------------------
 
 test t183_dual_update_active_to_absent_old_refuses() {
   foldOneOld(
@@ -115,7 +117,7 @@ test t183_dual_update_active_to_absent_old_refuses() {
       Update(fx.activeLeaf, fx.absentLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -128,12 +130,29 @@ test t183_dual_update_active_to_absent_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 2, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.activeLeaf, fx.absentLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_update_active_to_absent_same_trace() {
+  state.shapeTrace(Update(fx.activeLeaf, fx.absentLeaf), Some(lib.kindActive)) == @"update-to-absent"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 3: Update(0x00,0x02) on absent — `update-absent-to-terminal`
+// ----------------------------------------------------------------------------
 
 test t183_dual_update_absent_to_terminal_old_refuses() {
   foldOneOld(
@@ -145,7 +164,7 @@ test t183_dual_update_absent_to_terminal_old_refuses() {
       Update(fx.absentLeaf, fx.terminalLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -158,12 +177,29 @@ test t183_dual_update_absent_to_terminal_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 3, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.absentLeaf, fx.terminalLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_update_absent_to_terminal_same_trace() {
+  state.shapeTrace(Update(fx.absentLeaf, fx.terminalLeaf), Some(lib.kindAbsent)) == @"update-absent-to-terminal"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 4: Update(0x01,0x01) on active — `update-active-to-active`
+// ----------------------------------------------------------------------------
 
 test t183_dual_update_active_to_active_old_refuses() {
   foldOneOld(
@@ -175,7 +211,7 @@ test t183_dual_update_active_to_active_old_refuses() {
       Update(fx.activeLeaf, fx.activeLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -188,12 +224,29 @@ test t183_dual_update_active_to_active_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 2, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.activeLeaf, fx.activeLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_update_active_to_active_same_trace() {
+  state.shapeTrace(Update(fx.activeLeaf, fx.activeLeaf), Some(lib.kindActive)) == @"update-active-to-active"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 5: Update(0x02,0x01) on terminal — `edge-from-terminal`
+// ----------------------------------------------------------------------------
 
 test t183_dual_update_from_terminal_old_refuses() {
   foldOneOld(
@@ -205,7 +258,7 @@ test t183_dual_update_from_terminal_old_refuses() {
       Update(fx.terminalLeaf, fx.activeLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -218,12 +271,29 @@ test t183_dual_update_from_terminal_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 2, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.terminalLeaf, fx.activeLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_update_from_terminal_same_trace() {
+  state.shapeTrace(Update(fx.terminalLeaf, fx.activeLeaf), Some(lib.kindTerminal)) == @"edge-from-terminal"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 6: Delete(0x02) on terminal — `edge-from-terminal`
+// ----------------------------------------------------------------------------
 
 test t183_dual_delete_terminal_old_refuses() {
   foldOneOld(
@@ -235,7 +305,7 @@ test t183_dual_delete_terminal_old_refuses() {
       Delete(fx.terminalLeaf),
       fx.bookerKey,
       fx.noDestination(),
-      zero,
+      fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
       fx.requestValue,
     ),
     [],
@@ -248,12 +318,29 @@ test t183_dual_delete_terminal_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 5, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      5,
+      Delete(fx.terminalLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      fx.approval(5, fx.keyA, fx.bookerKey, fx.noDestination()),
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_delete_terminal_same_trace() {
+  state.shapeTrace(Delete(fx.terminalLeaf), Some(lib.kindTerminal)) == @"edge-from-terminal"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 7: Read(0x00) on absent — `read-absent` (no approval, C4)
+// ----------------------------------------------------------------------------
 
 test t183_dual_read_absent_old_refuses() {
   foldOneOld(
@@ -278,12 +365,29 @@ test t183_dual_read_absent_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 6, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      6,
+      Read(fx.absentLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      zero,
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
+
+test t183_dual_read_absent_same_trace() {
+  state.shapeTrace(Read(fx.absentLeaf), Some(lib.kindAbsent)) == @"read-absent"
+}
+
+// ----------------------------------------------------------------------------
+// G3 pair 8: Read(0x01) on active — `read-non-terminal` (no approval, C4)
+// ----------------------------------------------------------------------------
 
 test t183_dual_read_active_old_refuses() {
   foldOneOld(
@@ -308,16 +412,176 @@ test t183_dual_read_active_new_refuses() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
-    fx.edgeRequestInput(0, fx.keyA, 6, fx.bookerKey, fx.noDestination(), zero, fx.requestValue),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      6,
+      Read(fx.activeLeaf),
+      fx.bookerKey,
+      fx.noDestination(),
+      zero,
+      fx.requestValue,
+    ),
     [],
     [],
     zero,
   ) == False
 }
 
+test t183_dual_read_active_same_trace() {
+  state.shapeTrace(Read(fx.activeLeaf), Some(lib.kindActive)) == @"read-non-terminal"
+}
+
 // ----------------------------------------------------------------------------
-// Valid control: read-terminal accepts under both (the new codec is live)
+// Valid controls: the same valid scenario accepts under both (per class)
 // ----------------------------------------------------------------------------
+
+fn updateActiveCustody() -> List<Input> {
+  [fx.custodyInput(0, fx.keyA, fx.inserterAddress, fx.deposit)]
+}
+
+fn bookingOutputs() -> List<Output> {
+  [
+    fx.deliveryOutput(
+      fx.activePolicy,
+      fx.keyA,
+      fx.recordAddress,
+      InlineDatum(fx.recordDatum()),
+      fx.deposit,
+    ),
+    fx.paymentOutput(fx.inserterAddress, fx.deposit),
+  ]
+}
+
+test t183_dual_update_valid_old_accepts() {
+  foldOneOld(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.requestInput(
+      0,
+      fx.keyA,
+      Update(fx.absentLeaf, fx.activeLeaf),
+      fx.bookerKey,
+      fx.bookingDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.bookingDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    bookingOutputs(),
+    merge(
+      fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+      fx.mintOf(fx.activePolicy, fx.keyA, 1),
+    ),
+  )
+}
+
+test t183_dual_update_valid_new_accepts() {
+  foldOneNew(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Update(fx.absentLeaf, fx.activeLeaf),
+      fx.bookerKey,
+      fx.bookingDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.bookingDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    bookingOutputs(),
+    merge(
+      fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+      fx.mintOf(fx.activePolicy, fx.keyA, 1),
+    ),
+  )
+}
+
+/// Mutation (update class): same valid bytes, wrong tag — new refuses
+/// `edge-mismatch` while old accepts. The comparison can disagree.
+test t183_dual_update_wrong_tag_disagrees() {
+  foldOneNew(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      5,
+      Update(fx.absentLeaf, fx.activeLeaf),
+      fx.bookerKey,
+      fx.bookingDestination(),
+      fx.approval(2, fx.keyA, fx.bookerKey, fx.bookingDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    bookingOutputs(),
+    merge(
+      fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+      fx.mintOf(fx.activePolicy, fx.keyA, 1),
+    ),
+  ) == False
+}
+
+test t183_dual_delete_valid_old_accepts() {
+  foldOneOld(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.emptyRoot(),
+    fx.requestInput(
+      0,
+      fx.keyA,
+      Delete(fx.absentLeaf),
+      fx.inserterKey,
+      fx.noDestination(),
+      fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+  )
+}
+
+test t183_dual_delete_valid_new_accepts() {
+  foldOneNew(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.emptyRoot(),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      4,
+      Delete(fx.absentLeaf),
+      fx.inserterKey,
+      fx.noDestination(),
+      fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+  )
+}
+
+/// Mutation (delete class): same valid bytes, wrong tag.
+test t183_dual_delete_wrong_tag_disagrees() {
+  foldOneNew(
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.oneLeaf(fx.keyA, fx.absentLeaf),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      5,
+      Delete(fx.absentLeaf),
+      fx.inserterKey,
+      fx.noDestination(),
+      fx.approval(4, fx.keyA, fx.inserterKey, fx.noDestination()),
+      fx.requestValue,
+    ),
+    updateActiveCustody(),
+    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+    fx.mintOf(fx.absentPolicy, fx.keyA, -1),
+  ) == False
+}
 
 fn readOutputs() -> List<Output> {
   [
@@ -331,7 +595,7 @@ fn readOutputs() -> List<Output> {
   ]
 }
 
-test t183_dual_read_terminal_old_accepts() {
+test t183_dual_read_valid_old_accepts() {
   foldOneOld(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
@@ -350,7 +614,7 @@ test t183_dual_read_terminal_old_accepts() {
   )
 }
 
-test t183_dual_read_terminal_new_accepts() {
+test t183_dual_read_valid_new_accepts() {
   foldOneNew(
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
     fx.oneLeaf(fx.keyA, fx.terminalLeaf),
@@ -358,6 +622,7 @@ test t183_dual_read_terminal_new_accepts() {
       0,
       fx.keyA,
       6,
+      Read(fx.terminalLeaf),
       fx.bookerKey,
       fx.readDestination(),
       zero,
@@ -367,4 +632,25 @@ test t183_dual_read_terminal_new_accepts() {
     readOutputs(),
     fx.mintOf(fx.terminalPolicy, fx.keyA, 1),
   )
+}
+
+/// Mutation (read class): same valid bytes, wrong tag.
+test t183_dual_read_wrong_tag_disagrees() {
+  foldOneNew(
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.edgeRequestInput(
+      0,
+      fx.keyA,
+      2,
+      Read(fx.terminalLeaf),
+      fx.bookerKey,
+      fx.readDestination(),
+      zero,
+      fx.requestValue,
+    ),
+    [],
+    readOutputs(),
+    fx.mintOf(fx.terminalPolicy, fx.keyA, 1),
+  ) == False
 }

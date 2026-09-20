@@ -565,44 +565,46 @@ fn admittedEdge(
   }
 }
 
-/// The canonical operation an edge entails (#183 S20). The leaf bytes are
-/// implied by the edge; there are no free value bytes to refuse (G1/G3 retire
-/// with a recorded mapping). Used to reuse the MPF walk and the duty logic.
-fn canonicalOp(edge: Int) -> Operation {
-  if edge == edgeInsertAbsent {
-    Insert(leafAbsent)
-  } else if edge == edgeInsertActive {
-    Insert(leafActive)
-  } else if edge == edgeUpdateActive {
-    Update(leafAbsent, leafActive)
-  } else if edge == edgeUpdateTerminal {
-    Update(leafActive, leafTerminal)
-  } else if edge == edgeDeleteAbsent {
-    Delete(leafAbsent)
-  } else if edge == edgeDeleteActive {
-    Delete(leafActive)
-  } else {
-    Read(leafTerminal)
-  }
-}
-
-/// The leaf an edge requires in the trie, if any (#183 S20). Inserts require
-/// absence (`None`); every other edge requires the named leaf. Checked with
-/// the total `mpf.has` before any library update/delete runs, so a mismatch
-/// refuses cleanly instead of crashing.
-fn edgeExpects(edge: Int) -> Option<ByteArray> {
-  if edge == edgeUpdateActive {
-    Some(leafAbsent)
-  } else if edge == edgeUpdateTerminal {
-    Some(leafActive)
-  } else if edge == edgeDeleteAbsent {
-    Some(leafAbsent)
-  } else if edge == edgeDeleteActive {
-    Some(leafActive)
-  } else if edge == edgeWitnessTerminal {
-    Some(leafTerminal)
-  } else {
-    None
+/// The G3 trace of an illegal shape, as a value (#183 NOTE-002).
+///
+/// Mirrors `refuseEdge` arm for arm (including `lib.insertRefusal`), so a test
+/// asserting this string asserts the value the fold actually traces. Total
+/// over illegal shapes; call only when `edgeOf(op, before)` is `None`.
+pub fn shapeTrace(op: Operation, before: Option<Int>) -> String {
+  when op is {
+    Insert(value) ->
+      when lib.insertRefusal(insertEdgeOf(value), before) is {
+        Some(reason) -> reason
+        None -> @"edge-inadmissible"
+      }
+    Read(_) ->
+      if before == Some(kindAbsent) {
+        @"read-absent"
+      } else {
+        @"read-non-terminal"
+      }
+    Delete(_) ->
+      if before == Some(kindTerminal) {
+        @"edge-from-terminal"
+      } else {
+        @"edge-inadmissible"
+      }
+    Update(old, new) ->
+      if before == Some(kindTerminal) {
+        @"edge-from-terminal"
+      } else if decodeState(new) == Some(kindAbsent) {
+        @"update-to-absent"
+      } else if decodeState(old) == Some(kindAbsent) && decodeState(new) == Some(
+        kindTerminal,
+      ) {
+        @"update-absent-to-terminal"
+      } else if decodeState(old) == Some(kindActive) && decodeState(new) == Some(
+        kindActive,
+      ) {
+        @"update-active-to-active"
+      } else {
+        @"edge-inadmissible"
+      }
   }
 }
 
@@ -613,11 +615,15 @@ fn stepEdgeRequest(
   input: Input,
   validity_range,
 ) -> Fold {
-  let EdgeRequest { requestOwner, requestKey, edge, submitted_at, destination, deposit, .. } =
+  // #183 S20/NOTE-002: the transient carries the SAME value bytes as the old
+  // codec plus the edge tag. Shape is checked with the same
+  // `codecOk`/`edgeOf`/`refuseEdge` before approval (identical traces, tag
+  // unchecked); then the tag must equal the derived edge (`edge-mismatch`);
+  // then admission and the MPF walk run on the same bytes. No `tip` field:
+  // `held >= state.tip` + `deposit == held - tip` (`tip-mismatch` retires).
+  let EdgeRequest { requestOwner, requestKey, edge: tag, requestValue, submitted_at, destination, deposit, .. } =
     request
   let held = lovelace_of(input.output.value)
-  // #183: no `tip` field to mismatch (`tip-mismatch` retires). The fold
-  // requires request lovelace >= `state.tip` (Lean `lovelaceCoversTip`).
   if held < pins.tip {
     halt(acc, @"tip-coverage")
   } else if deposit != held - pins.tip {
@@ -645,53 +651,41 @@ fn stepEdgeRequest(
           UpdateAction(proof) ->
             if !in_phase1(validity_range, submitted_at, pins.process_time) {
               halt(popped, @"not-phase1")
-            } else if edge < 0 || edge > 6 {
-              halt(popped, @"edge-inadmissible")
+            } else if !codecOk(requestValue) {
+              halt(popped, @"leaf-codec")
             } else {
-              let checked =
-                if edge == edgeWitnessTerminal {
-                  popped
-                } else {
-                  admittedEdge(popped, pins, edge, request, input.output.value)
+              let before =
+                when statedBefore(requestValue) is {
+                  None -> None
+                  Some(bytes) -> decodeState(bytes)
                 }
-              if !checked.ok {
-                checked
-              } else {
-                // Trie-shape gate before the MPF walk: inserts are gated
-                // inside `applyEdge` via `mpf.miss` (`key-exists`); reads
-                // via `mpf.has` (`read-root`); updates/deletes need an
-                // explicit inclusion check here so a wrong trie refuses
-                // cleanly (`edge-inadmissible`) instead of crashing inside
-                // the library. G1/G3 value-byte refusals retire; the mapping
-                // is receipted in `t183_dual`.
-                when edgeExpects(edge) is {
-                  None ->
-                    applyEdge(
-                      checked,
-                      pins,
-                      edge,
-                      requestKey,
-                      canonicalOp(edge),
-                      destination,
-                      held - pins.tip,
-                      proof,
-                    )
-                  Some(expected) ->
-                    if !mpf.has(checked.trie, requestKey, expected, proof) {
-                      halt(checked, @"edge-inadmissible")
+              when edgeOf(requestValue, before) is {
+                None -> refuseEdge(popped, requestValue, before)
+                Some(derived) ->
+                  if tag != derived {
+                    halt(popped, @"edge-mismatch")
+                  } else {
+                    let checked =
+                      if derived == edgeWitnessTerminal {
+                        popped
+                      } else {
+                        admittedEdge(popped, pins, derived, request, input.output.value)
+                      }
+                    if !checked.ok {
+                      checked
                     } else {
                       applyEdge(
                         checked,
                         pins,
-                        edge,
+                        derived,
                         requestKey,
-                        canonicalOp(edge),
+                        requestValue,
                         destination,
                         held - pins.tip,
                         proof,
                       )
                     }
-                }
+                  }
               }
             }
         }

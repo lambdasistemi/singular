@@ -409,11 +409,14 @@ pub fn requestInput(
   }
 }
 
-/// The edge-tagged datum (#183 S20 dual-codec): the C2 row index in place
-/// of `Operation`, no `tip` field, explicit `deposit` (`held - tip`).
+/// The edge-tagged datum (#183 S20 dual-codec, transitional NOTE-002): the C2
+/// row index AND the same value bytes as the old codec, no `tip` field,
+/// explicit `deposit` (`held - tip`). The next commit removes the old
+/// `Request`/`Operation`/`RequestDatum` AND this transient `requestValue`.
 pub fn edgeRequestDatum(
   key: ByteArray,
   edge: Int,
+  operation: Operation,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
 ) -> CageDatum {
@@ -423,6 +426,7 @@ pub fn edgeRequestDatum(
       requestOwner: owner,
       requestKey: key,
       edge,
+      requestValue: operation,
       submitted_at: 0,
       destination,
       deposit,
@@ -432,11 +436,13 @@ pub fn edgeRequestDatum(
 
 /// A request UTxO in the new encoding, carrying its approval and its deposit.
 /// `lovelace` must be `tip + deposit`; the fold checks `held >= tip` and
-/// `deposit == held - tip`.
+/// `deposit == held - tip`. Non-read rows must carry their approval (NOTE-002
+/// well-formedness); reads carry none.
 pub fn edgeRequestInput(
   index: Int,
   key: ByteArray,
   edge: Int,
+  operation: Operation,
   owner: ByteArray,
   destination: (ByteArray, ByteArray),
   carried: Value,
@@ -447,7 +453,7 @@ pub fn edgeRequestInput(
     output: Output {
       address: cageAddress(),
       value: merge(from_lovelace(lovelace), carried),
-      datum: InlineDatum(edgeRequestDatum(key, edge, owner, destination)),
+      datum: InlineDatum(edgeRequestDatum(key, edge, operation, owner, destination)),
       reference_script: None,
     },
   }

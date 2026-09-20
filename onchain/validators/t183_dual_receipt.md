@@ -1,30 +1,35 @@
-# T183 dual-codec receipt (S20)
+# T183 dual-codec receipt (S20, NOTE-002 standard)
 
-Commit carries both codecs: old `Request` (`Operation` + `tip`) and new
-`EdgeRequest` (`edge` 0-6, no `tip`, `held >= state.tip`, `deposit == held -
-tip`). Every other-edge G3 fixture folded under BOTH encodings with identical
-verdicts; one valid read-terminal control accepts under both.
+Both codecs in this commit: old `Request` (`Operation` + `tip`) and transient
+`EdgeRequest` (SAME value bytes + edge tag, no `tip`, `held >= state.tip`,
+`deposit == held - tip`). The SAME scenario — same trie, same key, same bytes —
+folds under both with the same outcome and, for refusals, the same trace
+compared as a value via `state.shapeTrace`. Non-read rows carry approval under
+both; reads carry none (C4). One mutation per class shows disagreement.
 
-Executed via `aiken check` (`t183_dual.tests.ak`): 18 tests (8 old-refuse +
-8 new-refuse + 2 accept), all green on this commit.
+Executed: `aiken check` in `onchain/` (S04 aiken-suite component); all green.
 
-| # | old fixture (Operation, trie) | old verdict | new edge (same trie) | new verdict | mapping |
-|---|---|---|---|---|---|
-| 1 | Update(0x00,0x00) on absent | refuse (`update-to-absent`) | 5 deleteActive on absent | refuse (`no-approval`; with approval `edge-inadmissible`) | G3 retires; shape gate becomes trie gate |
-| 2 | Update(0x01,0x00) on active | refuse (`update-to-absent`) | 2 updateActive on active | refuse (`no-approval`; with approval `edge-inadmissible`) | same |
-| 3 | Update(0x00,0x02) on absent | refuse (`update-absent-to-terminal`) | 3 updateTerminal on absent | refuse (`no-approval`; with approval `edge-inadmissible`) | same |
-| 4 | Update(0x01,0x01) on active | refuse (`update-active-to-active`) | 2 updateActive on active | refuse (`no-approval`; with approval `edge-inadmissible`) | same |
-| 5 | Update(0x02,0x01) on terminal | refuse (`edge-from-terminal`) | 2 updateActive on terminal | refuse (`no-approval`; with approval `edge-inadmissible`) | same |
-| 6 | Delete(0x02) on terminal | refuse (`edge-from-terminal`) | 5 deleteActive on terminal | refuse (`no-approval`; with approval `edge-inadmissible`) | same |
-| 7 | Read(0x00) on absent | refuse (`read-absent`) | 6 witnessTerminal on absent | refuse (`edge-inadmissible`) | Lean `read-absent` |
-| 8 | Read(0x01) on active | refuse (`read-non-terminal`) | 6 witnessTerminal on active | refuse (`edge-inadmissible`) | Lean `read-active` |
-| C | Read(0x02) on terminal | accept | 6 witnessTerminal on terminal | accept | new codec is live |
+| scenario | old outcome+trace | new outcome+trace | equal | mutation (unequal) |
+|---|---|---|---|---|
+| update_absent_to_absent: Update(00,00) on absent | refuse `update-to-absent` | refuse `update-to-absent` | yes | update class: valid Update(00,01) old accepts / new wrong-tag(5) refuses `edge-mismatch` |
+| update_active_to_absent: Update(01,00) on active | refuse `update-to-absent` | refuse `update-to-absent` | yes | (same update mutation) |
+| update_absent_to_terminal: Update(00,02) on absent | refuse `update-absent-to-terminal` | refuse `update-absent-to-terminal` | yes | (same update mutation) |
+| update_active_to_active: Update(01,01) on active | refuse `update-active-to-active` | refuse `update-active-to-active` | yes | (same update mutation) |
+| update_from_terminal: Update(02,01) on terminal | refuse `edge-from-terminal` | refuse `edge-from-terminal` | yes | (same update mutation) |
+| delete_terminal: Delete(02) on terminal | refuse `edge-from-terminal` | refuse `edge-from-terminal` | yes | delete class: valid Delete(00) old accepts / new wrong-tag(5) refuses `edge-mismatch` |
+| read_absent: Read(00) on absent | refuse `read-absent` | refuse `read-absent` | yes | read class: valid Read(02) old accepts / new wrong-tag(2) refuses `edge-mismatch` |
+| read_active: Read(01) on active | refuse `read-non-terminal` | refuse `read-non-terminal` | yes | (same read mutation) |
+| valid updateActive (control) | accept | accept | yes | — |
+| valid deleteAbsent (control) | accept | accept | yes | — |
+| valid readTerminal (control) | accept | accept | yes | — |
 
-G1 (`leaf-codec`) retires: no value bytes in the new wire. `tip-mismatch`
-retires: no tip field; `tip-coverage` stays as `held >= state.tip`.
-`deposit-mismatch` is new (explicit deposit). MPFS proof failures keep their
-verdicts (walk reused via `canonicalOp`).
+G1 (`leaf-codec`) for non-codec bytes is unchanged on both (same `codecOk`
+first); `tip-mismatch` retires on the new path only (no tip field;
+`tip-coverage` stays as `held >= tip`); `deposit-mismatch`/`edge-mismatch`
+are new-path-only gates after the shape gate, so no G3 trace changes.
+MPFS proof failures keep their verdicts (walk reused on the same bytes).
 
 Next commit removes the old codec (`Request`, `Operation`, `RequestDatum`
-index 0) and renames `EdgeRequest`/`EdgeRequestDatum` to `Request`/
-`RequestDatum` at index 0. Final head must NOT contain the old codec.
+index 0) AND the transient `requestValue` from `EdgeRequest`, renaming
+`EdgeRequest`/`EdgeRequestDatum` to `Request`/`RequestDatum` at index 0.
+Final head must NOT contain the old codec.
