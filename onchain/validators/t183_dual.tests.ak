@@ -1,4 +1,5 @@
 use aiken/collection/list
+use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value, merge, zero}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output}
 use lib
@@ -652,5 +653,334 @@ test t183_dual_read_wrong_tag_disagrees() {
     [],
     readOutputs(),
     fx.mintOf(fx.terminalPolicy, fx.keyA, 1),
+  ) == False
+}
+
+// ----------------------------------------------------------------------------
+// Terminal-edge class (#177 updateTerminal, edge 3) — extended set on the
+// rebased main (NOTE-005 §3, NOTE-006 §3). SAME scenario both encodings,
+// SAME outcome, SAME reason as a value (terminalFault / tokenMissingRefusal).
+// Non-read rows carry approval(3, ..) under both (well-formed, C4).
+// ----------------------------------------------------------------------------
+
+fn terminalWitness() -> List<Input> {
+  [fx.tokenInput(0, fx.activePolicy, fx.keyA)]
+}
+
+fn terminalBurn() -> Value {
+  fx.mintOf(fx.activePolicy, fx.keyA, -1)
+}
+
+fn retireOld(
+  root: ByteArray,
+  nextRoot: ByteArray,
+  key: ByteArray,
+  held: List<Input>,
+  extra: List<Output>,
+  mint: Value,
+) -> Bool {
+  state.state.spend(
+    Some(StateDatum(fx.stateOf(root))),
+    Modify([UpdateAction([])]),
+    fx.stateRef,
+    fx.foldTx(
+      root,
+      nextRoot,
+      [
+        fx.requestInput(
+          0,
+          key,
+          Update(fx.activeLeaf, fx.terminalLeaf),
+          fx.bookerKey,
+          fx.noDestination(),
+          fx.approval(3, key, fx.bookerKey, fx.noDestination()),
+          fx.requestValue,
+        ),
+      ],
+      held,
+      extra,
+      mint,
+    ),
+  )
+}
+
+fn retireNew(
+  root: ByteArray,
+  nextRoot: ByteArray,
+  key: ByteArray,
+  held: List<Input>,
+  extra: List<Output>,
+  mint: Value,
+) -> Bool {
+  state.state.spend(
+    Some(StateDatum(fx.stateOf(root))),
+    Modify([UpdateAction([])]),
+    fx.stateRef,
+    fx.foldTx(
+      root,
+      nextRoot,
+      [
+        fx.edgeRequestInput(
+          0,
+          key,
+          3,
+          Update(fx.activeLeaf, fx.terminalLeaf),
+          fx.bookerKey,
+          fx.noDestination(),
+          fx.approval(3, key, fx.bookerKey, fx.noDestination()),
+          fx.requestValue,
+        ),
+      ],
+      held,
+      extra,
+      mint,
+    ),
+  )
+}
+
+fn retireFromOld(leaf: ByteArray) -> Bool {
+  retireOld(
+    fx.oneLeaf(fx.keyA, leaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    terminalWitness(),
+    [],
+    terminalBurn(),
+  )
+}
+
+fn retireFromNew(leaf: ByteArray) -> Bool {
+  retireNew(
+    fx.oneLeaf(fx.keyA, leaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    terminalWitness(),
+    [],
+    terminalBurn(),
+  )
+}
+
+test t183_dual_update_terminal_valid_old_accepts() {
+  retireFromOld(fx.activeLeaf)
+}
+
+test t183_dual_update_terminal_valid_new_accepts() {
+  retireFromNew(fx.activeLeaf)
+}
+
+test t183_dual_update_terminal_unknown_old_refuses() {
+  retireOld(
+    fx.emptyRoot(),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    terminalWitness(),
+    [],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_unknown_new_refuses() {
+  retireNew(
+    fx.emptyRoot(),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    terminalWitness(),
+    [],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_absent_old_refuses() {
+  retireFromOld(fx.absentLeaf) == False
+}
+
+test t183_dual_update_terminal_absent_new_refuses() {
+  retireFromNew(fx.absentLeaf) == False
+}
+
+test t183_dual_update_terminal_terminal_old_refuses() {
+  retireFromOld(fx.terminalLeaf) == False
+}
+
+test t183_dual_update_terminal_terminal_new_refuses() {
+  retireFromNew(fx.terminalLeaf) == False
+}
+
+test t183_dual_update_terminal_no_witness_old_refuses() {
+  retireOld(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [],
+    [],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_no_witness_new_refuses() {
+  retireNew(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [],
+    [],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_survivor_old_refuses() {
+  retireOld(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [
+      fx.tokenInput(0, fx.activePolicy, fx.keyA),
+      fx.tokenInput(1, fx.activePolicy, fx.keyA),
+    ],
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_survivor_new_refuses() {
+  retireNew(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [
+      fx.tokenInput(0, fx.activePolicy, fx.keyA),
+      fx.tokenInput(1, fx.activePolicy, fx.keyA),
+    ],
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyA,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_wrong_key_old_refuses() {
+  retireOld(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [fx.tokenInput(0, fx.activePolicy, fx.keyB)],
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyB,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+    terminalBurn(),
+  ) == False
+}
+
+test t183_dual_update_terminal_wrong_key_new_refuses() {
+  retireNew(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
+    fx.keyA,
+    [fx.tokenInput(0, fx.activePolicy, fx.keyB)],
+    [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        fx.keyB,
+        fx.recordAddress,
+        InlineDatum(fx.recordDatum()),
+        fx.deposit,
+      ),
+    ],
+    terminalBurn(),
+  ) == False
+}
+
+// The SAME reason as a value on both sides: the construction sites the
+// validator itself reads (t177 A-006 pattern). The trie fault is
+// encoding-independent; the fold outcome equality above shows the two
+// codecs refuse together, these rows bind WHICH reason.
+
+test t183_dual_update_terminal_unknown_reason_is_key_unknown() {
+  state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
+    @"key-unknown",
+  )
+}
+
+test t183_dual_update_terminal_absent_reason_is_not_booked() {
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
+    fx.keyA,
+    [],
+  ) == Some(@"not-booked")
+}
+
+test t183_dual_update_terminal_terminal_reason_is_terminal_immutable() {
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
+    fx.keyA,
+    [],
+  ) == Some(@"terminal-immutable")
+}
+
+test t183_dual_update_terminal_active_is_not_a_trie_fault() {
+  state.terminalFault(
+    mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
+    fx.keyA,
+    [],
+  ) == None
+}
+
+test t183_dual_update_terminal_missing_witness_reason_is_token_missing() {
+  state.tokenMissingRefusal() == @"token-missing"
+}
+
+fn retireNewWrongTag(root: ByteArray, nextRoot: ByteArray) -> Bool {
+  state.state.spend(
+    Some(StateDatum(fx.stateOf(root))),
+    Modify([UpdateAction([])]),
+    fx.stateRef,
+    fx.foldTx(
+      root,
+      nextRoot,
+      [
+        fx.edgeRequestInput(
+          0,
+          fx.keyA,
+          5,
+          Update(fx.activeLeaf, fx.terminalLeaf),
+          fx.bookerKey,
+          fx.noDestination(),
+          fx.approval(3, fx.keyA, fx.bookerKey, fx.noDestination()),
+          fx.requestValue,
+        ),
+      ],
+      terminalWitness(),
+      [],
+      terminalBurn(),
+    ),
+  )
+}
+
+/// Mutation (terminal class): same valid retirement bytes, wrong tag — old
+/// accepts, new refuses `edge-mismatch`. The comparison can disagree.
+test t183_dual_update_terminal_wrong_tag_disagrees() {
+  retireNewWrongTag(
+    fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    fx.oneLeaf(fx.keyA, fx.terminalLeaf),
   ) == False
 }

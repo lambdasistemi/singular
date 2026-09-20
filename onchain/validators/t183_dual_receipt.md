@@ -1,13 +1,22 @@
-# T183 dual-codec receipt (S20, NOTE-002 standard)
+# T183 dual-codec receipt (S20, NOTE-002 standard) — EXTENDED over #177 updateTerminal
 
 Both codecs in this commit: old `Request` (`Operation` + `tip`) and transient
 `EdgeRequest` (SAME value bytes + edge tag, no `tip`, `held >= state.tip`,
 `deposit == held - tip`). The SAME scenario — same trie, same key, same bytes —
 folds under both with the same outcome and, for refusals, the same trace
-compared as a value via `state.shapeTrace`. Non-read rows carry approval under
-both; reads carry none (C4). One mutation per class shows disagreement.
+compared as a value via `state.shapeTrace` for the pre-admission G3 shapes
+and via `state.terminalFault` / `state.tokenMissingRefusal` for the admitted
+terminal edge (#177). Non-read rows carry approval under
+both (terminal rows carry approval(3, ..) under both); reads carry none (C4).
+One mutation per class shows disagreement.
 
-Executed: `aiken check` in `onchain/` (S04 aiken-suite component); all green.
+Extended set on rebased main `019e2584a67148d62d40b58a74f117763060d924` (#177
+merged): the terminal-edge class (`Update(01,02)` on active, edge 3) with its
+accepting control and six refusal scenarios plus reason-value rows, per
+NOTE-005 §3 / NOTE-006 §3. Gate-S-v1 extent GREW (NOTE-005 §5): S20 now
+quantifies over #177's `updateTerminal` rows as well.
+
+Executed: `bash -c 'cd /code/singular-issue-183/onchain && nix develop --command aiken check'` — exit 0, 352 passed / 0 failed overall, `t183_dual.tests` 53 passed / 0 failed (33 pre-rebase + 20 terminal).
 
 | scenario | old outcome+trace | new outcome+trace | equal | mutation (unequal) |
 |---|---|---|---|---|
@@ -22,6 +31,14 @@ Executed: `aiken check` in `onchain/` (S04 aiken-suite component); all green.
 | valid updateActive (control) | accept | accept | yes | — |
 | valid deleteAbsent (control) | accept | accept | yes | — |
 | valid readTerminal (control) | accept | accept | yes | — |
+| valid updateTerminal (control): Update(01,02) on active, witness held, burn -1 | accept | accept | yes | — |
+| updateTerminal unknown key: empty trie | refuse `key-unknown` (`terminalFault` value) | refuse `key-unknown` (`terminalFault` value) | yes | terminal class: valid Update(01,02) old accepts / new wrong-tag(5) refuses `edge-mismatch` |
+| updateTerminal absent leaf: Update(01,02) on absent | refuse `not-booked` (`terminalFault` value) | refuse `not-booked` (`terminalFault` value) | yes | (same terminal mutation) |
+| updateTerminal terminal leaf: Update(01,02) on terminal | refuse `terminal-immutable` (`terminalFault` value) | refuse `terminal-immutable` (`terminalFault` value) | yes | (same terminal mutation) |
+| updateTerminal no witness: active leaf, held=[] | refuse `token-missing` (`tokenMissingRefusal` value) | refuse `token-missing` (`tokenMissingRefusal` value) | yes | (same terminal mutation) |
+| updateTerminal surviving carrier: two witnesses in, one survives | refuse `token-missing` (strict `sole` duty) | refuse `token-missing` (strict `sole` duty) | yes | (same terminal mutation) |
+| updateTerminal wrong-key witness: keyB token for keyA burn | refuse `token-missing` (strict `sole` duty) | refuse `token-missing` (strict `sole` duty) | yes | (same terminal mutation) |
+| reason values (encoding-independent construction sites) | `terminalFault` empty→`key-unknown`, absent→`not-booked`, terminal→`terminal-immutable`, active→None; `tokenMissingRefusal`→`token-missing` | same | yes | — |
 
 G1 (`leaf-codec`) for non-codec bytes is unchanged on both (same `codecOk`
 first); `tip-mismatch` retires on the new path only (no tip field;
