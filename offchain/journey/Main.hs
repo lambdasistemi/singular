@@ -194,6 +194,7 @@ import Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     toLedgerData,
     toPlcData,
+    scriptFromBytes,
     txInToRef,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
@@ -326,8 +327,9 @@ takes none, so its two layers coincide. This step
   * applies this instance's parameters to the unapplied
     code, hashes the result, and requires it to equal the
     hash of the script the run actually carried to the
-    node: the boot transaction's witness holds exactly the
-    derived state script, the update transaction's witness
+    node: the boot transaction carries exactly the
+    derived state script in its witness set or through a
+    reference output, the update transaction carries
     exactly the derived state and request scripts.
 
 Any mismatch fails the run naming both hashes and the
@@ -384,7 +386,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> ") but the run's state policy hash is 0x"
                 <> hashHex (cfgScriptHash cfg)
     -- The scripts the run actually carried to the node.
-    let bootWitness = witnessScriptHashes bootTx
+    let bootWitness = carriedScriptHashes refs bootTx
         updateWitness = carriedScriptHashes refs updateTx
         pinHex p = hex (SBS.fromShort p)
         -- The fold spends the state and the request and mints under the
@@ -408,7 +410,7 @@ stepDerivedIdentity si cfg rawState rawRequest rawStaking tid bootTx updateTx re
                 <> stateHex
                 <> " (parameters "
                 <> stateParams
-                <> ") but its script witness held "
+                <> ") but the scripts it carried held "
                 <> show (Set.toList bootWitness)
     -- #157: the fold withdraws from nothing, so the update transaction
     -- carries exactly the two derived scripts it spends — the retired
@@ -552,14 +554,26 @@ runJourney si stateBytes requestBytes stakingBytes = do
         mirrorRef <- newIORef emptyMPFInMemoryDB
         -- Verify the connection carries queries before building on it.
         _ <- Cage.queryProtocolParams prov
+        -- #177 A-003: publish the state validator as a reference output
+        -- BEFORE the seed is chosen, so the publication cannot spend
+        -- the very output the seed pins. Boot then references the
+        -- fifteen-kilobyte script instead of carrying it inline.
+        stateRef <-
+            Edges.publishRefScript
+                prov
+                (submitWithGenesis submit)
+                genesisAddr
+                (scriptFromBytes "state" stateBytes)
         -- Pick the boot seed from the genesis wallet. The state
         -- script is unparameterized; boot carries the seed in the
         -- mint redeemer.
         utxos <- Cage.queryUTxOs prov genesisAddr
-        seedRef <- case utxos of
+        -- #177 A-003: never seed from the reference publication; boot
+        -- references that output and cannot also spend it.
+        seedRef <- case filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos of
             [] ->
                 failWith
-                    "genesis wallet has no UTxOs; cannot pick a boot seed"
+                    "genesis wallet has no spendable UTxO; cannot pick a boot seed"
             (txIn, _) : _ -> pure (txInToRef txIn)
         codes <- loadRegistryCodesFromEnv
         let cfg = cageCfg stateBytes requestBytes codes seedRef
@@ -593,7 +607,7 @@ runJourney si stateBytes requestBytes stakingBytes = do
             tokenId
             bootTx
             appliedTx
-            refs
+            (stateRef : refs)
         stepVerifyPresent cfg prov mirrorRef tokenId
         appliedState <- stepReadBack cfg prov tokenId bootRoot
         stepReject cfg codes prov submit tm tokenId refs appliedState

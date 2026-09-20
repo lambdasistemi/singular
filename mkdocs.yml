@@ -13,6 +13,7 @@ nav:
       - Certification: docs/certification.md
   - Naming walkthrough: docs/naming-demo.md
   - Naming lifecycle: docs/naming-lifecycle.md
+  - Ending a name: docs/retirement.md
   - Recovery and retirement: docs/recovery-retirement.md
   - Record value and recovery: docs/record-value.md
   - Run against your own preprod node: docs/consumer-onboarding.md

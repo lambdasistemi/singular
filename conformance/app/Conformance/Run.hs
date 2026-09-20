@@ -108,7 +108,8 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (intercalate, isInfixOf, sortOn, nub)
+import Data.ByteString.Base16 qualified as Base16
+import Data.List (intercalate, isInfixOf, nub, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust)
 import Data.Ord (Down (..))
@@ -209,7 +210,7 @@ import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..), txInToText)
 import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
@@ -258,6 +259,7 @@ import Singular.Registry.TxBuilder.Internal (
     addrWitnessKeyHash,
     cageAddrFromCfg,
     cagePolicyIdFromCfg,
+    policyIdFromPin,
     computeScriptHash,
     computeScriptIntegrity,
     currentPosixMs,
@@ -375,6 +377,10 @@ import Conformance.Receipt (
     Receipt (..),
     RefusalInfo (..),
     RefusalLeg (..),
+    RetirementEvidence (..),
+    RetirementQuantities (..),
+    RetirementRoots (..),
+    RetirementSource (..),
     Verdict (..),
     derivationMatches,
     derivationVenue,
@@ -399,7 +405,7 @@ import Conformance.Refusal (
 -- these lists, never by exclusion: a catch-all partition silently absorbs
 -- the next family of rows (CA01-CA05 were once routed into the CS
 -- session by a notElem-CG catch-all). A row in no family fails loudly.
-caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows :: [String]
+caRows, cgRows, csRows, issue70Rows, issue70AcceptingRows, issue173Rows, issue177Rows :: [String]
 caRows = ["CA01", "CA02", "CA03", "CA04", "CA05"]
 cgRows = ["CG02", "CG03", "CG04", "CG05"]
 csRows = ["CS01", "CS02", "CS03", "CS04", "CS05", "CS06", "CS07", "CS08"]
@@ -430,8 +436,17 @@ issue70AcceptingRows = ["CG11", "CG12", "CG14", "CG19"]
 -- `net-mint-mismatch`. Each refusal carries its own accepting control.
 issue173Rows = ["CG21"]
 
+-- The issue #177 row, listed by membership like every other family:
+-- CG22 is the updateTerminal retirement — insertActive then
+-- updateTerminal at the SAME key in one session — together with its two
+-- DISTINCT refusal fixtures, an Unknown key (`key-unknown`) and an
+-- Absent key (`not-booked`), each with its own accepting control. It
+-- shares no fixture, receipt or assertion with CG21.
+issue177Rows = ["CG22"]
+
 canonicalRows :: [String]
-canonicalRows = caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows
+canonicalRows =
+    caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows
 
 data Control
     = Normal
@@ -682,10 +697,10 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows)]
+        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -759,7 +774,7 @@ validateRows raw = do
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
         hasCa = any (`elem` caRows) requested
-        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows)) requested
+        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows)) requested
     when (hasCa && hasCg) $
         failWith
             ( "CA and CG rows run as separate sessions, one devnet \
@@ -1301,6 +1316,10 @@ runRow env marker row = do
     -- is left exactly as the designation left it. Every other row wants
     -- one ada-only output to fund from.
     unless (take 2 row == "CA") (consolidateFunding env)
+    -- #177 A-003: every boot in this session references the state
+    -- validator instead of carrying it inline. Idempotent, so it is
+    -- established before the first row and found by every later one.
+    ensureStateRef env
     runRowIn env marker row
 
 runRowIn :: Env -> String -> String -> IO ()
@@ -1323,6 +1342,12 @@ runRowIn env marker row = case row of
     "CG15" -> runCG15 env
     "CG19" -> runCG19 env
     "CG21" -> runCG21 env
+    -- #177 I177-CONFORMANCE. NOT YET IMPLEMENTED: the row is reached
+    -- inside a real session, on a real devnet, and fails here rather
+    -- than in `validateRows`, so the session, genesis, node and
+    -- partitioning subjects all execute before the absent fixture is
+    -- reported.
+    "CG22" -> runCG22 env
     _ -> failWith ("run cannot execute row: " <> row)
 
 withCa :: Env -> String -> (Env -> CaWorld -> IO ()) -> IO ()
@@ -2482,6 +2507,7 @@ controlFreshCage env = do
                 , rcCageUtxos = utxos
                 , rcDatums = [(recordDatumHash, recordDatum)]
                 , rcAllowInadmissible = False
+                , rcHolderUtxos = []
                 , rcRefUtxos = refs
                 }
     foldTx <-
@@ -5170,6 +5196,7 @@ writeCG21Receipt env foldTx mem cpu size edge =
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
             , receiptEdge = Just edge
+            , receiptRetirement = Nothing
             , receiptDerivation = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
@@ -5241,6 +5268,430 @@ rowRequestAndFold env cage label key _val _op = do
     -- would prove against a root the chain does not have.
     rowCommit env cage key (OpInsert leafAbsent)
     pure (signed, mem, cpu, size)
+
+
+-- ---------------------------------------------------------
+-- CG22 (#177): the retirement, and the two leaves that refuse it
+-- ---------------------------------------------------------
+
+{- | CG22: `insertActive` then `updateTerminal` at the SAME key, in one
+real open-registry session, with the two refusals the Lean row names.
+
+The lifecycle is connected on purpose (constitution III): the token this
+row burns is the token it booked a moment earlier, at a WALLET — the
+open application has no spending arm, so a token routed to it could
+never be retired. A fixture dropped into the final state would evidence
+nothing about the transition.
+
+Each refusal is measured against an ACCEPTING CONTROL taken first, in
+the same cage and through the same builder, differing in exactly one
+fact: the control's key IS active, the unknown key was never inserted,
+and the absent key was witnessed absent by a real fold. Without the
+control, "refused" is consistent with "this harness cannot fold at all".
+
+The reason NAMES are not asserted from the node. A phase-2 failure
+carries an empty Plutus log list, so the receipt records honest `null`
+with script-hash attribution; the names live in the compiled Aiken suite
+against `state.terminalRefusal`.
+-}
+runCG22 :: Env -> IO ()
+runCG22 env = do
+    cage <- ensureRowCage env "cg22" 30_000 30_000
+    tid <- cageTid cage
+    let cfg = rcCfg cage
+        prov = envProv env
+        bond = defaultTipCoin cfg + cgDeposit
+        -- The open story hands the witness to a WALLET, which is where
+        -- the retirement must find it. `edgeDestinationFor` would route
+        -- an activation to the application's script address, right for
+        -- naming and wrong here.
+        walletDest = (serialiseAddr genesisAddr, recordDatumHash)
+        -- A retirement delivers nothing, so it names nothing.
+        retireDest = (BS.empty, BS.empty)
+        book key op dest =
+            bookEdge env cfg tid genesisAddr genesisSignKey key op dest [] bond
+        buildFold = do
+            ctx <- rowRegistryContext env cage tid
+            updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
+        land key op = do
+            unsigned <- buildFold
+            signed <- submitWithGenesis (envSubmit env) unsigned
+            rowCommit env cage key op
+            pure signed
+        rootNow = withTrie (envTm env) tid CageTrie.getRoot
+
+    -- 1. the prerequisite, EXECUTED: the key becomes Active and the
+    --    wallet holds its witness.
+    rootBeforeInsert <- rootNow
+    _ <- book cg22Key insertActiveOp walletDest
+    insertTx <- land cg22Key insertActiveOp
+    rootActive <- rootNow
+    heldBefore <- activeHeldFor env cfg cg22Key
+    require
+        "CG22: the insert did not leave exactly one active witness at the wallet"
+        (heldBefore == 1)
+
+    -- The exact input the burn will consume, recorded BEFORE it is
+    -- spent. A mint of -1 with no token-bearing input is the shape the
+    -- cage refuses `token-missing`, and a row that did not look would
+    -- not know the difference.
+    source <- activeSourceFor env cfg cg22Key
+
+    -- 2. the edge under test, at the SAME key.
+    _ <- book cg22Key retireOp retireDest
+    retireTx <- land cg22Key retireOp
+    rootTerminal <- rootNow
+    heldAfter <- activeHeldFor env cfg cg22Key
+    chainRoot <- committedRootOf env cage
+    require
+        "CG22: the wallet still holds this key's active witness after the retirement"
+        (heldAfter == 0)
+    -- The LEAF, observed where a leaf can actually be observed.
+    -- `Trie.lookup` answers with the key's hash rather than its value and
+    -- cannot see a leaf at all. The committed ROOT can: a trie with a
+    -- different leaf at this key has a different root. The chain reached
+    -- this one through the validator's own `mpf.update(0x01, 0x02)` and
+    -- the mirror through an independent local trie, so equality is a
+    -- statement about the leaf and not about either implementation.
+    require
+        "CG22: the chain root after the retirement is not the root of a \
+        \trie whose leaf at this key is Terminal"
+        (chainRoot == unRoot rootTerminal)
+    let burned = activeMintOf retireTx cfg
+    require
+        "CG22: the retirement's mint under the active policy is not exactly this key's -1"
+        (burned == [AssetEntry (hexText (activePolicyBytes cfg)) (hexText cg22Key) (-1)])
+    require
+        "CG22: the three roots are not distinct"
+        (length (nub [rootBeforeInsert, rootActive, rootTerminal]) == 3)
+
+    {- Each refusal needs a cage of its own.
+
+    A refused fold never consumes the request that caused it. That
+    request stays pending, the next fold sweeps it up, and the second
+    refusal becomes the chain re-refusing the first — or, worse, a
+    builder failure naming the first key while the row claims the
+    second. Ordering does not help: whichever refusal runs first poisons
+    everything after it.
+
+    So the Absent leg runs LAST in this cage, controlled by the story's
+    own retirement above — same cage, same builder, and the only thing
+    that differs is the leaf. The Unknown leg gets a second cage with a
+    control folded in it first. -}
+
+    -- 3. a key bound by a real insertAbsent fold and never booked. Its
+    --    control is the retirement that has just landed here.
+    _ <- book cg22AbsentKey insertAbsentOp (serialiseAddr genesisAddr, BS.empty)
+    _ <- land cg22AbsentKey insertAbsentOp
+    _ <- book cg22AbsentKey retireOp retireDest
+    -- a #177 retirement refusal leg does not observe the keyed-mint
+    -- delta; CG21 (#184) is the row that observes it. An empty
+    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
+    -- observed-empty.
+    absentLeg <-
+        refusedRetirement
+            env
+            cage
+            tid
+            cg22AbsentKey
+            (txIdHex retireTx)
+            "the control retired a key that IS Active in this same cage; \
+            \this one was witnessed Absent"
+            "CG22: the chain ACCEPTED updateTerminal on a key witnessed \
+            \Absent — reported, not relabelled"
+
+    -- 4. a key the trie does not bind at all, in a cage of its own so
+    --    the Absent refusal above cannot be what refuses it.
+    unknownCage <- ensureRowCage env "cg22-unknown" 30_000 30_000
+    unknownTid <- cageTid unknownCage
+    let unknownCfg = rcCfg unknownCage
+        bookU key op dest =
+            bookEdge env unknownCfg unknownTid genesisAddr genesisSignKey key op dest [] bond
+        landU key op = do
+            ctx <- rowRegistryContext env unknownCage unknownTid
+            unsigned <-
+                updateTokenWithDuties
+                    unknownCfg
+                    prov
+                    (envTm env)
+                    unknownTid
+                    genesisAddr
+                    ctx
+            signed <- submitWithGenesis (envSubmit env) unsigned
+            rowCommit env unknownCage key op
+            pure signed
+    _ <- bookU cg22ControlKey insertActiveOp walletDest
+    _ <- landU cg22ControlKey insertActiveOp
+    _ <- bookU cg22ControlKey retireOp retireDest
+    controlTx <- landU cg22ControlKey retireOp
+    emit
+        "control"
+        "CG22 control: a key that IS active retired in the Unknown leg's \
+        \own cage — the refusal below discriminates the leaf"
+    _ <- bookU cg22UnknownKey retireOp retireDest
+    -- a #177 retirement refusal leg does not observe the keyed-mint
+    -- delta; CG21 (#184) is the row that observes it. An empty
+    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
+    -- observed-empty.
+    unknownLeg <-
+        refusedRetirement
+            env
+            unknownCage
+            unknownTid
+            cg22UnknownKey
+            (txIdHex controlTx)
+            "the control retired a key that IS Active in this same cage; \
+            \this one was never inserted at all"
+            "CG22: the chain ACCEPTED updateTerminal on a key the trie \
+            \does not bind — reported, not relabelled"
+
+    (mem, cpu) <- readIORef (rcUnits cage)
+    writeRetirementReceipt
+        env
+        "CG22"
+        -- Every transaction this row put on chain, so the gate can find
+        -- the two folds and BOTH accepting controls in it.
+        --
+        -- The two legs carry DIFFERENT controls, because they run in
+        -- different cages: the Absent leg is controlled by `retireTx`,
+        -- the story retirement in its own cage, and the Unknown leg by
+        -- `controlTx`, folded in the second cage before it. A single
+        -- control could not serve both — a refused fold never consumes
+        -- its request, so the two refusals cannot share a cage, and a
+        -- control from the other cage would not be the same builder
+        -- against the same state.
+        [ txIdHex insertTx
+        , txIdHex retireTx
+        , txIdHex controlTx
+        , T.unpack (rlTxid unknownLeg)
+        , T.unpack (rlTxid absentLeg)
+        ]
+        (Just mem)
+        (Just cpu)
+        (Just (txSizeBytes retireTx))
+        RetirementEvidence
+            { rtActivePolicy = hexText (activePolicyBytes cfg)
+            , rtKey = hexText cg22Key
+            , rtInsertTxid = T.pack (txIdHex insertTx)
+            , rtRetireTxid = T.pack (txIdHex retireTx)
+            , rtRoots =
+                RetirementRoots
+                    { rrBeforeInsert = hexText (unRoot rootBeforeInsert)
+                    , rrActive = hexText (unRoot rootActive)
+                    , rrTerminal = hexText (unRoot rootTerminal)
+                    }
+            , rtQuantities =
+                RetirementQuantities{rqBefore = heldBefore, rqAfter = heldAfter}
+            , rtMint = burned
+            , rtSource = source
+            , rtLeaf = "Terminal"
+            , rtUnknown = unknownLeg
+            , rtAbsent = absentLeg
+            }
+    emit
+        "CG22"
+        "the witness the insert delivered was burned from its holder, the \
+        \leaf reads Terminal, and the Unknown and Absent retirements were \
+        \refused against an accepting control"
+
+
+{- | The registry's own committed root, read off a row cage's state UTxO
+on chain. This is how a LEAF is observed: `Trie.lookup` answers with the
+key's hash rather than its value, while a trie with a different leaf at
+a key has a different root.
+-}
+committedRootOf :: Env -> RowCage -> IO ByteString
+committedRootOf env cage = do
+    (_, out) <- cageStateUtxo env cage
+    case extractCageDatum out of
+        Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))
+        _ -> failWith "row cage: the state UTxO carries no state datum"
+
+-- | CG22's three keys: the story, its control, and the two bad leaves.
+cg22Key, cg22ControlKey, cg22UnknownKey, cg22AbsentKey :: ByteString
+cg22Key = "cg22-retire"
+cg22ControlKey = "cg22-retire-control"
+cg22UnknownKey = "cg22-retire-unknown"
+cg22AbsentKey = "cg22-retire-absent"
+
+insertActiveOp, insertAbsentOp, retireOp :: OnChainOperation
+insertActiveOp = OpInsert leafActive
+insertAbsentOp = OpInsert leafAbsent
+retireOp = OpUpdate leafActive leafTerminal
+
+{- | Submit a fold the chain must REFUSE, and record the leg: the refused
+transaction's id, the script hashes the failure is attributed to, the
+honest trace (`Nothing` unless the ledger surfaced one), the accepting
+control, and what differs between the two.
+
+The fold is HAND-ASSEMBLED rather than taken from
+`updateTokenWithDuties`. That builder evaluates on the node and raises
+the failure as its own error, so it produces no transaction — and a row
+whose claim is "the chain refused this, here is the transaction" needs
+one to point at. Assembling it directly is the same path every other
+refusal row in this suite uses.
+
+An ACCEPTANCE here is reported as a finding, never relabelled.
+-}
+refusedRetirement ::
+    Env ->
+    RowCage ->
+    TokenId ->
+    -- | the key under test, named by the refused batch
+    ByteString ->
+    -- | the accepting control's txid
+    String ->
+    -- | the one fact that differs from the control
+    String ->
+    -- | what to say if the chain accepts
+    String ->
+    IO RefusalLeg
+refusedRetirement env cage tid key controlTxid distinguisher acceptedMsg = do
+    state <- cageStateUtxo env cage
+    reqUtxos <- pendingRequests env cage
+    (proofs, newRoot) <- speculativeApplyAll env cage tid reqUtxos
+    pp <- Cage.queryProtocolParams (envProv env)
+    -- The budget is per REDEEMER and the ledger caps their SUM, so the
+    -- transaction maximum handed to each one over-subscribes it by the
+    -- number of purposes (`ExUnitsTooBigUTxO`). A quarter each leaves
+    -- room for the state spend, the request spends and the mints, and
+    -- is far more than a fold needs to reach the refusal under test.
+    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
+        share = ExUnits (maxMem `div` 4) (maxSteps `div` 4)
+    unsigned <-
+        assembleFoldWithFee
+            env
+            (rowSpec cage tid state reqUtxos (map Update proofs) newRoot share)
+    let signed = addKeyWitness genesisSignKey unsigned
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> awaitTx >> failWith acceptedMsg
+        Rejected reason -> do
+            let text = T.unpack (TE.decodeUtf8Lenient reason)
+                hashes = refusalScriptHashes text
+            -- A phase-2 failure names the script that refused. A phase-1
+            -- rejection names none, and would mean the chain refused
+            -- this transaction for its shape rather than for the leaf
+            -- under test — so the reason travels with the complaint.
+            require
+                ( "CG22: the refusal carries no script-hash attribution, so \
+                  \it is not the cage refusing: "
+                    <> take 600 text
+                )
+                (not (null hashes))
+            pure
+                RefusalLeg
+                    { rlTxid = T.pack (txIdHex signed)
+                    , rlHashes = map T.pack hashes
+                    , -- A phase-2 failure carries an EMPTY Plutus log
+                      -- list, so the validator's own trace is normally
+                      -- not recoverable. `Nothing` rather than a guess;
+                      -- the NAMES are asserted in the Aiken suite.
+                      rlTrace = Nothing
+                    , rlControlTxid = T.pack controlTxid
+                    , rlDistinguisher = T.pack distinguisher
+                    , rlKeys = [hexT key]
+                    , rlClaimed = Nothing
+                    , rlEntailed = Nothing
+                    , rlControlMint = Nothing
+                    }
+
+-- | The quantity the genesis wallet holds of this key's active witness.
+activeHeldFor :: Env -> CageConfig -> ByteString -> IO Integer
+activeHeldFor env cfg key = do
+    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+    pure (sum [q | (_, o) <- utxos, (_, q) <- activeEntriesOf cfg key o])
+
+{- | The wallet UTxO carrying this key's active witness, by outref and
+quantity, read off the chain before the retirement spends it.
+-}
+activeSourceFor :: Env -> CageConfig -> ByteString -> IO RetirementSource
+activeSourceFor env cfg key = do
+    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+    case [(i, q) | (i, o) <- utxos, (_, q) <- activeEntriesOf cfg key o] of
+        [(i, q)] ->
+            pure
+                RetirementSource
+                    { rsOutref = txInToText i
+                    , rsPolicy = hexText (activePolicyBytes cfg)
+                    , rsName = hexText key
+                    , rsQuantity = q
+                    }
+        carriers ->
+            failWith
+                ( "CG22: the wallet holds "
+                    <> show (length carriers)
+                    <> " carriers of this key's active witness, not one"
+                )
+
+-- | This output's holdings under the active policy at this key.
+activeEntriesOf ::
+    CageConfig -> ByteString -> TxOut ConwayEra -> [(ByteString, Integer)]
+activeEntriesOf cfg key out =
+    let MaryValue _ (MultiAsset ma) = out ^. valueTxOutL
+        policy = policyIdFromPin (cfgActivePolicy cfg)
+     in [ (SBS.fromShort n, q)
+        | (p, names) <- Map.toList ma
+        , p == policy
+        , (AssetName n, q) <- Map.toList names
+        , SBS.fromShort n == key
+        ]
+
+-- | Everything a transaction moves under the ACTIVE policy, by key.
+activeMintOf :: ConwayTx -> CageConfig -> [AssetEntry]
+activeMintOf tx cfg =
+    let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
+        policy = policyIdFromPin (cfgActivePolicy cfg)
+     in [ AssetEntry
+            (hexText (activePolicyBytes cfg))
+            (hexText (SBS.fromShort n))
+            q
+        | (p, names) <- Map.toList ma
+        , p == policy
+        , (AssetName n, q) <- Map.toList names
+        ]
+
+activePolicyBytes :: CageConfig -> ByteString
+activePolicyBytes = SBS.fromShort . cfgActivePolicy
+
+hexText :: ByteString -> T.Text
+hexText = TE.decodeUtf8 . Base16.encode
+
+{- | A receipt carrying retirement evidence (#177). Everything else is
+`writeRowReceipt`'s; only the extra object differs, so the two cannot
+drift on the fields they share.
+-}
+writeRetirementReceipt ::
+    Env ->
+    String ->
+    [String] ->
+    Maybe Integer ->
+    Maybe Integer ->
+    Maybe Integer ->
+    RetirementEvidence ->
+    IO ()
+writeRetirementReceipt env row txs mem cpu size retirement =
+    writeReceiptFile (envReceiptsDir env) $
+        Receipt
+            { receiptRow = T.pack row
+            , receiptOutcome = Accepted
+            , receiptVerdict = AgreesWithModel
+            , receiptTransactions = map T.pack txs
+            , receiptRefusal = Nothing
+            , receiptRejected = Nothing
+            , receiptMem = mem
+            , receiptCpu = cpu
+            , receiptTxSize = size
+            , receiptBase = T.pack (envBase env)
+            , receiptDirty = envDirty env
+            , receiptPartial = Nothing
+            , receiptEdge = Nothing
+            , receiptRetirement = Just retirement
+            , receiptDerivation = Nothing
+            , receiptNode = T.pack (envNode env)
+            , receiptBlueprint = T.pack (envBlueprint env)
+            , receiptVenue = "node-submit"
+            }
 
 -- | Every pending request UTxO of a row cage, in tx-input order.
 pendingRequests :: Env -> RowCage -> IO [(TxIn, TxOut ConwayEra)]
@@ -5958,6 +6409,7 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
             , receiptEdge = Nothing
+            , receiptRetirement = Nothing
 
             , receiptDerivation = derivation
             , receiptNode = T.pack (envNode env)
@@ -6362,6 +6814,7 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptDirty = dirty
             , receiptPartial = partial
             , receiptEdge = Nothing
+            , receiptRetirement = Nothing
 
             , receiptDerivation = Nothing
             , receiptNode = T.pack nodeVer
@@ -7364,6 +7817,7 @@ registryContext env = do
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
+            , rcHolderUtxos = []
             , rcRefUtxos = refs
             }
 {- | CG03's own key, seeded at the absent leaf.
@@ -7535,6 +7989,41 @@ transaction for a collateral shortfall. One output, one choice.
 Reference outputs are left alone: they are what the folds resolve their
 scripts through.
 -}
+
+{- | Publish the state validator as a reference output once per session,
+before any boot (#177, A-003).
+
+The boot transaction carries the state validator INLINE unless the
+funding wallet already holds a publication of it, and that validator is
+fifteen kilobytes against a sixteen-kilobyte transaction cap. #177's
+retirement guard does not fit in what is left. Referencing the script
+returns the whole fifteen kilobytes to the budget.
+
+Every cage in a session shares the same state script — only the seed
+differs — so one publication serves every boot. Idempotent by
+discovery, and the funding sweep already spares outputs carrying
+reference scripts, so it publishes once and finds it thereafter.
+-}
+ensureStateRef :: Env -> IO ()
+ensureStateRef env = do
+    let cfg = envCfg env
+        wanted = cfgScriptHash cfg
+    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+    let published =
+            [ ()
+            | (_, out) <- utxos
+            , SJust s <- [out ^. referenceScriptTxOutL]
+            , hashScript s == wanted
+            ]
+    case published of
+        (_ : _) -> pure ()
+        [] -> do
+            _ <- publishRefScript env (mkCageScript cfg)
+            emit
+                "state-ref"
+                "published the state validator as a reference output; \
+                \boots reference it instead of carrying it inline"
+
 consolidateFunding :: Env -> IO ()
 consolidateFunding env = consolidateWallet (envProv env) (envSubmit env)
 
@@ -7754,6 +8243,7 @@ rowRegistryContext env cage tid = do
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
             , rcAllowInadmissible = False
+            , rcHolderUtxos = []
             , rcRefUtxos = rcRefs cage
             }
 
@@ -7781,6 +8271,7 @@ foldSpecContext env fs = do
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
+            , rcHolderUtxos = []
             , -- A refusal row exists to watch the chain refuse a fold the
               -- builder cannot discharge duties for; it must still be built.
               rcAllowInadmissible = True

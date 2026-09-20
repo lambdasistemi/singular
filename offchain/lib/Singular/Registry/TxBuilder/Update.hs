@@ -137,6 +137,7 @@ emptyRegistryContext =
         , rcCageUtxos = []
         , rcDatums = []
         , rcAllowInadmissible = False
+        , rcHolderUtxos = []
         , rcRefUtxos = []
         }
 
@@ -169,9 +170,18 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
         if null (rcCageUtxos ctx0)
             then queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
             else pure (rcCageUtxos ctx0)
+    -- #177 I177-BUILDER: the candidate burn sources. A retirement
+    -- destroys an asset it does not create, so the fold has to consume
+    -- the UTxO that HOLDS it; left unset, the inventory is the fold's
+    -- own wallet, which is where `insertActive` delivered it.
+    holderUtxos <-
+        if null (rcHolderUtxos ctx0)
+            then queryUTxOs prov addr
+            else pure (rcHolderUtxos ctx0)
     let ctx =
             ctx0
                 { rcCageUtxos = cageUtxos
+                , rcHolderUtxos = holderUtxos
                 , rcCageScript = case rcCageScript ctx0 of
                     Just s -> Just s
                     Nothing -> Just script
@@ -203,7 +213,12 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
             (Tx.mkPParamsBound pp)
             (Tx.InterpretIO (const (pure undefined)))
             evalTx
-            (feeUtxo : stateUtxo : reqUtxos <> map csUtxo (rdSpends duties))
+            ( feeUtxo
+                : stateUtxo
+                : reqUtxos
+                    <> map csUtxo (rdSpends duties)
+                    <> rdInputs duties
+            )
             (rcRefUtxos ctx)
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
@@ -430,6 +445,11 @@ buildProgram
         mapM_
             (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))
             (rdSpends duties)
+        -- #177 I177-BUILDER: the retirement's burn source. It is an
+        -- ordinary input, not a script spend: the active witness sits at
+        -- the holder's own address, and the key that signs the fold is
+        -- the key that owns it.
+        mapM_ (Tx.spend . fst) (rdInputs duties)
         mapM_
             (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
             (rdMints duties)
@@ -506,6 +526,12 @@ data RegistryDuties = RegistryDuties
     , rdOutputs :: [TxOut ConwayEra]
     , rdSpends :: [ConnectedSpend]
     , rdSigners :: [KeyHash Guard]
+    , rdInputs :: [(TxIn, TxOut ConwayEra)]
+    -- ^ #177 I177-BUILDER: ordinary (non-script) inputs the edge needs
+    -- the transaction to consume. The retirement burns an asset it does
+    -- not create, so the holder UTxO carrying that asset has to ride in
+    -- as an input; a mint of `-1` with nothing to burn is a transaction
+    -- whose only possible outcome is a refusal.
     }
 
 instance Semigroup RegistryDuties where
@@ -515,9 +541,10 @@ instance Semigroup RegistryDuties where
             (rdOutputs a <> rdOutputs b)
             (rdSpends a <> rdSpends b)
             (rdSigners a <> rdSigners b)
+            (rdInputs a <> rdInputs b)
 
 instance Monoid RegistryDuties where
-    mempty = RegistryDuties [] [] [] []
+    mempty = RegistryDuties [] [] [] [] []
 
 {- | What a fold needs in hand to discharge the obligations: the three
 token policies' scripts by kind, the cage script (custody spends run it),
@@ -535,6 +562,14 @@ data RegistryContext = RegistryContext
     -- row that exists to watch the chain REFUSE one can produce the
     -- transaction it submits. An honest builder leaves this off and
     -- fails early, naming the request.
+    , rcHolderUtxos :: [(TxIn, TxOut ConwayEra)]
+    -- ^ #177 I177-BUILDER: the candidate inputs a burn may be sourced
+    -- from — the outputs that actually HOLD registry witnesses. A
+    -- retirement destroys an asset it does not create, so the fold has
+    -- to consume the holder's own UTxO; with nothing in this
+    -- inventory the builder fails naming the key rather than emitting a
+    -- mint the cage refuses `token-missing`. Left empty, the builder
+    -- queries the fold's own wallet address.
     , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
     -- ^ Outputs carrying the fold's scripts as reference scripts. The
     -- state validator alone is fifteen kilobytes, so a fold that
@@ -653,11 +688,68 @@ registryDuties cfg pp st ctx reqUtxos processed =
         | edge == 0 = lockCustody key destAddr floorAda
         | edge == 1 = deliver (cfgActivePolicy cfg) key dest destHash floorAda
         | edge == 2 = (<>) <$> spendCustody key <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
-        | edge == 3 = pure mempty
+        | edge == 3 = burnSource (cfgActivePolicy cfg) key
         | edge == 4 = spendCustody key
         | edge == 5 = pure mempty
         | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
         | otherwise = Left ("registryDuties: unknown edge " <> show edge)
+    {- #177 I177-BUILDER: the retirement burns a token it must first
+    hold. `deltaOf 3` is `[(active, -1)]` and there is no carrier
+    output, so the asset the mint destroys has to arrive on an input —
+    the Lean row's witness input,
+    @{ role := .witness, assets := [((.active, r.key), 1)] }@.
+
+    Selection is exact in both directions: the policy is THIS registry's
+    active pin and the name is THIS key, so a holder of another key or
+    another policy is not a candidate and cannot be swept in. Exactly
+    one candidate must hold exactly one unit; none, several, or a
+    different quantity is the state the cage refuses `token-missing`,
+    and the builder says so here rather than emitting a transaction
+    whose only possible outcome is that refusal. -}
+    burnSource policy key =
+        let policyId = policyIdOf policy
+            name = AssetName (SBS.toShort key)
+            held out = case out ^. valueTxOutL of
+                MaryValue _ (MultiAsset m) ->
+                    maybe 0 (Map.findWithDefault 0 name) (Map.lookup policyId m)
+            candidates =
+                [ (u, q)
+                | u@(_, o) <- rcHolderUtxos ctx
+                , let q = held o
+                , q /= 0
+                ]
+         in case candidates of
+                [(u, 1)] -> Right mempty{rdInputs = [u]}
+                -- A row that exists to watch the CHAIN refuse this edge
+                -- needs the transaction built, not withheld: the cage
+                -- refuses `key-unknown` or `not-booked` before it ever
+                -- reaches the burn, and a builder failure here would
+                -- substitute its own reason for the one under test.
+                -- Same flag, same reason, as the inadmissible-edge arm.
+                _ | rcAllowInadmissible ctx -> Right mempty
+                [(_, q)] ->
+                    Left
+                        ( "registryDuties: the holder of the active witness \
+                          \for key "
+                            <> show key
+                            <> " carries "
+                            <> show q
+                            <> " of it, not exactly one"
+                        )
+                [] ->
+                    Left
+                        ( "registryDuties: no input in hand carries the \
+                          \active witness for key "
+                            <> show key
+                            <> "; a retirement that burns it must consume it"
+                        )
+                _ ->
+                    Left
+                        ( "registryDuties: more than one input carries the \
+                          \active witness for key "
+                            <> show key
+                            <> "; the burn must name one source"
+                        )
     -- C6: the absent token sits at the cage, alone, under a custody datum
     -- naming its key and the address the deposit goes back to.
     lockCustody key refund floorAda = do

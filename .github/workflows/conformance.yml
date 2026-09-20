@@ -112,6 +112,74 @@ jobs:
       - name: List the inventory as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance -- list
+      # #177 A-002 row S07, CI change in this ticket: CG22 gets its
+      # OWN step, into its OWN receipts directory, kept out of the
+      # generic-rows block above. #184 is editing that block for CG21
+      # in parallel and two tickets must not edit the same step;
+      # whichever lands second then rebases a step nobody else touched.
+      #
+      # The assertion is the RECEIPT, not the exit code: the retirement
+      # evidence is read back field by field — both txids distinct, the
+      # three roots distinct, the 1 -> 0 quantity transition, the exact
+      # keyed `-1` mint, the token-bearing source input, the Terminal
+      # leaf, and each refusal leg with its accepting control. A trace
+      # name is admitted only where the ledger surfaced one; the exact
+      # names are enforced in the compiled Aiken suite.
+      #
+      # Falsification: while CG22 has no producer this step fails at
+      # the run itself, and with a producer that drops any field it
+      # fails at the jq assertion.
+      - name: Run the dedicated CG22 retirement row as a packaged app
+        run: |
+          set -e
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/cg22-receipts.XXXXXX")"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG22 --receipts-dir "$receipts"
+          head_sha="$(git rev-parse HEAD)"
+          f="$receipts/receipt-CG22.json"
+          test -f "$f" || { echo 'FAIL: missing CG22 receipt'; exit 1; }
+          # jq expands its own --arg variables inside this program.
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            def text: type == "string" and length > 0;
+            .row == "CG22"
+            and .verdict == "agrees-with-model"
+            and .base == $base and .dirty == false
+            and (.blueprint | text) and (.node | text)
+            and (.retirement != null)
+            and (.retirement as $r |
+              ($r.activePolicy | text) and ($r.key | text)
+              and ($r.insertTxid | txid) and ($r.retireTxid | txid)
+              and $r.insertTxid != $r.retireTxid
+              and ([$r.roots.beforeInsert, $r.roots.active, $r.roots.terminal]
+                | all(.[]; text) and (unique | length == 3))
+              and $r.quantities == {"before": 1, "after": 0}
+              and $r.mint == [{"policy": $r.activePolicy, "name": $r.key, "quantity": -1}]
+              and ($r.source.outref | text)
+              and $r.source.policy == $r.activePolicy
+              and $r.source.name == $r.key
+              and $r.source.quantity == 1
+              and $r.leaf == "Terminal"
+              and ($r.unknown.txid | txid)
+              and ($r.unknown.hashes | type == "array" and length > 0)
+              and ($r.unknown.trace == null or $r.unknown.trace == "key-unknown")
+              and ($r.unknown.controlTxid | txid)
+              and $r.unknown.controlTxid != $r.unknown.txid
+              and ($r.unknown.distinguisher | text)
+              and ($r.absent.txid | txid)
+              and ($r.absent.hashes | type == "array" and length > 0)
+              and ($r.absent.trace == null or $r.absent.trace == "not-booked")
+              and ($r.absent.controlTxid | txid)
+              and $r.absent.controlTxid != $r.absent.txid
+              and ($r.absent.distinguisher | text)
+              and (.transactions | index($r.insertTxid) != null)
+              and (.transactions | index($r.retireTxid) != null)
+              and (.transactions | index($r.unknown.controlTxid) != null)
+              and (.transactions | index($r.absent.controlTxid) != null)
+            )
+          ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |

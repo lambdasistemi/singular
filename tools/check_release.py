@@ -134,6 +134,11 @@ if onchain_present:
         # the archive cannot ship the command without its authority.
         "INSERT-ACTIVE.md",
         "offchain/insert-active/Main.hs",
+        # #177 I177-COMMAND: the second packaged verb's run page and its
+        # tracked source. Required, so the archive cannot ship the
+        # retirement command without the page that documents it.
+        "UPDATE-TERMINAL.md",
+        "offchain/update-terminal/Main.hs",
         "onchain/plutus.json",
         "onchain/script-identity.json",
         "onchain/aiken.toml",
