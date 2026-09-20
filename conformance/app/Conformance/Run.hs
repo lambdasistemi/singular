@@ -5196,6 +5196,7 @@ writeCG21Receipt env foldTx mem cpu size edge =
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
             , receiptEdge = Just edge
+            , receiptRetirement = Nothing
             , receiptDerivation = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
@@ -5383,11 +5384,16 @@ runCG22 env = do
     _ <- book cg22AbsentKey insertAbsentOp (serialiseAddr genesisAddr, BS.empty)
     _ <- land cg22AbsentKey insertAbsentOp
     _ <- book cg22AbsentKey retireOp retireDest
+    -- a #177 retirement refusal leg does not observe the keyed-mint
+    -- delta; CG21 (#184) is the row that observes it. An empty
+    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
+    -- observed-empty.
     absentLeg <-
         refusedRetirement
             env
             cage
             tid
+            cg22AbsentKey
             (txIdHex retireTx)
             "the control retired a key that IS Active in this same cage; \
             \this one was witnessed Absent"
@@ -5423,11 +5429,16 @@ runCG22 env = do
         "CG22 control: a key that IS active retired in the Unknown leg's \
         \own cage — the refusal below discriminates the leaf"
     _ <- bookU cg22UnknownKey retireOp retireDest
+    -- a #177 retirement refusal leg does not observe the keyed-mint
+    -- delta; CG21 (#184) is the row that observes it. An empty
+    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
+    -- observed-empty.
     unknownLeg <-
         refusedRetirement
             env
             unknownCage
             unknownTid
+            cg22UnknownKey
             (txIdHex controlTx)
             "the control retired a key that IS Active in this same cage; \
             \this one was never inserted at all"
@@ -5526,6 +5537,8 @@ refusedRetirement ::
     Env ->
     RowCage ->
     TokenId ->
+    -- | the key under test, named by the refused batch
+    ByteString ->
     -- | the accepting control's txid
     String ->
     -- | the one fact that differs from the control
@@ -5533,7 +5546,7 @@ refusedRetirement ::
     -- | what to say if the chain accepts
     String ->
     IO RefusalLeg
-refusedRetirement env cage tid controlTxid distinguisher acceptedMsg = do
+refusedRetirement env cage tid key controlTxid distinguisher acceptedMsg = do
     state <- cageStateUtxo env cage
     reqUtxos <- pendingRequests env cage
     (proofs, newRoot) <- speculativeApplyAll env cage tid reqUtxos
@@ -5577,6 +5590,10 @@ refusedRetirement env cage tid controlTxid distinguisher acceptedMsg = do
                       rlTrace = Nothing
                     , rlControlTxid = T.pack controlTxid
                     , rlDistinguisher = T.pack distinguisher
+                    , rlKeys = [hexT key]
+                    , rlClaimed = Nothing
+                    , rlEntailed = Nothing
+                    , rlControlMint = Nothing
                     }
 
 -- | The quantity the genesis wallet holds of this key's active witness.
