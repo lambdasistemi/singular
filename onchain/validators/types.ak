@@ -372,6 +372,29 @@ pub type Request {
   destination: (ByteArray, ByteArray),
 }
 
+/// The edge-tagged request (#183, dual-codec S20).
+///
+/// The same registry binding, owner, key, time and destination as `Request`,
+/// but carrying the C2 row index (`edge` 0-6) in place of `Operation`, and no
+/// `tip` field: the fold requires the input lovelace to reach `state.tip`
+/// (Lean `lovelaceCoversTip`, `c.maxFee <= lovelace`). `deposit` is the value
+/// above the tip the request rides with (`held - state.tip`); `approval`
+/// (Lean) is the carried asset under the application policy, not a datum
+/// field; `claimed` (Lean) is the transaction mint, not a datum field;
+/// `refundAddress` (Lean) is `destination`'s first component for the absent
+/// edges and the custody refund otherwise. Transitional: `Operation` and the
+/// old `Request` stay for exactly one commit (S20); the next commit removes
+/// them and renames this to `Request`.
+pub type EdgeRequest {
+  requestToken: TokenId,
+  requestOwner: VerificationKeyHash,
+  requestKey: ByteArray,
+  edge: Int,
+  submitted_at: Int,
+  destination: (ByteArray, ByteArray),
+  deposit: Int,
+}
+
 /// Datum for UTxOs locked at the cage script address.
 ///
 /// The cage script can hold two types of UTxOs:
@@ -419,6 +442,12 @@ pub type CageDatum {
   /// output at `refund`. Whoever books the name later, the deposit goes
   /// back to whoever witnessed the absence.
   AbsentCustody { key: ByteArray, refund: ByteArray }
+  /// The edge-tagged request (#183 S20, transitional dual-codec).
+  /// Appended at index 3, so `RequestDatum` 0, `StateDatum` 1 and
+  /// `AbsentCustody` 2 never move. The next commit removes the old
+  /// `RequestDatum`/`Request`/`Operation` and renames this to
+  /// `RequestDatum` at index 0.
+  EdgeRequestDatum(EdgeRequest)
 }
 
 /// The open application's mint redeemer (#173 I1).

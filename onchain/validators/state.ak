@@ -16,15 +16,14 @@ use cardano/transaction.{
 }
 use lib.{
   approvalName, assetName, decodeState, deltaOf, destinationMatches,
-  edgeDeleteAbsent, edgeInsertAbsent, edgeInsertActive, edgeOf,
+  edgeDeleteAbsent, edgeDeleteActive, edgeInsertAbsent, edgeInsertActive, edgeOf,
   edgeUpdateActive, edgeUpdateTerminal, edgeWitnessTerminal, exactQuantity,
-  kindAbsent, kindActive, kindTerminal, leafAbsent, leafTerminal,
-  paysAddress,
+  kindAbsent, kindActive, kindTerminal, leafAbsent, leafActive, leafTerminal, paysAddress,
   statedBefore, tokenFromPolicy,
 }
 use shared.{in_phase1, is_rejectable}
 use types.{
-  AbsentCustody, Burning, CageDatum, Delete, End, Insert, Migrating,
+  AbsentCustody, Burning, CageDatum, Delete, EdgeRequest, EdgeRequestDatum, End, Insert, Migrating,
   MintRedeemer, Minting, Modify, Operation, Read, Rejected, Request,
   RequestAction, RequestDatum, State, StateDatum, TokenId, Update,
   UpdateAction, UpdateRedeemer,
@@ -437,6 +436,15 @@ fn mkAction(pins: State, tokenId: TokenId, validity_range) {
               // A request for another cage token is not ours to fold.
               acc
             }
+          } else if datum is EdgeRequestDatum(request): CageDatum {
+            // #183 S20 dual-codec: the edge-tagged request folds beside the
+            // old Operation request for exactly one commit, with identical
+            // verdicts on the G3 shapes (receipted in t183_dual).
+            if request.requestToken == tokenId {
+              stepEdgeRequest(acc, pins, request, input, validity_range)
+            } else {
+              acc
+            }
           } else {
             acc
           }
@@ -520,6 +528,169 @@ fn stepRequest(
                       proof,
                     )
                   }
+                }
+              }
+            }
+        }
+      }
+    }
+  }
+}
+
+/// Admission by approval for the edge-tagged request (#183 S20): identical
+/// to `admitted`, read off `EdgeRequest` instead of `Request`.
+fn admittedEdge(
+  acc: Fold,
+  pins: State,
+  edge: Int,
+  request: EdgeRequest,
+  value: Value,
+) -> Fold {
+  let carried = assets.tokens(value, pins.application_policy)
+  when dict.keys(carried) is {
+    [name] ->
+      if dict.get(carried, name) != Some(1) {
+        halt(acc, @"no-approval")
+      } else if name != approvalName(
+        edge,
+        request.requestKey,
+        request.requestOwner,
+        request.destination,
+      ) {
+        halt(acc, @"approval-binding")
+      } else {
+        acc
+      }
+    _ -> halt(acc, @"no-approval")
+  }
+}
+
+/// The canonical operation an edge entails (#183 S20). The leaf bytes are
+/// implied by the edge; there are no free value bytes to refuse (G1/G3 retire
+/// with a recorded mapping). Used to reuse the MPF walk and the duty logic.
+fn canonicalOp(edge: Int) -> Operation {
+  if edge == edgeInsertAbsent {
+    Insert(leafAbsent)
+  } else if edge == edgeInsertActive {
+    Insert(leafActive)
+  } else if edge == edgeUpdateActive {
+    Update(leafAbsent, leafActive)
+  } else if edge == edgeUpdateTerminal {
+    Update(leafActive, leafTerminal)
+  } else if edge == edgeDeleteAbsent {
+    Delete(leafAbsent)
+  } else if edge == edgeDeleteActive {
+    Delete(leafActive)
+  } else {
+    Read(leafTerminal)
+  }
+}
+
+/// The leaf an edge requires in the trie, if any (#183 S20). Inserts require
+/// absence (`None`); every other edge requires the named leaf. Checked with
+/// the total `mpf.has` before any library update/delete runs, so a mismatch
+/// refuses cleanly instead of crashing.
+fn edgeExpects(edge: Int) -> Option<ByteArray> {
+  if edge == edgeUpdateActive {
+    Some(leafAbsent)
+  } else if edge == edgeUpdateTerminal {
+    Some(leafActive)
+  } else if edge == edgeDeleteAbsent {
+    Some(leafAbsent)
+  } else if edge == edgeDeleteActive {
+    Some(leafActive)
+  } else if edge == edgeWitnessTerminal {
+    Some(leafTerminal)
+  } else {
+    None
+  }
+}
+
+fn stepEdgeRequest(
+  acc: Fold,
+  pins: State,
+  request: EdgeRequest,
+  input: Input,
+  validity_range,
+) -> Fold {
+  let EdgeRequest { requestOwner, requestKey, edge, submitted_at, destination, deposit, .. } =
+    request
+  let held = lovelace_of(input.output.value)
+  // #183: no `tip` field to mismatch (`tip-mismatch` retires). The fold
+  // requires request lovelace >= `state.tip` (Lean `lovelaceCoversTip`).
+  if held < pins.tip {
+    halt(acc, @"tip-coverage")
+  } else if deposit != held - pins.tip {
+    halt(acc, @"deposit-mismatch")
+  } else {
+    when acc.actions is {
+      [] -> halt(acc, @"missing-action")
+      [action, ..tail] -> {
+        let popped = Fold { ..acc, actions: tail, consumed: acc.consumed + 1 }
+        when action is {
+          Rejected ->
+            if !is_rejectable(
+              validity_range,
+              submitted_at,
+              pins.process_time,
+              pins.retract_time,
+            ) {
+              halt(popped, @"not-rejectable")
+            } else {
+              Fold {
+                ..popped,
+                refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
+              }
+            }
+          UpdateAction(proof) ->
+            if !in_phase1(validity_range, submitted_at, pins.process_time) {
+              halt(popped, @"not-phase1")
+            } else if edge < 0 || edge > 6 {
+              halt(popped, @"edge-inadmissible")
+            } else {
+              let checked =
+                if edge == edgeWitnessTerminal {
+                  popped
+                } else {
+                  admittedEdge(popped, pins, edge, request, input.output.value)
+                }
+              if !checked.ok {
+                checked
+              } else {
+                // Trie-shape gate before the MPF walk: inserts are gated
+                // inside `applyEdge` via `mpf.miss` (`key-exists`); reads
+                // via `mpf.has` (`read-root`); updates/deletes need an
+                // explicit inclusion check here so a wrong trie refuses
+                // cleanly (`edge-inadmissible`) instead of crashing inside
+                // the library. G1/G3 value-byte refusals retire; the mapping
+                // is receipted in `t183_dual`.
+                when edgeExpects(edge) is {
+                  None ->
+                    applyEdge(
+                      checked,
+                      pins,
+                      edge,
+                      requestKey,
+                      canonicalOp(edge),
+                      destination,
+                      held - pins.tip,
+                      proof,
+                    )
+                  Some(expected) ->
+                    if !mpf.has(checked.trie, requestKey, expected, proof) {
+                      halt(checked, @"edge-inadmissible")
+                    } else {
+                      applyEdge(
+                        checked,
+                        pins,
+                        edge,
+                        requestKey,
+                        canonicalOp(edge),
+                        destination,
+                        held - pins.tip,
+                        proof,
+                      )
+                    }
                 }
               }
             }

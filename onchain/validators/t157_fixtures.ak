@@ -16,7 +16,7 @@ use cardano/transaction
 use lib
 use lib.{approvalName}
 use types.{
-  AbsentCustody, CageDatum, Operation, Request, RequestDatum, State,
+  AbsentCustody, CageDatum, EdgeRequest, EdgeRequestDatum, Operation, Request, RequestDatum, State,
   StateDatum, TokenId,
 }
 
@@ -404,6 +404,50 @@ pub fn requestInput(
       address: cageAddress(),
       value: merge(from_lovelace(lovelace), carried),
       datum: InlineDatum(requestDatum(key, operation, owner, destination)),
+      reference_script: None,
+    },
+  }
+}
+
+/// The edge-tagged datum (#183 S20 dual-codec): the C2 row index in place
+/// of `Operation`, no `tip` field, explicit `deposit` (`held - tip`).
+pub fn edgeRequestDatum(
+  key: ByteArray,
+  edge: Int,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+) -> CageDatum {
+  EdgeRequestDatum(
+    EdgeRequest {
+      requestToken: cageToken,
+      requestOwner: owner,
+      requestKey: key,
+      edge,
+      submitted_at: 0,
+      destination,
+      deposit,
+    },
+  )
+}
+
+/// A request UTxO in the new encoding, carrying its approval and its deposit.
+/// `lovelace` must be `tip + deposit`; the fold checks `held >= tip` and
+/// `deposit == held - tip`.
+pub fn edgeRequestInput(
+  index: Int,
+  key: ByteArray,
+  edge: Int,
+  owner: ByteArray,
+  destination: (ByteArray, ByteArray),
+  carried: Value,
+  lovelace: Int,
+) -> Input {
+  Input {
+    output_reference: requestRef(index),
+    output: Output {
+      address: cageAddress(),
+      value: merge(from_lovelace(lovelace), carried),
+      datum: InlineDatum(edgeRequestDatum(key, edge, owner, destination)),
       reference_script: None,
     },
   }
