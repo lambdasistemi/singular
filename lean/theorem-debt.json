@@ -144,6 +144,12 @@
     "statementSha256": "0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120"
   },
   {
+    "name": "Singular.Statements.insert_absent_transaction_row",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+  },
+  {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",

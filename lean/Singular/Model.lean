@@ -757,7 +757,18 @@ structure TxOutput where
   config : Option Config
   commitment : Option Nat
   assets : List (Asset × Int)
+  /-- Ordered logical fields of the custody datum; `[refundAddress]` is the
+  refund-only payload. This models field shape, not ledger serialization. -/
+  custodyDatum : Option (List Nat) := none
+  lovelace : Nat := 0
   deriving BEq, DecidableEq
+
+/-- Recover custody identity from one absent asset of quantity one. Neither
+the datum nor the request can supply a fallback key. -/
+def custodyKey (o : TxOutput) : Option Key :=
+  match o.assets with
+  | [((.absent, key), 1)] => some key
+  | _ => none
 
 /-- The transaction of an admitted fold. -/
 structure Tx where
@@ -825,7 +836,8 @@ def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
   let assets := routedPayment t r .cageCustody
   if assets.isEmpty then []
   else [{ role := .cage, datum := registryDatumForm, address := some 0
-        , stateTokens := 0, config := none, commitment := none, assets := assets }]
+        , stateTokens := 0, config := none, commitment := none, assets := assets
+        , custodyDatum := some [r.refundAddress], lovelace := r.deposit }]
 
 /-- The transaction an admitted single-request fold builds, or the model's own
 refusal. Every field is the executed step's answer or a definition applied to

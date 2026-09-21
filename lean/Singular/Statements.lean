@@ -892,6 +892,89 @@ theorem read_changes_nothing (s : RegistryState) (r : Request) (t : Result)
   obtain ⟨h1, h2, h3, _, _, _⟩ := applyEdge_witnessTerminal s r he
   exact ⟨h1, h2, h3⟩
 
+/-- The whole transaction an admitted absent insertion builds. The custody
+payload has one field, the refund address; its identity is recovered from its
+sole absent asset. The deposit is held, not refunded during insertion.
+Reachability supplies witness uniqueness, not the transaction equation. -/
+theorem insert_absent_transaction_row (s : RegistryState) (r : Request) (t : Result)
+    (ap : Approval) (lovelace : Nat) (h : Reachable s) (he : r.edge = .insertAbsent)
+    (hap : r.approval = some ap) (hok : step s r = .ok t)
+    (hfee : s.config.maxFee ≤ lovelace) :
+    txOf s r lovelace =
+      .ok { inputs :=
+              [ { role := .state, datum := .inline, stateTokens := 1
+                , approvals := 0, lovelace := 0 }
+              , { role := .request, datum := .inline, stateTokens := 0
+                , approvals := 1, lovelace := lovelace } ]
+          , outputs :=
+              [ { role := .state, datum := .inline, address := none, stateTokens := 1
+                , config := some t.state.config, commitment := none, assets := [] }
+              , { role := .destination, datum := .inline, address := some 0
+                , stateTokens := 0, config := none, commitment := some ap.assetName
+                , assets := [] }
+              , { role := .cage, datum := .inline, address := some 0
+                , stateTokens := 0, config := none, commitment := none
+                , assets := [((.absent, r.key), 1)]
+                , custodyDatum := some [r.refundAddress], lovelace := r.deposit } ]
+          , mint := [((.absent, r.key), 1)], signers := [], refunds := [] } ∧
+    (txCageOutputs t r).map custodyKey = [some r.key] ∧
+    lovelaceCoversTip s.config lovelace = true ∧
+    destinationDatumBinds r = true ∧
+    trieGet s.trie r.key = .unknown ∧
+    t.state.trie = trieSet s.trie r.key (.known .absent) ∧
+    onlyRootChanged s.config t.state.config = true ∧
+    t.state.config.root = rootOf t.state.trie ∧
+    t.state.custody =
+      { key := r.key, refundAddress := r.refundAddress, value := r.deposit } :: s.custody ∧
+    t.state.held = s.held ∧
+    custodyCount t.state r.key = 1 ∧
+    kindPolicy s.config .absent = s.config.absentPolicy ∧
+    tokenAssetName .absent r.key = r.key := by
+  obtain ⟨hfree, ⟨ap', hap', hpol, hedge, hkey, hown, hdst, hasset⟩,
+    htrie, hcfg, hcust, hheld, hmint, hpaid⟩ := (insert_absent_inversion s r t he).mp hok
+  have hapeq : ap' = ap := Option.some.inj (hap'.symm.trans hap)
+  rw [hapeq] at hpol hedge hkey hown hdst hasset
+  have hbind : datumHash (destinationDatum r) = ap.assetName := by
+    unfold datumHash destinationDatum
+    rw [hasset, hedge, hkey, hown, hdst]
+  have hdest : requestDestination r = 0 := by simp [requestDestination, he]
+  have happrovals : approvalsIn r = 1 := by rw [approvalsIn, hap]; rfl
+  have hrouted : routedPayment t r .requestOutput = [] := by
+    simp +decide [routedPayment, mintRoutedTo, hmint, route]
+  have hcage : txCageOutputs t r =
+      [{ role := .cage, datum := .inline, address := some 0
+       , stateTokens := 0, config := none, commitment := none
+       , assets := [((.absent, r.key), 1)]
+       , custodyDatum := some [r.refundAddress], lovelace := r.deposit }] := by
+    simp +decide [txCageOutputs, routedPayment, mintRoutedTo, hmint, route, registryDatumForm]
+  have hburn : txBurnInputs t r = [] := by simp [txBurnInputs, hmint]
+  have htx : txOf s r lovelace =
+      .ok { inputs :=
+              [ { role := .state, datum := .inline, stateTokens := 1
+                , approvals := 0, lovelace := 0 }
+              , { role := .request, datum := .inline, stateTokens := 0
+                , approvals := 1, lovelace := lovelace } ]
+          , outputs :=
+              [ { role := .state, datum := .inline, address := none, stateTokens := 1
+                , config := some t.state.config, commitment := none, assets := [] }
+              , { role := .destination, datum := .inline, address := some 0
+                , stateTokens := 0, config := none, commitment := some ap.assetName
+                , assets := [] }
+              , { role := .cage, datum := .inline, address := some 0
+                , stateTokens := 0, config := none, commitment := none
+                , assets := [((.absent, r.key), 1)]
+                , custodyDatum := some [r.refundAddress], lovelace := r.deposit } ]
+          , mint := [((.absent, r.key), 1)], signers := [], refunds := [] } := by
+    simp [txOf, hok, txStateOutput, txDestinationOutput, hcage, hburn, happrovals,
+      hdest, hrouted, hbind, hpaid, hmint, requiredSigners, registryDatumForm,
+      registryStateTokens]
+  have hcount : custodyCount t.state r.key = 1 :=
+    (absent_witness_unique t.state (Reachable.next h hok) r.key).2.mpr
+      (by rw [htrie, trieGet_set_eq])
+  exact ⟨htx, by simp [hcage, custodyKey], by simpa [lovelaceCoversTip] using hfee,
+    by simp [destinationDatumBinds, hap, hbind], hfree, htrie,
+    by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hheld, hcount, rfl, rfl⟩
+
 /-- **#173 T1** — the transaction an admitted `insertActive` builds.
 
 The conclusion is one equation on the transaction `txOf` constructs from the

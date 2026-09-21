@@ -301,7 +301,9 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("stateToken", toJson o.stateTokens)
     , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
     , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
-    , ("assets", assetsJson c o.assets) ]
+    , ("assets", assetsJson c o.assets)
+    , ("custodyDatum", toJson o.custodyDatum)
+    , ("lovelace", toJson o.lovelace) ]
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -343,6 +345,60 @@ def transactionRowJson : Json :=
       , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
       , ("secondInsert", Json.mkObj [("accepted", toJson false), ("reason", toJson why)]) ]
   | _, _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
+
+/-- An insertion from genesis with a refund address different from the key. -/
+def absentRequest : Request :=
+  { req .insertAbsent 42 91 0 with refundAddress := 91, deposit := 200, claimed := [(.absent, 1)] }
+
+def absentResult : Except String Result := step s0 absentRequest
+
+def absentTx : Except String Tx := txOf s0 absentRequest txLovelace
+
+def absentRowTheorem : String := "Singular.Statements.insert_absent_transaction_row"
+def absentRowStatement : String := "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+
+/-- Check the constructed value independently of its constructors, so changing
+those constructors cannot silently change the exported expectations. -/
+def absentTxCorrect : Bool :=
+  match absentTx, absentResult with
+  | .ok tx, .ok t =>
+    tx ==
+      { inputs :=
+          [ { role := .state, datum := .inline, stateTokens := 1, approvals := 0, lovelace := 0 }
+          , { role := .request, datum := .inline, stateTokens := 0, approvals := 1
+            , lovelace := txLovelace } ]
+      , outputs :=
+          [ { role := .state, datum := .inline, address := none, stateTokens := 1
+            , config := some t.state.config, commitment := none, assets := [] }
+          , { role := .destination, datum := .inline, address := some 0, stateTokens := 0
+            , config := none, commitment := some (approvalAssetName .insertAbsent 42 91 0)
+            , assets := [] }
+          , { role := .cage, datum := .inline, address := some 0, stateTokens := 0
+            , config := none, commitment := none, assets := [((.absent, 42), 1)]
+            , custodyDatum := some [91], lovelace := 200 } ]
+      , mint := [((.absent, 42), 1)], signers := [], refunds := [] } &&
+    (tx.outputs.filter (fun o => o.role == .cage)).map custodyKey == [some 42] &&
+    t.state.trie == trieSet s0.trie 42 (.known .absent) &&
+    onlyRootChanged cfg t.state.config && t.state.config.root == rootOf t.state.trie &&
+    t.state.custody == [{ key := 42, refundAddress := 91, value := 200 }] &&
+    t.state.held == [] && custodyCount t.state 42 == 1 &&
+    lovelaceCoversTip cfg txLovelace && destinationDatumBinds absentRequest
+  | _, _ => false
+
+def absentRowJson : Json :=
+  match absentTx, absentResult with
+  | .ok tx, .ok t => Json.mkObj
+      [ ("profile", "insertAbsent"), ("accepted", toJson absentTxCorrect)
+      , ("theorem", toJson absentRowTheorem), ("statementSha256", toJson absentRowStatement)
+      , ("request", toJson absentRequest), ("transaction", txJson cfg tx)
+      , ("recoveredKeys", toJson ((tx.outputs.filter (fun o => o.role == .cage)).map custodyKey))
+      , ("claimed", assetsJson cfg (requestClaim absentRequest))
+      , ("onlyRootChanges", toJson (onlyRootChanged cfg t.state.config))
+      , ("rootMatchesTrie", toJson (t.state.config.root == rootOf t.state.trie))
+      , ("absentQuantity", toJson (custodyCount t.state 42))
+      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
+      , ("destinationDatumBinds", toJson (destinationDatumBinds absentRequest)) ]
+  | _, _ => Json.mkObj [("profile", "insertAbsent"), ("accepted", toJson false)]
 
 /-! ### T1 — the `updateTerminal` transaction row (#177)
 
@@ -523,6 +579,8 @@ def main : IO Unit := do
     throw (IO.userError "T1 keyed accepted row refused")
   unless foldReason (foldBatch s0 keyedWrongKey) == "net-mint-mismatch" do
     throw (IO.userError s!"T1 wrong-key row: {foldReason (foldBatch s0 keyedWrongKey)}")
+  unless absentTxCorrect do
+    throw (IO.userError "T1 insertAbsent constructed transaction violates refund-only custody row")
   -- #177: the transaction an admitted updateTerminal builds is a verdict too
   unless (match retireResult with | .ok _ => true | .error _ => false) do
     throw (IO.userError "T1 updateTerminal was refused at a booked key")
@@ -555,7 +613,7 @@ def main : IO Unit := do
     , ("codec", toJson codecJson)
     , ("configRoundtrip", toJson configRow)
     , ("tokenPolicies", tokenPoliciesJson)
-    , ("transactions", Json.arr #[transactionRowJson, retirementRowJson])
+    , ("transactions", Json.arr #[transactionRowJson, absentRowJson, retirementRowJson])
     , ("keyedMintRows", Json.arr
         #[ keyedMintRowJson "GK01-two-keys-accepted" keyedAccepted
          , keyedMintRowJson "GK02-same-kind-wrong-key-refused" keyedWrongKey ])

@@ -1,0 +1,42 @@
+[
+  {
+    "mutation": "baseline",
+    "before": "",
+    "after": "",
+    "binaryBuildExit": 0,
+    "rowExit": 0,
+    "proofExit": 0,
+    "modelSha256": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
+    "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+  },
+  {
+    "mutation": "datum-key",
+    "before": "custodyDatum := some [r.refundAddress]",
+    "after": "custodyDatum := some [r.key, r.refundAddress]",
+    "binaryBuildExit": 0,
+    "rowExit": 1,
+    "proofExit": 1,
+    "modelSha256": "64dec103f1687fd293ccab30750ee1c78b7b8fda27e1071ea5465ab5218d48f2",
+    "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+  },
+  {
+    "mutation": "two-assets",
+    "before": "assets := assets\n        , custodyDatum",
+    "after": "assets := assets ++ [((.absent, r.key + 1), 1)]\n        , custodyDatum",
+    "binaryBuildExit": 0,
+    "rowExit": 1,
+    "proofExit": 1,
+    "modelSha256": "328d62d98ea64d5b67dbde6b780610c6c73fd3ab3bff28e5c6a99c359a917e3e",
+    "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+  },
+  {
+    "mutation": "zero-assets",
+    "before": "assets := assets\n        , custodyDatum",
+    "after": "assets := []\n        , custodyDatum",
+    "binaryBuildExit": 0,
+    "rowExit": 1,
+    "proofExit": 1,
+    "modelSha256": "83db91e8ba80a16feb8482cf76e78cce33569da8eebc62dfd94039eaa09e6d05",
+    "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+  }
+]

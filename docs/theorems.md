@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 27 declarations of the registry's own statement module are **PROVED**
+All 28 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **48** in total, each with its own
+and its wire encoding 5, for **49** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -49,6 +49,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
 | `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
 | `Singular.Statements.insert_absent_inversion` | — | `b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d` | PROVED |
+| `Singular.Statements.insert_absent_transaction_row` | Complete absent-insertion transaction: refund-only custody, sole-asset key, deposit, root and custody effects, keyed mint, no required signers or immediate refunds | `cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46` | PROVED |
 | `Singular.Statements.insert_active_inversion` | — | `8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b` | PROVED |
 | `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the keyed mint, no refunds, no required signer — plus universal open admission and the duplicate-key refusal | `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737` | PROVED |
 | `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
