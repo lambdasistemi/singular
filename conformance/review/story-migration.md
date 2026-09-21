@@ -29,14 +29,14 @@ The original titles remain below as historical identities; the next column gives
 | a fold that moved a non-root configuration pin | A registration report is rejected if applying the request changes the maximum fee | `Edge.Register` | loader returns Left |
 | a configuration observation that lost a pin | A registration report is rejected if the original settings are missing | `Edge.Register` | loader returns Left |
 | a leg whose trace the ledger did not surface is accepted | Evidence of a rejected duplicate registration is accepted without a script log | `Edge.Register` | loader returns exactly Right 1 |
-| a leg whose control is the transaction it refused | Evidence of a rejected duplicate is rejected if the same transaction is also called successful | `Edge.Register` | loader returns Left |
-| a leg naming no failing script | Evidence of a rejected duplicate is rejected if it does not identify the script that failed | `Edge.Register` | loader returns Left |
-| a leg naming an empty failing script | Evidence of a rejected duplicate is rejected if the failing script identifier is blank | `Edge.Register` | loader returns Left |
-| a duplicate leg naming two keys | Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered | `Edge.Register` | loader returns Left |
-| a duplicate leg naming a key the fold did not insert | Evidence of a rejected duplicate is rejected if it names a key this run never registered | `Edge.Register` | loader returns Left |
-| a duplicate leg carrying mint arithmetic | Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example | `Edge.Register` | loader returns Left |
-| a refused transaction that also landed as a fold | Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions | `Edge.Register` | loader returns Left |
-| a control that never landed a fold | Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run | `Edge.Register` | loader returns Left |
+| a leg whose control is the transaction it refused | Rejects duplicate-registration evidence that calls the same transaction both rejected and successful | `Edge.Register` | loader returns Left |
+| a leg naming no failing script | Rejects duplicate-registration evidence that does not identify the script that failed | `Edge.Register` | loader returns Left |
+| a leg naming an empty failing script | Rejects duplicate-registration evidence with a blank identifier for the failing script | `Edge.Register` | loader returns Left |
+| a duplicate leg naming two keys | Rejects duplicate-registration evidence naming two keys instead of the one already registered | `Edge.Register` | loader returns Left |
+| a duplicate leg naming a key the fold did not insert | Rejects duplicate-registration evidence naming a key this run never registered | `Edge.Register` | loader returns Left |
+| a duplicate leg carrying mint arithmetic | Rejects duplicate-registration evidence mixed with token allocation data from the separate batch example | `Edge.Register` | loader returns Left |
+| a refused transaction that also landed as a fold | Rejects duplicate-registration evidence if the rejected transaction also appears among successful transactions | `Edge.Register` | loader returns Left |
+| a control that never landed a fold | Rejects duplicate-registration evidence if the successful comparison transaction is absent from the run | `Edge.Register` | loader returns Left |
 | a leg whose distinguisher is empty | A batch rejection report must explain what differs from the successful comparison | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg reusing the duplicate's transaction | A batch rejection report cannot reuse the transaction from the duplicate-registration example | `Fold.KeyedMint` | loader returns Left |
 | two legs sharing one accepting control | The batch and duplicate-registration examples must each identify their own successful comparison transaction | `Fold.KeyedMint` | loader returns Left |
@@ -45,7 +45,7 @@ The original titles remain below as historical identities; the next column gives
 | a keyed-mint leg naming three keys | A report about a two-key batch is rejected if it lists three keys | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg naming an empty key | A report about a two-key batch is rejected if either key is blank | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg reusing the fold's own key | A batch rejection report cannot borrow a key from the separate single-registration example | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg whose claim also disagrees per kind | A report claiming the total is correct is rejected if it creates three tokens where two are required | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg whose claim also disagrees per kind | Rejects a report that claims the total is correct while listing three tokens where two are required | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg whose claim agrees per key as well | A report claiming a wrong allocation is rejected if each key actually receives its required token | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg claiming a mint at neither named key | A batch rejection report is rejected if the claimed tokens name a key outside the batch | `Fold.KeyedMint` | loader returns Left |
 | a keyed-mint leg entailing a mint at neither named key | A batch rejection report is rejected if the required tokens name a key outside the batch | `Fold.KeyedMint` | loader returns Left |

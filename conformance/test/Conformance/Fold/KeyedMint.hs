@@ -76,7 +76,7 @@ story = theorem keyedMintFold $ do
                         key keyBHex
 
             rejects
-                "A report claiming the total is correct is rejected if it creates three tokens where two are required"
+                "Rejects a report that claims the total is correct while listing three tokens where two are required"
                 "This example is meant to expose a wrong allocation despite a correct total of two tokens. A total of three tests a different mistake." $
                     onLeg keyedMint $ claimedMint $ mint activeHex keyAHex 3
 

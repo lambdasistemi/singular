@@ -158,14 +158,14 @@ renderFailure report =
         , "  actual    " <> frActual report
         ]
 
--- | Render one story as the readable theorem-clause-example text.
+-- | Render the reader's story first, with exact specification and input
+-- details available underneath. Both are read from the same program.
 renderStory :: Program StoryI () -> String
 renderStory prog = case view prog of
     Return () -> ""
     Theorem binding clauses :>>= rest ->
-        unlines
-            [ boName binding <> " @" <> boRevision binding <> " " <> take 8 (boDigest binding) <> "\8230"
-            ]
+        details "Formal specification for this chapter"
+            (boName binding <> "\nRevision: " <> boRevision binding <> "\nStatement digest: " <> boDigest binding)
             <> renderClauses clauses
             <> renderStory (rest ())
   where
@@ -173,34 +173,39 @@ renderStory prog = case view prog of
     renderClauses p = case view p of
         Return () -> ""
         Clause alias selects cases :>>= rest ->
-            "  " <> T.unpack alias <> "\n"
-                <> renderSelects selects
+            "### " <> T.unpack alias <> "\n\n"
+                <> details "Rules quoted from the formal specification" (renderSelects selects)
                 <> renderCases cases
                 <> renderClauses (rest ())
         Unexercised alias missing :>>= rest ->
-            "    \8251 unexercised: " <> T.unpack alias <> "\n"
-                <> "        " <> T.unpack missing <> "\n"
+            "### Not yet demonstrated: " <> T.unpack alias <> "\n\n"
+                <> T.unpack missing <> "\n\n"
                 <> renderClauses (rest ())
     renderSelects :: Program SelectI () -> String
     renderSelects p = case view p of
         Return () -> ""
         Conjunct t :>>= rest ->
-            "      \183 " <> T.unpack t <> "\n" <> renderSelects (rest ())
+            T.unpack t <> "\n" <> renderSelects (rest ())
     renderCases :: Program CaseI () -> String
     renderCases p = case view p of
         Return () -> ""
         Accepts name edit :>>= rest ->
-            "      accepts: " <> T.unpack name <> "\n"
-                <> "          edit " <> renderEdit edit <> "\n"
+            "#### " <> T.unpack name <> "\n\n"
+                <> "Expected result: the report is accepted.\n\n"
+                <> details "Exact change made to the example report" (renderEdit edit)
                 <> renderCases (rest ())
         AcceptsBecause name edit reason :>>= rest ->
-            "      accepts: " <> T.unpack name <> "\n"
-                <> "          because " <> T.unpack reason <> "\n"
-                <> "          edit " <> renderEdit edit <> "\n"
+            "#### " <> T.unpack name <> "\n\n"
+                <> T.unpack reason <> "\n\n"
+                <> "Expected result: the report is accepted.\n\n"
+                <> details "Exact change made to the example report" (renderEdit edit)
                 <> renderCases (rest ())
         Rejects name reason edit :>>= rest ->
-            "      refuses: " <> T.unpack name <> "\n"
-                <> "          because " <> T.unpack reason <> "\n"
-                <> "          edit " <> renderEdit edit <> "\n"
+            "#### " <> T.unpack name <> "\n\n"
+                <> T.unpack reason <> "\n\n"
+                <> "Expected result: the report is rejected.\n\n"
+                <> details "Exact change made to the example report" (renderEdit edit)
                 <> renderCases (rest ())
-
+    details title body =
+        "<details>\n<summary>" <> title <> "</summary>\n\n```text\n"
+            <> body <> "\n```\n\n</details>\n\n"

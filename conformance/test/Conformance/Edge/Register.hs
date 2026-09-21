@@ -146,44 +146,44 @@ story = theorem insertActiveRow $ do
                     onLeg duplicate omitTrace
 
             rejects
-                "Evidence of a rejected duplicate is rejected if the same transaction is also called successful"
+                "Rejects duplicate-registration evidence that calls the same transaction both rejected and successful"
                 "The example needs a separate successful transaction to show that the duplicate key caused the rejection." $
                     onLeg duplicate $ controlTxid dupTx
 
             rejects
-                "Evidence of a rejected duplicate is rejected if it does not identify the script that failed"
+                "Rejects duplicate-registration evidence that does not identify the script that failed"
                 "A failed transaction alone does not show that the intended script rejected the duplicate key." $
                     onLeg duplicate $ hashes noHashes
 
             rejects
-                "Evidence of a rejected duplicate is rejected if the failing script identifier is blank"
+                "Rejects duplicate-registration evidence with a blank identifier for the failing script"
                 "A blank script identifier cannot establish which script rejected the transaction." $
                     onLeg duplicate $ hashes $ hash emptyValue
 
             rejects
-                "Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered"
+                "Rejects duplicate-registration evidence naming two keys instead of the one already registered"
                 "This example attempts to register the one key already registered earlier in the run." $
                     onLeg duplicate $ keys $ do
                         key keyHex
                         key keyBHex
 
             rejects
-                "Evidence of a rejected duplicate is rejected if it names a key this run never registered"
+                "Rejects duplicate-registration evidence naming a key this run never registered"
                 "To demonstrate a duplicate, this run must first register the same key." $
                     onLeg duplicate $ keys $ key keyAHex
 
             rejects
-                "Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example"
+                "Rejects duplicate-registration evidence mixed with token allocation data from the separate batch example"
                 "The duplicate-registration example and the token-allocation example must remain separate reports." $
                     onLeg duplicate $ claimedMint $ mint activeHex keyAHex 2
 
             rejects
-                "Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions"
+                "Rejects duplicate-registration evidence if the rejected transaction also appears among successful transactions"
                 "The same transaction cannot be reported as both rejected and successfully applied." $
                     onLeg duplicate $ txid mintControlTx
 
             rejects
-                "Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run"
+                "Rejects duplicate-registration evidence if the successful comparison transaction is absent from the run"
                 "The report must show that the successful comparison transaction was actually applied during this run." $
                     onLeg duplicate $ controlTxid unlandedTx
 

@@ -1,16 +1,16 @@
 # The registry's promises
 
-A registry commits a map of keys to a root. Requests ask it to change a key; a fold applies those requests. Active tokens witness active registrations.
+The registry records keys and processes requests to change them. Registering an active key gives the requested recipient a token identifying that key. Applying several requests together must still create the right token for each key.
 
-Read the requirements first, then the active-registration and batch stories. Each case states what is accepted or refused, why, and the exact observation it changes.
+Read the requirements first, then the registration and batch stories. Each case explains what evidence is accepted or rejected and why. The exact test inputs and formal specification are available in expandable details.
 
 ## What has been demonstrated
 
-The stories below passed against the receipt loader. They check the evidence a run must supply; they do not execute new chain transactions or turn uncovered requirements into demonstrated behavior. This book includes no live run receipts.
+The stories below check whether reports from a registry run contain the required evidence. All of these checks passed on example reports. This does not establish that the transactions were run on a blockchain; this book includes no reports from a live run. Requirements without evidence remain unproven.
 
 ## Requirements and remaining evidence
 
-These requirements and their planned states come directly from rows.json. Only a matching run receipt can establish execution. Bound-elsewhere points to existing evidence; uncovered remains uncovered.
+The wording and evidence status below come directly from the requirements inventory. 'Uncovered' means the required evidence is missing. 'Bound elsewhere' points to evidence maintained elsewhere. 'Outside the registry's scope' identifies responsibilities that belong to another system. A requirement is marked as executed only when a matching run report establishes that.
 
 ### The canonical registry token name is SHA-256 of the canonical seed's outRef; a consumer recomputes it from the published seed and matches the on-chain state UTxO.
 
@@ -287,162 +287,751 @@ Expected: accept the insert and the retirement; the active quantity goes 1 -> 0 
 Source: Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; A-002.
 
 
-## Insert active registrations
+## Registering a key
+
+The example starts with a request to register one key and send its active token to the requested address. The run report describes applying that request and then attempting to register the same key again. A separate successful transaction provides a comparison for the rejected duplicate. Each case below changes one part of that report.
+
+<details>
+<summary>Formal specification for this chapter</summary>
 
 ```text
-Singular.Statements.insert_active_transaction_row @265c595 bfb4e317…
-  The requested address must receive exactly one active token for the registered key
-      · address := some r.output
-      · assets := [((.active, r.key), 1)]
-      · kindCount t.state .active r.key = 1
-      accepts: A registration report is accepted when the requested address receives one active token for the key
-          edit unchanged
-      refuses: A registration report is rejected if no active token is delivered
-          because The recipient must receive one active token; receiving none does not establish registration.
-          edit deliver: nothing
-      refuses: A registration report is rejected if two active tokens are delivered for the same key
-          because The recipient must receive exactly one active token for this key, not two.
-          edit deliver: activeToken "743137332d696e736572742d616374697665" 2
-      refuses: A registration report is rejected if the delivered token comes from the wrong minting policy
-          because The open-policy token cannot stand in for the active token required by this registration.
-          edit deliver: token "4a2f1c9e83b70d5641ae2c08df93b1760ea5c42d8f6b3019ac7e5d22" "743137332d696e736572742d616374697665" 1
-      refuses: A registration report is rejected if the token names a different key
-          because The token name must identify the registered key. A token naming another key does not meet the requirement.
-          edit deliver: token "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "6f74686572" 1
-      refuses: A registration report is rejected if the token goes to the wrong address
-          because The request specifies who receives the token. Delivery to another address does not satisfy it.
-          edit observedAddress "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-    ※ unexercised: Registration preserves the signatures supplied with the approval
-        Not demonstrated: the report does not record which signatures the approval carried
-  Applying the registration request must create one active token for its key
-      · mint := [((.active, r.key), 1)]
-      refuses: A registration report is rejected if no active token was created for the key
-          because Applying the request must create the active token that the recipient receives.
-          edit minted: nothing
-  The open registry application takes no parameters
-      · openPolicyParameters = []
-      refuses: A registration report is rejected if the open application declares a parameter
-          because The open application takes no parameters. A report describing an application with a parameter does not describe it.
-          edit openParameters 1
-  Applying this registration request pays no refund
-      · refunds := []
-      refuses: A registration report is rejected if applying the request also pays a refund
-          because This registration is specified to pay no refund. A reported refund contradicts that result.
-          edit refunds: lovelace 1000000
-  Applying this registration request requires no additional signer
-      · signers := []
-      refuses: A registration report is rejected if applying the request requires a signer
-          because This request-processing transaction requires no signer. The report must not add that requirement.
-          edit signers: signer "60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b"
-  The request must supply enough ada to pay the processing tip
-      · lovelaceCoversTip s.config lovelace = true
-      refuses: A registration report is rejected if the request cannot pay the processing tip
-          because The request supplies 999,999 lovelace, which is below the 1,000,000-lovelace processing tip in this example.
-          edit requestLovelace 999999
-  The delivery address must match the approval
-      · destinationDatumBinds r = true
-      refuses: A registration report is rejected if the approval does not match the delivery address
-          because The recorded approval must match the approval calculated for the requested destination.
-          edit approvalRecomputed "00112233445566778899001122334455667788990011223344556677"
-  Applying a request may update the registry contents but must preserve its other settings
-      · onlyRootChanged s.config t.state.config = true
-      refuses: A registration report is rejected if applying the request changes the maximum fee
-          because Processing a registration updates the registry contents, not the maximum fee or other settings.
-          edit configAfter: max fee 2000000; other pins unchanged
-      refuses: A registration report is rejected if the original settings are missing
-          because The report needs the settings from before and after processing so they can be compared.
-          edit configBefore: no pins
-  Registering an already registered key must fail
-      · txOf t.state r₂ lovelace = .error "key-exists"
-      accepts: Evidence of a rejected duplicate registration is accepted without a script log
-          because A script can fail without emitting a log. The report still identifies the rejected transaction and failing script.
-          edit onLeg duplicate: without trace
-      refuses: Evidence of a rejected duplicate is rejected if the same transaction is also called successful
-          because The example needs a separate successful transaction to show that the duplicate key caused the rejection.
-          edit onLeg duplicate: controlTxid: "bb22222222222222222222222222222222222222222222222222222222222222"
-      refuses: Evidence of a rejected duplicate is rejected if it does not identify the script that failed
-          because A failed transaction alone does not show that the intended script rejected the duplicate key.
-          edit onLeg duplicate: hashes: no failing script
-      refuses: Evidence of a rejected duplicate is rejected if the failing script identifier is blank
-          because A blank script identifier cannot establish which script rejected the transaction.
-          edit onLeg duplicate: hashes: script ""
-      refuses: Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered
-          because This example attempts to register the one key already registered earlier in the run.
-          edit onLeg duplicate: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
-      refuses: Evidence of a rejected duplicate is rejected if it names a key this run never registered
-          because To demonstrate a duplicate, this run must first register the same key.
-          edit onLeg duplicate: keys: key "743137332d6b6579656d696e742d61"
-      refuses: Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example
-          because The duplicate-registration example and the token-allocation example must remain separate reports.
-          edit onLeg duplicate: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
-      refuses: Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions
-          because The same transaction cannot be reported as both rejected and successfully applied.
-          edit onLeg duplicate: txid: "ee55555555555555555555555555555555555555555555555555555555555555"
-      refuses: Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run
-          because The report must show that the successful comparison transaction was actually applied during this run.
-          edit onLeg duplicate: controlTxid: "ff66666666666666666666666666666666666666666666666666666666666666"
+Singular.Statements.insert_active_transaction_row
+Revision: 265c595
+Statement digest: bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737
 ```
 
-## Batch minting at distinct keys
+</details>
+
+### The requested address must receive exactly one active token for the registered key
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
 
 ```text
-Singular.Statements.fold_batch_claimed_mint_by_kind_key @265c595 9c01e278…
-  A batch must create the right number of tokens for each key, even when the total is correct
-      · assetKindTotal (claimedMint [b₁, b₂]) k
-      · assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false
-      · foldBatch s [b₁, b₂] = .error "net-mint-mismatch"
-      refuses: A batch rejection report must explain what differs from the successful comparison
-          because The report must explain why the rejected transaction differs from its successful comparison.
-          edit onLeg keyedMint: distinguisher: ""
-      refuses: A batch rejection report cannot reuse the transaction from the duplicate-registration example
-          because The wrong-allocation example and the duplicate-registration example are different transactions.
-          edit onLeg keyedMint: txid: "bb22222222222222222222222222222222222222222222222222222222222222"
-      refuses: The batch and duplicate-registration examples must each identify their own successful comparison transaction
-          because Each rejection example needs its own successful comparison so the cause of failure can be checked.
-          edit onLeg keyedMint: controlTxid: "cc33333333333333333333333333333333333333333333333333333333333333"
-      refuses: A report about a two-key batch is rejected if it lists only one key
-          because This example compares token allocation across two different keys, so both must be identified.
-          edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"
-      refuses: A report about a two-key batch is rejected if it lists the same key twice
-          because Listing one key twice does not describe two separate registration requests.
-          edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d61"
-      refuses: A report about a two-key batch is rejected if it lists three keys
-          because This example processes two keys. A report about three keys does not describe the same batch.
-          edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d62"; key "743137332d696e736572742d616374697665"
-      refuses: A report about a two-key batch is rejected if either key is blank
-          because Both registration keys must be identified; a blank entry does not identify a key.
-          edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key ""
-      refuses: A batch rejection report cannot borrow a key from the separate single-registration example
-          because The two-key batch is separate from the earlier single registration. Its report must name its own keys.
-          edit onLeg keyedMint: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
-      refuses: A report claiming the total is correct is rejected if it creates three tokens where two are required
-          because This example is meant to expose a wrong allocation despite a correct total of two tokens. A total of three tests a different mistake.
-          edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 3
-      refuses: A report claiming a wrong allocation is rejected if each key actually receives its required token
-          because One token for each key is the correct allocation. It cannot demonstrate rejection for an incorrect allocation.
-          edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
-      refuses: A batch rejection report is rejected if the claimed tokens name a key outside the batch
-          because The claimed tokens must refer to the two registration keys named in this batch.
-          edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 2
-      refuses: A batch rejection report is rejected if the required tokens name a key outside the batch
-          because The required tokens come from the requests in this batch, not from a registration elsewhere.
-          edit onLeg keyedMint: entailedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
-      refuses: A batch rejection report must say which tokens the rejected transaction tried to create
-          because Without the proposed token allocation, the report cannot show how it differs from the required allocation.
-          edit onLeg keyedMint: claimedMint: no mint
-      refuses: A successful comparison must correct the allocation, not put both tokens at the first key again
-          because The successful comparison must create one token per key. Putting both tokens at the first key repeats the rejected mistake.
-          edit onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
-      refuses: A successful comparison must allocate its tokens to the two keys in the batch
-          because The successful comparison must create one token for each of the two requested keys.
-          edit onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1
-      refuses: A registration run report is rejected if the required batch-rejection example is missing
-          because This run report is required to include the batch-rejection example. Leaving it out does not remove the requirement.
-          edit without keyedMint
-    ※ unexercised: Every successful batch creates exactly the tokens its requests require
-        Not demonstrated as a separate claim: the reports record successful comparison transactions but do not establish this general rule
+address := some r.output
+assets := [((.active, r.key), 1)]
+kindCount t.state .active r.key = 1
+
 ```
+
+</details>
+
+#### A registration report is accepted when the requested address receives one active token for the key
+
+Expected result: the report is accepted.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+unchanged
+```
+
+</details>
+
+#### A registration report is rejected if no active token is delivered
+
+The recipient must receive one active token; receiving none does not establish registration.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+deliver: nothing
+```
+
+</details>
+
+#### A registration report is rejected if two active tokens are delivered for the same key
+
+The recipient must receive exactly one active token for this key, not two.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+deliver: activeToken "743137332d696e736572742d616374697665" 2
+```
+
+</details>
+
+#### A registration report is rejected if the delivered token comes from the wrong minting policy
+
+The open-policy token cannot stand in for the active token required by this registration.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+deliver: token "4a2f1c9e83b70d5641ae2c08df93b1760ea5c42d8f6b3019ac7e5d22" "743137332d696e736572742d616374697665" 1
+```
+
+</details>
+
+#### A registration report is rejected if the token names a different key
+
+The token name must identify the registered key. A token naming another key does not meet the requirement.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+deliver: token "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "6f74686572" 1
+```
+
+</details>
+
+#### A registration report is rejected if the token goes to the wrong address
+
+The request specifies who receives the token. Delivery to another address does not satisfy it.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+observedAddress "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+```
+
+</details>
+
+### Not yet demonstrated: Registration preserves the signatures supplied with the approval
+
+Not demonstrated: the report does not record which signatures the approval carried
+
+### Applying the registration request must create one active token for its key
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+mint := [((.active, r.key), 1)]
+
+```
+
+</details>
+
+#### A registration report is rejected if no active token was created for the key
+
+Applying the request must create the active token that the recipient receives.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+minted: nothing
+```
+
+</details>
+
+### The open registry application takes no parameters
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+openPolicyParameters = []
+
+```
+
+</details>
+
+#### A registration report is rejected if the open application declares a parameter
+
+The open application takes no parameters. A report describing an application with a parameter does not describe it.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+openParameters 1
+```
+
+</details>
+
+### Applying this registration request pays no refund
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+refunds := []
+
+```
+
+</details>
+
+#### A registration report is rejected if applying the request also pays a refund
+
+This registration is specified to pay no refund. A reported refund contradicts that result.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+refunds: lovelace 1000000
+```
+
+</details>
+
+### Applying this registration request requires no additional signer
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+signers := []
+
+```
+
+</details>
+
+#### A registration report is rejected if applying the request requires a signer
+
+This request-processing transaction requires no signer. The report must not add that requirement.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+signers: signer "60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b"
+```
+
+</details>
+
+### The request must supply enough ada to pay the processing tip
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+lovelaceCoversTip s.config lovelace = true
+
+```
+
+</details>
+
+#### A registration report is rejected if the request cannot pay the processing tip
+
+The request supplies 999,999 lovelace, which is below the 1,000,000-lovelace processing tip in this example.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+requestLovelace 999999
+```
+
+</details>
+
+### The delivery address must match the approval
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+destinationDatumBinds r = true
+
+```
+
+</details>
+
+#### A registration report is rejected if the approval does not match the delivery address
+
+The recorded approval must match the approval calculated for the requested destination.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+approvalRecomputed "00112233445566778899001122334455667788990011223344556677"
+```
+
+</details>
+
+### Applying a request may update the registry contents but must preserve its other settings
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+onlyRootChanged s.config t.state.config = true
+
+```
+
+</details>
+
+#### A registration report is rejected if applying the request changes the maximum fee
+
+Processing a registration updates the registry contents, not the maximum fee or other settings.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+configAfter: max fee 2000000; other pins unchanged
+```
+
+</details>
+
+#### A registration report is rejected if the original settings are missing
+
+The report needs the settings from before and after processing so they can be compared.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+configBefore: no pins
+```
+
+</details>
+
+### Registering an already registered key must fail
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+txOf t.state r₂ lovelace = .error "key-exists"
+
+```
+
+</details>
+
+#### Evidence of a rejected duplicate registration is accepted without a script log
+
+A script can fail without emitting a log. The report still identifies the rejected transaction and failing script.
+
+Expected result: the report is accepted.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: without trace
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence that calls the same transaction both rejected and successful
+
+The example needs a separate successful transaction to show that the duplicate key caused the rejection.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: controlTxid: "bb22222222222222222222222222222222222222222222222222222222222222"
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence that does not identify the script that failed
+
+A failed transaction alone does not show that the intended script rejected the duplicate key.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: hashes: no failing script
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence with a blank identifier for the failing script
+
+A blank script identifier cannot establish which script rejected the transaction.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: hashes: script ""
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence naming two keys instead of the one already registered
+
+This example attempts to register the one key already registered earlier in the run.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence naming a key this run never registered
+
+To demonstrate a duplicate, this run must first register the same key.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: keys: key "743137332d6b6579656d696e742d61"
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence mixed with token allocation data from the separate batch example
+
+The duplicate-registration example and the token-allocation example must remain separate reports.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence if the rejected transaction also appears among successful transactions
+
+The same transaction cannot be reported as both rejected and successfully applied.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: txid: "ee55555555555555555555555555555555555555555555555555555555555555"
+```
+
+</details>
+
+#### Rejects duplicate-registration evidence if the successful comparison transaction is absent from the run
+
+The report must show that the successful comparison transaction was actually applied during this run.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg duplicate: controlTxid: "ff66666666666666666666666666666666666666666666666666666666666666"
+```
+
+</details>
+
+## Allocating tokens across a batch of requests
+
+Two requests register two different keys. Each needs one active token. Creating both tokens for the first key gives the right total but the wrong allocation: the second key receives none. The rejection report must describe that mistake and a successful comparison that creates one token for each key. These cases check the report supporting that claim.
+
+<details>
+<summary>Formal specification for this chapter</summary>
+
+```text
+Singular.Statements.fold_batch_claimed_mint_by_kind_key
+Revision: 265c595
+Statement digest: 9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988
+```
+
+</details>
+
+### A batch must create the right number of tokens for each key, even when the total is correct
+
+<details>
+<summary>Rules quoted from the formal specification</summary>
+
+```text
+assetKindTotal (claimedMint [b₁, b₂]) k
+assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false
+foldBatch s [b₁, b₂] = .error "net-mint-mismatch"
+
+```
+
+</details>
+
+#### A batch rejection report must explain what differs from the successful comparison
+
+The report must explain why the rejected transaction differs from its successful comparison.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: distinguisher: ""
+```
+
+</details>
+
+#### A batch rejection report cannot reuse the transaction from the duplicate-registration example
+
+The wrong-allocation example and the duplicate-registration example are different transactions.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: txid: "bb22222222222222222222222222222222222222222222222222222222222222"
+```
+
+</details>
+
+#### The batch and duplicate-registration examples must each identify their own successful comparison transaction
+
+Each rejection example needs its own successful comparison so the cause of failure can be checked.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: controlTxid: "cc33333333333333333333333333333333333333333333333333333333333333"
+```
+
+</details>
+
+#### A report about a two-key batch is rejected if it lists only one key
+
+This example compares token allocation across two different keys, so both must be identified.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"
+```
+
+</details>
+
+#### A report about a two-key batch is rejected if it lists the same key twice
+
+Listing one key twice does not describe two separate registration requests.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d61"
+```
+
+</details>
+
+#### A report about a two-key batch is rejected if it lists three keys
+
+This example processes two keys. A report about three keys does not describe the same batch.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d62"; key "743137332d696e736572742d616374697665"
+```
+
+</details>
+
+#### A report about a two-key batch is rejected if either key is blank
+
+Both registration keys must be identified; a blank entry does not identify a key.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key ""
+```
+
+</details>
+
+#### A batch rejection report cannot borrow a key from the separate single-registration example
+
+The two-key batch is separate from the earlier single registration. Its report must name its own keys.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
+```
+
+</details>
+
+#### Rejects a report that claims the total is correct while listing three tokens where two are required
+
+This example is meant to expose a wrong allocation despite a correct total of two tokens. A total of three tests a different mistake.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 3
+```
+
+</details>
+
+#### A report claiming a wrong allocation is rejected if each key actually receives its required token
+
+One token for each key is the correct allocation. It cannot demonstrate rejection for an incorrect allocation.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
+```
+
+</details>
+
+#### A batch rejection report is rejected if the claimed tokens name a key outside the batch
+
+The claimed tokens must refer to the two registration keys named in this batch.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 2
+```
+
+</details>
+
+#### A batch rejection report is rejected if the required tokens name a key outside the batch
+
+The required tokens come from the requests in this batch, not from a registration elsewhere.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: entailedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
+```
+
+</details>
+
+#### A batch rejection report must say which tokens the rejected transaction tried to create
+
+Without the proposed token allocation, the report cannot show how it differs from the required allocation.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: claimedMint: no mint
+```
+
+</details>
+
+#### A successful comparison must correct the allocation, not put both tokens at the first key again
+
+The successful comparison must create one token per key. Putting both tokens at the first key repeats the rejected mistake.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
+```
+
+</details>
+
+#### A successful comparison must allocate its tokens to the two keys in the batch
+
+The successful comparison must create one token for each of the two requested keys.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1
+```
+
+</details>
+
+#### A registration run report is rejected if the required batch-rejection example is missing
+
+This run report is required to include the batch-rejection example. Leaving it out does not remove the requirement.
+
+Expected result: the report is rejected.
+
+<details>
+<summary>Exact change made to the example report</summary>
+
+```text
+without keyedMint
+```
+
+</details>
+
+### Not yet demonstrated: Every successful batch creates exactly the tokens its requests require
+
+Not demonstrated as a separate claim: the reports record successful comparison transactions but do not establish this general rule
 
 ## Appendix: how this evidence is checked
 
-The Support modules check receipt parsing, refusal attribution, inventory and observation completeness. Story modules check the language and its two interpreters. They make no additional registry promise. Authentication checks remain compiled but unwired, tracked separately.
+The supporting tests check that reports are readable and complete, identify the script responsible for a rejection, and preserve the requirements inventory. Other checks make sure a published story describes the report actually tested and quotes the specification accurately. They make no additional registry promise. Tests for recognising the intended registry are compiled but are not yet run by this suite.
