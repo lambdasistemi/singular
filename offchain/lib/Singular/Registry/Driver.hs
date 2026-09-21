@@ -339,6 +339,18 @@ foldEdgeWith reg key edge mDest = do
     signed <- regSubmit reg unsigned
     withTrie (regTm reg) (regTid reg) $ \t -> () <$ walkEdge t key edge
     rootAfter <- mirrorRoot reg
+    -- The mirror root on either side of the landed fold. A root that does
+    -- NOT move is the defect this driver exists for, and it would
+    -- otherwise be invisible until the next fold failed for an
+    -- unrelated-looking reason — so a reader of a run sees both.
+    putStrLn
+        ( "[fold] key="
+            <> show key
+            <> " mirror-root-before=0x"
+            <> renderRoot (unRoot rootBefore)
+            <> " mirror-root-after=0x"
+            <> renderRoot (unRoot rootAfter)
+        )
     when (unRoot rootBefore == unRoot rootAfter) $
         error
             ( "foldEdge: the committed mirror root did not move across a \
