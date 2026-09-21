@@ -11,6 +11,7 @@ import Conformance.EdgeSpec qualified as EdgeSpec
 import Conformance.ReceiptSpec qualified as ReceiptSpec
 import Conformance.RefusalSpec qualified as RefusalSpec
 import Conformance.RowsSpec qualified as RowsSpec
+import Conformance.S2ControlsSpec qualified as S2ControlsSpec
 import Conformance.StorySpec qualified as StorySpec
 import Conformance.UsageSpec qualified as UsageSpec
 
@@ -20,5 +21,6 @@ main = hspec $ do
     ReceiptSpec.spec
     RefusalSpec.spec
     RowsSpec.spec
+    S2ControlsSpec.spec
     StorySpec.spec
     UsageSpec.spec
