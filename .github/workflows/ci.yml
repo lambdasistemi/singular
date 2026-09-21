@@ -207,6 +207,34 @@ jobs:
       # runs against the assembled bytes. The same assembler runs inside the
       # publish job before anything is uploaded.
       - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
+  commit-subjects:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Commit subjects follow Conventional Commits
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #195: a subject with no Conventional Commit type is invisible to
+      # release-please, so the work drops out of the changelog. Full history
+      # is fetched so the merge base with the base branch exists.
+      - name: Check every non-merge commit subject in this pull request
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base="$(git merge-base "origin/$BASE_BRANCH" "$HEAD_SHA")"
+          bash tools/commit-subjects.sh "$base..$HEAD_SHA"
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
