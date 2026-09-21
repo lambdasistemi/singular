@@ -76,6 +76,7 @@ import Singular.Registry.Blueprint (
  )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
+import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -155,7 +156,8 @@ spec = describe "#177 updateTerminal on the open registry" $ do
 updateTerminalSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 updateTerminalSpec stateBytes requestBytes = do
     it "retires the active token it inserted: quantity 1 -> 0, keyed -1 burn, Terminal leaf" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
+        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
 
@@ -198,7 +200,8 @@ updateTerminalSpec stateBytes requestBytes = do
             chainRoot `shouldBe` unRoot mirrorRoot
 
     it "refuses updateTerminal on a key the trie does not bind, with an accepting control" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
+        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
             -- The control FIRST: a key that was inserted Active retires
@@ -232,7 +235,8 @@ updateTerminalSpec stateBytes requestBytes = do
                 Left _ -> pure ()
 
     it "refuses updateTerminal on a key witnessed Absent, with an accepting control" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
+        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
             codes <- loadRegistryCodesFromEnv
             -- The control, again first and in this same cage.

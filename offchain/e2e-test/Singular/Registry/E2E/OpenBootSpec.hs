@@ -53,6 +53,7 @@ import Singular.Registry.Blueprint (
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal (
@@ -127,7 +128,8 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
         let expectedOpenPolicy =
                 SBS.toShort (scriptHashBytes (computeScriptHash openBytes))
 
-        withBootedCage id stateBytes requestBytes $ \cfg prov _submit _tm tokenId -> do
+        withBootedCage id stateBytes requestBytes $ \cfg prov _submit _tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             -- The config pins the open application, obtained from the
             -- blueprint rather than written down here.
             cfgApplicationPolicy cfg `shouldBe` expectedOpenPolicy
