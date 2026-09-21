@@ -192,6 +192,24 @@ not the caller's to remember. See the module header for why both exist.
 foldEdge :: Registry -> ByteString -> Edge -> IO FoldOutcome
 foldEdge reg key edge = do
     rootBefore <- mirrorRoot reg
+    onChainBefore <- chainRoot reg
+    -- The precondition nobody had. A caller that landed a fold behind
+    -- this driver — built, submitted, and did not mirror — is rejected
+    -- HERE, before a proof is built against a root the chain no longer
+    -- has. Without it the omission is invisible until some later fold
+    -- fails for a reason that has nothing to do with it.
+    unless (unRoot rootBefore == unOnChainRoot onChainBefore) $
+        error
+            ( "foldEdge: the manager is out of step with the chain before \
+              \folding "
+                <> show key
+                <> " (mirror "
+                <> show (unRoot rootBefore)
+                <> ", chain "
+                <> show (unOnChainRoot onChainBefore)
+                <> "): a fold landed without being committed into the \
+                   \manager"
+            )
     booking <-
         Edges.bookEdge
             (regCfg reg)
