@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -16,11 +17,20 @@ green under checkpoint s2-dsl with no test change:
 -}
 module Conformance.S2ControlsSpec (spec) where
 
+import Control.Monad.Operational (Program)
+import Data.List (nub)
+import Data.Map.Strict qualified as Map
+import Conformance.Story.Discover (discoverPrograms)
 import Data.Either (isLeft)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn, shouldSatisfy)
 
-import Conformance.EdgeFixtures (activeAsset, keyHex, loadTwoFixtures)
+import Conformance.EdgeFixtures (activeAsset, completeReceipt, keyHex, loadTwoFixtures)
 import Conformance.Operational (
+    EditI,
+    foldEdit,
+    refunds,
+    noRefunds,
+    lovelace,
     accepts,
     acceptsMeaning,
     activeToken,
@@ -43,6 +53,17 @@ spec = describe "S2 operational controls" $ do
         -- The failure: rendering ignores the program, so two
         -- different programs render identically.
         (renderEdit progTwo /= renderEdit progOne) `shouldBe` True
+
+    it "distinguishes the executed observations across every discovered constructor" $ do
+        let observations = Map.fromListWith (<>)
+                [(renderEdit p, [(label, foldEdit p completeReceipt)]) | (label, p) <- discovered]
+            collisions = [(rendered, nub (map fst entries))
+                | (rendered, entries) <- Map.toList observations
+                , length (nub (map snd entries)) > 1]
+        null discovered `shouldBe` False
+        executeEdit (refunds noRefunds) `shouldReturn` Right 1
+        executeEdit (refunds (lovelace 1)) >>= (`shouldSatisfy` isLeft)
+        collisions `shouldBe` []
 
     it "LEG-2 accepts means exactly one receipt" $ do
         -- The subject ran: the fixture dir genuinely holds two receipts.
@@ -68,3 +89,7 @@ spec = describe "S2 operational controls" $ do
   where
     progTwo = deliver $ activeToken keyHex 2
     progOne = deliver $ activeToken keyHex 1
+
+-- Generated from the datatype, including nested instruction sets.
+discovered :: [(String, Program EditI ())]
+discovered = $(discoverPrograms ''EditI)

@@ -66,6 +66,7 @@ module Conformance.Operational (
     duplicate,
     entailedMint,
     executeEdit,
+    foldEdit,
     groupNames,
     hash,
     hashes,
@@ -132,6 +133,7 @@ import Data.Foldable (toList)
 import Data.List (isInfixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as T
 import System.Directory (doesFileExist)
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO)
 
@@ -869,19 +871,9 @@ validateEdit prog = case view prog of
 -- Rendering: the same instructions, read as a story
 -- ---------------------------------------------------------
 
--- | Render a JSON scalar compactly; long hashes read as a prefix so
--- the edit line stays one line.
+-- | Preserve the complete value, including hash suffixes and JSON structure.
 valueText :: Value -> String
-valueText v = case v of
-    Aeson.String t ->
-        if T.length t > 8
-            then T.unpack (T.take 8 t) <> "\8230"
-            else T.unpack t
-    Aeson.Number n -> show n
-    Aeson.Bool b -> show b
-    Aeson.Null -> "null"
-    Aeson.Array _ -> "[…]"
-    Aeson.Object _ -> "{…}"
+valueText = T.unpack . T.decodeUtf8 . BSL.toStrict . Aeson.encode
 
 -- | Render an asset program.
 renderAssets :: Program AssetsI () -> String
@@ -892,7 +884,7 @@ renderAssets prog = case view prog of
     Token policy name qty :>>= rest ->
         "token " <> valueText policy <> " " <> valueText name <> " " <> show qty <> then_ (renderAssets (rest ()))
     NoAssets :>>= rest -> "nothing" <> then_ (renderAssets (rest ()))
-    LitAssets _ :>>= rest -> "literal" <> then_ (renderAssets (rest ()))
+    LitAssets vs :>>= rest -> "literal " <> valueText (toJSON vs) <> then_ (renderAssets (rest ()))
   where
     then_ "" = ""
     then_ s = "; " <> s
@@ -909,17 +901,15 @@ renderEdit prog = case view prog of
     RequestLovelace n :>>= rest -> "requestLovelace " <> show n <> then_ (renderEdit (rest ()))
     ApprovalRecomputed v :>>= rest ->
         "approvalRecomputed " <> valueText v <> then_ (renderEdit (rest ()))
-    Refunds _ :>>= rest -> "refunds" <> then_ (renderEdit (rest ()))
-    Signers _ :>>= rest -> "signers" <> then_ (renderEdit (rest ()))
-    ConfigAfter _ :>>= rest -> "configAfter" <> then_ (renderEdit (rest ()))
-    ConfigBefore _ :>>= rest -> "configBefore" <> then_ (renderEdit (rest ()))
-    LandedFolds _ :>>= rest -> "landedFolds" <> then_ (renderEdit (rest ()))
+    Refunds p :>>= rest -> "refunds: " <> renderRefunds p <> then_ (renderEdit (rest ()))
+    Signers p :>>= rest -> "signers: " <> renderSigners p <> then_ (renderEdit (rest ()))
+    ConfigAfter p :>>= rest -> "configAfter: " <> renderConfig p <> then_ (renderEdit (rest ()))
+    ConfigBefore p :>>= rest -> "configBefore: " <> renderConfig p <> then_ (renderEdit (rest ()))
+    LandedFolds p :>>= rest -> "landedFolds: " <> renderSequence p <> then_ (renderEdit (rest ()))
     OnLeg leg p :>>= rest ->
         "onLeg " <> renderLeg leg <> ": " <> renderLegProg p <> then_ (renderEdit (rest ()))
     DropLeg leg :>>= rest -> "without " <> renderLeg leg <> then_ (renderEdit (rest ()))
-    Unchanged :>>= rest -> case view (rest ()) of
-        Return () -> "unchanged"
-        _ -> renderEdit (rest ())
+    Unchanged :>>= rest -> renderEdit (rest ())
   where
     then_ "unchanged" = ""
     then_ "" = ""
@@ -929,18 +919,72 @@ renderEdit prog = case view prog of
 renderLegProg :: Program LegI () -> String
 renderLegProg prog = case view prog of
     Return () -> ""
-    LegKeys _ :>>= rest -> "keys" <> then_ (renderLegProg (rest ()))
-    LegClaimed _ :>>= rest -> "claimedMint" <> then_ (renderLegProg (rest ()))
-    LegEntailed _ :>>= rest -> "entailedMint" <> then_ (renderLegProg (rest ()))
-    LegControl _ :>>= rest -> "controlMint" <> then_ (renderLegProg (rest ()))
-    LegDistinguisher _ :>>= rest -> "distinguisher" <> then_ (renderLegProg (rest ()))
-    LegTxid _ :>>= rest -> "txid" <> then_ (renderLegProg (rest ()))
-    LegControlTxid _ :>>= rest -> "controlTxid" <> then_ (renderLegProg (rest ()))
-    LegHashes _ :>>= rest -> "hashes" <> then_ (renderLegProg (rest ()))
+    LegKeys p :>>= rest -> "keys: " <> renderKeys p <> then_ (renderLegProg (rest ()))
+    LegClaimed p :>>= rest -> "claimedMint: " <> renderMints p <> then_ (renderLegProg (rest ()))
+    LegEntailed p :>>= rest -> "entailedMint: " <> renderMints p <> then_ (renderLegProg (rest ()))
+    LegControl p :>>= rest -> "controlMint: " <> renderMints p <> then_ (renderLegProg (rest ()))
+    LegDistinguisher v :>>= rest -> "distinguisher: " <> valueText (Aeson.String v) <> then_ (renderLegProg (rest ()))
+    LegTxid v :>>= rest -> "txid: " <> valueText v <> then_ (renderLegProg (rest ()))
+    LegControlTxid v :>>= rest -> "controlTxid: " <> valueText v <> then_ (renderLegProg (rest ()))
+    LegHashes p :>>= rest -> "hashes: " <> renderHashes p <> then_ (renderLegProg (rest ()))
     OmitTrace :>>= rest -> "without trace" <> then_ (renderLegProg (rest ()))
   where
     then_ "" = ""
     then_ s = "; " <> s
+
+-- | Join rendered instructions without losing their order.
+next :: String -> String
+next "" = ""
+next text = "; " <> text
+
+-- | Render every instruction in a keys program.
+renderKeys :: Program KeysI () -> String
+renderKeys prog = case view prog of
+    Return () -> ""
+    Key k :>>= rest -> "key " <> valueText k <> next (renderKeys (rest ()))
+
+-- | Render every instruction in a mints program.
+renderMints :: Program MintI () -> String
+renderMints prog = case view prog of
+    Return () -> ""
+    Mint policy name qty :>>= rest -> "mint " <> valueText policy <> " " <> valueText name <> " " <> show qty <> next (renderMints (rest ()))
+    NoMints :>>= rest -> "no mint" <> next (renderMints (rest ()))
+
+-- | Render every instruction in a refunds program.
+renderRefunds :: Program RefundsI () -> String
+renderRefunds prog = case view prog of
+    Return () -> ""
+    Lovelace n :>>= rest -> "lovelace " <> show n <> next (renderRefunds (rest ()))
+    NoRefunds :>>= rest -> "no refund" <> next (renderRefunds (rest ()))
+
+-- | Render every instruction in a signers program.
+renderSigners :: Program SignersI () -> String
+renderSigners prog = case view prog of
+    Return () -> ""
+    Signer addr :>>= rest -> "signer " <> valueText addr <> next (renderSigners (rest ()))
+    NoSigners :>>= rest -> "no signer" <> next (renderSigners (rest ()))
+
+-- | Render every instruction in a config program.
+renderConfig :: Program ConfigI () -> String
+renderConfig prog = case view prog of
+    Return () -> ""
+    MaxFee n :>>= rest -> "max fee " <> show n <> next (renderConfig (rest ()))
+    RestUnchanged :>>= rest -> "other pins unchanged" <> next (renderConfig (rest ()))
+    NoPins :>>= rest -> "no pins" <> next (renderConfig (rest ()))
+
+-- | Render every instruction in a sequence program.
+renderSequence :: Program SequenceI () -> String
+renderSequence prog = case view prog of
+    Return () -> ""
+    Step tx before after committed :>>= rest -> "transaction " <> valueText tx <> " from " <> valueText before <> " to " <> valueText after <> " committed " <> valueText committed <> next (renderSequence (rest ()))
+    NoSteps :>>= rest -> "no landed folds" <> next (renderSequence (rest ()))
+
+-- | Render every instruction in a hashes program.
+renderHashes :: Program HashesI () -> String
+renderHashes prog = case view prog of
+    Return () -> ""
+    Hash h :>>= rest -> "script " <> valueText h <> next (renderHashes (rest ()))
+    NoHashes :>>= rest -> "no failing script" <> next (renderHashes (rest ()))
 
 -- | Execute an edit program against the real loader.
 executeEdit :: Program EditI () -> IO (Either String Int)
