@@ -11,6 +11,8 @@ import Conformance.EdgeSpec qualified as EdgeSpec
 import Conformance.ReceiptSpec qualified as ReceiptSpec
 import Conformance.RefusalSpec qualified as RefusalSpec
 import Conformance.RowsSpec qualified as RowsSpec
+import Conformance.StorySpec qualified as StorySpec
+import Conformance.UsageSpec qualified as UsageSpec
 
 main :: IO ()
 main = hspec $ do
@@ -18,3 +20,5 @@ main = hspec $ do
     ReceiptSpec.spec
     RefusalSpec.spec
     RowsSpec.spec
+    StorySpec.spec
+    UsageSpec.spec
