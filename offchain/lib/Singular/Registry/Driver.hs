@@ -75,9 +75,9 @@ import Cardano.Ledger.Api.Tx.Body (
     referenceInputsTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
+import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Core (eraProtVerHigh)
-import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -85,8 +85,8 @@ import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..), cfgScriptHash)
 import Singular.Registry.Ledger (
     Addr,
-    Coin (..),
     AssetName (..),
+    Coin (..),
     ConwayEra,
     Root (..),
     TokenId (..),
@@ -339,18 +339,6 @@ foldEdgeWith reg key edge mDest = do
     signed <- regSubmit reg unsigned
     withTrie (regTm reg) (regTid reg) $ \t -> () <$ walkEdge t key edge
     rootAfter <- mirrorRoot reg
-    -- The mirror root on either side of the landed fold. A root that does
-    -- NOT move is the defect this driver exists for, and it would
-    -- otherwise be invisible until the next fold failed for an
-    -- unrelated-looking reason — so a reader of a run sees both.
-    putStrLn
-        ( "[fold] key="
-            <> show key
-            <> " mirror-root-before=0x"
-            <> renderRoot (unRoot rootBefore)
-            <> " mirror-root-after=0x"
-            <> renderRoot (unRoot rootAfter)
-        )
     when (unRoot rootBefore == unRoot rootAfter) $
         error
             ( "foldEdge: the committed mirror root did not move across a \

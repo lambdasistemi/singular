@@ -45,9 +45,9 @@ module Singular.Registry.E2E.InsertActiveSpec (spec) where
 
 import Control.Exception (SomeException, try)
 import Control.Monad (unless)
-import Data.List (isInfixOf)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import System.Environment (lookupEnv)
 import Test.Hspec
@@ -65,14 +65,16 @@ import Singular.Registry.Blueprint (
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..))
+import Singular.Registry.Ledger (AssetName (..), Root (..))
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.Types (edgeInsertActive)
 
 import Singular.Registry.Driver (
+    FoldOutcome (..),
     bootRegistry,
     foldEdgeTo,
+    renderRoot,
  )
 import Singular.Registry.E2E.CageSpec (
     submitWithGenesis,
@@ -134,7 +136,7 @@ insertActiveSpec stateBytes requestBytes = do
             codes <- loadRegistryCodesFromEnv
             reg <-
                 bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
-            _ <- foldEdgeTo reg activeKey edgeInsertActive walletDestination
+            _ <- sayFold $ foldEdgeTo reg activeKey edgeInsertActive walletDestination
 
             -- The observation, not the exit code: exactly one token under
             -- the ACTIVE policy, named by the key, at the wallet the
@@ -156,7 +158,8 @@ insertActiveSpec stateBytes requestBytes = do
             -- A cage of its own, and every delivery routed away from the
             -- funding wallet, so neither the named-wallet story above nor
             -- a fee-input collision can be confused with occupancy.
-            let fold key = foldEdgeTo reg key edgeInsertActive elsewhereDestination
+            let fold key =
+                    sayFold $ foldEdgeTo reg key edgeInsertActive elsewhereDestination
 
             -- 1. book and fold the key once: it is now taken.
             _ <- fold refusalKey
@@ -208,6 +211,25 @@ insertActiveSpec stateBytes requestBytes = do
                                 <> msg
                             )
 
+{- | The trace line this spec's examples printed before the private
+harness was deleted: the key and the mirror root on either side of the
+fold. It is restored here, byte for byte, rather than in the driver:
+these three lines belong to these two examples, and a driver that
+printed for every caller would add output to examples that were silent.
+-}
+sayFold :: IO FoldOutcome -> IO FoldOutcome
+sayFold act = do
+    o <- act
+    putStrLn
+        ( "[t173] fold key="
+            <> show (foKey o)
+            <> " mirror-root-before=0x"
+            <> renderRoot (unRoot (foRootBefore o))
+            <> " mirror-root-after=0x"
+            <> renderRoot (unRoot (foRootAfter o))
+        )
+    pure o
+
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
 activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
 activeHeldAt prov cfg key = do
@@ -223,4 +245,3 @@ activeHeldAt prov cfg key = do
             , (AssetName n, q) <- Map.toList names
             , SBS.fromShort n == key
             ]
-
