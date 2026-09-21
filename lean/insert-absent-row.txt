@@ -1,0 +1,188 @@
+# insertAbsent transaction contract
+
+As a requester witnessing an unknown key absent, I want the cage custody output
+to carry my refund address alone and exactly one absent token naming the key,
+so that the token supplies the identity and the recorded deposit can later be
+refunded to the address I selected.
+
+The design authority is issue #207's refund-only contract, extending the logical
+model at `265c595edd72eab10f3b08a36cb010ad407cf48b`. This is a design candidate for
+#178, not acceptance of the current ledger implementation.
+
+## Statement and representation
+
+```mermaid
+flowchart LR
+  S[Registry state input] -->|consume one state token| T[Admitted insertAbsent]
+  R[Request input] -->|one approval and tip allowance| T
+  T -->|preserve pins and set absent root| O[Registry state output]
+  T -->|approval commitment| D[Destination output]
+  T -->|mint one absent token at the request key| C[Custody output]
+  C -->|inline payload| F[Refund address only]
+  C -->|holds value| V[Request deposit]
+  C -->|sole asset supplies identity| K[Recovered key]
+```
+
+| Decision | Chosen | Rejected alternative and reason |
+| --- | --- | --- |
+| Custody identity | Recover from the sole absent asset | A second key in the datum contradicts the refund-only contract |
+| Datum model | Ordered logical fields | Claiming byte-level serialization here would exceed the modeled boundary |
+| Executable mirror | Lean transaction execution here; simulator replay in #178 | Treating refreshed simulator copies as execution would hide the missing replay |
+
+`Singular.Statements.insert_absent_transaction_row` has statement digest
+`cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46`.
+Its model source digest is
+`3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89`;
+its statements source digest is
+`4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db`.
+The manifest and exported corpus bind these identities. The PR records the
+exact candidate commit containing them.
+
+Given a reachable registry, an `insertAbsent` request with an approval, a
+successful logical step, and request lovelace covering the configured tip, the
+statement binds all of the following together:
+
+- The exact `txOf` result: two inputs (one state token and one request approval),
+  three outputs (state, destination, custody), their inline datum forms,
+  addresses, token counts, configuration and commitment fields, asset lists,
+  custody payloads and modeled lovelace fields.
+- The custody output has exactly `[((absent, request.key), 1)]`, a payload of
+  exactly `[request.refundAddress]`, and `request.deposit` lovelace. `custodyKey`
+  reads the key from that singleton asset list. It does not consult the datum
+  or request and has no fallback for an empty, multiple or wrong-kind asset list.
+- The mint is exactly one absent token at the request key, with no other mint,
+  empty required signers and no immediate refunds.
+- The source key was unknown; the resulting trie inserts `Known Absent`; only
+  the configuration root changes and it commits that trie. The logical custody
+  record prepends the same key, refund address and deposit; holdings are unchanged;
+  absent witness count is exactly one. The absent kind maps to the configured
+  absent policy and its asset name is the key.
+- The request covers the tip and the destination commitment matches its approval.
+
+`custodyDatum : Option (List Nat)` records ordered logical payload fields,
+not CBOR. A singleton is one refund field even when the numerical refund
+address happens to equal the key. The logical `Custody` index still includes a
+key so the state machine can find custody; that index is not the output datum.
+The new fields default to no custody payload and zero modeled lovelace for
+other output roles, preserving their previous abstraction. Zero does not claim
+those real ledger outputs need no minimum ADA. Address `0` retains the existing
+abstract cage destination; it is not a derived script address.
+
+The statement is conditional on admission, not a transaction validator iff.
+It does not prove serialization bytes, address/hash derivation, transaction
+balance, deposit funding, minimum ADA, fees, approval token disposal, arbitrary
+batch/refusal completeness, cryptographic verification or later refund execution.
+It does not assert that `txOf` checks the request's claimed mint; that belongs to
+`foldBatch` and its existing keyed-mint theorem. Unlike the active row, it adds
+no separate universal open-policy, cross-registry or signature-invariance
+conjunct. Its required signer list is fixed empty by the whole-transaction
+conjunct. Existing admission and refund theorems remain in force.
+
+## Non-vacuity and failure evidence
+
+The hypotheses mention logical admission, never a custody datum, `txOf` result
+or output shape. `insert_absent_inversion` derives the step effects;
+`absent_witness_unique` on `Reachable.next` derives custody uniqueness. Neither
+existing theorem was edited. Consequently admission cannot assume away a wrong
+transaction output.
+
+The compiled corpus executes insertion from `s0`, the empty genesis registry,
+with key 42, refund address 91, deposit 200, one approval, and request lovelace 5
+against tip ceiling 1. The distinct key and refund values expose accidental
+substitution. `absentTxCorrect` compares the whole built value with independent
+expected fields and checks its logical effects; `main` throws if it is false.
+The exported row's asset policy is obtained from the configured absent policy.
+This is one finite execution accompanying the universally quantified proof.
+
+The frozen mutation harness is `lean/check_insert_absent_mutants.py`, SHA-256
+`9b3d59f9d5f2edbdd917c50a154829fcd37f4031007830c7b30f9ed247c1b14b`.
+Run from a clean checkout:
+
+```sh
+nix develop --quiet -c python3 lean/check_insert_absent_mutants.py /tmp/insert-absent-evidence
+```
+
+It copies the Lean project into temporary trees, changes only `txCageOutputs`,
+builds the executable, executes it, then elaborates the complete proof library.
+The proof error must occur inside the new theorem. Raw logs and mutant sources
+are retained in the selected evidence directory; temporary build trees are
+removed. `lean/insert-absent-mutations.json` records the executed results.
+
+| Definition variant | Binary build exit | Executable exit | Proof build exit |
+| --- | --- | --- | --- |
+| Unchanged baseline | 0 | 0 | 0 |
+| Payload `[key, refundAddress]` | 0 | 1 | 1 |
+| Custody assets plus `((absent, key + 1), 1)` | 0 | 1 | 1 |
+| Custody assets `[]` | 0 | 1 | 1 |
+
+Each mutant produced an unsolved custody-output equation in the new theorem
+and `T1 insertAbsent constructed transaction violates refund-only custody row`
+from the executing binary. These are definition defects detected at the model
+boundary, not ledger validator refusals or setup failures.
+
+## Copies and disposition
+
+Locations refer to this candidate. Source enumeration identifies consumers;
+only the executed checks above and in the PR establish behavioral evidence.
+
+The original inventory omitted the current coverage record's claimed population.
+The snapshot gate reproduced that omission: one discovered theorem was unclaimed.
+Re-emitting `sorted(build_inventory(root).by_identity())` into the current record
+added exactly the absent-transaction identity and removed none; the protected
+base and empty checks/mappings were preserved. From `conformance/`,
+`nix build --no-link .#coverageGateSnapshot` then exited 0. Removing only that
+claim in a scratch copy made the same command exit 1, with the builder reporting
+`FAIL-CLOSED population` and `1 discovered but unclaimed`. This snapshot target
+is a separate required check: neither root `coverage-check` nor `just ci`
+executes it.
+
+| Copy or consumer | Location | Disposition |
+| --- | --- | --- |
+| Output representation and sole-asset recovery | `lean/Singular/Model.lean:748`, `:768`, `:835` | Changed here; `txOf` uses the enriched cage output |
+| Logical transition and lemmas | `lean/Singular/Model.lean:517`, `lean/Singular/Lemmas.lean:188` | Unchanged; transaction refinement uses these effects |
+| Existing inversion and uniqueness | `lean/Singular/Statements.lean:309`, `:415` | Retained and called by new proof |
+| New transaction statement | `lean/Singular/Statements.lean:899` | Added here |
+| Executed row, JSON and assertion | `lean/Main.lean:297`, `:350`, `:362`, `:388`, `:582`, `:616` | Added here |
+| Exported row and theorem digest | `lean/corpus.json:2889`, `lean/theorem-debt.json:147` | Regenerated here |
+| Other corpus source envelopes | `lean/naming-corpus.json:131`, `lean/lifecycle-corpus.json:106` | Regenerated source hashes; existing scenarios unchanged |
+| Axiom inventory and package | `lean/Singular/Audit.lean:18`, `tools/check_model.py:191`, `nix/model.nix:13` | Existing enumerators include the new statement; executed unchanged |
+| Theorem page | `docs/theorems.md:8`, `:52`, `docs/theorems.speech.json:8` | Updated total, new statement/digest and matching speech |
+| Shipped Lean and corpus copies | `simulator/formal/Model.lean:748`, `simulator/formal/Statements.lean:899`, `simulator/formal/Main.lean:350`, `simulator/formal/theorem-debt.json:147`, `simulator/corpus.json:2889` | Regenerated here |
+| Simulator bundle and hashes | `simulator/identity.json:1`, `simulator/index.html:1` | Regenerated with existing identity/build generators |
+| Simulator execution | `simulator/core.mjs:163`, `simulator/gate.mjs:45`, `:69` | Logical steps remain unchanged; transaction execution deferred to #178 |
+| Coverage declaration and digest inventory | `conformance/coverage/singular_coverage/inventory.py:115`, `conformance/coverage/tests/test_inventory.py:139` | Dynamic inventory/corpus reconciliation unchanged; new mapping remains debt |
+| Frozen coverage populations | `conformance/coverage/tests/test_inventory.py:69`, `conformance/coverage/tests/test_leanscan.py:104` | Updated to 86 total, 49 manifest-bound, 37 unclassified; both reject mutated expectation 87 |
+| Current coverage record population | `conformance/coverage/record/record.json:5`, `:37` | Re-emitted from `build_inventory(...).by_identity()`: 86 identities, exactly the new transaction theorem added, none removed; checks and mappings remain empty |
+| Protected coverage reference population | `conformance/coverage/record/base-record.json:5` | Unchanged; the ratchet retains every protected identity |
+| Frozen coverage snapshot and CI consumer | `conformance/flake.nix:186`, `.github/workflows/conformance.yml:615` | Existing `coverageGateSnapshot` executes inventory, ratchet and nonzero-debt completion; verified separately from root `coverage-check` and `just ci` |
+| Conformance row registry | `conformance/rows.json:227`, `:244`, `:362` | Unchanged; #178 must add the absent-transaction correspondence and evidence |
+| Generic CI model/simulator/coverage jobs | `.github/workflows/ci.yml:62`, `:84`, `:133` | Existing jobs unchanged; consume regenerated artifacts and population tests |
+| Ledger CI assertions | `.github/workflows/conformance.yml:194`, `:320`, `:461`, `:571` | Unchanged; #178 owns new custody transaction assertions |
+| Aiken datum and consumers | `onchain/validators/types.ak:408`, `onchain/validators/state.ak:100`, `:811`, `:848`, `:860` | Key-bearing wire remains; #178 must migrate and read identity from the sole asset |
+| Aiken fixtures and controls | `onchain/validators/t157_fixtures.ak:456`, `:580`, `onchain/validators/t157_rows.tests.ak:1420`, `:1630`, `:1655` | Deferred to #178 |
+| Haskell datum/codec and generator | `offchain/lib/Singular/Registry/Types.hs:269`, `:623`, `:636`, `:647`, `offchain/test/Singular/Registry/TypesSpec.hs:122` | Deferred to #178 |
+| Haskell builder and custody lookup | `offchain/lib/Singular/Registry/TxBuilder/Update.hs:741`, `:807` | Deferred to #178 |
+| Conformance codec/schema and lookup | `conformance/app/Conformance/CS01.hs:368`, `:536`, `conformance/app/Conformance/Run.hs:7823` | Deferred to #178; no implementation conformance claimed |
+| Shipped wire documentation | `docs/consumer-conformance.md:156` | Describes the current two-field wire; update with #178's migration |
+| Earlier wire specification | `specs/157-cage-registry-mode/spec.md:123`, `:314`, `data-model.md:59`, `plan.md:105`, `:106`, `:131`, `functions-model.md:22` (same directory) | Historical key-bearing contract superseded by this refund-only design; #178 must align its implementation story |
+| Earlier refund semantics | `specs/156-registry-mode-model/data-model.md:72`, `functions-model.md:33`, `plan.md:99` (same directory) | Refund destination semantics retained; no wire shape proved by those logical rows |
+
+## Named limits for #178
+
+**SIMULATOR-TRANSACTION-REPLAY:** the simulator gate executes logical cases,
+codec rows and refund observations, but has no transaction builder/replay for
+`corpus.transactions`. Regenerating the mirrored Lean and embedded corpus
+establishes byte parity only. #178 must implement the mirror and falsify its
+transaction checks with a deliberately corrupted custody row. This design-only
+slice defers that work to the implementation edge under the brief's explicit
+option; a green simulator check is not custody transaction execution evidence.
+
+**IMPLEMENTATION-CUSTODY-WIRE:** the Aiken/Haskell two-field custody wire still
+differs from the new refund-only transaction authority. #178 must migrate it,
+recover identity from the sole absent-policy asset, and supply actual boundary
+controls. The legacy wire's existing green tests do not discharge this limit.
+
+**IMPLEMENTATION-COVERAGE:** the additional theorem increases total mapping and
+implementation-layer debt from 85 to 86. Coverage-check is expected to exit zero
+while reporting `INCOMPLETE`; neither that exit code nor the 49 manifest-bound
+proofs establish implementation acceptance. No conformance row is added here.

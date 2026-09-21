@@ -2582,7 +2582,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
+  "corpusSourceSha256": "323d9d5a3c1ddda039fba8361a3a930e5985dad667792b45d7a325344c1d0e3b",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2711,19 +2711,19 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
-  "payloadSha256": "ec5e394ea8a85efda4c24a5d481a7e31741e2a59624dcf3665734db0b820d8c8",
+  "modelSha256": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
+  "payloadSha256": "e9e7860c1248d214f11741e1447e2e14d280041bbaa654369f019548e320896a",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "93fef702cbdd889eb8f8eb6d7295c6b6c8930f0d5238b7a6fdba563bf389cf9a",
+    "lean/Main.lean": "323d9d5a3c1ddda039fba8361a3a930e5985dad667792b45d7a325344c1d0e3b",
     "lean/Singular.lean": "ff714f19fd7ab8e9288043cf62c2755e77c05c92373a93029729244aa1cf3559",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853",
-    "lean/Singular/Statements.lean": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab"
+    "lean/Singular/Model.lean": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
+    "lean/Singular/Statements.lean": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
   },
-  "statementsSha256": "b0f8867e232a241da73b76230b47ce72e9cd4a221d27e7b48ae0872fba22acab",
-  "theoremManifestSha256": "bbc2cdf90295fd2231b27fa85a0447161677feaeafa5987cb99afc92c49aef6c",
+  "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db",
+  "theoremManifestSha256": "3c159da967606c9390129ffeceafc5bce628316b3dd211e44a44b1e2ef0b7625",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -2793,6 +2793,7 @@
             "address": null,
             "assets": [],
             "commitment": null,
+            "custodyDatum": null,
             "datum": "inline",
             "inlineConfig": {
               "absentPolicy": 9,
@@ -2813,6 +2814,7 @@
               ],
               "terminalPolicy": 10
             },
+            "lovelace": 0,
             "role": "state",
             "stateToken": 1
           },
@@ -2828,9 +2830,151 @@
               }
             ],
             "commitment": 1604014105,
+            "custodyDatum": null,
             "datum": "inline",
             "inlineConfig": null,
+            "lovelace": 0,
             "role": "destination",
+            "stateToken": 0
+          }
+        ],
+        "refunds": [],
+        "signers": []
+      }
+    },
+    {
+      "absentQuantity": 1,
+      "accepted": true,
+      "claimed": [
+        {
+          "assetName": 42,
+          "key": 42,
+          "kind": "absent",
+          "policy": 9,
+          "quantity": 1
+        }
+      ],
+      "destinationDatumBinds": true,
+      "lovelaceCoversTip": true,
+      "onlyRootChanges": true,
+      "profile": "insertAbsent",
+      "recoveredKeys": [
+        42
+      ],
+      "request": {
+        "approval": {
+          "assetName": 3021472884,
+          "destination": 0,
+          "edge": "insertAbsent",
+          "key": 42,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [
+          {
+            "kind": "absent",
+            "quantity": 1
+          }
+        ],
+        "deposit": 200,
+        "edge": "insertAbsent",
+        "key": 42,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 91
+      },
+      "rootMatchesTrie": true,
+      "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46",
+      "theorem": "Singular.Statements.insert_absent_transaction_row",
+      "transaction": {
+        "inputs": [
+          {
+            "approvalQuantity": 0,
+            "assets": [],
+            "datum": "inline",
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "approvalQuantity": 1,
+            "assets": [],
+            "datum": "inline",
+            "lovelace": 5,
+            "role": "request",
+            "stateToken": 0
+          }
+        ],
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "absent",
+            "policy": 9,
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "address": null,
+            "assets": [],
+            "commitment": null,
+            "custodyDatum": null,
+            "datum": "inline",
+            "inlineConfig": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 1,
+              "processTime": 2,
+              "retractTime": 3,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                254,
+                168,
+                232,
+                211
+              ],
+              "terminalPolicy": 10
+            },
+            "lovelace": 0,
+            "role": "state",
+            "stateToken": 1
+          },
+          {
+            "address": 0,
+            "assets": [],
+            "commitment": 3021472884,
+            "custodyDatum": null,
+            "datum": "inline",
+            "inlineConfig": null,
+            "lovelace": 0,
+            "role": "destination",
+            "stateToken": 0
+          },
+          {
+            "address": 0,
+            "assets": [
+              {
+                "assetName": 42,
+                "key": 42,
+                "kind": "absent",
+                "policy": 9,
+                "quantity": 1
+              }
+            ],
+            "commitment": null,
+            "custodyDatum": [
+              91
+            ],
+            "datum": "inline",
+            "inlineConfig": null,
+            "lovelace": 200,
+            "role": "cage",
             "stateToken": 0
           }
         ],
@@ -2951,6 +3095,7 @@
             "address": null,
             "assets": [],
             "commitment": null,
+            "custodyDatum": null,
             "datum": "inline",
             "inlineConfig": {
               "absentPolicy": 9,
@@ -2971,6 +3116,7 @@
               ],
               "terminalPolicy": 10
             },
+            "lovelace": 0,
             "role": "state",
             "stateToken": 1
           },
@@ -2978,8 +3124,10 @@
             "address": 555,
             "assets": [],
             "commitment": 2958227895,
+            "custodyDatum": null,
             "datum": "inline",
             "inlineConfig": null,
+            "lovelace": 0,
             "role": "destination",
             "stateToken": 0
           }

@@ -7,7 +7,7 @@
   ],
   "exact-declaration-inventory": [
     {
-      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name.",
+      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name. The absent-insertion transaction statement now binds a refund-only custody payload, its deposit, and the key recovered from its sole absent asset, together with the constructed transaction and logical root effects. Its proof does not certify the current on-chain wire.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "2183bea95a87cfc048ec6772a270131643872ad222465ce88c4d7d34122a075e"
+    "sha256": "3e8cd1aa3639a26e654f569e5543447ef45dad66e343e49d8965692a04d3eb33"
   }
 }

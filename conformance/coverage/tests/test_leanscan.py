@@ -101,26 +101,19 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree at base: 85 = 48 manifest-bound + 37 unclassified.
+    """The frozen tree: 86 = 49 manifest-bound + 37 unclassified.
 
-    Re-frozen on #177's transaction row. The 48 are the registry's 27
-    statements plus naming's 7, its lifecycle's 9 and its wire encoding's 5; the
-    37 are the lemmas and effect equations they are proved from. The registry's
-    26 became 27 with update_terminal_transaction_row, so this denominator grew
-    by exactly the one statement the slice added. The #157 base was 82 = 45 + 37, the #156
-    base 79 = 42 + 37 and before it 196 = 113 + 83, retired with the model it
-    described — the disposition of all 44 of those base declarations is in
-    docs/model-ledger.md (1 carried, 3 renamed, 40 retired), so the earlier
-    shrinking denominator is the recorded retirement and not an undiscovered
-    population.
+    The registry's 28 statements include the new absent-insertion transaction
+    row; naming contributes 7, lifecycle 9 and wire encoding 5. No helper was
+    added or retired. The predecessor population was 85 = 48 + 37.
     """
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 85, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 86, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 48)
+        self.assertEqual(len(statements), 49)
 
     def test_attributed_count_at_base(self):
         decls = scan_tree_strict(REPO_ROOT / "lean")
