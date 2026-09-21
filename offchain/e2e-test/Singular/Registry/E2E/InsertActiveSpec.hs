@@ -44,6 +44,8 @@ refusal of a second insert on a bound key with its accepting control.
 module Singular.Registry.E2E.InsertActiveSpec (spec) where
 
 import Control.Exception (SomeException, try)
+import Control.Monad (unless)
+import Data.List (isInfixOf)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
@@ -186,7 +188,25 @@ insertActiveSpec stateBytes requestBytes = do
                         "A173-REFUSALS: the chain ACCEPTED a second \
                         \insertActive on a key the trie already binds — \
                         \reported, not relabelled"
-                Left _ -> pure ()
+                Left e -> do
+                    -- The refusal must be the CAGE refusing the fold, not
+                    -- the booking failing first. `foldEdgeTo` books and
+                    -- folds in one call, so an undiscriminated `Left _`
+                    -- would accept a duplicate-specific booking failure
+                    -- and never reach the occupancy this example is about.
+                    let msg = show (e :: SomeException)
+                        wanted = ["EvalFailure", "ConwaySpending", "CekError"]
+                        absent = [w | w <- wanted, not (w `isInfixOf` msg)]
+                    unless (null absent) $
+                        expectationFailure
+                            ( "A173-REFUSALS: the duplicate failed, but not as \
+                              \a cage refusal of the fold — "
+                                <> show absent
+                                <> " absent, so this may be the booking \
+                                   \failing before the occupancy is reached. \
+                                   \Got: "
+                                <> msg
+                            )
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
 activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
