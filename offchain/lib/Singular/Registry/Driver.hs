@@ -232,7 +232,12 @@ foldEdgeWith reg key edge mDest = do
             ( "foldEdge: the manager is out of step with the chain before \
               \folding "
                 <> show key
-                <> ": a fold landed without being committed into the manager"
+                <> " (mirror "
+                <> renderRoot (unRoot rootBefore)
+                <> ", chain "
+                <> renderRoot (unOnChainRoot onChainBefore)
+                <> "): a fold landed without being committed into the \
+                   \manager"
             )
     booking <- case mDest of
         Nothing ->
