@@ -1,0 +1,11 @@
+{
+  "contract": [
+    {
+      "text": "The wire slice corrects the datum, derives identity from the complete asset set, preserves the custody consumers and documents every copy. The second slice adds the executable conformance row and its registration after the DSL merge. Final readiness requires both slices, every review approval and the exact-head verification. The ticket owner checks tasks only on evidence-bound acceptance."
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "0da34e61761267bb598184de74207b2290719568a8a11ee8c967b2584cca20d8"
+  }
+}

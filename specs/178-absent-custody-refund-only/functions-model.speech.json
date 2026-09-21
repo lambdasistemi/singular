@@ -1,0 +1,11 @@
+{
+  "contract": [
+    {
+      "text": "Public registry duties and codec interfaces remain stable while the custody payload loses its key. Custody identity extraction receives the output value and returns its sole asset's policy and name, or no identity. Callers with registry configuration check the absent policy. Refund extraction reads the remaining datum field. Existing consumer adaptations preserve their contracts and do not establish naming certification coverage."
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "4f82437e82f6494860c85559c23feb0d073d77d9413bb096d63795b27275ea97"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "contract": [
+    {
+      "text": "The custody datum carries only the refund address at constructor index two. Its output holds the deposit and exactly one absent token, with quantity one. That token's policy and name determine its identity. Zero tokens, multiple tokens, an incorrect policy or an incorrect quantity cannot supply a custody key. The old two-field datum is incompatible; this correction introduces no migration or compatibility promise."
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "05fa5b3fd92f86837b00fc8be9c6592c44372bcc8543e09b66efc9623a7ab155"
+  }
+}

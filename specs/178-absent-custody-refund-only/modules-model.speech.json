@@ -1,0 +1,11 @@
+{
+  "contract": [
+    {
+      "text": "The on-chain datatype and validator own the custody contract. Off-chain types encode that contract, and the transaction builder constructs and recognizes its outputs. Existing test components exercise those boundaries. The new conformance row and its registration remain held until the separate DSL change merges. Documentation records the corrected wire and its limits. No new subsystem, dependency or command is introduced."
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "b305a65fe4917fa839478c7145b0ea5db70118fab30d6c2c47a051c495ae26bb"
+  }
+}

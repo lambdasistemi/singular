@@ -1,0 +1,26 @@
+{
+  "story": [
+    {
+      "text": "A registry integrator needs the custody datum to carry only the refund address, so the output's sole asset is the one source of token identity. The library and validator must agree on that wire."
+    }
+  ],
+  "authority": [
+    {
+      "text": "The accepted behavioral authority is the merged absent-insertion transaction model. Its custody key and transaction construction definitions govern this correction. No Lean change is authorized."
+    }
+  ],
+  "requirements-and-invariants": [
+    {
+      "text": "The real encoders, decoders, validator and builder must agree on a refund-only datum. Identity comes from exactly one non-ADA asset of quantity one under the absent policy. Empty or multiple asset sets provide no key, and neither datum nor request supplies a fallback. Insertion preserves the model's deposit, refund, mint, root and authorization relationships. CI must execute and judge the registered conformance row; an unregistered-row control must demonstrate the selection gap. Every copy and verification limit belongs in the final pull request."
+    }
+  ],
+  "scope-and-limits": [
+    {
+      "text": "The wire correction precedes the conformance row, which remains held until the separate DSL merge. Minimal adaptations of existing consumers are authorized while their edge contracts stay unchanged. The edge-four reference selection needs existing before-and-after evidence and a control able to fail; any uncovered selection must be named explicitly. The independent naming validator, simulator engine and new insert-absent command are outside this ticket. Simulator transaction replay and broader coverage debt remain unresolved. No project-wide conformance or release claim follows."
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "381be98a95b27d991a58c4eab14e0f682ba3ce07ab4e7e70a8f560027de20157"
+  }
+}
