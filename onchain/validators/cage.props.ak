@@ -2,11 +2,15 @@ use aiken/fuzz
 use aiken/interval
 use cage.{in_phase1, in_phase2, is_rejectable}
 
-/// Phase property tests (fuzz) — mirror Lean theorems in MpfsCage/Phases.lean.
+/// Phase property tests (fuzz) for the time-gated phase system in `cage.ak`.
 ///
-/// These property tests verify the time-gated phase system that governs
-/// who can act on a request and when. The cage lifecycle is divided into
-/// three mutually exclusive phases:
+/// **Lean binding: MISSING.** The historic citations below name
+/// `MpfsCage/Phases.lean`, which is absent from this repository's Lean tree
+/// (`lean/` contains only `Singular.*` modules, no `MpfsCage.*`). No
+/// accepted Lean declaration is bound here and no conformance is claimed;
+/// these are behavioral regression properties over `cage.ak`'s phase
+/// helpers alone. Historic per-property markers keep the original
+/// reference names as provenance.
 ///
 /// ```
 ///   submitted_at          +process_time    +retract_time
@@ -24,8 +28,7 @@ use cage.{in_phase1, in_phase2, is_rejectable}
 /// **Phase 3** (rejectable): The retract window has expired. Any folder
 ///   can Reject expired requests. Additionally, any request with a dishonest
 ///   `submitted_at` (in the future) is rejectable in any phase.
-///
-/// These fuzz tests verify, for randomly generated parameters, that:
+////// These fuzz tests verify, for randomly generated parameters, that:
 /// 1. The phases never overlap (mutual exclusion).
 /// 2. Honest requests in Phase 1 or 2 are never rejectable (safety).
 /// 3. Every point in time falls into at least one phase (coverage).
@@ -38,7 +41,7 @@ use cage.{in_phase1, in_phase2, is_rejectable}
 /// `retract_time` in [1, 50k], validity range start in [0, 200k] with span
 /// in [1, 50k]. These cover a wide range of realistic and edge-case timing
 /// configurations.
-/// **Lean: phase1_phase2_exclusive**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase1_phase2_exclusive` — binding MISSING (see header)**
 ///
 /// No validity range can satisfy both `in_phase1` and `in_phase2` simultaneously.
 ///
@@ -66,7 +69,7 @@ test prop_phase1_phase2_exclusive(
   !(p1 && p2)
 }
 
-/// **Lean: phase1_phase3_exclusive**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase1_phase3_exclusive` — binding MISSING (see header)**
 ///
 /// Phase 1 and Phase 3 (rejectable via expiry) are mutually exclusive.
 ///
@@ -99,7 +102,7 @@ test prop_phase1_phase3_exclusive(
   !(p1 && p3)
 }
 
-/// **Lean: phase2_phase3_exclusive**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase2_phase3_exclusive` — binding MISSING (see header)**
 ///
 /// Phases 2 and 3 are mutually exclusive.
 ///
@@ -132,7 +135,7 @@ test prop_phase2_phase3_exclusive(
   !(p2 && p3)
 }
 
-/// **Lean: phase1_honest_not_rejectable**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase1_honest_not_rejectable` — binding MISSING (see header)**
 ///
 /// An honest request (submitted_at <= range_start) in Phase 1 can never
 /// be rejected.
@@ -172,7 +175,7 @@ test prop_phase1_honest_not_rejectable(
   !(p1 && rej)
 }
 
-/// **Lean: phase2_honest_not_rejectable**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase2_honest_not_rejectable` — binding MISSING (see header)**
 ///
 /// An honest request in Phase 2 (retract window) can never be rejected.
 ///
@@ -206,7 +209,7 @@ test prop_phase2_honest_not_rejectable(
   !(p2 && rej)
 }
 
-/// **Lean: phase_coverage_point**
+/// **Historic Lean reference `MpfsCage/Phases.lean` `phase_coverage_point` — binding MISSING (see header)**
 ///
 /// For any single-slot validity range [t, t+1) with an honest timestamp
 /// (submitted_at = 0), at least one of {Phase 1, Phase 2, rejectable} holds.

@@ -174,18 +174,18 @@ fn bookingCertified(edge: Int, signers: List<ByteArray>) -> Bool {
   )
 }
 
-test t157_n1_insert_active_with_controller_signature_accepts() {
+test n1_insert_active_with_controller_signature_accepts() {
   bookingCertified(1, [controllerKey])
 }
 
-test t157_n1_insert_active_without_signature_refuses() fail {
+test n1_insert_active_without_signature_refuses() fail {
   bookingCertified(1, [])
 }
 
 /// The binding is over all four components: a different edge for the same
 /// key, owner and destination is a different approval, so an approval
 /// certified for one edge cannot be spent on another.
-test t157_n1_prop_approval_name_binds_the_edge(
+test n1_prop_approval_name_binds_the_edge(
   pair via fuzz.tuple(fuzz.int_between(0, 5), fuzz.int_between(0, 5)),
 ) {
   let (left, right) = pair
@@ -200,11 +200,11 @@ test t157_n1_prop_approval_name_binds_the_edge(
   }
 }
 
-test t157_n2_update_active_with_controller_signature_accepts() {
+test n2_update_active_with_controller_signature_accepts() {
   bookingCertified(2, [controllerKey])
 }
 
-test t157_n2_update_active_without_signature_refuses() fail {
+test n2_update_active_without_signature_refuses() fail {
   bookingCertified(2, [])
 }
 
@@ -215,7 +215,7 @@ test t157_n2_update_active_without_signature_refuses() fail {
 /// `insertAbsent` needs no signature at all: Carol needs nobody's
 /// permission to say a name is unclaimed. What the approval binds is
 /// where her deposit comes back to.
-test t157_n3_insert_absent_without_any_signature_accepts() {
+test n3_insert_absent_without_any_signature_accepts() {
   certify(
     0,
     registryKey,
@@ -252,7 +252,7 @@ fn deleteAbsentCertified(
   )
 }
 
-test t157_n4_delete_absent_by_the_recorded_refund_accepts() {
+test n4_delete_absent_by_the_recorded_refund_accepts() {
   deleteAbsentCertified(
     inserterKey,
     [inserterKey],
@@ -260,7 +260,7 @@ test t157_n4_delete_absent_by_the_recorded_refund_accepts() {
   )
 }
 
-test t157_n4_delete_absent_by_another_address_refuses() fail {
+test n4_delete_absent_by_another_address_refuses() fail {
   deleteAbsentCertified(
     strangerKey,
     [strangerKey],
@@ -268,7 +268,7 @@ test t157_n4_delete_absent_by_another_address_refuses() fail {
   )
 }
 
-test t157_n4_delete_absent_unsigned_refuses() fail {
+test n4_delete_absent_unsigned_refuses() fail {
   deleteAbsentCertified(
     inserterKey,
     [],
@@ -276,14 +276,14 @@ test t157_n4_delete_absent_unsigned_refuses() fail {
   )
 }
 
-test t157_n4_delete_absent_without_custody_reference_refuses() fail {
+test n4_delete_absent_without_custody_reference_refuses() fail {
   deleteAbsentCertified(inserterKey, [inserterKey], [])
 }
 
 /// The refund binding reads the custody datum, never the redeemer: for
 /// any owner that is not the payment key of the address the cage
 /// recorded, the arm refuses.
-test t157_n4_prop_refund_binding_reads_the_custody(
+test n4_prop_refund_binding_reads_the_custody(
   owner via fuzz.bytearray_between(28, 28),
 ) {
   let certified =
@@ -303,7 +303,7 @@ test t157_n4_prop_refund_binding_reads_the_custody(
 // N5 — a live registration never returns to absence
 // ============================================================================
 
-test t157_n5_delete_active_is_never_certified_refuses() fail {
+test n5_delete_active_is_never_certified_refuses() fail {
   certify(
     5,
     registryKey,
@@ -461,17 +461,17 @@ fn retireShaped(
 
 /// The committed recovery key, revealed and signing — the proof
 /// `Recover` uses, and the only one a single key can offer.
-test t157_n6_retire_with_the_recovery_key_accepts() {
+test n6_retire_with_the_recovery_key_accepts() {
   retireWith(recoveryReveal, [recoveryKey])
 }
 
 /// Or a distinct-member quorum (`LT02`).
-test t157_n6_retire_with_the_quorum_accepts() {
+test n6_retire_with_the_quorum_accepts() {
   retireWith(#"", [fixtures.member1, fixtures.member2])
 }
 
 /// Below the threshold (`LT03`).
-test t157_n6_retire_below_the_quorum_refuses() fail {
+test n6_retire_below_the_quorum_refuses() fail {
   retireWith(#"", [fixtures.member1])
 }
 
@@ -480,13 +480,13 @@ test t157_n6_retire_below_the_quorum_refuses() fail {
 /// her name pays until she recovers; they cannot end it, because the
 /// recovery key is the one thing they do not have. `LT01` is retired as a
 /// row precisely here.
-test t157_n6_retire_with_the_control_key_alone_refuses() fail {
+test n6_retire_with_the_control_key_alone_refuses() fail {
   retireWith(#"", [fixtures.controller])
 }
 
 /// A reveal that is not the preimage of the stored commitment proves
 /// nothing (`LR02`'s shape, at the retirement boundary).
-test t157_n6_retire_with_a_wrong_reveal_refuses() fail {
+test n6_retire_with_a_wrong_reveal_refuses() fail {
   retireWith(fixtures.altered_control, [recoveryKey])
 }
 
@@ -494,13 +494,13 @@ test t157_n6_retire_with_a_wrong_reveal_refuses() fail {
 /// with no `updateTerminal` approval minted. Retirement is not a
 /// two-step promise — the transaction that ends a name mints the
 /// approval that completes it, or it is not that transaction.
-test t157_n6_retire_without_approval_mint_refuses() fail {
+test n6_retire_without_approval_mint_refuses() fail {
   retireShaped(recoveryReveal, [recoveryKey], False, True)
 }
 
 /// F-003, the other half: the approval minted with no completion
 /// request to carry it. An approval nobody can spend certifies nothing.
-test t157_n6_retire_without_completion_request_refuses() fail {
+test n6_retire_without_completion_request_refuses() fail {
   retireShaped(recoveryReveal, [recoveryKey], True, False)
 }
 
@@ -509,7 +509,7 @@ test t157_n6_retire_without_completion_request_refuses() fail {
 /// proves nothing about who was retired — the governing input has to be
 /// the record itself, at the application's own address, carrying this
 /// key's active token.
-test t157_n6_foreign_script_retire_spoof_refuses() fail {
+test n6_foreign_script_retire_spoof_refuses() fail {
   let spoofRedeemer: Data = Retire { key: registryKey, revealed_control: #"" }
   let spoofRef =
     OutputReference { transaction_id: #"53504f4f46", output_index: 0 }
@@ -548,7 +548,7 @@ test t157_n6_foreign_script_retire_spoof_refuses() fail {
 
 /// The terminate approval cannot be minted on its own: the transaction
 /// that certifies the end of a name must be the `Retire` that proves it.
-test t157_n6_terminate_approval_without_a_retire_refuses() fail {
+test n6_terminate_approval_without_a_retire_refuses() fail {
   certify(
     3,
     registryKey,
@@ -574,12 +574,12 @@ test t157_n6_terminate_approval_without_a_retire_refuses() fail {
 /// The fold created this record at the destination the approval bound,
 /// with the bound datum and exactly the active token: the application
 /// spends it like any record.
-test t157_n7_record_with_its_single_active_token_accepts() {
+test n7_record_with_its_single_active_token_accepts() {
   retireWith(recoveryReveal, [recoveryKey])
 }
 
 /// A record carrying a second asset is not a record.
-test t157_n7_record_with_a_second_asset_refuses() fail {
+test n7_record_with_a_second_asset_refuses() fail {
   application.application.spend(
     Some(fixtures.as_datum(retirementRecord())),
     Retire { key: registryKey, revealed_control: recoveryReveal },
@@ -639,19 +639,19 @@ fn maintain(inputs: List<Input>) -> Bool {
   )
 }
 
-test t157_n9_maintain_without_the_registry_accepts() {
+test n9_maintain_without_the_registry_accepts() {
   maintain([recordInput(recordValue())])
 }
 
 /// NM2: a `Maintain` that SPENDS the registry state is not maintenance —
 /// it is a fold wearing maintenance's clothes, and the root is not
 /// maintenance's to move.
-test t157_n9_maintain_spending_the_registry_refuses() fail {
+test n9_maintain_spending_the_registry_refuses() fail {
   maintain([recordInput(recordValue()), fixtures.state_input()])
 }
 
 /// Recovery is the same: it moves control, never the trie.
-test t157_n9_recover_without_the_registry_accepts() {
+test n9_recover_without_the_registry_accepts() {
   application.application.spend(
     Some(fixtures.as_datum(maintainRecord())),
     Recover { revealed_control: recoveryReveal, registry: appPolicy },

@@ -3,7 +3,7 @@ use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
 use state
-use t157_fixtures as fx
+use registry_fixtures as fx
 use types.{Modify, StateDatum, UpdateAction}
 
 /// #177 I177-CHAIN — the `updateTerminal` edge (ordinal 3) against the
@@ -23,10 +23,10 @@ use types.{Modify, StateDatum, UpdateAction}
 /// Every refusal row below is `== False`, never `fail`. Aiken's `fail`
 /// is satisfied by a CRASH, and a crash says only that the script died —
 /// never that it refused, and never which fact it refused for. The three
-/// trie faults are exactly where the cage crashes today: `mpf.update`
-/// dies inside the library on a proof that does not match the leaf, so
-/// there is no attributable refusal to read. That is the I177-CHAIN gap,
-/// and it is not a string to rename.
+/// trie faults are refused at the validator's own named sites BEFORE the
+/// library is reached: `mpf.update` would die inside the library on a
+/// proof that does not match the leaf, so the attributable refusal has to
+/// happen earlier — that is the I177-CHAIN shape, and these rows pin it.
 ///
 /// The refusal NAMES cannot be read back from an Aiken test — a `trace`
 /// is not observable — so each one is asserted at the single
@@ -110,7 +110,7 @@ fn retireFrom(leaf: ByteArray) -> Bool {
 /// the exact keyed `-1` mint, no carrier output, no signer. This is the
 /// control for every refusal in this file: each one moves exactly one
 /// fact away from here.
-test t177_update_terminal_retires_the_active_token() {
+test update_terminal_retires_the_active_token() {
   retireFrom(fx.activeLeaf)
 }
 
@@ -130,19 +130,19 @@ fn unknownKey() -> Bool {
   )
 }
 
-test t177_unknown_key_refuses_cleanly() {
+test unknown_key_refuses_cleanly() {
   unknownKey() == False
 }
 
 /// The key is bound, but only witnessed `Absent` — nobody booked it.
 /// Lean: `not-booked`.
-test t177_absent_key_refuses_cleanly() {
+test absent_key_refuses_cleanly() {
   retireFrom(fx.absentLeaf) == False
 }
 
 /// The key is already `Terminal`: retirement completes, and a second
 /// one builds no transaction. Lean: `terminal-immutable`.
-test t177_terminal_key_refuses_cleanly() {
+test terminal_key_refuses_cleanly() {
   retireFrom(fx.terminalLeaf) == False
 }
 
@@ -150,7 +150,7 @@ test t177_terminal_key_refuses_cleanly() {
 /// the point of use: move the leaf BACK to `Active` and the same fold
 /// lands. Without it each `== False` is consistent with "this fixture
 /// never folds".
-test t177_the_trie_fault_control_accepts() {
+test the_trie_fault_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
@@ -171,13 +171,13 @@ fn withoutTheWitness() -> Bool {
   )
 }
 
-test t177_without_the_active_witness_refuses_cleanly() {
+test without_the_active_witness_refuses_cleanly() {
   withoutTheWitness() == False
 }
 
 /// The control: restore the witness input and nothing else. The mint,
 /// the leaves, the request and the batch are byte-identical.
-test t177_the_witness_control_accepts() {
+test the_witness_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
@@ -214,14 +214,14 @@ fn leftoverCarrier() -> Bool {
   )
 }
 
-test t177_a_surviving_active_carrier_refuses_cleanly() {
+test a_surviving_active_carrier_refuses_cleanly() {
   leftoverCarrier() == False
 }
 
 /// The control for the row above: drop the second witness and the
 /// carrier output, change nothing else, and the retirement lands. The
 /// difference is exactly the surviving token.
-test t177_the_surviving_carrier_control_accepts() {
+test the_surviving_carrier_control_accepts() {
   retireFrom(fx.activeLeaf)
 }
 
@@ -247,7 +247,7 @@ fn wrongKeyWitness() -> Bool {
   )
 }
 
-test t177_another_keys_witness_refuses_cleanly() {
+test another_keys_witness_refuses_cleanly() {
   wrongKeyWitness() == False
 }
 
@@ -259,7 +259,7 @@ test t177_another_keys_witness_refuses_cleanly() {
 /// and its trace is `burn-from-input`. #177 moves edge 3 to its OWN duty
 /// so that name keeps meaning what it meant; this row is the guard that
 /// edge 5 still folds exactly as it did.
-test t177_delete_active_still_folds() {
+test delete_active_still_folds() {
   state.state.spend(
     Some(StateDatum(fx.stateOf(fx.oneLeaf(fx.keyA, fx.activeLeaf)))),
     Modify([UpdateAction([])]),
@@ -295,13 +295,13 @@ test t177_delete_active_still_folds() {
 /// reason asserts the value the cage actually traces rather than a
 /// helper nothing calls. An Aiken test cannot read a `trace` back, and
 /// this is the repository's answer to that.
-test t177_unknown_key_reason_is_key_unknown() {
+test unknown_key_reason_is_key_unknown() {
   state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
     @"key-unknown",
   )
 }
 
-test t177_absent_key_reason_is_not_booked() {
+test absent_key_reason_is_not_booked() {
   state.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
     fx.keyA,
@@ -309,7 +309,7 @@ test t177_absent_key_reason_is_not_booked() {
   ) == Some(@"not-booked")
 }
 
-test t177_terminal_key_reason_is_terminal_immutable() {
+test terminal_key_reason_is_terminal_immutable() {
   state.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.terminalLeaf)),
     fx.keyA,
@@ -321,7 +321,7 @@ test t177_terminal_key_reason_is_terminal_immutable() {
 /// witness duty decides. Without this row every answer could have become
 /// a refusal and the accepting control would be the only thing left to
 /// notice it.
-test t177_an_active_leaf_is_not_a_trie_fault() {
+test an_active_leaf_is_not_a_trie_fault() {
   state.terminalFault(
     mpf.from_root(fx.oneLeaf(fx.keyA, fx.activeLeaf)),
     fx.keyA,
@@ -329,7 +329,7 @@ test t177_an_active_leaf_is_not_a_trie_fault() {
   ) == None
 }
 
-test t177_missing_witness_reason_is_token_missing() {
+test missing_witness_reason_is_token_missing() {
   state.tokenMissingRefusal() == @"token-missing"
 }
 
@@ -337,7 +337,7 @@ test t177_missing_witness_reason_is_token_missing() {
 /// inequality: two pre-#177 names are also distinct from each other, so
 /// an inequality alone would go green while this row stayed
 /// unimplemented.
-test t177_the_reasons_are_distinct_names() {
+test the_reasons_are_distinct_names() {
   and {
     state.terminalFault(mpf.from_root(fx.emptyRoot()), fx.keyA, []) == Some(
       @"key-unknown",

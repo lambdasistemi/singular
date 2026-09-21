@@ -879,7 +879,7 @@ const extra_policy = #"ffeeddccbbaa99887766554433221100ffeeddccbbaa998877665544"
 
 fn extra_token(value) { add(value, extra_policy, "junk", 1) }
 
-test t146_lr01_with_extra_token_refuses() {
+test lr01_with_extra_token_refuses() {
   let source = recovery_source()
   let successor = recovery_successor()
   !application.application.spend(
@@ -902,7 +902,7 @@ test t146_lr01_with_extra_token_refuses() {
   )
 }
 
-test t146_lm01_with_extra_token_accepts() {
+test lm01_with_extra_token_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
@@ -919,7 +919,7 @@ test t146_lm01_with_extra_token_accepts() {
   )
 }
 
-test t146_maintain_extra_token_refuses() {
+test maintain_extra_token_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -936,7 +936,7 @@ test t146_maintain_extra_token_refuses() {
   )
 }
 
-test t146_maintain_lovelace_topup_accepts() {
+test maintain_lovelace_topup_accepts() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   application.application.spend(
@@ -953,7 +953,7 @@ test t146_maintain_lovelace_topup_accepts() {
   )
 }
 
-test t146_maintain_lovelace_reduction_refuses() {
+test maintain_lovelace_reduction_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -970,7 +970,7 @@ test t146_maintain_lovelace_reduction_refuses() {
   )
 }
 
-test t146_maintain_addition_refuses() {
+test maintain_addition_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -987,7 +987,7 @@ test t146_maintain_addition_refuses() {
   )
 }
 
-test t146_maintain_same_policy_addition_refuses() {
+test maintain_same_policy_addition_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -1004,7 +1004,7 @@ test t146_maintain_same_policy_addition_refuses() {
   )
 }
 
-test t146_maintain_quantity_increase_refuses() {
+test maintain_quantity_increase_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -1021,7 +1021,7 @@ test t146_maintain_quantity_increase_refuses() {
   )
 }
 
-test t146_maintain_removal_refuses() {
+test maintain_removal_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -1038,7 +1038,7 @@ test t146_maintain_removal_refuses() {
   )
 }
 
-test t146_maintain_replacement_refuses() {
+test maintain_replacement_refuses() {
   let source = source_record()
   let maintained = fixtures.maintained_record()
   !application.application.spend(
@@ -1055,7 +1055,7 @@ test t146_maintain_replacement_refuses() {
   )
 }
 
-test t146_recover_extra_token_refuses() {
+test recover_extra_token_refuses() {
   let source = recovery_source()
   let successor = recovery_successor()
   !application.application.spend(

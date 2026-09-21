@@ -1,0 +1,106 @@
+{
+  "story-and-authority": [
+    {
+      "text": "As a validator contributor, I run the Aiken suite and observe precise failures for wrong authorization or token identity behavior, in tests whose names and model references explain the rule.",
+      "pause": 500
+    },
+    {
+      "text": "Everything here is test-only on top of the recorded base; the accepted Lean tree is the authority and no model, validator, or blueprint byte changed.",
+      "pause": 300
+    }
+  ],
+  "boundary-repairs-and-controls": [
+    {
+      "text": "Three properties had an existential shape: a single unequal result satisfied them, so a partial defect stayed invisible.",
+      "pause": 300
+    },
+    {
+      "text": "Each now asserts the intended outcome exactly for every generated case, with structurally distinct identities.",
+      "pause": 400
+    },
+    {
+      "text": "Old properties passed under deliberate mutations; the new ones fail under the same mutations, and the accepting controls were retained.",
+      "pause": 400
+    }
+  ],
+  "authorization-fixture-repair": [
+    {
+      "text": "The retract fixtures now use twenty-eight byte owner and signer hashes, matching Cardano key hashes.",
+      "pause": 300
+    },
+    {
+      "text": "Non-owner inequality is structural: generated signers end in a byte the owner cannot have, so the property is purely about authorization.",
+      "pause": 300
+    },
+    {
+      "text": "The accepting and refusing rows share one request and differ only in the signer; and a correct key-hash length is a valid representation, not by itself a complete ledger transaction.",
+      "pause": 500
+    },
+    {
+      "text": "Out-of-window retract rows preserve executable script-failure expectations at the current phase assertion; clean Boolean refusal and its Lean binding move to Issue two hundred five.",
+      "pause": 500
+    }
+  ],
+  "refusal-classification": [
+    {
+      "text": "Refusal rows distinguish clean semantic outcomes, malformed input failures, and script-level phase-guard failures; the last prove rejection but do not claim a clean Boolean result.",
+      "pause": 500
+    },
+    {
+      "text": "Helper-string reason checks never stand alone; each carries an executable refusal row beside it.",
+      "pause": 300
+    }
+  ],
+  "module-organization": [
+    {
+      "text": "The three-thousand-line cage test module was split into twelve behavior modules plus a shared fixture module.",
+      "pause": 300
+    },
+    {
+      "text": "Ticket-named modules became behavior-led names, with ticket identifiers kept in the documentation as provenance, and stale currently-broken prose was removed.",
+      "pause": 400
+    }
+  ],
+  "name-inventory": [
+    {
+      "text": "Every test of the base tree is accounted for: the cage rows move with exactly one rename, and every other rename is a pure ticket-prefix strip. Counts per module are unchanged.",
+      "pause": 500
+    }
+  ],
+  "cage-split-inventory": [
+    {
+      "text": "This block lists every cage test and its new behavior module: ninety-seven rows, one rename, zero drops.",
+      "pause": 400
+    }
+  ],
+  "ticket-prefix-strips": [
+    {
+      "text": "This block lists all one hundred sixty-eight prefix renames, old to new, so any reader can verify the mechanical rule rather than trust it.",
+      "pause": 400
+    }
+  ],
+  "lean-bindings": [
+    {
+      "text": "Citations to absent Lean files are recorded as missing bindings with no conformance claim, and the citations that do resolve are stated with their exact qualified declarations.",
+      "pause": 500
+    }
+  ],
+  "verification-and-limits": [
+    {
+      "text": "The final staged source passed both existing flake gates: three on-chain checks and two naming-onchain checks; focused runs were controls, not substitutes.",
+      "pause": 300
+    },
+    {
+      "text": "The raw Aiken logs record zero errors but retain non-failing warnings, so the result is not described as warning-clean.",
+      "pause": 300
+    },
+    {
+      "text": "The limits are stated: malformed-context rows bound input shape only, retract phase guards remain script-level until Issue two hundred five, and mutation evidence lives outside the repository because mutations are never committed.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "mapping.md",
+    "sha256": "58b853b3c1b2ecbbdc27a93f2592dc846d4130589db045c1cb288e43088a2e89"
+  }
+}
