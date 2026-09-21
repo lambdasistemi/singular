@@ -45,6 +45,7 @@ library
     , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
+    , cardano-ledger-binary
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-strict-containers

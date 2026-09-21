@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 {- |
 Module      : Singular.Registry.Driver
@@ -61,12 +62,21 @@ import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
+import Data.ByteString.Lazy qualified as BSL
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, referenceInputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body (
+    collateralInputsTxBodyL,
+    feeTxBodyL,
+    mintTxBodyL,
+    referenceInputsTxBodyL,
+ )
+import Cardano.Ledger.Api.Tx.Out (coinTxOutL)
+import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -75,6 +85,7 @@ import Singular.Registry.Blueprint (NamingCodes)
 import Singular.Registry.Config (CageConfig (..), cfgScriptHash)
 import Singular.Registry.Ledger (
     Addr,
+    Coin (..),
     AssetName (..),
     ConwayEra,
     Root (..),
@@ -155,18 +166,46 @@ bootRegistry ::
     TrieManager IO ->
     IO Registry
 bootRegistry cfg codes prov submit payer tm = do
+    bootWallet <- Cage.queryUTxOs prov payer
     unsignedBoot <- bootTokenImpl cfg prov payer
+    let bootScripts = unsignedBoot ^. witsTxL . scriptTxWitsL
+        bootRefs = unsignedBoot ^. bodyTxL . referenceInputsTxBodyL
+        bootBytes =
+            BSL.length (serialize (eraProtVerHigh @ConwayEra) unsignedBoot)
+    -- The boot budget, printed rather than taken on trust: the state
+    -- validator is fifteen kilobytes against a sixteen-kilobyte cap, so
+    -- a reader of a run needs to see the room that is left.
+    putStrLn
+        ( "[boot] bytes="
+            <> show bootBytes
+            <> " inline-scripts="
+            <> show (Map.size bootScripts)
+            <> " reference-inputs="
+            <> show (Set.size bootRefs)
+            <> " fee="
+            <> show (unsignedBoot ^. bodyTxL . feeTxBodyL)
+            <> " collateral-coins="
+            <> show
+                [ c
+                | i <- Set.toList (unsignedBoot ^. bodyTxL . collateralInputsTxBodyL)
+                , (j, o) <- bootWallet
+                , i == j
+                , let Coin c = o ^. coinTxOutL
+                ]
+            <> " wallet-coins="
+            <> show [c | (_, o) <- bootWallet, let Coin c = o ^. coinTxOutL]
+        )
     -- The boot must RESOLVE the state validator through a published
     -- reference output, never carry it. The validator is fifteen
     -- kilobytes against a sixteen-kilobyte cap, so an inline boot
     -- leaves the registry no room to grow: that is what the retirement
     -- guard ran out of. These two checks came from a harness that
     -- booted by hand; they belong to whoever boots.
-    when (Map.member (cfgScriptHash cfg) (unsignedBoot ^. witsTxL . scriptTxWitsL)) $
+    when (Map.member (cfgScriptHash cfg) bootScripts) $
         error
             "bootRegistry: the boot transaction carries the state \
             \validator INLINE; it must reference the published output"
-    when (Set.null (unsignedBoot ^. bodyTxL . referenceInputsTxBodyL)) $
+    when (Set.null bootRefs) $
         error
             "bootRegistry: the boot transaction resolves no reference \
             \input, so the state validator was not published before it"
