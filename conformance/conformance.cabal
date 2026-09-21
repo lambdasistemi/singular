@@ -132,10 +132,15 @@ test-suite conformance-tests
   main-is:          Main.hs
   other-modules:
     Conformance.AuthenticateSpec
+    Conformance.EdgeFixtures
     Conformance.EdgeSpec
     Conformance.ReceiptSpec
     Conformance.RefusalSpec
     Conformance.RowsSpec
+    Conformance.Story
+    Conformance.StoryBindings
+    Conformance.StorySpec
+    Conformance.UsageSpec
     Paths_conformance
   build-depends:
     , aeson >=2.1 && <2.3

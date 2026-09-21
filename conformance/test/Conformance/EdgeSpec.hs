@@ -3,696 +3,528 @@
 
 {- |
 Module      : Conformance.EdgeSpec
-Description : CG21 edge evidence must be complete or the loader refuses it
+Description : The receipt checks read as theorem clauses
 License     : Apache-2.0
 
-#184. CG21 reports one accepted @insertActive@ fold together with two
-DISTINCT refusals, each carrying its own accepting control. The outer
-@edge@ field stays optional so every other row keeps writing @null@ and
-receipts written before it still parse — but for CG21 it is mandatory
-and COMPLETE, and this suite is what makes "complete" mean something.
+The CG21 receipt-validation examples, expressed through the
+theorem-clause DSL. A reader follows a bound Lean obligation to the
+clauses it exercises and the executable cases under each: every case
+names its condition and outcome, runs the real loader through
+'Conformance.Receipt.loadReceipts', and records why it distinguishes
+its defect. The stable row identity survives beside the cases as
+compatibility metadata, never in a name.
 
-The subject is 'loadReceipts': these tests hand it JSON and require a
-'Left'. They are written against the JSON rather than against the
-Haskell record on purpose — a mutant that drops a field must fail
-because the LOADER refuses it, not because a constructor stopped
-compiling.
-
-Two guards, because a quantified check ranging over nothing reports
-success having tested nothing:
-
-* the mutant set is read OUT of the complete artifact rather than
-  listed here, so a field added to the observation is covered the day
-  it is added;
-* the extent is asserted at its known size before any mutant runs, and
-  the complete artifact itself must LOAD, so a fixture broken for an
-  unrelated reason cannot make every mutant pass for the wrong reason.
+What is not a clause stays visibly supporting evidence with no theorem
+binding: the artifact-derived quantifier guards and their extent
+assertion, the schema gates, and the landed-fold chaining that guards
+the Given rather than a Then conjunct. Do not invent bindings for them.
 -}
 module Conformance.EdgeSpec (spec) where
 
-import Data.Aeson (Value (..), encode, object, toJSON, (.=))
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KM
-import Data.ByteString.Lazy qualified as BSL
-import Data.Either (isLeft, isRight)
-import Data.Foldable (for_)
-import Data.IORef (IORef, atomicModifyIORef', newIORef)
-import Data.List (sort)
-import System.Directory (
-    createDirectoryIfMissing,
-    getTemporaryDirectory,
-    removeDirectoryRecursive,
+import Data.Aeson (Value (..), object, toJSON, (.=))
+import Data.Either (isLeft)
+import Test.Hspec (Spec, describe, it, shouldBe)
+
+import Conformance.EdgeFixtures (
+    activeHex,
+    bootRoot,
+    claimedMint,
+    completeReceipt,
+    dupControlTx,
+    dupTx,
+    edgeDrop,
+    edgeKeys,
+    edgeSet,
+    entailedMint,
+    foldStep,
+    foldTx,
+    keyAHex,
+    keyBHex,
+    keyHex,
+    legDrop,
+    legKeysOf,
+    legSet,
+    loadOne,
+    mintControlTx,
+    mintOf,
+    openHex,
+    optionalLegKeys,
+    receiptSet,
+    root1,
+    root2,
+    root3,
+    walletAddr,
+    withEdge,
  )
-import System.FilePath ((</>))
-import System.IO.Unsafe (unsafePerformIO)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Conformance.Story (
+    TheoremGroup,
+    accepts,
+    acceptsBecause,
+    compatRow,
+    groupNames,
+    mkClause,
+    nameViolation,
+    receiptClause,
+    rejects,
+    runTheorem,
+    theorem,
+    unexercised,
+ )
+import Conformance.StoryBindings (insertActiveRow, keyedMintFold)
 
-import Conformance.Receipt (loadReceipts)
-
--- ---------------------------------------------------------
--- The complete artifact
--- ---------------------------------------------------------
-
--- | The parameterless open application's policy id.
-openHex :: Value
-openHex = String "4a2f1c9e83b70d5641ae2c08df93b1760ea5c42d8f6b3019ac7e5d22"
-
--- | The active witness policy: under it the asset name IS the key.
-activeHex :: Value
-activeHex = String "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c"
-
--- | The state script both refusals are attributed to.
-stateScriptHex :: Value
-stateScriptHex = String "0f3d5a71c28b4e690da1735c86fb02e94d7a61c30582bf49e7ad6c11"
-
-keyHex :: Value
-keyHex = String "743137332d696e736572742d616374697665"
-
-foldTx, dupTx, dupControlTx, mintTx, mintControlTx :: Value
-foldTx = String "aa11111111111111111111111111111111111111111111111111111111111111"
-dupTx = String "bb22222222222222222222222222222222222222222222222222222222222222"
-dupControlTx = String "cc33333333333333333333333333333333333333333333333333333333333333"
-mintTx = String "dd44444444444444444444444444444444444444444444444444444444444444"
-mintControlTx = String "ee55555555555555555555555555555555555555555555555555555555555555"
-
-bootRoot, root1, root2, root3 :: Value
-bootRoot = String "1000000000000000000000000000000000000000000000000000000000000000"
-root1 = String "2000000000000000000000000000000000000000000000000000000000000000"
-root2 = String "3000000000000000000000000000000000000000000000000000000000000000"
-root3 = String "4000000000000000000000000000000000000000000000000000000000000000"
-
-walletAddr :: Value
-walletAddr = String "60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b"
-
-approvalHex :: Value
-approvalHex =
-    String "9c8b7a6958473625140f2e3d4c5b6a79889786756463524130f1e2d3"
-
--- | One active token at the key, and nothing else.
-activeAsset :: Value
-activeAsset =
-    object ["policy" .= activeHex, "name" .= keyHex, "quantity" .= (1 :: Int)]
-
--- | The seven non-root pins of the eight-field state datum.
-configPins :: Value
-configPins =
-    toJSON
-        [ String "1000000"
-        , String "30000"
-        , String "30000"
-        , openHex
-        , activeHex
-        , String "5c1e7ab390d24f6817be05c3a9f2d148e6730bc5924af18de036b7a1"
-        , String "3b8d02f7561ec49a0d73b15fa28c6e904715d3ba6cf28017e94db5c6"
-        ]
-
-foldStep :: Value -> Value -> Value -> Value
-foldStep txid before after =
-    object
-        [ "txid" .= txid
-        , "rootBefore" .= before
-        , "rootAfter" .= after
-        , "committed" .= after
-        ]
-
-{- | A refusal leg, with the structured subjects of every relation it
-claims.
-
-A prose distinguisher says what differs between the refused shape and
-its control; it cannot be checked. Every relation the row PROMISES —
-which keys the batch named, what the transaction claimed to mint, what
-its edges actually entail, what the accepting control minted — is
-carried as a structured observation so the loader can reject a batch
-that merely describes itself correctly.
--}
-refusalLegWith :: Value -> Value -> Value -> [Value] -> [(Key.Key, Value)] -> Value
-refusalLegWith txid controlTxid distinguisher keys extra =
-    object
-        ( [ "txid" .= txid
-          , "hashes" .= toJSON [stateScriptHex]
-          , -- The ledger's EvalFailure carries an EMPTY Plutus log list,
-            -- so the validator's own trace is not recoverable from it.
-            -- Absent, never guessed: the NAMES live in the compiled suite.
-            "trace" .= Null
-          , "controlTxid" .= controlTxid
-          , "distinguisher" .= distinguisher
-          , "keys" .= toJSON keys
-          ]
-            <> [k .= v | (k, v) <- extra]
-        )
-
--- | The two DISTINCT keys the keyed-mint batch names.
-keyAHex, keyBHex :: Value
-keyAHex = String "743137332d6b6579656d696e742d61"
-keyBHex = String "743137332d6b6579656d696e742d62"
-
-mintOf :: Value -> Integer -> Value
-mintOf name q =
-    object ["policy" .= activeHex, "name" .= name, "quantity" .= q]
-
-{- | What the two-key batch's edges actually entail: one active token at
-each of the two keys.
--}
-entailedMint :: Value
-entailedMint = toJSON [mintOf keyAHex 1, mintOf keyBHex 1]
-
-{- | What the refused transaction claimed instead: the same total under
-the kind, both units at ONE key. A per-kind sum cannot see this; only
-the per-(kind, key) comparison can, which is the whole fixture.
--}
-claimedMint :: Value
-claimedMint = toJSON [mintOf keyAHex 2]
-
-{- | The duplicate leg. It names ONE key — the occupied one — and
-carries NO mint arithmetic at all, because it is refused before any
-runs. That absence is what keeps it from being read as the keyed-mint
-witness.
--}
-duplicateLeg :: Value
-duplicateLeg =
-    refusalLegWith
-        dupTx
-        dupControlTx
-        (String "the key is already bound")
-        [keyHex]
-        []
-
--- | The keyed-mint leg: two distinct keys, and every mint it compares.
-keyedMintLeg :: Value
-keyedMintLeg =
-    refusalLegWith
-        mintTx
-        mintControlTx
-        (String "claimed 2/0 against 1/1 actually minted")
-        [keyAHex, keyBHex]
-        [ ("claimedMint", claimedMint)
-        , ("entailedMint", entailedMint)
-        , ("controlMint", entailedMint)
-        ]
-
-{- | The complete CG21 edge observation: the fold, every fine conjunct
-of @insert_active_transaction_row@, the landed-fold sequence, and both
-refusal legs with their accepting controls.
--}
-completeEdge :: Value
-completeEdge =
-    object
-        [ "openPolicy" .= openHex
-        , "openParameters" .= (0 :: Int)
-        , "activePolicy" .= activeHex
-        , "key" .= keyHex
-        , "foldTxid" .= foldTx
-        , "minted" .= toJSON [activeAsset]
-        , "requestedAddress" .= walletAddr
-        , "observedAddress" .= walletAddr
-        , "delivered" .= toJSON [activeAsset]
-        , "maxFee" .= (1_000_000 :: Int)
-        , "requestLovelace" .= (3_000_000 :: Int)
-        , "approvalName" .= approvalHex
-        , "approvalRecomputed" .= approvalHex
-        , "refunds" .= toJSON ([] :: [Int])
-        , "signers" .= toJSON ([] :: [Value])
-        , "configBefore" .= configPins
-        , "configAfter" .= configPins
-        , "sequence"
-            .= toJSON
-                [ foldStep foldTx bootRoot root1
-                , foldStep dupControlTx root1 root2
-                , foldStep mintControlTx root2 root3
+-- | The active-registration obligation read through its receipt checks.
+insertActiveGroup :: TheoremGroup
+insertActiveGroup =
+    theorem
+        insertActiveRow
+        [ receiptClause
+            ( mkClause
+                "the destination holds exactly one active token at the requested address"
+                [ "address := some r.output"
+                , "assets := [((.active, r.key), 1)]"
+                , "kindCount t.state .active r.key = 1"
                 ]
-        , "duplicate" .= duplicateLeg
-        , "keyedMint" .= keyedMintLeg
+            )
+            [ accepts
+                "one active token at the key, at the address the request named"
+                (loadOne completeReceipt)
+            , rejects
+                "no token delivered"
+                (loadOne (edgeSet "delivered" (toJSON ([] :: [Value]))))
+                "the conclusion is exactly one, so zero is a distinct defect from a wrong one"
+            , rejects
+                "two tokens delivered at the key"
+                ( loadOne
+                    ( edgeSet
+                        "delivered"
+                        ( toJSON
+                            [ object
+                                [ "policy" .= activeHex
+                                , "name" .= keyHex
+                                , "quantity" .= (2 :: Int)
+                                ]
+                            ]
+                        )
+                    )
+                )
+                "a per-kind total cannot see a quantity right in kind and wrong in count"
+            , rejects
+                "a token delivered under the open policy instead of the active one"
+                ( loadOne
+                    ( edgeSet
+                        "delivered"
+                        ( toJSON
+                            [ object
+                                [ "policy" .= openHex
+                                , "name" .= keyHex
+                                , "quantity" .= (1 :: Int)
+                                ]
+                            ]
+                        )
+                    )
+                )
+                "the policy is half the token identity; an open-policy token is never the active witness"
+            , rejects
+                "a token whose asset name is not the key"
+                ( loadOne
+                    ( edgeSet
+                        "delivered"
+                        ( toJSON
+                            [ object
+                                [ "policy" .= activeHex
+                                , "name" .= String "6f74686572"
+                                , "quantity" .= (1 :: Int)
+                                ]
+                            ]
+                        )
+                    )
+                )
+                "the asset name is the key; a token under another name is a different holding"
+            , rejects
+                "a token observed at an address the request did not name"
+                ( loadOne
+                    ( edgeSet
+                        "observedAddress"
+                        (String "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+                    )
+                )
+                "the destination is the address the request named; the same token elsewhere misses it"
+            ]
+            [ unexercised
+                "the signature-set invariance conjunct"
+                "no receipt field carries the approval's signature set"
+            ]
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "the fold mints exactly one active token at the key"
+                ["mint := [((.active, r.key), 1)]"]
+            )
+            [ rejects
+                "a mint that is not exactly one token at the key"
+                (loadOne (edgeSet "minted" (toJSON ([] :: [Value]))))
+                "the fold must mint what the destination holds; an empty mint funds nothing"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "the open application declares no parameter"
+                ["openPolicyParameters = []"]
+            )
+            [ rejects
+                "an open application that declares a parameter"
+                (loadOne (edgeSet "openParameters" (Number 1)))
+                "the open policy is parameterless; a declared parameter names a different application"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            (mkClause "the fold pays no refund" ["refunds := []"])
+            [ rejects
+                "a fold that paid a refund"
+                (loadOne (edgeSet "refunds" (toJSON [1_000_000 :: Int])))
+                "the concluded transaction refunds nothing; a paid refund moves value the rule never sends"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            (mkClause "the fold requires no signer" ["signers := []"])
+            [ rejects
+                "a fold that required a signer"
+                (loadOne (edgeSet "signers" (toJSON [walletAddr])))
+                "the concluded transaction is unsigned; a required signer adds an authorization the rule never grants"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "the request lovelace covers the tip"
+                ["lovelaceCoversTip s.config lovelace = true"]
+            )
+            [ rejects
+                "a request whose lovelace does not cover the tip"
+                (loadOne (edgeSet "requestLovelace" (Number 999_999)))
+                "the hypothesis needs the tip on hand; below it the rule does not apply"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "the destination is bound by the approval"
+                ["destinationDatumBinds r = true"]
+            )
+            [ rejects
+                "a destination binding the approval does not carry"
+                ( loadOne
+                    ( edgeSet
+                        "approvalRecomputed"
+                        (String "00112233445566778899001122334455667788990011223344556677")
+                    )
+                )
+                "equality of the carried and recomputed approval name is the binding; a mismatch delivers where nothing authorized"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "only the root pin moves"
+                ["onlyRootChanged s.config t.state.config = true"]
+            )
+            [ rejects
+                "a fold that moved a non-root configuration pin"
+                ( loadOne
+                    ( edgeSet
+                        "configAfter"
+                        ( toJSON
+                            [ String "2000000"
+                            , String "30000"
+                            , String "30000"
+                            , openHex
+                            , activeHex
+                            , String "5c1e7ab390d24f6817be05c3a9f2d148e6730bc5924af18de036b7a1"
+                            , String "3b8d02f7561ec49a0d73b15fa28c6e904715d3ba6cf28017e94db5c6"
+                            ]
+                        )
+                    )
+                )
+                "only the root may move; any other difference is a configuration change the fold must not make"
+            , rejects
+                "a configuration observation that lost a pin"
+                (loadOne (edgeSet "configBefore" (toJSON ([] :: [Value]))))
+                "the pin comparison needs both sides; a lost pin is an unobserved configuration, not an unchanged one"
+            ]
+            []
+            (compatRow "CG21")
+        , receiptClause
+            ( mkClause
+                "a second insert at the same key is refused"
+                ["txOf t.state r₂ lovelace = .error \"key-exists\""]
+            )
+            [ acceptsBecause
+                "a leg whose trace the ledger did not surface is accepted"
+                (loadOne (legDrop "duplicate" "trace"))
+                "a script-execution failure carries an empty log list, so absence is the normal case, not an incomplete leg"
+            , rejects
+                "a leg whose control is the transaction it refused"
+                (loadOne (legSet "duplicate" "controlTxid" dupTx))
+                "the control must be an accepted transaction; a leg that controls for itself proves the builder can build nothing"
+            , rejects
+                "a leg naming no failing script"
+                (loadOne (legSet "duplicate" "hashes" (toJSON ([] :: [Value]))))
+                "attribution needs the failing script; without it the refusal blames nothing"
+            , rejects
+                "a leg naming an empty failing script"
+                (loadOne (legSet "duplicate" "hashes" (toJSON [String ""])))
+                "an empty hash attributes to nothing"
+            , rejects
+                "a duplicate leg naming two keys"
+                (loadOne (legSet "duplicate" "keys" (toJSON [keyHex, keyBHex])))
+                "the duplicate names the one occupied key; a second key belongs to the other fixture"
+            , rejects
+                "a duplicate leg naming a key the fold did not insert"
+                (loadOne (legSet "duplicate" "keys" (toJSON [keyAHex])))
+                "the refusal is key-exists on the inserted key; a key the fold never inserted cannot exist yet"
+            , rejects
+                "a duplicate leg carrying mint arithmetic"
+                (loadOne (legSet "duplicate" "claimedMint" claimedMint))
+                "the duplicate is refused before any mint runs; arithmetic on it claims to be the keyed-mint witness"
+            , rejects
+                "a refused transaction that also landed as a fold"
+                (loadOne (legSet "duplicate" "txid" mintControlTx))
+                "a refused transaction never lands; a landed txid identifies an acceptance, not a refusal"
+            , rejects
+                "a control that never landed a fold"
+                ( loadOne
+                    ( legSet
+                        "duplicate"
+                        "controlTxid"
+                        (String "ff66666666666666666666666666666666666666666666666666666666666666")
+                    )
+                )
+                "the control must be a landed accepting fold; a transaction the run never landed accepts nothing"
+            ]
+            []
+            (compatRow "CG21")
         ]
 
--- | The CG21 receipt the runner writes, with a complete observation.
-completeReceipt :: Value
-completeReceipt =
-    object
-        [ "row" .= String "CG21"
-        , "outcome" .= String "accepted"
-        , "verdict" .= String "agrees-with-model"
-        , "transactions" .= toJSON [foldTx]
-        , "refusal" .= Null
-        , "rejected" .= Null
-        , "mem" .= (1000 :: Int)
-        , "cpu" .= (2000 :: Int)
-        , "txSize" .= (500 :: Int)
-        , "base" .= String "fixture-base"
-        , "dirty" .= False
-        , "node" .= String "fixture-node"
-        , "blueprint" .= String "fixture-blueprint"
-        , "venue" .= String "node-submit"
-        , "partial" .= Null
-        , "edge" .= completeEdge
-        , "derivation" .= Null
+-- | The batch-allocation obligation read through its keyed-mint witness.
+keyedMintGroup :: TheoremGroup
+keyedMintGroup =
+    theorem
+        keyedMintFold
+        [ receiptClause
+            ( mkClause
+                "a two-key batch agreeing per kind but not per key is refused"
+                [ "assetKindTotal (claimedMint [b₁, b₂]) k"
+                , "assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false"
+                , "foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""
+                ]
+            )
+            [ rejects
+                "a leg whose distinguisher is empty"
+                (loadOne (legSet "keyedMint" "distinguisher" (String "")))
+                "the pair's value is exactly one differing thing; an empty distinguisher states none"
+            , rejects
+                "a keyed-mint leg reusing the duplicate's transaction"
+                (loadOne (legSet "keyedMint" "txid" dupTx))
+                "each refusal names its own transaction; a shared txid merges two distinct facts"
+            , rejects
+                "two legs sharing one accepting control"
+                (loadOne (legSet "keyedMint" "controlTxid" dupControlTx))
+                "each refusal carries its own accepting control; one control for both proves neither pair"
+            , rejects
+                "a keyed-mint leg naming one key"
+                (loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex])))
+                "the witness names two distinct keys; one key cannot disagree with itself"
+            , rejects
+                "a keyed-mint leg naming the same key twice"
+                (loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex, keyAHex])))
+                "two entries for one key are one key; the batch must name two distinct ones"
+            , rejects
+                "a keyed-mint leg naming three keys"
+                (loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex, keyBHex, keyHex])))
+                "the witness is a two-key batch; a third key is a different batch"
+            , rejects
+                "a keyed-mint leg naming an empty key"
+                (loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex, String ""])))
+                "an empty key is not a key the batch consumed"
+            , rejects
+                "a keyed-mint leg reusing the fold's own key"
+                (loadOne (legSet "keyedMint" "keys" (toJSON [keyHex, keyBHex])))
+                "the witness is a batch of its own; the fold's key belongs to the other observation"
+            , rejects
+                "a keyed-mint leg whose claim also disagrees per kind"
+                (loadOne (legSet "keyedMint" "claimedMint" (toJSON [mintOf keyAHex 3])))
+                "a claim that also disagrees per kind is a net mismatch, not the keyed fault this witness exhibits"
+            , rejects
+                "a keyed-mint leg whose claim agrees per key as well"
+                (loadOne (legSet "keyedMint" "claimedMint" entailedMint))
+                "a claim matching the entailment per key agrees everywhere; nothing distinguishes it from its control"
+            , rejects
+                "a keyed-mint leg claiming a mint at neither named key"
+                (loadOne (legSet "keyedMint" "claimedMint" (toJSON [mintOf keyHex 2])))
+                "the claim must sit at a named key; a mint elsewhere is unobserved arithmetic"
+            , rejects
+                "a keyed-mint leg entailing a mint at neither named key"
+                ( loadOne
+                    ( legSet
+                        "keyedMint"
+                        "entailedMint"
+                        (toJSON [mintOf keyHex 1, mintOf keyBHex 1])
+                    )
+                )
+                "the entailment is read off the batch's own edges; an edge elsewhere entails nothing here"
+            , rejects
+                "a keyed-mint leg with no claimed mint at all"
+                (loadOne (legSet "keyedMint" "claimedMint" (toJSON ([] :: [Value]))))
+                "a claim with nothing to compare is not an observation; the pair comes whole or not at all"
+            , rejects
+                "a keyed-mint control that minted the refused claim"
+                (loadOne (legSet "keyedMint" "controlMint" claimedMint))
+                "the control is the same batch with the right distribution; minting the refused claim repeats the defect"
+            , rejects
+                "a keyed-mint control that minted at another key"
+                ( loadOne
+                    ( legSet
+                        "keyedMint"
+                        "controlMint"
+                        (toJSON [mintOf keyAHex 1, mintOf keyHex 1])
+                    )
+                )
+                "the control must mint exactly what the batch entails; another key is another distribution"
+            , rejects
+                "an absent keyed-mint leg is refused"
+                (loadOne (edgeSet "keyedMint" Null))
+                "an absent leg is an incomplete row, never an absent requirement"
+            ]
+            [ unexercised
+                "the accepted-fold agreement conjunct"
+                "agreement on an accepted fold as a standalone conclusion; the controls witness landings, not the asset-same equation"
+            ]
+            (compatRow "CG21")
         ]
-
--- ---------------------------------------------------------
--- Mutation helpers
--- ---------------------------------------------------------
-
--- | Replace the receipt's edge observation.
-withEdge :: Value -> Value
-withEdge e = case completeReceipt of
-    Object o -> Object (KM.insert "edge" e o)
-    v -> v
-
--- | Replace one field of the receipt itself.
-receiptSet :: String -> Value -> Value
-receiptSet k v = case completeReceipt of
-    Object o -> Object (KM.insert (Key.fromString k) v o)
-    x -> x
-
--- | Edit one field of the edge observation.
-edgeSet :: String -> Value -> Value
-edgeSet k v = case completeEdge of
-    Object o -> withEdge (Object (KM.insert (Key.fromString k) v o))
-    x -> x
-
--- | Drop one field of the edge observation.
-edgeDrop :: String -> Value
-edgeDrop k = case completeEdge of
-    Object o -> withEdge (Object (KM.delete (Key.fromString k) o))
-    x -> x
-
--- | Edit one field of a named refusal leg.
-legSet :: String -> String -> Value -> Value
-legSet leg k v = onLeg leg (KM.insert (Key.fromString k) v)
-
--- | Drop one field of a named refusal leg.
-legDrop :: String -> String -> Value
-legDrop leg k = onLeg leg (KM.delete (Key.fromString k))
-
-onLeg :: String -> (KM.KeyMap Value -> KM.KeyMap Value) -> Value
-onLeg leg f = case completeEdge of
-    Object o -> case KM.lookup (Key.fromString leg) o of
-        Just (Object l) ->
-            withEdge (Object (KM.insert (Key.fromString leg) (Object (f l)) o))
-        _ -> completeReceipt
-    _ -> completeReceipt
-
--- | Every field the complete observation actually carries.
-edgeKeys :: [String]
-edgeKeys = case completeEdge of
-    Object o -> sort (map Key.toString (KM.keys o))
-    _ -> []
-
--- | Every field the named refusal leg actually carries.
-legKeysOf :: String -> [String]
-legKeysOf leg = case completeEdge of
-    Object o -> case KM.lookup (Key.fromString leg) o of
-        Just (Object l) -> sort (map Key.toString (KM.keys l))
-        _ -> []
-    _ -> []
-
-{- | The one leg field that may be absent: the ledger surfaces no trace
-for a script-execution failure, so a leg recording its absence is
-complete.
--}
-optionalLegKeys :: [String]
-optionalLegKeys = ["trace"]
-
--- | Write one receipt into a fresh directory and load it.
-loadOne :: Value -> IO (Either String Int)
-loadOne receipt = do
-    tmp <- getTemporaryDirectory
-    n <- atomicModifyIORef' dirCounter (\i -> (i + 1, i))
-    let dir = tmp </> ("conformance-edge-spec-" <> show n)
-    createDirectoryIfMissing True dir
-    BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
-    result <- loadReceipts dir
-    removeDirectoryRecursive dir
-    pure (fmap length result)
-
-dirCounter :: IORef Int
-dirCounter = unsafePerformIO (newIORef 0)
-{-# NOINLINE dirCounter #-}
-
--- ---------------------------------------------------------
--- The suite
--- ---------------------------------------------------------
 
 spec :: Spec
-spec = describe "CG21 edge evidence (#184)" $ do
-    -- The positive control. Every refusal below is only informative
-    -- beside an artifact the loader actually accepts.
-    it "accepts one complete CG21 observation" $ do
-        r <- loadOne completeReceipt
-        r `shouldBe` Right 1
+spec = do
+    runTheorem insertActiveGroup
+    runTheorem keyedMintGroup
+    describe "supporting evidence (schema completeness, no theorem binding)" $ do
+        -- The extent is read out of the artifact, not listed here; these
+        -- sizes are what stop the quantifiers ranging over nothing.
+        it "names every field of the observation before mutating one" $ do
+            length edgeKeys `shouldBe` 20
+            legKeysOf "duplicate"
+                `shouldBe` ["controlTxid", "distinguisher", "hashes", "keys", "trace", "txid"]
+            legKeysOf "keyedMint"
+                `shouldBe` [ "claimedMint"
+                           , "controlMint"
+                           , "controlTxid"
+                           , "distinguisher"
+                           , "entailedMint"
+                           , "hashes"
+                           , "keys"
+                           , "trace"
+                           , "txid"
+                           ]
 
-    it "refuses a CG21 receipt that carries no observation at all" $ do
-        r <- loadOne (withEdge Null)
-        r `shouldSatisfy` isLeft
+        it "refuses a receipt that carries no observation at all" $ do
+            r <- loadOne (withEdge Null)
+            (isLeft r) `shouldBe` True
 
-    -- The extent is read out of the artifact, not listed here; these
-    -- two sizes are what stop the quantifiers ranging over nothing.
-    it "names every field of the observation before mutating one" $ do
-        length edgeKeys `shouldBe` 20
-        legKeysOf "duplicate"
-            `shouldBe` ["controlTxid", "distinguisher", "hashes", "keys", "trace", "txid"]
-        legKeysOf "keyedMint"
-            `shouldBe` [ "claimedMint"
-                       , "controlMint"
-                       , "controlTxid"
-                       , "distinguisher"
-                       , "entailedMint"
-                       , "hashes"
-                       , "keys"
-                       , "trace"
-                       , "txid"
-                       ]
+        it "refuses the observation with any single field absent" $
+            mapM_
+                ( \k -> do
+                    r <- loadOne (edgeDrop k)
+                    (k, isLeft r) `shouldBe` (k, True)
+                )
+                edgeKeys
 
-    it "refuses the observation with any single field absent" $
-        for_ edgeKeys $ \k -> do
-            r <- loadOne (edgeDrop k)
-            (k, isLeft r) `shouldBe` (k, True)
+        it "refuses either refusal leg with any required field absent" $
+            mapM_
+                ( \(leg, k) -> do
+                    r <- loadOne (legDrop leg k)
+                    ((leg, k), isLeft r) `shouldBe` ((leg, k), True)
+                )
+                [ (leg, k)
+                | leg <- ["duplicate", "keyedMint"]
+                , k <- legKeysOf leg
+                , k `notElem` optionalLegKeys
+                ]
 
-    it "refuses either refusal leg with any required field absent" $
-        for_
-            [ (leg, k)
-            | leg <- ["duplicate", "keyedMint"]
-            , k <- legKeysOf leg
-            , k `notElem` optionalLegKeys
-            ]
-            $ \(leg, k) -> do
-                r <- loadOne (legDrop leg k)
-                ((leg, k), isLeft r) `shouldBe` ((leg, k), True)
-
-    it "accepts a leg whose trace the ledger did not surface" $ do
-        r <- loadOne (legDrop "duplicate" "trace")
-        r `shouldSatisfy` isRight
-
-    -- A184-FOLD: the identities and the single delivered asset.
-    it "refuses an open application that declares a parameter" $ do
-        r <- loadOne (edgeSet "openParameters" (Number 1))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a delivery that is not exactly one token at the key" $ do
-        r <- loadOne (edgeSet "delivered" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a delivery of two tokens at the key" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "delivered"
-                    ( toJSON
-                        [ object
-                            [ "policy" .= activeHex
-                            , "name" .= keyHex
-                            , "quantity" .= (2 :: Int)
+        -- Each landed fold advances the committed trie before the next
+        -- proof is built. These guard the Given — that every fold in
+        -- the observation genuinely landed — rather than a Then
+        -- conjunct, so they stay supporting instead of borrowing a
+        -- clause they do not read.
+        it "refuses a landed fold whose root did not move" $ do
+            r <-
+                loadOne
+                    ( edgeSet
+                        "sequence"
+                        ( toJSON
+                            [ foldStep foldTx bootRoot bootRoot
+                            , foldStep dupControlTx bootRoot root2
+                            , foldStep mintControlTx root2 root3
                             ]
-                        ]
+                        )
                     )
-                )
-        r `shouldSatisfy` isLeft
+            (isLeft r) `shouldBe` True
 
-    it "refuses a delivery under a policy that is not the active one" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "delivered"
-                    ( toJSON
-                        [ object
-                            [ "policy" .= openHex
-                            , "name" .= keyHex
-                            , "quantity" .= (1 :: Int)
+        it "refuses a second fold proved against the boot root" $ do
+            r <-
+                loadOne
+                    ( edgeSet
+                        "sequence"
+                        ( toJSON
+                            [ foldStep foldTx bootRoot root1
+                            , foldStep dupControlTx bootRoot root2
+                            , foldStep mintControlTx root2 root3
                             ]
-                        ]
+                        )
                     )
-                )
-        r `shouldSatisfy` isLeft
+            (isLeft r) `shouldBe` True
 
-    it "refuses a delivery whose asset name is not the key" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "delivered"
-                    ( toJSON
-                        [ object
-                            [ "policy" .= activeHex
-                            , "name" .= String "6f74686572"
-                            , "quantity" .= (1 :: Int)
+        it "refuses a committed root that disagrees with the chain's" $ do
+            r <-
+                loadOne
+                    ( edgeSet
+                        "sequence"
+                        ( toJSON
+                            [ object
+                                [ "txid" .= foldTx
+                                , "rootBefore" .= bootRoot
+                                , "rootAfter" .= root1
+                                , "committed" .= root2
+                                ]
+                            , foldStep dupControlTx root1 root2
+                            , foldStep mintControlTx root2 root3
                             ]
-                        ]
+                        )
                     )
-                )
-        r `shouldSatisfy` isLeft
+            (isLeft r) `shouldBe` True
 
-    it "refuses a mint that is not exactly one token at the key" $ do
-        r <- loadOne (edgeSet "minted" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
+        it "refuses an empty landed-fold sequence" $ do
+            r <- loadOne (edgeSet "sequence" (toJSON ([] :: [Value])))
+            (isLeft r) `shouldBe` True
 
-    it "refuses a token observed somewhere other than the requested address" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "observedAddress"
-                    (String "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff")
-                )
-        r `shouldSatisfy` isLeft
-
-    -- A184-CONJUNCTS: each fine conjunct separately observable and
-    -- separately fatal.
-    it "refuses a fold that paid a refund" $ do
-        r <- loadOne (edgeSet "refunds" (toJSON [1_000_000 :: Int]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a fold that required a signer" $ do
-        r <- loadOne (edgeSet "signers" (toJSON [walletAddr]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a request whose lovelace does not cover the tip" $ do
-        r <- loadOne (edgeSet "requestLovelace" (Number 999_999))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a destination binding the approval does not carry" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "approvalRecomputed"
-                    (String "00112233445566778899001122334455667788990011223344556677")
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a fold that moved a non-root configuration pin" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "configAfter"
-                    ( toJSON
-                        [ String "2000000"
-                        , String "30000"
-                        , String "30000"
-                        , openHex
-                        , activeHex
-                        , String "5c1e7ab390d24f6817be05c3a9f2d148e6730bc5924af18de036b7a1"
-                        , String "3b8d02f7561ec49a0d73b15fa28c6e904715d3ba6cf28017e94db5c6"
-                        ]
-                    )
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a configuration observation that lost a pin" $ do
-        r <- loadOne (edgeSet "configBefore" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
-
-    -- A184-SEQUENCE: each landed fold advances the committed trie
-    -- before the next proof is built.
-    it "refuses a landed fold whose root did not move" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "sequence"
-                    ( toJSON
-                        [ foldStep foldTx bootRoot bootRoot
-                        , foldStep dupControlTx bootRoot root2
-                        , foldStep mintControlTx root2 root3
-                        ]
-                    )
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a second fold proved against the boot root" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "sequence"
-                    ( toJSON
-                        [ foldStep foldTx bootRoot root1
-                        , foldStep dupControlTx bootRoot root2
-                        , foldStep mintControlTx root2 root3
-                        ]
-                    )
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a committed root that disagrees with the chain's" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "sequence"
-                    ( toJSON
-                        [ object
-                            [ "txid" .= foldTx
-                            , "rootBefore" .= bootRoot
-                            , "rootAfter" .= root1
-                            , "committed" .= root2
+        it "refuses a fold transaction absent from the landed sequence" $ do
+            r <-
+                loadOne
+                    ( edgeSet
+                        "sequence"
+                        ( toJSON
+                            [ foldStep dupControlTx bootRoot root1
+                            , foldStep mintControlTx root1 root2
                             ]
-                        , foldStep dupControlTx root1 root2
-                        , foldStep mintControlTx root2 root3
-                        ]
+                        )
                     )
-                )
-        r `shouldSatisfy` isLeft
+            (isLeft r) `shouldBe` True
 
-    it "refuses an empty landed-fold sequence" $ do
-        r <- loadOne (edgeSet "sequence" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
+        it "refuses edge evidence on a row carrying another identity" $ do
+            r <- loadOne (receiptSet "row" (String "CG02"))
+            (isLeft r) `shouldBe` True
 
-    it "refuses a fold transaction absent from the landed sequence" $ do
-        r <-
-            loadOne
-                ( edgeSet
-                    "sequence"
-                    ( toJSON
-                        [ foldStep dupControlTx bootRoot root1
-                        , foldStep mintControlTx root1 root2
-                        ]
-                    )
-                )
-        r `shouldSatisfy` isLeft
-
-    -- A184-DUPLICATE / A184-KEYED-MINT: two refusals, two controls,
-    -- and neither standing in for the other.
-    it "refuses a leg whose control is the transaction it refused" $ do
-        r <- loadOne (legSet "duplicate" "controlTxid" dupTx)
-        r `shouldSatisfy` isLeft
-
-    it "refuses a leg naming no failing script" $ do
-        r <- loadOne (legSet "duplicate" "hashes" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a leg naming an empty failing script" $ do
-        r <- loadOne (legSet "duplicate" "hashes" (toJSON [String ""]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a leg whose distinguisher is empty" $ do
-        r <- loadOne (legSet "keyedMint" "distinguisher" (String ""))
-        r `shouldSatisfy` isLeft
-
-    it "refuses one refusal reused as the other" $ do
-        r <- loadOne (legSet "keyedMint" "txid" dupTx)
-        r `shouldSatisfy` isLeft
-
-    it "refuses two legs sharing one accepting control" $ do
-        r <- loadOne (legSet "keyedMint" "controlTxid" dupControlTx)
-        r `shouldSatisfy` isLeft
-
-    it "refuses a control that never landed a fold" $ do
-        r <-
-            loadOne
-                ( legSet
-                    "duplicate"
-                    "controlTxid"
-                    (String "ff66666666666666666666666666666666666666666666666666666666666666")
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a refused transaction that also landed as a fold" $ do
-        r <- loadOne (legSet "duplicate" "txid" mintControlTx)
-        r `shouldSatisfy` isLeft
-
-    -- The two-key relation, with a structured subject rather than a
-    -- phrase. A leg that only SAYS "two distinct keys" leaves the
-    -- loader nothing to reject a same-key batch with.
-    it "refuses a keyed-mint leg naming one key" $ do
-        r <- loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg naming the same key twice" $ do
-        r <- loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex, keyAHex]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg naming three keys" $ do
-        r <-
-            loadOne
-                (legSet "keyedMint" "keys" (toJSON [keyAHex, keyBHex, keyHex]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg naming an empty key" $ do
-        r <- loadOne (legSet "keyedMint" "keys" (toJSON [keyAHex, String ""]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg reusing the fold's own key" $ do
-        r <- loadOne (legSet "keyedMint" "keys" (toJSON [keyHex, keyBHex]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a duplicate leg naming two keys" $ do
-        r <- loadOne (legSet "duplicate" "keys" (toJSON [keyHex, keyBHex]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a duplicate leg naming a key the fold did not insert" $ do
-        r <- loadOne (legSet "duplicate" "keys" (toJSON [keyAHex]))
-        r `shouldSatisfy` isLeft
-
-    -- The duplicate is refused BEFORE any mint arithmetic runs. A leg
-    -- carrying mint arithmetic is claiming to be the other fixture.
-    it "refuses a duplicate leg carrying mint arithmetic" $ do
-        r <- loadOne (legSet "duplicate" "claimedMint" claimedMint)
-        r `shouldSatisfy` isLeft
-
-    -- The claimed and entailed mints, compared the two ways that make
-    -- this a KEYED fault and not a net one.
-    it "refuses a keyed-mint leg whose claim also disagrees per kind" $ do
-        r <- loadOne (legSet "keyedMint" "claimedMint" (toJSON [mintOf keyAHex 3]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg whose claim agrees per key as well" $ do
-        r <- loadOne (legSet "keyedMint" "claimedMint" entailedMint)
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg claiming a mint at neither named key" $ do
-        r <-
-            loadOne
-                (legSet "keyedMint" "claimedMint" (toJSON [mintOf keyHex 2]))
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg entailing a mint at neither named key" $ do
-        r <-
-            loadOne
-                ( legSet
-                    "keyedMint"
-                    "entailedMint"
-                    (toJSON [mintOf keyHex 1, mintOf keyBHex 1])
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint leg with no claimed mint at all" $ do
-        r <- loadOne (legSet "keyedMint" "claimedMint" (toJSON ([] :: [Value])))
-        r `shouldSatisfy` isLeft
-
-    -- The accepting control is the SAME batch with the right
-    -- distribution: it must mint exactly what the batch entails.
-    it "refuses a keyed-mint control that minted the refused claim" $ do
-        r <- loadOne (legSet "keyedMint" "controlMint" claimedMint)
-        r `shouldSatisfy` isLeft
-
-    it "refuses a keyed-mint control that minted at another key" $ do
-        r <-
-            loadOne
-                ( legSet
-                    "keyedMint"
-                    "controlMint"
-                    (toJSON [mintOf keyAHex 1, mintOf keyHex 1])
-                )
-        r `shouldSatisfy` isLeft
-
-    it "refuses a CG21 observation with no keyed-mint leg at all" $ do
-        r <- loadOne (edgeSet "keyedMint" Null)
-        r `shouldSatisfy` isLeft
-
-    -- Backward compatibility, in both directions.
-    it "refuses edge evidence on a row that is not CG21" $ do
-        r <- loadOne (receiptSet "row" (String "CG02"))
-        r `shouldSatisfy` isLeft
+        it "names every clause and example without a row ID or ticket number" $
+            [n | g <- [insertActiveGroup, keyedMintGroup], n <- groupNames g, nameViolation n]
+                `shouldBe` []
