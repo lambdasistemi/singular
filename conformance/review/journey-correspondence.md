@@ -1,17 +1,13 @@
 # Journey, Lean and conformance correspondence
 
-Source inventory: all 28 `theorem` declarations in
-`lean/Singular/Statements.lean` at `d92f35bf722120369c386ce09e6c7a40d321182f`.
-The two retained statement bindings name revision
-`265c595edd72eab10f3b08a36cb010ad407cf48b`; their statement digests remain unchanged.
+Source inventory below: the 28 generic-registry declarations in
+`lean/Singular/Statements.lean` at the branch base `d92f35bf722120369c386ce09e6c7a40d321182f`.
+This is not a complete inventory of naming statements and project helper
+lemmas. The operator's every-theorem coverage requirement remains unmet.
 
-The journey column names a related subject, **not proof of equivalence**.
-Only the two explicitly bound assets claim receipt-validation correspondence.
-The main journey currently requests `edgeInsertAbsent`; naming it as this
-suite's active-registration journey would be inaccurate. The `register`
-journey covers active insertion with the naming application; the `Register`
-asset below covers the narrower open-registry receipt. No extra asset or
-new evidence was invented to complete this table.
+Journey names identify related subjects, not proof of equivalence. The main
+journey requests `edgeInsertAbsent`; the naming `register` journey includes
+application behavior outside this open-registry example.
 
 ## All statements
 
@@ -44,9 +40,9 @@ Names below have the prefix `Singular.Statements.`.
 | `fold_batch_cons` | apply (no dedicated batch-decomposition step) | GAP: no asset binds this statement |
 | `read_changes_nothing` | read-back | GAP: no asset binds this statement |
 | `insert_absent_transaction_row` | request → apply (the main journey books insertAbsent) | GAP: no asset binds this statement |
-| `insert_active_transaction_row` | register (related naming-application journey; this asset uses the open registry) | `Edge.Register` — receipt-validation cases |
-| `update_terminal_transaction_row` | retirement / retire-verify | GAP: no asset binds this statement |
-| `fold_batch_claimed_mint_by_kind_key` | GAP: no dedicated journey; conformance runner produces the two-key observation | `Fold.KeyedMint` — receipt-validation cases |
+| `insert_active_transaction_row` | register (related naming-application journey; this asset uses the open registry) | `Edge.Register` — live delivery compared with executable Lean; remaining checks use Haskell predicates; report cases are appendix evidence |
+| `update_terminal_transaction_row` | retirement / retire-verify | `Edge.Retire` — live Haskell checks with a statement binding; no executable Lean comparison yet |
+| `fold_batch_claimed_mint_by_kind_key` | GAP: no dedicated journey; conformance runner produces the two-key observation | `Fold.KeyedMint` — live batch comparison using Haskell predicates; no executable Lean comparison yet |
 
 ## All journey subjects
 
@@ -63,8 +59,8 @@ Names below have the prefix `Singular.Statements.`.
 | `reject-tampered-output` | GAP: no product asset |
 | `reject-missing-proof` | GAP: no product asset |
 | `reject-end-without-owner`, `reject-control` | GAP: no product asset |
-| `register` | `Edge.Register`, narrower open-registry receipt boundary; naming-specific approval behavior is not bound here |
-| `retirement` | GAP: no product asset; `Support.Receipt` only checks a retirement receipt's codec |
+| `register` | `Edge.Register`, open-registry live execution; naming-specific approval behavior is not bound here |
+| `retirement` | `Edge.Retire`, live open-registry registration then retirement; naming authorization remains outside this story |
 | `recovery` | GAP: no product asset |
 | `repair` | GAP: no product asset |
 | `verifier` | GAP: no product asset |
@@ -76,32 +72,23 @@ Names below have the prefix `Singular.Statements.`.
 `complete` is a runner summary, not a new product subject. The nine sibling
 executables above are all the immediate `offchain/journey/*/Main.hs` entries.
 
-## Every product asset
+## Product assets and binding limits
 
-- `Edge.Register` binds `insert_active_transaction_row`. Request, application,
-  token destination, refund, signer, configuration and occupied-key cases stay
-  together. The related inversion remains an explicit binding gap.
-- `Fold.KeyedMint` binds `fold_batch_claimed_mint_by_kind_key`. Its two-key
-  batch and refusal controls stay together. Its dedicated journey is a gap.
-- No product asset lacks a Lean binding. `Story`, `Fixture` and `Support`
-  modules are not additional product assets.
+- `Edge.Register` binds `insert_active_transaction_row`; its delivery clause
+  runs the model oracle and the real registration. See [the run evidence](registration-lean.md).
+- `Edge.Retire` binds `update_terminal_transaction_row`; its real registration,
+  retirement and refusal controls currently use Haskell checks.
+- `Fold.KeyedMint` binds `fold_batch_claimed_mint_by_kind_key`; its real
+  two-key allocation controls currently use Haskell checks.
 
-## The binding check's measured limit
+The appendix still checks exactly two constants, `insertActiveRow` and
+`keyedMintFold`, against the manifest. The live interpreter resolves bindings
+when their program steps execute, including retirement. Neither mechanism
+establishes that every project theorem has a consumer or that every conclusion
+is exercised. The coverage report's `stale bindings 0` is not such a census;
+[issue 213](https://github.com/lambdasistemi/singular/issues/213) tracks that gap.
 
-`find_stale_bindings` in `coverage/singular_coverage/debt.py:253` iterates the
-coverage record's checks and mappings. It does not read Haskell bindings.
-The coverage report's `stale bindings 0` does not quantify over the Haskell
-story binding population; exactly two constants — `insertActiveRow` and
-`keyedMintFold` — are bound against the committed manifest; a story binding
-outside that list resolves against nothing and the report still prints zero.
-The population gap is [issue 213](https://github.com/lambdasistemi/singular/issues/213).
-
-The existing test command is `nix run --quiet .#conformance-tests` from
-`conformance/` (`.github/workflows/conformance.yml`, unit-test step).
-Its two-constant check was observed failing after the actual `insertActiveRow`
-binding was changed to `Singular.Statements.missing_registration_theorem`:
-1 example, 1 failure, expected True but got False. The valid binding was restored.
-No new binding checker or CI job was introduced.
-
-These gaps do not change a row's state. Receipt validation does not execute
-a journey or demonstrate all conjuncts of a Lean theorem.
+The retained missing-binding control was observed failing after changing the
+actual registration binding to a nonexistent declaration, then restored.
+The missing-consumer requirement has not been discharged by this example.
+No uncovered row is promoted by this correspondence document.

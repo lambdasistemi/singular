@@ -1,45 +1,55 @@
 # Read the registry's promises
 
-A registry commits a map of keys to a root. A request asks to change a key;
-a fold applies it. Active tokens witness active registrations. The suite says
-what evidence must accompany those claims, and leaves missing evidence visible.
+Start with [registration](../lib/Conformance/Edge/Register.hs). Its caller
+supplies a fresh registry and funded recipient. The story names the Lean
+theorem and runs a registration inside a readable clause.
 
-Start with [the rendered book](../BOOK.md). It includes every requirement from
-`rows.json`, the unchanged evidence gaps, and the stories generated from the
-same programs the tests execute. These are **receipt-validation stories**;
-a green unit suite is not a new chain run.
+That clause executes the real transaction builder on a local Cardano devnet.
+The interpreter maps actual wallet, policy and key identities to stable model
+IDs, asks the [Lean program](../lean/RegistrationOracle.lean) for the expected
+delivery, and compares both the accepted transaction output and queried holdings.
+The Lean program's delivery projection is proved from
+`Singular.Statements.insert_active_transaction_row`.
 
-Then read forward:
+Run it from `conformance/`:
 
-1. [Register an active key](Conformance/Edge/Register.hs): the `register`
-   journey's request, fold and active witness; a repeated insert is refused.
-   This asset binds `insert_active_transaction_row` and uses the open registry.
-   The naming journey adds application approval behavior beyond this asset.
-2. [Apply a batch at distinct keys](Conformance/Fold/KeyedMint.hs): totals can
-   agree while tokens are allocated to the wrong keys. That distribution is
-   refused. The producer is the conformance runner; a dedicated journey step
-   for this subject is still missing.
-3. [The correspondence and its gaps](../review/journey-correspondence.md): every
-   statement and journey subject, including those without a conformance asset.
-4. [The appendix](Conformance/Support): checks of our receipt, refusal and
-   inventory machinery. Skipping it loses no product promise.
+```sh
+export REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+nix run --quiet .#conformance -- example registration --receipts-dir /tmp/registration-example
+```
 
-Cases say what changes and whether that observation is accepted or refused.
-Their reasons distinguish the failure. Collections are programs, so nested
-keys, mint entries, refunds, signers and configuration edits are part of both
-the executed case and its rendered story.
+The registration run also retains the existing fresh-key, duplicate-key and
+batch-allocation controls. `registration-lean.json` records the exact mapping,
+model input, expected result, chain observations and transaction identity.
+These observations concern one delivery projection, not the entire theorem.
 
-To run the tests and regenerate the book, from `conformance/`:
+To demonstrate a failing comparison after a real transaction has landed:
+
+```sh
+CONFORMANCE_STORY_CONTROL=wrong-delivery nix run --quiet .#conformance -- \
+  example registration --receipts-dir /tmp/registration-wrong-delivery
+```
+
+This deliberately increments the observed quantity supplied to the comparator;
+the Lean expectation remains unchanged. `wrong-address` and `wrong-policy`
+substitute other known identities, which must remain distinguishable.
+
+The [retirement story](../lib/Conformance/Edge/Retire.hs) and
+[batch story](../lib/Conformance/Fold/KeyedMint.hs) use the existing live backend.
+Their checks have not yet been converted to executable Lean comparisons.
+Other theorem consumers remain missing; see the
+[correspondence inventory](../review/journey-correspondence.md).
+
+[Support](Conformance/Support) contains the unchanged report-validation cases
+and checks of the evidence machinery. These are the appendix, not evidence
+that a new chain execution happened. Run them separately with
+`nix run --quiet .#conformance-appendix-tests`.
+
+Run both live chapters and the appendix, then render the successful run:
 
 ```sh
 nix run --quiet .#conformance-tests -- --book BOOK.md
 ```
 
-The file is written only after the suite succeeds. No live receipt is supplied
-by that command and no inventory state is promoted.
-
-To add a subject, read the executable [story recipe](Conformance/Story/Usage.hs).
-Keep its Lean binding in that subject's module; place edge subjects under
-`Edge`, batch properties under `Fold`, and machinery under `Support`.
-The current binding check covers exactly two constants. The missing population
-check is tracked in [issue 213](https://github.com/lambdasistemi/singular/issues/213).
+The book is written only after those checks pass. It remains a repository
+artifact; publication to the documentation site is tracked in issue 218.

@@ -209,6 +209,33 @@
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
 
+        # Compile the observation and its proof against this checkout's model.
+        # The executable transports abstract IDs; Cardano bytes stay in Haskell.
+        modelLock = builtins.fromJSON (builtins.readFile ../flake.lock);
+        modelPkgs = import (builtins.fetchTree modelLock.nodes.nixpkgs.locked) {
+          inherit system;
+        };
+        registrationOracle = modelPkgs.runCommand "registration-lean-oracle" {
+          nativeBuildInputs = [ modelPkgs.lean4 modelPkgs.stdenv.cc ];
+          meta.mainProgram = "registration-oracle";
+        } ''
+          mkdir work
+          cp -r ${../lean} work/lean
+          cp ${../lakefile.toml} work/lakefile.toml
+          chmod -R u+w work
+          cp ${./lean/RegistrationOracle.lean} work/lean/RegistrationOracle.lean
+          cat >> work/lakefile.toml <<'EOF'
+
+          [[lean_exe]]
+          name = "registration-oracle"
+          root = "RegistrationOracle"
+          EOF
+          cd work
+          lake build registration-oracle
+          mkdir -p $out/bin
+          cp .lake/build/bin/registration-oracle $out/bin/
+        '';
+
         # The row runner, wrapped so it brings the locked cardano-node
         # on its own PATH like the offchain journey runners, with the
         # devnet genesis defaulting to this suite's own copy
@@ -232,14 +259,44 @@
           mkdir -p $out/bin
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
             --prefix PATH : ${cardanoNode}/bin \
+            --set CONFORMANCE_LEAN_ORACLE ${pkgs.lib.getExe registrationOracle} \
             --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
             --set-default NAMING_BLUEPRINT ${naming-blueprint}
         '';
 
+        # The public test command executes the book, including fresh devnet
+        # transactions. The cheap evidence-checker suite remains available by
+        # its explicit appendix name; it cannot generate the product book.
+        runningBook = pkgs.writeShellApplication {
+          name = "conformance-tests";
+          runtimeInputs = [ pkgs.nix pkgs.git pkgs.coreutils ];
+          text = ''
+            book_args=()
+            if [ "$#" -eq 2 ] && [ "$1" = "--book" ]; then
+              book_args=(--output "$2")
+            elif [ "$#" -ne 0 ]; then
+              echo 'usage: conformance-tests [--book BOOK.md]' >&2
+              echo 'For report-unit-test filters, use conformance-appendix-tests.' >&2
+              exit 2
+            fi
+            if [ -z "''${REGISTRY_BLUEPRINT:-}" ]; then
+              REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+              export REGISTRY_BLUEPRINT
+            fi
+            if [ ! -r "$REGISTRY_BLUEPRINT" ]; then
+              echo "Live story needs a readable validator blueprint: $REGISTRY_BLUEPRINT" >&2
+              exit 1
+            fi
+            ${pkgs.lib.getExe components.tests.conformance-tests}
+            receipts="$(mktemp -d -t singular-running-book.XXXXXX)"
+            ${pkgs.lib.getExe conformance} book --receipts-dir "$receipts" "''${book_args[@]}"
+          '';
+        };
+
       in
       {
         packages = {
-          inherit conformance;
+          inherit conformance registrationOracle;
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
@@ -265,6 +322,10 @@
             program = pkgs.lib.getExe conformance;
           };
           conformance-tests = {
+            type = "app";
+            program = pkgs.lib.getExe runningBook;
+          };
+          conformance-appendix-tests = {
             type = "app";
             program =
               pkgs.lib.getExe components.tests.conformance-tests;

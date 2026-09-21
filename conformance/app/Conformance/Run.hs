@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 
 {- |
 Module      : Conformance.Run
@@ -82,6 +83,13 @@ should.
 -}
 module Conformance.Run (runForkProbe, runRows) where
 
+import Control.Monad.Operational qualified as Operational
+import Conformance.Story.Live qualified as Live
+import Conformance.Story.Identity qualified as Identity
+import Conformance.Lean.Registration qualified as Lean
+import Conformance.Story.Binding qualified as Binding
+import Conformance.Edge.Register qualified as RegistrationStory
+import Conformance.Edge.Retire qualified as RetirementStory
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
 import Control.Exception (
@@ -248,6 +256,7 @@ import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
 import Singular.Registry.TxBuilder.Internal (
     walkEdge,
+    emptyRoot,
     leafAbsent,
     leafActive,
     leafTerminal,
@@ -1347,11 +1356,6 @@ runRowIn env marker row = case row of
     "CG15" -> runCG15 env
     "CG19" -> runCG19 env
     "CG21" -> runCG21 env
-    -- #177 I177-CONFORMANCE. NOT YET IMPLEMENTED: the row is reached
-    -- inside a real session, on a real devnet, and fails here rather
-    -- than in `validateRows`, so the session, genesis, node and
-    -- partitioning subjects all execute before the absent fixture is
-    -- reported.
     "CG22" -> runCG22 env
     _ -> failWith ("run cannot execute row: " <> row)
 
@@ -4550,12 +4554,6 @@ three DISTINCT fixtures (A-006) and none may stand in for another: the
 fold's own key, the fresh key that controls the duplicate, and the two
 keys the keyed-mint batch needs.
 -}
-cg21Key, cg21ControlKey, cg21KeyA, cg21KeyB :: ByteString
-cg21Key = "cg21-insert-active"
-cg21ControlKey = "cg21-insert-active-control"
-cg21KeyA = "cg21-keyed-mint-a"
-cg21KeyB = "cg21-keyed-mint-b"
-
 {- | CG21: one `insertActive` folds on the open registry and places
 exactly one @(activePolicy, key)@ token at the address the request
 named; a second insert at the same committed key is refused on chain at
@@ -4588,119 +4586,43 @@ surfacing later as an unrelated-looking failure.
 -}
 runCG21 :: Env -> IO ()
 runCG21 env = do
-    cage <- ensureRowCage env "cg21" 30_000 30_000
-    let cfg = rcCfg cage
-    tid <- cageTid cage
-    openParams <- cg21OpenParameters env
-    (_, destAddr) <- secondWallet env
-    let dest = (serialiseAddr destAddr, BS.empty)
-        bond = defaultTipCoin cfg + cgDeposit
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    require "unknown registration story control"
+        (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains"])
+    registry <- ensureRowCage env "story-registration" 30_000 30_000
+    (_, recipient) <- secondWallet env
+    result <- runLive env (RegistrationStory.story (Live.Context registry recipient))
+    let registration = Live.registeredKey result
+        fresh = Live.freshKeyControl result
+        batch = Live.batchAllocation result
+        cfg = rcCfg (Live.registrationRegistry result)
+        key = lrKey registration
+        destAddr = lrWallet registration
         activePolicy = policyIdFromPin (cfgActivePolicy cfg)
-        book key =
-            bookEdge
-                env
-                cfg
-                tid
-                genesisAddr
-                genesisSignKey
-                key
-                edgeInsertActive
-                dest
-                []
-                bond
-
-    -- 1. The story fold. Every fine conjunct is read off this
-    --    transaction and the state datum either side of it.
-    (_, reqOut) <- book cg21Key
-    before <- cg21State env cage
-    (foldTx, step1, (mem, cpu, size)) <- cg21Fold env cage [cg21Key]
-    after <- cg21State env cage
+        foldTx = lrTx registration
+        before = lrBefore registration
+        after = lrAfter registration
+        (mem, cpu, size) = lrUnits registration
+        step1 = lrStep registration
+        step2 = lrStep fresh
+        step3 = lbStep batch
+        dupControlTx = lrTx fresh
+        mintControlTx = lbControl batch
+        dupLeg = Live.duplicateRefusal result
+        mintLeg = lbRefusal batch
+    openParams <- cg21OpenParameters env
+    (observedAddr, delivered) <- cg21Delivery activePolicy key foldTx
+    approvalObserved <- cg21ApprovalOn cfg (lrRequest registration)
+    (reqLovelace, approvalRecomputed) <- cg21RequestFacts (lrRequest registration)
     emitMeasure env "CG21-fold" mem cpu size
-    (observedAddr, delivered) <- cg21Delivery activePolicy cg21Key foldTx
-    held <- cg21HeldAt env destAddr activePolicy cg21Key
-    require
-        ( "CG21: the named wallet holds "
-            <> show held
-            <> " active tokens at this key, not exactly one"
-        )
-        (held == 1)
-    approvalObserved <- cg21ApprovalOn cfg reqOut
-    (reqLovelace, approvalRecomputed) <- cg21RequestFacts reqOut
-    emit
-        "row"
-        ( "CG21: one insertActive folded (tx="
-            <> txIdHex foldTx
-            <> ") and exactly one active token landed at the named wallet"
-        )
-
-    -- 2. The duplicate's accepting control: a FRESH key through the
-    --    SAME builder, folded first so a failure here is reported as a
-    --    broken control rather than making step 4 vacuous.
-    _ <- book cg21ControlKey
-    (dupControlTx, step2) <- cg21HandFold env cage [cg21ControlKey]
-    emit
-        "control"
-        ( "CG21 control: a fresh key folded through the same builder (tx="
-            <> txIdHex dupControlTx
-            <> ") — the duplicate below is the occupancy, not the builder"
-        )
-
-    -- 3. The keyed-mint batch: two DISTINCT keys whose per-kind totals
-    --    agree and whose per-(kind, key) totals do not. The claim moves
-    --    key B's unit onto key A in the mint AND in the output that
-    --    carries it, so the ledger still balances and the STATE SCRIPT
-    --    is what refuses, rather than phase 1 on an unbalanced value.
-    _ <- book cg21KeyA
-    _ <- book cg21KeyB
-    honest <- cg21BatchFold env cage
-    let nameA = AssetName (SBS.toShort cg21KeyA)
-        nameB = AssetName (SBS.toShort cg21KeyB)
-        policyHexT = hexT (cg21PolicyBytes activePolicy)
-        entailed =
-            [ AssetEntry policyHexT (hexT cg21KeyA) 1
-            , AssetEntry policyHexT (hexT cg21KeyB) 1
-            ]
-        claimedTx = cg21MoveAsset activePolicy nameB nameA honest
-    mintLeg <-
-        cg21ExpectRefused
-            env
-            cage
-            "keyed-mint"
-            [cg21KeyA, cg21KeyB]
-            (Just (cg21MintedOf activePolicy claimedTx))
-            (Just entailed)
-            "claimed both units at one key; the edges entail one at each"
-            (addKeyWitness genesisSignKey claimedTx)
-    (mintControlTx, step3, _) <- cg21Fold env cage [cg21KeyA, cg21KeyB]
-    emit
-        "control"
-        ( "CG21 control: the same two keys with the distribution their "
-            <> "edges entail accepted (tx="
-            <> txIdHex mintControlTx
-            <> ")"
-        )
-
-    -- 4. The duplicate, last: its request stays pending and nothing
-    --    after it folds.
-    _ <- book cg21Key
-    duplicateTx <- cg21HandBuild env cage
-    dupLeg <-
-        cg21ExpectRefused
-            env
-            cage
-            "duplicate"
-            [cg21Key]
-            Nothing
-            Nothing
-            "the committed trie already binds this key"
-            (addKeyWitness genesisSignKey duplicateTx)
-
+    emit "row" ("CG21: one insertActive folded (tx=" <> txIdHex foldTx <> ") and exactly one active token landed at the named wallet")
+    emit "control" ("CG21 control: a fresh key folded through the same builder (tx=" <> txIdHex dupControlTx <> ") — the duplicate below is the occupancy, not the builder")
     let edge =
             EdgeEvidence
                 { eeOpenPolicy = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
                 , eeOpenParameters = openParams
                 , eeActivePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                , eeKey = hexT cg21Key
+                , eeKey = hexT key
                 , eeFoldTxid = T.pack (txIdHex foldTx)
                 , eeMinted = cg21MintedOf activePolicy foldTx
                 , eeRequestedAddress = hexT (serialiseAddr destAddr)
@@ -4726,6 +4648,343 @@ runCG21 env = do
                             }
                 }
     writeCG21Receipt env foldTx mem cpu size edge
+
+-- The live interpreter's handles contain values observed during this run.
+-- They cannot be constructed by a story or supplied by a JSON fixture.
+data LiveRegistration = LiveRegistration
+    { lrCage :: RowCage
+    , lrKey :: ByteString
+    , lrWallet :: Addr
+    , lrTx :: ConwayTx
+    , lrStep :: FoldStep
+    , lrBefore :: OnChainTokenState
+    , lrAfter :: OnChainTokenState
+    , lrRequest :: TxOut ConwayEra
+    , lrUnits :: (Integer, Integer, Integer)
+    }
+
+data LiveRetirement = LiveRetirement
+    { ltRegistration :: LiveRegistration
+    , ltTx :: ConwayTx
+    , ltRoot :: Root
+    , ltChainRoot :: ByteString
+    , ltBefore :: Integer
+    , ltAfter :: Integer
+    , ltSource :: RetirementSource
+    }
+
+data LiveBatch = LiveBatch
+    { lbRefusal :: RefusalLeg
+    , lbControl :: ConwayTx
+    , lbStep :: FoldStep
+    }
+
+-- | Interpret shared story instructions against the running node and builders.
+runLive :: Env -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg result -> IO result
+runLive env program = do
+    identities <- newLiveIdentities
+    go identities Nothing program
+  where
+    go :: LiveIdentities -> Maybe Binding.Binding -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg a -> IO a
+    go identities binding body = case Operational.view body of
+        Operational.Return result -> pure result
+        instruction Operational.:>>= next -> interpret identities binding instruction >>= go identities binding . next
+    interpret :: LiveIdentities -> Maybe Binding.Binding -> Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg a -> IO a
+    interpret identities currentTheorem instruction = case instruction of
+        Live.LinkedTo binding rules -> do
+            manifest <- Binding.loadManifest >>= either failWith pure
+            require "live story names a missing or changed formal specification" (Binding.resolveBinding manifest binding)
+            source <- Binding.loadStatementSource >>= either failWith pure
+            require "live story quotes a rule absent from the formal specification"
+                (Binding.anchorsPresent source [(Binding.boName binding, rules)])
+            emit "specification" (Binding.boName binding <> " @" <> Binding.boRevision binding)
+        Live.Theorem binding body -> do
+            manifest <- Binding.loadManifest >>= either failWith pure
+            require "live theorem binding is missing or stale" (Binding.resolveBinding manifest binding)
+            emit "theorem" (Binding.boName binding)
+            go identities (Just binding) body
+        Live.Clause title Lean.RegistrationDelivery body -> do
+            require "delivery check must be inside its registration theorem"
+                (currentTheorem == Just Lean.insertActiveRow)
+            emit "clause" title
+            registration <- go identities currentTheorem body
+            checkRegistrationAgainstLean env identities registration
+            pure registration
+        Live.RegisterKey registry key wallet -> do
+            let bytes = TE.encodeUtf8 (T.pack key)
+            prepareRegistrationIdentities identities registry bytes wallet
+            registerLive env False registry bytes wallet
+        Live.ExpectActiveToken registration wallet quantity -> checkRegistrationLive env registration wallet quantity
+        Live.RegisterFreshKey registry key wallet -> do
+            let bytes = TE.encodeUtf8 (T.pack key)
+            prepareRegistrationIdentities identities registry bytes wallet
+            registerLive env True registry bytes wallet
+        Live.ExpectDuplicateRegistrationRefused registry registration control -> do
+            requireSameRegistry registry (lrCage registration)
+            requireSameRegistry registry (lrCage control)
+            require "duplicate comparison reuses the registered key" (lrKey registration /= lrKey control)
+            _ <- bookLive env registry (lrKey registration) edgeInsertActive (lrWallet registration)
+            transaction <- cg21HandBuild env registry
+            refused <- cg21ExpectRefused env registry "duplicate" [lrKey registration]
+                Nothing Nothing "the committed trie already binds this key"
+                (addKeyWitness genesisSignKey transaction)
+            pure refused{rlControlTxid = T.pack (txIdHex (lrTx control))}
+        Live.CompareBatchAllocation registry wallet first second ->
+            compareBatchLive env registry wallet (TE.encodeUtf8 (T.pack first)) (TE.encodeUtf8 (T.pack second))
+        Live.RetireRegistration registry registration -> retireLive env registry registration
+        Live.ExpectRetired retirement expected -> checkRetirementLive env retirement expected
+        Live.ExpectAbsentRetirementRefused registry wallet control keyText -> do
+            requireSameRegistry registry (lrCage (ltRegistration control))
+            let key = TE.encodeUtf8 (T.pack keyText)
+            _ <- bookLive env registry key edgeInsertAbsent wallet
+            _ <- landLive env registry key edgeInsertAbsent
+            _ <- bookRetirementLive env registry key
+            tid <- cageTid registry
+            refusedRetirement env registry tid key (txIdHex (ltTx control))
+                "the control retired a key that IS Active in this same cage; this one was witnessed Absent"
+                "the chain ACCEPTED retirement of an Absent key"
+        Live.ExpectUnknownRetirementRefused registry control keyText -> do
+            requireSameRegistry registry (lrCage (ltRegistration control))
+            let key = TE.encodeUtf8 (T.pack keyText)
+            _ <- bookRetirementLive env registry key
+            tid <- cageTid registry
+            refusedRetirement env registry tid key (txIdHex (ltTx control))
+                "the control retired a key that IS Active in this same cage; this one was never inserted at all"
+                "the chain ACCEPTED retirement of a never-registered key"
+
+-- Mapping allocation is confined to context/actions. Observation is read-only.
+newtype WalletIdentity = WalletIdentity ByteString deriving stock (Show, Eq, Ord)
+newtype PolicyIdentity = PolicyIdentity ByteString deriving stock (Show, Eq, Ord)
+newtype KeyIdentity = KeyIdentity ByteString deriving stock (Show, Eq, Ord)
+
+data LiveIdentities = LiveIdentities
+    { liveWallets :: IORef (Identity.Identities WalletIdentity)
+    , livePolicies :: IORef (Identity.Identities PolicyIdentity)
+    , liveKeys :: IORef (Identity.Identities KeyIdentity)
+    }
+
+newLiveIdentities :: IO LiveIdentities
+newLiveIdentities = LiveIdentities <$> newIORef Identity.empty <*> newIORef Identity.empty <*> newIORef Identity.empty
+
+allocateIdentity :: Ord identity => IORef (Identity.Identities identity) -> identity -> IO Integer
+allocateIdentity state identity = do
+    original <- readIORef state
+    let (identifier, updated) = Identity.identify identity original
+    writeIORef state updated
+    pure identifier
+
+observeIdentity :: Ord identity => IORef (Identity.Identities identity) -> identity -> IO Integer
+observeIdentity state identity = readIORef state >>= either failWith pure . Identity.observe identity
+
+prepareRegistrationIdentities :: LiveIdentities -> RowCage -> ByteString -> Addr -> IO ()
+prepareRegistrationIdentities ids cage key recipient = do
+    let cfg = rcCfg cage
+    _ <- allocateIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
+    _ <- allocateIdentity (liveWallets ids) (WalletIdentity (serialiseAddr recipient))
+    _ <- allocateIdentity (liveKeys ids) (KeyIdentity key)
+    mapM_ (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
+        [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+
+-- The oracle's bounded example assumes a freshly booted registry. Establish
+-- this from the actual pre-fold state, not by resetting a nonempty model state.
+checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
+checkRegistrationAgainstLean env ids registration = do
+    let cfg = rcCfg (lrCage registration)
+        before = lrBefore registration
+        key = lrKey registration
+        policy = policyIdFromPin (cfgActivePolicy cfg)
+        transaction = lrTx registration
+    require "the Lean delivery example requires a freshly booted empty registry"
+        (unOnChainRoot (stateRoot before) == emptyRoot)
+    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
+    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    modelPolicies <- mapM (observeIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
+        [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+    (application, active, absent, terminal) <- case modelPolicies of
+        [a, b, c, d] -> pure (a, b, c, d)
+        _ -> failWith "registration context has an incomplete policy mapping"
+    (funds, _) <- cg21RequestFacts (lrRequest registration)
+    let scenario = object
+            [ "config" .= object
+                [ "root" .= ([] :: [Integer]), "maxFee" .= stateMaxFee before
+                , "processTime" .= stateProcessTime before, "retractTime" .= stateRetractTime before
+                , "applicationPolicy" .= application, "activePolicy" .= active
+                , "absentPolicy" .= absent, "terminalPolicy" .= terminal ]
+            , "key" .= modelKey, "owner" .= owner, "recipient" .= recipient, "lovelace" .= funds ]
+    oracle <- requireEnv "CONFORMANCE_LEAN_ORACLE"
+    expected <- Lean.expectedDelivery oracle scenario >>= either failWith pure
+    -- Select the output carrying the requested asset, then observe its complete
+    -- non-ADA value and address. A missing/wrong asset or extra asset fails.
+    output <- case [ out | out <- toList (transaction ^. bodyTxL . outputsTxBodyL)
+                        , Just names <- [Map.lookup policy (rawAssets out)]
+                        , Map.member (AssetName (SBS.toShort key)) names ] of
+        [out] -> pure out
+        outs -> failWith ("delivery observation found " <> show (length outs) <> " destination candidates")
+    (observedPolicy, observedKey, quantity) <- case
+        [(p, SBS.fromShort name, q) | (p, names) <- Map.toList (rawAssets output), (AssetName name, q) <- Map.toList names] of
+        [asset] -> pure asset
+        _ -> failWith "delivery observation is not one asset at one destination"
+    addressId <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (output ^. addrTxOutL)))
+    policyId <- observeIdentity (livePolicies ids) (PolicyIdentity (cg21PolicyBytes observedPolicy))
+    keyId <- observeIdentity (liveKeys ids) (KeyIdentity observedKey)
+    held <- cg21HeldAt env (lrWallet registration) policy key
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    let normalized a p k q = object ["address" .= a, "policy" .= p, "key" .= k, "quantity" .= q]
+        actual = normalized addressId policyId keyId quantity
+        observed = case control of
+            Just "wrong-delivery" -> normalized addressId policyId keyId (quantity + 1)
+            Just "wrong-policy" -> normalized addressId application keyId quantity
+            Just "wrong-address" -> normalized owner policyId keyId quantity
+            _ -> actual
+        holdings = normalized addressId policyId keyId held
+        checked = Lean.compareDelivery expected observed >> Lean.compareDelivery expected holdings
+    wallets <- Identity.bindings <$> readIORef (liveWallets ids)
+    policies <- Identity.bindings <$> readIORef (livePolicies ids)
+    keys <- Identity.bindings <$> readIORef (liveKeys ids)
+    BSL.writeFile (envReceiptsDir env </> "registration-lean.json") $ encode $ object
+        [ "theorem" .= Binding.boName Lean.insertActiveRow
+        , "statementDigest" .= Binding.boDigest Lean.insertActiveRow
+        , "oracle" .= oracle, "base" .= envBase env, "transaction" .= txIdHex transaction
+        , "scenario" .= scenario, "expected" .= expected
+        , "actual" .= actual, "checkedObservation" .= observed, "holdings" .= holdings
+        , "control" .= control, "passed" .= either (const False) (const True) checked
+        , "mapping" .= object
+            [ "wallets" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (WalletIdentity bytes, identifier) <- wallets]
+            , "policies" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (PolicyIdentity bytes, identifier) <- policies]
+            , "keys" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (KeyIdentity bytes, identifier) <- keys] ] ]
+    emit "Lean expected" (show expected)
+    emit "chain observed" (show actual)
+    when (observed /= actual) $ emit "control" "deliberately changed the observation presented to the Lean comparison"
+    either failWith pure checked
+    emit "PASS" ("delivery agrees with the executable Lean model; tx=" <> txIdHex transaction)
+
+requireSameRegistry :: RowCage -> RowCage -> IO ()
+requireSameRegistry first second = do
+    a <- cageTid first
+    b <- cageTid second
+    require "story attempted to use a result from a different registry" (a == b)
+
+bookLive :: Env -> RowCage -> ByteString -> Edge -> Addr -> IO (TxIn, TxOut ConwayEra)
+bookLive env registry key edge recipient = do
+    tid <- cageTid registry
+    let cfg = rcCfg registry
+    bookEdge env cfg tid genesisAddr genesisSignKey key edge
+        (serialiseAddr recipient, BS.empty) [] (defaultTipCoin cfg + cgDeposit)
+
+bookRetirementLive :: Env -> RowCage -> ByteString -> IO (TxIn, TxOut ConwayEra)
+bookRetirementLive env registry key = do
+    tid <- cageTid registry
+    let cfg = rcCfg registry
+    bookEdge env cfg tid genesisAddr genesisSignKey key edgeUpdateTerminal
+        (BS.empty, BS.empty) [] (defaultTipCoin cfg + cgDeposit)
+
+landLive :: Env -> RowCage -> ByteString -> Edge -> IO ConwayTx
+landLive env registry key edge = do
+    tid <- cageTid registry
+    context <- rowRegistryContext env registry tid
+    unsigned <- updateTokenWithDuties (rcCfg registry) (envProv env) (envTm env) tid genesisAddr context
+    signed <- submitWithGenesis (envSubmit env) unsigned
+    rowCommit env registry key edge
+    pure signed
+
+registerLive :: Env -> Bool -> RowCage -> ByteString -> Addr -> IO LiveRegistration
+registerLive env handBuilt registry key recipient = do
+    emit "story" ("Request and apply registration of " <> show key)
+    (_, request) <- bookLive env registry key edgeInsertActive recipient
+    before <- cg21State env registry
+    (transaction, observation, units) <-
+        if handBuilt then do
+            (tx, step) <- cg21HandFold env registry [key]
+            (mem, cpu) <- readIORef (rcUnits registry)
+            pure (tx, step, (mem, cpu, txSizeBytes tx))
+        else cg21Fold env registry [key]
+    after <- cg21State env registry
+    pure (LiveRegistration registry key recipient transaction observation before after request units)
+
+checkRegistrationLive :: Env -> LiveRegistration -> Addr -> Integer -> IO ()
+checkRegistrationLive env registration wallet quantity = do
+    let registry = lrCage registration
+        cfg = rcCfg registry
+        key = lrKey registration
+        policy = policyIdFromPin (cfgActivePolicy cfg)
+        expectedAsset = AssetEntry (hexT (cg21PolicyBytes policy)) (hexT key) quantity
+        transaction = lrTx registration
+    require "the story changed the registration recipient" (wallet == lrWallet registration)
+    held <- cg21HeldAt env wallet policy key
+    require ("live registration: expected " <> show quantity <> " active tokens, observed " <> show held) (held == quantity)
+    (address, delivered) <- cg21Delivery policy key transaction
+    require "active token went to a different address" (address == hexT (serialiseAddr wallet))
+    require "delivered token identity or quantity differs from the story" (delivered == [expectedAsset])
+    require "mint differs from the token the story requires" (cg21MintedOf policy transaction == [expectedAsset])
+    require "registration unexpectedly paid a refund" (null (cg21RefundsOf transaction))
+    require "registration unexpectedly required a signer" (null (cg21SignersOf transaction))
+    require "registration changed a non-root setting" (cg21Pins (lrBefore registration) == cg21Pins (lrAfter registration))
+    require "the chain root differs from the applied request's committed root"
+        (fsRootAfter (lrStep registration) == fsCommitted (lrStep registration))
+    parameters <- cg21OpenParameters env
+    require "the open application unexpectedly takes parameters" (parameters == 0)
+    approval <- cg21ApprovalOn cfg (lrRequest registration)
+    (funds, recomputed) <- cg21RequestFacts (lrRequest registration)
+    require "the approval does not bind the requested destination" (approval == recomputed)
+    require "the request does not cover the processing tip" (funds >= stateMaxFee (lrBefore registration))
+    emit "PASS" ("registered " <> show key <> ": token delivered to the requested wallet; tx=" <> txIdHex transaction)
+
+compareBatchLive :: Env -> RowCage -> Addr -> ByteString -> ByteString -> IO LiveBatch
+compareBatchLive env registry wallet first second = do
+    require "the two-key story needs distinct keys" (first /= second)
+    _ <- bookLive env registry first edgeInsertActive wallet
+    _ <- bookLive env registry second edgeInsertActive wallet
+    honest <- cg21BatchFold env registry
+    let policy = policyIdFromPin (cfgActivePolicy (rcCfg registry))
+        policyText = hexT (cg21PolicyBytes policy)
+        required = [AssetEntry policyText (hexT first) 1, AssetEntry policyText (hexT second) 1]
+        wrong = cg21MoveAsset policy (AssetName (SBS.toShort second)) (AssetName (SBS.toShort first)) honest
+    rejected <- cg21ExpectRefused env registry "keyed-mint" [first, second]
+        (Just (cg21MintedOf policy wrong)) (Just required)
+        "claimed both units at one key; the edges entail one at each"
+        (addKeyWitness genesisSignKey wrong)
+    (accepted, step, _) <- cg21Fold env registry [first, second]
+    heldFirst <- cg21HeldAt env wallet policy first
+    heldSecond <- cg21HeldAt env wallet policy second
+    require "the accepted batch did not deliver one active token per key" (heldFirst == 1 && heldSecond == 1)
+    require "the accepted batch minted the wrong allocation" (sortOn aeName (cg21MintedOf policy accepted) == sortOn aeName required)
+    emit "control" ("CG21 control: the same two keys with the distribution their edges entail accepted (tx=" <> txIdHex accepted <> ")")
+    pure (LiveBatch rejected{rlControlTxid = T.pack (txIdHex accepted), rlControlMint = Just (cg21MintedOf policy accepted)} accepted step)
+
+retireLive :: Env -> RowCage -> LiveRegistration -> IO LiveRetirement
+retireLive env registry registration = do
+    requireSameRegistry registry (lrCage registration)
+    require "this retirement backend requires the funded requester to hold and sign for its token" (lrWallet registration == genesisAddr)
+    let cfg = rcCfg registry
+        key = lrKey registration
+    before <- activeHeldFor env cfg key
+    require "retirement must start with the active token created by registration" (before == 1)
+    source <- activeSourceFor env cfg key
+    _ <- bookRetirementLive env registry key
+    transaction <- landLive env registry key edgeUpdateTerminal
+    tid <- cageTid registry
+    root <- withTrie (envTm env) tid CageTrie.getRoot
+    held <- activeHeldFor env cfg key
+    chain <- committedRootOf env registry
+    pure (LiveRetirement registration transaction root chain before held source)
+
+checkRetirementLive :: Env -> LiveRetirement -> Integer -> IO ()
+checkRetirementLive _env retirement expected = do
+    let registration = ltRegistration retirement
+        cfg = rcCfg (lrCage registration)
+        key = lrKey registration
+        transaction = ltTx retirement
+        roots = [fsRootBefore (lrStep registration), fsRootAfter (lrStep registration), hexText (unRoot (ltRoot retirement))]
+    require ("live retirement: expected " <> show expected <> " remaining tokens, observed " <> show (ltAfter retirement)) (ltAfter retirement == expected)
+    require "the chain does not carry the root of the Terminal leaf" (ltChainRoot retirement == unRoot (ltRoot retirement))
+    require "retirement did not burn exactly the registered key's active token"
+        (activeMintOf transaction cfg == [AssetEntry (hexText (activePolicyBytes cfg)) (hexText key) (-1)])
+    require "retirement did not consume the observed token-bearing input"
+        (rsOutref (ltSource retirement) `elem` map txInToText (Set.toList (transaction ^. bodyTxL . inputsTxBodyL)))
+    require "registration and retirement did not produce three distinct roots" (length (nub roots) == 3)
+    emit "PASS" ("retired " <> show key <> ": original active token burned and leaf is Terminal; tx=" <> txIdHex transaction)
+
 
 -- ---------------------------------------------------------
 -- CG21 helpers (#184)
@@ -4854,6 +5113,7 @@ cg21HandBuild env cage = do
         env
         (rowSpec cage tid state reqs (map Update proofs) root units)
             { fsCollateral = Just pot
+            , fsSigners = Just []
             }
 
 {- | Proof steps for the pending requests, and the root they reach.
@@ -5288,204 +5548,43 @@ against `state.terminalRefusal`.
 -}
 runCG22 :: Env -> IO ()
 runCG22 env = do
-    cage <- ensureRowCage env "cg22" 30_000 30_000
-    tid <- cageTid cage
-    let cfg = rcCfg cage
-        prov = envProv env
-        bond = defaultTipCoin cfg + cgDeposit
-        -- The open story hands the witness to a WALLET, which is where
-        -- the retirement must find it. `edgeDestinationFor` would route
-        -- an activation to the application's script address, right for
-        -- naming and wrong here.
-        walletDest = (serialiseAddr genesisAddr, recordDatumHash)
-        -- A retirement delivers nothing, so it names nothing.
-        retireDest = (BS.empty, BS.empty)
-        book key op dest =
-            bookEdge env cfg tid genesisAddr genesisSignKey key op dest [] bond
-        buildFold = do
-            ctx <- rowRegistryContext env cage tid
-            updateTokenWithDuties cfg prov (envTm env) tid genesisAddr ctx
-        land key op = do
-            unsigned <- buildFold
-            signed <- submitWithGenesis (envSubmit env) unsigned
-            rowCommit env cage key op
-            pure signed
-        rootNow = withTrie (envTm env) tid CageTrie.getRoot
-
-    -- 1. the prerequisite, EXECUTED: the key becomes Active and the
-    --    wallet holds its witness.
-    rootBeforeInsert <- rootNow
-    _ <- book cg22Key insertActiveOp walletDest
-    insertTx <- land cg22Key insertActiveOp
-    rootActive <- rootNow
-    heldBefore <- activeHeldFor env cfg cg22Key
-    require
-        "CG22: the insert did not leave exactly one active witness at the wallet"
-        (heldBefore == 1)
-
-    -- The exact input the burn will consume, recorded BEFORE it is
-    -- spent. A mint of -1 with no token-bearing input is the shape the
-    -- cage refuses `token-missing`, and a row that did not look would
-    -- not know the difference.
-    source <- activeSourceFor env cfg cg22Key
-
-    -- 2. the edge under test, at the SAME key.
-    _ <- book cg22Key retireOp retireDest
-    retireTx <- land cg22Key retireOp
-    rootTerminal <- rootNow
-    heldAfter <- activeHeldFor env cfg cg22Key
-    chainRoot <- committedRootOf env cage
-    require
-        "CG22: the wallet still holds this key's active witness after the retirement"
-        (heldAfter == 0)
-    -- The LEAF, observed where a leaf can actually be observed.
-    -- `Trie.lookup` answers with the key's hash rather than its value and
-    -- cannot see a leaf at all. The committed ROOT can: a trie with a
-    -- different leaf at this key has a different root. The chain reached
-    -- this one through the validator's own `mpf.update(0x01, 0x02)` and
-    -- the mirror through an independent local trie, so equality is a
-    -- statement about the leaf and not about either implementation.
-    require
-        "CG22: the chain root after the retirement is not the root of a \
-        \trie whose leaf at this key is Terminal"
-        (chainRoot == unRoot rootTerminal)
-    let burned = activeMintOf retireTx cfg
-    require
-        "CG22: the retirement's mint under the active policy is not exactly this key's -1"
-        (burned == [AssetEntry (hexText (activePolicyBytes cfg)) (hexText cg22Key) (-1)])
-    require
-        "CG22: the three roots are not distinct"
-        (length (nub [rootBeforeInsert, rootActive, rootTerminal]) == 3)
-
-    {- Each refusal needs a cage of its own.
-
-    A refused fold never consumes the request that caused it. That
-    request stays pending, the next fold sweeps it up, and the second
-    refusal becomes the chain re-refusing the first — or, worse, a
-    builder failure naming the first key while the row claims the
-    second. Ordering does not help: whichever refusal runs first poisons
-    everything after it.
-
-    So the Absent leg runs LAST in this cage, controlled by the story's
-    own retirement above — same cage, same builder, and the only thing
-    that differs is the leaf. The Unknown leg gets a second cage with a
-    control folded in it first. -}
-
-    -- 3. a key bound by a real insertAbsent fold and never booked. Its
-    --    control is the retirement that has just landed here.
-    _ <- book cg22AbsentKey insertAbsentOp (serialiseAddr genesisAddr, BS.empty)
-    _ <- land cg22AbsentKey insertAbsentOp
-    _ <- book cg22AbsentKey retireOp retireDest
-    -- a #177 retirement refusal leg does not observe the keyed-mint
-    -- delta; CG21 (#184) is the row that observes it. An empty
-    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
-    -- observed-empty.
-    absentLeg <-
-        refusedRetirement
-            env
-            cage
-            tid
-            cg22AbsentKey
-            (txIdHex retireTx)
-            "the control retired a key that IS Active in this same cage; \
-            \this one was witnessed Absent"
-            "CG22: the chain ACCEPTED updateTerminal on a key witnessed \
-            \Absent — reported, not relabelled"
-
-    -- 4. a key the trie does not bind at all, in a cage of its own so
-    --    the Absent refusal above cannot be what refuses it.
-    unknownCage <- ensureRowCage env "cg22-unknown" 30_000 30_000
-    unknownTid <- cageTid unknownCage
-    let unknownCfg = rcCfg unknownCage
-        bookU key op dest =
-            bookEdge env unknownCfg unknownTid genesisAddr genesisSignKey key op dest [] bond
-        landU key op = do
-            ctx <- rowRegistryContext env unknownCage unknownTid
-            unsigned <-
-                updateTokenWithDuties
-                    unknownCfg
-                    prov
-                    (envTm env)
-                    unknownTid
-                    genesisAddr
-                    ctx
-            signed <- submitWithGenesis (envSubmit env) unsigned
-            rowCommit env unknownCage key op
-            pure signed
-    _ <- bookU cg22ControlKey insertActiveOp walletDest
-    _ <- landU cg22ControlKey insertActiveOp
-    _ <- bookU cg22ControlKey retireOp retireDest
-    controlTx <- landU cg22ControlKey retireOp
-    emit
-        "control"
-        "CG22 control: a key that IS active retired in the Unknown leg's \
-        \own cage — the refusal below discriminates the leaf"
-    _ <- bookU cg22UnknownKey retireOp retireDest
-    -- a #177 retirement refusal leg does not observe the keyed-mint
-    -- delta; CG21 (#184) is the row that observes it. An empty
-    -- `rlClaimed`/`rlEntailed` on such a leg means not-observed, never
-    -- observed-empty.
-    unknownLeg <-
-        refusedRetirement
-            env
-            unknownCage
-            unknownTid
-            cg22UnknownKey
-            (txIdHex controlTx)
-            "the control retired a key that IS Active in this same cage; \
-            \this one was never inserted at all"
-            "CG22: the chain ACCEPTED updateTerminal on a key the trie \
-            \does not bind — reported, not relabelled"
-
-    (mem, cpu) <- readIORef (rcUnits cage)
-    writeRetirementReceipt
-        env
-        "CG22"
-        -- Every transaction this row put on chain, so the gate can find
-        -- the two folds and BOTH accepting controls in it.
-        --
-        -- The two legs carry DIFFERENT controls, because they run in
-        -- different cages: the Absent leg is controlled by `retireTx`,
-        -- the story retirement in its own cage, and the Unknown leg by
-        -- `controlTx`, folded in the second cage before it. A single
-        -- control could not serve both — a refused fold never consumes
-        -- its request, so the two refusals cannot share a cage, and a
-        -- control from the other cage would not be the same builder
-        -- against the same state.
-        [ txIdHex insertTx
-        , txIdHex retireTx
-        , txIdHex controlTx
-        , T.unpack (rlTxid unknownLeg)
-        , T.unpack (rlTxid absentLeg)
-        ]
-        (Just mem)
-        (Just cpu)
-        (Just (txSizeBytes retireTx))
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    let expected = if control == Just "token-remains" then 1 else 0
+    registry <- ensureRowCage env "story-retirement" 30_000 30_000
+    comparison <- ensureRowCage env "story-unknown-key comparison" 30_000 30_000
+    _ <- largestWalletUtxo (envProv env)
+    result <- runLive env (RetirementStory.storyWithRemainingTokens expected
+        (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
+    let registration = Live.retirementRegistration result
+        retired = Live.retiredRegistration result
+        cfg = rcCfg (lrCage registration)
+        insertTx = lrTx registration
+        retireTx = ltTx retired
+        controlTx = ltTx (Live.unknownControl result)
+        unknownLeg = Live.unknownRefusal result
+        absentLeg = Live.absentRefusal result
+    (mem, cpu) <- readIORef (rcUnits (lrCage registration))
+    writeRetirementReceipt env "CG22"
+        [txIdHex insertTx, txIdHex retireTx, txIdHex controlTx, T.unpack (rlTxid unknownLeg), T.unpack (rlTxid absentLeg)]
+        (Just mem) (Just cpu) (Just (txSizeBytes retireTx))
         RetirementEvidence
             { rtActivePolicy = hexText (activePolicyBytes cfg)
-            , rtKey = hexText cg22Key
+            , rtKey = hexText (lrKey registration)
             , rtInsertTxid = T.pack (txIdHex insertTx)
             , rtRetireTxid = T.pack (txIdHex retireTx)
-            , rtRoots =
-                RetirementRoots
-                    { rrBeforeInsert = hexText (unRoot rootBeforeInsert)
-                    , rrActive = hexText (unRoot rootActive)
-                    , rrTerminal = hexText (unRoot rootTerminal)
-                    }
-            , rtQuantities =
-                RetirementQuantities{rqBefore = heldBefore, rqAfter = heldAfter}
-            , rtMint = burned
-            , rtSource = source
+            , rtRoots = RetirementRoots
+                { rrBeforeInsert = fsRootBefore (lrStep registration)
+                , rrActive = fsRootAfter (lrStep registration)
+                , rrTerminal = hexText (unRoot (ltRoot retired))
+                }
+            , rtQuantities = RetirementQuantities (ltBefore retired) (ltAfter retired)
+            , rtMint = activeMintOf retireTx cfg
+            , rtSource = ltSource retired
             , rtLeaf = "Terminal"
             , rtUnknown = unknownLeg
             , rtAbsent = absentLeg
             }
-    emit
-        "CG22"
-        "the witness the insert delivered was burned from its holder, the \
-        \leaf reads Terminal, and the Unknown and Absent retirements were \
-        \refused against an accepting control"
-
+    emit "CG22" "the witness the insert delivered was burned from its holder, the leaf reads Terminal, and the Unknown and Absent retirements were refused against an accepting control"
 
 {- | The registry's own committed root, read off a row cage's state UTxO
 on chain. This is how a LEAF is observed: `Trie.lookup` answers with the
@@ -5498,18 +5597,6 @@ committedRootOf env cage = do
     case extractCageDatum out of
         Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))
         _ -> failWith "row cage: the state UTxO carries no state datum"
-
--- | CG22's three keys: the story, its control, and the two bad leaves.
-cg22Key, cg22ControlKey, cg22UnknownKey, cg22AbsentKey :: ByteString
-cg22Key = "cg22-retire"
-cg22ControlKey = "cg22-retire-control"
-cg22UnknownKey = "cg22-retire-unknown"
-cg22AbsentKey = "cg22-retire-absent"
-
-insertActiveOp, insertAbsentOp, retireOp :: Edge
-insertActiveOp = edgeInsertActive
-insertAbsentOp = edgeInsertAbsent
-retireOp = edgeUpdateTerminal
 
 {- | Submit a fold the chain must REFUSE, and record the leg: the refused
 transaction's id, the script hashes the failure is attributed to, the

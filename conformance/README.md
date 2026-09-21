@@ -49,3 +49,11 @@ nix run --quiet .#conformance -- list --receipts ./out
 (`CONFORMANCE_RECEIPTS=DIR` when the flag is absent; default none.)
 CK06 is out of scope and recorded in `docs/consumer-conformance.md`,
 never claimed.
+
+## Registration checked against executable Lean
+
+The [registration story](lib/Conformance/Edge/Register.hs) receives its context
+from the caller and checks the real delivery against a packaged Lean executable.
+See [the example and its failing control](test/README.md). This first comparison
+covers delivery to the requested recipient; it does not establish full theorem
+coverage or replace the other live checks.

@@ -1,0 +1,257 @@
+{
+  "normal": {
+    "actual": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "base": "7db0341a17cb0f2e9c932b86437d72648e5b88d1",
+    "checkedObservation": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "control": null,
+    "expected": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "holdings": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "mapping": {
+      "keys": [
+        {
+          "bytes": "616c696365",
+          "id": 1
+        }
+      ],
+      "policies": [
+        {
+          "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "id": 2
+        },
+        {
+          "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+          "id": 1
+        },
+        {
+          "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+          "id": 4
+        },
+        {
+          "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+          "id": 3
+        }
+      ],
+      "wallets": [
+        {
+          "bytes": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+          "id": 2
+        },
+        {
+          "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+          "id": 1
+        }
+      ]
+    },
+    "oracle": "/nix/store/a1s1wkqbjf3mvqvd2j9llw6slbjysaix-registration-lean-oracle/bin/registration-oracle",
+    "passed": true,
+    "scenario": {
+      "config": {
+        "absentPolicy": 3,
+        "activePolicy": 2,
+        "applicationPolicy": 1,
+        "maxFee": 1000000,
+        "processTime": 30000,
+        "retractTime": 30000,
+        "root": [],
+        "terminalPolicy": 4
+      },
+      "key": 1,
+      "lovelace": 4000000,
+      "owner": 1,
+      "recipient": 2
+    },
+    "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+    "theorem": "Singular.Statements.insert_active_transaction_row",
+    "transaction": "415be32de685fdf9138240156d420577c8f897770b3089f0eadcdb06aac5095b"
+  },
+  "wrongQuantity": {
+    "actual": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "base": "7db0341a17cb0f2e9c932b86437d72648e5b88d1",
+    "checkedObservation": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 2
+    },
+    "control": "wrong-delivery",
+    "expected": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "holdings": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "mapping": {
+      "keys": [
+        {
+          "bytes": "616c696365",
+          "id": 1
+        }
+      ],
+      "policies": [
+        {
+          "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "id": 2
+        },
+        {
+          "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+          "id": 1
+        },
+        {
+          "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+          "id": 4
+        },
+        {
+          "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+          "id": 3
+        }
+      ],
+      "wallets": [
+        {
+          "bytes": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+          "id": 2
+        },
+        {
+          "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+          "id": 1
+        }
+      ]
+    },
+    "oracle": "/nix/store/a1s1wkqbjf3mvqvd2j9llw6slbjysaix-registration-lean-oracle/bin/registration-oracle",
+    "passed": false,
+    "scenario": {
+      "config": {
+        "absentPolicy": 3,
+        "activePolicy": 2,
+        "applicationPolicy": 1,
+        "maxFee": 1000000,
+        "processTime": 30000,
+        "retractTime": 30000,
+        "root": [],
+        "terminalPolicy": 4
+      },
+      "key": 1,
+      "lovelace": 4000000,
+      "owner": 1,
+      "recipient": 2
+    },
+    "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+    "theorem": "Singular.Statements.insert_active_transaction_row",
+    "transaction": "95a0c69ab1869d667d3db4512269d9d04ae71a9606b4e2c7fa78f2d62729b685"
+  },
+  "wrongPolicy": {
+    "actual": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "base": "7db0341a17cb0f2e9c932b86437d72648e5b88d1",
+    "checkedObservation": {
+      "address": 2,
+      "key": 1,
+      "policy": 1,
+      "quantity": 1
+    },
+    "control": "wrong-policy",
+    "expected": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "holdings": {
+      "address": 2,
+      "key": 1,
+      "policy": 2,
+      "quantity": 1
+    },
+    "mapping": {
+      "keys": [
+        {
+          "bytes": "616c696365",
+          "id": 1
+        }
+      ],
+      "policies": [
+        {
+          "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "id": 2
+        },
+        {
+          "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+          "id": 1
+        },
+        {
+          "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+          "id": 4
+        },
+        {
+          "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+          "id": 3
+        }
+      ],
+      "wallets": [
+        {
+          "bytes": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+          "id": 2
+        },
+        {
+          "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+          "id": 1
+        }
+      ]
+    },
+    "oracle": "/nix/store/a1s1wkqbjf3mvqvd2j9llw6slbjysaix-registration-lean-oracle/bin/registration-oracle",
+    "passed": false,
+    "scenario": {
+      "config": {
+        "absentPolicy": 3,
+        "activePolicy": 2,
+        "applicationPolicy": 1,
+        "maxFee": 1000000,
+        "processTime": 30000,
+        "retractTime": 30000,
+        "root": [],
+        "terminalPolicy": 4
+      },
+      "key": 1,
+      "lovelace": 4000000,
+      "owner": 1,
+      "recipient": 2
+    },
+    "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+    "theorem": "Singular.Statements.insert_active_transaction_row",
+    "transaction": "f3a16ae41ef8a85125c57d76dd88377ec11c66793af18e37613852de9bcf9066"
+  }
+}

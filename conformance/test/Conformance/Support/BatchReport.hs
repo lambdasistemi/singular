@@ -7,11 +7,12 @@
 -- each key. The single registered key belongs to a different observation.
 -- This checks receipt evidence. No dedicated keyed-mint journey step exists;
 -- the real producer is conformance/app/Conformance/Run.hs.
-module Conformance.Fold.KeyedMint (spec, story, keyedMintFold, conjuncts) where
+module Conformance.Support.BatchReport (spec, story, keyedMintFold, conjuncts) where
 
 import Control.Monad.Operational (Program)
 import Test.Hspec (Spec)
 import Conformance.Story
+import Conformance.Fold.KeyedMint (keyedMintFold, conjuncts)
 import Conformance.Fixture.ActiveRegistration (activeHex, keyHex, keyAHex, keyBHex, dupTx, dupControlTx, emptyValue)
 
 spec :: Spec
@@ -124,19 +125,3 @@ story = theorem keyedMintFold $ do
     unexercised
         "Every successful batch creates exactly the tokens its requests require"
         "Not demonstrated as a separate claim: the reports record successful comparison transactions but do not establish this general rule"
-
-
--- | The batch-allocation obligation.
-keyedMintFold :: Binding
-keyedMintFold =
-    mkBoundObligation
-        "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
-        "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
-        "265c595"
-
--- | Verbatim Lean anchors used by this subject.
-conjuncts :: [String]
-conjuncts = [ "assetKindTotal (claimedMint [b₁, b₂]) k"
-          , "assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false"
-          , "foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""
-    ]

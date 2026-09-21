@@ -7,8 +7,8 @@ import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
 import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldReturn, shouldSatisfy)
 import Conformance.Fixture.ActiveRegistration (keyHex, loadTwoFixtures)
-import Conformance.Edge.Register qualified as InsertActive
-import Conformance.Fold.KeyedMint qualified as KeyedMint
+import Conformance.Support.RegistrationReport qualified as InsertActive
+import Conformance.Support.BatchReport qualified as KeyedMint
 import Conformance.Story
 import Conformance.Edge.Register (insertActiveRow)
 import Conformance.Fold.KeyedMint (keyedMintFold)

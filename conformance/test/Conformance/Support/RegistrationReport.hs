@@ -8,11 +8,12 @@
 -- cases validate the receipt evidence. They do not rerun the journey.
 -- The duplicate is a second insert at that same occupied key; its control is
 -- a separate accepted transaction. Every refusal states the altered fact.
-module Conformance.Edge.Register (spec, story, insertActiveRow, conjuncts) where
+module Conformance.Support.RegistrationReport (spec, story, insertActiveRow, conjuncts) where
 
 import Control.Monad.Operational (Program)
 import Test.Hspec (Spec)
 import Conformance.Story
+import Conformance.Edge.Register (insertActiveRow, conjuncts)
 import Conformance.Fixture.ActiveRegistration (activeHex, openHex, keyHex, keyAHex, keyBHex, walletAddr, dupTx, mintControlTx, otherName, otherAddress, otherApproval, emptyValue, unlandedTx)
 
 spec :: Spec
@@ -186,27 +187,3 @@ story = theorem insertActiveRow $ do
                 "Rejects duplicate-registration evidence if the successful comparison transaction is absent from the run"
                 "The report must show that the successful comparison transaction was actually applied during this run." $
                     onLeg duplicate $ controlTxid unlandedTx
-
-
--- | The active-registration obligation.
-insertActiveRow :: Binding
-insertActiveRow =
-    mkBoundObligation
-        "Singular.Statements.insert_active_transaction_row"
-        "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
-        "265c595"
-
--- | Verbatim Lean anchors used by this subject.
-conjuncts :: [String]
-conjuncts = [ "address := some r.output"
-          , "assets := [((.active, r.key), 1)]"
-          , "kindCount t.state .active r.key = 1"
-          , "mint := [((.active, r.key), 1)]"
-          , "openPolicyParameters = []"
-          , "refunds := []"
-          , "signers := []"
-          , "lovelaceCoversTip s.config lovelace = true"
-          , "destinationDatumBinds r = true"
-          , "onlyRootChanged s.config t.state.config = true"
-          , "txOf t.state r₂ lovelace = .error \"key-exists\""
-    ]
