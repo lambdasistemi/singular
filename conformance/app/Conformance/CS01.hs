@@ -365,7 +365,7 @@ checkCageDatum :: Map.Map Text Schema -> IO ()
 checkCageDatum defs = do
     let req = RequestDatum sampleRequest
         st = StateDatum sampleState
-        custody = AbsentCustody "cs01-key" "cs01-refund"
+        custody = AbsentCustody "cs01-refund"
     requireRoundTripReal req "RequestDatum"
     requireRoundTripReal st "StateDatum"
     requireRoundTripReal custody "AbsentCustody"
@@ -533,7 +533,7 @@ instance RealFromData OnChainTokenState where
 instance RealFromData CageDatum where
     realFromData (Constr 0 [d]) = RequestDatum <$> realFromData d
     realFromData (Constr 1 [d]) = StateDatum <$> realFromData d
-    realFromData (Constr 2 [B k, B refund]) = Just (AbsentCustody k refund)
+    realFromData (Constr 2 [B refund]) = Just (AbsentCustody refund)
     realFromData _ = Nothing
 
 instance RealFromData Migration where

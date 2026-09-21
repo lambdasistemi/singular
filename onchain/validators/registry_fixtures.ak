@@ -456,8 +456,8 @@ pub fn deliveryOutputN(
 }
 
 /// The cage's own custody of a minted absent token.
-pub fn custodyDatum(key: ByteArray, refund: ByteArray) -> CageDatum {
-  AbsentCustody { key, refund }
+pub fn custodyDatum(_key: ByteArray, refund: ByteArray) -> CageDatum {
+  AbsentCustody { refund }
 }
 
 pub fn custodyOutput(key: ByteArray, refund: ByteArray, lovelace: Int) -> Output {

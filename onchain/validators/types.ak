@@ -395,8 +395,9 @@ pub type CageDatum {
   /// The cage's own custody of an absent token (#157 D-CUSTODY;
   /// appended at index 2, so `RequestDatum` 0 and `StateDatum` 1 never
   /// move). A fold of edge 0 mints the absent token and locks
-  /// it here, at the cage's own address, beside the key it witnesses
-  /// and the address the inserter named for their refund. Its lovelace
+  /// it here, at the cage's own address, beside the address the inserter
+  /// named for their refund. The witnessed key is the sole non-ADA asset
+  /// in the custody output, not a second datum identity. Its lovelace
   /// is the request's residual after the tip — the min-ADA that R-ADA
   /// returns.
   ///
@@ -405,7 +406,7 @@ pub type CageDatum {
   /// (`updateActive`) or edge 4 (`deleteAbsent`), paying its lovelace to an
   /// output at `refund`. Whoever books the name later, the deposit goes
   /// back to whoever witnessed the absence.
-  AbsentCustody { key: ByteArray, refund: ByteArray }
+  AbsentCustody { refund: ByteArray }
 }
 
 /// The open application's mint redeemer (#173 I1).

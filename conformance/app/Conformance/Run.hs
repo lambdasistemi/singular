@@ -7817,11 +7817,14 @@ edgeReferences ::
 edgeReferences env key edge = case edge of
     4 -> do
         utxos <- cageUtxos env
+        let absentPolicy =
+                scriptHashBytes
+                    (policyID (policyIdFromPin (cfgAbsentPolicy (envCfg env))))
         case
             [ u
             | u@(_, o) <- utxos
-            , Just (AbsentCustody k _) <- [extractCageDatum o]
-            , k == key
+            , Just (AbsentCustody _) <- [extractCageDatum o]
+            , outAssets o == Map.singleton absentPolicy (Map.singleton key 1)
             ]
             of
             [u] -> pure [u]

@@ -119,7 +119,7 @@ genCageDatum =
     oneof
         [ RequestDatum <$> genRequest
         , StateDatum <$> genTokenState
-        , AbsentCustody <$> genBS <*> genBS
+        , AbsentCustody <$> genBS
         ]
 
 genMigration :: Gen Migration

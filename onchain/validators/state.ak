@@ -97,8 +97,7 @@ validator state() {
       // The cage's own custody of an absent token (#157 D-CUSTODY): one
       // spending path and nothing else. The redeemer is not what
       // authorizes it — the shape of the fold around it is.
-      AbsentCustody { key, refund } ->
-        validCustodySpend(key, refund, input, tx)
+      AbsentCustody { refund } -> validCustodySpend(refund, input, tx)
       StateDatum(pins) -> {
         expect address.Script(policyId) =
           input.output.address.payment_credential
@@ -635,11 +634,10 @@ fn dutyOk(
       let carriers = carriersOf(tx.outputs, pins.absent_policy, key)
       when carriers is {
         [carrier] ->
-          if quantity_of(carrier.value, pins.absent_policy, key) != 1 || carrier.address != cageAddress || !custodyDatumIs(
+          if custodyKeyOf(carrier.value) != Some((pins.absent_policy, key)) || carrier.address != cageAddress || !custodyDatumIs(
             carrier.datum,
-            key,
             refund,
-          ) || !onlyAsset(carrier.value, pins.absent_policy, key) {
+          ) {
             traceFalse(@"absent-custody")
           } else if lovelace_of(carrier.value) < floor {
             traceFalse(@"deposit-returned")
@@ -650,7 +648,7 @@ fn dutyOk(
       }
     }
     SpendCustody { key } ->
-      when custodyInput(cageAddress, key, tx.inputs) is {
+      when custodyInput(cageAddress, pins.absent_policy, key, tx.inputs) is {
         None -> traceFalse(@"refund")
         Some((refund, owed)) ->
           if filter(
@@ -796,23 +794,11 @@ fn carriersOf(
   filter(outputs, fn(out) { quantity_of(out.value, policy, key) != 0 })
 }
 
-/// The output carries this absent token and nothing else besides ADA
-/// (#157 C6: "No other asset in that output").
-fn onlyAsset(value: Value, policy: PolicyId, key: ByteArray) -> Bool {
-  filter(
-    assets.flatten(value),
-    fn(entry) {
-      let (entryPolicy, name, _) = entry
-      entryPolicy != #"" && !(entryPolicy == policy && name == key)
-    },
-  ) == []
-}
-
-fn custodyDatumIs(datum: Datum, key: ByteArray, refund: ByteArray) -> Bool {
+fn custodyDatumIs(datum: Datum, refund: ByteArray) -> Bool {
   when datum is {
     InlineDatum(inline) ->
-      if inline is AbsentCustody { key: heldKey, refund: heldRefund }: CageDatum {
-        heldKey == key && heldRefund == refund
+      if inline is AbsentCustody { refund: heldRefund }: CageDatum {
+        heldRefund == refund
       } else {
         False
       }
@@ -824,6 +810,7 @@ fn custodyDatumIs(datum: Datum, key: ByteArray, refund: ByteArray) -> Bool {
 /// address it recorded and the lovelace it holds.
 fn custodyInput(
   cageAddress: Address,
+  policy: PolicyId,
   key: ByteArray,
   inputs: List<Input>,
 ) -> Option<(ByteArray, Int)> {
@@ -831,9 +818,10 @@ fn custodyInput(
     filter(
       inputs,
       fn(i) {
-        i.output.address == cageAddress && custodyKeyOf(i.output.datum) == Some(
+        i.output.address == cageAddress && custodyKeyOf(i.output.value) == Some((
+          policy,
           key,
-        )
+        ))
       },
     )
   is {
@@ -845,14 +833,20 @@ fn custodyInput(
   }
 }
 
-fn custodyKeyOf(datum: Datum) -> Option<ByteArray> {
-  when datum is {
-    InlineDatum(inline) ->
-      if inline is AbsentCustody { key, refund: _ }: CageDatum {
-        Some(key)
-      } else {
-        None
-      }
+/// The custody identity encoded by the complete non-ADA value extent.
+/// Exactly one asset at quantity one is admissible; zero, extra, wrong-policy
+/// and wrong-quantity extents cannot be interpreted as custody for a key.
+fn custodyKeyOf(value: Value) -> Option<(PolicyId, ByteArray)> {
+  when
+    filter(
+      assets.flatten(value),
+      fn(entry) {
+        let (policy, _, _) = entry
+        policy != #""
+      },
+    )
+  is {
+    [(policy, key, 1)] -> Some((policy, key))
     _ -> None
   }
 }
@@ -860,7 +854,7 @@ fn custodyKeyOf(datum: Datum) -> Option<ByteArray> {
 fn custodyRefundOf(datum: Datum) -> Option<ByteArray> {
   when datum is {
     InlineDatum(inline) ->
-      if inline is AbsentCustody { key: _, refund }: CageDatum {
+      if inline is AbsentCustody { refund }: CageDatum {
         Some(refund)
       } else {
         None
@@ -1026,26 +1020,15 @@ fn mintMatches(pins: State, expected: Value, mint: Value) -> Bool {
 /// refuse here. The refund leg is the fold's duty (`refund`), checked by
 /// `validModify` on the same transaction.
 fn validCustodySpend(
-  key: ByteArray,
   refund: ByteArray,
   self: Input,
   tx: Transaction,
 ) -> Bool {
-  when foldAuthenticated(self.output.address, tx) is {
-    None ->
-      // The fold itself, authenticated: the registry's own state token,
-      // at the cage's own address, SPENT with `Modify`. Without it a
-      // request-shaped neighbour would be enough, and custody would be
-      // spendable outside the fold that is supposed to consume it.
-      traceFalse(@"custody-spend")
-    Some(cageToken) ->
-      // The request this custody rides on, found by what BINDS it — its
-      // key and this registry.s own cage token — and not by where it
-      // sits. A deployed request lives at the request validator.s own
-      // address, not the cage.s, so an address test here would refuse
-      // every honest fold on chain while passing fixtures that happen to
-      // place requests beside the state.
-      if filter(
+  when (custodyKeyOf(self.output.value), foldAuthenticated(self.output.address, tx)) is {
+    (Some((custodyPolicy, key)), Some((cageToken, absentPolicy))) ->
+      if custodyPolicy != absentPolicy {
+        traceFalse(@"custody-spend")
+      } else if filter(
         tx.inputs,
         fn(i) { consumesAbsent(i.output.datum, key, cageToken) },
       ) == [] {
@@ -1055,6 +1038,12 @@ fn validCustodySpend(
       } else {
         True
       }
+    _ ->
+      // The fold itself, authenticated: the registry's own state token,
+      // at the cage's own address, SPENT with `Modify`. Without it a
+      // request-shaped neighbour would be enough, and custody would be
+      // spendable outside the fold that is supposed to consume it.
+      traceFalse(@"custody-spend")
   }
 }
 
@@ -1070,7 +1059,10 @@ fn validCustodySpend(
 /// bare yes, is what stops one registry's fold from authorizing another's
 /// custody when both are held by this same script: the caller must then
 /// show a request bound to the very registry whose fold it rode in on.
-fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Option<TokenId> {
+fn foldAuthenticated(
+  cageAddress: Address,
+  tx: Transaction,
+) -> Option<(TokenId, PolicyId)> {
   when
     filter(
       tx.inputs,
@@ -1085,7 +1077,16 @@ fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Option<TokenId> {
     [stateIn] ->
       when cageAddress.payment_credential is {
         address.Script(policyId) ->
-          tokenFromPolicy(policyId, stateIn.output.value)
+          when
+            (
+              tokenFromPolicy(policyId, stateIn.output.value),
+              stateAbsentPolicy(stateIn.output.datum),
+            )
+          is {
+            (Some(cageToken), Some(absentPolicy)) ->
+              Some((cageToken, absentPolicy))
+            _ -> None
+          }
         _ -> None
       }
     _ -> None
@@ -1099,7 +1100,19 @@ fn foldAuthenticated(cageAddress: Address, tx: Transaction) -> Option<TokenId> {
 type DatumTag {
   RequestTag(Data)
   StateTag(Data)
-  CustodyTag(Data, Data)
+  CustodyTag(Data)
+}
+
+fn stateAbsentPolicy(datum: Datum) -> Option<PolicyId> {
+  when datum is {
+    InlineDatum(inline) ->
+      if inline is StateDatum(pins): CageDatum {
+        Some(pins.absent_policy)
+      } else {
+        None
+      }
+    _ -> None
+  }
 }
 
 /// `UpdateRedeemer`'s constructor tags, likewise: the real redeemer
