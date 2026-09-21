@@ -3,34 +3,41 @@
 // The proofs live in Lean; this says which of them a reader can watch happen.
 import {step,witnesses,trieGet} from './core.mjs';
 
-/** Checks that must HOLD on every accepted row where the law's hypotheses are
- * active. Each entry names the statement's own hypothesis separately from its
- * consequence: `applies` decides whether the row is an example of the law at
- * all, `law` evaluates the consequence. A row outside `applies` can satisfy
- * the implication vacuously, so it is counted as vacuous, never as exhibited. */
+/** Checks transcribed from the exact bound declarations of their Lean
+ * statements. `applies` is the statement's own hypothesis and nothing else:
+ * a law whose declaration assumes nothing beyond reachability (W1, W2, W4,
+ * S3) applies to EVERY accepted row, because the replayed after-state is
+ * reachable by construction and output witness presence is a consequence of
+ * these laws, never their hypothesis — gating `applies` on witnesses would
+ * let an absence or wrong-multiplicity defect demote a violated law to an
+ * inactive hypothesis. `law` is the full consequent, both biconditional
+ * halves included. Only the statements with real hypotheses (termination's
+ * terminal leaf, occupancy's booking edges, S1's existing attestation) leave
+ * rows outside `applies`; those count as vacuous, never as exhibited. */
 export const checks={
   active_witness_unique:{
-    applies:(before,action,after)=>witnesses(after,action.key).active>0,
-    law:(before,action,after)=>witnesses(after,action.key).active<=1},
+    applies:()=>true,
+    law:(before,action,after)=>{
+      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
+      return w.active<=1&&(w.active===1)===(leaf==='active');}},
   absent_witness_unique:{
-    applies:(before,action,after)=>witnesses(after,action.key).absent>0,
-    law:(before,action,after)=>witnesses(after,action.key).absent<=1},
+    applies:()=>true,
+    law:(before,action,after)=>{
+      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
+      return w.absent<=1&&(w.absent===1)===(leaf==='absent');}},
   witness_kinds_exclude:{
-    applies:(before,action,after)=>{
-      const w=witnesses(after,action.key);
-      return w.active+w.absent+w.terminal>0;},
+    applies:()=>true,
     law:(before,action,after)=>{
       const w=witnesses(after,action.key);
       return [w.active>0,w.absent>0,w.terminal>0].filter(Boolean).length<=1;}},
   biconditional_supply_sync:{
-    applies:(before,action,after)=>{
-      const w=witnesses(after,action.key);
-      return w.active+w.absent>0;},
+    applies:()=>true,
     law:(before,action,after)=>{
       const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-      return (w.active===1)===(leaf==='active')&&(w.absent===1)===(leaf==='absent');}},
+      return (w.active===1)===(leaf==='active')&&(w.active===0)===(leaf!=='active')&&
+             (w.absent===1)===(leaf==='absent')&&(w.absent===0)===(leaf!=='absent');}},
   terminal_attestation_sound:{
-    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'&&h.key===action.key),
+    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'),
     law:(before,action,after)=>
       after.held.filter(h=>h.kind==='terminal')
         .every(h=>trieGet(after.trie,h.key)==='terminal')},
@@ -45,9 +52,11 @@ export const checks={
 };
 
 /** One row per statement: whether the corpus exhibits it, and whether the
- * consequence held everywhere the hypotheses were active. `vacuous` counts
- * accepted rows that passed through an inactive hypothesis; a law with no
- * applicable example is never reported as exercised. */
+ * consequence held everywhere the statement's own hypotheses were active.
+ * `vacuous` counts accepted rows outside `applies`; for the unconditional
+ * laws (W1, W2, W4, S3) that is zero by construction and every accepted row's
+ * consequent is evaluated. A law with no applicable example is never reported
+ * as exercised. */
 export function theoremReport(manifest,corpus){
   const rows=[];
   for(const decl of manifest){

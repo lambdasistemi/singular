@@ -180,10 +180,11 @@ assert.equal(storyExecuted,storyDiscovered,'story denominator');
 assert.ok(storyExecuted>0,'zero stories');
 
 // ---- 6. the laws, checked on their applicable rows -------------------------
-// A law is exercised only where its own hypotheses are active. An accepted row
-// outside the hypotheses passes vacuously and is counted as vacuous, never as
-// exhibited — and a law left with no applicable example at all fails here
-// rather than being reported as exercised on the strength of vacuous passes.
+// `applies` is the Lean statement's own hypothesis, nothing more. The
+// unconditional laws (W1, W2, W4, S3) apply to every accepted row, so a
+// missing witness can never demote a violated law to an inactive hypothesis;
+// and a law left with no applicable example at all fails here rather than
+// being reported as exercised on the strength of vacuous passes.
 const report=theoremReport(theorems,corpus);
 assert.equal(report.length,theorems.length,'theorem report denominator');
 let checked=0;
@@ -345,6 +346,30 @@ if(selftest){
     checkNamingCorpus({...namingCorpus,
       resolves:namingCorpus.resolves.map(r=>
         r.id==='NRP03-resolve-active'?{...r,leaf:'unknown'}:r)});});
+  mustThrow('a naming resolve row that hides witnesses under a terminal leaf',()=>{
+    checkNamingCorpus({...namingCorpus,
+      resolves:namingCorpus.resolves.map(r=>
+        r.id==='NRP03-resolve-active'
+          ?{...r,leaf:{known:{s:'terminal'}},active:2}:r)});});
+  { // positive control: plural terminal witnesses stay allowed where the leaf
+    // is terminal (W3), so strengthening the biconditional outlawed nothing.
+    checkNamingCorpus({...namingCorpus,
+      resolves:namingCorpus.resolves.map(r=>
+        r.id==='NRP05-resolve-attested'?{...r,terminal:2}:r)});
+    console.log('PASS selftest: plural terminal witnesses stay allowed on a terminal leaf');
+  }
+  { // positive control: the supply law is unconditional over reachable states
+    // (S3 assumes only reachability). A state whose leaf says active while no
+    // witness exists must stay an applicable example and must read as a
+    // violated law — not vanish into the vacuous column.
+    const s={...initial(),trie:[{key:1,leaf:'active'}],held:[]};
+    const c=checks.biconditional_supply_sync;
+    assert.ok(c.applies(s,{key:1},s),
+      'the supply law applies to every reachable state; absence is not a hypothesis');
+    assert.ok(!c.law(s,{key:1},s),
+      'a witnessless active leaf violates the supply law');
+    console.log('PASS selftest: a witnessless supply violation stays applicable and reads as violated');
+  }
   mustThrow('an admitted triple outside the table',()=>{
     const s={...initial(),trie:[{key:7,leaf:'terminal'}]};
     assert.ok(step(s,approved('deleteActive',7,{owner:42,output:555})).accepted);});

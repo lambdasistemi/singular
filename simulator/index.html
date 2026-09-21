@@ -766,34 +766,41 @@ const read=(key,output=0)=>request('witnessTerminal',key,{output});
 // proof: a finite row can exhibit a theorem's consequent, never its quantifier.
 // The proofs live in Lean; this says which of them a reader can watch happen.
 
-/** Checks that must HOLD on every accepted row where the law's hypotheses are
- * active. Each entry names the statement's own hypothesis separately from its
- * consequence: `applies` decides whether the row is an example of the law at
- * all, `law` evaluates the consequence. A row outside `applies` can satisfy
- * the implication vacuously, so it is counted as vacuous, never as exhibited. */
+/** Checks transcribed from the exact bound declarations of their Lean
+ * statements. `applies` is the statement's own hypothesis and nothing else:
+ * a law whose declaration assumes nothing beyond reachability (W1, W2, W4,
+ * S3) applies to EVERY accepted row, because the replayed after-state is
+ * reachable by construction and output witness presence is a consequence of
+ * these laws, never their hypothesis — gating `applies` on witnesses would
+ * let an absence or wrong-multiplicity defect demote a violated law to an
+ * inactive hypothesis. `law` is the full consequent, both biconditional
+ * halves included. Only the statements with real hypotheses (termination's
+ * terminal leaf, occupancy's booking edges, S1's existing attestation) leave
+ * rows outside `applies`; those count as vacuous, never as exhibited. */
 const checks={
   active_witness_unique:{
-    applies:(before,action,after)=>witnesses(after,action.key).active>0,
-    law:(before,action,after)=>witnesses(after,action.key).active<=1},
+    applies:()=>true,
+    law:(before,action,after)=>{
+      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
+      return w.active<=1&&(w.active===1)===(leaf==='active');}},
   absent_witness_unique:{
-    applies:(before,action,after)=>witnesses(after,action.key).absent>0,
-    law:(before,action,after)=>witnesses(after,action.key).absent<=1},
+    applies:()=>true,
+    law:(before,action,after)=>{
+      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
+      return w.absent<=1&&(w.absent===1)===(leaf==='absent');}},
   witness_kinds_exclude:{
-    applies:(before,action,after)=>{
-      const w=witnesses(after,action.key);
-      return w.active+w.absent+w.terminal>0;},
+    applies:()=>true,
     law:(before,action,after)=>{
       const w=witnesses(after,action.key);
       return [w.active>0,w.absent>0,w.terminal>0].filter(Boolean).length<=1;}},
   biconditional_supply_sync:{
-    applies:(before,action,after)=>{
-      const w=witnesses(after,action.key);
-      return w.active+w.absent>0;},
+    applies:()=>true,
     law:(before,action,after)=>{
       const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-      return (w.active===1)===(leaf==='active')&&(w.absent===1)===(leaf==='absent');}},
+      return (w.active===1)===(leaf==='active')&&(w.active===0)===(leaf!=='active')&&
+             (w.absent===1)===(leaf==='absent')&&(w.absent===0)===(leaf!=='absent');}},
   terminal_attestation_sound:{
-    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'&&h.key===action.key),
+    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'),
     law:(before,action,after)=>
       after.held.filter(h=>h.kind==='terminal')
         .every(h=>trieGet(after.trie,h.key)==='terminal')},
@@ -808,9 +815,11 @@ const checks={
 };
 
 /** One row per statement: whether the corpus exhibits it, and whether the
- * consequence held everywhere the hypotheses were active. `vacuous` counts
- * accepted rows that passed through an inactive hypothesis; a law with no
- * applicable example is never reported as exercised. */
+ * consequence held everywhere the statement's own hypotheses were active.
+ * `vacuous` counts accepted rows outside `applies`; for the unconditional
+ * laws (W1, W2, W4, S3) that is zero by construction and every accepted row's
+ * consequent is evaluated. A law with no applicable example is never reported
+ * as exercised. */
 function theoremReport(manifest,corpus){
   const rows=[];
   for(const decl of manifest){
@@ -862,9 +871,15 @@ const NAMING_OBSERVATIONS={
 };
 
 /** A resolve row's observations must agree with the model's own laws: the
- * supply biconditional (a kind has exactly one witness iff the leaf says so),
- * kind exclusion, and terminal attestation soundness. A row that claims a
- * witness and the wrong leaf contradicts itself and is not evidence. */
+ * supply biconditional in full — Statements.lean S3 claims one witness IFF the
+ * leaf says so AND zero witnesses IFF it does not, for both the active and the
+ * absent kind — plus terminal attestation soundness (S1: no attestation of a
+ * non-terminal leaf; plural attestations on a terminal leaf stay allowed, W3).
+ * Kind exclusion is not checked separately: with the zero halves in place a
+ * count above zero pins the leaf, and one leaf cannot be two states, so a row
+ * failing exclusion always fails the biconditional or the terminal check
+ * first. A row that claims witnesses and the wrong leaf contradicts itself
+ * and is not evidence. */
 function checkResolveObservations(row){
   const leaf=row.leaf==='unknown'?null
     :(row.leaf&&typeof row.leaf==='object'&&row.leaf.known?row.leaf.known.s:undefined);
@@ -873,16 +888,13 @@ function checkResolveObservations(row){
   for(const k of ['active','absent','terminal'])
     if(!Number.isSafeInteger(row[k])||row[k]<0)
       throw Error(`naming resolve row without a witness count: ${row.id}`);
-  if((row.active===1)!==(leaf==='active')||(row.absent===1)!==(leaf==='absent'))
+  if((row.active===1)!==(leaf==='active')||(row.active===0)!==(leaf!=='active')||
+     (row.absent===1)!==(leaf==='absent')||(row.absent===0)!==(leaf!=='absent'))
     throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
   if(leaf===null&&(row.active>0||row.absent>0||row.terminal>0))
     throw Error(`naming resolve row claims witnesses on an unknown leaf: ${row.id}`);
   if(leaf!=='terminal'&&row.terminal>0)
     throw Error(`naming resolve row attests a leaf that is not terminal: ${row.id}`);
-  if(row.active>0&&(row.absent>0||row.terminal>0)||
-     row.absent>0&&(row.active>0||row.terminal>0)||
-     row.terminal>0&&(row.active>0||row.absent>0))
-    throw Error(`naming resolve row holds excluding witness kinds: ${row.id}`);
 }
 
 /** Inspect the naming corpus: every row states an expectation the Lean model

@@ -49,6 +49,66 @@ refusals, page build identity, the Over witness journey (behavior), lifecycle
 by-id rows and retirement-reason checks. The handwritten fold controls remain
 behavioral controls, not a coverage catalogue; no second catalogue was added.
 
+## Prepublication repair (2026-09-21): full S3 and unconditional laws
+
+Prepublication owner checks found two original-criteria failures against the
+candidate; both repaired against clear Lean, no operator ruling needed.
+
+1. **Resolve rows accepted a contradictory observation.** The checker encoded
+   only the one-iff half of `Singular.Statements.biconditional_supply_sync`:
+   NRP03-resolve-active mutated to leaf `{known:{s:'terminal'}}` with
+   `active:2, absent:0, terminal:0` passed all 24 rows, though S3 also claims
+   zero active supply whenever the leaf is not active (and zero absent
+   whenever it is not absent). RED: the mutation was accepted. GREEN: the
+   checker now requires all four conjuncts — `(active===1)===leaf active`,
+   `(active===0)===leaf not active`, and the same pair for absent — so absence
+   and wrong-multiplicity rows are rejected by name. Plural terminal witnesses
+   stay allowed on a terminal leaf (W3); NRP05 with `terminal:2` passes as a
+   positive control. Kind exclusion, previously its own branch, is no longer
+   checked separately: with the zero halves in place a positive count pins the
+   leaf and one leaf cannot be two states, so every exclusion-failing row
+   fails the biconditional or the terminal check first — the branch could
+   never fire again and was deleted rather than left unable to fail.
+2. **`biconditional_supply_sync.applies` gated the law on its own output.**
+   `active+absent>0` made a state with leaf `active` and no witnesses report
+   `applies:false` while `law:false` — the violation hid as an inactive
+   hypothesis. Lean's law is unconditional over reachable states; output
+   witness presence is its consequence, never its hypothesis. `applies` for
+   W1, W2, W4 and S3 is now constant; `law` is the exact full consequent
+   (W1/W2 gain their iff conjuncts; S3 gains both zero halves). S1's `applies`
+   follows its own quantifier: any terminal attestation in `held`, not only
+   the action's key. Termination and occupancy keep their real hypotheses.
+   Corpus coverage moved (S3/W1/W2/W4: applicable 10, vacuous 0; S1 stays
+   2/2/8); no check was weakened — the repaired law layer run against a
+   preserved witness-dropping mutant flags `biconditional_supply_sync` 9/10
+   and `active_witness_unique` 9/10 where the old one reported 3 held / 7
+   vacuous.
+
+Representation/evidence boundary: these checks observe one replayed row at a
+bound key through `witnesses(after, action.key)` (the output-witness view over
+`held`/`custody`) and `trieGet` on the replayed after-state. The Lean
+statements quantify over all reachable states and all keys; a finite corpus
+row is an example of the law's consequent, never its quantifier — the
+quantifier remains Lean's proof. `applicable` now means rows where the
+statement's own declared hypotheses hold (all accepted rows for the
+unconditional laws); `vacuous` is meaningful only for termination, occupancy
+and S1; `exercised` requires applicable>0 with held===applicable, i.e. every
+applicable row's consequent evaluated and held. A defect that drops or
+duplicates a witness on any accepted row now lands in `held<applicable` and
+fails the gate as `law violated on a corpus row: <name>`.
+
+Selftest: 13 → 16 legs (terminal-leaf witness-hiding resolve row; plural
+terminal positive control; witnessless supply violation stays applicable and
+reads as violated).
+
+Verification of this repair: focused node controls (RED before, GREEN after)
+for both defects including the wrong-multiplicity and four-healthy-leaf shapes
+of S3; `node simulator/{mirror-check.mjs,build.mjs --check,gate.mjs,gate.mjs
+--selftest}` all exit 0; then the one remaining budgeted
+`nix run --quiet .#simulator-check` exit 0 (suite now 3/3 spent; browser-check
+remained 3/3 spent, not rerun; page rebuilt, `index.html` sha256
+`4fbf030800f009bda07fd5bcbf317bee1813c521316b6ef9ee902b3b86e50b15`).
+
 ## Verification record
 
 Commands and results (all run from the worktree root):
