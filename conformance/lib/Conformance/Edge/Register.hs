@@ -1,9 +1,19 @@
 -- | Register a real key, observe its token, then exercise the refusal boundaries.
 module Conformance.Edge.Register (story, insertActiveRow, conjuncts) where
 
-import Conformance.Story.Live
+import Conformance.Fold.KeyedMint qualified as Batch (story)
 import Conformance.Lean.Registration (insertActiveRow, registrationDelivery)
-import Conformance.Fold.KeyedMint qualified as Batch
+import Conformance.Story.Live
+    ( Context (Context)
+    , RegistrationRun (RegistrationRun)
+    , Story
+    , clause
+    , expectActiveToken
+    , expectDuplicateRegistrationRefused
+    , registerFreshKey
+    , registerKey
+    , theorem
+    )
 
 -- | The caller supplies an empty open registry and a funded recipient.
 story :: Context r w -> Story r w a t b f (RegistrationRun r a b f)
