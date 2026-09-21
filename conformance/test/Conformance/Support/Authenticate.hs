@@ -1,5 +1,5 @@
 {- |
-Module      : Conformance.AuthenticateSpec
+Module      : Conformance.Support.Authenticate
 Description : Canonical-authentication decision tests (issue #69)
 
 The rival fixtures below are the shapes the devnet rows meet: a
@@ -9,7 +9,7 @@ weak authenticator's designed acceptance of the rival is itself
 asserted: it is the CA03 control, and a control that could not
 accept would prove nothing.
 -}
-module Conformance.AuthenticateSpec (spec) where
+module Conformance.Support.Authenticate (spec) where
 
 import Data.Map.Strict qualified as Map
 import Test.Hspec (

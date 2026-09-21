@@ -1,5 +1,5 @@
 {- |
-Module      : Conformance.RefusalSpec
+Module      : Conformance.Support.Refusal
 Description : Refusal matcher acceptance and rejection tests
 License     : Apache-2.0
 
@@ -9,7 +9,7 @@ script hash hex). The first real devnet run pins the observed text
 as a regression sample here; until then these prove the matcher can
 both accept and refuse.
 -}
-module Conformance.RefusalSpec (spec) where
+module Conformance.Support.Refusal (spec) where
 
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf)
@@ -160,7 +160,7 @@ nodeShapedRefusal = "HardForkApplyTxErrFromEra (ConwayUtxowFailure (FailedUnexpe
 --
 -- The defect: a refused CONTROL submitted through the same helper as a
 -- refusal ROW wrote its refusal under the row's id, replacing the row's
--- held receipt in every receipts directory (CG11/CG12/CG19). These tests
+-- held receipt in every receipts directory. These tests
 -- deliberately clobber a main receipt and require the path to
 -- discriminate: the row writes, the control never does, a refusal that
 -- does not attribute writes nothing for either role.
@@ -180,7 +180,7 @@ freshReceiptsDir = do
     createDirectoryIfMissing True dir
     pure dir
 
--- | The row's own receipt as CG11's run writes it before its control
+-- | The row's own receipt as the run writes it before its control
 -- fires: accepted, held-q002, transaction id and measurements present.
 heldRowReceipt :: Receipt
 heldRowReceipt =

@@ -1,9 +1,9 @@
 {- |
-Module      : Conformance.RowsSpec
+Module      : Conformance.Support.Rows
 Description : Inventory loading and denominator enforcement tests
 License     : Apache-2.0
 -}
-module Conformance.RowsSpec (spec) where
+module Conformance.Support.Rows (spec) where
 
 import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as BSL
@@ -43,11 +43,11 @@ spec = describe "Rows" $ do
             (filter ((/= OutOfScope) . rowState) rows)
             `shouldBe` ownedDenominator
 
-    it "records CK06 out of scope under cardano-keri" $ do
+    it "records checkpoint policy outside the registry scope" $ do
         rows <- loadCommitted
         case filter ((== "CK06") . rowId) rows of
             [ck06] -> rowState ck06 `shouldBe` OutOfScope
-            _ -> expectationFailure "inventory has no single CK06"
+            _ -> expectationFailure "inventory has no single checkpoint-policy requirement"
 
     it "carries no executed rows in the committed file" $ do
         rows <- loadCommitted

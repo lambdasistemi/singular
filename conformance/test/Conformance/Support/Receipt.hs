@@ -1,5 +1,5 @@
 {- |
-Module      : Conformance.ReceiptSpec
+Module      : Conformance.Support.Receipt
 Description : Receipt loading, validation and overlay tests
 License     : Apache-2.0
 
@@ -7,7 +7,7 @@ A row prints as executed only when a receipt for it exists and
 matches the base. The fixture receipts carry base @fixture-base@;
 @other-base@ is the stale-receipt case.
 -}
-module Conformance.ReceiptSpec (spec) where
+module Conformance.Support.Receipt (spec) where
 
 import Data.Aeson (eitherDecode, encode)
 import Data.ByteString.Lazy qualified as BSL
@@ -76,7 +76,7 @@ spec = describe "Receipt" $ do
                         effectiveState "fixture-base" [] cg02
                             `shouldBe` ShownPlanned Uncovered
                     _ ->
-                        fail "fixture inventory has no single CG02"
+                        fail "fixture inventory has no single update requirement"
 
     it "shows the refused fixture row executed with its receipt" $ do
         dir <- getDataFileName "test/fixtures/receipts"
@@ -90,7 +90,7 @@ spec = describe "Receipt" $ do
                         effectiveState "fixture-base" rs cg05
                             `shouldBe` ShownExecuted
                     _ ->
-                        fail "fixture inventory has no single CG05"
+                        fail "fixture inventory has no single occupied-key refusal requirement"
 
     it "rejects an accepted receipt with no transactions" $ do
         dir <- getDataFileName "test/fixtures/bad-accepted"
@@ -282,7 +282,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("derivation venue must be" `isInfixOf`)
             Right _ -> fail "a misvenued derivation receipt loaded"
 
-    it "rejects a CA04 receipt missing the executed negative" $ do
+    it "rejects validator-identity evidence missing the executed negative" $ do
         dir <- getDataFileName "test/fixtures/derivation-incomplete"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -318,7 +318,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("mislabelled" `isInfixOf`)
             Right _ -> fail "a bare-prefix provenance receipt loaded"
 
-    it "rejects a CA04 receipt with legacy node-submit venue" $ do
+    it "rejects validator-identity evidence with the legacy node-submit venue" $ do
         dir <- getDataFileName "test/fixtures/derivation-legacyvenue"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -397,7 +397,7 @@ loadCommitted = do
         Left err -> fail err
         Right rows -> pure rows
 
-{- | #177 I177-CONFORMANCE: the retirement evidence a CG22 receipt
+{- | #177 I177-CONFORMANCE: the retirement evidence a receipt
 carries.
 
 Gate S names the vocabulary exactly — policy and key, both txids, the
@@ -413,11 +413,11 @@ comes back out must still carry the retirement the row observed. This is
 the schema half of the row; the values are established by the live run.
 -}
 retirementRoundTrip :: Spec
-retirementRoundTrip = describe "CG22 retirement evidence" $
+retirementRoundTrip = describe "Active witness retirement evidence" $
     it "survives a decode/encode round trip through the receipt codec" $ do
         let decoded = eitherDecode cg22Receipt :: Either String Receipt
         case decoded of
-            Left err -> fail ("CG22 receipt does not parse: " <> err)
+            Left err -> fail ("retirement receipt does not parse: " <> err)
             Right r -> do
                 let out = show (encode r)
                 mapM_
@@ -431,7 +431,7 @@ retirementRoundTrip = describe "CG22 retirement evidence" $
                     , "Terminal"
                     ]
 
-{- | A CG22 receipt in the exact shape Gate S reads. Every value here is
+{- | A retirement receipt in the exact shape the evidence reader consumes. Every value here is
 a placeholder standing in for one the live row observes; the point of
 the fixture is the SHAPE, which the codec must preserve.
 -}

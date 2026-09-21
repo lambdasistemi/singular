@@ -2,20 +2,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
-Module      : Conformance.S2ControlsSpec
-Description : Slice S2 RED controls the operational DSL must satisfy
+Module      : Conformance.Story.Control
+Description : Controls protecting the correspondence between stories and execution
 License     : Apache-2.0
 
-Four legs, each executing its subject. They FAIL against the weak
-stub in 'Conformance.Operational' for the named reason and must go
-green under checkpoint s2-dsl with no test change:
-
-* LEG-1 rendered story ignores the program it ran;
-* LEG-2 'acceptsMeaning' admits a two-receipt load;
-* LEG-3 a 'rejects' with an empty reason is accepted;
-* LEG-4 a literal-built collection is accepted.
+The renderer must preserve the receipt edit actually executed, including
+nested collections and full identities. Constructor samples come from the
+compiler's datatype information; an unsupported argument fails compilation.
+The real loader also exercises acceptance, refusal and exact receipt count.
 -}
-module Conformance.S2ControlsSpec (spec) where
+module Conformance.Story.Control (spec) where
 
 import Control.Monad.Operational (Program)
 import Data.List (nub)
@@ -24,8 +20,8 @@ import Conformance.Story.Discover (discoverPrograms)
 import Data.Either (isLeft)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn, shouldSatisfy)
 
-import Conformance.EdgeFixtures (activeAsset, completeReceipt, keyHex, loadTwoFixtures)
-import Conformance.Operational (
+import Conformance.Fixture.ActiveRegistration (activeAsset, completeReceipt, keyHex, loadTwoFixtures)
+import Conformance.Story (
     EditI,
     foldEdit,
     refunds,
@@ -45,8 +41,8 @@ import Conformance.Operational (
  )
 
 spec :: Spec
-spec = describe "S2 operational controls" $ do
-    it "LEG-1 the rendered edit follows the program that ran" $ do
+spec = describe "Story language controls" $ do
+    it "the rendered edit follows the program that ran" $ do
         -- The subject ran: qty 2 is refused, qty 1 is accepted.
         executeEdit progTwo >>= (`shouldSatisfy` isLeft)
         executeEdit progOne `shouldReturn` Right 1
@@ -61,11 +57,12 @@ spec = describe "S2 operational controls" $ do
                 | (rendered, entries) <- Map.toList observations
                 , length (nub (map snd entries)) > 1]
         null discovered `shouldBe` False
+        putStrLn ("Rendered constructor census: " <> show (length (nub (map fst discovered))) <> " edit constructors, " <> show (length discovered) <> " programs")
         executeEdit (refunds noRefunds) `shouldReturn` Right 1
         executeEdit (refunds (lovelace 1)) >>= (`shouldSatisfy` isLeft)
         collisions `shouldBe` []
 
-    it "LEG-2 accepts means exactly one receipt" $ do
+    it "accepts means exactly one receipt" $ do
         -- The subject ran: the fixture dir genuinely holds two receipts.
         loadTwoFixtures `shouldReturn` Right 2
         -- The failure: the weak meaning admits any Right.
@@ -73,7 +70,7 @@ spec = describe "S2 operational controls" $ do
         acceptsMeaning (Right 1) `shouldBe` True
         acceptsMeaning (Left "boom") `shouldBe` False
 
-    it "LEG-3 a rejects without a reason is refused" $ do
+    it "a rejects without a reason is refused" $ do
         -- Sanity: reasoned cases and accepts validate in both worlds.
         validateCase (accepts "one active token" unchanged) `shouldBe` True
         validateCase (rejects "two tokens" "a per-kind total cannot see it" unchanged)
@@ -81,7 +78,7 @@ spec = describe "S2 operational controls" $ do
         -- The failure: the stub accepts an empty reason.
         validateCase (rejects "two tokens" "" unchanged) `shouldBe` False
 
-    it "LEG-4 a literal-built collection is refused" $ do
+    it "a literal-built collection is refused" $ do
         -- Sanity: program-built collections validate in both worlds.
         validateCollection (activeToken keyHex 1) `shouldBe` True
         -- The failure: the stub accepts the literal control.

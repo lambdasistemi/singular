@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
-Module      : Conformance.EdgeFixtures
+Module      : Conformance.Fixture.ActiveRegistration
 Description : The complete receipt artifact and its JSON mutations
 License     : Apache-2.0
 
@@ -19,7 +19,12 @@ than listed, and the extent is asserted at its known size before any
 mutant runs, so a fixture broken for an unrelated reason cannot make
 every mutant pass for the wrong reason.
 -}
-module Conformance.EdgeFixtures (
+module Conformance.Fixture.ActiveRegistration (
+    otherName,
+    otherAddress,
+    otherApproval,
+    emptyValue,
+    unlandedTx,
     activeAsset,
     activeHex,
     approvalHex,
@@ -221,7 +226,7 @@ keyedMintLeg =
         , ("controlMint", entailedMint)
         ]
 
-{- | The complete CG21 edge observation: the fold, every fine conjunct
+{- | The complete active-registration observation: the fold, every fine conjunct
 of @insert_active_transaction_row@, the landed-fold sequence, and both
 refusal legs with their accepting controls.
 -}
@@ -255,7 +260,7 @@ completeEdge =
         , "keyedMint" .= keyedMintLeg
         ]
 
--- | The CG21 receipt the runner writes, with a complete observation.
+-- | The active-registration receipt the runner writes, with a complete observation.
 completeReceipt :: Value
 completeReceipt =
     object
@@ -368,3 +373,23 @@ loadTwoFixtures = do
     dir <- getDataFileName "test/fixtures/receipts"
     fmap length <$> loadReceipts dir
 
+
+-- | A contrasting value for a refused observation.
+otherName :: Value
+otherName = String "6f74686572"
+
+-- | A contrasting value for a refused observation.
+otherAddress :: Value
+otherAddress = String "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+-- | A contrasting value for a refused observation.
+otherApproval :: Value
+otherApproval = String "00112233445566778899001122334455667788990011223344556677"
+
+-- | A contrasting value for a refused observation.
+emptyValue :: Value
+emptyValue = String ""
+
+-- | A contrasting value for a refused observation.
+unlandedTx :: Value
+unlandedTx = String "ff66666666666666666666666666666666666666666666666666666666666666"

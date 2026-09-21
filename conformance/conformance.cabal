@@ -132,19 +132,25 @@ test-suite conformance-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
-    Conformance.AuthenticateSpec
-    Conformance.EdgeFixtures
-    Conformance.EdgeSpec
-    Conformance.Operational
-    Conformance.ReceiptSpec
-    Conformance.RefusalSpec
-    Conformance.RowsSpec
-    Conformance.Story.Discover
-    Conformance.S2ControlsSpec
+    Conformance.Edge.Register
+    Conformance.Fixture.ActiveRegistration
+    Conformance.Fold.KeyedMint
     Conformance.Story
-    Conformance.StoryBindings
-    Conformance.StorySpec
-    Conformance.UsageSpec
+    Conformance.Story.Binding
+    Conformance.Story.BindingControl
+    Conformance.Story.Book
+    Conformance.Story.Build
+    Conformance.Story.Control
+    Conformance.Story.Discover
+    Conformance.Story.Instruction
+    Conformance.Story.Render
+    Conformance.Story.Run
+    Conformance.Story.Usage
+    Conformance.Support.Authenticate
+    Conformance.Support.Observation
+    Conformance.Support.Receipt
+    Conformance.Support.Refusal
+    Conformance.Support.Rows
     Paths_conformance
   build-depends:
     , aeson >=2.1 && <2.3
