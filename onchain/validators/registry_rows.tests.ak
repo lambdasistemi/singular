@@ -11,7 +11,7 @@ use lib
 use request
 use state
 use cardano/transaction
-use t157_fixtures as fx
+use registry_fixtures as fx
 use types.{
   Modify, RequestAction, StateDatum, UpdateAction,
 }
@@ -263,18 +263,18 @@ fn readOutputs() -> List<Output> {
 // G2 — the seven rows accept, and each refuses with its delta off by one
 // ============================================================================
 
-test t157_g2_insert_absent_accepts() {
+test g2_insert_absent_accepts() {
   insertAbsent(fx.mintOf(fx.absentPolicy, fx.keyA, 1), insertAbsentOutputs())
 }
 
-test t157_g2_insert_active_accepts() {
+test g2_insert_active_accepts() {
   insertActive(
     fx.mintOf(fx.activePolicy, fx.keyA, 1),
     bookingOutputs(fx.activePolicy),
   )
 }
 
-test t157_g2_update_absent_to_active_accepts() {
+test g2_update_absent_to_active_accepts() {
   updateActive(
     merge(
       fx.mintOf(fx.absentPolicy, fx.keyA, -1),
@@ -285,11 +285,11 @@ test t157_g2_update_absent_to_active_accepts() {
   )
 }
 
-test t157_g2_update_active_to_terminal_accepts() {
+test g2_update_active_to_terminal_accepts() {
   updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -1), [], activeHeld())
 }
 
-test t157_g2_delete_absent_accepts() {
+test g2_delete_absent_accepts() {
   deleteAbsent(
     fx.mintOf(fx.absentPolicy, fx.keyA, -1),
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
@@ -297,23 +297,23 @@ test t157_g2_delete_absent_accepts() {
   )
 }
 
-test t157_g2_delete_active_accepts() {
+test g2_delete_active_accepts() {
   deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, -1), [], activeHeld())
 }
 
-test t157_g2_read_terminal_accepts() {
+test g2_read_terminal_accepts() {
   readTerminal(fx.mintOf(fx.terminalPolicy, fx.keyA, 1), readOutputs())
 }
 
-test t157_g2_insert_absent_delta_off_refuses() fail {
+test g2_insert_absent_delta_off_refuses() fail {
   insertAbsent(fx.mintOf(fx.absentPolicy, fx.keyA, 2), insertAbsentOutputs())
 }
 
-test t157_g2_insert_active_delta_off_refuses() fail {
+test g2_insert_active_delta_off_refuses() fail {
   insertActive(zero, bookingOutputs(fx.activePolicy))
 }
 
-test t157_g2_update_absent_to_active_delta_off_refuses() fail {
+test g2_update_absent_to_active_delta_off_refuses() fail {
   updateActive(
     merge(
       fx.mintOf(fx.absentPolicy, fx.keyA, -1),
@@ -324,11 +324,11 @@ test t157_g2_update_absent_to_active_delta_off_refuses() fail {
   )
 }
 
-test t157_g2_update_active_to_terminal_delta_off_refuses() fail {
+test g2_update_active_to_terminal_delta_off_refuses() fail {
   updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -2), [], activeHeld())
 }
 
-test t157_g2_delete_absent_delta_off_refuses() fail {
+test g2_delete_absent_delta_off_refuses() fail {
   deleteAbsent(
     zero,
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
@@ -336,18 +336,18 @@ test t157_g2_delete_absent_delta_off_refuses() fail {
   )
 }
 
-test t157_g2_delete_active_delta_off_refuses() fail {
+test g2_delete_active_delta_off_refuses() fail {
   deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, 1), [], activeHeld())
 }
 
-test t157_g2_read_terminal_delta_off_refuses() fail {
+test g2_read_terminal_delta_off_refuses() fail {
   readTerminal(fx.mintOf(fx.terminalPolicy, fx.keyA, 2), readOutputs())
 }
 
 /// The token column of C2 is read off the edge and nothing else: every
 /// admitted edge moves at most two kinds, and every quantity is exactly
 /// one token in or one token out.
-test t157_g2_prop_delta_reads_off_the_edge(edge via fuzz.int_between(-2, 9)) {
+test g2_prop_delta_reads_off_the_edge(edge via fuzz.int_between(-2, 9)) {
   let delta = lib.deltaOf(edge)
   let admitted = edge >= 0 && edge <= 6
   and {
@@ -405,19 +405,19 @@ fn insertAbsentTagged(edge: Int) -> Bool {
 
 /// The control: at the admitted tag the very same fold accepts, so the
 /// three refusals below cannot be passing on some other defect.
-test t157_g3_tagged_insert_absent_accepts() {
+test g3_tagged_insert_absent_accepts() {
   insertAbsentTagged(0)
 }
 
-test t157_g3_edge_tag_just_above_the_table_refuses() fail {
+test g3_edge_tag_just_above_the_table_refuses() fail {
   insertAbsentTagged(7)
 }
 
-test t157_g3_edge_tag_negative_refuses() fail {
+test g3_edge_tag_negative_refuses() fail {
   insertAbsentTagged(-1)
 }
 
-test t157_g3_edge_tag_far_outside_the_table_refuses() fail {
+test g3_edge_tag_far_outside_the_table_refuses() fail {
   insertAbsentTagged(999)
 }
 
@@ -432,7 +432,7 @@ test t157_g3_edge_tag_far_outside_the_table_refuses() fail {
 /// final branch would produce, which deletes the live leaf. Without the
 /// admission the fold ACCEPTS and a tag outside the table has silently
 /// deleted a registration; with it the request never reaches the trie.
-test t157_g3_an_unadmitted_tag_never_walks_the_trie() fail {
+test g3_an_unadmitted_tag_never_walks_the_trie() fail {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
     fx.emptyRoot(),
@@ -545,19 +545,19 @@ fn middleProof() -> Proof {
   fx.siblingProof(fx.keyB, fx.absentLeaf, fx.keyA)
 }
 
-test t157_g4_read_verifies_against_the_middle_root() {
+test g4_read_verifies_against_the_middle_root() {
   readInBatch(middleProof())
 }
 
 /// The same read proved against the root the batch STARTED from: at the
 /// read's position that root is already gone.
-test t157_g4_read_against_initial_root_refuses() fail {
+test g4_read_against_initial_root_refuses() fail {
   readInBatch([])
 }
 
 /// And against the root the batch ENDS at, which does not exist yet when
 /// the read is folded.
-test t157_g4_read_against_final_root_refuses() fail {
+test g4_read_against_final_root_refuses() fail {
   readInBatch(
     [
       fx.branchStep(
@@ -612,7 +612,7 @@ fn twoReads(mint: Value, outputs: List<Output>) -> Bool {
   )
 }
 
-test t157_g5_batch_of_only_reads_accepts() {
+test g5_batch_of_only_reads_accepts() {
   twoReads(
     fx.mintOf(fx.terminalPolicy, fx.keyA, 2),
     [
@@ -629,7 +629,7 @@ test t157_g5_batch_of_only_reads_accepts() {
 }
 
 /// A `Modify` that consumes no request at all is not a batch.
-test t157_g5_zero_consumed_requests_refuses() fail {
+test g5_zero_consumed_requests_refuses() fail {
   fold(fx.emptyRoot(), fx.emptyRoot(), [], [], [], zero, [UpdateAction([])])
 }
 
@@ -659,22 +659,22 @@ fn readAt(root: ByteArray) -> Bool {
   )
 }
 
-test t157_m3_read_of_terminal_leaf_accepts() {
+test m3_read_of_terminal_leaf_accepts() {
   readAt(fx.oneLeaf(fx.keyA, fx.terminalLeaf))
 }
 
-test t157_m3_read_of_active_leaf_refuses() fail {
+test m3_read_of_active_leaf_refuses() fail {
   readAt(fx.oneLeaf(fx.keyA, fx.activeLeaf))
 }
 
-test t157_m3_read_of_absent_leaf_refuses() fail {
+test m3_read_of_absent_leaf_refuses() fail {
   readAt(fx.oneLeaf(fx.keyA, fx.absentLeaf))
 }
 
 /// A key the trie does not bind at all is a third fact, and it did not
 /// exist on the old wire: `Read(0x02)` on an empty trie stated a leaf
 /// the shape gate could judge, where edge 6 states none.
-test t157_m3_read_of_an_unbound_key_refuses() fail {
+test m3_read_of_an_unbound_key_refuses() fail {
   readAt(fx.emptyRoot())
 }
 
@@ -682,7 +682,7 @@ test t157_m3_read_of_an_unbound_key_refuses() fail {
 /// validator itself reads, because an Aiken test cannot read a `trace`
 /// back. Asserted by NAME, so a site that collapsed to one answer for
 /// every leaf could not go green here.
-test t157_m3_the_read_faults_are_distinct_names() {
+test m3_the_read_faults_are_distinct_names() {
   and {
     state.readFault(
       mpf.from_root(fx.oneLeaf(fx.keyA, fx.absentLeaf)),
@@ -729,7 +729,7 @@ fn onTerminal(edge: Int, owner: ByteArray, carried: Value) -> Bool {
   )
 }
 
-test t157_n10_update_active_on_terminal_refuses() fail {
+test n10_update_active_on_terminal_refuses() fail {
   onTerminal(
     2,
     fx.bookerKey,
@@ -737,7 +737,7 @@ test t157_n10_update_active_on_terminal_refuses() fail {
   )
 }
 
-test t157_n10_delete_absent_on_terminal_refuses() fail {
+test n10_delete_absent_on_terminal_refuses() fail {
   onTerminal(
     4,
     fx.inserterKey,
@@ -745,7 +745,7 @@ test t157_n10_delete_absent_on_terminal_refuses() fail {
   )
 }
 
-test t157_n10_delete_active_on_terminal_refuses() fail {
+test n10_delete_active_on_terminal_refuses() fail {
   onTerminal(
     5,
     fx.bookerKey,
@@ -756,14 +756,14 @@ test t157_n10_delete_active_on_terminal_refuses() fail {
 /// A-006 again: the reason comes from the site the fold reads, since the
 /// rows above can only establish THAT the fold refused. Without it a
 /// guard that halted with some other reason would go unnoticed.
-test t157_n10_terminal_edge_reason_is_edge_from_terminal() {
+test n10_terminal_edge_reason_is_edge_from_terminal() {
   state.terminalEdgeRefusal() == Some(@"edge-from-terminal")
 }
 
 /// The accepting half: the terminal read is the sole operation a `0x02`
 /// leaf admits, it leaves the leaf exactly where it is, and it mints the
 /// `+1 terminal` the model promises (A-001).
-test t157_n10_read_terminal_accepts() {
+test n10_read_terminal_accepts() {
   readTerminal(fx.mintOf(fx.terminalPolicy, fx.keyA, 1), readOutputs())
 }
 
@@ -959,51 +959,51 @@ fn foldEdgeCarrying(edge: Int, carried: Value) -> Bool {
 // A1 — a tree edge is folded only with its approval
 // ============================================================================
 
-test t157_a1_insert_absent_without_approval_refuses() fail {
+test a1_insert_absent_without_approval_refuses() fail {
   foldEdgeCarrying(0, zero)
 }
 
-test t157_a1_insert_active_without_approval_refuses() fail {
+test a1_insert_active_without_approval_refuses() fail {
   foldEdgeCarrying(1, zero)
 }
 
-test t157_a1_update_active_without_approval_refuses() fail {
+test a1_update_active_without_approval_refuses() fail {
   foldEdgeCarrying(2, zero)
 }
 
-test t157_a1_update_terminal_without_approval_refuses() fail {
+test a1_update_terminal_without_approval_refuses() fail {
   foldEdgeCarrying(3, zero)
 }
 
-test t157_a1_delete_absent_without_approval_refuses() fail {
+test a1_delete_absent_without_approval_refuses() fail {
   foldEdgeCarrying(4, zero)
 }
 
-test t157_a1_delete_active_without_approval_refuses() fail {
+test a1_delete_active_without_approval_refuses() fail {
   foldEdgeCarrying(5, zero)
 }
 
-test t157_a1_insert_absent_with_approval_accepts() {
+test a1_insert_absent_with_approval_accepts() {
   foldEdge(0)
 }
 
-test t157_a1_insert_active_with_approval_accepts() {
+test a1_insert_active_with_approval_accepts() {
   foldEdge(1)
 }
 
-test t157_a1_update_active_with_approval_accepts() {
+test a1_update_active_with_approval_accepts() {
   foldEdge(2)
 }
 
-test t157_a1_update_terminal_with_approval_accepts() {
+test a1_update_terminal_with_approval_accepts() {
   foldEdge(3)
 }
 
-test t157_a1_delete_absent_with_approval_accepts() {
+test a1_delete_absent_with_approval_accepts() {
   foldEdge(4)
 }
 
-test t157_a1_delete_active_with_approval_accepts() {
+test a1_delete_active_with_approval_accepts() {
   foldEdge(5)
 }
 
@@ -1011,42 +1011,42 @@ test t157_a1_delete_active_with_approval_accepts() {
 // A2 — the approval's name binds this edge, key, owner and destination
 // ============================================================================
 
-test t157_a2_wrong_edge_approval_refuses() fail {
+test a2_wrong_edge_approval_refuses() fail {
   foldEdgeCarrying(
     1,
     fx.approval(2, fx.keyA, edgeOwner(1), edgeDestination(1)),
   )
 }
 
-test t157_a2_wrong_key_approval_refuses() fail {
+test a2_wrong_key_approval_refuses() fail {
   foldEdgeCarrying(
     1,
     fx.approval(1, fx.keyB, edgeOwner(1), edgeDestination(1)),
   )
 }
 
-test t157_a2_wrong_owner_approval_refuses() fail {
+test a2_wrong_owner_approval_refuses() fail {
   foldEdgeCarrying(
     1,
     fx.approval(1, fx.keyA, fx.inserterKey, edgeDestination(1)),
   )
 }
 
-test t157_a2_wrong_destination_approval_refuses() fail {
+test a2_wrong_destination_approval_refuses() fail {
   foldEdgeCarrying(
     1,
     fx.approval(1, fx.keyA, edgeOwner(1), fx.readDestination()),
   )
 }
 
-test t157_a2_bound_approval_accepts() {
+test a2_bound_approval_accepts() {
   foldEdge(1)
 }
 
 /// The binding is a function of all four components: with the owner and
 /// the destination fixed, two different keys never share an approval
 /// name, and the same key always produces the same one.
-test t157_a2_prop_approval_name_binds_the_key(
+test a2_prop_approval_name_binds_the_key(
   pair via fuzz.tuple(
     fuzz.bytearray_between(1, 8),
     fuzz.bytearray_between(1, 8),
@@ -1068,11 +1068,11 @@ test t157_a2_prop_approval_name_binds_the_key(
 // A3 — a read needs no approval; a foreign policy is no approval
 // ============================================================================
 
-test t157_a3_read_without_approval_accepts() {
+test a3_read_without_approval_accepts() {
   foldEdge(6)
 }
 
-test t157_a3_foreign_policy_approval_refuses() fail {
+test a3_foreign_policy_approval_refuses() fail {
   foldEdgeCarrying(
     1,
     from_asset(
@@ -1118,37 +1118,37 @@ fn nextState() -> types.State {
   fx.stateOf(edgeNextRoot(1))
 }
 
-test t157_a4_altered_tip_refuses() fail {
+test a4_altered_tip_refuses() fail {
   foldAltering(types.State { ..nextState(), tip: fx.tip + 1 })
 }
 
-test t157_a4_altered_process_time_refuses() fail {
+test a4_altered_process_time_refuses() fail {
   foldAltering(types.State { ..nextState(), process_time: fx.processTime + 1 })
 }
 
-test t157_a4_altered_retract_time_refuses() fail {
+test a4_altered_retract_time_refuses() fail {
   foldAltering(types.State { ..nextState(), retract_time: fx.retractTime + 1 })
 }
 
-test t157_a4_altered_application_policy_refuses() fail {
+test a4_altered_application_policy_refuses() fail {
   foldAltering(
     types.State { ..nextState(), application_policy: fx.foreignPolicy },
   )
 }
 
-test t157_a4_altered_active_policy_refuses() fail {
+test a4_altered_active_policy_refuses() fail {
   foldAltering(types.State { ..nextState(), active_policy: fx.foreignPolicy })
 }
 
-test t157_a4_altered_absent_policy_refuses() fail {
+test a4_altered_absent_policy_refuses() fail {
   foldAltering(types.State { ..nextState(), absent_policy: fx.foreignPolicy })
 }
 
-test t157_a4_altered_terminal_policy_refuses() fail {
+test a4_altered_terminal_policy_refuses() fail {
   foldAltering(types.State { ..nextState(), terminal_policy: fx.foreignPolicy })
 }
 
-test t157_a4_all_seven_preserved_accepts() {
+test a4_all_seven_preserved_accepts() {
   foldAltering(nextState())
 }
 
@@ -1156,11 +1156,11 @@ test t157_a4_all_seven_preserved_accepts() {
 // M1-M5, P3 — the mint equals the summed C2 column, exactly
 // ============================================================================
 
-test t157_m1_two_active_tokens_for_one_key_refuses() fail {
+test m1_two_active_tokens_for_one_key_refuses() fail {
   foldEdgeMinting(1, fx.mintOf(fx.activePolicy, fx.keyA, 2))
 }
 
-test t157_m1_active_token_for_another_key_refuses() fail {
+test m1_active_token_for_another_key_refuses() fail {
   foldEdgeMinting(
     1,
     merge(
@@ -1170,13 +1170,13 @@ test t157_m1_active_token_for_another_key_refuses() fail {
   )
 }
 
-test t157_m1_exactly_one_active_token_accepts() {
+test m1_exactly_one_active_token_accepts() {
   foldEdge(1)
 }
 
 /// There is no C2 row that mints an absent witness for a live key, so a
 /// fold that does is a delta the edges do not entail.
-test t157_m2_absent_mint_on_active_leaf_refuses() fail {
+test m2_absent_mint_on_active_leaf_refuses() fail {
   foldEdgeMinting(
     3,
     merge(
@@ -1186,21 +1186,21 @@ test t157_m2_absent_mint_on_active_leaf_refuses() fail {
   )
 }
 
-test t157_m2_insert_absent_on_unknown_key_accepts() {
+test m2_insert_absent_on_unknown_key_accepts() {
   foldEdge(0)
 }
 
-test t157_m4_update_active_without_absent_burn_refuses() fail {
+test m4_update_active_without_absent_burn_refuses() fail {
   foldEdgeMinting(2, fx.mintOf(fx.activePolicy, fx.keyA, 1))
 }
 
-test t157_m4_update_active_with_both_legs_accepts() {
+test m4_update_active_with_both_legs_accepts() {
   foldEdge(2)
 }
 
 /// Nothing else may move under the three pinned policies: a stray
 /// terminal mint no consumed request entails is the same refusal.
-test t157_m5_stray_terminal_mint_refuses() fail {
+test m5_stray_terminal_mint_refuses() fail {
   foldEdgeMinting(
     1,
     merge(
@@ -1213,11 +1213,11 @@ test t157_m5_stray_terminal_mint_refuses() fail {
 /// Under each token policy the asset name IS the registry key (D-ASSET):
 /// a correctly-sized mint under the right policy with any other name is
 /// a delta mismatch.
-test t157_p3_token_named_other_than_the_key_refuses() fail {
+test p3_token_named_other_than_the_key_refuses() fail {
   foldEdgeMinting(1, fx.mintOf(fx.activePolicy, #"7a7a7a7a", 1))
 }
 
-test t157_p3_key_named_token_accepts() {
+test p3_key_named_token_accepts() {
   foldEdge(1)
 }
 
@@ -1225,7 +1225,7 @@ test t157_p3_key_named_token_accepts() {
 // T1, T2 — the minted token lands where the request named, and nowhere else
 // ============================================================================
 
-test t157_t1_active_token_at_another_address_refuses() fail {
+test t1_active_token_at_another_address_refuses() fail {
   foldEdgeOutputs(
     1,
     [
@@ -1240,7 +1240,7 @@ test t157_t1_active_token_at_another_address_refuses() fail {
   )
 }
 
-test t157_t1_active_token_with_another_datum_refuses() fail {
+test t1_active_token_with_another_datum_refuses() fail {
   foldEdgeOutputs(
     1,
     [
@@ -1257,7 +1257,7 @@ test t157_t1_active_token_with_another_datum_refuses() fail {
 
 /// One asset in two outputs is not "exactly one output carrying it",
 /// even when both sit at the named destination.
-test t157_t1_active_token_in_two_outputs_refuses() fail {
+test t1_active_token_in_two_outputs_refuses() fail {
   foldEdgeWith(
     1,
     edgeApproval(1),
@@ -1283,11 +1283,11 @@ test t157_t1_active_token_in_two_outputs_refuses() fail {
   )
 }
 
-test t157_t1_named_output_accepts() {
+test t1_named_output_accepts() {
   foldEdge(1)
 }
 
-test t157_t2_terminal_token_elsewhere_refuses() fail {
+test t2_terminal_token_elsewhere_refuses() fail {
   foldEdgeOutputs(
     6,
     [
@@ -1302,7 +1302,7 @@ test t157_t2_terminal_token_elsewhere_refuses() fail {
   )
 }
 
-test t157_t2_read_destination_accepts() {
+test t2_read_destination_accepts() {
   foldEdge(6)
 }
 
@@ -1310,11 +1310,11 @@ test t157_t2_read_destination_accepts() {
 // T3 — the absent token's only home is the cage's own custody
 // ============================================================================
 
-test t157_t3_absent_token_in_a_wallet_refuses() fail {
+test t3_absent_token_in_a_wallet_refuses() fail {
   foldEdgeOutputs(0, [fx.strayCustodyOutput(fx.keyA, fx.deposit)])
 }
 
-test t157_t3_custody_naming_another_key_refuses() fail {
+test t3_custody_naming_another_key_refuses() fail {
   foldEdgeOutputs(
     0,
     [
@@ -1329,14 +1329,14 @@ test t157_t3_custody_naming_another_key_refuses() fail {
   )
 }
 
-test t157_t3_custody_with_another_refund_refuses() fail {
+test t3_custody_with_another_refund_refuses() fail {
   foldEdgeOutputs(
     0,
     [fx.custodyOutput(fx.keyA, fx.strangerAddress, fx.deposit)],
   )
 }
 
-test t157_t3_custody_carrying_an_extra_asset_refuses() fail {
+test t3_custody_carrying_an_extra_asset_refuses() fail {
   foldEdgeOutputs(
     0,
     [
@@ -1351,7 +1351,7 @@ test t157_t3_custody_carrying_an_extra_asset_refuses() fail {
   )
 }
 
-test t157_t3_exact_custody_output_accepts() {
+test t3_exact_custody_output_accepts() {
   foldEdge(0)
 }
 
@@ -1361,15 +1361,15 @@ test t157_t3_exact_custody_output_accepts() {
 
 /// The booker is not the inserter: Alice books the name Carol witnessed
 /// absent, and Carol's deposit goes back to Carol.
-test t157_t4_booking_over_custody_refunds_the_inserter() {
+test t4_booking_over_custody_refunds_the_inserter() {
   foldEdge(2)
 }
 
-test t157_t4_deleting_custody_refunds_the_inserter() {
+test t4_deleting_custody_refunds_the_inserter() {
   foldEdge(4)
 }
 
-test t157_t4_refund_below_the_held_lovelace_refuses() fail {
+test t4_refund_below_the_held_lovelace_refuses() fail {
   foldEdgeOutputs(
     2,
     list.concat(
@@ -1379,7 +1379,7 @@ test t157_t4_refund_below_the_held_lovelace_refuses() fail {
   )
 }
 
-test t157_t4_refund_to_the_booker_instead_refuses() fail {
+test t4_refund_to_the_booker_instead_refuses() fail {
   foldEdgeOutputs(
     2,
     list.concat(
@@ -1389,7 +1389,7 @@ test t157_t4_refund_to_the_booker_instead_refuses() fail {
   )
 }
 
-test t157_t4_custody_left_unspent_refuses() fail {
+test t4_custody_left_unspent_refuses() fail {
   foldEdgeWith(
     2,
     edgeApproval(2),
@@ -1466,7 +1466,7 @@ fn consumingRequest(key: ByteArray, edge: Int) -> Input {
   )
 }
 
-test t157_t5_plain_custody_spend_refuses() fail {
+test t5_plain_custody_spend_refuses() fail {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
@@ -1475,7 +1475,7 @@ test t157_t5_plain_custody_spend_refuses() fail {
   )
 }
 
-test t157_t5_fold_for_another_key_refuses() fail {
+test t5_fold_for_another_key_refuses() fail {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
@@ -1484,7 +1484,7 @@ test t157_t5_fold_for_another_key_refuses() fail {
   )
 }
 
-test t157_t5_fold_whose_request_is_a_read_refuses() fail {
+test t5_fold_whose_request_is_a_read_refuses() fail {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
@@ -1498,7 +1498,7 @@ test t157_t5_fold_whose_request_is_a_read_refuses() fail {
 /// registry state input and no `Modify` at all. Co-presence with
 /// something request-shaped is not a fold, and custody is spendable
 /// only inside the fold that consumes it.
-test t157_t5_request_without_authenticated_state_modify_refuses() fail {
+test t5_request_without_authenticated_state_modify_refuses() fail {
   spendCustodyIn(
     fx.keyA,
     fx.inserterAddress,
@@ -1508,7 +1508,7 @@ test t157_t5_request_without_authenticated_state_modify_refuses() fail {
   )
 }
 
-test t157_t5_fold_consuming_this_key_accepts() {
+test t5_fold_consuming_this_key_accepts() {
   spendCustody(
     fx.keyA,
     fx.inserterAddress,
@@ -1521,11 +1521,11 @@ test t157_t5_fold_consuming_this_key_accepts() {
 // T6 — the deposit that rode the request comes back
 // ============================================================================
 
-test t157_t6_destination_carrying_the_residual_accepts() {
+test t6_destination_carrying_the_residual_accepts() {
   foldEdge(1)
 }
 
-test t157_t6_folder_keeping_the_residual_refuses() fail {
+test t6_folder_keeping_the_residual_refuses() fail {
   foldEdgeOutputs(
     1,
     [
@@ -1540,7 +1540,7 @@ test t157_t6_folder_keeping_the_residual_refuses() fail {
   )
 }
 
-test t157_t6_underfunded_destination_refuses() fail {
+test t6_underfunded_destination_refuses() fail {
   foldEdgeOutputs(
     1,
     [
@@ -1559,7 +1559,7 @@ test t157_t6_underfunded_destination_refuses() fail {
 // V1 — every consumed request carries at least its tip
 // ============================================================================
 
-test t157_v1_request_below_its_tip_refuses() fail {
+test v1_request_below_its_tip_refuses() fail {
   foldEdgeWith(
     1,
     edgeApproval(1),
@@ -1570,7 +1570,7 @@ test t157_v1_request_below_its_tip_refuses() fail {
   )
 }
 
-test t157_v1_funded_request_accepts() {
+test v1_funded_request_accepts() {
   foldEdge(1)
 }
 
@@ -1606,16 +1606,16 @@ fn retract(edge: Int, signer: ByteArray) -> Bool {
   )
 }
 
-test t157_v2_read_retracted_by_its_owner_accepts() {
+test v2_read_retracted_by_its_owner_accepts() {
   retract(6, fx.bookerKey)
 }
 
-test t157_v2_read_retracted_by_a_stranger_refuses() fail {
+test v2_read_retracted_by_a_stranger_refuses() fail {
   retract(6, fx.inserterKey)
 }
 
 /// The completion-only custody still binds updates: they do not retract.
-test t157_v2_update_retract_refuses() fail {
+test v2_update_retract_refuses() fail {
   retract(3, fx.bookerKey)
 }
 
@@ -1624,7 +1624,7 @@ test t157_v2_update_retract_refuses() fail {
 /// token, genuinely spent with `Modify` — and the request for this key is
 /// bound to the registry whose custody this is. That fold will never
 /// process this request, so its redeemer must not authorize the spend.
-test t157_t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
+test t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
   let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
     Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),
@@ -1649,7 +1649,7 @@ test t157_t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
 /// custody is its key and this registry's own cage token, both of which
 /// the datum carries — so the fold accepts, and the rule cannot be
 /// satisfied by a neighbour that merely shares an address.
-test t157_t5_request_at_the_request_script_accepts() {
+test t5_request_at_the_request_script_accepts() {
   let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
     Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),

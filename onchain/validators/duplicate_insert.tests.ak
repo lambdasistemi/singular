@@ -3,7 +3,7 @@ use cardano/assets.{Value, merge, zero}
 use cardano/transaction.{InlineDatum, Input, Output}
 use lib
 use state
-use t157_fixtures as fx
+use registry_fixtures as fx
 use types.{
   Modify, RequestAction, StateDatum, UpdateAction,
 }
@@ -22,7 +22,7 @@ use types.{
 ///   keyed-mint witness and must not be confused with it;
 /// - a **two-request batch at two DISTINCT keys** whose claimed mint
 ///   agrees per KIND and disagrees per `(kind, key)` is refused
-///   `net-mint-mismatch`. This is the fault `Singular.Model.assetSame`
+///   `net-mint-mismatch`. This is the fault `Singular.assetSame`
 ///   catches and a per-kind sum does not, and NOTHING in this tree
 ///   exercised it before this row.
 ///
@@ -83,7 +83,7 @@ fn bookingOutput(key: ByteArray) -> Output {
 
 /// The accepting control for everything below: one `insertActive` on a
 /// free key places one active token where the request named.
-test t173_insert_active_places_one_active_token_at_the_named_output() {
+test insert_active_places_one_active_token_at_the_named_output() {
   foldBatch(
     fx.emptyRoot(),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
@@ -124,12 +124,13 @@ fn duplicateInsertActive() -> Bool {
 /// these rows is that every refusal returns False through ONE named
 /// trace.
 ///
-/// Today it CRASHES: `edgeOf` reads the leaf the REQUEST states, and an
-/// insert states none, so the edge is ADMITTED and `applyEdge` reaches
-/// `excluding(key, proof)` on a key that is present. There is no
-/// `key-exists` path in the cage at all — that is the A173-REFUSALS
-/// gap, and it is not a string to rename.
-test t173_duplicate_insert_active_refuses_cleanly() {
+/// The fold refuses the duplicate CLEANLY — `== False` through ONE named
+/// construction site (`lib.occupiedRefusal`, bound by the reason row
+/// below), reached BEFORE any mint arithmetic. (Historic note: an earlier
+/// revision crashed here instead of refusing, with no `key-exists` path
+/// at all; that gap is closed, and this row plus its reason binding are
+/// the regression guard.)
+test duplicate_insert_active_refuses_cleanly() {
   duplicateInsertActive() == False
 }
 
@@ -139,7 +140,7 @@ test t173_duplicate_insert_active_refuses_cleanly() {
 /// retired with value bytes in slice b — there is no second fact left
 /// to name, so the row above stands on the trie fault alone. The retired
 /// distinction stands in history (reviews 002–005).
-test t173_duplicate_insert_active_reason_is_key_exists() {
+test duplicate_insert_active_reason_is_key_exists() {
   lib.occupiedRefusal() == Some(@"key-exists")
 }
 
@@ -166,7 +167,7 @@ fn twoKeyBatch(mint: Value, outputs: List<Output>) -> Bool {
 /// The RIGHT keyed distribution: `A:+1, B:+1`. This is the positive
 /// control for the guard below — without it, a refusal of the wrong
 /// distribution could simply mean two-request batches never fold.
-test t173_two_key_batch_with_the_right_distribution_accepts() {
+test two_key_batch_with_the_right_distribution_accepts() {
   twoKeyBatch(
     merge(
       fx.mintOf(fx.activePolicy, fx.keyA, 1),
@@ -180,7 +181,7 @@ test t173_two_key_batch_with_the_right_distribution_accepts() {
 /// exactly what the two edges entail — a per-kind guard accepts it. Per
 /// `(kind, key)` it claims one key's token twice and the other's not at
 /// all.
-test t173_two_key_batch_with_the_wrong_distribution_refuses() fail {
+test two_key_batch_with_the_wrong_distribution_refuses() fail {
   twoKeyBatch(
     fx.mintOf(fx.activePolicy, fx.keyA, 2),
     [bookingOutput(fx.keyA), bookingOutput(fx.keyA)],
@@ -190,7 +191,7 @@ test t173_two_key_batch_with_the_wrong_distribution_refuses() fail {
 /// The two claims really do agree per kind: without this, the row above
 /// proves nothing about the keyed guard, because a batch that also
 /// disagreed per kind would be refused by the coarser rule.
-test t173_the_wrong_distribution_agrees_per_kind() {
+test the_wrong_distribution_agrees_per_kind() {
   let right =
     merge(
       fx.mintOf(fx.activePolicy, fx.keyA, 1),
@@ -206,11 +207,11 @@ test t173_the_wrong_distribution_agrees_per_kind() {
 /// A-006: the keyed-mint refusal is `net-mint-mismatch`, a DIFFERENT
 /// reason from the duplicate's `key-exists`. Two distinct fixtures, two
 /// distinct names.
-test t173_keyed_mint_reason_is_net_mint_mismatch() {
+test keyed_mint_reason_is_net_mint_mismatch() {
   lib.mintRefusal() == Some(@"net-mint-mismatch")
 }
 
-test t173_the_two_refusals_are_distinct_reasons() {
+test the_two_refusals_are_distinct_reasons() {
   // Asserted by NAME, not merely by inequality: two pre-#173 names are
   // also distinct from each other, so an inequality alone would go
   // green while A-006 stayed unimplemented.

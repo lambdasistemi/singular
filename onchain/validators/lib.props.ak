@@ -1,16 +1,19 @@
 use aiken/fuzz
+use aiken/primitive/bytearray
 use cardano/assets.{from_asset}
 use lib.{quantity, tokenFromValue, valueFromToken}
 use types.{TokenId}
 
-/// Token handling property tests (fuzz) — mirror Lean theorems in MpfsCage/Lib.lean.
+/// Token handling property tests (fuzz) for `lib.ak`.
 ///
 /// These property tests verify the token manipulation functions from `lib.ak`
 /// that the cage validator relies on for token identification and extraction.
 ///
-/// Each property mirrors a machine-checked Lean 4 theorem. The Lean proofs
-/// provide mathematical certainty; the fuzz tests validate the Aiken
-/// implementation matches the formal specification.
+/// **Lean binding: MISSING.** The Lean correspondence claims below cite
+/// `MpfsCage/Lib.lean`, which is absent from this repository's Lean tree
+/// (`lean/` contains only `Singular.*` modules, no `MpfsCage.*`). No
+/// accepted Lean declaration is bound here and no conformance is claimed;
+/// these are behavioral regression properties over `lib.ak` alone.
 ///
 /// ## Functions Under Test
 ///
@@ -27,7 +30,7 @@ use types.{TokenId}
 /// for policy IDs, matching Cardano's script hash length; 32 bytes for asset
 /// names, matching SHA2-256 output). Non-empty policy IDs are guaranteed by
 /// the fixed length, satisfying the `p ≠ ""` precondition.
-/// **Lean: valueFromToken_roundtrip**
+/// **Historic Lean reference `MpfsCage/Lib.lean` `valueFromToken_roundtrip` — binding MISSING (see header)**
 ///
 /// `tokenFromValue(valueFromToken(pid, tid))` always returns `Some(tid)`
 /// for any non-ADA policy ID.
@@ -47,7 +50,7 @@ test prop_valueFromToken_roundtrip(
   tokenFromValue(valueFromToken(pid, tid)) == Some(tid)
 }
 
-/// **Lean: tokenFromValue_ada_only**
+/// **Historic Lean reference `MpfsCage/Lib.lean` `tokenFromValue_ada_only` — binding MISSING (see header)**
 ///
 /// A value containing only ADA (the empty-string policy) has no extractable
 /// token — `tokenFromValue` returns `None`.
@@ -68,7 +71,7 @@ test prop_tokenFromValue_ada_only(
   tokenFromValue(v) == None
 }
 
-/// **Lean: quantity_present**
+/// **Historic Lean reference `MpfsCage/Lib.lean` `quantity_present` — binding MISSING (see header)**
 ///
 /// `quantity(p, fromAsset(p, a, q), TokenId{a})` always returns `Some(q)`.
 ///
@@ -92,35 +95,41 @@ test prop_quantity_present(
   quantity(pid, v, tid) == Some(qty)
 }
 
-/// **Lean: quantity_wrong_policy**
-///
-/// Looking up a token under a different policy always returns `None`.
+/// **quantity of a token under a foreign policy is exactly None — for every
+/// generated case** (historic name: `prop_quantity_wrong_policy`, #197).
 ///
 /// Cage instances are isolated by policy ID (each cage script has its own
 /// hash). A token minted under policy `p'` must not be visible when querying
 /// policy `p`. Without this isolation, an attacker could mint a cheap token
 /// under their own policy and have it pass another cage's quantity check.
 ///
-/// Two independently-fuzzed 28-byte policy IDs are extremely unlikely to
-/// collide (2^224 space), satisfying the Lean `p ≠ p'` precondition.
-/// The `fail once` directive confirms that collisions are rejected by the
-/// fuzzer — the test expects the equality to fail on the first try.
-test prop_quantity_wrong_policy(
+/// The two policy IDs are STRUCTURALLY distinct by construction: both extend
+/// the same fuzzed 27-byte prefix, `pid` with final byte 0 and `other_pid`
+/// with final byte 1, so the `p ≠ p'` precondition holds for every case and
+/// no fuzzer collision can silently drop it.
+///
+/// This asserts the intended outcome EXACTLY (`None`) for EVERY case. It
+/// replaced a `fail once` existential that was satisfied by a single
+/// unequal result and so accepted a `quantity` that returned a wrong
+/// non-None value (`Some(0)`) for a mismatched identity — the mutation
+/// recorded in the #197 control evidence.
+test prop_quantity_is_none_for_a_foreign_policy(
   params via fuzz.tuple(
-    fuzz.tuple(fuzz.bytearray_fixed(28), fuzz.bytearray_fixed(28)),
+    fuzz.bytearray_fixed(27),
     fuzz.tuple(fuzz.bytearray_fixed(32), fuzz.int_between(1, 1_000_000)),
   ),
-) fail once {
-  let ((pid, other_pid), (asset, qty)) = params
+) {
+  let (prefix, (asset, qty)) = params
+  let pid = bytearray.concat(prefix, #[0])
+  let other_pid = bytearray.concat(prefix, #[1])
   let tid = TokenId { assetName: asset }
   let v = from_asset(other_pid, asset, qty)
-  quantity(pid, v, tid) == Some(qty)
+  quantity(pid, v, tid) == None
 }
 
-/// **Lean: quantity_wrong_asset**
-///
-/// Looking up a token with a different asset name always returns `None`,
-/// even when the policy matches.
+/// **quantity of a foreign asset name under the right policy is exactly
+/// None — for every generated case** (historic name:
+/// `prop_quantity_wrong_asset`, #197).
 ///
 /// Within a cage policy, each NFT has a unique asset name derived from its
 /// minting OutputReference via SHA2-256. The quantity check must distinguish
@@ -128,21 +137,27 @@ test prop_quantity_wrong_policy(
 /// A could satisfy a check meant for token B, letting an attacker destroy
 /// the wrong cage while keeping the intended target alive.
 ///
-/// Two independently-fuzzed 32-byte asset names are extremely unlikely to
-/// collide, satisfying the Lean `a ≠ a'` precondition.
-test prop_quantity_wrong_asset(
+/// The two asset names are STRUCTURALLY distinct by construction: both
+/// extend the same fuzzed 31-byte prefix with a distinct final byte (0 vs 1),
+/// so the `a ≠ a'` precondition holds for every case.
+///
+/// This asserts the intended outcome EXACTLY (`None`) for EVERY case, the
+/// same repair as the foreign-policy property above.
+test prop_quantity_is_none_for_a_foreign_asset_name(
   params via fuzz.tuple(
-    fuzz.tuple(fuzz.bytearray_fixed(28), fuzz.bytearray_fixed(32)),
-    fuzz.tuple(fuzz.bytearray_fixed(32), fuzz.int_between(1, 1_000_000)),
+    fuzz.bytearray_fixed(28),
+    fuzz.tuple(fuzz.bytearray_fixed(31), fuzz.int_between(1, 1_000_000)),
   ),
-) fail once {
-  let ((pid, asset), (other_asset, qty)) = params
+) {
+  let (pid, (prefix, qty)) = params
+  let asset = bytearray.concat(prefix, #[0])
+  let other_asset = bytearray.concat(prefix, #[1])
   let tid = TokenId { assetName: asset }
   let v = from_asset(pid, other_asset, qty)
-  quantity(pid, v, tid) == Some(qty)
+  quantity(pid, v, tid) == None
 }
 
-/// **Lean: quantity_valueFromToken**
+/// **Historic Lean reference `MpfsCage/Lib.lean` `quantity_valueFromToken` — binding MISSING (see header)**
 ///
 /// `quantity(p, valueFromToken(p, tid), tid)` always returns `Some(1)`.
 ///
