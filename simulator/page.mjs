@@ -93,7 +93,8 @@ function renderCorpusAndTheorems(){
   $('corpus-status').textContent=
     `${agree}/${CORPUS.cases.length} Lean corpus rows reproduced in your browser · model ${CORPUS.modelSha256.slice(0,12)}`;
   const report=theoremReport(THEOREMS,CORPUS);
-  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.exhibited,d.held]);
+  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.applicable,d.vacuous,d.held,
+    d.exercised?'exercised':'not exercised']);
 }
 
 function renderNaming(){
@@ -102,11 +103,11 @@ function renderNaming(){
     leafName(d.leaf),d.witnesses.active,d.witnesses.absent,d.witnesses.terminal]);
   const c=checkNamingCorpus(NAMINGCORPUS);
   $('naming-status').textContent=
-    `${c.executed}/${c.discovered} naming corpus rows across ${c.sections} sections replayed`;
+    `${c.inspected}/${c.discovered} naming rows across ${c.sections} sections inspected · Lean evidence, not replayed`;
   const l=checkLifecycleCorpus(LIFECYCLECORPUS);
   rows($('lifecycle'),l.rows,d=>[LIFECYCLE_TITLES[d.section],d.id,lifecycleReason(d)]);
   $('lifecycle-status').textContent=
-    `${l.executed}/${l.discovered} lifecycle rows across ${l.sections} sections replayed`;
+    `${l.inspected}/${l.discovered} lifecycle rows across ${l.sections} sections inspected · Lean evidence, not replayed`;
 }
 
 function boot(){

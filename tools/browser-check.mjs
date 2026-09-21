@@ -85,8 +85,14 @@ async function checkPage(page, evidence) {
   assert(/witnessTerminal/.test(journey[2]), 'the witness is minted by a folded read');
   assert(/burn/.test(journey[4]) && /Known terminal/.test(journey[4]),
     'the witnesses burn and the leaf stays terminal');
-  assert(/\d+\/\d+ naming corpus rows/.test(await text('#naming-status')),
-    'the naming corpus is replayed');
+  // The naming corpus is Lean evidence, not a replay: the label must claim
+  // inspection, and must not claim the rows were executed here.
+  const namingStatus = await text('#naming-status');
+  assert(/\d+\/\d+ naming rows across \d+ sections inspected · Lean evidence, not replayed/
+    .test(namingStatus), `naming corpus labeled as inspected evidence (${namingStatus})`);
+  const lifecycleStatus = await text('#lifecycle-status');
+  assert(/\d+\/\d+ lifecycle rows across \d+ sections inspected/.test(lifecycleStatus),
+    `lifecycle corpus labeled as inspected evidence (${lifecycleStatus})`);
 
   await page.click('#btn-theme');
   await writeFile(join(evidence, 'checks.json'), JSON.stringify(checks, null, 2) + '\n');

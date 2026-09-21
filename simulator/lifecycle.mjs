@@ -18,9 +18,13 @@ export const LIFECYCLE_TITLES = {
   wire: 'The datum on the wire, byte for byte',
 };
 
-/** Replay the lifecycle corpus. Every row is an expectation the Lean model
+/** Inspect the lifecycle corpus. Every row is an expectation the Lean model
  * computed and every row must still say what it said; an empty section, a
- * duplicate id or a row without a verdict is a failure, not a smaller pass. */
+ * duplicate id or a row without a verdict is a failure, not a smaller pass.
+ *
+ * The receipt reports INSPECTION, never execution: these rows are verdicts
+ * the Lean computed, replayed by nothing here, so `executed` is zero by
+ * construction and the page labels say "inspected". */
 export function checkLifecycleCorpus(corpus) {
   if (!corpus || typeof corpus !== 'object') throw Error('no lifecycle corpus');
   let discovered = 0, executed = 0;
@@ -43,7 +47,8 @@ export function checkLifecycleCorpus(corpus) {
     }
   }
   if (discovered !== executed) throw Error('lifecycle denominator');
-  return { discovered, executed, sections: LIFECYCLE_SECTIONS.length, rows };
+  return { discovered, inspected: executed, executed: 0,
+    sections: LIFECYCLE_SECTIONS.length, rows, boundary: 'evidence' };
 }
 
 /** The reason a row records, when it records one rather than a plain `true`. */

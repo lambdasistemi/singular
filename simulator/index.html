@@ -426,7 +426,7 @@
       <h2>The corpus this page replays</h2>
       <p id="corpus-status" class="mono"></p>
       <table id="theorem-table">
-        <thead><tr><th>statement</th><th>coverage</th><th>exhibited</th><th>held</th></tr></thead>
+        <thead><tr><th>statement</th><th>coverage</th><th>applicable</th><th>vacuous</th><th>held</th><th>exercised</th></tr></thead>
         <tbody id="theorems"></tbody>
       </table>
     </div>
@@ -448,8 +448,9 @@
     <div class="panel">
       <h2>The rest of a name's life</h2>
       <p class="sub">A name is seeded, maintained, recovered and retired. Each
-        row below is a verdict the Lean computed and this page replayed: an
-        acceptance, or a refusal with the reason that caused it.</p>
+        row below is a verdict the Lean computed and this page inspects —
+        evidence, not a replay: an acceptance, or a refusal with the reason
+        that caused it.</p>
       <table id="lifecycle-table">
         <thead><tr><th>what</th><th>row</th><th>outcome</th></tr></thead>
         <tbody id="lifecycle"></tbody>
@@ -765,52 +766,74 @@ const read=(key,output=0)=>request('witnessTerminal',key,{output});
 // proof: a finite row can exhibit a theorem's consequent, never its quantifier.
 // The proofs live in Lean; this says which of them a reader can watch happen.
 
-/** Checks that must HOLD on every accepted row. Each is a consequence of a
- * named law, evaluated on the row's own result — so a row that violated it
- * would turn this red rather than merely look odd. */
+/** Checks that must HOLD on every accepted row where the law's hypotheses are
+ * active. Each entry names the statement's own hypothesis separately from its
+ * consequence: `applies` decides whether the row is an example of the law at
+ * all, `law` evaluates the consequence. A row outside `applies` can satisfy
+ * the implication vacuously, so it is counted as vacuous, never as exhibited. */
 const checks={
-  active_witness_unique:(before,action,after)=>
-    witnesses(after,action.key).active<=1,
-  absent_witness_unique:(before,action,after)=>
-    witnesses(after,action.key).absent<=1,
-  witness_kinds_exclude:(before,action,after)=>{
-    const w=witnesses(after,action.key);
-    return [w.active>0,w.absent>0,w.terminal>0].filter(Boolean).length<=1;},
-  biconditional_supply_sync:(before,action,after)=>{
-    const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
-    return (w.active===1)===(leaf==='active')&&(w.absent===1)===(leaf==='absent');},
-  terminal_attestation_sound:(before,action,after)=>
-    after.held.filter(h=>h.kind==='terminal')
-      .every(h=>trieGet(after.trie,h.key)==='terminal'),
-  termination:(before,action,after)=>
-    trieGet(before.trie,action.key)!=='terminal'||
-    trieGet(after.trie,action.key)==='terminal',
-  occupancy:(before,action,after)=>{
-    if(!['insertActive','updateActive'].includes(action.edge))return true;
-    const was=trieGet(before.trie,action.key);
-    return was!=='active'&&was!=='terminal'&&trieGet(after.trie,action.key)==='active';},
+  active_witness_unique:{
+    applies:(before,action,after)=>witnesses(after,action.key).active>0,
+    law:(before,action,after)=>witnesses(after,action.key).active<=1},
+  absent_witness_unique:{
+    applies:(before,action,after)=>witnesses(after,action.key).absent>0,
+    law:(before,action,after)=>witnesses(after,action.key).absent<=1},
+  witness_kinds_exclude:{
+    applies:(before,action,after)=>{
+      const w=witnesses(after,action.key);
+      return w.active+w.absent+w.terminal>0;},
+    law:(before,action,after)=>{
+      const w=witnesses(after,action.key);
+      return [w.active>0,w.absent>0,w.terminal>0].filter(Boolean).length<=1;}},
+  biconditional_supply_sync:{
+    applies:(before,action,after)=>{
+      const w=witnesses(after,action.key);
+      return w.active+w.absent>0;},
+    law:(before,action,after)=>{
+      const leaf=trieGet(after.trie,action.key),w=witnesses(after,action.key);
+      return (w.active===1)===(leaf==='active')&&(w.absent===1)===(leaf==='absent');}},
+  terminal_attestation_sound:{
+    applies:(before,action,after)=>after.held.some(h=>h.kind==='terminal'&&h.key===action.key),
+    law:(before,action,after)=>
+      after.held.filter(h=>h.kind==='terminal')
+        .every(h=>trieGet(after.trie,h.key)==='terminal')},
+  termination:{
+    applies:(before,action)=>trieGet(before.trie,action.key)==='terminal',
+    law:(before,action,after)=>trieGet(after.trie,action.key)==='terminal'},
+  occupancy:{
+    applies:(before,action)=>['insertActive','updateActive'].includes(action.edge),
+    law:(before,action,after)=>{
+      const was=trieGet(before.trie,action.key);
+      return was!=='active'&&was!=='terminal'&&trieGet(after.trie,action.key)==='active';}},
 };
 
 /** One row per statement: whether the corpus exhibits it, and whether the
- * consequent held everywhere it was exhibited. */
+ * consequence held everywhere the hypotheses were active. `vacuous` counts
+ * accepted rows that passed through an inactive hypothesis; a law with no
+ * applicable example is never reported as exercised. */
 function theoremReport(manifest,corpus){
   const rows=[];
   for(const decl of manifest){
     const short=decl.name.split('.').at(-1);
-    const checker=checks[short];
-    let exhibited=0,held=0;
-    if(checker)for(const row of corpus.cases){
+    const entry=checks[short];
+    let applicable=0,held=0,vacuous=0;
+    if(entry)for(const row of corpus.cases){
       if(!row.expectedAccept)continue;
       const r=step(row.before,row.action);
       if(!r.accepted)continue;
-      exhibited++;
-      if(checker(row.before,row.action,r.value.state))held++;
+      if(entry.applies(row.before,row.action,r.value.state)){
+        applicable++;
+        if(entry.law(row.before,row.action,r.value.state))held++;
+      }else vacuous++;
     }
+    const exercised=!!entry&&applicable>0&&held===applicable;
     rows.push({name:decl.name,status:`${decl.status} / ${decl.debt}`,
-      coverage:checker?'controlled-check':'proved-only',
-      exhibited,held,
-      note:checker
-        ?'Finite consequent checks over the corpus; the quantified statement is proved in Lean.'
+      coverage:entry?'controlled-check':'proved-only',
+      applicable,held,vacuous,exercised,
+      note:entry
+        ?(exercised
+          ?'Finite applicable examples over the corpus; the quantified statement is proved in Lean.'
+          :'No applicable example in this corpus; only the Lean proof covers this statement.')
         :'No executable exhibit here; the quantified statement is proved in Lean.'});
   }
   return rows;
@@ -826,33 +849,93 @@ function theoremReport(manifest,corpus){
 
 const NAMING_SECTIONS=['spellings','queues','folds','steps','resolves','replays'];
 
-/** Replay the naming corpus: every row states an expectation the Lean model
- * computed, and every row must still say what it said. */
+/** The observations each section's rows must carry. The rows are verdicts the
+ * Lean computed; a row that carries only an id is not evidence, and a checker
+ * that waved it through would report rows it never looked at. */
+const NAMING_OBSERVATIONS={
+  spellings:['spelling','resolved'],
+  queues:['expected','actual'],
+  folds:['expected','actual'],
+  steps:['expected','actual'],
+  replays:['expected','actual'],
+  resolves:['leaf','active','absent','terminal'],
+};
+
+/** A resolve row's observations must agree with the model's own laws: the
+ * supply biconditional (a kind has exactly one witness iff the leaf says so),
+ * kind exclusion, and terminal attestation soundness. A row that claims a
+ * witness and the wrong leaf contradicts itself and is not evidence. */
+function checkResolveObservations(row){
+  const leaf=row.leaf==='unknown'?null
+    :(row.leaf&&typeof row.leaf==='object'&&row.leaf.known?row.leaf.known.s:undefined);
+  if(leaf!==null&&!['absent','active','terminal'].includes(leaf))
+    throw Error(`naming resolve row with an unreadable leaf: ${row.id}`);
+  for(const k of ['active','absent','terminal'])
+    if(!Number.isSafeInteger(row[k])||row[k]<0)
+      throw Error(`naming resolve row without a witness count: ${row.id}`);
+  if((row.active===1)!==(leaf==='active')||(row.absent===1)!==(leaf==='absent'))
+    throw Error(`naming resolve row contradicts the supply biconditional: ${row.id}`);
+  if(leaf===null&&(row.active>0||row.absent>0||row.terminal>0))
+    throw Error(`naming resolve row claims witnesses on an unknown leaf: ${row.id}`);
+  if(leaf!=='terminal'&&row.terminal>0)
+    throw Error(`naming resolve row attests a leaf that is not terminal: ${row.id}`);
+  if(row.active>0&&(row.absent>0||row.terminal>0)||
+     row.absent>0&&(row.active>0||row.terminal>0)||
+     row.terminal>0&&(row.active>0||row.absent>0))
+    throw Error(`naming resolve row holds excluding witness kinds: ${row.id}`);
+}
+
+/** Inspect the naming corpus: every row states an expectation the Lean model
+ * computed, and every row must still say what it said, completely — an
+ * id-only row, a missing observation, a duplicate id or a row that
+ * contradicts itself is a failure, not a smaller pass.
+ *
+ * The receipt reports INSPECTION, never execution: nothing here runs a
+ * transition, so `executed` is zero by construction and the page labels say
+ * "inspected", not "replayed". */
 function checkNamingCorpus(corpus){
-  let discovered=0,executed=0;
-  const ids=new Set();
+  let discovered=0,inspected=0;
+  const ids=new Set(),bySection={};
   for(const section of NAMING_SECTIONS){
     const rows=corpus[section];
     if(!Array.isArray(rows)||rows.length===0)
       throw Error(`empty naming corpus section: ${section}`);
+    bySection[section]=0;
     for(const row of rows){
       discovered++;
+      if(typeof row.id!=='string'||!row.id)
+        throw Error(`naming row without an id in ${section}`);
       if(ids.has(row.id))throw Error(`duplicate naming row: ${row.id}`);
       ids.add(row.id);
-      if('expected' in row&&'actual' in row&&row.expected!==row.actual)
-        throw Error(`naming row disagrees with its own expectation: ${row.id}`);
-      if('resolved' in row&&typeof row.resolved!=='boolean')
-        throw Error(`naming row has no verdict: ${row.id}`);
-      executed++;
+      for(const field of NAMING_OBSERVATIONS[section])
+        if(!(field in row))
+          throw Error(`naming row missing its ${field} observation: ${row.id}`);
+      if(section==='spellings'){
+        if(typeof row.resolved!=='boolean')
+          throw Error(`naming row without a boolean verdict: ${row.id}`);
+        if(row.resolved&&(!Number.isSafeInteger(row.key)||row.key<0))
+          throw Error(`naming row claims a resolution without the key: ${row.id}`);
+      }else if(section==='resolves'){
+        checkResolveObservations(row);
+      }else{
+        if(typeof row.expected!=='boolean'||typeof row.actual!=='boolean')
+          throw Error(`naming row without a boolean verdict: ${row.id}`);
+        if(row.expected!==row.actual)
+          throw Error(`naming row disagrees with its own expectation: ${row.id}`);
+      }
+      bySection[section]++;
+      inspected++;
     }
   }
-  if(discovered!==executed)throw Error('naming denominator');
-  return {discovered,executed,sections:NAMING_SECTIONS.length};
+  if(discovered!==inspected)throw Error('naming denominator');
+  return {discovered,inspected,executed:0,sections:NAMING_SECTIONS.length,
+    bySection,boundary:'evidence'};
 }
 
 /** The Over witness, played rather than asserted: book a name, retire it, and
  * watch the attestation minted by a folded read — twice, because it is plural —
- * then burned, because an implicational witness may be. */
+ * then burned, because an implicational witness may be. Unlike the corpus
+ * checks above this EXECUTES behavior: each step runs the engine. */
 function overWitnessJourney(key=42,owner=42,output=555){
   const steps=[];
   let state=initial();
@@ -897,9 +980,13 @@ const LIFECYCLE_TITLES = {
   wire: 'The datum on the wire, byte for byte',
 };
 
-/** Replay the lifecycle corpus. Every row is an expectation the Lean model
+/** Inspect the lifecycle corpus. Every row is an expectation the Lean model
  * computed and every row must still say what it said; an empty section, a
- * duplicate id or a row without a verdict is a failure, not a smaller pass. */
+ * duplicate id or a row without a verdict is a failure, not a smaller pass.
+ *
+ * The receipt reports INSPECTION, never execution: these rows are verdicts
+ * the Lean computed, replayed by nothing here, so `executed` is zero by
+ * construction and the page labels say "inspected". */
 function checkLifecycleCorpus(corpus) {
   if (!corpus || typeof corpus !== 'object') throw Error('no lifecycle corpus');
   let discovered = 0, executed = 0;
@@ -922,7 +1009,8 @@ function checkLifecycleCorpus(corpus) {
     }
   }
   if (discovered !== executed) throw Error('lifecycle denominator');
-  return { discovered, executed, sections: LIFECYCLE_SECTIONS.length, rows };
+  return { discovered, inspected: executed, executed: 0,
+    sections: LIFECYCLE_SECTIONS.length, rows, boundary: 'evidence' };
 }
 
 /** The reason a row records, when it records one rather than a plain `true`. */
@@ -6090,7 +6178,8 @@ function renderCorpusAndTheorems(){
   $('corpus-status').textContent=
     `${agree}/${CORPUS.cases.length} Lean corpus rows reproduced in your browser · model ${CORPUS.modelSha256.slice(0,12)}`;
   const report=theoremReport(THEOREMS,CORPUS);
-  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.exhibited,d.held]);
+  rows($('theorems'),report,d=>[d.name.split('.').at(-1),d.coverage,d.applicable,d.vacuous,d.held,
+    d.exercised?'exercised':'not exercised']);
 }
 
 function renderNaming(){
@@ -6099,11 +6188,11 @@ function renderNaming(){
     leafName(d.leaf),d.witnesses.active,d.witnesses.absent,d.witnesses.terminal]);
   const c=checkNamingCorpus(NAMINGCORPUS);
   $('naming-status').textContent=
-    `${c.executed}/${c.discovered} naming corpus rows across ${c.sections} sections replayed`;
+    `${c.inspected}/${c.discovered} naming rows across ${c.sections} sections inspected · Lean evidence, not replayed`;
   const l=checkLifecycleCorpus(LIFECYCLECORPUS);
   rows($('lifecycle'),l.rows,d=>[LIFECYCLE_TITLES[d.section],d.id,lifecycleReason(d)]);
   $('lifecycle-status').textContent=
-    `${l.executed}/${l.discovered} lifecycle rows across ${l.sections} sections replayed`;
+    `${l.inspected}/${l.discovered} lifecycle rows across ${l.sections} sections inspected · Lean evidence, not replayed`;
 }
 
 function boot(){
