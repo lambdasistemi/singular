@@ -1,0 +1,30 @@
+{
+  "beforeafter-mapping-of-the-checks": [
+    {
+      "text": "The table maps every simulator control from what it observed before this slice to what it observes now. The new rows close the silent holes: an admitted case must show the modeled mint delta and the custody refund in both destination and amount, a guard fails if the corpus stops observing refunds at all, and every exported corpus section must be classified as behavior, evidence or uncovered. The replaced rows report honestly: theorem tables separate applicable, vacuous, held and exercised; receipts say inspected, never replayed; and naming rows are validated against the supply biconditional. Everything listed as preserved keeps its previous observation unchanged.",
+      "pause": 400
+    }
+  ],
+  "prepublication-repair-2026-09-21-full-s3-and-unconditional-laws": [
+    {
+      "text": "Two defects in the original acceptance criteria were caught by prepublication owner checks and repaired against the Lean model, with no operator ruling needed. First, resolve rows could pass while contradicting the supply-sync biconditional, because the checker encoded only the active half; it now requires all four conjuncts, so absence and wrong-multiplicity rows are rejected by name, and a branch that could never fire again was deleted rather than left unable to fail. Second, the same law gated itself on its own output, letting a violating state hide as an inactive hypothesis; since the law is unconditional over reachable states, it now applies always and asserts the full consequent. Coverage moved to ten applicable rows with none vacuous for the affected laws, and a preserved witness-dropping mutant is now flagged on nine of ten rows where the old layer reported the law as merely vacuous.",
+      "pause": 400
+    }
+  ],
+  "verification-record": [
+    {
+      "text": "Every command and its result is listed. The simulator check passed on baseline and candidate with one permitted invocation to spare; the browser check used all three, failing once on a redundant label assertion and passing after the exact inspected wording was pinned. Red controls planted dropped mints, zeroed refunds and fabricated rows into the old checks and watched them survive; the same mutants under the new gate fail by name, while the page-build identity checks still pass honestly because they observe identity, not behavior. The candidate's own report counts thirty-eight corpus cases, seven controlled laws each with applicable rows held, and twenty-four naming and twenty-one lifecycle rows inspected, never executed.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "The limits are stated plainly. Refund coverage rests on the four accepted cases that pay, with the ada rows adding a destination-named control, and the gate fails rather than passing quietly if the corpus ever stops exporting one. Mint expectations come from the transcription's delta table, anchored to the model through end states and evidence rows rather than re-proved here. Fold, keyed and transaction rows are inspected as exported evidence, never executed, and transaction wire bytes are not re-derived. The candidate is local only; push, audit and acceptance belong to the parent.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "mapping.md",
+    "sha256": "92c52310a00193da6cae76f353267c3f7cb77d6437fa49e8d984cd43e02d2f88"
+  }
+}
