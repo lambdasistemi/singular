@@ -62,15 +62,17 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Lens.Micro ((^.))
 
-import Cardano.Ledger.Api.Tx (bodyTxL)
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, referenceInputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Blueprint (NamingCodes)
-import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config (CageConfig (..), cfgScriptHash)
 import Singular.Registry.Ledger (
     Addr,
     AssetName (..),
@@ -154,10 +156,28 @@ bootRegistry ::
     IO Registry
 bootRegistry cfg codes prov submit payer tm = do
     unsignedBoot <- bootTokenImpl cfg prov payer
+    -- The boot must RESOLVE the state validator through a published
+    -- reference output, never carry it. The validator is fifteen
+    -- kilobytes against a sixteen-kilobyte cap, so an inline boot
+    -- leaves the registry no room to grow: that is what the retirement
+    -- guard ran out of. These two checks came from a harness that
+    -- booted by hand; they belong to whoever boots.
+    when (Map.member (cfgScriptHash cfg) (unsignedBoot ^. witsTxL . scriptTxWitsL)) $
+        error
+            "bootRegistry: the boot transaction carries the state \
+            \validator INLINE; it must reference the published output"
+    when (Set.null (unsignedBoot ^. bodyTxL . referenceInputsTxBodyL)) $
+        error
+            "bootRegistry: the boot transaction resolves no reference \
+            \input, so the state validator was not published before it"
     signedBoot <- submit unsignedBoot
     tid <- tokenIdOfBootTx cfg signedBoot
     createTrie tm tid
     refs <- Edges.publishCageRefs cfg codes prov submit payer tid
+    -- The boot is not booted until the chain holds its state UTxO.
+    stateUtxos <- Cage.queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
+    when (null stateUtxos) $
+        error "bootRegistry: the cage address holds no UTxO after the boot"
     pure
         Registry
             { regCfg = cfg

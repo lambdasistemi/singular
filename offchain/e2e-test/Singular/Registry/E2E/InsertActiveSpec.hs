@@ -32,18 +32,18 @@ an empty Plutus log list, so the cage's trace is not recoverable from
 it; the names are asserted under `aiken check`, against the construction
 sites the validator reads.
 
-'foldAndMirror' commits each landed fold into the manager's trie and
-fails if the committed root does not move. That is not bookkeeping: the
-speculative session inside 'updateTokenWithDuties' starts from the
-committed trie and is discarded, so a caller that skips this re-proves
-the next fold against the BOOT state and fold 2 submits an empty proof.
-A stale root is otherwise invisible until a later fold fails for an
-unrelated-looking reason.
+This spec used to carry its own 'foldAndMirror', which committed each
+landed fold into the manager and failed if the root did not move — the
+same function 'Fork81Spec' carried, with a comment here saying so. Both
+are gone: 'Singular.Registry.Driver.foldEdgeTo' books, folds, submits and
+commits as one step, and refuses a fold when the manager is behind the
+chain. What is left here is what belongs here — the observation that
+exactly one active token lands at the wallet the request named, and the
+refusal of a second insert on a bound key with its accepting control.
 -}
 module Singular.Registry.E2E.InsertActiveSpec (spec) where
 
 import Control.Exception (SomeException, try)
-import Control.Monad (when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
@@ -53,38 +53,28 @@ import Test.Hspec
 import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
-import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
-import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 
 import Cardano.Ledger.Core (valueTxOutL)
-import Cardano.Node.Client.Submitter (Submitter)
-import Cardano.Tx.Ledger (ConwayTx)
-import Cardano.Ledger.Api.Tx.Out (TxOut)
-import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.Blueprint (
-    NamingCodes,
     extractCompiledCode,
     loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (AssetName (..), TokenId, TxIn)
-import Singular.Registry.Ledger (Root (..))
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Ledger (AssetName (..))
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.TxBuilder.Edges qualified as Edges
-import Singular.Registry.TxBuilder.Internal (leafActive, policyIdFromPin)
-import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
+import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.Types (edgeInsertActive)
 
+import Singular.Registry.Driver (
+    bootRegistry,
+    foldEdgeTo,
+ )
 import Singular.Registry.E2E.CageSpec (
-    publishCageRefs,
-    registryContextFor,
     submitWithGenesis,
-    withBootedCage,
+    withE2E,
  )
 
 activeKey, refusalKey, controlKey :: ByteString
@@ -138,12 +128,11 @@ insertActiveSpec ::
     SBS.ShortByteString -> SBS.ShortByteString -> Spec
 insertActiveSpec stateBytes requestBytes = do
     it "folds one insertActive and places exactly one active token at the named wallet" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
-            refs <- publishCageRefs cfg prov submit tokenId
+        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
-            _ <-
-                bookTo cfg codes prov submit tokenId activeKey walletDestination
-            _ <- foldAndMirror cfg prov submit tm tokenId refs activeKey
+            reg <-
+                bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+            _ <- foldEdgeTo reg activeKey edgeInsertActive walletDestination
 
             -- The observation, not the exit code: exactly one token under
             -- the ACTIVE policy, named by the key, at the wallet the
@@ -157,19 +146,17 @@ insertActiveSpec stateBytes requestBytes = do
             held `shouldBe` (1 :: Integer)
 
     it "refuses a second insertActive on the same key, with a fresh key accepted in the same cage" $
-        withBootedCage id stateBytes requestBytes $ \cfg prov submit tm tokenId -> do
-            refs <- publishCageRefs cfg prov submit tokenId
+        withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
+            reg <-
+                bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
 
             -- A cage of its own, and every delivery routed away from the
             -- funding wallet, so neither the named-wallet story above nor
             -- a fee-input collision can be confused with occupancy.
-            let book key =
-                    bookTo cfg codes prov submit tokenId key elsewhereDestination
-                fold key = foldAndMirror cfg prov submit tm tokenId refs key
+            let fold key = foldEdgeTo reg key edgeInsertActive elsewhereDestination
 
             -- 1. book and fold the key once: it is now taken.
-            _ <- book refusalKey
             _ <- fold refusalKey
 
             -- 2. the accepting control, in THIS cage, through the SAME
@@ -177,7 +164,6 @@ insertActiveSpec stateBytes requestBytes = do
             --    runs before the duplicate so a failure here is reported
             --    as a broken control rather than silently making step 3
             --    vacuous.
-            _ <- book controlKey
             control <- try @SomeException (fold controlKey)
             case control of
                 Left e ->
@@ -193,7 +179,6 @@ insertActiveSpec stateBytes requestBytes = do
             --    against step 2 — same cage, same builder, same
             --    destination, same fee wallet holding no active token.
             --    The only difference is that this key is already bound.
-            _ <- book refusalKey
             duplicate <- try @SomeException (fold refusalKey)
             case duplicate of
                 Right _ ->
@@ -202,78 +187,6 @@ insertActiveSpec stateBytes requestBytes = do
                         \insertActive on a key the trie already binds — \
                         \reported, not relabelled"
                 Left _ -> pure ()
-
--- | Book one `insertActive` at an explicitly named destination.
-bookTo ::
-    CageConfig ->
-    NamingCodes ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TokenId ->
-    ByteString ->
-    (ByteString, ByteString) ->
-    IO TxIn
-bookTo cfg codes prov submit tokenId key dest =
-    Edges.bookEdgeTo
-        cfg
-        codes
-        prov
-        (submitWithGenesis submit)
-        genesisAddr
-        tokenId
-        key
-        edgeInsertActive
-        dest
-
-{- | Fold the pending requests, submit, and MIRROR the landed fold into
-the manager's committed trie.
-
-The mirroring is not bookkeeping. The speculative session inside
-`updateTokenWithDuties` starts from the committed trie and is discarded,
-so a caller that does not commit each landed fold re-proves the next one
-against the BOOT state: fold 2 submits an empty proof and fails. That is
-what made every second fold in this spec fail, whatever its destination,
-and it is a defect in this harness rather than in the cage —
-`Fork81Spec.foldInsert` has done it correctly all along, and says so in
-its own comment.
--}
-foldAndMirror ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    TokenId ->
-    [(TxIn, TxOut ConwayEra)] ->
-    ByteString ->
-    IO ConwayTx
-foldAndMirror cfg prov submit tm tokenId refs key = do
-    rootBefore <- withTrie tm tokenId getRoot
-    ctx <- registryContextFor cfg prov tokenId refs
-    unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
-    -- Building the fold is not folding it: the token only moves once the
-    -- transaction is on chain.
-    signed <- submitWithGenesis submit unsigned
-    withTrie tm tokenId $ \t -> do
-        _ <- insert t key leafActive
-        pure ()
-    rootAfter <- withTrie tm tokenId getRoot
-    -- A-011 receipt binding: the committed mirror root on either side of
-    -- the landed fold. A root that does NOT move is the defect this
-    -- repair exists for, and it would otherwise be invisible until the
-    -- NEXT fold failed for an unrelated-looking reason.
-    putStrLn
-        ( "[t173] fold key="
-            <> show key
-            <> " mirror-root-before=0x"
-            <> hexBS (unRoot rootBefore)
-            <> " mirror-root-after=0x"
-            <> hexBS (unRoot rootAfter)
-        )
-    when (unRoot rootBefore == unRoot rootAfter) $
-        expectationFailure
-            "A-011: the committed mirror root did not move across a landed \
-            \fold — the next fold would re-prove against a stale root"
-    pure signed
 
 -- | The quantity held under the ACTIVE policy at this key, at the wallet.
 activeHeldAt :: Cage.Provider IO -> CageConfig -> ByteString -> IO Integer
@@ -291,6 +204,3 @@ activeHeldAt prov cfg key = do
             , SBS.fromShort n == key
             ]
 
--- | Hex for the receipt lines.
-hexBS :: ByteString -> String
-hexBS = T.unpack . TE.decodeUtf8 . Base16.encode
