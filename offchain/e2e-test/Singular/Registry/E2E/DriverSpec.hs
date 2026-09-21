@@ -33,7 +33,15 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (isInfixOf)
 import System.Environment (lookupEnv)
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe)
+import Test.Hspec (
+    Spec,
+    describe,
+    expectationFailure,
+    it,
+    runIO,
+    shouldBe,
+    shouldNotBe,
+ )
 
 import Singular.Registry.Blueprint (
     extractCompiledCode,
@@ -48,6 +56,7 @@ import Singular.Registry.Driver (
     mirrorRoot,
     registryRefs,
     registryTokenId,
+    renderRoot,
  )
 import Singular.Registry.Ledger (Root (..))
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
@@ -142,6 +151,19 @@ driverSpec stateBytes requestBytes = do
             -- so at the NEXT fold rather than letting it build a doomed
             -- proof. The control for this assertion is the first example
             -- above, where the identical call succeeds.
+            --
+            -- Both roots are read HERE, independently of the driver, and
+            -- the rejection must carry both of them. A driver that says
+            -- only "out of step" and swallows the values does not satisfy
+            -- the acceptance line, which asks for the root before and the
+            -- root after in the receipt — so the assertion binds the
+            -- values, not the phrasing.
+            staleMirror <- mirrorRoot reg
+            landedChain <- chainRoot reg
+            let staleHex = renderRoot (unRoot staleMirror)
+                chainHex = renderRoot (unOnChainRoot landedChain)
+            staleHex `shouldNotBe` chainHex
+
             result <- try @SomeException (foldEdge reg afterSeededKey edgeInsertAbsent)
             case result of
                 Right _ ->
@@ -151,12 +173,24 @@ driverSpec stateBytes requestBytes = do
                         \here, so it will surface at a later unrelated fold"
                 Left err -> do
                     let msg = show err
-                    if "out of step" `isInfixOf` msg
+                        missing =
+                            [ what
+                            | (what, needle) <-
+                                [ ("the out-of-step diagnosis", "out of step")
+                                , ("the manager's root " <> staleHex, staleHex)
+                                , ("the chain's root " <> chainHex, chainHex)
+                                ]
+                            , not (needle `isInfixOf` msg)
+                            ]
+                    if null missing
                         then pure ()
                         else
                             expectationFailure
-                                ( "the driver failed, but not for the skipped \
-                                  \commit — the rejection must name the \
-                                  \out-of-step manager and both roots. Got: "
+                                ( "the driver failed, but its rejection is \
+                                  \missing "
+                                    <> show missing
+                                    <> " — the acceptance line asks for the \
+                                       \root before and after in the receipt. \
+                                       \Got: "
                                     <> msg
                                 )

@@ -51,6 +51,7 @@ module Singular.Registry.Driver (
     -- * Reading the two roots
     chainRoot,
     mirrorRoot,
+    renderRoot,
 
     -- * Deriving the token a boot minted
     tokenIdOfBootTx,
@@ -58,6 +59,8 @@ module Singular.Registry.Driver (
 
 import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BS8
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((^.))
 
@@ -230,9 +233,9 @@ foldEdgeWith reg key edge mDest = do
               \folding "
                 <> show key
                 <> " (mirror "
-                <> show (unRoot rootBefore)
+                <> renderRoot (unRoot rootBefore)
                 <> ", chain "
-                <> show (unOnChainRoot onChainBefore)
+                <> renderRoot (unOnChainRoot onChainBefore)
                 <> "): a fold landed without being committed into the \
                    \manager"
             )
@@ -290,9 +293,9 @@ foldEdgeWith reg key edge mDest = do
             ( "foldEdge: after folding "
                 <> show key
                 <> " the mirror root and the chain root disagree (mirror "
-                <> show (unRoot rootAfter)
+                <> renderRoot (unRoot rootAfter)
                 <> ", chain "
-                <> show (unOnChainRoot onChain)
+                <> renderRoot (unOnChainRoot onChain)
                 <> ")"
             )
     pure
@@ -337,3 +340,11 @@ tokenIdOfBootTx cfg tx =
                         <> show (length assets)
                         <> " assets under the cage policy, not one"
                     )
+
+{- | A root as the driver's diagnostics render it: lowercase hex, no
+quoting. A caller that wants to assert on a rejection's text builds the
+same string from a root it read itself, so the assertion binds the
+values rather than the phrasing.
+-}
+renderRoot :: ByteString -> String
+renderRoot = BS8.unpack . B16.encode
