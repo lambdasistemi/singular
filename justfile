@@ -36,8 +36,15 @@ ci:
     python3 tools/check_site.py site
     just check-presentation
     just rename-registry-test
+    just commit-subjects-test
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
 rename-registry-test:
     bash tools/rename-registry.test.sh
+
+# #195: every non-merge commit subject in a range must carry the Conventional
+# Commit type release-please classifies by, or the work drops out of the
+# changelog.
+commit-subjects-test:
+    bash tools/commit-subjects.test.sh
