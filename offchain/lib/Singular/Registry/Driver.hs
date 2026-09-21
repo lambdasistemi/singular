@@ -45,6 +45,7 @@ module Singular.Registry.Driver (
 
     -- * Folding one edge
     foldEdge,
+    foldEdgeTo,
     FoldOutcome (..),
 
     -- * Reading the two roots
@@ -190,7 +191,32 @@ The order is not the caller's to get wrong, and the two root checks are
 not the caller's to remember. See the module header for why both exist.
 -}
 foldEdge :: Registry -> ByteString -> Edge -> IO FoldOutcome
-foldEdge reg key edge = do
+foldEdge reg key edge = foldEdgeWith reg key edge Nothing
+
+{- | Fold one edge whose delivery goes to an explicitly named
+destination rather than the one the edge would route to by itself.
+
+The naming application routes an `insertActive` to its own script
+address; a harness that has no spending arm there names a wallet
+instead. That is the only difference, so it is a parameter here rather
+than a second driver.
+-}
+foldEdgeTo ::
+    Registry ->
+    ByteString ->
+    Edge ->
+    -- | destination address and datum, as `Edges.bookEdgeTo` takes them
+    (ByteString, ByteString) ->
+    IO FoldOutcome
+foldEdgeTo reg key edge dest = foldEdgeWith reg key edge (Just dest)
+
+foldEdgeWith ::
+    Registry ->
+    ByteString ->
+    Edge ->
+    Maybe (ByteString, ByteString) ->
+    IO FoldOutcome
+foldEdgeWith reg key edge mDest = do
     rootBefore <- mirrorRoot reg
     onChainBefore <- chainRoot reg
     -- The precondition nobody had. A caller that landed a fold behind
@@ -210,16 +236,28 @@ foldEdge reg key edge = do
                 <> "): a fold landed without being committed into the \
                    \manager"
             )
-    booking <-
-        Edges.bookEdge
-            (regCfg reg)
-            (regCodes reg)
-            (regProv reg)
-            (regSubmit reg)
-            (regPayer reg)
-            (regTid reg)
-            key
-            edge
+    booking <- case mDest of
+        Nothing ->
+            Edges.bookEdge
+                (regCfg reg)
+                (regCodes reg)
+                (regProv reg)
+                (regSubmit reg)
+                (regPayer reg)
+                (regTid reg)
+                key
+                edge
+        Just dest ->
+            Edges.bookEdgeTo
+                (regCfg reg)
+                (regCodes reg)
+                (regProv reg)
+                (regSubmit reg)
+                (regPayer reg)
+                (regTid reg)
+                key
+                edge
+                dest
     ctx <-
         Edges.registryContextFor
             (regCfg reg)
