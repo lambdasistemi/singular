@@ -5,7 +5,7 @@ module Conformance.Story.Usage (spec, story) where
 import Control.Monad.Operational (Program)
 import Test.Hspec (Spec, it, shouldBe)
 import Conformance.Story
-import Conformance.Edge.Register (insertActiveRow)
+import Conformance.Support.RegistrationReport (insertActiveRow)
 
 story :: Program StoryI ()
 story = theorem insertActiveRow $ do

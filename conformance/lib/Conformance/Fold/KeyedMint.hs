@@ -5,7 +5,7 @@ import Conformance.Story.Live
 import Conformance.Story.Binding (Binding, mkBoundObligation)
 
 -- | Both requests belong to the registry and recipient established by the caller.
-story :: r -> w -> Story r w a t b f b
+story :: reg -> wal -> Story reg wal ins ret bat ref bat
 story registry recipient = do
     linkedTo keyedMintFold conjuncts
     compareBatchAllocation registry recipient "carol" "david"

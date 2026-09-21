@@ -4,6 +4,13 @@ Start with [registration](../lib/Conformance/Edge/Register.hs). Its caller
 supplies a fresh registry and funded recipient. The story names the Lean
 theorem and runs a registration inside a readable clause.
 
+`theorem` and `clause` come from the reusable
+[`Story.Specification`](../lib/Conformance/Story/Specification.hs) library.
+They are indexed by theorem (`thm`), action vocabulary (`act`), observation
+(`obs`) and result (`res`). Singular supplies the bound declaration and the
+check action; the generic library has no registry operations or Cardano types.
+A clause for another theorem or observation type does not compile.
+
 That clause executes the real transaction builder on a local Cardano devnet.
 The interpreter maps actual wallet, policy and key identities to stable model
 IDs, asks the [Lean program](../lean/RegistrationOracle.lean) for the expected

@@ -4,21 +4,21 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `7db0341a17cb0f2e9c932b86437d72648e5b88d1` (working tree had changes).
+Code revision: `46d5d35616b0601d11e6ad6e0cf4dfbf0ad62743` (working tree had changes).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Registration passed: exactly one active token reached the requested recipient.
 
-Transaction: `4d5735de5590d733366c61f6e31a23a78cd2742935ed6baab2fa759f57d3421a`.
+Transaction: `ed0f946688bb5327e3cf2f1a8e57c612274f69bbd6ac6405443fdc24da5ac034`.
 
-Code revision: `7db0341a17cb0f2e9c932b86437d72648e5b88d1` (working tree had changes).
+Code revision: `46d5d35616b0601d11e6ad6e0cf4dfbf0ad62743` (working tree had changes).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Retirement passed: the holder's active-token quantity changed from **1** to **0**, the token was burned, and the key became Terminal.
 
-Registration transaction: `2add626125ba445193cd9b2f8eaa66790b9ecb55d57ed3960364e92ee0a49c74`. Retirement transaction: `e67ea98cab96bab38f1b48b1b5ad435d4fc7b42a188d84e60e1b58539dbe3352`.
+Registration transaction: `45e94917bf4e182410a1312f57dcf5479c8a64743685cbc8dcd490a32d14c55b`. Retirement transaction: `076145ed10975a6d328816a4b37797de963c9ba862d3b22089ff8449f8aa7db9`.
 
 ## Register a key and receive its active token
 

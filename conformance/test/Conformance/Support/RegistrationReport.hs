@@ -13,11 +13,16 @@ module Conformance.Support.RegistrationReport (spec, story, insertActiveRow, con
 import Control.Monad.Operational (Program)
 import Test.Hspec (Spec)
 import Conformance.Story
-import Conformance.Edge.Register (insertActiveRow, conjuncts)
+import Conformance.Edge.Register (conjuncts)
+import Conformance.Lean.Registration qualified as Lean
+import Conformance.Story.Specification (theoremBinding)
 import Conformance.Fixture.ActiveRegistration (activeHex, openHex, keyHex, keyAHex, keyBHex, walletAddr, dupTx, mintControlTx, otherName, otherAddress, otherApproval, emptyValue, unlandedTx)
 
 spec :: Spec
 spec = runStory story
+
+insertActiveRow :: Binding
+insertActiveRow = theoremBinding Lean.insertActiveRow
 
 story :: Program StoryI ()
 story = theorem insertActiveRow $ do

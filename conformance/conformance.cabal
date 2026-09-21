@@ -75,6 +75,7 @@ library
     Conformance.Rows
     Conformance.Story.Binding
     Conformance.Story.Live
+    Conformance.Story.Specification
     Conformance.Story.Identity
     Conformance.Lean.Registration
     Conformance.Edge.Register
@@ -160,6 +161,7 @@ test-suite conformance-tests
     Conformance.Support.Refusal
     Conformance.Support.Rows
     Conformance.Support.Identity
+    Conformance.Support.Specification
     Paths_conformance
   build-depends:
     , aeson >=2.1 && <2.3

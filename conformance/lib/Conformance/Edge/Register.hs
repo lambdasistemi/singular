@@ -3,20 +3,19 @@ module Conformance.Edge.Register (story, insertActiveRow, conjuncts) where
 
 import Conformance.Fold.KeyedMint qualified as Batch (story)
 import Conformance.Lean.Registration (insertActiveRow, registrationDelivery)
+import Conformance.Story.Specification (clause, theorem)
 import Conformance.Story.Live
     ( Context (Context)
     , RegistrationRun (RegistrationRun)
     , Story
-    , clause
     , expectActiveToken
     , expectDuplicateRegistrationRefused
     , registerFreshKey
     , registerKey
-    , theorem
     )
 
 -- | The caller supplies an empty open registry and a funded recipient.
-story :: Context r w -> Story r w a t b f (RegistrationRun r a b f)
+story :: Context reg wal -> Story reg wal ins ret bat ref (RegistrationRun reg ins bat ref)
 story (Context registry recipient) = do
     registration <- theorem insertActiveRow $
         clause "Registration delivers one active token to the requested recipient"
@@ -30,7 +29,8 @@ story (Context registry recipient) = do
     duplicate <- expectDuplicateRegistrationRefused registry registration fresh
     pure (RegistrationRun registry registration fresh batch duplicate)
 
--- | Verbatim Lean anchors used by this subject.
+-- | Legacy text anchors for receipt-validation tests and the retirement narrative.
+-- These strings do not execute Lean; the live delivery check is registrationDelivery.
 conjuncts :: [String]
 conjuncts = [ "address := some r.output"
           , "assets := [((.active, r.key), 1)]"

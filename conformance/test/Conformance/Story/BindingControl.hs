@@ -10,7 +10,7 @@ import Conformance.Fixture.ActiveRegistration (keyHex, loadTwoFixtures)
 import Conformance.Support.RegistrationReport qualified as InsertActive
 import Conformance.Support.BatchReport qualified as KeyedMint
 import Conformance.Story
-import Conformance.Edge.Register (insertActiveRow)
+import Conformance.Support.RegistrationReport (insertActiveRow)
 import Conformance.Fold.KeyedMint (keyedMintFold)
 
 spec :: Spec

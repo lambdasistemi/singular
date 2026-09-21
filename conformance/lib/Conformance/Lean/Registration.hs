@@ -1,7 +1,7 @@
 -- | The delivery projection proved by the registration theorem. Expectations
 -- are computed by the packaged Lean executable, never reconstructed here.
 module Conformance.Lean.Registration (
-    DeliveryCheck (..), registrationDelivery, insertActiveRow,
+    InsertActive, registrationDelivery, insertActiveRow,
     expectedDelivery, compareDelivery,
 ) where
 
@@ -9,16 +9,19 @@ import Data.Aeson (Value, eitherDecode, encode)
 import Data.ByteString.Lazy.Char8 qualified as BSL
 import System.Exit (ExitCode (..))
 import System.Process (readProcessWithExitCode)
-import Conformance.Story.Binding (Binding, mkBoundObligation)
+import Conformance.Story.Binding (mkBoundObligation)
+import Conformance.Story.Specification (LeanCheck, Theorem, bindCheck, bindTheorem)
+import Conformance.Story.Live (LiveI (CheckRegistrationDelivery))
 
-data DeliveryCheck = RegistrationDelivery
-    deriving stock (Show, Eq)
+-- | The registration declaration, distinct from every other theorem marker.
+data InsertActive
 
-registrationDelivery :: DeliveryCheck
-registrationDelivery = RegistrationDelivery
+-- | The check runs through the registry interpreter under this theorem.
+registrationDelivery :: LeanCheck (LiveI reg wal ins ret bat ref) InsertActive ins
+registrationDelivery = bindCheck insertActiveRow CheckRegistrationDelivery
 
-insertActiveRow :: Binding
-insertActiveRow = mkBoundObligation
+insertActiveRow :: Theorem InsertActive
+insertActiveRow = bindTheorem $ mkBoundObligation
     "Singular.Statements.insert_active_transaction_row"
     "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
     "265c595edd72eab10f3b08a36cb010ad407cf48b"

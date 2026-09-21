@@ -84,6 +84,7 @@ should.
 module Conformance.Run (runForkProbe, runRows) where
 
 import Control.Monad.Operational qualified as Operational
+import Conformance.Story.Specification qualified as Specification
 import Conformance.Story.Live qualified as Live
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Lean.Registration qualified as Lean
@@ -4680,17 +4681,36 @@ data LiveBatch = LiveBatch
     }
 
 -- | Interpret shared story instructions against the running node and builders.
-runLive :: Env -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg result -> IO result
+runLive :: Env -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg res -> IO res
 runLive env program = do
     identities <- newLiveIdentities
-    go identities Nothing program
+    go identities program
   where
-    go :: LiveIdentities -> Maybe Binding.Binding -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg a -> IO a
-    go identities binding body = case Operational.view body of
+    go :: LiveIdentities -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg res -> IO res
+    go identities body = case Operational.view body of
         Operational.Return result -> pure result
-        instruction Operational.:>>= next -> interpret identities binding instruction >>= go identities binding . next
-    interpret :: LiveIdentities -> Maybe Binding.Binding -> Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg a -> IO a
-    interpret identities currentTheorem instruction = case instruction of
+        Specification.Action instruction Operational.:>>= next ->
+            interpret identities instruction >>= go identities . next
+        Specification.Theorem declaration body' Operational.:>>= next -> do
+            let binding = Specification.theoremBinding declaration
+            manifest <- Binding.loadManifest >>= either failWith pure
+            require "live theorem binding is missing or stale" (Binding.resolveBinding manifest binding)
+            emit "theorem" (Binding.boName binding)
+            runClauses identities binding (Specification.clauses body') >>= go identities . next
+    runClauses :: LiveIdentities -> Binding.Binding -> Operational.Program (Specification.Clause thm (Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg)) res -> IO res
+    runClauses identities binding body = case Operational.view body of
+        Operational.Return result -> pure result
+        Specification.Clause title check actions Operational.:>>= next -> do
+            require "clause check names a different declaration than its enclosing theorem"
+                (binding == Specification.theoremBinding (Specification.checkTheorem check))
+            emit "clause" title
+            observation <- go identities actions
+            interpret identities (Specification.checkAction check observation)
+            runClauses identities binding (next observation)
+    interpret :: LiveIdentities -> Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg obs -> IO obs
+    interpret identities instruction = case instruction of
+        Live.CheckRegistrationDelivery registration ->
+            checkRegistrationAgainstLean env identities registration
         Live.LinkedTo binding rules -> do
             manifest <- Binding.loadManifest >>= either failWith pure
             require "live story names a missing or changed formal specification" (Binding.resolveBinding manifest binding)
@@ -4698,18 +4718,6 @@ runLive env program = do
             require "live story quotes a rule absent from the formal specification"
                 (Binding.anchorsPresent source [(Binding.boName binding, rules)])
             emit "specification" (Binding.boName binding <> " @" <> Binding.boRevision binding)
-        Live.Theorem binding body -> do
-            manifest <- Binding.loadManifest >>= either failWith pure
-            require "live theorem binding is missing or stale" (Binding.resolveBinding manifest binding)
-            emit "theorem" (Binding.boName binding)
-            go identities (Just binding) body
-        Live.Clause title Lean.RegistrationDelivery body -> do
-            require "delivery check must be inside its registration theorem"
-                (currentTheorem == Just Lean.insertActiveRow)
-            emit "clause" title
-            registration <- go identities currentTheorem body
-            checkRegistrationAgainstLean env identities registration
-            pure registration
         Live.RegisterKey registry key wallet -> do
             let bytes = TE.encodeUtf8 (T.pack key)
             prepareRegistrationIdentities identities registry bytes wallet
@@ -4843,8 +4851,8 @@ checkRegistrationAgainstLean env ids registration = do
     policies <- Identity.bindings <$> readIORef (livePolicies ids)
     keys <- Identity.bindings <$> readIORef (liveKeys ids)
     BSL.writeFile (envReceiptsDir env </> "registration-lean.json") $ encode $ object
-        [ "theorem" .= Binding.boName Lean.insertActiveRow
-        , "statementDigest" .= Binding.boDigest Lean.insertActiveRow
+        [ "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
+        , "statementDigest" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
         , "oracle" .= oracle, "base" .= envBase env, "transaction" .= txIdHex transaction
         , "scenario" .= scenario, "expected" .= expected
         , "actual" .= actual, "checkedObservation" .= observed, "holdings" .= holdings

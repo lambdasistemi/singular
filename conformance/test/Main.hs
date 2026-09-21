@@ -12,6 +12,7 @@ import Conformance.Support.Receipt qualified as Receipt
 import Conformance.Support.Refusal qualified as Refusal
 import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.Identity qualified as Identity
+import Conformance.Support.Specification qualified as Specification
 
 main :: IO ()
 main = hspec suite
@@ -27,6 +28,7 @@ suite = do
         Refusal.spec
         Rows.spec
         Identity.spec
+        Specification.spec
         Control.spec
         BindingControl.spec
         Usage.spec

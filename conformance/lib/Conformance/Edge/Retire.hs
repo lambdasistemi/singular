@@ -1,18 +1,19 @@
 -- | Retire a registration created in this run, then try two ineligible keys.
 module Conformance.Edge.Retire (story, storyWithRemainingTokens, retirement, conjuncts) where
 
+import Conformance.Story.Specification (theoremBinding)
 import Conformance.Story.Live
 import Conformance.Story.Binding (Binding, mkBoundObligation)
 import Conformance.Edge.Register qualified as Register
 
 -- | The holder context and the active token are created by real transactions.
-story :: Context r w -> Context r w -> Story r w a t b f (RetirementRun a t f)
+story :: Context reg wal -> Context reg wal -> Story reg wal ins ret bat ref (RetirementRun ins ret ref)
 story = storyWithRemainingTokens 0
 
 -- | A wrong remaining quantity makes the live observation fail after retirement.
-storyWithRemainingTokens :: Integer -> Context r w -> Context r w -> Story r w a t b f (RetirementRun a t f)
+storyWithRemainingTokens :: Integer -> Context reg wal -> Context reg wal -> Story reg wal ins ret bat ref (RetirementRun ins ret ref)
 storyWithRemainingTokens expected (Context registry holder) (Context otherRegistry _) = do
-    linkedTo Register.insertActiveRow Register.conjuncts
+    linkedTo (theoremBinding Register.insertActiveRow) Register.conjuncts
     registration <- registerKey registry "alice" holder
     expectActiveToken registration holder 1
 
