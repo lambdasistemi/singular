@@ -25,10 +25,10 @@ main = do
 
 suite :: Spec
 suite = do
-    describe "Registry promises — receipt evidence" $ do
-        InsertActive.spec
-        KeyedMint.spec
-    describe "Appendix — evidence machinery" $ do
+    describe "Registry promises — checking the reports that support them" $ do
+        describe "Registering a key" InsertActive.spec
+        describe "Allocating tokens across a batch of requests" KeyedMint.spec
+    describe "Appendix — how we check the evidence" $ do
         Observation.spec
         Receipt.spec
         Refusal.spec

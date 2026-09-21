@@ -10,59 +10,59 @@ The ten supporting cases below retain byte-identical bodies and run in the suite
 
 **49 cases; differing inputs: 0; differing predicates: 0.**
 The clause/name hygiene check is additional machinery, moved to Story.BindingControl.
-The old 49 case identities are retained, so the case text is the old-to-new key.
+The original titles remain below as historical identities; the next column gives the current stakeholder-facing title. Only titles changed after the recorded sweep; the case programs and assertions are unchanged.
 
-| Case (old EdgeSpec to new asset) | New module | Old predicate = new predicate |
-|---|---|---|
-| one active token at the key, at the address the request named | `Edge.Register` | loader returns exactly Right 1 |
-| no token delivered | `Edge.Register` | loader returns Left |
-| two tokens delivered at the key | `Edge.Register` | loader returns Left |
-| a token delivered under the open policy instead of the active one | `Edge.Register` | loader returns Left |
-| a token whose asset name is not the key | `Edge.Register` | loader returns Left |
-| a token observed at an address the request did not name | `Edge.Register` | loader returns Left |
-| a mint that is not exactly one token at the key | `Edge.Register` | loader returns Left |
-| an open application that declares a parameter | `Edge.Register` | loader returns Left |
-| a fold that paid a refund | `Edge.Register` | loader returns Left |
-| a fold that required a signer | `Edge.Register` | loader returns Left |
-| a request whose lovelace does not cover the tip | `Edge.Register` | loader returns Left |
-| a destination binding the approval does not carry | `Edge.Register` | loader returns Left |
-| a fold that moved a non-root configuration pin | `Edge.Register` | loader returns Left |
-| a configuration observation that lost a pin | `Edge.Register` | loader returns Left |
-| a leg whose trace the ledger did not surface is accepted | `Edge.Register` | loader returns exactly Right 1 |
-| a leg whose control is the transaction it refused | `Edge.Register` | loader returns Left |
-| a leg naming no failing script | `Edge.Register` | loader returns Left |
-| a leg naming an empty failing script | `Edge.Register` | loader returns Left |
-| a duplicate leg naming two keys | `Edge.Register` | loader returns Left |
-| a duplicate leg naming a key the fold did not insert | `Edge.Register` | loader returns Left |
-| a duplicate leg carrying mint arithmetic | `Edge.Register` | loader returns Left |
-| a refused transaction that also landed as a fold | `Edge.Register` | loader returns Left |
-| a control that never landed a fold | `Edge.Register` | loader returns Left |
-| a leg whose distinguisher is empty | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg reusing the duplicate's transaction | `Fold.KeyedMint` | loader returns Left |
-| two legs sharing one accepting control | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg naming one key | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg naming the same key twice | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg naming three keys | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg naming an empty key | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg reusing the fold's own key | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg whose claim also disagrees per kind | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg whose claim agrees per key as well | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg claiming a mint at neither named key | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg entailing a mint at neither named key | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint leg with no claimed mint at all | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint control that minted the refused claim | `Fold.KeyedMint` | loader returns Left |
-| a keyed-mint control that minted at another key | `Fold.KeyedMint` | loader returns Left |
-| an absent keyed-mint leg is refused | `Fold.KeyedMint` | loader returns Left |
-| names every field of the observation before mutating one | `Support.Observation` | 20 edge fields; exact duplicate/keyed field extents |
-| refuses a receipt that carries no observation at all | `Support.Observation` | loader returns Left |
-| refuses the observation with any single field absent | `Support.Observation` | loader returns Left for every discovered mutation |
-| refuses either refusal leg with any required field absent | `Support.Observation` | loader returns Left for every discovered mutation |
-| refuses a landed fold whose root did not move | `Support.Observation` | loader returns Left |
-| refuses a second fold proved against the boot root | `Support.Observation` | loader returns Left |
-| refuses a committed root that disagrees with the chain's | `Support.Observation` | loader returns Left |
-| refuses an empty landed-fold sequence | `Support.Observation` | loader returns Left |
-| refuses a fold transaction absent from the landed sequence | `Support.Observation` | loader returns Left |
-| refuses edge evidence on a row carrying another identity | `Support.Observation` | loader returns Left |
+| Original case | Current title | New module | Old predicate = new predicate |
+|---|---|---|---|
+| one active token at the key, at the address the request named | A registration report is accepted when the requested address receives one active token for the key | `Edge.Register` | loader returns exactly Right 1 |
+| no token delivered | A registration report is rejected if no active token is delivered | `Edge.Register` | loader returns Left |
+| two tokens delivered at the key | A registration report is rejected if two active tokens are delivered for the same key | `Edge.Register` | loader returns Left |
+| a token delivered under the open policy instead of the active one | A registration report is rejected if the delivered token comes from the wrong minting policy | `Edge.Register` | loader returns Left |
+| a token whose asset name is not the key | A registration report is rejected if the token names a different key | `Edge.Register` | loader returns Left |
+| a token observed at an address the request did not name | A registration report is rejected if the token goes to the wrong address | `Edge.Register` | loader returns Left |
+| a mint that is not exactly one token at the key | A registration report is rejected if no active token was created for the key | `Edge.Register` | loader returns Left |
+| an open application that declares a parameter | A registration report is rejected if the open application declares a parameter | `Edge.Register` | loader returns Left |
+| a fold that paid a refund | A registration report is rejected if applying the request also pays a refund | `Edge.Register` | loader returns Left |
+| a fold that required a signer | A registration report is rejected if applying the request requires a signer | `Edge.Register` | loader returns Left |
+| a request whose lovelace does not cover the tip | A registration report is rejected if the request cannot pay the processing tip | `Edge.Register` | loader returns Left |
+| a destination binding the approval does not carry | A registration report is rejected if the approval does not match the delivery address | `Edge.Register` | loader returns Left |
+| a fold that moved a non-root configuration pin | A registration report is rejected if applying the request changes the maximum fee | `Edge.Register` | loader returns Left |
+| a configuration observation that lost a pin | A registration report is rejected if the original settings are missing | `Edge.Register` | loader returns Left |
+| a leg whose trace the ledger did not surface is accepted | Evidence of a rejected duplicate registration is accepted without a script log | `Edge.Register` | loader returns exactly Right 1 |
+| a leg whose control is the transaction it refused | Evidence of a rejected duplicate is rejected if the same transaction is also called successful | `Edge.Register` | loader returns Left |
+| a leg naming no failing script | Evidence of a rejected duplicate is rejected if it does not identify the script that failed | `Edge.Register` | loader returns Left |
+| a leg naming an empty failing script | Evidence of a rejected duplicate is rejected if the failing script identifier is blank | `Edge.Register` | loader returns Left |
+| a duplicate leg naming two keys | Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered | `Edge.Register` | loader returns Left |
+| a duplicate leg naming a key the fold did not insert | Evidence of a rejected duplicate is rejected if it names a key this run never registered | `Edge.Register` | loader returns Left |
+| a duplicate leg carrying mint arithmetic | Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example | `Edge.Register` | loader returns Left |
+| a refused transaction that also landed as a fold | Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions | `Edge.Register` | loader returns Left |
+| a control that never landed a fold | Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run | `Edge.Register` | loader returns Left |
+| a leg whose distinguisher is empty | A batch rejection report must explain what differs from the successful comparison | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg reusing the duplicate's transaction | A batch rejection report cannot reuse the transaction from the duplicate-registration example | `Fold.KeyedMint` | loader returns Left |
+| two legs sharing one accepting control | The batch and duplicate-registration examples must each identify their own successful comparison transaction | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg naming one key | A report about a two-key batch is rejected if it lists only one key | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg naming the same key twice | A report about a two-key batch is rejected if it lists the same key twice | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg naming three keys | A report about a two-key batch is rejected if it lists three keys | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg naming an empty key | A report about a two-key batch is rejected if either key is blank | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg reusing the fold's own key | A batch rejection report cannot borrow a key from the separate single-registration example | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg whose claim also disagrees per kind | A report claiming the total is correct is rejected if it creates three tokens where two are required | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg whose claim agrees per key as well | A report claiming a wrong allocation is rejected if each key actually receives its required token | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg claiming a mint at neither named key | A batch rejection report is rejected if the claimed tokens name a key outside the batch | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg entailing a mint at neither named key | A batch rejection report is rejected if the required tokens name a key outside the batch | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint leg with no claimed mint at all | A batch rejection report must say which tokens the rejected transaction tried to create | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint control that minted the refused claim | A successful comparison must correct the allocation, not put both tokens at the first key again | `Fold.KeyedMint` | loader returns Left |
+| a keyed-mint control that minted at another key | A successful comparison must allocate its tokens to the two keys in the batch | `Fold.KeyedMint` | loader returns Left |
+| an absent keyed-mint leg is refused | A registration run report is rejected if the required batch-rejection example is missing | `Fold.KeyedMint` | loader returns Left |
+| names every field of the observation before mutating one | Checks that the example report contains all the fields used by the missing-data tests | `Support.Observation` | 20 edge fields; exact duplicate/keyed field extents |
+| refuses a receipt that carries no observation at all | Rejects a report with no registration evidence | `Support.Observation` | loader returns Left |
+| refuses the observation with any single field absent | Rejects a registration report whenever any required top-level field is missing | `Support.Observation` | loader returns Left for every discovered mutation |
+| refuses either refusal leg with any required field absent | Rejects either rejection example whenever any required detail is missing | `Support.Observation` | loader returns Left for every discovered mutation |
+| refuses a landed fold whose root did not move | Rejects a report saying a successful registration left the registry contents unchanged | `Support.Observation` | loader returns Left |
+| refuses a second fold proved against the boot root | Rejects a report whose second transaction starts from the initial registry instead of the first transaction's result | `Support.Observation` | loader returns Left |
+| refuses a committed root that disagrees with the chain's | Rejects a report whose recorded registry state disagrees with its reported transaction result | `Support.Observation` | loader returns Left |
+| refuses an empty landed-fold sequence | Rejects a report that lists no successful request-processing transactions | `Support.Observation` | loader returns Left |
+| refuses a fold transaction absent from the landed sequence | Rejects a report whose registration transaction is missing from its list of successful transactions | `Support.Observation` | loader returns Left |
+| refuses edge evidence on a row carrying another identity | Rejects registration evidence submitted under a different requirement | `Support.Observation` | loader returns Left |
 
 The new configuration edit preserves string-valued pins, matching the original
 receipt input exactly. Rejection remains `Left`; `Right 2` satisfies neither

@@ -45,14 +45,14 @@ import Conformance.Rows (
 import Paths_conformance (getDataFileName)
 
 spec :: Spec
-spec = describe "Receipt" $ do
+spec = describe "Appendix: deciding whether a run report counts as evidence" $ do
     retirementRoundTrip
-    it "round-trips every verdict class" $
+    it "Preserves every result category when saving and reading it back" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
                 Right v' -> v' `shouldBe` v
                 Left err -> fail err
-    it "loads the fixture receipts" $ do
+    it "Reads both example run reports successfully" $ do
         dir <- getDataFileName "test/fixtures/receipts"
         result <- loadReceipts dir
         result `shouldSatisfy` isRight
@@ -60,7 +60,7 @@ spec = describe "Receipt" $ do
             Right rs -> length rs `shouldBe` 2
             Left err -> fail err
 
-    it "shows executed only with a base-matching receipt" $ do
+    it "Marks a requirement as tested only when its report matches the code revision being assessed" $ do
         dir <- getDataFileName "test/fixtures/receipts"
         result <- loadReceipts dir
         case result of
@@ -78,7 +78,7 @@ spec = describe "Receipt" $ do
                     _ ->
                         fail "fixture inventory has no single update requirement"
 
-    it "shows the refused fixture row executed with its receipt" $ do
+    it "Counts a demonstrated rejection as a completed test of a rejection requirement" $ do
         dir <- getDataFileName "test/fixtures/receipts"
         result <- loadReceipts dir
         case result of
@@ -92,17 +92,17 @@ spec = describe "Receipt" $ do
                     _ ->
                         fail "fixture inventory has no single occupied-key refusal requirement"
 
-    it "rejects an accepted receipt with no transactions" $ do
+    it "Rejects a report claiming transaction acceptance without naming a transaction" $ do
         dir <- getDataFileName "test/fixtures/bad-accepted"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "rejects a refused receipt with no attribution" $ do
+    it "Rejects a rejection report that does not identify the responsible script" $ do
         dir <- getDataFileName "test/fixtures/bad-refused"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "rejects a phase-1 refusal as unattributed" $ do
+    it "Does not count a transaction rejected before script execution as a demonstrated script rejection" $ do
         dir <- getDataFileName "test/fixtures/bad-phase"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -111,7 +111,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("phase is not phase-2" `isInfixOf`)
             Right _ -> fail "a phase-1 refusal loaded as attributed"
 
-    it "rejects an empty attribution limit" $ do
+    it "Rejects rejection evidence that leaves its stated limitation blank" $ do
         dir <- getDataFileName "test/fixtures/bad-limit"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -120,12 +120,12 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("empty branch or limit" `isInfixOf`)
             Right _ -> fail "an empty limit loaded as explicit"
 
-    it "rejects two receipts for one row" $ do
+    it "Rejects competing reports for the same requirement" $ do
         dir <- getDataFileName "test/fixtures/duplicate"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "rejects a malformed receipt naming the file" $ do
+    it "Rejects an unreadable report and identifies the file to fix" $ do
         dir <- getDataFileName "test/fixtures/malformed"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -134,46 +134,46 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("receipt-CG02.json" `isInfixOf`)
             Right _ -> fail "a malformed receipt loaded"
 
-    it "rejects a receipt with an unknown venue" $ do
+    it "Rejects a report that names an unrecognised way of obtaining evidence" $ do
         dir <- getDataFileName "test/fixtures/bad-venue"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "rejects a node-submit refusal with no rejected id" $ do
+    it "Rejects a node rejection report that omits the rejected transaction identifier" $ do
         dir <- getDataFileName "test/fixtures/bad-no-rejected"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "rejects an accepted receipt naming a rejected id" $ do
+    it "Rejects a report that claims acceptance while also naming a rejected transaction" $ do
         dir <- getDataFileName "test/fixtures/bad-accepted-rejected"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "accepts a blueprint-check receipt with no transactions" $ do
+    it "Accepts a compiled-script inspection report without requiring a chain transaction" $ do
         dir <- getDataFileName "test/fixtures/good-blueprint-check"
         result <- loadReceipts dir
         result `shouldSatisfy` isRight
 
-    it "accepts a param-check receipt with no transactions" $ do
+    it "Accepts a parameter inspection report without requiring a chain transaction" $ do
         dir <- getDataFileName "test/fixtures/good-param-check"
         result <- loadReceipts dir
         result `shouldSatisfy` isRight
 
-    it "rejects a blueprint-check receipt naming transactions" $ do
+    it "Rejects a compiled-script inspection report that claims transaction evidence" $ do
         dir <- getDataFileName "test/fixtures/bad-blueprint-tx"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
 
-    it "accepts a small receipt under the size bound" $
+    it "Accepts a report within the allowed file size" $
         checkReceiptSize smallReceipt `shouldBe` Right ()
 
-    it "rejects an oversized receipt naming the row" $
+    it "Rejects an oversized report and identifies the affected requirement" $
         case checkReceiptSize oversizedReceipt of
             Left err ->
                 err `shouldSatisfy` ("CG05" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
 
-    it "loads a valid partial receipt and keeps it partial" $ do
+    it "Reads an incomplete-coverage report without turning it into a full success" $ do
         dir <- getDataFileName "test/fixtures/partial-valid"
         result <- loadReceipts dir
         result `shouldSatisfy` isRight
@@ -182,7 +182,7 @@ spec = describe "Receipt" $ do
             Right rs -> fail ("expected one receipt, got " <> show (length rs))
             Left err -> fail err
 
-    it "renders a partial receipt as partial, never executed" $ do
+    it "Shows incomplete coverage as partial, not as a completed requirement" $ do
         dir <- getDataFileName "test/fixtures/partial-valid"
         result <- loadReceipts dir
         case result of
@@ -195,7 +195,7 @@ spec = describe "Receipt" $ do
                             `shouldBe` ShownPartial
                     _ -> fail "fixture inventory has no single CS03"
 
-    it "renders the inventory table with partial in column four" $ do
+    it "Shows partial coverage in the published status column and uncovered when no report exists" $ do
         dir <- getDataFileName "test/fixtures/partial-valid"
         result <- loadReceipts dir
         case result of
@@ -221,7 +221,7 @@ spec = describe "Receipt" $ do
                     [l] -> T.splitOn "\t" l !! 3 `shouldBe` "uncovered"
                     _ -> fail "bare inventory has no single CS03 line"
 
-    it "rejects a success verdict carrying partial constructors" $ do
+    it "Rejects a success claim when the report says some operation variants remain untested" $ do
         dir <- getDataFileName "test/fixtures/partial-success"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -231,7 +231,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` (not . ("does not parse" `isInfixOf`))
             Right _ -> fail "a false-success receipt loaded"
 
-    it "rejects a partial receipt omitting a declared constructor" $ do
+    it "Rejects a partial-coverage report that silently omits a required operation variant" $ do
         dir <- getDataFileName "test/fixtures/partial-incomplete"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -241,7 +241,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("Sweep" `isInfixOf`)
             Right _ -> fail "an incomplete partial receipt loaded"
 
-    it "rejects a partial verdict with no residual or gap" $ do
+    it "Rejects a partial-coverage report that identifies no remaining gap" $ do
         dir <- getDataFileName "test/fixtures/partial-empty"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -250,7 +250,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("no residual or gap" `isInfixOf`)
             Right _ -> fail "a vacuous partial receipt loaded"
 
-    it "rejects partial accounting for a row with no declared set" $ do
+    it "Rejects coverage counts for operation variants the requirement never listed" $ do
         dir <- getDataFileName "test/fixtures/partial-nodecl"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -259,7 +259,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("declares no constructor set" `isInfixOf`)
             Right _ -> fail "undeclared partial accounting loaded"
 
-    it "rejects a refused constructor witness as fail-closed" $ do
+    it "Does not count a rejected operation variant as evidence that the required operation succeeded" $ do
         dir <- getDataFileName "test/fixtures/partial-refused"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -268,12 +268,12 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("refused constructor witness" `isInfixOf`)
             Right _ -> fail "a refused-standing receipt loaded"
 
-    it "loads a valid derivation receipt" $ do
+    it "Accepts a complete report comparing the calculated validator identity with its reference" $ do
         dir <- getDataFileName "test/fixtures/derivation-valid"
         result <- loadReceipts dir
         result `shouldSatisfy` isRight
 
-    it "rejects a derivation receipt with a non-identity venue" $ do
+    it "Rejects an identity-comparison report labelled as a different kind of check" $ do
         dir <- getDataFileName "test/fixtures/derivation-venue"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -282,7 +282,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("derivation venue must be" `isInfixOf`)
             Right _ -> fail "a misvenued derivation receipt loaded"
 
-    it "rejects validator-identity evidence missing the executed negative" $ do
+    it "Rejects an identity-check report that never tried a deliberately wrong identity" $ do
         dir <- getDataFileName "test/fixtures/derivation-incomplete"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -291,7 +291,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("incomplete" `isInfixOf`)
             Right _ -> fail "an incomplete derivation receipt loaded"
 
-    it "rejects a mislabelled reference provenance" $ do
+    it "Rejects an identity-check report that mislabels where its reference came from" $ do
         dir <- getDataFileName "test/fixtures/derivation-mislabelled"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -300,7 +300,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("mislabelled" `isInfixOf`)
             Right _ -> fail "a mislabelled provenance receipt loaded"
 
-    it "rejects a missing reference provenance as unknown" $ do
+    it "Rejects an identity-check report that does not say where its reference came from" $ do
         dir <- getDataFileName "test/fixtures/derivation-missingsource"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -309,7 +309,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("no reference provenance" `isInfixOf`)
             Right _ -> fail "a missing-provenance receipt loaded"
 
-    it "rejects a bare chain-observed prefix with no outref" $ do
+    it "Rejects a claimed chain reference that does not identify a transaction output" $ do
         dir <- getDataFileName "test/fixtures/derivation-bareprefix"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -318,7 +318,7 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("mislabelled" `isInfixOf`)
             Right _ -> fail "a bare-prefix provenance receipt loaded"
 
-    it "rejects validator-identity evidence with the legacy node-submit venue" $ do
+    it "Rejects an identity-comparison report labelled as a submitted transaction" $ do
         dir <- getDataFileName "test/fixtures/derivation-legacyvenue"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -327,11 +327,11 @@ spec = describe "Receipt" $ do
                 err `shouldSatisfy` ("CA04 venue must be" `isInfixOf`)
             Right _ -> fail "a legacy-venue CA04 receipt loaded"
 
-    it "decides derivation matches from the comparison" $ do
+    it "Reports an identity match only when the calculated and reference values are equal" $ do
         derivationMatches ("a" :: T.Text) "a" `shouldBe` ("a", True)
         derivationMatches ("a" :: T.Text) "b" `shouldBe` ("a", False)
 
-    it "rejects a legacy constructor row with no accounting as unknown" $ do
+    it "Rejects an older report that never accounts for which operation variants were tested" $ do
         dir <- getDataFileName "test/fixtures/partial-legacy"
         result <- loadReceipts dir
         result `shouldSatisfy` isLeft
@@ -413,8 +413,8 @@ comes back out must still carry the retirement the row observed. This is
 the schema half of the row; the values are established by the live run.
 -}
 retirementRoundTrip :: Spec
-retirementRoundTrip = describe "Active witness retirement evidence" $
-    it "survives a decode/encode round trip through the receipt codec" $ do
+retirementRoundTrip = describe "Saving reports about retiring an active token" $
+    it "Keeps the retirement details when reading and saving a report" $ do
         let decoded = eitherDecode cg22Receipt :: Either String Receipt
         case decoded of
             Left err -> fail ("retirement receipt does not parse: " <> err)

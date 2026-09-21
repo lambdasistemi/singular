@@ -20,110 +20,110 @@ spec = runStory story
 story :: Program StoryI ()
 story = theorem keyedMintFold $ do
     clause
-        "a two-key batch agreeing per kind but not per key is refused"
+        "A batch must create the right number of tokens for each key, even when the total is correct"
         do
             conjunct "assetKindTotal (claimedMint [b₁, b₂]) k"
             conjunct "assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false"
             conjunct "foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""
         do
             rejects
-                "a leg whose distinguisher is empty"
-                "the pair's value is exactly one differing thing; an empty distinguisher states none" $
+                "A batch rejection report must explain what differs from the successful comparison"
+                "The report must explain why the rejected transaction differs from its successful comparison." $
                     onLeg keyedMint $ distinguisher ""
 
             rejects
-                "a keyed-mint leg reusing the duplicate's transaction"
-                "each refusal names its own transaction; a shared txid merges two distinct facts" $
+                "A batch rejection report cannot reuse the transaction from the duplicate-registration example"
+                "The wrong-allocation example and the duplicate-registration example are different transactions." $
                     onLeg keyedMint $ txid dupTx
 
             rejects
-                "two legs sharing one accepting control"
-                "each refusal carries its own accepting control; one control for both proves neither pair" $
+                "The batch and duplicate-registration examples must each identify their own successful comparison transaction"
+                "Each rejection example needs its own successful comparison so the cause of failure can be checked." $
                     onLeg keyedMint $ controlTxid dupControlTx
 
             rejects
-                "a keyed-mint leg naming one key"
-                "the witness names two distinct keys; one key cannot disagree with itself" $
+                "A report about a two-key batch is rejected if it lists only one key"
+                "This example compares token allocation across two different keys, so both must be identified." $
                     onLeg keyedMint $ keys $ key keyAHex
 
             rejects
-                "a keyed-mint leg naming the same key twice"
-                "two entries for one key are one key; the batch must name two distinct ones" $
+                "A report about a two-key batch is rejected if it lists the same key twice"
+                "Listing one key twice does not describe two separate registration requests." $
                     onLeg keyedMint $ keys $ do
                         key keyAHex
                         key keyAHex
 
             rejects
-                "a keyed-mint leg naming three keys"
-                "the witness is a two-key batch; a third key is a different batch" $
+                "A report about a two-key batch is rejected if it lists three keys"
+                "This example processes two keys. A report about three keys does not describe the same batch." $
                     onLeg keyedMint $ keys $ do
                         key keyAHex
                         key keyBHex
                         key keyHex
 
             rejects
-                "a keyed-mint leg naming an empty key"
-                "an empty key is not a key the batch consumed" $
+                "A report about a two-key batch is rejected if either key is blank"
+                "Both registration keys must be identified; a blank entry does not identify a key." $
                     onLeg keyedMint $ keys $ do
                         key keyAHex
                         key emptyValue
 
             rejects
-                "a keyed-mint leg reusing the fold's own key"
-                "the witness is a batch of its own; the fold's key belongs to the other observation" $
+                "A batch rejection report cannot borrow a key from the separate single-registration example"
+                "The two-key batch is separate from the earlier single registration. Its report must name its own keys." $
                     onLeg keyedMint $ keys $ do
                         key keyHex
                         key keyBHex
 
             rejects
-                "a keyed-mint leg whose claim also disagrees per kind"
-                "a claim that also disagrees per kind is a net mismatch, not the keyed fault this witness exhibits" $
+                "A report claiming the total is correct is rejected if it creates three tokens where two are required"
+                "This example is meant to expose a wrong allocation despite a correct total of two tokens. A total of three tests a different mistake." $
                     onLeg keyedMint $ claimedMint $ mint activeHex keyAHex 3
 
             rejects
-                "a keyed-mint leg whose claim agrees per key as well"
-                "a claim matching the entailment per key agrees everywhere; nothing distinguishes it from its control" $
+                "A report claiming a wrong allocation is rejected if each key actually receives its required token"
+                "One token for each key is the correct allocation. It cannot demonstrate rejection for an incorrect allocation." $
                     onLeg keyedMint $ claimedMint $ do
                         mint activeHex keyAHex 1
                         mint activeHex keyBHex 1
 
             rejects
-                "a keyed-mint leg claiming a mint at neither named key"
-                "the claim must sit at a named key; a mint elsewhere is unobserved arithmetic" $
+                "A batch rejection report is rejected if the claimed tokens name a key outside the batch"
+                "The claimed tokens must refer to the two registration keys named in this batch." $
                     onLeg keyedMint $ claimedMint $ mint activeHex keyHex 2
 
             rejects
-                "a keyed-mint leg entailing a mint at neither named key"
-                "the entailment is read off the batch's own edges; an edge elsewhere entails nothing here" $
+                "A batch rejection report is rejected if the required tokens name a key outside the batch"
+                "The required tokens come from the requests in this batch, not from a registration elsewhere." $
                     onLeg keyedMint $ entailedMint $ do
                         mint activeHex keyHex 1
                         mint activeHex keyBHex 1
 
             rejects
-                "a keyed-mint leg with no claimed mint at all"
-                "a claim with nothing to compare is not an observation; the pair comes whole or not at all" $
+                "A batch rejection report must say which tokens the rejected transaction tried to create"
+                "Without the proposed token allocation, the report cannot show how it differs from the required allocation." $
                     onLeg keyedMint $ claimedMint noMints
 
             rejects
-                "a keyed-mint control that minted the refused claim"
-                "the control is the same batch with the right distribution; minting the refused claim repeats the defect" $
+                "A successful comparison must correct the allocation, not put both tokens at the first key again"
+                "The successful comparison must create one token per key. Putting both tokens at the first key repeats the rejected mistake." $
                     onLeg keyedMint $ controlMint $ mint activeHex keyAHex 2
 
             rejects
-                "a keyed-mint control that minted at another key"
-                "the control must mint exactly what the batch entails; another key is another distribution" $
+                "A successful comparison must allocate its tokens to the two keys in the batch"
+                "The successful comparison must create one token for each of the two requested keys." $
                     onLeg keyedMint $ controlMint $ do
                         mint activeHex keyAHex 1
                         mint activeHex keyHex 1
 
             rejects
-                "an absent keyed-mint leg is refused"
-                "an absent leg is an incomplete row, never an absent requirement" $
+                "A registration run report is rejected if the required batch-rejection example is missing"
+                "This run report is required to include the batch-rejection example. Leaving it out does not remove the requirement." $
                     dropLeg keyedMint
 
     unexercised
-        "the accepted-fold agreement conjunct"
-        "agreement on an accepted fold as a standalone conclusion; the controls witness landings, not the asset-same equation"
+        "Every successful batch creates exactly the tokens its requests require"
+        "Not demonstrated as a separate claim: the reports record successful comparison transactions but do not establish this general rule"
 
 
 -- | The batch-allocation obligation.

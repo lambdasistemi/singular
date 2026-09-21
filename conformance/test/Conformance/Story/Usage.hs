@@ -10,20 +10,20 @@ import Conformance.Edge.Register (insertActiveRow)
 story :: Program StoryI ()
 story = theorem insertActiveRow $ do
     clause
-        "the open application declares no parameter"
+        "The open registry application takes no parameters"
         do
             conjunct "openPolicyParameters = []"
         do
             acceptsBecause
-                "an explicit zero parameter is accepted"
-                "zero is what parameterless means on the wire; stating it must preserve the complete observation" $
+                "A registration report is accepted when it explicitly records zero application parameters"
+                "The open application takes no parameters, so its report may explicitly record a count of zero." $
                     openParameters 0
     unexercised
-        "the parameterized-application refusal"
-        "a blueprint that grew a parameter would need a case refusing a nonzero count"
+        "Rejecting an open application that unexpectedly requires parameters"
+        "This example does not check a compiled application that unexpectedly gains a parameter"
 
 spec :: Spec
 spec = do
     runStory story
-    it "names the recipe without a row identifier or ticket number" $
+    it "Keeps internal reference numbers out of the example story" $
         filter nameViolation (groupNames story) `shouldBe` []

@@ -338,13 +338,13 @@ checkCase obligation clauseName boundary prog = go prog
                 Left report -> pure (Left report)
                 Right _ -> go (rest ())
 
--- | Run one story as Hspec: theorem, clause, then example. Every
+-- | Run one story as Hspec: the promise, then its examples. Every
 -- example executes the loader using the same edits the story renders.
 runStory :: Program StoryI () -> Spec
 runStory prog = case view prog of
     Return () -> pure ()
     Theorem binding clauses :>>= rest -> do
-        describe (boName binding <> " @" <> boRevision binding) (runClauses binding clauses)
+        runClauses binding clauses
         runStory (rest ())
   where
     runClauses :: Binding -> Program ClauseI () -> Spec

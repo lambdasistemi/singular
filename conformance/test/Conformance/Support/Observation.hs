@@ -29,10 +29,10 @@ import Conformance.Fixture.ActiveRegistration (
 
 spec :: Spec
 spec = do
-    describe "supporting evidence (schema completeness, no theorem binding)" $ do
+    describe "Appendix: checking that a registration report is complete and consistent" $ do
         -- The extent is read out of the artifact, not listed here; these
         -- sizes are what stop the quantifiers ranging over nothing.
-        it "names every field of the observation before mutating one" $ do
+        it "Checks that the example report contains all the fields used by the missing-data tests" $ do
             length edgeKeys `shouldBe` 20
             legKeysOf "duplicate"
                 `shouldBe` ["controlTxid", "distinguisher", "hashes", "keys", "trace", "txid"]
@@ -48,11 +48,11 @@ spec = do
                            , "txid"
                            ]
 
-        it "refuses a receipt that carries no observation at all" $ do
+        it "Rejects a report with no registration evidence" $ do
             r <- loadOne (withEdge Null)
             (isLeft r) `shouldBe` True
 
-        it "refuses the observation with any single field absent" $
+        it "Rejects a registration report whenever any required top-level field is missing" $
             mapM_
                 ( \k -> do
                     r <- loadOne (edgeDrop k)
@@ -60,7 +60,7 @@ spec = do
                 )
                 edgeKeys
 
-        it "refuses either refusal leg with any required field absent" $
+        it "Rejects either rejection example whenever any required detail is missing" $
             mapM_
                 ( \(leg, k) -> do
                     r <- loadOne (legDrop leg k)
@@ -77,7 +77,7 @@ spec = do
         -- the observation genuinely landed — rather than a Then
         -- conjunct, so they stay supporting instead of borrowing a
         -- clause they do not read.
-        it "refuses a landed fold whose root did not move" $ do
+        it "Rejects a report saying a successful registration left the registry contents unchanged" $ do
             r <-
                 loadOne
                     ( edgeSet
@@ -91,7 +91,7 @@ spec = do
                     )
             (isLeft r) `shouldBe` True
 
-        it "refuses a second fold proved against the boot root" $ do
+        it "Rejects a report whose second transaction starts from the initial registry instead of the first transaction's result" $ do
             r <-
                 loadOne
                     ( edgeSet
@@ -105,7 +105,7 @@ spec = do
                     )
             (isLeft r) `shouldBe` True
 
-        it "refuses a committed root that disagrees with the chain's" $ do
+        it "Rejects a report whose recorded registry state disagrees with its reported transaction result" $ do
             r <-
                 loadOne
                     ( edgeSet
@@ -124,11 +124,11 @@ spec = do
                     )
             (isLeft r) `shouldBe` True
 
-        it "refuses an empty landed-fold sequence" $ do
+        it "Rejects a report that lists no successful request-processing transactions" $ do
             r <- loadOne (edgeSet "sequence" (toJSON ([] :: [Value])))
             (isLeft r) `shouldBe` True
 
-        it "refuses a fold transaction absent from the landed sequence" $ do
+        it "Rejects a report whose registration transaction is missing from its list of successful transactions" $ do
             r <-
                 loadOne
                     ( edgeSet
@@ -141,7 +141,7 @@ spec = do
                     )
             (isLeft r) `shouldBe` True
 
-        it "refuses edge evidence on a row carrying another identity" $ do
+        it "Rejects registration evidence submitted under a different requirement" $ do
             r <- loadOne (receiptSet "row" (String "CG02"))
             (isLeft r) `shouldBe` True
 

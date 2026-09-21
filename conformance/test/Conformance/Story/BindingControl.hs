@@ -14,8 +14,8 @@ import Conformance.Edge.Register (insertActiveRow)
 import Conformance.Fold.KeyedMint (keyedMintFold)
 
 spec :: Spec
-spec = describe "Statement bindings and story verdicts" $ do
-    it "refuses a missing declaration and a changed statement digest" $ do
+spec = describe "Appendix: keeping tests honest about what they demonstrate" $ do
+    it "Rejects a test linked to a missing or changed specification" $ do
         manifestE <- loadManifest
         manifest <- either (\err -> expectationFailure err >> pure []) pure manifestE
         let absent = insertActiveRow {boName = "Singular.Statements.no_such_theorem"}
@@ -24,35 +24,35 @@ spec = describe "Statement bindings and story verdicts" $ do
         resolveBinding manifest moved `shouldBe` False
         resolveBinding manifest insertActiveRow `shouldBe` True
         resolveBinding manifest keyedMintFold `shouldBe` True
-    it "refuses a clause selecting no conjunct" $
+    it "Rejects a test that does not identify the promise it checks" $
         resolveClause conjunctInventory insertActiveRow [] `shouldBe` False
-    it "refuses a conjunct outside its obligation" $ do
+    it "Rejects a test whose claimed promise is absent from its specification" $ do
         resolveClause conjunctInventory insertActiveRow ["not a conjunct"] `shouldBe` False
         resolveClause conjunctInventory insertActiveRow ["foldBatch s [b₁, b₂] = .error \"net-mint-mismatch\""] `shouldBe` False
-    it "resolves delivery to its destination conjuncts" $
+    it "Links the token delivery checks to the specified address, token and quantity" $
         resolveClause conjunctInventory insertActiveRow
             [ "address := some r.output", "assets := [((.active, r.key), 1)]", "kindCount t.state .active r.key = 1"] `shouldBe` True
-    it "reconciles every quoted anchor against Lean" $ do
+    it "Checks that every quoted rule actually appears in the formal specification" $ do
         sourceE <- loadStatementSource
         source <- either (\err -> expectationFailure err >> pure "") pure sourceE
         anchorsPresent source conjunctInventory `shouldBe` True
         anchorsPresent source [("mine", ["no such conjunct in any statement"])] `shouldBe` False
-    it "refuses cases whose executed outcome contradicts their expectation" $ do
+    it "Fails a test when the report is accepted but rejection was expected, or the reverse" $ do
         check (accepts "one token" twoTokens) >>= (`shouldSatisfy` isLeft)
         check (rejects "two tokens" "a reason" unchanged) >>= (`shouldSatisfy` isLeft)
         check (accepts "one token" unchanged) >>= (`shouldSatisfy` isRight)
         check (rejects "two tokens" "a reason" twoTokens) >>= (`shouldSatisfy` isRight)
-    it "executes the declared edit through the real loader" $ do
+    it "Checks the supplied report: one delivered token is accepted and two are rejected" $ do
         executeEdit unchanged `shouldReturn` Right 1
         executeEdit twoTokens >>= (`shouldSatisfy` isLeft)
-    it "a wrong refusal reports the observed acceptance and executed edit" $ do
+    it "Explains a failed test by showing the report that was unexpectedly accepted" $ do
         result <- check (rejects "one token" "deliberately wrong refusal" unchanged)
         case result of
             Right () -> expectationFailure "wrong refusal passed"
             Left report -> do
                 frActual report `shouldBe` "the loader accepted it, returning 1 receipt"
                 checkReport report "one token" "the loader refuses the observation"
-    it "a wrong acceptance reports the actual loader refusal and executed edit" $ do
+    it "Explains a failed test by showing why the report was unexpectedly rejected" $ do
         result <- check (accepts "two tokens" twoTokens)
         case result of
             Right () -> expectationFailure "wrong acceptance passed"
@@ -60,17 +60,17 @@ spec = describe "Statement bindings and story verdicts" $ do
                 frActual report `shouldSatisfy` isInfixOf "the loader refused:"
                 frEdit report `shouldBe` renderEdit twoTokens
                 checkReport report "two tokens" "the loader accepts the observation"
-    it "two receipts satisfy neither one-receipt acceptance nor refusal" $ do
+    it "Does not treat two reports as the expected single report or as a rejection" $ do
         loadTwoFixtures `shouldReturn` Right 2
         outcomeMatches True (Right 2) `shouldBe` False
         outcomeMatches False (Right 2) `shouldBe` False
-    it "flags row identifiers and ticket numbers in names" $ do
+    it "Detects test titles that use internal reference numbers" $ do
         nameViolation "plain condition and outcome" `shouldBe` False
         nameViolation ("row CG" <> show (21 :: Int) <> " evidence") `shouldBe` True
         nameViolation "case #194" `shouldBe` True
-    it "records unexercised clauses without contributing a check" $
+    it "Does not count an untested promise as a completed test" $
         unexercisedChecks (UnexercisedClause "signature-set invariance" "no observed signature set") `shouldBe` 0
-    it "keeps every product clause and case free of row identifiers" $
+    it "Keeps internal reference numbers out of the product stories" $
         filter nameViolation (groupNames InsertActive.story <> groupNames KeyedMint.story) `shouldBe` []
   where
     twoTokens = deliver $ activeToken keyHex 2

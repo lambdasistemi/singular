@@ -47,28 +47,28 @@ import Conformance.Refusal (
  )
 
 spec :: Spec
-spec = describe "Refusal" $ do
-    it "accepts a phase-2 failure naming the script" $
+spec = describe "Appendix: checking which script rejected a transaction" $ do
+    it "Recognises a script rejection when the node error identifies the expected script" $
         matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldBe` Right ()
 
-    it "accepts a build-evaluation failure naming the script" $
+    it "Recognises a script rejection during transaction building when the error identifies the expected script" $
         matchRefusal "874e476d" evalFailureSample `shouldBe` Right ()
 
-    it "rejects a phase-1 refusal without PlutusFailure" $
+    it "Does not mistake already-spent inputs for a script rejection" $
         matchRefusal "abcdef01" "BadInputs: inputs are spent"
             `shouldSatisfy` isLeft
 
-    it "rejects marker-only text with no phase-2 vocabulary" $
+    it "Does not count a script identifier mentioned in an input error as a script rejection" $
         matchRefusal
             "abcdef01"
             "BadInputs 0xabcdef01: inputs are spent"
             `shouldSatisfy` isLeft
 
-    it "rejects a phase-2 failure naming another script" $
+    it "Does not blame the expected script when the error identifies a different one" $
         matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
@@ -80,14 +80,14 @@ spec = describe "Refusal" $ do
                     \script evaluation failed"
                 )
 
-    it "never matches the wrong-reason control marker" $
+    it "Rejects an error when asked to attribute it to a deliberately unrelated script identifier" $
         matchRefusal
             wrongReasonMarker
             "phase-2 PlutusFailure naming ScriptHash \"abcdef01\": \
             \script evaluation failed"
             `shouldSatisfy` isLeft
 
-    it "refuses a different hash merely mentioning the expected hash" $
+    it "Does not blame a script merely because its identifier appears elsewhere in the error message" $
         matchRefusal
             "abcdef01"
             "phase-2 PlutusFailure naming ScriptHash \"99999999\": \
@@ -99,7 +99,7 @@ spec = describe "Refusal" $ do
                     \diagnostic context abcdef01 unquoted"
                 )
 
-    it "trims the script binary out of an eval refusal" $
+    it "Shortens a build error while keeping the failing script and execution error" $
         let trimmed = trimRefusal evalShapedRefusal
          in do
                 trimmed `shouldSatisfy` ("scriptHash=874e476d" `isInfixOf`)
@@ -108,11 +108,11 @@ spec = describe "Refusal" $ do
                 trimmed `shouldSatisfy` (not . ("pwcCostModel" `isInfixOf`))
                 length trimmed `shouldSatisfy` (< 2000)
 
-    it "marks an unknown refusal shape unparsed" $
+    it "Labels an unfamiliar error as unparsed instead of inventing an explanation" $
         trimRefusal "something entirely new"
             `shouldBe` "something entirely new [unparsed]"
 
-    it "keeps every failed script hash when two scripts fail" $
+    it "Keeps both script identifiers when two scripts fail" $
         let two = nodeShapedRefusal <> " second: " <> secondHashRefusal
             trimmed = trimRefusal two
          in do
@@ -121,7 +121,7 @@ spec = describe "Refusal" $ do
                 trimmed `shouldSatisfy` ("scriptHash=874e476d,28726576" `isInfixOf`)
                 length trimmed `shouldSatisfy` (< 2000)
 
-    it "trims the node-submit shape to its attribution" $
+    it "Shortens a node error while keeping the failing script and its reason" $
         let trimmed = trimRefusal nodeShapedRefusal
          in do
                 trimmed `shouldSatisfy` ("scriptHash=874e476d" `isInfixOf`)
@@ -223,8 +223,8 @@ policyReason =
         <> "Caused by: error. The protocol version is: Version 10\")))"
 
 receiptPolicySpec :: Spec
-receiptPolicySpec = describe "receipt policy (A-002)" $ do
-    it "a refused control never overwrites the row's held receipt" $ do
+receiptPolicySpec = describe "Protecting the saved report when checking deliberate failures" $ do
+    it "A deliberately rejected comparison transaction does not overwrite the main test report" $ do
         dir <- freshReceiptsDir
         writeReceiptFile dir heldRowReceipt
         r <-
@@ -250,7 +250,7 @@ receiptPolicySpec = describe "receipt policy (A-002)" $ do
                 receiptTransactions r0 `shouldBe` [T.pack "rowtxid"]
                 receiptRejected r0 `shouldBe` Nothing
             other -> fail ("expected the untouched held receipt, got " <> show other)
-    it "a refusal row writes its refused receipt" $ do
+    it "A test of required rejection saves the rejected transaction and the script responsible" $ do
         dir <- freshReceiptsDir
         r <-
             attributeRefusalReceipt
@@ -278,7 +278,7 @@ receiptPolicySpec = describe "receipt policy (A-002)" $ do
             other -> fail ("expected the row's refused receipt, got " <> show other)
     it -- A control that attempted any write would throw here: the
        -- directory does not exist, so Right () proves no write attempt.
-        "a control refusal writes nothing even where no receipts directory exists"
+        "A deliberate failure check writes no report, even when the reports directory does not exist"
         $ do
             r <-
                 attributeRefusalReceipt
@@ -295,7 +295,7 @@ receiptPolicySpec = describe "receipt policy (A-002)" $ do
                     "node"
                     "blueprint"
             r `shouldBe` Right ()
-    it "a refusal that does not attribute writes nothing and says why" $ do
+    it "An unexplained rejection saves no evidence and reports the problem" $ do
         dir <- freshReceiptsDir
         r <-
             attributeRefusalReceipt

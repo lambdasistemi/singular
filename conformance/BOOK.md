@@ -291,95 +291,95 @@ Source: Singular.Statements.update_terminal_transaction_row and Singular.Stateme
 
 ```text
 Singular.Statements.insert_active_transaction_row @265c595 bfb4e317…
-  the destination holds exactly one active token at the requested address
+  The requested address must receive exactly one active token for the registered key
       · address := some r.output
       · assets := [((.active, r.key), 1)]
       · kindCount t.state .active r.key = 1
-      accepts: one active token at the key, at the address the request named
+      accepts: A registration report is accepted when the requested address receives one active token for the key
           edit unchanged
-      refuses: no token delivered
-          because the conclusion is exactly one, so zero is a distinct defect from a wrong one
+      refuses: A registration report is rejected if no active token is delivered
+          because The recipient must receive one active token; receiving none does not establish registration.
           edit deliver: nothing
-      refuses: two tokens delivered at the key
-          because a per-kind total cannot see a quantity right in kind and wrong in count
+      refuses: A registration report is rejected if two active tokens are delivered for the same key
+          because The recipient must receive exactly one active token for this key, not two.
           edit deliver: activeToken "743137332d696e736572742d616374697665" 2
-      refuses: a token delivered under the open policy instead of the active one
-          because the policy is half the token identity; an open-policy token is never the active witness
+      refuses: A registration report is rejected if the delivered token comes from the wrong minting policy
+          because The open-policy token cannot stand in for the active token required by this registration.
           edit deliver: token "4a2f1c9e83b70d5641ae2c08df93b1760ea5c42d8f6b3019ac7e5d22" "743137332d696e736572742d616374697665" 1
-      refuses: a token whose asset name is not the key
-          because the asset name is the key; a token under another name is a different holding
+      refuses: A registration report is rejected if the token names a different key
+          because The token name must identify the registered key. A token naming another key does not meet the requirement.
           edit deliver: token "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "6f74686572" 1
-      refuses: a token observed at an address the request did not name
-          because the destination is the address the request named; the same token elsewhere misses it
+      refuses: A registration report is rejected if the token goes to the wrong address
+          because The request specifies who receives the token. Delivery to another address does not satisfy it.
           edit observedAddress "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-    ※ unexercised: the signature-set invariance conjunct
-        no receipt field carries the approval's signature set
-  the fold mints exactly one active token at the key
+    ※ unexercised: Registration preserves the signatures supplied with the approval
+        Not demonstrated: the report does not record which signatures the approval carried
+  Applying the registration request must create one active token for its key
       · mint := [((.active, r.key), 1)]
-      refuses: a mint that is not exactly one token at the key
-          because the fold must mint what the destination holds; an empty mint funds nothing
+      refuses: A registration report is rejected if no active token was created for the key
+          because Applying the request must create the active token that the recipient receives.
           edit minted: nothing
-  the open application declares no parameter
+  The open registry application takes no parameters
       · openPolicyParameters = []
-      refuses: an open application that declares a parameter
-          because the open policy is parameterless; a declared parameter names a different application
+      refuses: A registration report is rejected if the open application declares a parameter
+          because The open application takes no parameters. A report describing an application with a parameter does not describe it.
           edit openParameters 1
-  the fold pays no refund
+  Applying this registration request pays no refund
       · refunds := []
-      refuses: a fold that paid a refund
-          because the concluded transaction refunds nothing; a paid refund moves value the rule never sends
+      refuses: A registration report is rejected if applying the request also pays a refund
+          because This registration is specified to pay no refund. A reported refund contradicts that result.
           edit refunds: lovelace 1000000
-  the fold requires no signer
+  Applying this registration request requires no additional signer
       · signers := []
-      refuses: a fold that required a signer
-          because the concluded transaction is unsigned; a required signer adds an authorization the rule never grants
+      refuses: A registration report is rejected if applying the request requires a signer
+          because This request-processing transaction requires no signer. The report must not add that requirement.
           edit signers: signer "60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b"
-  the request lovelace covers the tip
+  The request must supply enough ada to pay the processing tip
       · lovelaceCoversTip s.config lovelace = true
-      refuses: a request whose lovelace does not cover the tip
-          because the hypothesis needs the tip on hand; below it the rule does not apply
+      refuses: A registration report is rejected if the request cannot pay the processing tip
+          because The request supplies 999,999 lovelace, which is below the 1,000,000-lovelace processing tip in this example.
           edit requestLovelace 999999
-  the destination is bound by the approval
+  The delivery address must match the approval
       · destinationDatumBinds r = true
-      refuses: a destination binding the approval does not carry
-          because equality of the carried and recomputed approval name is the binding; a mismatch delivers where nothing authorized
+      refuses: A registration report is rejected if the approval does not match the delivery address
+          because The recorded approval must match the approval calculated for the requested destination.
           edit approvalRecomputed "00112233445566778899001122334455667788990011223344556677"
-  only the root pin moves
+  Applying a request may update the registry contents but must preserve its other settings
       · onlyRootChanged s.config t.state.config = true
-      refuses: a fold that moved a non-root configuration pin
-          because only the root may move; any other difference is a configuration change the fold must not make
+      refuses: A registration report is rejected if applying the request changes the maximum fee
+          because Processing a registration updates the registry contents, not the maximum fee or other settings.
           edit configAfter: max fee 2000000; other pins unchanged
-      refuses: a configuration observation that lost a pin
-          because the pin comparison needs both sides; a lost pin is an unobserved configuration, not an unchanged one
+      refuses: A registration report is rejected if the original settings are missing
+          because The report needs the settings from before and after processing so they can be compared.
           edit configBefore: no pins
-  a second insert at the same key is refused
+  Registering an already registered key must fail
       · txOf t.state r₂ lovelace = .error "key-exists"
-      accepts: a leg whose trace the ledger did not surface is accepted
-          because a script-execution failure carries an empty log list, so absence is the normal case, not an incomplete leg
+      accepts: Evidence of a rejected duplicate registration is accepted without a script log
+          because A script can fail without emitting a log. The report still identifies the rejected transaction and failing script.
           edit onLeg duplicate: without trace
-      refuses: a leg whose control is the transaction it refused
-          because the control must be an accepted transaction; a leg that controls for itself proves the builder can build nothing
+      refuses: Evidence of a rejected duplicate is rejected if the same transaction is also called successful
+          because The example needs a separate successful transaction to show that the duplicate key caused the rejection.
           edit onLeg duplicate: controlTxid: "bb22222222222222222222222222222222222222222222222222222222222222"
-      refuses: a leg naming no failing script
-          because attribution needs the failing script; without it the refusal blames nothing
+      refuses: Evidence of a rejected duplicate is rejected if it does not identify the script that failed
+          because A failed transaction alone does not show that the intended script rejected the duplicate key.
           edit onLeg duplicate: hashes: no failing script
-      refuses: a leg naming an empty failing script
-          because an empty hash attributes to nothing
+      refuses: Evidence of a rejected duplicate is rejected if the failing script identifier is blank
+          because A blank script identifier cannot establish which script rejected the transaction.
           edit onLeg duplicate: hashes: script ""
-      refuses: a duplicate leg naming two keys
-          because the duplicate names the one occupied key; a second key belongs to the other fixture
+      refuses: Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered
+          because This example attempts to register the one key already registered earlier in the run.
           edit onLeg duplicate: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
-      refuses: a duplicate leg naming a key the fold did not insert
-          because the refusal is key-exists on the inserted key; a key the fold never inserted cannot exist yet
+      refuses: Evidence of a rejected duplicate is rejected if it names a key this run never registered
+          because To demonstrate a duplicate, this run must first register the same key.
           edit onLeg duplicate: keys: key "743137332d6b6579656d696e742d61"
-      refuses: a duplicate leg carrying mint arithmetic
-          because the duplicate is refused before any mint runs; arithmetic on it claims to be the keyed-mint witness
+      refuses: Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example
+          because The duplicate-registration example and the token-allocation example must remain separate reports.
           edit onLeg duplicate: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
-      refuses: a refused transaction that also landed as a fold
-          because a refused transaction never lands; a landed txid identifies an acceptance, not a refusal
+      refuses: Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions
+          because The same transaction cannot be reported as both rejected and successfully applied.
           edit onLeg duplicate: txid: "ee55555555555555555555555555555555555555555555555555555555555555"
-      refuses: a control that never landed a fold
-          because the control must be a landed accepting fold; a transaction the run never landed accepts nothing
+      refuses: Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run
+          because The report must show that the successful comparison transaction was actually applied during this run.
           edit onLeg duplicate: controlTxid: "ff66666666666666666666666666666666666666666666666666666666666666"
 ```
 
@@ -387,60 +387,60 @@ Singular.Statements.insert_active_transaction_row @265c595 bfb4e317…
 
 ```text
 Singular.Statements.fold_batch_claimed_mint_by_kind_key @265c595 9c01e278…
-  a two-key batch agreeing per kind but not per key is refused
+  A batch must create the right number of tokens for each key, even when the total is correct
       · assetKindTotal (claimedMint [b₁, b₂]) k
       · assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false
       · foldBatch s [b₁, b₂] = .error "net-mint-mismatch"
-      refuses: a leg whose distinguisher is empty
-          because the pair's value is exactly one differing thing; an empty distinguisher states none
+      refuses: A batch rejection report must explain what differs from the successful comparison
+          because The report must explain why the rejected transaction differs from its successful comparison.
           edit onLeg keyedMint: distinguisher: ""
-      refuses: a keyed-mint leg reusing the duplicate's transaction
-          because each refusal names its own transaction; a shared txid merges two distinct facts
+      refuses: A batch rejection report cannot reuse the transaction from the duplicate-registration example
+          because The wrong-allocation example and the duplicate-registration example are different transactions.
           edit onLeg keyedMint: txid: "bb22222222222222222222222222222222222222222222222222222222222222"
-      refuses: two legs sharing one accepting control
-          because each refusal carries its own accepting control; one control for both proves neither pair
+      refuses: The batch and duplicate-registration examples must each identify their own successful comparison transaction
+          because Each rejection example needs its own successful comparison so the cause of failure can be checked.
           edit onLeg keyedMint: controlTxid: "cc33333333333333333333333333333333333333333333333333333333333333"
-      refuses: a keyed-mint leg naming one key
-          because the witness names two distinct keys; one key cannot disagree with itself
+      refuses: A report about a two-key batch is rejected if it lists only one key
+          because This example compares token allocation across two different keys, so both must be identified.
           edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"
-      refuses: a keyed-mint leg naming the same key twice
-          because two entries for one key are one key; the batch must name two distinct ones
+      refuses: A report about a two-key batch is rejected if it lists the same key twice
+          because Listing one key twice does not describe two separate registration requests.
           edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d61"
-      refuses: a keyed-mint leg naming three keys
-          because the witness is a two-key batch; a third key is a different batch
+      refuses: A report about a two-key batch is rejected if it lists three keys
+          because This example processes two keys. A report about three keys does not describe the same batch.
           edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key "743137332d6b6579656d696e742d62"; key "743137332d696e736572742d616374697665"
-      refuses: a keyed-mint leg naming an empty key
-          because an empty key is not a key the batch consumed
+      refuses: A report about a two-key batch is rejected if either key is blank
+          because Both registration keys must be identified; a blank entry does not identify a key.
           edit onLeg keyedMint: keys: key "743137332d6b6579656d696e742d61"; key ""
-      refuses: a keyed-mint leg reusing the fold's own key
-          because the witness is a batch of its own; the fold's key belongs to the other observation
+      refuses: A batch rejection report cannot borrow a key from the separate single-registration example
+          because The two-key batch is separate from the earlier single registration. Its report must name its own keys.
           edit onLeg keyedMint: keys: key "743137332d696e736572742d616374697665"; key "743137332d6b6579656d696e742d62"
-      refuses: a keyed-mint leg whose claim also disagrees per kind
-          because a claim that also disagrees per kind is a net mismatch, not the keyed fault this witness exhibits
+      refuses: A report claiming the total is correct is rejected if it creates three tokens where two are required
+          because This example is meant to expose a wrong allocation despite a correct total of two tokens. A total of three tests a different mistake.
           edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 3
-      refuses: a keyed-mint leg whose claim agrees per key as well
-          because a claim matching the entailment per key agrees everywhere; nothing distinguishes it from its control
+      refuses: A report claiming a wrong allocation is rejected if each key actually receives its required token
+          because One token for each key is the correct allocation. It cannot demonstrate rejection for an incorrect allocation.
           edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
-      refuses: a keyed-mint leg claiming a mint at neither named key
-          because the claim must sit at a named key; a mint elsewhere is unobserved arithmetic
+      refuses: A batch rejection report is rejected if the claimed tokens name a key outside the batch
+          because The claimed tokens must refer to the two registration keys named in this batch.
           edit onLeg keyedMint: claimedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 2
-      refuses: a keyed-mint leg entailing a mint at neither named key
-          because the entailment is read off the batch's own edges; an edge elsewhere entails nothing here
+      refuses: A batch rejection report is rejected if the required tokens name a key outside the batch
+          because The required tokens come from the requests in this batch, not from a registration elsewhere.
           edit onLeg keyedMint: entailedMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d62" 1
-      refuses: a keyed-mint leg with no claimed mint at all
-          because a claim with nothing to compare is not an observation; the pair comes whole or not at all
+      refuses: A batch rejection report must say which tokens the rejected transaction tried to create
+          because Without the proposed token allocation, the report cannot show how it differs from the required allocation.
           edit onLeg keyedMint: claimedMint: no mint
-      refuses: a keyed-mint control that minted the refused claim
-          because the control is the same batch with the right distribution; minting the refused claim repeats the defect
+      refuses: A successful comparison must correct the allocation, not put both tokens at the first key again
+          because The successful comparison must create one token per key. Putting both tokens at the first key repeats the rejected mistake.
           edit onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 2
-      refuses: a keyed-mint control that minted at another key
-          because the control must mint exactly what the batch entails; another key is another distribution
+      refuses: A successful comparison must allocate its tokens to the two keys in the batch
+          because The successful comparison must create one token for each of the two requested keys.
           edit onLeg keyedMint: controlMint: mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d6b6579656d696e742d61" 1; mint "b71e04d9f2c35a8067de1b49ca20f5836d7e0c194ab52f63d8091e7c" "743137332d696e736572742d616374697665" 1
-      refuses: an absent keyed-mint leg is refused
-          because an absent leg is an incomplete row, never an absent requirement
+      refuses: A registration run report is rejected if the required batch-rejection example is missing
+          because This run report is required to include the batch-rejection example. Leaving it out does not remove the requirement.
           edit without keyedMint
-    ※ unexercised: the accepted-fold agreement conjunct
-        agreement on an accepted fold as a standalone conclusion; the controls witness landings, not the asset-same equation
+    ※ unexercised: Every successful batch creates exactly the tokens its requests require
+        Not demonstrated as a separate claim: the reports record successful comparison transactions but do not establish this general rule
 ```
 
 ## Appendix: how this evidence is checked

@@ -41,16 +41,15 @@ import Conformance.Story (
  )
 
 spec :: Spec
-spec = describe "Story language controls" $ do
-    it "the rendered edit follows the program that ran" $ do
+spec = describe "Appendix: making sure the published story matches the test" $ do
+    it "Describes delivering one token differently from delivering two tokens" $ do
         -- The subject ran: qty 2 is refused, qty 1 is accepted.
         executeEdit progTwo >>= (`shouldSatisfy` isLeft)
         executeEdit progOne `shouldReturn` Right 1
-        -- The failure: rendering ignores the program, so two
-        -- different programs render identically.
+        -- Delivering different quantities must produce different descriptions.
         (renderEdit progTwo /= renderEdit progOne) `shouldBe` True
 
-    it "distinguishes the executed observations across every discovered constructor" $ do
+    it "Does not give the same description to different reports in the generated examples" $ do
         let observations = Map.fromListWith (<>)
                 [(renderEdit p, [(label, foldEdit p completeReceipt)]) | (label, p) <- discovered]
             collisions = [(rendered, nub (map fst entries))
@@ -62,26 +61,24 @@ spec = describe "Story language controls" $ do
         executeEdit (refunds (lovelace 1)) >>= (`shouldSatisfy` isLeft)
         collisions `shouldBe` []
 
-    it "accepts means exactly one receipt" $ do
+    it "Requires exactly one valid report when a story expects acceptance" $ do
         -- The subject ran: the fixture dir genuinely holds two receipts.
         loadTwoFixtures `shouldReturn` Right 2
-        -- The failure: the weak meaning admits any Right.
+        -- Two reports do not satisfy a story expecting exactly one.
         acceptsMeaning (Right 2) `shouldBe` False
         acceptsMeaning (Right 1) `shouldBe` True
         acceptsMeaning (Left "boom") `shouldBe` False
 
-    it "a rejects without a reason is refused" $ do
-        -- Sanity: reasoned cases and accepts validate in both worlds.
+    it "Requires every rejection story to explain why the report is rejected" $ do
+        -- A rejection needs an explanation; an acceptance does not.
         validateCase (accepts "one active token" unchanged) `shouldBe` True
         validateCase (rejects "two tokens" "a per-kind total cannot see it" unchanged)
             `shouldBe` True
-        -- The failure: the stub accepts an empty reason.
         validateCase (rejects "two tokens" "" unchanged) `shouldBe` False
 
-    it "a literal-built collection is refused" $ do
-        -- Sanity: program-built collections validate in both worlds.
+    it "Rejects token lists that bypass the story language" $ do
+        -- Token collections must use the same language as the rest of the story.
         validateCollection (activeToken keyHex 1) `shouldBe` True
-        -- The failure: the stub accepts the literal control.
         validateCollection (literalControl [activeAsset]) `shouldBe` False
   where
     progTwo = deliver $ activeToken keyHex 2

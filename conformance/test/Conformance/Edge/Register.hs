@@ -21,170 +21,170 @@ spec = runStory story
 story :: Program StoryI ()
 story = theorem insertActiveRow $ do
     clause
-        "the destination holds exactly one active token at the requested address"
+        "The requested address must receive exactly one active token for the registered key"
         do
             conjunct "address := some r.output"
             conjunct "assets := [((.active, r.key), 1)]"
             conjunct "kindCount t.state .active r.key = 1"
         do
-            accepts "one active token at the key, at the address the request named" unchanged
+            accepts "A registration report is accepted when the requested address receives one active token for the key" unchanged
 
             rejects
-                "no token delivered"
-                "the conclusion is exactly one, so zero is a distinct defect from a wrong one" $
+                "A registration report is rejected if no active token is delivered"
+                "The recipient must receive one active token; receiving none does not establish registration." $
                     deliver nothing
 
             rejects
-                "two tokens delivered at the key"
-                "a per-kind total cannot see a quantity right in kind and wrong in count" $
+                "A registration report is rejected if two active tokens are delivered for the same key"
+                "The recipient must receive exactly one active token for this key, not two." $
                     deliver $ activeToken keyHex 2
 
             rejects
-                "a token delivered under the open policy instead of the active one"
-                "the policy is half the token identity; an open-policy token is never the active witness" $
+                "A registration report is rejected if the delivered token comes from the wrong minting policy"
+                "The open-policy token cannot stand in for the active token required by this registration." $
                     deliver $ token openHex keyHex 1
 
             rejects
-                "a token whose asset name is not the key"
-                "the asset name is the key; a token under another name is a different holding" $
+                "A registration report is rejected if the token names a different key"
+                "The token name must identify the registered key. A token naming another key does not meet the requirement." $
                     deliver $ token activeHex otherName 1
 
             rejects
-                "a token observed at an address the request did not name"
-                "the destination is the address the request named; the same token elsewhere misses it" $
+                "A registration report is rejected if the token goes to the wrong address"
+                "The request specifies who receives the token. Delivery to another address does not satisfy it." $
                     observedAddress otherAddress
 
     unexercised
-        "the signature-set invariance conjunct"
-        "no receipt field carries the approval's signature set"
+        "Registration preserves the signatures supplied with the approval"
+        "Not demonstrated: the report does not record which signatures the approval carried"
 
     clause
-        "the fold mints exactly one active token at the key"
+        "Applying the registration request must create one active token for its key"
         do
             conjunct "mint := [((.active, r.key), 1)]"
         do
             rejects
-                "a mint that is not exactly one token at the key"
-                "the fold must mint what the destination holds; an empty mint funds nothing" $
+                "A registration report is rejected if no active token was created for the key"
+                "Applying the request must create the active token that the recipient receives." $
                     minted nothing
 
     clause
-        "the open application declares no parameter"
+        "The open registry application takes no parameters"
         do
             conjunct "openPolicyParameters = []"
         do
             rejects
-                "an open application that declares a parameter"
-                "the open policy is parameterless; a declared parameter names a different application" $
+                "A registration report is rejected if the open application declares a parameter"
+                "The open application takes no parameters. A report describing an application with a parameter does not describe it." $
                     openParameters 1
 
     clause
-        "the fold pays no refund"
+        "Applying this registration request pays no refund"
         do
             conjunct "refunds := []"
         do
             rejects
-                "a fold that paid a refund"
-                "the concluded transaction refunds nothing; a paid refund moves value the rule never sends" $
+                "A registration report is rejected if applying the request also pays a refund"
+                "This registration is specified to pay no refund. A reported refund contradicts that result." $
                     refunds $ lovelace 1_000_000
 
     clause
-        "the fold requires no signer"
+        "Applying this registration request requires no additional signer"
         do
             conjunct "signers := []"
         do
             rejects
-                "a fold that required a signer"
-                "the concluded transaction is unsigned; a required signer adds an authorization the rule never grants" $
+                "A registration report is rejected if applying the request requires a signer"
+                "This request-processing transaction requires no signer. The report must not add that requirement." $
                     signers $ signer walletAddr
 
     clause
-        "the request lovelace covers the tip"
+        "The request must supply enough ada to pay the processing tip"
         do
             conjunct "lovelaceCoversTip s.config lovelace = true"
         do
             rejects
-                "a request whose lovelace does not cover the tip"
-                "the hypothesis needs the tip on hand; below it the rule does not apply" $
+                "A registration report is rejected if the request cannot pay the processing tip"
+                "The request supplies 999,999 lovelace, which is below the 1,000,000-lovelace processing tip in this example." $
                     requestLovelace 999_999
 
     clause
-        "the destination is bound by the approval"
+        "The delivery address must match the approval"
         do
             conjunct "destinationDatumBinds r = true"
         do
             rejects
-                "a destination binding the approval does not carry"
-                "equality of the carried and recomputed approval name is the binding; a mismatch delivers where nothing authorized" $
+                "A registration report is rejected if the approval does not match the delivery address"
+                "The recorded approval must match the approval calculated for the requested destination." $
                     approvalRecomputed otherApproval
 
     clause
-        "only the root pin moves"
+        "Applying a request may update the registry contents but must preserve its other settings"
         do
             conjunct "onlyRootChanged s.config t.state.config = true"
         do
             rejects
-                "a fold that moved a non-root configuration pin"
-                "only the root may move; any other difference is a configuration change the fold must not make" $
+                "A registration report is rejected if applying the request changes the maximum fee"
+                "Processing a registration updates the registry contents, not the maximum fee or other settings." $
                     configAfter $ do
                         maxFee 2_000_000
                         restUnchanged
 
             rejects
-                "a configuration observation that lost a pin"
-                "the pin comparison needs both sides; a lost pin is an unobserved configuration, not an unchanged one" $
+                "A registration report is rejected if the original settings are missing"
+                "The report needs the settings from before and after processing so they can be compared." $
                     configBefore noPins
 
     clause
-        "a second insert at the same key is refused"
+        "Registering an already registered key must fail"
         do
             conjunct "txOf t.state r₂ lovelace = .error \"key-exists\""
         do
             acceptsBecause
-                "a leg whose trace the ledger did not surface is accepted"
-                "a script-execution failure carries an empty log list, so absence is the normal case, not an incomplete leg" $
+                "Evidence of a rejected duplicate registration is accepted without a script log"
+                "A script can fail without emitting a log. The report still identifies the rejected transaction and failing script." $
                     onLeg duplicate omitTrace
 
             rejects
-                "a leg whose control is the transaction it refused"
-                "the control must be an accepted transaction; a leg that controls for itself proves the builder can build nothing" $
+                "Evidence of a rejected duplicate is rejected if the same transaction is also called successful"
+                "The example needs a separate successful transaction to show that the duplicate key caused the rejection." $
                     onLeg duplicate $ controlTxid dupTx
 
             rejects
-                "a leg naming no failing script"
-                "attribution needs the failing script; without it the refusal blames nothing" $
+                "Evidence of a rejected duplicate is rejected if it does not identify the script that failed"
+                "A failed transaction alone does not show that the intended script rejected the duplicate key." $
                     onLeg duplicate $ hashes noHashes
 
             rejects
-                "a leg naming an empty failing script"
-                "an empty hash attributes to nothing" $
+                "Evidence of a rejected duplicate is rejected if the failing script identifier is blank"
+                "A blank script identifier cannot establish which script rejected the transaction." $
                     onLeg duplicate $ hashes $ hash emptyValue
 
             rejects
-                "a duplicate leg naming two keys"
-                "the duplicate names the one occupied key; a second key belongs to the other fixture" $
+                "Evidence of a rejected duplicate is rejected if it names two keys instead of the one already registered"
+                "This example attempts to register the one key already registered earlier in the run." $
                     onLeg duplicate $ keys $ do
                         key keyHex
                         key keyBHex
 
             rejects
-                "a duplicate leg naming a key the fold did not insert"
-                "the refusal is key-exists on the inserted key; a key the fold never inserted cannot exist yet" $
+                "Evidence of a rejected duplicate is rejected if it names a key this run never registered"
+                "To demonstrate a duplicate, this run must first register the same key." $
                     onLeg duplicate $ keys $ key keyAHex
 
             rejects
-                "a duplicate leg carrying mint arithmetic"
-                "the duplicate is refused before any mint runs; arithmetic on it claims to be the keyed-mint witness" $
+                "Evidence of a rejected duplicate is rejected if it includes token allocation data from the separate batch example"
+                "The duplicate-registration example and the token-allocation example must remain separate reports." $
                     onLeg duplicate $ claimedMint $ mint activeHex keyAHex 2
 
             rejects
-                "a refused transaction that also landed as a fold"
-                "a refused transaction never lands; a landed txid identifies an acceptance, not a refusal" $
+                "Evidence of a rejected duplicate is rejected if that transaction also appears among the successful transactions"
+                "The same transaction cannot be reported as both rejected and successfully applied." $
                     onLeg duplicate $ txid mintControlTx
 
             rejects
-                "a control that never landed a fold"
-                "the control must be a landed accepting fold; a transaction the run never landed accepts nothing" $
+                "Evidence of a rejected duplicate is rejected if its successful comparison transaction is absent from the run"
+                "The report must show that the successful comparison transaction was actually applied during this run." $
                     onLeg duplicate $ controlTxid unlandedTx
 
 
