@@ -125,6 +125,17 @@ boundary, not ledger validator refusals or setup failures.
 Locations refer to this candidate. Source enumeration identifies consumers;
 only the executed checks above and in the PR establish behavioral evidence.
 
+The original inventory omitted the current coverage record's claimed population.
+The snapshot gate reproduced that omission: one discovered theorem was unclaimed.
+Re-emitting `sorted(build_inventory(root).by_identity())` into the current record
+added exactly the absent-transaction identity and removed none; the protected
+base and empty checks/mappings were preserved. From `conformance/`,
+`nix build --no-link .#coverageGateSnapshot` then exited 0. Removing only that
+claim in a scratch copy made the same command exit 1, with the builder reporting
+`FAIL-CLOSED population` and `1 discovered but unclaimed`. This snapshot target
+is a separate required check: neither root `coverage-check` nor `just ci`
+executes it.
+
 | Copy or consumer | Location | Disposition |
 | --- | --- | --- |
 | Output representation and sole-asset recovery | `lean/Singular/Model.lean:748`, `:768`, `:835` | Changed here; `txOf` uses the enriched cage output |
@@ -141,6 +152,9 @@ only the executed checks above and in the PR establish behavioral evidence.
 | Simulator execution | `simulator/core.mjs:163`, `simulator/gate.mjs:45`, `:69` | Logical steps remain unchanged; transaction execution deferred to #178 |
 | Coverage declaration and digest inventory | `conformance/coverage/singular_coverage/inventory.py:115`, `conformance/coverage/tests/test_inventory.py:139` | Dynamic inventory/corpus reconciliation unchanged; new mapping remains debt |
 | Frozen coverage populations | `conformance/coverage/tests/test_inventory.py:69`, `conformance/coverage/tests/test_leanscan.py:104` | Updated to 86 total, 49 manifest-bound, 37 unclassified; both reject mutated expectation 87 |
+| Current coverage record population | `conformance/coverage/record/record.json:5`, `:37` | Re-emitted from `build_inventory(...).by_identity()`: 86 identities, exactly the new transaction theorem added, none removed; checks and mappings remain empty |
+| Protected coverage reference population | `conformance/coverage/record/base-record.json:5` | Unchanged; the ratchet retains every protected identity |
+| Frozen coverage snapshot and CI consumer | `conformance/flake.nix:186`, `.github/workflows/conformance.yml:615` | Existing `coverageGateSnapshot` executes inventory, ratchet and nonzero-debt completion; verified separately from root `coverage-check` and `just ci` |
 | Conformance row registry | `conformance/rows.json:227`, `:244`, `:362` | Unchanged; #178 must add the absent-transaction correspondence and evidence |
 | Generic CI model/simulator/coverage jobs | `.github/workflows/ci.yml:62`, `:84`, `:133` | Existing jobs unchanged; consume regenerated artifacts and population tests |
 | Ledger CI assertions | `.github/workflows/conformance.yml:194`, `:320`, `:461`, `:571` | Unchanged; #178 owns new custody transaction assertions |
