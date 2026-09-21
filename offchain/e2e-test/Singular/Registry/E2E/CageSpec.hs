@@ -10,6 +10,7 @@ License     : Apache-2.0
 module Singular.Registry.E2E.CageSpec (
     spec,
     withBootedCage,
+    withE2E,
     submitInsertRequest,
     submitWithGenesis,
     publishCageRefs,
