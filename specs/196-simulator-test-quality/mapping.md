@@ -10,15 +10,15 @@ review baseline `e19ca5efacb23acdbef51110f003dddc35ad592c`):
 - `lean/corpus.json` `modelSha256 343f7e23a13c05f814a66c9d3d55fe2486a23ce0c4f8cb842b0e96626bcde853`,
   `statementsSha256 b0f8867e…22acab`, `theoremManifestSha256 bbc2cdf9…9aef6c`.
 - The observable result of an admitted transition is the whole
-  `Singular.Model.Result` `{state, mint, paid}`:
-  `Singular.Model.applyEdge` returns `mint := assetDelta a` (the R2 delta of
+  `Singular.Result` `{state, mint, paid}`:
+  `Singular.applyEdge` returns `mint := assetDelta a` (the R2 delta of
   the edge) and `paid := [(c.refundAddress, c.value)]` for `updateActive` /
   `deleteAbsent` over the request key's custody entry (R-ADA); `step` is
   `refusal` or `applyEdge`. The gate now compares all three observables.
 - Keyed mint evidence rows are exports of
   `Singular.Statements.fold_batch_claimed_mint_by_kind_key`; the transcription
   predicate they are inspected with is `core.mjs` `assetSame`
-  (transcription of `Singular.Model.assetSame`).
+  (transcription of `Singular.assetSame`).
 - No Lean file, corpus export, or expected result was changed by this slice.
 
 ## Before/after mapping of the checks
