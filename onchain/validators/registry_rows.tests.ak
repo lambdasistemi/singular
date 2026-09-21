@@ -2,19 +2,19 @@ use aiken/collection/list
 use aiken/fuzz
 use aiken/merkle_patricia_forestry.{Proof}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/assets.{Value, from_asset, merge, zero}
+use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
-  Spend,
-  InlineDatum, Input, NoDatum, Output, Transaction,
+  InlineDatum, Input, NoDatum, Output, Spend, Transaction,
 }
 use lib
+use registry_fixtures as fx
 use request
 use state
-use cardano/transaction
-use registry_fixtures as fx
-use types.{
-  Modify, RequestAction, StateDatum, UpdateAction,
-}
+use types.{Modify, RequestAction, StateDatum, UpdateAction}
+
+// ----------------------------------------------------------------------------
+// The driver
+// ----------------------------------------------------------------------------
 
 /// Registry-mode rows for the cage (#157 Gate S): codec, admissibility,
 /// the read, batches and the terminal leaf.
@@ -23,11 +23,6 @@ use types.{
 /// gate's mutation pass can read that trace back and bind the row to the
 /// one reason the cage gave. A row that crashed would say only that the
 /// validator died.
-
-// ----------------------------------------------------------------------------
-// The driver
-// ----------------------------------------------------------------------------
-
 fn fold(
   root: ByteArray,
   nextRoot: ByteArray,
@@ -130,7 +125,11 @@ fn bookingOutputs(policy: ByteArray) -> List<Output> {
 
 /// Edge 2: booking a key somebody witnessed absent. The
 /// custody UTxO is spent and its lovelace goes back to the inserter.
-fn updateActive(mint: Value, outputs: List<Output>, custody: List<Input>) -> Bool {
+fn updateActive(
+  mint: Value,
+  outputs: List<Output>,
+  custody: List<Input>,
+) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.oneLeaf(fx.keyA, fx.activeLeaf),
@@ -182,7 +181,11 @@ fn activeHeld() -> List<Input> {
 }
 
 /// Edge 4: the inserter takes their witness back.
-fn deleteAbsent(mint: Value, outputs: List<Output>, custody: List<Input>) -> Bool {
+fn deleteAbsent(
+  mint: Value,
+  outputs: List<Output>,
+  custody: List<Input>,
+) -> Bool {
   foldOne(
     fx.oneLeaf(fx.keyA, fx.absentLeaf),
     fx.emptyRoot(),
@@ -252,17 +255,16 @@ fn readOutputs() -> List<Output> {
 // G1 — the leaf codec, retired with the `Operation` wire (#183 slice b)
 // ============================================================================
 
+// ============================================================================
+// G2 — the seven rows accept, and each refuses with its delta off by one
+// ============================================================================
+
 /// The leaf codec retired with value bytes: edge-only requests state no
 /// bytes, so non-codec bytes are inexpressible and `leaf-codec` is gone.
 /// Mapping: `leaf-codec`, `insert-empty`, `update-over-marker`,
 /// `delete-spelling` traces retire; the codec check (`codecOk`) is removed
 /// and `lib.decodeState` goes with it. The three leaf bytes remain as the
 /// edge table's trie moves (`types.ak`, `lib.leafAbsent/Active/Terminal`).
-
-// ============================================================================
-// G2 — the seven rows accept, and each refuses with its delta off by one
-// ============================================================================
-
 test g2_insert_absent_accepts() {
   insertAbsent(fx.mintOf(fx.absentPolicy, fx.keyA, 1), insertAbsentOutputs())
 }
@@ -461,13 +463,7 @@ fn readInBatch(readProof: Proof) -> Bool {
   let start = fx.oneLeaf(fx.keyA, fx.terminalLeaf)
   let middle = fx.twoLeaves(fx.keyA, fx.terminalLeaf, fx.keyB, fx.absentLeaf)
   let thirdProof =
-    fx.thirdLeafProof(
-      fx.keyA,
-      fx.terminalLeaf,
-      fx.keyB,
-      fx.absentLeaf,
-      fx.keyC,
-    )
+    fx.thirdLeafProof(fx.keyA, fx.terminalLeaf, fx.keyB, fx.absentLeaf, fx.keyC)
   let final =
     mpf.root(
       mpf.insert(mpf.from_root(middle), fx.keyC, fx.absentLeaf, thirdProof),
@@ -1012,17 +1008,11 @@ test a1_delete_active_with_approval_accepts() {
 // ============================================================================
 
 test a2_wrong_edge_approval_refuses() fail {
-  foldEdgeCarrying(
-    1,
-    fx.approval(2, fx.keyA, edgeOwner(1), edgeDestination(1)),
-  )
+  foldEdgeCarrying(1, fx.approval(2, fx.keyA, edgeOwner(1), edgeDestination(1)))
 }
 
 test a2_wrong_key_approval_refuses() fail {
-  foldEdgeCarrying(
-    1,
-    fx.approval(1, fx.keyB, edgeOwner(1), edgeDestination(1)),
-  )
+  foldEdgeCarrying(1, fx.approval(1, fx.keyB, edgeOwner(1), edgeDestination(1)))
 }
 
 test a2_wrong_owner_approval_refuses() fail {
@@ -1054,9 +1044,7 @@ test a2_prop_approval_name_binds_the_key(
 ) {
   let (left, right) = pair
   let nameOf =
-    fn(key) {
-      lib.approvalName(1, key, fx.bookerKey, fx.bookingDestination())
-    }
+    fn(key) { lib.approvalName(1, key, fx.bookerKey, fx.bookingDestination()) }
   if left == right {
     nameOf(left) == nameOf(right)
   } else {
@@ -1314,18 +1302,10 @@ test t3_absent_token_in_a_wallet_refuses() fail {
   foldEdgeOutputs(0, [fx.strayCustodyOutput(fx.keyA, fx.deposit)])
 }
 
-test t3_custody_naming_another_key_refuses() fail {
+test t3_old_two_field_custody_wire_refuses() fail {
   foldEdgeOutputs(
     0,
-    [
-      fx.custodyOutputMismatched(
-        fx.keyA,
-        fx.keyB,
-        fx.inserterAddress,
-        fx.deposit,
-        zero,
-      ),
-    ],
+    [fx.legacyCustodyOutput(fx.keyA, fx.inserterAddress, fx.deposit)],
   )
 }
 
@@ -1340,8 +1320,7 @@ test t3_custody_carrying_an_extra_asset_refuses() fail {
   foldEdgeOutputs(
     0,
     [
-      fx.custodyOutputMismatched(
-        fx.keyA,
+      fx.custodyOutputWithExtra(
         fx.keyA,
         fx.inserterAddress,
         fx.deposit,
@@ -1408,16 +1387,17 @@ test t4_custody_left_unspent_refuses() fail {
 /// state input and the `Modify` redeemer that make the transaction a
 /// fold at all; a row that leaves them out is asking whether custody
 /// can be spent outside one.
-fn spendCustodyIn(
+fn spendCustodyUsing(
   key: ByteArray,
   refund: ByteArray,
+  custody: Input,
   fold: Bool,
   otherInputs: List<Input>,
   outputs: List<Output>,
 ) -> Bool {
   let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
-    Some(types.AbsentCustody { key, refund }),
+    Some(fx.custodyDatum(key, refund)),
     Modify([]),
     fx.custodyRef(0),
     Transaction {
@@ -1425,7 +1405,7 @@ fn spendCustodyIn(
       validity_range: fx.phase1(),
       inputs: list.concat(
         list.concat(
-          [fx.custodyInput(0, key, refund, fx.deposit)],
+          [custody],
           if fold {
             [fx.stateInput(fx.oneLeaf(fx.keyA, fx.absentLeaf))]
           } else {
@@ -1441,6 +1421,23 @@ fn spendCustodyIn(
         []
       },
     },
+  )
+}
+
+fn spendCustodyIn(
+  key: ByteArray,
+  refund: ByteArray,
+  fold: Bool,
+  otherInputs: List<Input>,
+  outputs: List<Output>,
+) -> Bool {
+  spendCustodyUsing(
+    key,
+    refund,
+    fx.custodyInput(0, key, refund, fx.deposit),
+    fold,
+    otherInputs,
+    outputs,
   )
 }
 
@@ -1514,6 +1511,42 @@ test t5_fold_consuming_this_key_accepts() {
     fx.inserterAddress,
     [consumingRequest(fx.keyA, 2)],
     [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+  )
+}
+
+fn spendCustodyWithValue(value: Value) -> Bool {
+  spendCustodyUsing(
+    fx.keyA,
+    fx.inserterAddress,
+    fx.custodyInputWithValue(0, fx.keyA, fx.inserterAddress, value),
+    True,
+    [consumingRequest(fx.keyA, 2)],
+    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+  )
+}
+
+test t5_custody_without_an_asset_refuses() fail {
+  spendCustodyWithValue(from_lovelace(fx.deposit))
+}
+
+test t5_custody_with_two_assets_refuses() fail {
+  spendCustodyWithValue(
+    merge(
+      merge(from_lovelace(fx.deposit), from_asset(fx.absentPolicy, fx.keyA, 1)),
+      from_asset(fx.foreignPolicy, fx.keyB, 1),
+    ),
+  )
+}
+
+test t5_custody_under_the_wrong_policy_refuses() fail {
+  spendCustodyWithValue(
+    merge(from_lovelace(fx.deposit), from_asset(fx.activePolicy, fx.keyA, 1)),
+  )
+}
+
+test t5_custody_with_the_wrong_quantity_refuses() fail {
+  spendCustodyWithValue(
+    merge(from_lovelace(fx.deposit), from_asset(fx.absentPolicy, fx.keyA, 2)),
   )
 }
 
@@ -1627,7 +1660,7 @@ test v2_update_retract_refuses() fail {
 test t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
   let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
-    Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),
+    Some(fx.custodyDatum(fx.keyA, fx.inserterAddress)),
     Modify([]),
     fx.custodyRef(0),
     Transaction {
@@ -1652,7 +1685,7 @@ test t5_foreign_registry_modify_does_not_authorize_custody_refuses() fail {
 test t5_request_at_the_request_script_accepts() {
   let modify: Data = Modify([UpdateAction([])])
   state.state.spend(
-    Some(types.AbsentCustody { key: fx.keyA, refund: fx.inserterAddress }),
+    Some(fx.custodyDatum(fx.keyA, fx.inserterAddress)),
     Modify([]),
     fx.custodyRef(0),
     Transaction {
