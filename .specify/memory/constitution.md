@@ -1,5 +1,19 @@
 <!--
 Sync impact report
+Version: 1.0.0 -> 1.1.0 (conformance suite audience and form)
+Amended: 2026-09-21
+Added principles: VI, the conformance suite is the product's public evidence
+statement — published audience, receipt-computed state, published uncovered
+rows, every claim said in the description language, total interpretation with a
+discovered-extent control, requirement text over internal identifiers, harness
+evidence as a marked appendix, and no restructure that moves a row's state.
+Modified governance: records the user's 2026-09-21 instruction.
+Synchronized: AGENTS.md.
+Templates: .github/pull_request_template.md already routes acceptance through
+this constitution; no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: none -> 1.0.0 (first repository constitution)
 Ratified and amended: 2026-09-11
 Added principles: Lean authority; user-story escalation; behavioral correspondence;
@@ -123,6 +137,36 @@ repair and its evidence, or an explicit user ruling followed by the model-first
 alignment above. Publishing this constitution does not itself resolve any
 existing implementation finding.
 
+### VI. The conformance suite is the product's public evidence statement
+
+The conformance suite is read by people outside this project who are deciding
+whether to build on the registry. It is published — `docs/consumer-conformance.md`
+— and it MUST be written for that reader, in the product's own words, without
+requiring them to learn this project's internal vocabulary first.
+
+Its worth to that reader is that it is honest about what has not been shown.
+Row state MUST be computed from run receipts and MUST NOT be typed by hand.
+`uncovered` MUST be published rather than hidden. A green step is not a
+fulfilled consumer promise, and a passing suite MUST NOT be presented as one.
+
+Every product claim MUST be expressed in the suite's description language, so
+that a story cannot describe a case the suite does not run. A case that cannot
+be said in that language is a finding to raise; it MUST NOT be written as a raw
+assertion outside it. Interpretation of that language — execution and
+rendering — MUST be total over the same instruction set, and the control proving
+it MUST quantify over the discovered extent of that set rather than a listed
+member. A renderer that silently drops an instruction publishes a claim the
+suite never executed, which is the same defect as typing `executed` into a row.
+
+Surfaces the reader navigates MUST carry requirement text, not internal
+identifiers. Evidence about the project's own harness MUST be marked as an
+appendix and MUST NOT occupy the body, whatever its volume.
+
+Because the suite is a product surface rather than an internal test tree, a
+change to it is a product change and is held to the same bar. A restructure
+MUST NOT move any row's state by one increment and MUST NOT make an uncovered
+row look covered.
+
 ## Development and review
 
 Contributors MUST read this constitution before specifying, implementing or
@@ -144,10 +188,15 @@ user stories, and the rule must apply retroactively. It supersedes conflicting
 repository guidance and prior owner interpretations. An explicit later user
 ruling may amend it; an agent or reviewer cannot grant itself an exception.
 
+Principle VI records the user's 2026-09-21 instruction that the conformance
+suite is the product bible, written for stakeholders rather than for this
+project, and that this value is constitutional rather than the scope of the
+ticket that first applied it.
+
 Amendments MUST record their authority, rationale, affected principles and
 dependent guidance. Use a major version for incompatible principle changes, a
 minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-11
+**Version**: 1.1.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-21
