@@ -32,6 +32,7 @@ import Data.Text.Encoding qualified as TE
 import Singular.Registry.Blueprint (
     extractCompiledCode,
     loadBlueprint,
+    loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
@@ -47,9 +48,6 @@ import Singular.Registry.TxBuilder.Internal (
     leafAbsent,
     scriptHashBytes,
  )
-import Singular.Registry.TxBuilder.Update (
-    updateTokenWithDuties,
- )
 import Singular.Registry.Types (
     CageDatum (..),
     edgeInsertAbsent,
@@ -57,12 +55,14 @@ import Singular.Registry.Types (
     OnChainTokenState (..),
  )
 
+import Singular.Registry.Driver (
+    bootRegistry,
+    foldEdge,
+    registryTokenId,
+ )
 import Singular.Registry.E2E.CageSpec (
-    bookEdge,
-    publishCageRefs,
-    registryContextFor,
     submitWithGenesis,
-    withBootedCage,
+    withE2E,
  )
 
 -- mts pieces for the independent read-back recompute
@@ -97,7 +97,6 @@ import MPF.Proof.Insertion (
 
 import Singular.Registry.Trie (
     Trie (..),
-    TrieManager (..),
  )
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
@@ -154,14 +153,18 @@ fork81Spec ::
     Spec
 fork81Spec stateBytes requestBytes = do
     it "accepts the real absence insertion of C and reads it back" $
-        withBootedCage id stateBytes requestBytes $
-            \cfg prov submit tm tokenId -> do
-                refs <- publishCageRefs cfg prov submit tokenId
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-A"
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-B1294"
+        withE2E stateBytes requestBytes $
+            \cfg prov submit tm -> do
+                codes <- loadRegistryCodesFromEnv
+                reg <-
+                    bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+                let tokenId = registryTokenId reg
+                    foldInsert k = () <$ foldEdge reg k edgeInsertAbsent
+                foldInsert "cs07-fork-A"
+                foldInsert "cs07-fork-B1294"
                 -- The previously-refused fold (CS07): its proof's sole step
                 -- is a root-level Fork with skip > 0.
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-C11"
+                foldInsert "cs07-fork-C11"
                 -- Read back from chain: the state datum root must equal an
                 -- independent {A,B,C} recompute, and an inclusion proof for
                 -- C built from the independent trie must fold to the chain
@@ -204,25 +207,22 @@ fork81Spec stateBytes requestBytes = do
                         renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
     it "refuses a second insert of the now-present key (occupied-key)" $
-        withBootedCage id stateBytes requestBytes $
-            \cfg prov submit tm tokenId -> do
-                refs <- publishCageRefs cfg prov submit tokenId
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-A"
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-B1294"
-                foldInsert cfg prov submit tm tokenId refs "cs07-fork-C11"
+        withE2E stateBytes requestBytes $
+            \cfg prov submit tm -> do
+                codes <- loadRegistryCodesFromEnv
+                reg <-
+                    bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+                let foldInsert k = () <$ foldEdge reg k edgeInsertAbsent
+                foldInsert "cs07-fork-A"
+                foldInsert "cs07-fork-B1294"
+                foldInsert "cs07-fork-C11"
                 -- The edge table cannot see the trie: an insert is edge 0
                 -- whether or not the key is present, so this books and the
                 -- CAGE refuses it, which is the refusal under test.
-                _ <-
-                    bookEdge
-                        cfg
-                        prov
-                        submit
-                        tokenId
-                        "cs07-fork-C11"
-                        edgeInsertAbsent
-                ctx <- registryContextFor cfg prov tokenId refs
-                res <- try (updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx)
+                -- Through the driver, so the refusal observed is the one a
+                -- production caller meets: the driver books, finds the
+                -- manager in step, builds, and the cage refuses the build.
+                res <- try (foldEdge reg "cs07-fork-C11" edgeInsertAbsent)
                 case res of
                     Right _ ->
                         expectationFailure "occupied-key insert was accepted"
@@ -259,17 +259,3 @@ fork81Spec stateBytes requestBytes = do
                             Nothing ->
                                 expectationFailure
                                     ("unexpected exception: " <> show e)
-  where
-    -- The speculative session inside updateTokenImpl starts from the
-    -- manager's committed trie and is discarded; the production caller
-    -- mirrors each landed fold into the committed trie. Without this,
-    -- every fold would re-prove against the boot state (fold 2 would
-    -- submit an empty proof and fail).
-    foldInsert cfg prov submit tm tokenId refs k = do
-        _ <- bookEdge cfg prov submit tokenId k edgeInsertAbsent
-        ctx <- registryContextFor cfg prov tokenId refs
-        unsigned <- updateTokenWithDuties cfg prov tm tokenId genesisAddr ctx
-        _ <- submitWithGenesis submit unsigned
-        withTrie tm tokenId $ \t -> do
-            _ <- insert t k leafAbsent
-            pure ()

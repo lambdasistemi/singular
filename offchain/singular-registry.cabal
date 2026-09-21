@@ -45,6 +45,7 @@ library
     , cardano-crypto-class
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
+    , cardano-ledger-binary
     , cardano-ledger-api
     , cardano-ledger-conway
     , cardano-strict-containers
@@ -77,6 +78,7 @@ library
     Singular.Registry.Candidate
     Singular.Registry.Config
     Singular.Registry.Deployment
+    Singular.Registry.Driver
     Singular.Registry.Ledger
     Singular.Registry.Lifecycle
     Singular.Registry.Node
@@ -582,6 +584,7 @@ test-suite e2e-tests
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
+    Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.InsertActiveSpec
@@ -593,7 +596,6 @@ test-suite e2e-tests
     , base16-bytestring
     , bytestring
     , cardano-ledger-api
-    , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-ledger-mary
     , singular-registry

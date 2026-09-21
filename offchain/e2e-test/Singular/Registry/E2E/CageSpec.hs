@@ -10,6 +10,7 @@ License     : Apache-2.0
 module Singular.Registry.E2E.CageSpec (
     spec,
     withBootedCage,
+    withE2E,
     submitInsertRequest,
     submitWithGenesis,
     publishCageRefs,
@@ -21,20 +22,7 @@ module Singular.Registry.E2E.CageSpec (
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel, poll)
 import Data.ByteString (ByteString)
-import Control.Monad (when)
 import Data.ByteString.Short qualified as SBS
-import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
-import Data.ByteString.Lazy qualified as BSL
-import Cardano.Ledger.Api.Tx (witsTxL)
-import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    referenceInputsTxBodyL,
- )
-import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
-import Cardano.Ledger.Binary (serialize)
-import Cardano.Ledger.Core (eraProtVerHigh)
 import Lens.Micro ((^.))
 import System.Environment (lookupEnv)
 import Test.Hspec (
@@ -47,15 +35,10 @@ import Test.Hspec (
  )
 
 import Cardano.Ledger.Api.Tx (
-    bodyTxL,
     txIdTx,
  )
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (SNothing), TxIx (..))
-import Cardano.Ledger.Mary.Value (
-    MultiAsset (..),
- )
 import Cardano.Ledger.TxIn (TxIn (..))
 
 import Cardano.Node.Client.E2E.Devnet (
@@ -100,19 +83,15 @@ import Singular.Registry.Ledger (
     ConwayEra,
     TokenId (..),
  )
+import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (
     mkPureTrieManager,
  )
-import Singular.Registry.TxBuilder.Boot (
-    bootTokenImpl,
- )
 import Singular.Registry.TxBuilder.Edges (SubmitSigned)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Internal (
-    cageAddrFromCfg,
-    cagePolicyIdFromCfg,
     computeScriptHash,
     requestAddrFromCfg,
     scriptFromBytes,
@@ -191,7 +170,8 @@ cageFlowSpec stateBytes requestBytes = do
             id
             stateBytes
             requestBytes
-        $ \cfg prov submit tm tokenId -> do
+        $ \cfg prov submit tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             let requestAddr =
                     requestAddrFromCfg
                         cfg
@@ -237,7 +217,8 @@ cageFlowSpec stateBytes requestBytes = do
             fastRetractCfg
             stateBytes
             requestBytes
-        $ \cfg prov submit _tm tokenId -> do
+        $ \cfg prov submit _tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             let requestAddr =
                     requestAddrFromCfg
                         cfg
@@ -277,7 +258,8 @@ cageFlowSpec stateBytes requestBytes = do
             fastRejectCfg
             stateBytes
             requestBytes
-        $ \cfg prov submit _tm tokenId -> do
+        $ \cfg prov submit _tm reg -> do
+            let tokenId = Driver.registryTokenId reg
             let requestAddr =
                     requestAddrFromCfg
                         cfg
@@ -322,6 +304,13 @@ cageFlowSpec stateBytes requestBytes = do
 -- That refusal evidence, with success controls, lives in repair-rows
 -- (ownerless-end/migration/sweep, receipted) instead of here.
 
+{- | Boot a cage and hand the caller the driver's registry handle.
+
+The boot itself belongs to 'Driver.bootRegistry' (#190): minting the
+token, creating the trie, publishing the cage references and the three
+checks that used to live in this module's own 'bootCage'. A caller that
+wants only the token asks the handle for it.
+-}
 withBootedCage ::
     (CageConfig -> CageConfig) ->
     SBS.ShortByteString ->
@@ -330,7 +319,7 @@ withBootedCage ::
       Cage.Provider IO ->
       Submitter IO ->
       TrieManager IO ->
-      TokenId ->
+      Driver.Registry ->
       IO a
     ) ->
     IO a
@@ -338,73 +327,10 @@ withBootedCage adjustCfg stateBytes requestBytes action =
     withE2E stateBytes requestBytes $
         \cfg0 prov submit tm -> do
             let cfg = adjustCfg cfg0
-            tokenId <- bootCage cfg prov submit tm
-            action cfg prov submit tm tokenId
-
-bootCage ::
-    CageConfig ->
-    Cage.Provider IO ->
-    Submitter IO ->
-    TrieManager IO ->
-    IO TokenId
-bootCage cfg prov submit tm = do
-    let stateAddr =
-            cageAddrFromCfg cfg Testnet
-    bootWallet <- Cage.queryUTxOs prov genesisAddr
-    unsignedBoot <-
-        bootTokenImpl
-            cfg
-            prov
-            genesisAddr
-    -- #177 A-003: the boot transaction must RESOLVE the state validator
-    -- through the published reference output, not carry it. The
-    -- validator is fifteen kilobytes against a sixteen-kilobyte cap, so
-    -- an inline boot leaves the registry no room to grow — that is what
-    -- the retirement guard ran out of. Asserted on the transaction the
-    -- chain accepted, and printed with its size so a reviewer can see
-    -- the budget rather than take it on trust.
-    let bootScripts = unsignedBoot ^. witsTxL . scriptTxWitsL
-        bootRefs = unsignedBoot ^. bodyTxL . referenceInputsTxBodyL
-        bootBytes =
-            BSL.length (serialize (eraProtVerHigh @ConwayEra) unsignedBoot)
-    putStrLn
-        ( "[boot] bytes="
-            <> show bootBytes
-            <> " inline-scripts="
-            <> show (Map.size bootScripts)
-            <> " reference-inputs="
-            <> show (Set.size bootRefs)
-            <> " fee="
-            <> show (unsignedBoot ^. bodyTxL . feeTxBodyL)
-            <> " collateral-coins="
-            <> show
-                [ c
-                | i <- Set.toList (unsignedBoot ^. bodyTxL . collateralInputsTxBodyL)
-                , (j, o) <- bootWallet
-                , i == j
-                , let Coin c = o ^. coinTxOutL
-                ]
-            <> " wallet-coins="
-            <> show [c | (_, o) <- bootWallet, let Coin c = o ^. coinTxOutL]
-        )
-    when (Map.member (cfgScriptHash cfg) bootScripts) $
-        expectationFailure
-            "#177 A-003: the boot transaction carries the state validator \
-            \INLINE. It must reference the published output instead; an \
-            \inline boot is what left no room for the retirement guard."
-    when (Set.null bootRefs) $
-        expectationFailure
-            "#177 A-003: the boot transaction resolves no reference input, \
-            \so the state validator was not published before it."
-    signedBoot <- submitWithGenesis submit unsignedBoot
-    let tokenId =
-            extractTokenId cfg signedBoot
-    createTrie tm tokenId
-    stateUtxos <-
-        Cage.queryUTxOs prov stateAddr
-    stateUtxos
-        `shouldSatisfy` (not . null)
-    pure tokenId
+            codes <- loadRegistryCodesFromEnv
+            reg <-
+                Driver.bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
+            action cfg prov submit tm reg
 
 submitInsertRequest ::
     CageConfig ->
@@ -582,28 +508,6 @@ assertSubmitted (Submitted _) = pure ()
 assertSubmitted (Rejected reason) =
     expectationFailure $
         "Tx rejected: " <> show reason
-
-{- | Extract the 'TokenId' from a boot
-transaction's mint field.
--}
-extractTokenId ::
-    CageConfig -> ConwayTx -> TokenId
-extractTokenId cfg tx =
-    let MultiAsset ma =
-            tx ^. bodyTxL . mintTxBodyL
-        assets =
-            Map.toList
-                ( ma
-                    Map.! cagePolicyIdFromCfg cfg
-                )
-     in case assets of
-            [(an, _)] -> TokenId an
-            _ ->
-                error
-                    "extractTokenId: \
-                    \unexpected assets"
-
--- | Wait for a transaction to be confirmed.
 awaitTx :: IO ()
 awaitTx = threadDelay 5_000_000
 
