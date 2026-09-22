@@ -1,0 +1,46 @@
+{
+  "user-stories": [
+    {
+      "text": "Four readers are owed something here. A consumer reads a registration promise and runs its example against a real registry, seeing the complete declared observations compared with Lean. A holder retires a registration created in the same run, both transitions agreeing with Lean, and refusal examples agree on whether the request succeeds.",
+      "pause": 400
+    },
+    {
+      "text": "An integrator substitutes the execution context without rewriting the story or its expectations, with concrete identities kept inside the interpreter. And a reader can see which theorem conclusions were exercised, which remain unobservable, and which have no executable consumer yet.",
+      "pause": 400
+    }
+  ],
+  "requirements-and-blocking-invariants": [
+    {
+      "text": "Twelve requirements, each blocking for its assigned child ticket. One model-owned driver exposes the executable law and declared boundary observations. Model-owned scenarios carry theorem bindings, parameters and lawful setup traces where reachability is required. Acceptance and domain refusal are kept distinct from parse, process and infrastructure errors, so a broken runner never earns refusal evidence and an unexecuted law never earns acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "The constitution states the concrete realization of each law and observation, so no support module invents it. One Haskell abstraction compares all declared observable fields with field-level differences. Identities are allocated during context and actions and looked up during observation; registration and retirement share actual history and identity maps.",
+      "pause": 400
+    },
+    {
+      "text": "Product claims use the typed theorem and clause language with total execution and rendering, so no instruction can silently disappear from the book. Refusal replay fails when model and implementation disagree, every project theorem has an executable consumer or a named unmet requirement, end to end tests reuse the same scenario and comparison logic, and CI runs the suite into a readable, receipt-derived book with gaps visible. A later child's incompleteness stays visible and cannot be claimed by an earlier child's green gate, and a merged child's pull request closes only its own ticket.",
+      "pause": 400
+    },
+    {
+      "text": "Two standing constraints: no new Cardano byte model in Lean, because the abstract root encoding is not the concrete trie hash and translation must state and check their relationship; and no weakened statements, changed hypotheses or promoted uncovered rows to hide a gap. A model ambiguity requires a concrete user story and an operator ruling.",
+      "pause": 400
+    }
+  ],
+  "required-controls": [
+    {
+      "text": "Three demonstrations are required: the comparator fails for changed observations, the translation fails for unallocated identities, and refusal replay fails for an accepted mutant. Real connected success evidence is retained, missing and skipped consumers and stale bindings are detected, and every control reaches its claimed boundary rather than merely exiting with a failure code.",
+      "pause": 400
+    }
+  ],
+  "limits": [
+    {
+      "text": "This epic builds the machinery and migrates implemented behavior across its six children, and no child may claim unimplemented edges work. The every-theorem consumer requirement remains unmet until the complete inventory has evidence, and missing cases stay explicit. BDD library selection and general resource abstractions are deferred, and the existing authentication and publication gaps require explicit task accounting.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "877b28e396214b43eee8d8f44af1ee2409cec2af6ac46af1fc626658e21f3a49"
+  }
+}

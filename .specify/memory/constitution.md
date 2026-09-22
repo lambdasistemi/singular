@@ -1,5 +1,19 @@
 <!--
 Sync impact report
+Version: 1.1.0 -> 1.2.0 (model driver translation)
+Amended: 2026-09-22
+Added sections: the model driver translation — the concrete realization of each
+declared operation and boundary observation, the identity rules binding a
+scenario to the model and to its theorems, and the named unobservable fields,
+the registry root's abstractness among them.
+Modified principles: none; existing obligations are unchanged.
+Synchronized: tools/check_model.py reconciles this section against the driver's
+declared surface in both directions, in the required CI model job.
+Templates: .github/pull_request_template.md already routes acceptance through
+this constitution; no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.0.0 -> 1.1.0 (conformance suite audience and form)
 Amended: 2026-09-21
 Added principles: VI, the conformance suite is the product's public evidence
@@ -167,6 +181,54 @@ change to it is a product change and is held to the same bar. A restructure
 MUST NOT move any row's state by one increment and MUST NOT make an uncovered
 row look covered.
 
+## The model driver translation
+
+The driver at `Singular.Driver.runSurface` executes the model's law and reports
+a declared boundary. This section states what each declared name concretely
+means, so a support module cannot invent the correspondence and a missing field
+cannot be dropped in silence. The reconciliation is mechanical and runs in both
+directions in `tools/check_model.py`: a declared name with no row here fails,
+and a row naming something the driver does not declare fails. **That check
+establishes that every name is stated — never that a stated realization is
+true.** Whether a realization is correct is a review obligation under
+Principle III, not something a name-reconciliation can earn.
+
+Each operation is one of the seven edges, executed through `Singular.step` at
+the request the scenario carries. An operation is refused when `Singular.refusal`
+returns a reason; the driver reports that reason verbatim and never manufactures
+one.
+
+| declaration | kind | meaning |
+|---|---|---|
+| `insertAbsent` | realization | `Singular.step` with `Edge.insertAbsent`: books the key as `Known Absent` and records one custody entry holding the deposit and its refund address. |
+| `insertActive` | realization | `Singular.step` with `Edge.insertActive`: books the key as `Known Active` and holds one active token routed to the request's output. |
+| `updateActive` | realization | `Singular.step` with `Edge.updateActive`: moves a booked absent key to `Known Active`, consumes its custody entry and pays that entry's recorded value to its recorded refund address. |
+| `updateTerminal` | realization | `Singular.step` with `Edge.updateTerminal`: retires an active key to `Known Terminal` and releases its active holding. |
+| `deleteAbsent` | realization | `Singular.step` with `Edge.deleteAbsent`: returns a booked absent key to `unknown`, consuming its custody entry and paying its refund. |
+| `deleteActive` | realization | `Singular.step` with `Edge.deleteActive`: returns an active key to `unknown` and releases its active holding. |
+| `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: attests an already terminal key, adding a terminal holding and changing no leaf. |
+| `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
+| `custody` | realization | the custody census after the step: every outstanding absent token with its refund address and value. |
+| `held` | realization | the held-token census after the step: every active and terminal holding with its key, kind and output. |
+| `leaf` | realization | `Singular.trieGet` at the request's key in the produced state, spelled by `Singular.leafJson` as `null`, `absent`, `active` or `terminal`. |
+| `mint` | realization | the executed result's own `mint`: the R2 keyed delta of the edge, each entry named by the registry's pinned policy for its kind and the asset name the model derives from the key. |
+| `paid` | realization | the executed result's own `paid` list of (address, value) payments, which is non-empty exactly for the two edges that consume an absent token. |
+| `root` | realization | `Singular.rootOf` over the produced trie — FNV-1a over the sorted (key, leaf byte) list. This is the model's own commitment function and is stated as abstract; see the unobservable rows below. |
+| `state` | realization | the complete `Singular.RegistryState` after the step, serialized by the model's own instance so the row is a replayable input rather than a picture of an output. |
+| `tx` | realization | the transaction `Singular.txOf` builds from the same executed step: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. The driver builds no transaction of its own. |
+| model declaration | identity | a scenario names an operation only through `Singular.Driver.edgeName`, which reads the model's own `ToJson Edge`, so the driver holds no second vocabulary for the seven edges. |
+| theorem binding | identity | a scenario carries a theorem's qualified name and the `statementSha256` that `lean/theorem-debt.json` records for it. A statement that moves makes the binding stale and fails; a name alone would not. |
+| surface digest | identity | `definitionDigest` is taken over the declared operation, observation and unobservable names together, so a silently widened or narrowed surface changes it. |
+| law premise | identity | `Singular.Driver.consistentB`, the decidable finite characterization of `Singular.Consistent` over the keys a state actually mentions. It is checked on the state reached by the setup trace *before* any accepted observation is reported. A key the state mentions nowhere satisfies every conjunct trivially, which is why the finite extent does not weaken the premise. |
+| starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
+| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.refusal` can produce; `unsupported` is the driver failing to reach the case and is never reported as a ledger refusal. |
+| `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
+| `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
+| `requiredSigners` | unobservable | `Singular.requiredSigners` is `[]` for every request; the model does not yet say who must sign. The transaction's `signers` field therefore carries no obligation. |
+| `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |
+| `transactionId` | unobservable | the built transaction has no identity until a ledger accepts it. |
+| `utxoReference` | unobservable | inputs are modelled by role, not by concrete output reference. |
+
 ## Development and review
 
 Contributors MUST read this constitution before specifying, implementing or
@@ -199,4 +261,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-21
+**Version**: 1.2.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-22

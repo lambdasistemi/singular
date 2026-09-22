@@ -17,10 +17,11 @@ let
       cp .lake/build/bin/singular-corpus "$out/bin/"
       cp .lake/build/bin/naming-corpus "$out/bin/"
       cp .lake/build/bin/lifecycle-corpus "$out/bin/"
+      cp .lake/build/bin/singular-driver "$out/bin/"
       cp lean/corpus.json lean/theorem-debt.json \
         lean/naming-corpus.json lean/naming-theorem-debt.json \
         lean/lifecycle-corpus.json lean/lifecycle-theorem-debt.json \
-        lean/wire-theorem-debt.json \
+        lean/wire-theorem-debt.json lean/driver-corpus.json \
         axioms-report.txt "$out/share/"
     '';
   };
@@ -32,6 +33,7 @@ let
         --binary ${package}/bin/singular-corpus \
         --naming-binary ${package}/bin/naming-corpus \
         --lifecycle-binary ${package}/bin/lifecycle-corpus \
+        --driver-binary ${package}/bin/singular-driver \
         --axioms-report ${package}/share/axioms-report.txt \
         --root ${src}
     '';

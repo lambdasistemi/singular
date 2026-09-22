@@ -1,0 +1,40 @@
+{
+  "children": [
+    {
+      "text": "Each child ticket has its own branch and pull request, preserving the earlier candidate and its historical evidence. Opus owns implementation and tests, Grok independently checks committed checkpoints, and the ticket owner owns specs, gate synthesis and disposition. Muse and GLM may perform bounded mechanical tasks with no semantic authority.",
+      "pause": 400
+    },
+    {
+      "text": "Six children. Ticket 220 delivers the executable book DSL and stakeholder stories on a test-owned, exception-safe resource lifetime, with the total render and fold over one instruction set, the migrated case sweep, and no hidden global fixture state. Ticket 221 delivers the constitutional translation, the generic model driver and a replayable registration and retirement protocol, with existing model and corpus parity, driver success, refusal and error controls, and one complete field mapping with a readable story for review. Ticket 222 moves registration onto the shared concrete abstraction with complete declared observations; ticket 223 connects retirement and the applicable refusals through the same driver; ticket 224 migrates the keyed-mint batch and shares context with end to end; and ticket 225 delivers the whole-project consumer inventory, the ratchet, CI execution and the reader-facing book.",
+      "pause": 400
+    },
+    {
+      "text": "Ticket 220 and ticket 221 do not wait on each other: their owned surfaces do not intersect, ticket 221 adds no Haskell, and ticket 220 touches neither the Lean sources nor the model check. Ticket 222 depends on both; 223 on 222; 224 on 223; and 225 on 224. The mechanical theorem and CI inventory for 225 may be prepared at any time without claiming coverage, because an inventory is a denominator, never evidence. Ticket 221's representative contract and story are reviewed before the broad migration in 222.",
+      "pause": 400
+    }
+  ],
+  "scope": [
+    {
+      "text": "Ticket 221 may touch the constitution, the Lean interface, corpus and build files, conformance packaging with focused checks, and the CI and justfile integration needed to run them, and it adds no Haskell. Accepted model functions and theorem meanings stay frozen, and the existing onchain and offchain implementation is outside it. Pull request 226 carries this spec set so a reader can see where the driver sits in the epic, but carrying the plan is not authority to act on it: pull request 226 implements ticket 221 only, and tickets 220 and 222 through 225 are each fenced by their own ticket. Later fences are assigned per child before dispatch, and no worker creates new issues, edits unrelated branches, merges or deploys.",
+      "pause": 400
+    }
+  ],
+  "verification-and-publication": [
+    {
+      "text": "Two independent worker tables map acceptance rows to verbatim workflow commands and the owner synthesizes their union; a job nobody cited is a missing CI job. Required new checks become CI changes inside the child, never private substitute acceptance gates. Uncited falsification is recorded as none cited, not an invented historical red.",
+      "pause": 400
+    },
+    {
+      "text": "Workers run checks and keep compact receipts binding command, candidate or tree, inputs, exit, duration and evidence hash. The owner does not implement or run the subject tests; Grok reviews committed checkpoints and receipts, including failure modes, without rewriting the worker's code. Only the ticket owner pushes, after checkpoint approval and the required checks, keeping PR and gist previews current under the standing publication authorization.",
+      "pause": 400
+    },
+    {
+      "text": "Candidate, review, acceptance, merge and release remain distinct. The ceilings are one hundred lines per spec artifact and one hundred forty per worker packet, and an oversized mandate is split rather than stretched.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "46f0dce2d4a29098671c6afd13d286173a190f23171e86422733ad0bcca7c12c"
+  }
+}
