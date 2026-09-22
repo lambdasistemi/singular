@@ -3,9 +3,12 @@
 module Conformance.Story.Usage (spec, story) where
 
 import Control.Monad.Operational (Program)
-import Test.Hspec (Spec, it, shouldBe)
+import Data.List (isInfixOf)
+import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 import Conformance.Story
 import Conformance.Support.RegistrationReport (insertActiveRow)
+import Conformance.Edge.Register qualified as Register
+import Conformance.Story.Live qualified as Live
 
 story :: Program StoryI ()
 story = theorem insertActiveRow $ do
@@ -27,3 +30,8 @@ spec = do
     runStory story
     it "Keeps internal reference numbers out of the example story" $
         filter nameViolation (groupNames story) `shouldBe` []
+    it "Runs a redirected delivery and its untampered control in the registration chapter" $ do
+        let rendered = Live.renderLive (Register.story (Live.Context "registry" "recipient"))
+        rendered `shouldSatisfy` isInfixOf "redirect delivery"
+        rendered `shouldSatisfy` isInfixOf "untampered control"
+        rendered `shouldSatisfy` (not . isInfixOf "batch")
