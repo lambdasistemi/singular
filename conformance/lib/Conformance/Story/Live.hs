@@ -4,7 +4,7 @@
 module Conformance.Story.Live (
     Edge (..), edgeName, EdgeRequest (..), Tamper (..), tamperName,
     LiveI (..), Story, Context (..), submit, tamper, observe,
-    compareWithModel, renderLive,
+    compareWithModel, renderLive, validateLive,
 ) where
 
 import Control.Monad.Operational (Program, ProgramViewT (Return, (:>>=)), view)
@@ -61,6 +61,39 @@ observe = action . Observe
 
 compareWithModel :: step -> obs -> Story reg wal step obs cmp cmp
 compareWithModel step observation = action (Compare step observation)
+
+-- | Check instruction order over the same program with display-only handles,
+-- before a runner can submit a transaction.
+validateLive :: Story String String String String String res -> Either String ()
+validateLive program = do
+    (end, _) <- walk Ready program
+    if end == Ready then Right () else Left "live story ended before Observe and Compare"
+  where
+    walk :: PreflightPhase -> Story String String String String String a -> Either String (PreflightPhase, a)
+    walk phase body = case view body of
+        Return result -> Right (phase, result)
+        Action instruction :>>= rest -> case instruction of
+            Submit _ _ -> advance Ready NeedObserve "preflight step"
+            Tamper _ _ _ -> advance Ready NeedObserve "preflight step"
+            Observe _ -> advance NeedObserve NeedCompare "preflight observation"
+            Compare _ _ -> advance NeedCompare Ready "preflight comparison"
+          where
+            advance expected nextPhase value
+                | phase == expected = walk nextPhase (rest value)
+                | otherwise = Left "live story must Submit or Tamper, Observe, then Compare"
+        Theorem _ body' :>>= rest -> do
+            (afterClauses, result) <- walkClauses phase (Specification.clauses body')
+            walk afterClauses (rest result)
+    walkClauses :: PreflightPhase -> Program (Clause thm (LiveI String String String String String)) a -> Either String (PreflightPhase, a)
+    walkClauses phase body = case view body of
+        Return result -> Right (phase, result)
+        Clause _ check actions :>>= rest -> do
+            (afterActions, observation) <- walk phase actions
+            (afterCheck, ()) <- walk afterActions (Specification.checkAction check observation)
+            walkClauses afterCheck (rest observation)
+
+data PreflightPhase = Ready | NeedObserve | NeedCompare
+    deriving stock (Eq)
 
 renderLive :: Story String String String String String res -> String
 renderLive = fst . renderWithResult

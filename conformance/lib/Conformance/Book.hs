@@ -6,6 +6,7 @@ import Data.Aeson (Value (..))
 import Data.Aeson.KeyMap qualified as KM
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
+import Conformance.Edge.Sequence qualified as Sequence
 import Conformance.Story.Live (Context (..), renderLive)
 import Conformance.Rows (Row (..), RowState (..))
 import Conformance.Receipt (Receipt (..))
@@ -23,13 +24,19 @@ renderBook requirements receipts =
         <> "## Retire a registration and burn its active token\n\n"
         <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry.\n\n"
         <> renderLive (Retire.story (Context "retirement" "holder wallet") (Context "comparison" "holder wallet"))
+        <> "## A sequence no chapter names\n\n"
+        <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
+        <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
+        <> "### A deletion that disagrees with the model\n\n"
+        <> "An earlier devnet sequence submitted deletion of an Absent key after five agreeing accepted requests. The chain accepted the deletion, consumed custody, burned the Absent token and paid the recorded refund. Lean keeps the deleted key as an explicit unknown entry (`trieSet`, `lean/Singular/Model.lean:243`, committed by `rootOf`, lines 247–255); the chain removes the key. Their root and state observations differ. This is a model/chain disagreement, so the deletion is not counted as an agreeing request in this running sequence. Evidence: `handoffs/receipts/delete-absent-finding/s3-sequence-03.log` (SHA-256 e8488067883cebd9d408cd53ad0d5f26dadf0f36f4de35fe4e5a36de278abcb9).\n\n"
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction, including the transaction's signers value, which a check changes to prove the difference is reported. Two things are named rather than compared: a ledger makes every output carry a minimum ada and the model says nothing about it, so outputMinimumAda is removed from both sides and earns no pass; and the model states no obligation about who must sign, so requiredSigners stays a named unobservable until the signer rules are stated and proved. Retirement uses the same driver comparison after each request, with a separate fresh registry for the unknown-key control. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada and the rule for required signers remain named unobservables. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
         <> "## Appendix: checking the evidence machinery\n\n"
         <> "The report-validation tests remain under `test/Conformance/Support`. They check missing and contradictory evidence, report parsing and preservation, and refusal attribution. They run alongside the live stories but do not replace them. Authentication tests are still compiled but unwired, tracked in #210.\n\n"
+        <> concatMap gapEvidence receipts
         <> "The generated book is committed to the repository and is not yet reachable from the documentation site, tracked as #218. The general census of Haskell specification bindings remains tracked in #213.\n"
   where
     result receipt =
@@ -40,6 +47,7 @@ renderBook requirements receipts =
             <> maybe "" (\steps -> case receiptRow receipt of
                 "CG21" -> "Registration compared " <> outcomeCounts steps
                 "CG22" -> "Retirement compared " <> outcomeCounts steps
+                "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
         <> T.unpack (rowExpected row) <> ". Planned evidence status: " <> stateName (rowState row)
@@ -56,3 +64,23 @@ renderBook requirements receipts =
     outcomeCounts steps = show (length steps) <> " requests: "
         <> show (length (filter (hasOutcome "accepted") steps)) <> " accepted and "
         <> show (length (filter (hasOutcome "refused") steps)) <> " refused on chain.\n\n"
+        <> "Unsupported chain folds: " <> show (length (filter (hasOutcome "unsupported") steps)) <> ".\n\n"
+    gapEvidence receipt
+        | receiptRow receipt == "sequence" = maybe "" (concatMap gapReason) (receiptSteps receipt)
+        | otherwise = ""
+    gapReason (Object fields) = case (KM.lookup "edge" fields, KM.lookup "chain" fields) of
+        (Just (String edge), Just (Object chain)) -> case (KM.lookup "outcome" chain, KM.lookup "reason" chain) of
+            (Just (String "unsupported"), Just (String reason)) ->
+                "### " <> T.unpack edge <> " — observed gap\n\n"
+                    <> gapExplanation edge
+                    <> "The observed reason follows from the receipt.\n\n"
+                    <> "```text\n" <> T.unpack reason <> "\n```\n\n"
+            _ -> ""
+        _ -> ""
+    gapReason _ = ""
+    gapExplanation "deleteActive" =
+        "Deleting an active key is not yet supported: the transaction builder adds no burn of the active token for this edge, so the assembled transaction does not balance and the node rejects it before any script runs. The missing duty is in `offchain/lib/Singular/Registry/TxBuilder/Update.hs` (`dutiesFor` for edge 5).\n\n"
+    gapExplanation "witnessTerminal" =
+        "Reading a Terminal key is not yet supported: the node rejects the booking transaction before a fold is submitted.\n\n"
+    gapExplanation _ =
+        "The attempted operation did not produce a supported fold.\n\n"

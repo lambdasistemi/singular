@@ -1,92 +1,60 @@
-# Read the registry's promises
+# Replay the registry's live stories
 
-Start with [registration](../lib/Conformance/Edge/Register.hs). Its caller
-supplies a fresh registry and funded recipient. The story names the Lean
-theorem and runs a registration inside a readable clause.
+The [registration](../lib/Conformance/Edge/Register.hs) and
+[retirement](../lib/Conformance/Edge/Retire.hs) chapters are programs over the
+same four instructions: submit a model edge request, submit a named tamper,
+observe the resulting registry and transaction, and compare with the
+executable Lean driver. The [unnamed sequence](../lib/Conformance/Edge/Sequence.hs)
+uses those instructions without a chapter theorem binding.
 
-`theorem` and `clause` come from the reusable
-[`Story.Specification`](../lib/Conformance/Story/Specification.hs) library.
-They are indexed by theorem (`thm`), action vocabulary (`act`), observation
-(`obs`) and result (`res`). Singular supplies the bound declaration and the
-check action; the generic library has no registry operations or Cardano types.
-A clause for another theorem or observation type does not compile.
+The interpreter creates a local Cardano devnet, allocates stable model IDs
+while constructing each request, submits one fold for exactly that request,
+and reads the chain result. Every accepted step compares the driver's nine
+declared observations: configuration, custody, held tokens, leaf, mint,
+payments, root, state and transaction. A discovered-value perturbation check
+must make the comparison fail for each observed leaf and array, except the
+declared `outputMinimumAda` leaf. `requiredSigners` remains a named model gap;
+the transaction's observed signer value is still compared.
 
-That clause executes the real transaction builder on a local Cardano devnet.
-The interpreter maps actual wallet, policy and key identities to stable model
-IDs, then asks the [model evaluator](../lean/DriverTransport.lean) about the
-registry this run actually established — its own fee and timing pins travel with
-the question. The evaluator calls `Singular.Driver.runSurface` and answers with
-the complete declared boundary, and every one of those nine observations is
-compared with what the chain did: configuration, custody, held tokens, leaf,
-mint, payments, root, the resulting state and the transaction.
+Each chapter writes one receipt with a `steps` array. Every step records its
+request, model outcome, chain outcome, comparison and the observation and
+perturbation evidence when accepted. The registration chapter records a
+same-key refusal and a redirected-delivery attempt beside an accepted
+untampered control. The retirement chapter records a connected active-token
+burn, an Absent-key refusal and an unknown-key refusal. A refusal names the
+state script hash; an empty node trace is recorded as empty, without inventing
+a script reason.
 
-One leaf is deliberately not compared. A ledger makes every output carry a
-minimum ada and the model says nothing about it, so an output's `lovelace` is a
-logical zero; `outputMinimumAda` names that, it is removed from both sides
-before the transaction is compared, and it is the only such leaf.
-
-Signers sit in a transitional state worth stating exactly. The transaction's
-`signers` **value** is compared like any other field — it is empty on both
-sides today, and a check appends an element to it and requires the difference
-to be reported, so the comparison cannot stop noticing it. What is still
-missing is the **rule**: the model states no obligation about who must sign, so
-`requiredSigners` remains a named unobservable and earns no pass. #228 is the
-child that states and proves the signer rules from the validator's actual
-behaviour and removes `requiredSigners` from that vocabulary.
-
-The registration and retirement chapters now use the same driver evaluator.
-The former per-theorem retirement evaluator has been removed.
-
-Run it from `conformance/`:
+From `conformance/`, use the compiled blueprint and retain the receipts:
 
 ```sh
 export REGISTRY_BLUEPRINT="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
-nix run --quiet .#conformance -- example registration --receipts-dir /tmp/registration-example
+nix run --quiet .#conformance -- book --receipts-dir /tmp/registry-book --output /tmp/registry-book/BOOK.md
 ```
 
-The registration run also retains the existing fresh-key, duplicate-key and
-batch-allocation controls. `registration-lean.json` records the exact mapping,
-model input, expected result, chain observations and transaction identity.
-These observations concern one delivery projection, not the entire theorem.
+The book command requires both chapter receipts and the unnamed sequence
+receipt before rendering success. Its inventory statuses are computed from
+receipts; uncovered requirements remain visible. The two-request batch mint
+rule is a gap because the driver evaluates one request per transaction.
+`deleteActive` is unsupported because its assembled transaction lacks the
+active-token burn and fails balancing before any script runs. The node rejects
+`witnessTerminal` while booking its request. Both carry their observed reasons
+as gaps, without claiming a completed fold.
 
-To demonstrate a failing comparison after a real transaction has landed:
+`deleteAbsent` is published as a model/chain disagreement. Its accepted chain
+deletion removes the key from the authenticated map, while the bound Lean model
+retains an explicit `unknown` entry and computes a different root. The running
+sequence omits that request; its other applicable edges are still compared.
+See the retained devnet comparison in the commit-owner handoff.
+
+For the appendix alone, run:
 
 ```sh
-CONFORMANCE_STORY_CONTROL=wrong-delivery nix run --quiet .#conformance -- \
-  example registration --receipts-dir /tmp/registration-wrong-delivery
+nix run --quiet .#conformance-appendix-tests
 ```
 
-This deliberately increments the observed quantity supplied to the comparator;
-the Lean expectation remains unchanged. `wrong-address` and `wrong-policy`
-substitute other known identities, which must remain distinguishable.
-
-The [retirement story](../lib/Conformance/Edge/Retire.hs) now checks its
-registration and retirement through typed Lean clauses. Run it with
-`nix run --quiet .#conformance -- example retirement --receipts-dir /tmp/retirement-example`.
-The oracle replays registration, then computes the burn, witness consumption,
-remaining holdings and terminal leaf. Each observation is retained in a
-`retirement-lean-<transaction>.json` file. Registration observations also have
-per-transaction files so the two contexts remain distinguishable.
-
-`CONFORMANCE_STORY_CONTROL=wrong-burn` substitutes a zero burn in the observation
-presented to the Lean comparison after a real retirement. `token-remains` and
-`wrong-retirement-leaf` change the compared holdings and leaf respectively.
-
-The [batch story](../lib/Conformance/Fold/KeyedMint.hs) and refusal checks retain
-Haskell predicates; their executable Lean comparisons remain unfinished.
-Other theorem consumers remain missing; see the
-[correspondence inventory](../review/journey-correspondence.md).
-
-[Support](Conformance/Support) contains the unchanged report-validation cases
-and checks of the evidence machinery. These are the appendix, not evidence
-that a new chain execution happened. Run them separately with
-`nix run --quiet .#conformance-appendix-tests`.
-
-Run both live chapters and the appendix, then render the successful run:
-
-```sh
-nix run --quiet .#conformance-tests -- --book BOOK.md
-```
-
-The book is written only after those checks pass. It remains a repository
-artifact; publication to the documentation site is tracked in issue 218.
+The appendix checks the receipt loader, comparison machinery and rendering.
+It does not replace a devnet run. The current successful S2 candidate has
+86 appendix examples, five registration steps and seven retirement steps.
+The former field-level tests for a removed per-theorem receipt body are not
+counted as current evidence.

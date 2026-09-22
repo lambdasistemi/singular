@@ -241,69 +241,46 @@ Had the chain accepted the occupied insert, that would be a
 as a refusal.
 
 
-### The `insertActive` edge on the open registry (#173, executed in #184)
+### Model-compared registration and retirement candidate (#229)
 
-CG21 runs in the generic session on a registry booted under the
-**parameterless** open application. One `insertActive` folds, and the row's
-receipt carries what the chain did with it: the open policy and the parameter
-count read from the blueprint, the fold transaction, the active policy and
-key, the mint, the address the request named beside the address the token was
-found at, and the single token that landed there.
+A local clean candidate at `9b42458ffc1fab6bf9b7cf88ef44884e24333b8b`
+ran the registration and retirement chapters on a Cardano devnet. Its
+retained receipts carry five and seven model-and-chain step records
+respectively. The executable driver supplies the model outcome and all
+nine declared observations for each accepted step; the reader-facing book
+renders the story programs from those receipts. This is candidate evidence,
+not merge, release or independent acceptance.
 
-The row makes three DISTINCT observations. They are not one row wearing three
-names — conflating them is how a suite convinces itself it tested a mint rule
-it never exercised.
+| User-visible condition | Recorded result |
+|---|---|
+| Two distinct active registrations | accepted and compared after each fold |
+| Repeating an occupied key | refused by the state script, beside accepted registrations |
+| Redirecting active-token delivery | refused by the state script; the same request without redirection was accepted |
+| Retiring a token from the immediately preceding registration | accepted, with burn and terminal leaf compared |
+| Retiring an Absent key or a never-registered key | each refused by the state script beside an accepted retirement control |
 
-| observation | outcome | what the receipt records |
-|---|---|---|
-| CG21 `insertActive` fold | accept | one `(activePolicy, key)` token in the output at the address the request named, with empty refunds and signers, the approval binding that destination, a covered tip, the seven non-root configuration pins unchanged and the resulting root committed |
-| CG21 same-key duplicate | **refuse**, at the state script | refused BEFORE any mint arithmetic; a FRESH key through the same builder is accepted in-run (control) — the refusal is the occupancy, not the builder |
-| CG21 two-key wrong distribution | **refuse**, at the state script | two DISTINCT keys claiming both units at one of them against the one-each their edges entail; the same two keys with the right distribution are accepted in-run (control) — the refusal is the distribution, not the batch size |
+The node did not supply a Plutus trace name for the refused folds. The
+receipts retain the script hash and the empty trace rather than inferring
+a branch name. An accepting control establishes that the builder can fold
+a valid request in the same run.
 
-The second and third are different facts. The duplicate is refused because the
-key is taken, before the mint is looked at, so its leg carries no mint
-arithmetic at all. The keyed-mint witness needs a batch whose claimed mint
-**agrees per kind** and disagrees per `(kind, key)`, which is the exact fault a
-per-kind sum cannot see; its leg carries both mints and the loader compares
-them. A runner that only refused the duplicate would pass while the keyed
-guard was broken.
+The former two-request batch allocation check is no longer a current
+conformance claim. The driver evaluates one request per transaction, so the
+specified per-kind-and-key batch mint rule has no executable consumer in
+these chapters. The old batch evidence remains historical to its own
+revision. The former receipt-field appendix examples were removed with
+their schema; new appendix checks validate the generic step records.
 
-Each refusal carries its own accepting control, and the receipt binds the
-control to a fold that actually landed in the same run. Without that, "refused"
-is consistent with "this builder cannot fold at all".
-
-#### The refusal names are asserted elsewhere, and this page says where
-
-The two refusals above are observed **on chain**, in phase 2, attributed to
-the state script by its hash. What the receipt does **not** carry is the name
-the validator traced: a script-execution failure reaches the node with an
-EMPTY Plutus log list, so `key-exists` and `net-mint-mismatch` are not
-recoverable from the ledger's error text. The receipt records the absence
-rather than guessing, and the NAMES are asserted where the validator reads
-them — in the compiled Aiken suite, against the single construction site each
-one has.
-
-So this row establishes that the chain refused those two shapes and accepted
-their controls. It does not establish which branch of the state script named
-them.
-
-#### A limit worth stating plainly
-
-The cage decides occupancy with `mpf.miss`, the Merkle-Patricia-Forestry
-library's own total exclusion check. It answers false **both** for a key
-the trie already binds **and** for a malformed exclusion proof, and the
-validator cannot tell the two apart. Both are refused, and both are
-refused under the name `key-exists`.
-
-So nothing the model refuses is admitted — the guard is conservative in
-the safe direction — but the trace name is imprecise for the
-malformed-proof case, and a `key-exists` refusal on its own does not
-establish that the key was occupied. Proof-failure behaviour keeps its
-existing verdicts in the MPFS proof rows elsewhere on this page; this
-row does not restate them.
-
-This is recorded rather than fixed because distinguishing the two would
-mean the cage verifying a second proof shape it has no reason to carry.
+An earlier unnamed sequence reached an accepted `deleteAbsent` fold after
+five agreeing accepted steps. Lean keeps the deleted key as an explicit
+`unknown` entry (`trieSet`, `lean/Singular/Model.lean:243`, committed by
+`rootOf`, lines 247–255); the chain removes the key. The root and state
+observations differ, while the burn, refund, custody and transaction inputs
+agree. The transaction's state output carries the differing root.
+This is a published model/chain disagreement, with its devnet evidence in
+`handoffs/receipts/delete-absent-finding/`. The running sequence omits this
+request and compares the remaining applicable edges; it reports
+`deleteActive` and `witnessTerminal` as unsupported.
 
 #### The wire these rows and the archive verb speak
 

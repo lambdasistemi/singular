@@ -480,6 +480,11 @@ stepsComplete path receipt steps
                 , c `elem` ["accepted", "refused", "unsupported"]
                 , verdict `elem` ["agrees", "disagrees", "unsupported"] -> Right ()
             _ -> failure "missing or unknown model, chain or comparison outcome"
+        case chain of
+            Just (String "unsupported") -> case at "reason" =<< at "chain" step of
+                Just (String reason) | not (T.null reason) -> Right ()
+                _ -> failure "unsupported chain outcome has no observed reason"
+            _ -> Right ()
         case (tamper, comparison, model, chain) of
             (Just Null, Just (String "agrees"), m, c)
                 | m == c -> Right ()
