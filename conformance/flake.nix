@@ -215,6 +215,31 @@
         modelPkgs = import (builtins.fetchTree modelLock.nodes.nixpkgs.locked) {
           inherit system;
         };
+        # The generic evaluator: the DSL's abstract scenario and the context
+        # the caller established, through the model's own driver. Edge-agnostic
+        # on purpose, so #223's connected retirement is the same call with a
+        # setup trace rather than a second adapter.
+        driverTransport = modelPkgs.runCommand "singular-driver-transport" {
+          nativeBuildInputs = [ modelPkgs.lean4 modelPkgs.stdenv.cc ];
+          meta.mainProgram = "driver-transport";
+        } ''
+          mkdir work
+          cp -r ${../lean} work/lean
+          cp ${../lakefile.toml} work/lakefile.toml
+          chmod -R u+w work
+          cp ${./lean/DriverTransport.lean} work/lean/DriverTransport.lean
+          cat >> work/lakefile.toml <<'EOF'
+
+          [[lean_exe]]
+          name = "driver-transport"
+          root = "DriverTransport"
+          EOF
+          cd work
+          lake build driver-transport
+          mkdir -p $out/bin
+          cp .lake/build/bin/driver-transport $out/bin/
+        '';
+
         registrationOracle = modelPkgs.runCommand "registration-lean-oracle" {
           nativeBuildInputs = [ modelPkgs.lean4 modelPkgs.stdenv.cc ];
           meta.mainProgram = "registration-oracle";
@@ -260,8 +285,22 @@
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
             --prefix PATH : ${cardanoNode}/bin \
             --set CONFORMANCE_LEAN_ORACLE ${pkgs.lib.getExe registrationOracle} \
+            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+            --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
             --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
             --set-default NAMING_BLUEPRINT ${naming-blueprint}
+        '';
+
+        # The appendix suite compares against the committed driver corpus, so
+        # the corpus travels with the binary rather than being copied into the
+        # test tree where it could drift from the model.
+        appendixTests = pkgs.runCommand "conformance-appendix-tests" {
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+          meta.mainProgram = "conformance-tests";
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.tests.conformance-tests} $out/bin/conformance-tests \
+            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json}
         '';
 
         # The public test command executes the book, including fresh devnet
@@ -287,7 +326,7 @@
               echo "Live story needs a readable validator blueprint: $REGISTRY_BLUEPRINT" >&2
               exit 1
             fi
-            ${pkgs.lib.getExe components.tests.conformance-tests}
+            ${pkgs.lib.getExe appendixTests}
             receipts="$(mktemp -d -t singular-running-book.XXXXXX)"
             ${pkgs.lib.getExe conformance} book --receipts-dir "$receipts" "''${book_args[@]}"
           '';
@@ -296,7 +335,7 @@
       in
       {
         packages = {
-          inherit conformance registrationOracle;
+          inherit conformance registrationOracle driverTransport;
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
@@ -327,8 +366,7 @@
           };
           conformance-appendix-tests = {
             type = "app";
-            program =
-              pkgs.lib.getExe components.tests.conformance-tests;
+            program = pkgs.lib.getExe appendixTests;
           };
           coverage-gate = {
             type = "app";

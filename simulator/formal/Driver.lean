@@ -107,10 +107,16 @@ def declaredObservations : List String :=
 /-- Fields the model has no vocabulary for, named here so they are a stated
 limit instead of a silent omission. The registry root is the leading case: the
 model's `rootOf` is FNV-1a over the sorted (key, leaf byte) list — its own
-commitment function — and is NOT the concrete trie hash a chain would carry. -/
+commitment function — and is NOT the concrete trie hash a chain would carry.
+
+`outputMinimumAda` is the second of that kind: a ledger requires every output to
+carry a minimum, and this model says nothing about it, so a transaction output's
+`lovelace` here is a logical zero rather than an amount. It is named so that a
+consumer compares every other field of a transaction and leaves this one alone,
+rather than quietly reconstructing an equality the model never claimed. -/
 def declaredUnobservable : List String :=
-  ["concreteTrieHash", "registryAddress", "requiredSigners", "scriptExecutionUnits",
-   "transactionId", "utxoReference"]
+  ["concreteTrieHash", "outputMinimumAda", "registryAddress", "requiredSigners",
+   "scriptExecutionUnits", "transactionId", "utxoReference"]
 
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where

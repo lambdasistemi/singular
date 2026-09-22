@@ -1,5 +1,12 @@
 <!--
 Sync impact report
+Version: 1.2.0 -> 1.3.0 (per-output minimum ada named unobservable)
+Amended: 2026-09-22
+Added sections: none. The model driver translation names one further
+unobservable field, per-output ledger minimum ada, so a consumer compares every
+other transaction field and leaves that one alone.
+
+Sync impact report
 Version: 1.1.0 -> 1.2.0 (model driver translation)
 Amended: 2026-09-22
 Added sections: the model driver translation — the concrete realization of each
@@ -223,6 +230,7 @@ one.
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
 | outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.refusal` can produce; `unsupported` is the driver failing to reach the case and is never reported as a ledger refusal. |
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
+| `outputMinimumAda` | unobservable | the minimum ada a ledger requires every output to carry. The model says nothing about it, so an output's `lovelace` is a logical zero rather than an amount; a consumer compares every other field of a transaction and leaves this one alone rather than reconstructing an equality the model never claimed. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
 | `requiredSigners` | unobservable | `Singular.requiredSigners` is `[]` for every request; the model does not yet say who must sign. The transaction's `signers` field therefore carries no obligation. |
 | `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |
@@ -261,4 +269,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-22
+**Version**: 1.3.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-22
