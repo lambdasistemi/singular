@@ -54,6 +54,7 @@ import Control.Exception (ErrorCall (..), throwIO)
 import Data.Aeson (
     FromJSON (..),
     ToJSON (..),
+    Value (..),
     eitherDecode,
     encode,
     object,
@@ -65,6 +66,8 @@ import Data.Aeson (
     (.=),
  )
 import Data.ByteString.Lazy qualified as BSL
+import Data.Aeson.KeyMap qualified as KM
+import Data.Vector qualified as Vector
 import Data.Char (isHexDigit)
 import Data.List (isPrefixOf, isSuffixOf, sort)
 import Data.Maybe (isJust, isNothing)
@@ -390,6 +393,8 @@ data Receipt = Receipt
     , receiptDerivation :: !(Maybe [DerivationEvidence])
     -- ^ off-chain identity-derivation evidence (CA04 only; Nothing
     -- elsewhere; JSON-compatible).
+    , receiptSteps :: !(Maybe [Value])
+    -- ^ generic live steps, each written after model and chain comparison.
     }
     deriving stock (Show, Eq)
 
@@ -414,6 +419,7 @@ instance FromJSON Receipt where
             <*> o .:? "edge"
             <*> o .:? "retirement"
             <*> o .:? "derivation"
+            <*> o .:? "steps"
 
 instance ToJSON Receipt where
     toJSON r =
@@ -436,6 +442,7 @@ instance ToJSON Receipt where
             , "edge" .= receiptEdge r
             , "retirement" .= receiptRetirement r
             , "derivation" .= receiptDerivation r
+            , "steps" .= receiptSteps r
             ]
 
 {- | Write one @receipt-<ROW>.json@ under the run's output directory.
@@ -457,6 +464,74 @@ evaluation context prints every script and cost model.
 -}
 maxReceiptBytes :: Int
 maxReceiptBytes = 16384
+
+-- | Validate the generic evidence body independently of the runner. The
+-- runner computes its values; the loader refuses missing comparisons and
+-- fabricated agreement shapes before a book can count the receipt.
+stepsComplete :: FilePath -> Receipt -> [Value] -> Either String Receipt
+stepsComplete path receipt steps
+    | null steps = Left (path <> ": live receipt has no steps")
+    | otherwise = do
+        mapM_ checkStep steps
+        let landed = [txid | step <- steps, Just (String "accepted") <- [at "outcome" =<< at "chain" step]
+                           , Just (String txid) <- [at "txid" =<< at "chain" step]]
+        if landed == receiptTransactions receipt
+            then Right receipt
+            else Left (path <> ": accepted step transactions differ from the receipt envelope")
+  where
+    at name (Object fields) = KM.lookup name fields
+    at _ _ = Nothing
+    failure reason = Left (path <> ": invalid live step: " <> reason)
+    checkStep step = do
+        case (at "registry" step, at "edge" step, at "request" step) of
+            (Just (Number _), Just (String edge), Just (Object _))
+                | edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal"
+                              , "deleteAbsent", "deleteActive", "witnessTerminal"] -> Right ()
+            _ -> failure "missing registry, edge or model request"
+        let tamper = at "tamper" step
+            model = at "outcome" =<< at "model" step
+            chain = at "outcome" =<< at "chain" step
+            comparison = at "comparison" step
+        case (model, chain, comparison) of
+            (Just (String m), Just (String c), Just (String verdict))
+                | m `elem` ["accepted", "refused", "unsupported"]
+                , c `elem` ["accepted", "refused", "unsupported"]
+                , verdict `elem` ["agrees", "disagrees", "unsupported"] -> Right ()
+            _ -> failure "missing or unknown model, chain or comparison outcome"
+        case (tamper, comparison, model, chain) of
+            (Just Null, Just (String "agrees"), m, c)
+                | m == c -> Right ()
+                | otherwise -> failure "untampered agreement changes the outcome class"
+            (Just (String "redirect-delivery"), Just (String "agrees"),
+                Just (String "accepted"), Just (String "refused")) ->
+                    case at "hashes" =<< (at "refusal" =<< at "chain" step) of
+                        Just (Array hashes) | not (Vector.null hashes) -> Right ()
+                        _ -> failure "tamper refusal has no attributed script hashes"
+            (Just (String "redirect-delivery"), Just (String "agrees"), _, _) ->
+                failure "tamper agreement does not have model acceptance and chain refusal"
+            (Just Null, _, _, _) -> Right ()
+            (Just (String "redirect-delivery"), _, _, _) -> Right ()
+            _ -> failure "unknown tamper"
+        case (at "compared" step, at "unobserved" step) of
+            (Just (Array names), Just (Array _))
+                | comparison == Just (String "agrees")
+                , model == Just (String "accepted")
+                , chain == Just (String "accepted")
+                , Vector.length names == 9 -> Right ()
+                | Vector.null names -> Right ()
+                | otherwise -> failure "accepted agreement does not account for all nine observations"
+            _ -> failure "missing compared or unobserved arrays"
+        case (tamper, model, chain, comparison, at "perturbation" step) of
+            (Just Null, Just (String "accepted"), Just (String "accepted"),
+                Just (String "agrees"), Just (Object evidence))
+                | Just (Number count) <- KM.lookup "refused" evidence
+                , count > 0
+                , Just (Object _) <- KM.lookup "byObservation" evidence
+                , Just (Array _) <- KM.lookup "exempt" evidence -> Right ()
+            (Just Null, Just (String "accepted"), Just (String "accepted"),
+                Just (String "agrees"), _) -> failure "accepted agreement has no perturbation evidence"
+            (_, _, _, _, Just Null) -> Right ()
+            _ -> failure "unexpected perturbation evidence"
 
 {- | The size bound, purely: oversized receipts are an error naming
 the row and the byte count.
@@ -593,16 +668,18 @@ loadReceipts dir = do
             | otherwise -> Right r
     -- #184: the edge observation is optional for every other row and
     -- MANDATORY and COMPLETE for CG21.
-    checkEdge path r = case (receiptRow r == "CG21", receiptEdge r) of
-        (False, Nothing) -> Right r
-        (False, Just _) ->
-            Left (path <> ": only CG21 carries edge evidence")
-        (True, Nothing) ->
-            Left
-                ( path
-                    <> ": CG21 receipt names no edge observation — unknown or incomplete, never covered"
-                )
-        (True, Just e) -> edgeComplete path r e
+    checkEdge path r = case (receiptRow r == "CG21", receiptEdge r, receiptSteps r) of
+        (False, Nothing, Nothing) -> Right r
+        (False, Nothing, Just steps)
+            | receiptRow r `elem` ["CG22", "sequence"] -> stepsComplete path r steps
+            | otherwise -> Left (path <> ": only live rows carry steps")
+        (False, Just _, _) -> Left (path <> ": only CG21 carries legacy edge evidence")
+        -- The legacy fixture is retained while S1 and S2 are separate commits.
+        -- S2 removes the old evidence and its appendix examples.
+        (True, Just e, Nothing) -> edgeComplete path r e
+        (True, Nothing, Just steps) -> stepsComplete path r steps
+        (True, Nothing, Nothing) -> Left (path <> ": CG21 names no live steps")
+        (True, Just _, Just _) -> Left (path <> ": CG21 mixes old and new evidence")
 
     checkPartial path r = case (receiptVerdict r, receiptPartial r) of
         (_, Nothing) -> case declaredConstructors (receiptRow r) of

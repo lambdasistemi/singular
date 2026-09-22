@@ -1,15 +1,12 @@
 {-# LANGUAGE GADTs #-}
 
--- | Live stories carry their registry, wallets and previous results explicitly.
--- The interpreter chooses the concrete handle types; stories never construct
--- transaction results or receipts. The renderer uses names for those handles.
+-- | Programs over the seven model edges. Handles remain opaque to stories.
 module Conformance.Story.Live (
-    LiveI (..), Story, Context (..), RegistrationRun (..), RetirementRun (..),
-    linkedTo,
-    registerKey, expectActiveToken, registerFreshKey,
-    expectDuplicateRegistrationRefused, compareBatchAllocation,
-    retireRegistration, expectRetired, expectAbsentRetirementRefused,
-    expectUnknownRetirementRefused, renderLive,
+    Edge (..), edgeName, EdgeRequest (..), Tamper (..), tamperName,
+    LiveI (..), Story, Context (..), submit, tamper, observe,
+    compareWithModel, renderLive,
+    RetirementRun (..), registerKey, expectActiveToken, retireRegistration,
+    expectRetired, expectAbsentRetirementRefused, expectUnknownRetirementRefused,
 ) where
 
 import Control.Monad.Operational (Program, ProgramViewT (Return, (:>>=)), view)
@@ -17,137 +14,140 @@ import Conformance.Story.Specification (Step (..), Clause (..), TheoremStory, ac
 import Conformance.Story.Specification qualified as Specification
 import Conformance.Story.Binding (Binding, BoundObligation (..))
 
--- | A story can only use a registry or result returned by its interpreter.
-type Story reg wal ins ret bat ref = Specification.Story (LiveI reg wal ins ret bat ref)
+data Edge
+    = InsertAbsent | InsertActive | UpdateActive | UpdateTerminal
+    | DeleteAbsent | DeleteActive | WitnessTerminal
+    deriving stock (Eq, Ord, Show, Enum, Bounded)
 
--- | Resources are established by the caller, outside the reusable story.
+edgeName :: Edge -> String
+edgeName edge = case edge of
+    InsertAbsent -> "insertAbsent"
+    InsertActive -> "insertActive"
+    UpdateActive -> "updateActive"
+    UpdateTerminal -> "updateTerminal"
+    DeleteAbsent -> "deleteAbsent"
+    DeleteActive -> "deleteActive"
+    WitnessTerminal -> "witnessTerminal"
+
+data EdgeRequest wal = EdgeRequest
+    { requestEdge :: Edge
+    , requestKey :: String
+    , requestWallet :: wal
+    }
+    deriving stock (Eq, Show)
+
+data Tamper = RedirectDelivery
+    deriving stock (Eq, Show, Enum, Bounded)
+
+tamperName :: Tamper -> String
+tamperName RedirectDelivery = "redirect-delivery"
+
+type Story reg wal step obs cmp ins ret bat ref = Specification.Story (LiveI reg wal step obs cmp ins ret bat ref)
+
 data Context reg wal = Context reg wal
 
--- | The shared instruction set for the devnet runner and the book.
-data LiveI reg wal ins ret bat ref res where
-    LinkedTo :: Binding -> [String] -> LiveI reg wal ins ret bat ref ()
-    CheckRetirementEffect :: ret -> LiveI reg wal ins ret bat ref ()
-    CheckRegistrationDelivery :: ins -> LiveI reg wal ins ret bat ref ()
-    RegisterKey :: reg -> String -> wal -> LiveI reg wal ins ret bat ref ins
-    ExpectActiveToken :: ins -> wal -> Integer -> LiveI reg wal ins ret bat ref ()
-    RegisterFreshKey :: reg -> String -> wal -> LiveI reg wal ins ret bat ref ins
-    ExpectDuplicateRegistrationRefused :: reg -> ins -> ins -> LiveI reg wal ins ret bat ref ref
-    CompareBatchAllocation :: reg -> wal -> String -> String -> LiveI reg wal ins ret bat ref bat
-    RetireRegistration :: reg -> ins -> LiveI reg wal ins ret bat ref ret
-    ExpectRetired :: ret -> Integer -> LiveI reg wal ins ret bat ref ()
-    ExpectAbsentRetirementRefused :: reg -> wal -> ret -> String -> LiveI reg wal ins ret bat ref ref
-    ExpectUnknownRetirementRefused :: reg -> ret -> String -> LiveI reg wal ins ret bat ref ref
+data LiveI reg wal step obs cmp ins ret bat ref result where
+    Submit :: reg -> EdgeRequest wal -> LiveI reg wal step obs cmp ins ret bat ref step
+    Tamper :: Tamper -> reg -> EdgeRequest wal -> LiveI reg wal step obs cmp ins ret bat ref step
+    Observe :: step -> LiveI reg wal step obs cmp ins ret bat ref obs
+    Compare :: step -> obs -> LiveI reg wal step obs cmp ins ret bat ref cmp
+    -- The retirement chapter is migrated in the next bisect-safe slice.
+    CheckRetirementEffect :: ret -> LiveI reg wal step obs cmp ins ret bat ref ()
+    CheckRegistrationDelivery :: ins -> LiveI reg wal step obs cmp ins ret bat ref ()
+    RegisterKey :: reg -> String -> wal -> LiveI reg wal step obs cmp ins ret bat ref ins
+    ExpectActiveToken :: ins -> wal -> Integer -> LiveI reg wal step obs cmp ins ret bat ref ()
+    RetireRegistration :: reg -> ins -> LiveI reg wal step obs cmp ins ret bat ref ret
+    ExpectRetired :: ret -> Integer -> LiveI reg wal step obs cmp ins ret bat ref ()
+    ExpectAbsentRetirementRefused :: reg -> wal -> ret -> String -> LiveI reg wal step obs cmp ins ret bat ref ref
+    ExpectUnknownRetirementRefused :: reg -> ret -> String -> LiveI reg wal step obs cmp ins ret bat ref ref
 
--- | Results needed to publish registration evidence; supplied by the live run.
-data RegistrationRun reg ins bat ref = RegistrationRun
-    { registrationRegistry :: reg
-    , registeredKey :: ins
-    , freshKeyControl :: ins
-    , batchAllocation :: bat
-    , duplicateRefusal :: ref
-    }
-
--- | Retirement starts from a real registration and keeps both refusal controls.
-data RetirementRun ins ret ref = RetirementRun
-    { retirementRegistration :: ins
-    , retiredRegistration :: ret
+data RetirementRun step obs ref = RetirementRun
+    { retirementRegistration :: step
+    , retiredRegistration :: obs
     , absentRefusal :: ref
-    , unknownControl :: ret
+    , unknownControl :: obs
     , unknownRefusal :: ref
     }
 
--- | Check the specification identity before running its story.
-linkedTo :: Binding -> [String] -> Story reg wal ins ret bat ref ()
-linkedTo binding rules = action (LinkedTo binding rules)
+submit :: reg -> EdgeRequest wal -> Story reg wal step obs cmp ins ret bat ref step
+submit registry request = action (Submit registry request)
 
--- | Submit an approved request and apply it to the registry.
-registerKey :: reg -> String -> wal -> Story reg wal ins ret bat ref ins
+tamper :: Tamper -> reg -> EdgeRequest wal -> Story reg wal step obs cmp ins ret bat ref step
+tamper alteration registry request = action (Tamper alteration registry request)
+
+observe :: step -> Story reg wal step obs cmp ins ret bat ref obs
+observe = action . Observe
+
+compareWithModel :: step -> obs -> Story reg wal step obs cmp ins ret bat ref cmp
+compareWithModel step observation = action (Compare step observation)
+
+registerKey :: reg -> String -> wal -> Story reg wal step obs cmp ins ret bat ref ins
 registerKey registry key wallet = action (RegisterKey registry key wallet)
 
--- | Query the recipient and inspect the transaction that actually delivered it.
-expectActiveToken :: ins -> wal -> Integer -> Story reg wal ins ret bat ref ()
-expectActiveToken registration wallet quantity = action (ExpectActiveToken registration wallet quantity)
+expectActiveToken :: ins -> wal -> Integer -> Story reg wal step obs cmp ins ret bat ref ()
+expectActiveToken step wallet quantity = action (ExpectActiveToken step wallet quantity)
 
--- | Accept a fresh key through the same assembly used by the duplicate attempt.
-registerFreshKey :: reg -> String -> wal -> Story reg wal ins ret bat ref ins
-registerFreshKey registry key wallet = action (RegisterFreshKey registry key wallet)
+retireRegistration :: reg -> ins -> Story reg wal step obs cmp ins ret bat ref ret
+retireRegistration registry step = action (RetireRegistration registry step)
 
--- | Submit the duplicate and require a state-script rejection on the node.
-expectDuplicateRegistrationRefused :: reg -> ins -> ins -> Story reg wal ins ret bat ref ref
-expectDuplicateRegistrationRefused registry registration control =
-    action (ExpectDuplicateRegistrationRefused registry registration control)
+expectRetired :: ret -> Integer -> Story reg wal step obs cmp ins ret bat ref ()
+expectRetired result quantity = action (ExpectRetired result quantity)
 
--- | Submit a balanced but misallocated batch, then apply the correct allocation.
-compareBatchAllocation :: reg -> wal -> String -> String -> Story reg wal ins ret bat ref bat
-compareBatchAllocation registry recipient first second =
-    action (CompareBatchAllocation registry recipient first second)
+expectAbsentRetirementRefused :: reg -> wal -> ret -> String -> Story reg wal step obs cmp ins ret bat ref ref
+expectAbsentRetirementRefused registry wallet control key = action (ExpectAbsentRetirementRefused registry wallet control key)
 
--- | Spend the token delivered by this registration to retire the same key.
-retireRegistration :: reg -> ins -> Story reg wal ins ret bat ref ret
-retireRegistration registry registration = action (RetireRegistration registry registration)
+expectUnknownRetirementRefused :: reg -> ret -> String -> Story reg wal step obs cmp ins ret bat ref ref
+expectUnknownRetirementRefused registry control key = action (ExpectUnknownRetirementRefused registry control key)
 
--- | Check the holder's remaining quantity, exact burn, source input and Terminal state.
-expectRetired :: ret -> Integer -> Story reg wal ins ret bat ref ()
-expectRetired retirement quantity = action (ExpectRetired retirement quantity)
-
--- | Establish an Absent key by a real transaction, then attempt to retire it.
-expectAbsentRetirementRefused :: reg -> wal -> ret -> String -> Story reg wal ins ret bat ref ref
-expectAbsentRetirementRefused registry wallet control key =
-    action (ExpectAbsentRetirementRefused registry wallet control key)
-
--- | Attempt to retire a never-registered key beside a successful retirement.
-expectUnknownRetirementRefused :: reg -> ret -> String -> Story reg wal ins ret bat ref ref
-expectUnknownRetirementRefused registry control key =
-    action (ExpectUnknownRetirementRefused registry control key)
-
--- | Render the same context and actions the backend executes. No instruction
--- is hidden behind a catch-all; returned handles retain their names and keys.
-renderLive :: Story String String String String String String res -> String
+renderLive :: Story String String String String String String String String String res -> String
 renderLive = fst . renderWithResult
 
-renderWithResult :: Story String String String String String String res -> (String, res)
+renderWithResult :: Story String String String String String String String String String res -> (String, res)
 renderWithResult program = case view program of
     Return result -> ("", result)
     Action instruction :>>= rest -> renderAction instruction rest
     Theorem binding body :>>= rest ->
         let (text, result) = renderClauses body
-        in prepend (formal (theoremBinding binding) <> text) (renderWithResult (rest result))
+         in prepend (formal (theoremBinding binding) <> text) (renderWithResult (rest result))
 
-renderClauses :: TheoremStory thm (LiveI String String String String String String) res -> (String, res)
+renderClauses :: TheoremStory thm (LiveI String String String String String String String String String) res -> (String, res)
 renderClauses = renderClauseProgram . clauses
 
-renderClauseProgram :: Program (Clause thm (LiveI String String String String String String)) res -> (String, res)
+renderClauseProgram :: Program (Clause thm (LiveI String String String String String String String String String)) res -> (String, res)
 renderClauseProgram program = case view program of
     Return result -> ("", result)
     Clause title check body :>>= rest ->
         let (text, result) = renderWithResult body
-            (checked, ()) = renderWithResult (action (checkAction check result))
-        in prepend ("### " <> title <> "\n\n" <> text <> checked)
-            (renderClauseProgram (rest result))
+            (checked, ()) = renderWithResult (checkAction check result)
+         in prepend ("### " <> title <> "\n\n" <> text <> checked)
+                (renderClauseProgram (rest result))
 
-renderAction :: LiveI String String String String String String obs -> (obs -> Story String String String String String String res) -> (String, res)
+renderAction :: LiveI String String String String String String String String String obs -> (obs -> Story String String String String String String String String String res) -> (String, res)
 renderAction instruction rest = case instruction of
-    CheckRetirementEffect _retirement ->
+    Submit registry request ->
+        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
+            <> "** in **" <> registry <> "**, using the " <> requestWallet request <> ".")
+            (rest (requestKey request))
+    Tamper RedirectDelivery registry request ->
+        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
+            <> "** in **" <> registry <> "** with redirect delivery. The same request without redirection is the untampered control.")
+            (rest (requestKey request))
+    Observe handle ->
+        step ("Observe the complete registry, token, leaf and transaction boundary after **" <> handle <> "**.")
+            (rest ("observations for " <> handle))
+    Compare handle _ ->
+        step ("Compare **" <> handle <> "** and its observation with the executable registry model.")
+            (rest ("comparison for " <> handle))
+    CheckRetirementEffect _ ->
         step "Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result." (rest ())
-    CheckRegistrationDelivery _registration ->
+    CheckRegistrationDelivery _ ->
         step "Compare the observed delivery and queried holdings with the Lean executable's result." (rest ())
-    LinkedTo binding rules ->
-        prepend (formal binding <> "```text\n" <> unlines rules <> "```\n\n") (renderWithResult (rest ()))
     RegisterKey registry key wallet ->
         step ("Request registration of **" <> key <> "** in **" <> registry
             <> "**, deliver to the " <> wallet <> ", and apply the request on chain.") (rest key)
     ExpectActiveToken key wallet quantity ->
         step ("Check on chain that the " <> wallet <> " holds exactly **" <> show quantity
             <> " active token(s)** for **" <> key <> "**; check its policy, destination, mint and resulting registry state.") (rest ())
-    RegisterFreshKey registry key wallet ->
-        step ("Successfully register the fresh key **" <> key <> "** in **" <> registry
-            <> "** for the " <> wallet <> ", through the transaction builder used by the duplicate attempt.") (rest key)
-    ExpectDuplicateRegistrationRefused registry key control ->
-        step ("Try to register **" <> key <> "** again in **" <> registry
-            <> "**. Require the state script to reject it; **" <> control <> "** is the successful comparison.") (rest ("duplicate " <> key))
-    CompareBatchAllocation registry wallet first second ->
-        step ("Request **" <> first <> "** and **" <> second <> "** in **" <> registry
-            <> "** for the " <> wallet <> ". Submit a balanced transaction putting both tokens at the first key: require a state-script rejection. Apply the same requests with one token per key: require success and read back the allocation.") (rest (first <> " and " <> second))
     RetireRegistration registry key ->
         step ("Request retirement of the **" <> key <> "** registration just created in **" <> registry
             <> "**. Apply it using the active token held by its recipient.") (rest key)

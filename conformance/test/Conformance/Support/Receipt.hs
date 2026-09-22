@@ -363,6 +363,7 @@ smallReceipt =
         , receiptRetirement = Nothing
 
         , receiptDerivation = Nothing
+        , receiptSteps = Nothing
         }
 
 oversizedReceipt :: Receipt

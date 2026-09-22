@@ -37,10 +37,10 @@ theoremBinding (BoundTheorem binding) = binding
 
 -- | A check retains its theorem and supplies an interpreter action for the observation.
 type role LeanCheck nominal nominal nominal
-data LeanCheck act thm obs = BoundCheck (Theorem thm) (obs -> act ())
+data LeanCheck act thm obs = BoundCheck (Theorem thm) (obs -> Story act ())
 
 -- | Domain bindings supply the executable check of an observed result.
-bindCheck :: Theorem thm -> (obs -> act ()) -> LeanCheck act thm obs
+bindCheck :: Theorem thm -> (obs -> Story act ()) -> LeanCheck act thm obs
 bindCheck = BoundCheck
 
 -- | Resolve the same declaration for the enclosing theorem and its check.
@@ -48,7 +48,7 @@ checkTheorem :: LeanCheck act thm obs -> Theorem thm
 checkTheorem (BoundCheck binding _) = binding
 
 -- | Run the domain's check through the same interpreter as its actions.
-checkAction :: LeanCheck act thm obs -> obs -> act ()
+checkAction :: LeanCheck act thm obs -> obs -> Story act ()
 checkAction (BoundCheck _ check) = check
 
 -- | A reusable action program with nested theorem-scoped clauses.

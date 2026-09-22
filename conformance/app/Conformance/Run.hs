@@ -90,6 +90,7 @@ import Conformance.Story.Identity qualified as Identity
 import Conformance.Lean.Registration qualified as Lean
 import Conformance.Lean.Retirement qualified as LeanRetirement
 import Conformance.Compare.Registration qualified as Compare
+import Conformance.Compare.Perturbation qualified as Perturbation
 import Conformance.Lean.Oracle qualified as LeanOracle
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Edge.Register qualified as RegistrationStory
@@ -395,7 +396,6 @@ import Conformance.Receipt (
     ConstructorStanding (..),
     DerivationEvidence (..),
     DerivationOutcome (..),
-    EdgeEvidence (..),
     FoldStep (..),
     Outcome (..),
     PartialInfo (..),
@@ -614,6 +614,8 @@ data Env = Env
     chain refused what Singular's Lean requires accepted. The
     session ends non-zero while this is non-empty.
     -}
+    , envLiveRecords :: IORef [Value]
+    , envLiveMeasurements :: IORef [(Integer, Integer, Integer)]
     }
 
 {- | One row group's cage: the config it was booted from, its token,
@@ -1009,6 +1011,8 @@ runSession
         key2Ref <- newIORef Nothing
         heldRef <- newIORef []
         failedRef <- newIORef []
+        liveRecordsRef <- newIORef []
+        liveMeasurementsRef <- newIORef []
         (env, marker, bootLine) <-
             if caMode
                 then do
@@ -1069,6 +1073,8 @@ runSession
                             , envKey2 = key2Ref
                             , envHeld = heldRef
                             , envFailed = failedRef
+                            , envLiveRecords = liveRecordsRef
+                            , envLiveMeasurements = liveMeasurementsRef
                             }
                         , hex (scriptHashBytes (cfgScriptHash cfg))
                         , ( "CA session: canonical seed published at outRef "
@@ -1117,6 +1123,8 @@ runSession
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
                                     , envFailed = failedRef
+                                    , envLiveRecords = liveRecordsRef
+                                    , envLiveMeasurements = liveMeasurementsRef
                                     }
                                 , hex (scriptHashBytes (cfgScriptHash placeholderCfg))
                                 , "no session cage: the issue #70 rows boot \
@@ -1158,6 +1166,8 @@ runSession
                                     , envKey2 = key2Ref
                                     , envHeld = heldRef
                                     , envFailed = failedRef
+                                    , envLiveRecords = liveRecordsRef
+                                    , envLiveMeasurements = liveMeasurementsRef
                                     }
                                 , marker'
                                 , "cage booted bootTx=" <> txIdHex signedBoot
@@ -4597,6 +4607,8 @@ surfacing later as an unrelated-looking failure.
 -}
 runCG21 :: Env -> IO ()
 runCG21 env = do
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     require "unknown registration story control"
         ( control
@@ -4609,63 +4621,16 @@ runCG21 env = do
         )
     registry <- ensureRowCage env "story-registration" 30_000 30_000
     (_, recipient) <- secondWallet env
-    result <- runLive env (RegistrationStory.story (Live.Context registry recipient))
-    let registration = Live.registeredKey result
-        fresh = Live.freshKeyControl result
-        batch = Live.batchAllocation result
-        cfg = rcCfg (Live.registrationRegistry result)
-        key = lrKey registration
-        destAddr = lrWallet registration
-        activePolicy = policyIdFromPin (cfgActivePolicy cfg)
-        foldTx = lrTx registration
-        before = lrBefore registration
-        after = lrAfter registration
-        (mem, cpu, size) = lrUnits registration
-        step1 = lrStep registration
-        step2 = lrStep fresh
-        step3 = lbStep batch
-        dupControlTx = lrTx fresh
-        mintControlTx = lbControl batch
-        dupLeg = Live.duplicateRefusal result
-        mintLeg = lbRefusal batch
-    openParams <- cg21OpenParameters env
-    (observedAddr, delivered) <- cg21Delivery activePolicy key foldTx
-    approvalObserved <- cg21ApprovalOn cfg (lrRequest registration)
-    (reqLovelace, approvalRecomputed) <- cg21RequestFacts (lrRequest registration)
-    emitMeasure env "CG21-fold" mem cpu size
-    emit "row" ("CG21: one insertActive folded (tx=" <> txIdHex foldTx <> ") and exactly one active token landed at the named wallet")
-    emit "control" ("CG21 control: a fresh key folded through the same builder (tx=" <> txIdHex dupControlTx <> ") — the duplicate below is the occupancy, not the builder")
-    let edge =
-            EdgeEvidence
-                { eeOpenPolicy = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
-                , eeOpenParameters = openParams
-                , eeActivePolicy = hexT (SBS.fromShort (cfgActivePolicy cfg))
-                , eeKey = hexT key
-                , eeFoldTxid = T.pack (txIdHex foldTx)
-                , eeMinted = cg21MintedOf activePolicy foldTx
-                , eeRequestedAddress = hexT (serialiseAddr destAddr)
-                , eeObservedAddress = observedAddr
-                , eeDelivered = delivered
-                , eeMaxFee = stateMaxFee before
-                , eeRequestLovelace = reqLovelace
-                , eeApprovalName = approvalObserved
-                , eeApprovalRecomputed = approvalRecomputed
-                , eeRefunds = cg21RefundsOf foldTx
-                , eeSigners = cg21SignersOf foldTx
-                , eeConfigBefore = cg21Pins before
-                , eeConfigAfter = cg21Pins after
-                , eeSequence = [step1, step2, step3]
-                , eeDuplicate =
-                    dupLeg{rlControlTxid = T.pack (txIdHex dupControlTx)}
-                , eeKeyedMint =
-                    Just
-                        mintLeg
-                            { rlControlTxid = T.pack (txIdHex mintControlTx)
-                            , rlControlMint =
-                                Just (cg21MintedOf activePolicy mintControlTx)
-                            }
-                }
-    writeCG21Receipt env foldTx mem cpu size edge
+    _ <- runLive env (RegistrationStory.story (Live.Context registry recipient))
+    -- The generic interpreter writes one record per request. The receipt is
+    -- emitted only after all five outcomes and comparisons have completed.
+    records <- readIORef (envLiveRecords env)
+    require "CG21 did not compare its five requests" (length records == 5)
+    require "registration chapter has a disagreement or unsupported step"
+        (all (\record -> case record of
+            Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+            _ -> False) records)
+    writeStoryReceipt env "CG21" records
 
 -- The live interpreter's handles contain values observed during this run.
 -- They cannot be constructed by a story or supplied by a JSON fixture.
@@ -4678,7 +4643,6 @@ data LiveRegistration = LiveRegistration
     , lrBefore :: OnChainTokenState
     , lrAfter :: OnChainTokenState
     , lrRequest :: TxOut ConwayEra
-    , lrUnits :: (Integer, Integer, Integer)
     }
 
 data LiveRetirement = LiveRetirement
@@ -4693,73 +4657,78 @@ data LiveRetirement = LiveRetirement
     , ltRequest :: TxOut ConwayEra
     }
 
-data LiveBatch = LiveBatch
-    { lbRefusal :: RefusalLeg
-    , lbControl :: ConwayTx
-    , lbStep :: FoldStep
+data StepOutcome
+    = StepAccepted ConwayTx (Integer, Integer, Integer)
+    | StepRefused ConwayTx (Maybe T.Text) [T.Text]
+    | StepUnsupported T.Text
+
+data LiveStep = LiveStep
+    { lsCage :: RowCage
+    , lsRequest :: Live.EdgeRequest Addr
+    , lsTamper :: Maybe Live.Tamper
+    , lsRequestOut :: TxOut ConwayEra
+    , lsModelRequest :: Value
+    , lsRequestLovelace :: Integer
+    , lsAfter :: Maybe OnChainTokenState
+    , lsOutcome :: StepOutcome
+    }
+
+data LiveState = LiveState
+    { liveIds :: LiveIdentities
+    , liveStarts :: IORef (Map.Map String OnChainTokenState)
+    , liveTraces :: IORef (Map.Map String [Value])
+    , liveRegistryKeys :: IORef (Map.Map String [ByteString])
+    , liveRegistryWallets :: IORef (Map.Map String [Addr])
+    , liveRegistryIds :: IORef (Map.Map String Integer)
     }
 
 -- | Interpret shared story instructions against the running node and builders.
-runLive :: Env -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg res -> IO res
+runLive :: Env -> Live.Story RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg res -> IO res
 runLive env program = do
     identities <- newLiveIdentities
-    go identities program
+    starts <- newIORef Map.empty
+    traces <- newIORef Map.empty
+    keys <- newIORef Map.empty
+    wallets <- newIORef Map.empty
+    registryIds <- newIORef Map.empty
+    go (LiveState identities starts traces keys wallets registryIds) program
   where
-    go :: LiveIdentities -> Live.Story RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg res -> IO res
-    go identities body = case Operational.view body of
+    go :: LiveState -> Live.Story RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg res -> IO res
+    go state body = case Operational.view body of
         Operational.Return result -> pure result
         Specification.Action instruction Operational.:>>= next ->
-            interpret identities instruction >>= go identities . next
+            interpret state instruction >>= go state . next
         Specification.Theorem declaration body' Operational.:>>= next -> do
             let binding = Specification.theoremBinding declaration
             manifest <- Binding.loadManifest >>= either failWith pure
             require "live theorem binding is missing or stale" (Binding.resolveBinding manifest binding)
             emit "theorem" (Binding.boName binding)
-            runClauses identities binding (Specification.clauses body') >>= go identities . next
-    runClauses :: LiveIdentities -> Binding.Binding -> Operational.Program (Specification.Clause thm (Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg)) res -> IO res
-    runClauses identities binding body = case Operational.view body of
+            runClauses state binding (Specification.clauses body') >>= go state . next
+    runClauses :: LiveState -> Binding.Binding -> Operational.Program (Specification.Clause thm (Live.LiveI RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg)) res -> IO res
+    runClauses state binding body = case Operational.view body of
         Operational.Return result -> pure result
         Specification.Clause title check actions Operational.:>>= next -> do
             require "clause check names a different declaration than its enclosing theorem"
                 (binding == Specification.theoremBinding (Specification.checkTheorem check))
             emit "clause" title
-            observation <- go identities actions
-            interpret identities (Specification.checkAction check observation)
-            runClauses identities binding (next observation)
-    interpret :: LiveIdentities -> Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg obs -> IO obs
-    interpret identities instruction = case instruction of
+            observation <- go state actions
+            _ <- go state (Specification.checkAction check observation)
+            runClauses state binding (next observation)
+    interpret :: LiveState -> Live.LiveI RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg obs -> IO obs
+    interpret state instruction = case instruction of
+        Live.Submit registry request -> submitEdge env state registry Nothing request
+        Live.Tamper alteration registry request -> submitEdge env state registry (Just alteration) request
+        Live.Observe step -> observeStep env state step
+        Live.Compare step observation -> compareStep env state step observation
         Live.CheckRetirementEffect retirement ->
-            checkRetirementAgainstLean env identities retirement
+            checkRetirementAgainstLean env (liveIds state) retirement
         Live.CheckRegistrationDelivery registration ->
-            checkRegistrationAgainstLean env identities registration
-        Live.LinkedTo binding rules -> do
-            manifest <- Binding.loadManifest >>= either failWith pure
-            require "live story names a missing or changed formal specification" (Binding.resolveBinding manifest binding)
-            source <- Binding.loadStatementSource >>= either failWith pure
-            require "live story quotes a rule absent from the formal specification"
-                (Binding.anchorsPresent source [(Binding.boName binding, rules)])
-            emit "specification" (Binding.boName binding <> " @" <> Binding.boRevision binding)
+            checkRegistrationAgainstLean env (liveIds state) registration
         Live.RegisterKey registry key wallet -> do
             let bytes = TE.encodeUtf8 (T.pack key)
-            prepareRegistrationIdentities identities registry bytes wallet
-            registerLive env False registry bytes wallet
+            prepareRegistrationIdentities (liveIds state) registry bytes wallet
+            registerLive env registry bytes wallet
         Live.ExpectActiveToken registration wallet quantity -> checkRegistrationLive env registration wallet quantity
-        Live.RegisterFreshKey registry key wallet -> do
-            let bytes = TE.encodeUtf8 (T.pack key)
-            prepareRegistrationIdentities identities registry bytes wallet
-            registerLive env True registry bytes wallet
-        Live.ExpectDuplicateRegistrationRefused registry registration control -> do
-            requireSameRegistry registry (lrCage registration)
-            requireSameRegistry registry (lrCage control)
-            require "duplicate comparison reuses the registered key" (lrKey registration /= lrKey control)
-            _ <- bookLive env registry (lrKey registration) edgeInsertActive (lrWallet registration)
-            transaction <- cg21HandBuild env registry
-            refused <- cg21ExpectRefused env registry "duplicate" [lrKey registration]
-                Nothing Nothing "the committed trie already binds this key"
-                (addKeyWitness genesisSignKey transaction)
-            pure refused{rlControlTxid = T.pack (txIdHex (lrTx control))}
-        Live.CompareBatchAllocation registry wallet first second ->
-            compareBatchLive env registry wallet (TE.encodeUtf8 (T.pack first)) (TE.encodeUtf8 (T.pack second))
         Live.RetireRegistration registry registration -> retireLive env registry registration
         Live.ExpectRetired retirement expected -> checkRetirementLive env retirement expected
         Live.ExpectAbsentRetirementRefused registry wallet control keyText -> do
@@ -4780,6 +4749,361 @@ runLive env program = do
             refusedRetirement env registry tid key (txIdHex (ltTx control))
                 "the control retired a key that IS Active in this same cage; this one was never inserted at all"
                 "the chain ACCEPTED retirement of a never-registered key"
+
+-- | One story instruction books exactly one request. All later work keeps its
+-- outref, so a refused request left at the script cannot leak into a fold.
+submitEdge :: Env -> LiveState -> RowCage -> Maybe Live.Tamper -> Live.EdgeRequest Addr -> IO LiveStep
+submitEdge env state cage alteration request = do
+    let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
+        cfg = rcCfg cage
+        edge = fromIntegral (fromEnum (Live.requestEdge request))
+        wallet = Live.requestWallet request
+        ids = liveIds state
+    tid <- cageTid cage
+    let registry = show tid
+    knownRegistries <- readIORef (liveRegistryIds state)
+    when (Map.notMember registry knownRegistries) $
+        modifyIORef' (liveRegistryIds state)
+            (Map.insert registry (fromIntegral (Map.size knownRegistries) + 1))
+    before <- cg21State env cage
+    starts <- readIORef (liveStarts state)
+    case Map.lookup registry starts of
+        Nothing -> do
+            require "generic story requires a freshly booted empty registry"
+                (unOnChainRoot (stateRoot before) == emptyRoot)
+            modifyIORef' (liveStarts state) (Map.insert registry before)
+        Just _ -> pure ()
+    prepareRegistrationIdentities ids cage key wallet
+    modifyIORef' (liveRegistryKeys state)
+        (Map.alter (\known -> Just (case known of
+            Nothing -> [key]
+            Just keys | key `elem` keys -> keys
+                      | otherwise -> key : keys)) registry)
+    modifyIORef' (liveRegistryWallets state)
+        (Map.alter (\known -> Just (foldr (\address addresses ->
+            if address `elem` addresses then addresses else address : addresses)
+            (fromMaybe [] known) [wallet, genesisAddr])) registry)
+    let destination = case Live.requestEdge request of
+            Live.InsertAbsent -> (serialiseAddr wallet, BS.empty)
+            Live.InsertActive -> (serialiseAddr wallet, BS.empty)
+            Live.UpdateActive -> (serialiseAddr wallet, BS.empty)
+            Live.DeleteAbsent -> (serialiseAddr wallet, BS.empty)
+            Live.WitnessTerminal -> (serialiseAddr wallet, BS.empty)
+            _ -> (BS.empty, BS.empty)
+    refs <- storyReferences env cage key edge
+    named@(reqIn, reqOut) <- bookEdge env cfg tid genesisAddr genesisSignKey key edge destination refs
+        (defaultTipCoin cfg + cgDeposit)
+    let Coin bond = reqOut ^. coinTxOutL
+        deposit = bond - stateMaxFee before
+    require "booked request holds less than the on-chain processing tip" (deposit >= 0)
+    modelRequest <- storyModelRequest ids cfg request deposit
+    stateUtxo <- cageStateUtxo env cage
+    (proofs, root) <- cg21Proofs env cage tid [named]
+    units <- declaredSpec env cage
+    pot <- collateralPot env
+    unsigned <- assembleFoldWithFee env
+        (rowSpec cage tid stateUtxo [named] (map Update proofs) root units)
+            { fsCollateral = Just pot, fsSigners = Just [] }
+    let allInputs = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
+    pending <- pendingRequests env cage
+    require "generic step spent another pending request"
+        (filter (`elem` map fst pending) allInputs == [reqIn])
+    alternate <- if wallet == genesisAddr then snd <$> secondWallet env else pure genesisAddr
+    let candidate = case alteration of
+            Nothing -> unsigned
+            Just Live.RedirectDelivery ->
+                unsigned & bodyTxL . outputsTxBodyL %~ fmap
+                    (\out -> if containsStoryAsset cfg key out
+                        then out & addrTxOutL .~ alternate
+                        else out)
+        signed = addKeyWitness genesisSignKey candidate
+    measured <- try @SomeException (measureUnits env unsigned)
+    result <- submitTxResilient (envSubmit env) signed
+    case result of
+        Submitted _ -> do
+            case alteration of
+                Just _ -> failWith
+                    ("redirect-delivery FINDING: chain accepted tampered "
+                        <> Live.edgeName (Live.requestEdge request)
+                        <> " for " <> Live.requestKey request <> " (" <> txIdHex signed <> ")")
+                Nothing -> pure ()
+            awaitTx
+            rowCommit env cage key edge
+            after <- cg21State env cage
+            (mem, cpu) <- either (failWith . displayException) pure measured
+            modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, txSizeBytes signed)])
+            pure (LiveStep cage request alteration reqOut modelRequest bond
+                (Just after) (StepAccepted signed (mem, cpu, txSizeBytes signed)))
+        Rejected reason -> do
+            let explanation = T.unpack (TE.decodeUtf8Lenient reason)
+                marker = stateMarkerOf cfg
+            pure (LiveStep cage request alteration reqOut modelRequest bond Nothing
+                (case matchRefusal marker explanation of
+                    Right () -> StepRefused signed (cg21TraceIn explanation)
+                        (map T.pack (refusalScriptHashes explanation))
+                    Left mismatch -> StepUnsupported (T.pack ("unattributed node rejection: " <> show mismatch))))
+
+-- | The certificate's destination is not an inferred post-state identity.
+storyReferences :: Env -> RowCage -> ByteString -> Edge -> IO [(TxIn, TxOut ConwayEra)]
+storyReferences env cage key edge
+    | edge /= edgeDeleteAbsent = pure []
+    | otherwise = do
+        let cfg = rcCfg cage
+            absentPolicy = scriptHashBytes (policyID (policyIdFromPin (cfgAbsentPolicy cfg)))
+        utxos <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+        case [u | u@(_, out) <- utxos, Just (AbsentCustody _) <- [extractCageDatum out]
+                , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)] of
+            [u] -> pure [u]
+            _ -> failWith ("no single observed custody UTxO for " <> show key)
+
+containsStoryAsset :: CageConfig -> ByteString -> TxOut ConwayEra -> Bool
+containsStoryAsset cfg key out =
+    any (\policy -> maybe False (Map.member key) (Map.lookup policy (outAssets out)))
+        (map SBS.fromShort [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg])
+
+storyModelRequest :: LiveIdentities -> CageConfig -> Live.EdgeRequest Addr -> Integer -> IO Value
+storyModelRequest ids cfg request deposit = do
+    let wallet = Live.requestWallet request
+        key = TE.encodeUtf8 (T.pack (Live.requestKey request))
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
+    destination <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr wallet))
+    (application, _, _, _) <- observePins ids cfg
+    let (refundAddress, output) = case Live.requestEdge request of
+            Live.InsertAbsent -> (destination, 0)
+            Live.DeleteAbsent -> (destination, 0)
+            Live.InsertActive -> (0, destination)
+            Live.UpdateActive -> (0, destination)
+            Live.WitnessTerminal -> (destination, 0)
+            _ -> (0, 0)
+    pure $ object
+        [ "edge" .= Live.edgeName (Live.requestEdge request)
+        , "key" .= modelKey, "owner" .= owner
+        , "refundAddress" .= refundAddress, "deposit" .= deposit
+        , "output" .= output, "applicationPolicy" .= application
+        , "approval" .= String "canonical"
+        ]
+
+-- | Observation only looks up identities allocated while acting. The
+-- concrete trie root is checked before its leaves are translated.
+observeStep :: Env -> LiveState -> LiveStep -> IO Value
+observeStep env state step = case lsOutcome step of
+    StepAccepted transaction _ -> do
+        control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+        when (control == Just "unknown-identity") $
+            () <$ observeIdentity (liveWallets (liveIds state))
+                (WalletIdentity (BS.replicate 28 0xAB))
+        observeAcceptedStep env state step transaction
+    _ -> pure Null
+
+observeAcceptedStep :: Env -> LiveState -> LiveStep -> ConwayTx -> IO Value
+observeAcceptedStep env state step transaction = do
+    let cage = lsCage step
+        cfg = rcCfg cage
+        requestedKey = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
+    after <- maybe (failWith "accepted step has no chain state") pure (lsAfter step)
+    tid <- cageTid cage
+    let registry = show tid
+    keys <- maybe (failWith "registry has no allocated keys") pure
+        . Map.lookup registry =<< readIORef (liveRegistryKeys state)
+    wallets <- maybe (failWith "registry has no allocated wallets") pure
+        . Map.lookup registry =<< readIORef (liveRegistryWallets state)
+    (committed, membership) <- withTrie (envTm env) tid $ \trie -> do
+        root <- CageTrie.getRoot trie
+        values <- mapM (CageTrie.lookup trie) keys
+        pure (root, zip keys (map isJust values))
+    require "chain root differs from committed trie before observation"
+        (unOnChainRoot (stateRoot after) == unRoot committed)
+    -- This trie backend's `lookup` reports membership but returns the key's
+    -- digest, not the stored leaf. Recover the leaves by rebuilding every
+    -- possible assignment over the keys it says are present and matching the
+    -- resulting concrete commitment against the chain-read root.
+    classified <- classifyLeaves membership (unOnChainRoot (stateRoot after))
+    translated <- mapM translateLeaf classified
+    let root = Compare.rootOf [(identifier, ordinal) | (identifier, ordinal, _) <- translated]
+        trie = [object ["key" .= identifier, "leaf" .= leaf]
+               | (identifier, _, leaf) <- translated]
+    requestedId <- observeIdentity (liveKeys ids) (KeyIdentity requestedKey)
+    let leaf = fromMaybe Null
+            (lookup requestedId [(identifier, name) | (identifier, _, name) <- translated])
+    (application, active, absent, terminal) <- observePins ids cfg
+    let config = abstractConfig after application active absent terminal root
+        activeBytes = SBS.fromShort (cfgActivePolicy cfg)
+        activePolicy = policyIdFromPin (cfgActivePolicy cfg)
+    holdings <- fmap concat $ mapM (walletHoldings ids keys activeBytes) wallets
+    cageOutputs <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
+    require "active registration unexpectedly created custody"
+        (null [() | (_, out) <- cageOutputs, Just (AbsentCustody _) <- [extractCageDatum out]])
+    let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
+    mint <- mapM (\(policy, name, quantity) -> observeModelMint ids policy name quantity)
+        [ (cg21PolicyBytes policy, SBS.fromShort name, quantity)
+        | (policy, names) <- Map.toList minted
+        , (AssetName name, quantity) <- Map.toList names ]
+    (addressBytes, delivered) <- cg21Delivery activePolicy requestedKey transaction
+    let expectedAsset = AssetEntry (hexT activeBytes) (hexT requestedKey) 1
+    require "accepted active step did not deliver one named token" (delivered == [expectedAsset])
+    deliveredWallet <- case [wallet | wallet <- wallets,
+            hexT (serialiseAddr wallet) == addressBytes] of
+        [wallet] -> pure wallet
+        _ -> failWith "delivered token address was not allocated by an action"
+    destination <- observeIdentity (liveWallets ids)
+        (WalletIdentity (serialiseAddr deliveredWallet))
+    let owner = object
+            [ "config" .= config, "custody" .= ([] :: [Value])
+            , "held" .= holdings, "trie" .= trie ]
+    requestApproval <- cg21ApprovalOn cfg (lsRequestOut step)
+    (_, recomputed) <- cg21RequestFacts (lsRequestOut step)
+    require "request approval disagrees with its chain-read datum" (requestApproval == recomputed)
+    ownerId <- observeIdentity (liveWallets ids)
+        (WalletIdentity (serialiseAddr genesisAddr))
+    commitment <- maybe (failWith "request commitment cannot be derived") pure $
+        Compare.approvalAssetName "insertActive" requestedId ownerId destination
+    -- The model's transaction is a logical projection. Every field here is
+    -- backed by a chain read or a checked request datum above.
+    let tx = observedTx config mint destination commitment (lsRequestLovelace step)
+    pure $ object
+        [ "config" .= config, "custody" .= ([] :: [Value])
+        , "held" .= holdings, "leaf" .= leaf, "mint" .= mint
+        , "paid" .= ([] :: [Value]), "root" .= root
+        , "state" .= owner, "tx" .= tx ]
+  where
+    ids = liveIds state
+    translateLeaf (key, value) = do
+        identifier <- observeIdentity (liveKeys ids) (KeyIdentity key)
+        (ordinal, name) <- if value == leafAbsent then pure (0, String "absent")
+            else if value == leafActive then pure (1, String "active")
+            else if value == leafTerminal then pure (2, String "terminal")
+            else failWith ("unrecognized trie leaf for " <> show key)
+        pure (identifier, ordinal, name)
+    walletHoldings identities keys activeBytes wallet = do
+        utxos <- Cage.queryUTxOs (envProv env) wallet
+        addressId <- observeIdentity (liveWallets identities) (WalletIdentity (serialiseAddr wallet))
+        fmap concat $ mapM (\key -> do
+            keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
+            let quantity = sum
+                    [ q | (_, out) <- utxos
+                        , Just names <- [Map.lookup activeBytes (outAssets out)]
+                        , Just q <- [Map.lookup key names] ]
+            pure [object ["key" .= keyId, "kind" .= String "active", "output" .= addressId]
+                 | _ <- [1 .. quantity]]) keys
+
+classifyLeaves :: [(ByteString, Bool)] -> ByteString -> IO [(ByteString, ByteString)]
+classifyLeaves membership observedRoot = do
+    let present = [key | (key, True) <- membership]
+        assignments = sequence (replicate (length present) [leafAbsent, leafActive, leafTerminal])
+    candidates <- mapM (\values -> do
+        trie <- mkPureTrie
+        mapM_ (\(key, value) -> CageTrie.insert trie key value)
+            (zip present values)
+        root <- CageTrie.getRoot trie
+        pure (zip present values, unRoot root)) assignments
+    case [leaves | (leaves, root) <- candidates, root == observedRoot] of
+        [leaves] -> pure leaves
+        matches -> failWith ("concrete root identifies " <> show (length matches)
+            <> " leaf assignments over this registry's allocated keys")
+
+-- | Ask the same driver for every edge. Setup is only the earlier accepted,
+-- compared requests of this registry; a tamper never joins it.
+askModel :: Env -> LiveState -> LiveStep -> IO Value
+askModel _env state step = do
+    tid <- cageTid (lsCage step)
+    let registry = show tid
+        ids = liveIds state
+    start <- maybe (failWith "model question has no chain-read start") pure
+        . Map.lookup registry =<< readIORef (liveStarts state)
+    setup <- pure . Map.findWithDefault [] registry =<< readIORef (liveTraces state)
+    (application, active, absent, terminal) <- observePins ids (rcCfg (lsCage step))
+    let startValue = object
+            [ "config" .= abstractConfig start application active absent terminal (Compare.rootOf [])
+            , "trie" .= ([] :: [Value]), "custody" .= ([] :: [Value])
+            , "held" .= ([] :: [Value]) ]
+        question = object
+            [ "id" .= String "live-edge"
+            , "theorem" .= String "Singular.Driver.runSurface"
+            , "statementSha256" .= String "5766693268324097889"
+            , "start" .= startValue, "setup" .= setup
+            , "request" .= lsModelRequest step
+            , "lovelace" .= lsRequestLovelace step ]
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    let asked = case control of
+            Just "wrong-fee" -> bumpEvaluationField "maxFee" question
+            Just "wrong-timing" -> bumpEvaluationField "processTime" question
+            _ -> question
+    evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
+    LeanOracle.expectedObservation evaluator [] asked >>= either failWith pure
+
+compareStep :: Env -> LiveState -> LiveStep -> Value -> IO Value
+compareStep env state step observation = do
+    row <- askModel env state step
+    modelOutcome <- storyField "outcome" row
+    modelReason <- storyField "reason" row
+    let model = object ["outcome" .= modelOutcome, "reason" .= modelReason]
+        (chainOutcome, chain) = case lsOutcome step of
+            StepAccepted transaction _ ->
+                (String "accepted", object ["outcome" .= String "accepted", "txid" .= txIdHex transaction])
+            StepRefused transaction trace hashes ->
+                (String "refused", object
+                    [ "outcome" .= String "refused", "txid" .= txIdHex transaction
+                    , "refusal" .= object ["trace" .= trace, "hashes" .= hashes] ])
+            StepUnsupported reason ->
+                (String "unsupported", object ["outcome" .= String "unsupported", "reason" .= reason])
+    declared <- do
+        corpusPath <- requireEnv "CONFORMANCE_DRIVER_CORPUS"
+        corpus <- eitherDecodeFileStrict corpusPath >>= either failWith pure
+        either failWith pure (Compare.declaredSurface corpus)
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    let presented = case control of
+            Just "wrong-delivery" | chainOutcome == String "accepted" -> bumpObservedMint observation
+            _ -> observation
+    (comparison, compared, unobserved, perturbation) <- case (lsTamper step, modelOutcome, chainOutcome) of
+        (_, String "unsupported", _) -> pure ("unsupported" :: T.Text, [], [], Null)
+        (_, _, String "unsupported") -> pure ("unsupported", [], [], Null)
+        (Just _, String "accepted", String "refused") ->
+            pure ("agrees", [], [], Null)
+        (Just _, _, _) -> pure ("disagrees", [], [], Null)
+        (Nothing, String "accepted", String "accepted") -> do
+            expected <- storyField "observations" row
+            agreement <- either (failWith . renderDifferences) pure
+                (Compare.compareRegistration declared expected presented)
+            (refused, byObservation, exempt) <- either failWith pure
+                (Perturbation.checkPerturbations declared expected observation)
+            pure ("agrees", Compare.agreementCompared agreement,
+                Compare.agreementUnobserved agreement,
+                object ["refused" .= refused, "byObservation" .= byObservation, "exempt" .= exempt])
+        (Nothing, expectedClass, actualClass)
+            | expectedClass == actualClass -> pure ("agrees", [], [], Null)
+            | otherwise -> pure ("disagrees", [], [], Null)
+    tid <- cageTid (lsCage step)
+    let registry = show tid
+    registryId <- maybe (failWith "step registry was not allocated") pure
+        . Map.lookup registry =<< readIORef (liveRegistryIds state)
+    let record = object
+            [ "registry" .= registryId
+            , "edge" .= Live.edgeName (Live.requestEdge (lsRequest step))
+            , "request" .= lsModelRequest step
+            , "tamper" .= fmap Live.tamperName (lsTamper step)
+            , "model" .= model, "chain" .= chain
+            , "comparison" .= comparison
+            , "compared" .= compared, "unobserved" .= unobserved
+            , "perturbation" .= perturbation ]
+    modifyIORef' (envLiveRecords env) (<> [record])
+    case comparison of
+        "agrees" -> when (lsTamper step == Nothing && chainOutcome == String "accepted") $
+            modifyIORef' (liveTraces state)
+                (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
+        "unsupported" -> emit "gap" ("unsupported " <> Live.edgeName (Live.requestEdge (lsRequest step))
+            <> " for " <> Live.requestKey (lsRequest step))
+        _ -> failWith ("model and chain disagree for " <> Live.edgeName (Live.requestEdge (lsRequest step))
+            <> " at " <> Live.requestKey (lsRequest step)
+            <> ": model=" <> show modelOutcome <> " chain=" <> show chainOutcome)
+    pure record
+
+storyField :: T.Text -> Value -> IO Value
+storyField name value = case value of
+    Object fields -> maybe (failWith ("model response omits " <> T.unpack name)) pure
+        (KM.lookup (Key.fromText name) fields)
+    _ -> failWith "model response is not an object"
+
 
 -- Mapping allocation is confined to context/actions. Observation is read-only.
 newtype WalletIdentity = WalletIdentity ByteString deriving stock (Show, Eq, Ord)
@@ -5246,19 +5570,14 @@ landLive env registry key edge = do
     rowCommit env registry key edge
     pure signed
 
-registerLive :: Env -> Bool -> RowCage -> ByteString -> Addr -> IO LiveRegistration
-registerLive env handBuilt registry key recipient = do
+registerLive :: Env -> RowCage -> ByteString -> Addr -> IO LiveRegistration
+registerLive env registry key recipient = do
     emit "story" ("Request and apply registration of " <> show key)
     (_, request) <- bookLive env registry key edgeInsertActive recipient
     before <- cg21State env registry
-    (transaction, observation, units) <-
-        if handBuilt then do
-            (tx, step) <- cg21HandFold env registry [key]
-            (mem, cpu) <- readIORef (rcUnits registry)
-            pure (tx, step, (mem, cpu, txSizeBytes tx))
-        else cg21Fold env registry [key]
+    (transaction, observation, _) <- cg21Fold env registry [key]
     after <- cg21State env registry
-    pure (LiveRegistration registry key recipient transaction observation before after request units)
+    pure (LiveRegistration registry key recipient transaction observation before after request)
 
 checkRegistrationLive :: Env -> LiveRegistration -> Addr -> Integer -> IO ()
 checkRegistrationLive env registration wallet quantity = do
@@ -5287,28 +5606,6 @@ checkRegistrationLive env registration wallet quantity = do
     require "the approval does not bind the requested destination" (approval == recomputed)
     require "the request does not cover the processing tip" (funds >= stateMaxFee (lrBefore registration))
     emit "PASS" ("registered " <> show key <> ": token delivered to the requested wallet; tx=" <> txIdHex transaction)
-
-compareBatchLive :: Env -> RowCage -> Addr -> ByteString -> ByteString -> IO LiveBatch
-compareBatchLive env registry wallet first second = do
-    require "the two-key story needs distinct keys" (first /= second)
-    _ <- bookLive env registry first edgeInsertActive wallet
-    _ <- bookLive env registry second edgeInsertActive wallet
-    honest <- cg21BatchFold env registry
-    let policy = policyIdFromPin (cfgActivePolicy (rcCfg registry))
-        policyText = hexT (cg21PolicyBytes policy)
-        required = [AssetEntry policyText (hexT first) 1, AssetEntry policyText (hexT second) 1]
-        wrong = cg21MoveAsset policy (AssetName (SBS.toShort second)) (AssetName (SBS.toShort first)) honest
-    rejected <- cg21ExpectRefused env registry "keyed-mint" [first, second]
-        (Just (cg21MintedOf policy wrong)) (Just required)
-        "claimed both units at one key; the edges entail one at each"
-        (addKeyWitness genesisSignKey wrong)
-    (accepted, step, _) <- cg21Fold env registry [first, second]
-    heldFirst <- cg21HeldAt env wallet policy first
-    heldSecond <- cg21HeldAt env wallet policy second
-    require "the accepted batch did not deliver one active token per key" (heldFirst == 1 && heldSecond == 1)
-    require "the accepted batch minted the wrong allocation" (sortOn aeName (cg21MintedOf policy accepted) == sortOn aeName required)
-    emit "control" ("CG21 control: the same two keys with the distribution their edges entail accepted (tx=" <> txIdHex accepted <> ")")
-    pure (LiveBatch rejected{rlControlTxid = T.pack (txIdHex accepted), rlControlMint = Just (cg21MintedOf policy accepted)} accepted step)
 
 retireLive :: Env -> RowCage -> LiveRegistration -> IO LiveRetirement
 retireLive env registry registration = do
@@ -5459,31 +5756,6 @@ verdict to the node — which is what a refusal on chain means.
 This is the builder BOTH halves of the duplicate pair use, so the pair
 differs in the key's occupancy and in nothing else.
 -}
-cg21HandBuild :: Env -> RowCage -> IO ConwayTx
-cg21HandBuild env cage = do
-    tid <- cageTid cage
-    state <- cageStateUtxo env cage
-    reqs <- pendingRequests env cage
-    require "CG21: the hand fold has no pending request to fold" (not (null reqs))
-    (proofs, root) <- cg21Proofs env cage tid reqs
-    units <- declaredSpec env cage
-    pot <- collateralPot env
-    assembleFoldWithFee
-        env
-        (rowSpec cage tid state reqs (map Update proofs) root units)
-            { fsCollateral = Just pot
-            , fsSigners = Just []
-            }
-
-{- | Proof steps for the pending requests, and the root they reach.
-
-The speculative insert is the normal path. On a key the trie ALREADY
-binds it cannot apply — which is the whole duplicate fixture — so the
-fallback proves the key where it sits and leaves the root alone. Either
-proof reaches the same place on chain: `mpf.miss` answers false for an
-occupied key and the state script halts `key-exists` before any mint
-arithmetic runs.
--}
 cg21Proofs ::
     Env ->
     RowCage ->
@@ -5508,82 +5780,6 @@ cg21Proofs env cage tid reqs = do
 {- | Fold through the harness's own assembly, submit, commit, and record
 what the roots did — the accepting half of the duplicate pair.
 -}
-cg21HandFold :: Env -> RowCage -> [ByteString] -> IO (ConwayTx, FoldStep)
-cg21HandFold env cage keys = do
-    tid <- cageTid cage
-    rootBefore <- cg21ChainRoot env cage
-    hand <- cg21HandBuild env cage
-    signed <- submitExpectAccepted env (addKeyWitness genesisSignKey hand)
-    mapM_ (\k -> rowCommit env cage k edgeInsertActive) keys
-    rootAfter <- cg21ChainRoot env cage
-    committed <- withTrie (envTm env) tid CageTrie.getRoot
-    require
-        ( "CG21: a landed fold left the registry root where it found it (0x"
-            <> T.unpack rootBefore
-            <> "); the next proof would be built against a stale trie"
-        )
-        (rootBefore /= rootAfter)
-    pure
-        ( signed
-        , FoldStep
-            { fsTxid = T.pack (txIdHex signed)
-            , fsRootBefore = rootBefore
-            , fsRootAfter = rootAfter
-            , fsCommitted = hexT (unRoot committed)
-            }
-        )
-
-{- | The honest fold of whatever is pending, built and not submitted.
-The keyed-mint fixture derives its claim from this one, so the two
-differ in the mint distribution and in nothing else.
--}
-cg21BatchFold :: Env -> RowCage -> IO ConwayTx
-cg21BatchFold env cage = do
-    tid <- cageTid cage
-    let cfg = rcCfg cage
-    ctx <- rowRegistryContext env cage tid
-    updateTokenWithDuties cfg (envProv env) (envTm env) tid genesisAddr ctx
-
-{- | Move one asset name's whole quantity onto another, under one
-policy, in the mint AND in every output that carries it.
-
-Both halves matter. Moving only the mint leaves the transaction
-unbalanced and the LEDGER refuses it in phase 1, where no script speaks;
-moving both keeps it balanced so the state script runs and refuses the
-claim itself. The script integrity hash covers redeemers, datums and
-cost models, none of which this touches.
--}
-cg21MoveAsset :: PolicyID -> AssetName -> AssetName -> ConwayTx -> ConwayTx
-cg21MoveAsset policy from to tx =
-    tx
-        & bodyTxL . mintTxBodyL %~ (\(MultiAsset ma) -> MultiAsset (moveMap ma))
-        & bodyTxL . outputsTxBodyL %~ fmap moveOut
-  where
-    moveOut o =
-        o
-            & valueTxOutL
-                %~ ( \v -> case v of
-                        MaryValue c (MultiAsset ma) ->
-                            MaryValue c (MultiAsset (moveMap ma))
-                   )
-    moveMap ma = case Map.lookup policy ma of
-        Nothing -> ma
-        Just names -> case Map.lookup from names of
-            Nothing -> ma
-            Just q ->
-                Map.insert
-                    policy
-                    (Map.insertWith (+) to q (Map.delete from names))
-                    ma
-
-{- | The trace the ledger actually surfaced, or nothing.
-
-A script-execution failure carries an EMPTY Plutus log list, so the
-validator's own trace is usually not recoverable from the node's text.
-This reads it where it IS there and records absence where it is not; the
-refusal NAMES are asserted where the validator reads them, in the
-compiled suite.
--}
 cg21TraceIn :: String -> Maybe T.Text
 cg21TraceIn text =
     case [n | n <- ["key-exists", "net-mint-mismatch"], n `isInfixOf` text] of
@@ -5596,73 +5792,6 @@ refusal to the state script before recording it.
 An accepted transaction here is a FINDING and fails the run; a refusal
 that does not attribute fails the run naming the mismatch. Neither can
 pass quietly as "refused".
--}
-cg21ExpectRefused ::
-    Env ->
-    RowCage ->
-    String ->
-    -- | the keys the refused batch named
-    [ByteString] ->
-    -- | what it claimed to mint
-    Maybe [AssetEntry] ->
-    -- | what its edges entail
-    Maybe [AssetEntry] ->
-    -- | what differs between it and its control
-    String ->
-    ConwayTx ->
-    IO RefusalLeg
-cg21ExpectRefused env cage label keys claimed entailed distinguisher signed = do
-    let marker = stateMarkerOf (rcCfg cage)
-    result <- submitTxResilient (envSubmit env) signed
-    case result of
-        Submitted txid ->
-            failWith
-                ( "CG21 FINDING: the node ACCEPTED the "
-                    <> label
-                    <> " transaction expected to refuse (txid "
-                    <> txInHex txid
-                    <> ") — reported, not relabelled"
-                )
-        Rejected reason -> do
-            let text = T.unpack (TE.decodeUtf8Lenient reason)
-            case matchRefusal marker text of
-                Left mismatch ->
-                    failWith
-                        ( "CG21 "
-                            <> label
-                            <> ": the refusal did not attribute to the state "
-                            <> "script ("
-                            <> show mismatch
-                            <> "): "
-                            <> take 2000 text
-                        )
-                Right () -> do
-                    emit
-                        "row"
-                        ( "CG21 "
-                            <> label
-                            <> ": REFUSED at submit, attributed to state "
-                            <> "(phase-2, marker 0x"
-                            <> shortMarker marker
-                            <> ")"
-                        )
-                    pure
-                        RefusalLeg
-                            { rlTxid = T.pack (txIdHex signed)
-                            , rlHashes = map T.pack (refusalScriptHashes text)
-                            , rlTrace = cg21TraceIn text
-                            , -- The control belongs to the refusal it
-                              -- controls and is filled in when it lands.
-                              rlControlTxid = ""
-                            , rlDistinguisher = T.pack distinguisher
-                            , rlKeys = map hexT keys
-                            , rlClaimed = claimed
-                            , rlEntailed = entailed
-                            , rlControlMint = Nothing
-                            }
-
-{- | What the fold minted under one policy at one key, read off the
-transaction the chain accepted.
 -}
 cg21MintedOf :: PolicyID -> ConwayTx -> [AssetEntry]
 cg21MintedOf policy tx = case tx ^. bodyTxL . mintTxBodyL of
@@ -5788,16 +5917,23 @@ cg21SignersOf :: ConwayTx -> [T.Text]
 cg21SignersOf tx =
     map (T.pack . show) (Set.toList (tx ^. bodyTxL . reqSignerHashesTxBodyL))
 
--- | CG21's receipt: an accepted row carrying its edge observation.
-writeCG21Receipt ::
-    Env -> ConwayTx -> Integer -> Integer -> Integer -> EdgeEvidence -> IO ()
-writeCG21Receipt env foldTx mem cpu size edge =
+-- | One envelope, with the generic body computed by Compare instructions.
+writeStoryReceipt :: Env -> T.Text -> [Value] -> IO ()
+writeStoryReceipt env row records = do
+    txids <- fmap concat $ mapM acceptedTx records
+    measures <- readIORef (envLiveMeasurements env)
+    require "story receipt has no accepted transaction" (not (null txids))
+    require "story receipt measurement count differs from accepted steps"
+        (length txids == length measures)
+    let (mem, cpu, size) = foldr
+            (\(m, c, s) (ms, cs, largest) -> (m + ms, c + cs, max s largest))
+            (0, 0, 0) measures
     writeReceiptFile (envReceiptsDir env) $
         Receipt
-            { receiptRow = "CG21"
+            { receiptRow = row
             , receiptOutcome = Accepted
             , receiptVerdict = AgreesWithModel
-            , receiptTransactions = [T.pack (txIdHex foldTx)]
+            , receiptTransactions = txids
             , receiptRefusal = Nothing
             , receiptRejected = Nothing
             , receiptMem = Just mem
@@ -5806,13 +5942,25 @@ writeCG21Receipt env foldTx mem cpu size edge =
             , receiptBase = T.pack (envBase env)
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
-            , receiptEdge = Just edge
+            , receiptEdge = Nothing
             , receiptRetirement = Nothing
             , receiptDerivation = Nothing
+            , receiptSteps = Just records
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = "node-submit"
             }
+  where
+    acceptedTx record = do
+        chain <- storyField "chain" record
+        outcome <- storyField "outcome" chain
+        if outcome == String "accepted"
+            then do
+                txid <- storyField "txid" chain
+                case txid of
+                    String t -> pure [t]
+                    _ -> failWith "accepted step names no transaction id"
+            else pure []
 {- | One row cage's request-and-fold cycle through the library
 builder, with the calibration the hand-built shapes inherit their
 credibility from: submit the request, build the library fold over
@@ -6127,6 +6275,7 @@ writeRetirementReceipt env row txs mem cpu size retirement =
             , receiptEdge = Nothing
             , receiptRetirement = Just retirement
             , receiptDerivation = Nothing
+            , receiptSteps = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = "node-submit"
@@ -6826,6 +6975,7 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptRetirement = Nothing
 
             , receiptDerivation = derivation
+            , receiptSteps = Nothing
             , receiptNode = T.pack (envNode env)
             , receiptBlueprint = T.pack (envBlueprint env)
             , receiptVenue = venue
@@ -7230,6 +7380,7 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptRetirement = Nothing
 
             , receiptDerivation = Nothing
+            , receiptSteps = Nothing
             , receiptNode = T.pack nodeVer
             , receiptBlueprint = T.pack blueprintIdStr
             , receiptVenue = venue

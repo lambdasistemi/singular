@@ -120,6 +120,7 @@ runCS01 blueprintPath receiptsDir base dirty = do
                 , receiptRetirement = Nothing
 
                 , receiptDerivation = Nothing
+                , receiptSteps = Nothing
                 , receiptNode = T.pack nodeVer
                 , receiptBlueprint = T.pack bpId
                 , receiptVenue = "blueprint-check"

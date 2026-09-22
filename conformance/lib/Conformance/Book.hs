@@ -2,11 +2,13 @@
 module Conformance.Book (renderBook) where
 
 import Data.Text qualified as T
+import Data.Aeson (Value (..))
+import Data.Aeson.KeyMap qualified as KM
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Story.Live (Context (..), renderLive)
 import Conformance.Rows (Row (..), RowState (..))
-import Conformance.Receipt (Receipt (..), EdgeEvidence (..), RetirementEvidence (..), RetirementQuantities (..))
+import Conformance.Receipt (Receipt (..), RetirementEvidence (..), RetirementQuantities (..))
 
 -- | Called only after both live stories and their observations have succeeded.
 renderBook :: [Row] -> [Receipt] -> String
@@ -16,7 +18,7 @@ renderBook requirements receipts =
         <> "## This run\n\n"
         <> concatMap result receipts
         <> "## Register a key and receive its active token\n\n"
-        <> "A requester registers a new key for a recipient. The recipient must receive exactly one active token for that key. A fresh key must work; registering the same key again must fail. The batch example checks that a correct token total cannot hide a wrong allocation between keys.\n\n"
+        <> "A requester submits two distinct active registrations and then repeats one key. A redirected delivery is tried beside the same untampered request. Every step is compared with the executable registry model.\n\n"
         <> renderLive (Register.story (Context "registration" "recipient wallet"))
         <> "## Retire a registration and burn its active token\n\n"
         <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry.\n\n"
@@ -35,8 +37,11 @@ renderBook requirements receipts =
             <> (if receiptDirty receipt then " (working tree had changes)." else " (clean working tree).") <> "\n\n"
             <> "Node: `" <> T.unpack (receiptNode receipt) <> "`. Compiled validators: `"
             <> T.unpack (receiptBlueprint receipt) <> "`.\n\n"
-            <> maybe "" (\edge -> "Registration passed: exactly one active token reached the requested recipient.\n\nTransaction: `"
-                <> T.unpack (eeFoldTxid edge) <> "`.\n\n") (receiptEdge receipt)
+            <> maybe "" (\steps -> if receiptRow receipt == "CG21"
+                then "Registration compared " <> show (length steps) <> " requests: "
+                    <> show (length (filter (hasOutcome "accepted") steps)) <> " accepted and "
+                    <> show (length (filter (hasOutcome "refused") steps)) <> " refused on chain.\n\n"
+                else "") (receiptSteps receipt)
             <> maybe "" (\retired -> "Retirement passed: the holder's active-token quantity changed from **"
                 <> show (rqBefore (rtQuantities retired)) <> "** to **" <> show (rqAfter (rtQuantities retired))
                 <> "**, the token was burned, and the key became Terminal.\n\nRegistration transaction: `"
@@ -49,3 +54,8 @@ renderBook requirements receipts =
     stateName Uncovered = "uncovered"
     stateName BoundElsewhere = "bound elsewhere"
     stateName OutOfScope = "outside the registry's scope"
+    hasOutcome expected value = case value of
+        Object fields -> case KM.lookup "chain" fields of
+            Just (Object chain) -> KM.lookup "outcome" chain == Just (String expected)
+            _ -> False
+        _ -> False

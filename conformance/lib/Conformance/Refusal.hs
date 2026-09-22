@@ -309,6 +309,7 @@ attributeRefusalReceipt role dir row verdict script marker text rejectedTxid bas
                             , receiptRetirement = Nothing
 
                             , receiptDerivation = Nothing
+                            , receiptSteps = Nothing
                             }
             else pure ()
             pure (Right ())

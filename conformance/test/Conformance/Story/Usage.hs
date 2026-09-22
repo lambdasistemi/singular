@@ -30,7 +30,7 @@ spec = do
     runStory story
     it "Keeps internal reference numbers out of the example story" $
         filter nameViolation (groupNames story) `shouldBe` []
-    it "Runs a redirected delivery and its untampered control in the registration chapter" $ do
+    it "The registration chapter describes redirected delivery beside its untampered control" $ do
         let rendered = Live.renderLive (Register.story (Live.Context "registry" "recipient"))
         rendered `shouldSatisfy` isInfixOf "redirect delivery"
         rendered `shouldSatisfy` isInfixOf "untampered control"

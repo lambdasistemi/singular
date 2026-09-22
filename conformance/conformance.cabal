@@ -70,6 +70,7 @@ library
   exposed-modules:
     Conformance.Book
     Conformance.Compare.Registration
+    Conformance.Compare.Perturbation
     Conformance.Authenticate
     Conformance.Receipt
     Conformance.Refusal
@@ -94,6 +95,7 @@ library
     , operational >=0.2.4.2 && <0.3
     , process >=1.6 && <1.7
     , text >=2.0 && <2.2
+    , vector >=0.13 && <0.14
 
 executable conformance
   import:           warnings

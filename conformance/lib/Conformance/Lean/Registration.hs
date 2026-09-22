@@ -1,19 +1,25 @@
 -- | The delivery projection proved by the registration theorem. Expectations
 -- are computed by the packaged Lean executable, never reconstructed here.
 module Conformance.Lean.Registration (
-    InsertActive, registrationDelivery, insertActiveRow,
+    InsertActive, registrationDelivery, modelComparison, insertActiveRow,
 ) where
 
 import Conformance.Story.Binding (mkBoundObligation)
-import Conformance.Story.Specification (LeanCheck, Theorem, bindCheck, bindTheorem)
-import Conformance.Story.Live (LiveI (CheckRegistrationDelivery))
+import Conformance.Story.Specification (LeanCheck, Theorem, action, bindCheck, bindTheorem)
+import Conformance.Story.Live (LiveI (CheckRegistrationDelivery), compareWithModel, observe)
 
 -- | The registration declaration, distinct from every other theorem marker.
 data InsertActive
 
 -- | The check runs through the registry interpreter under this theorem.
-registrationDelivery :: LeanCheck (LiveI reg wal ins ret bat ref) InsertActive ins
-registrationDelivery = bindCheck insertActiveRow CheckRegistrationDelivery
+registrationDelivery :: LeanCheck (LiveI reg wal step obs cmp ins ret bat ref) InsertActive ins
+registrationDelivery = bindCheck insertActiveRow (action . CheckRegistrationDelivery)
+
+modelComparison :: LeanCheck (LiveI reg wal step obs cmp ins ret bat ref) InsertActive step
+modelComparison = bindCheck insertActiveRow $ \step -> do
+    observation <- observe step
+    _ <- compareWithModel step observation
+    pure ()
 
 insertActiveRow :: Theorem InsertActive
 insertActiveRow = bindTheorem $ mkBoundObligation

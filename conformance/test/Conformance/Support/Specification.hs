@@ -27,7 +27,7 @@ data Calculate obs where
     AssertEqual :: Int -> Int -> Calculate ()
 
 arithmeticCheck :: Int -> LeanCheck Calculate Arithmetic Int
-arithmeticCheck expected = bindCheck arithmetic (AssertEqual expected)
+arithmeticCheck expected = bindCheck arithmetic (action . AssertEqual expected)
 
 arithmetic :: Theorem Arithmetic
 arithmetic = bindTheorem (mkBoundObligation "example.arithmetic" "example-digest" "example-revision")
@@ -67,6 +67,6 @@ executeClauses program = case view program of
     Return result -> Right (result, [])
     Clause _ check body :>>= next -> do
         (observation, trace) <- execute body
-        ((), checked) <- execute (action (checkAction check observation))
+        ((), checked) <- execute (checkAction check observation)
         (result, following) <- executeClauses (next observation)
         pure (result, trace <> checked <> following)

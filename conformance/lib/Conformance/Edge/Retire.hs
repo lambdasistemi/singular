@@ -17,7 +17,7 @@ import Conformance.Story.Live
     )
 
 -- | The holder context and the active token are created by real transactions.
-story :: Context reg wal -> Context reg wal -> Story reg wal ins ret bat ref (RetirementRun ins ret ref)
+story :: Context reg wal -> Context reg wal -> Story reg wal step obs cmp ins ret bat ref (RetirementRun ins ret ref)
 story (Context registry holder) (Context otherRegistry _) = do
     registration <- theorem insertActiveRow $
         clause "The holder receives the token that will be retired" registrationDelivery $
