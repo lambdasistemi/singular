@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "72e3533212c5fb471f023e5624526bb5ae06e6912af950ae16b150239a7f22da"
+    "sha256": "ba0d46c72758c1979917fce321a7542b2348ef97fb7a62eb037262b7c22e8f8a"
   },
   "historical-execution-reports": [
     {
@@ -208,7 +208,7 @@
   "the-cage-datum-a-third-constructor": [
     {
       "pause": 400,
-      "text": "The cage datum gains a third constructor at index two: absent custody, carrying the registry key it witnesses and the refund address recorded beside it. The two published constructors do not move."
+      "text": "The cage datum gains a third constructor at index two: absent custody, carrying only the refund address. Its registry key comes from the output's sole non-Ada asset, at quantity one under the registry's pinned absent policy. The key is not duplicated in the datum, and the retired two-field constructor is incompatible. The two earlier constructor indices do not move."
     }
   ],
   "redeemers-that-are-gone": [
