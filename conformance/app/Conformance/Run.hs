@@ -88,6 +88,8 @@ import Conformance.Story.Specification qualified as Specification
 import Conformance.Story.Live qualified as Live
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Lean.Registration qualified as Lean
+import Conformance.Lean.Retirement qualified as LeanRetirement
+import Conformance.Lean.Oracle qualified as LeanOracle
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
@@ -101,7 +103,9 @@ import Control.Exception (
     try,
  )
 import Control.Monad (unless, when)
+import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson (
+    Value (..),
     FromJSON (..),
     eitherDecode,
     encode,
@@ -252,6 +256,7 @@ import Singular.Registry.Ledger (
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
+import Singular.Registry.Trie.Pure (mkPureTrie)
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Edges qualified as RegistryEdges
@@ -4589,7 +4594,7 @@ runCG21 :: Env -> IO ()
 runCG21 env = do
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     require "unknown registration story control"
-        (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains"])
+        (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains", Just "wrong-burn", Just "wrong-retirement-leaf"])
     registry <- ensureRowCage env "story-registration" 30_000 30_000
     (_, recipient) <- secondWallet env
     result <- runLive env (RegistrationStory.story (Live.Context registry recipient))
@@ -4672,6 +4677,8 @@ data LiveRetirement = LiveRetirement
     , ltBefore :: Integer
     , ltAfter :: Integer
     , ltSource :: RetirementSource
+    , ltBeforeState :: OnChainTokenState
+    , ltRequest :: TxOut ConwayEra
     }
 
 data LiveBatch = LiveBatch
@@ -4709,6 +4716,8 @@ runLive env program = do
             runClauses identities binding (next observation)
     interpret :: LiveIdentities -> Live.LiveI RowCage Addr LiveRegistration LiveRetirement LiveBatch RefusalLeg obs -> IO obs
     interpret identities instruction = case instruction of
+        Live.CheckRetirementEffect retirement ->
+            checkRetirementAgainstLean env identities retirement
         Live.CheckRegistrationDelivery registration ->
             checkRegistrationAgainstLean env identities registration
         Live.LinkedTo binding rules -> do
@@ -4793,16 +4802,12 @@ prepareRegistrationIdentities ids cage key recipient = do
     mapM_ (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
         [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
 
--- The oracle's bounded example assumes a freshly booted registry. Establish
--- this from the actual pre-fold state, not by resetting a nonempty model state.
-checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
-checkRegistrationAgainstLean env ids registration = do
+registrationScenario :: LiveIdentities -> LiveRegistration -> IO Value
+registrationScenario ids registration = do
     let cfg = rcCfg (lrCage registration)
         before = lrBefore registration
         key = lrKey registration
-        policy = policyIdFromPin (cfgActivePolicy cfg)
-        transaction = lrTx registration
-    require "the Lean delivery example requires a freshly booted empty registry"
+    require "the Lean lifecycle requires a freshly booted empty registry"
         (unOnChainRoot (stateRoot before) == emptyRoot)
     recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
     owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
@@ -4813,15 +4818,27 @@ checkRegistrationAgainstLean env ids registration = do
         [a, b, c, d] -> pure (a, b, c, d)
         _ -> failWith "registration context has an incomplete policy mapping"
     (funds, _) <- cg21RequestFacts (lrRequest registration)
-    let scenario = object
+    pure $ object
             [ "config" .= object
                 [ "root" .= ([] :: [Integer]), "maxFee" .= stateMaxFee before
                 , "processTime" .= stateProcessTime before, "retractTime" .= stateRetractTime before
                 , "applicationPolicy" .= application, "activePolicy" .= active
                 , "absentPolicy" .= absent, "terminalPolicy" .= terminal ]
             , "key" .= modelKey, "owner" .= owner, "recipient" .= recipient, "lovelace" .= funds ]
+
+-- The oracle's bounded example assumes a freshly booted registry. Establish
+-- this from the actual pre-fold state, not by resetting a nonempty model state.
+checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
+checkRegistrationAgainstLean env ids registration = do
+    let cfg = rcCfg (lrCage registration)
+        key = lrKey registration
+        policy = policyIdFromPin (cfgActivePolicy cfg)
+        transaction = lrTx registration
+    scenario <- registrationScenario ids registration
+    application <- observeIdentity (livePolicies ids) (PolicyIdentity (SBS.fromShort (cfgApplicationPolicy cfg)))
+    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
     oracle <- requireEnv "CONFORMANCE_LEAN_ORACLE"
-    expected <- Lean.expectedDelivery oracle scenario >>= either failWith pure
+    expected <- LeanOracle.expectedObservation oracle [] scenario >>= either failWith pure
     -- Select the output carrying the requested asset, then observe its complete
     -- non-ADA value and address. A missing/wrong asset or extra asset fails.
     output <- case [ out | out <- toList (transaction ^. bodyTxL . outputsTxBodyL)
@@ -4846,26 +4863,116 @@ checkRegistrationAgainstLean env ids registration = do
             Just "wrong-address" -> normalized owner policyId keyId quantity
             _ -> actual
         holdings = normalized addressId policyId keyId held
-        checked = Lean.compareDelivery expected observed >> Lean.compareDelivery expected holdings
+        checked = LeanOracle.compareObservation expected observed >> LeanOracle.compareObservation expected holdings
     wallets <- Identity.bindings <$> readIORef (liveWallets ids)
     policies <- Identity.bindings <$> readIORef (livePolicies ids)
     keys <- Identity.bindings <$> readIORef (liveKeys ids)
-    BSL.writeFile (envReceiptsDir env </> "registration-lean.json") $ encode $ object
-        [ "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
-        , "statementDigest" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
-        , "oracle" .= oracle, "base" .= envBase env, "transaction" .= txIdHex transaction
-        , "scenario" .= scenario, "expected" .= expected
-        , "actual" .= actual, "checkedObservation" .= observed, "holdings" .= holdings
-        , "control" .= control, "passed" .= either (const False) (const True) checked
-        , "mapping" .= object
-            [ "wallets" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (WalletIdentity bytes, identifier) <- wallets]
-            , "policies" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (PolicyIdentity bytes, identifier) <- policies]
-            , "keys" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (KeyIdentity bytes, identifier) <- keys] ] ]
+    let report = object
+            [ "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
+            , "statementDigest" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
+            , "oracle" .= oracle, "base" .= envBase env, "transaction" .= txIdHex transaction
+            , "scenario" .= scenario, "expected" .= expected
+            , "actual" .= actual, "checkedObservation" .= observed, "holdings" .= holdings
+            , "control" .= control, "passed" .= either (const False) (const True) checked
+            , "mapping" .= object
+                [ "wallets" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (WalletIdentity bytes, identifier) <- wallets]
+                , "policies" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (PolicyIdentity bytes, identifier) <- policies]
+                , "keys" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (KeyIdentity bytes, identifier) <- keys] ] ]
+    BSL.writeFile (envReceiptsDir env </> "registration-lean.json") (encode report)
+    BSL.writeFile (envReceiptsDir env </> ("registration-lean-" <> txIdHex transaction <> ".json")) (encode report)
     emit "Lean expected" (show expected)
     emit "chain observed" (show actual)
     when (observed /= actual) $ emit "control" "deliberately changed the observation presented to the Lean comparison"
     either failWith pure checked
     emit "PASS" ("delivery agrees with the executable Lean model; tx=" <> txIdHex transaction)
+
+-- The model replays the observed registration before retirement. The concrete
+-- root bounds this example to that single-key history; no state is invented.
+checkRetirementAgainstLean :: Env -> LiveIdentities -> LiveRetirement -> IO ()
+checkRetirementAgainstLean env ids retirement = do
+    let registration = ltRegistration retirement
+        key = lrKey registration
+        before = ltBeforeState retirement
+        transaction = ltTx retirement
+        source = ltSource retirement
+    registrationInput <- registrationScenario ids registration
+    require "retirement starts from a different state than the observed registration"
+        (stateRoot before == stateRoot (lrAfter registration)
+            && cg21Pins before == cg21Pins (lrAfter registration))
+    beforeLeaf <- observeSingleKeyLeaf key (unOnChainRoot (stateRoot before))
+    require "the observed registration state is not a single active key" (beforeLeaf == String "active")
+    request <- case extractCageDatum (ltRequest retirement) of
+        Just (RequestDatum observed) -> pure observed
+        _ -> failWith "retirement request datum is missing"
+    require "retirement request names a different edge or key"
+        (requestEdge request == edgeUpdateTerminal && requestKey request == key)
+    let BuiltinByteString ownerBytes = requestOwner request
+    require "retirement request names a different owner" (ownerBytes == addrKeyHashBytes genesisAddr)
+    require "retirement request changed the empty destination"
+        (requestDestination request == (BS.empty, BS.empty))
+    (funds, _) <- cg21RequestFacts (ltRequest retirement)
+    let scenario = object ["registration" .= registrationInput, "lovelace" .= funds]
+    oracle <- requireEnv "CONFORMANCE_LEAN_ORACLE"
+    expected <- LeanOracle.expectedObservation oracle ["retirement"] scenario >>= either failWith pure
+    let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
+    mint <- mapM (\(policy, name, quantity) -> observeModelAsset ids policy name quantity)
+        [(cg21PolicyBytes policy, SBS.fromShort name, quantity)
+        | (policy, names) <- Map.toList minted, (AssetName name, quantity) <- Map.toList names]
+    sourcePolicy <- either failWith pure (Base16.decode (TE.encodeUtf8 (rsPolicy source)))
+    sourceKey <- either failWith pure (Base16.decode (TE.encodeUtf8 (rsName source)))
+    sourceAsset <- observeModelAsset ids sourcePolicy sourceKey (rsQuantity source)
+    let spent = if rsOutref source `elem` map txInToText (Set.toList (transaction ^. bodyTxL . inputsTxBodyL))
+            then [sourceAsset] else []
+    leaf <- observeSingleKeyLeaf key (ltChainRoot retirement)
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    let observation minting remaining currentLeaf = object
+            [ "before" .= ltBefore retirement, "after" .= remaining
+            , "mint" .= minting, "spent" .= spent, "leaf" .= currentLeaf ]
+        actual = observation mint (ltAfter retirement) leaf
+        changedMint = [object ["policy" .= policy, "key" .= name, "quantity" .= (0 :: Integer)]
+            | Object asset <- mint
+            , Just policy <- [KM.lookup "policy" asset], Just name <- [KM.lookup "key" asset]]
+        observed = case control of
+            Just "wrong-burn" -> observation changedMint (ltAfter retirement) leaf
+            Just "token-remains" -> observation mint (ltAfter retirement + 1) leaf
+            Just "wrong-retirement-leaf" -> observation mint (ltAfter retirement) beforeLeaf
+            _ -> actual
+        checked = LeanOracle.compareObservation expected observed
+    let report = object
+            [ "theorem" .= Binding.boName (Specification.theoremBinding LeanRetirement.updateTerminalRow)
+            , "statementDigest" .= Binding.boDigest (Specification.theoremBinding LeanRetirement.updateTerminalRow)
+            , "oracle" .= oracle, "base" .= envBase env, "registration" .= txIdHex (lrTx registration)
+            , "transaction" .= txIdHex transaction, "scenario" .= scenario, "expected" .= expected
+            , "actual" .= actual, "checkedObservation" .= observed, "control" .= control
+            , "passed" .= either (const False) (const True) checked
+            , "rootBefore" .= hexT (unOnChainRoot (stateRoot before))
+            , "rootAfter" .= hexT (ltChainRoot retirement), "source" .= source ]
+    BSL.writeFile (envReceiptsDir env </> ("retirement-lean-" <> txIdHex transaction <> ".json")) (encode report)
+    emit "Lean retirement expected" (show expected)
+    emit "chain retirement observed" (show actual)
+    either failWith pure checked
+    emit "PASS" ("retirement agrees with the executable Lean model; tx=" <> txIdHex transaction)
+
+observeModelAsset :: LiveIdentities -> ByteString -> ByteString -> Integer -> IO Value
+observeModelAsset ids policy key quantity = do
+    modelPolicy <- observeIdentity (livePolicies ids) (PolicyIdentity policy)
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    pure (object ["policy" .= modelPolicy, "key" .= modelKey, "quantity" .= quantity])
+
+-- Classify the actual commitment by rebuilding each possible one-key trie.
+-- This is the concrete hash representation of a leaf, not a guessed leaf label.
+observeSingleKeyLeaf :: ByteString -> ByteString -> IO Value
+observeSingleKeyLeaf key observedRoot
+    | observedRoot == emptyRoot = pure Null
+    | otherwise = do
+        candidates <- mapM (\(label, value) -> do
+            trie <- mkPureTrie
+            root <- CageTrie.insert trie key value
+            pure (label, unRoot root))
+            [("absent", leafAbsent), ("active", leafActive), ("terminal", leafTerminal)]
+        case [label | (label, root) <- candidates, root == observedRoot] of
+            [label] -> pure (String label)
+            _ -> failWith "chain commitment is not a recognized single-key registry state"
 
 requireSameRegistry :: RowCage -> RowCage -> IO ()
 requireSameRegistry first second = do
@@ -4969,13 +5076,14 @@ retireLive env registry registration = do
     before <- activeHeldFor env cfg key
     require "retirement must start with the active token created by registration" (before == 1)
     source <- activeSourceFor env cfg key
-    _ <- bookRetirementLive env registry key
+    beforeState <- cg21State env registry
+    (_, request) <- bookRetirementLive env registry key
     transaction <- landLive env registry key edgeUpdateTerminal
     tid <- cageTid registry
     root <- withTrie (envTm env) tid CageTrie.getRoot
     held <- activeHeldFor env cfg key
     chain <- committedRootOf env registry
-    pure (LiveRetirement registration transaction root chain before held source)
+    pure (LiveRetirement registration transaction root chain before held source beforeState request)
 
 checkRetirementLive :: Env -> LiveRetirement -> Integer -> IO ()
 checkRetirementLive _env retirement expected = do
@@ -5557,11 +5665,12 @@ against `state.terminalRefusal`.
 runCG22 :: Env -> IO ()
 runCG22 env = do
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
-    let expected = if control == Just "token-remains" then 1 else 0
+    require "unknown retirement story control"
+        (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains", Just "wrong-burn", Just "wrong-retirement-leaf"])
     registry <- ensureRowCage env "story-retirement" 30_000 30_000
     comparison <- ensureRowCage env "story-unknown-key comparison" 30_000 30_000
     _ <- largestWalletUtxo (envProv env)
-    result <- runLive env (RetirementStory.storyWithRemainingTokens expected
+    result <- runLive env (RetirementStory.story
         (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
     let registration = Live.retirementRegistration result
         retired = Live.retiredRegistration result

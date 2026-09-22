@@ -57,6 +57,7 @@ main = do
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
         "run" : rest -> runDispatch rest
+        ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
         ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
         ["book", "--receipts-dir", dir] -> runBook dir Nothing
         ["book", "--receipts-dir", dir, "--output", output] -> runBook dir (Just output)
@@ -67,7 +68,7 @@ usage = do
     hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
     hPutStrLn stderr "       conformance -- find-fork-keys"
     hPutStrLn stderr "       conformance -- book --receipts-dir DIR [--output BOOK.md]"
-    hPutStrLn stderr "       conformance -- example registration --receipts-dir DIR"
+    hPutStrLn stderr "       conformance -- example registration|retirement --receipts-dir DIR"
     hPutStrLn
         stderr
         "       conformance -- run ROW... [--receipts-dir DIR]"

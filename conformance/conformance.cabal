@@ -78,6 +78,8 @@ library
     Conformance.Story.Specification
     Conformance.Story.Identity
     Conformance.Lean.Registration
+    Conformance.Lean.Retirement
+    Conformance.Lean.Oracle
     Conformance.Edge.Register
     Conformance.Edge.Retire
     Conformance.Fold.KeyedMint

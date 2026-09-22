@@ -13,7 +13,6 @@ module Conformance.Support.RegistrationReport (spec, story, insertActiveRow, con
 import Control.Monad.Operational (Program)
 import Test.Hspec (Spec)
 import Conformance.Story
-import Conformance.Edge.Register (conjuncts)
 import Conformance.Lean.Registration qualified as Lean
 import Conformance.Story.Specification (theoremBinding)
 import Conformance.Fixture.ActiveRegistration (activeHex, openHex, keyHex, keyAHex, keyBHex, walletAddr, dupTx, mintControlTx, otherName, otherAddress, otherApproval, emptyValue, unlandedTx)
@@ -192,3 +191,18 @@ story = theorem insertActiveRow $ do
                 "Rejects duplicate-registration evidence if the successful comparison transaction is absent from the run"
                 "The report must show that the successful comparison transaction was actually applied during this run." $
                     onLeg duplicate $ controlTxid unlandedTx
+
+-- Legacy source anchors for the receipt appendix; not live observations.
+conjuncts :: [String]
+conjuncts = [ "address := some r.output"
+          , "assets := [((.active, r.key), 1)]"
+          , "kindCount t.state .active r.key = 1"
+          , "mint := [((.active, r.key), 1)]"
+          , "openPolicyParameters = []"
+          , "refunds := []"
+          , "signers := []"
+          , "lovelaceCoversTip s.config lovelace = true"
+          , "destinationDatumBinds r = true"
+          , "onlyRootChanged s.config t.state.config = true"
+          , "txOf t.state r₂ lovelace = .error \"key-exists\""
+    ]

@@ -26,6 +26,7 @@ data Context reg wal = Context reg wal
 -- | The shared instruction set for the devnet runner and the book.
 data LiveI reg wal ins ret bat ref res where
     LinkedTo :: Binding -> [String] -> LiveI reg wal ins ret bat ref ()
+    CheckRetirementEffect :: ret -> LiveI reg wal ins ret bat ref ()
     CheckRegistrationDelivery :: ins -> LiveI reg wal ins ret bat ref ()
     RegisterKey :: reg -> String -> wal -> LiveI reg wal ins ret bat ref ins
     ExpectActiveToken :: ins -> wal -> Integer -> LiveI reg wal ins ret bat ref ()
@@ -126,6 +127,8 @@ renderClauseProgram program = case view program of
 
 renderAction :: LiveI String String String String String String obs -> (obs -> Story String String String String String String res) -> (String, res)
 renderAction instruction rest = case instruction of
+    CheckRetirementEffect _retirement ->
+        step "Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result." (rest ())
     CheckRegistrationDelivery _registration ->
         step "Compare the observed delivery and queried holdings with the Lean executable's result." (rest ())
     LinkedTo binding rules ->

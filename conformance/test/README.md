@@ -41,9 +41,20 @@ This deliberately increments the observed quantity supplied to the comparator;
 the Lean expectation remains unchanged. `wrong-address` and `wrong-policy`
 substitute other known identities, which must remain distinguishable.
 
-The [retirement story](../lib/Conformance/Edge/Retire.hs) and
-[batch story](../lib/Conformance/Fold/KeyedMint.hs) use the existing live backend.
-Their checks have not yet been converted to executable Lean comparisons.
+The [retirement story](../lib/Conformance/Edge/Retire.hs) now checks its
+registration and retirement through typed Lean clauses. Run it with
+`nix run --quiet .#conformance -- example retirement --receipts-dir /tmp/retirement-example`.
+The oracle replays registration, then computes the burn, witness consumption,
+remaining holdings and terminal leaf. Each observation is retained in a
+`retirement-lean-<transaction>.json` file. Registration observations also have
+per-transaction files so the two contexts remain distinguishable.
+
+`CONFORMANCE_STORY_CONTROL=wrong-burn` substitutes a zero burn in the observation
+presented to the Lean comparison after a real retirement. `token-remains` and
+`wrong-retirement-leaf` change the compared holdings and leaf respectively.
+
+The [batch story](../lib/Conformance/Fold/KeyedMint.hs) and refusal checks retain
+Haskell predicates; their executable Lean comparisons remain unfinished.
 Other theorem consumers remain missing; see the
 [correspondence inventory](../review/journey-correspondence.md).
 

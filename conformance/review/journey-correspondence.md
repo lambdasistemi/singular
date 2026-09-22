@@ -41,7 +41,7 @@ Names below have the prefix `Singular.Statements.`.
 | `read_changes_nothing` | read-back | GAP: no asset binds this statement |
 | `insert_absent_transaction_row` | request → apply (the main journey books insertAbsent) | GAP: no asset binds this statement |
 | `insert_active_transaction_row` | register (related naming-application journey; this asset uses the open registry) | `Edge.Register` — live delivery compared with executable Lean; remaining checks use Haskell predicates; report cases are appendix evidence |
-| `update_terminal_transaction_row` | retirement / retire-verify | `Edge.Retire` — live Haskell checks with a statement binding; no executable Lean comparison yet |
+| `update_terminal_transaction_row` | retirement / retire-verify | `Edge.Retire` — registration and successful retirement compared with executable Lean; refusal checks retain Haskell predicates |
 | `fold_batch_claimed_mint_by_kind_key` | GAP: no dedicated journey; conformance runner produces the two-key observation | `Fold.KeyedMint` — live batch comparison using Haskell predicates; no executable Lean comparison yet |
 
 ## All journey subjects
@@ -76,8 +76,10 @@ executables above are all the immediate `offchain/journey/*/Main.hs` entries.
 
 - `Edge.Register` binds `insert_active_transaction_row`; its delivery clause
   runs the model oracle and the real registration. See [the run evidence](registration-lean.md).
-- `Edge.Retire` binds `update_terminal_transaction_row`; its real registration,
-  retirement and refusal controls currently use Haskell checks.
+- `Edge.Retire` binds `update_terminal_transaction_row`; it compares burn,
+  witness consumption, remaining holdings and the terminal leaf with executable
+  Lean after replaying the real registration. Refusal controls retain Haskell
+  predicates; see [retirement correspondence](retirement-lean.md).
 - `Fold.KeyedMint` binds `fold_batch_claimed_mint_by_kind_key`; its real
   two-key allocation controls currently use Haskell checks.
 

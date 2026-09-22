@@ -4,21 +4,21 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `46d5d35616b0601d11e6ad6e0cf4dfbf0ad62743` (working tree had changes).
+Code revision: `e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2` (working tree had changes).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Registration passed: exactly one active token reached the requested recipient.
 
-Transaction: `ed0f946688bb5327e3cf2f1a8e57c612274f69bbd6ac6405443fdc24da5ac034`.
+Transaction: `e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df`.
 
-Code revision: `46d5d35616b0601d11e6ad6e0cf4dfbf0ad62743` (working tree had changes).
+Code revision: `e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2` (working tree had changes).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Retirement passed: the holder's active-token quantity changed from **1** to **0**, the token was burned, and the key became Terminal.
 
-Registration transaction: `45e94917bf4e182410a1312f57dcf5479c8a64743685cbc8dcd490a32d14c55b`. Retirement transaction: `076145ed10975a6d328816a4b37797de963c9ba862d3b22089ff8449f8aa7db9`.
+Registration transaction: `d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435`. Retirement transaction: `c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665`.
 
 ## Register a key and receive its active token
 
@@ -56,46 +56,43 @@ The holder first registers a key in this run. Retirement must consume and burn t
 
 Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
 
-```text
-address := some r.output
-assets := [((.active, r.key), 1)]
-kindCount t.state .active r.key = 1
-mint := [((.active, r.key), 1)]
-openPolicyParameters = []
-refunds := []
-signers := []
-lovelaceCoversTip s.config lovelace = true
-destinationDatumBinds r = true
-onlyRootChanged s.config t.state.config = true
-txOf t.state r₂ lovelace = .error "key-exists"
-```
+### The holder receives the token that will be retired
 
 - Request registration of **alice** in **retirement**, deliver to the holder wallet, and apply the request on chain.
+
+- Compare the observed delivery and queried holdings with the Lean executable's result.
 
 - Check on chain that the holder wallet holds exactly **1 active token(s)** for **alice**; check its policy, destination, mint and resulting registry state.
 
 Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `871c5df529d30357e4da7f6f9f141dc02c103bf6`. Statement digest: `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b`.
 
-```text
-kindCount s .active r.key = 1
-kindCount t.state .active r.key = 0
-mint := [((.active, r.key), -1)]
-trieGet t.state.trie r.key = .known .terminal
-txOf s' r' lovelace = .error "key-unknown"
-txOf s' r' lovelace = .error "not-booked"
-```
+### Retirement spends and burns that token and leaves the key Terminal
 
 - Request retirement of the **alice** registration just created in **retirement**. Apply it using the active token held by its recipient.
+
+- Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result.
 
 - Check that **alice** now has a Terminal leaf, the holder has **0 active token(s)** remaining, and exactly its original token was consumed and burned.
 
 - In **retirement**, establish **never-active** as Absent for the holder wallet through a real transaction, then try to retire it. Require a script rejection, compared with the successful retirement of **alice**.
 
+Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
+
+### The comparison holder receives a token in the fresh registry
+
 - Request registration of **control** in **comparison**, deliver to the holder wallet, and apply the request on chain.
+
+- Compare the observed delivery and queried holdings with the Lean executable's result.
 
 - Check on chain that the holder wallet holds exactly **1 active token(s)** for **control**; check its policy, destination, mint and resulting registry state.
 
+Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `871c5df529d30357e4da7f6f9f141dc02c103bf6`. Statement digest: `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b`.
+
+### The comparison retirement burns its own registration token
+
 - Request retirement of the **control** registration just created in **comparison**. Apply it using the active token held by its recipient.
+
+- Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result.
 
 - Check that **control** now has a Terminal leaf, the holder has **0 active token(s)** remaining, and exactly its original token was consumed and burned.
 
@@ -103,7 +100,7 @@ txOf s' r' lovelace = .error "not-booked"
 
 ## What these runs do not establish
 
-Only the first registration delivery is compared with executable Lean output. Retirement and batch allocation currently use Haskell checks tied to named statements. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.
+Registration delivery and successful retirement effects are compared with executable Lean output. The oracle replays registration before retirement; each example starts in an empty registry. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.
 
 ## Requirements inventory
 

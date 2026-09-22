@@ -1,5 +1,5 @@
 -- | Register a real key, observe its token, then exercise the refusal boundaries.
-module Conformance.Edge.Register (story, insertActiveRow, conjuncts) where
+module Conformance.Edge.Register (story, insertActiveRow) where
 
 import Conformance.Fold.KeyedMint qualified as Batch (story)
 import Conformance.Lean.Registration (insertActiveRow, registrationDelivery)
@@ -28,19 +28,3 @@ story (Context registry recipient) = do
     batch <- Batch.story registry recipient
     duplicate <- expectDuplicateRegistrationRefused registry registration fresh
     pure (RegistrationRun registry registration fresh batch duplicate)
-
--- | Legacy text anchors for receipt-validation tests and the retirement narrative.
--- These strings do not execute Lean; the live delivery check is registrationDelivery.
-conjuncts :: [String]
-conjuncts = [ "address := some r.output"
-          , "assets := [((.active, r.key), 1)]"
-          , "kindCount t.state .active r.key = 1"
-          , "mint := [((.active, r.key), 1)]"
-          , "openPolicyParameters = []"
-          , "refunds := []"
-          , "signers := []"
-          , "lovelaceCoversTip s.config lovelace = true"
-          , "destinationDatumBinds r = true"
-          , "onlyRootChanged s.config t.state.config = true"
-          , "txOf t.state r₂ lovelace = .error \"key-exists\""
-    ]
