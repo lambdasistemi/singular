@@ -25,11 +25,12 @@ import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
 import Conformance.Receipt (
-    Receipt,
+    Receipt (..),
+    Verdict (..),
     currentBase,
     loadReceipts,
-    receiptRow,
  )
+import Conformance.Book (renderBook)
 import Conformance.Rows (
     loadRows,
     renderInventory,
@@ -56,12 +57,18 @@ main = do
         ["list"] -> runList Nothing
         ["list", "--receipts", dir] -> runList (Just dir)
         "run" : rest -> runDispatch rest
+        ["example", "retirement", "--receipts-dir", dir] -> runGuarded ["CG22"] dir
+        ["example", "registration", "--receipts-dir", dir] -> runGuarded ["CG21"] dir
+        ["book", "--receipts-dir", dir] -> runBook dir Nothing
+        ["book", "--receipts-dir", dir, "--output", output] -> runBook dir (Just output)
         _ -> usage
 
 usage :: IO ()
 usage = do
     hPutStrLn stderr "usage: conformance -- list [--receipts DIR]"
     hPutStrLn stderr "       conformance -- find-fork-keys"
+    hPutStrLn stderr "       conformance -- book --receipts-dir DIR [--output BOOK.md]"
+    hPutStrLn stderr "       conformance -- example registration|retirement --receipts-dir DIR"
     hPutStrLn
         stderr
         "       conformance -- run ROW... [--receipts-dir DIR]"
@@ -72,6 +79,23 @@ usage = do
         stderr
         "env:   CONFORMANCE_CONTROL=wrong-reason|false-claim (run control)"
     exitFailure
+
+-- | Execute both chapters first. A book cannot be generated from fixtures or
+-- an old receipt directory supplied in place of an actual run.
+runBook :: FilePath -> Maybe FilePath -> IO ()
+runBook dir output = do
+    runGuarded ["CG21", "CG22"] dir
+    receipts <- loadReceipts dir >>= either fail pure
+    let chapters = filter (\r -> receiptRow r `elem` ["CG21", "CG22"]) receipts
+    if length chapters /= 2 || any ((/= AgreesWithModel) . receiptVerdict) chapters
+        then fail "the running book requires both successful live chapters"
+        else do
+            path <- getDataFileName "rows.json"
+            rows <- loadRows path >>= either fail pure
+            case output of
+                Nothing -> putStrLn "Both live chapters passed."
+                Just target -> writeFile target (renderBook rows chapters)
+            putStrLn ("Live run receipts: " <> dir)
 
 runDispatch :: [String] -> IO ()
 runDispatch rest = case break (== "--receipts-dir") rest of

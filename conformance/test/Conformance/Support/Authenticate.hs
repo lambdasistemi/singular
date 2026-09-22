@@ -1,5 +1,5 @@
 {- |
-Module      : Conformance.AuthenticateSpec
+Module      : Conformance.Support.Authenticate
 Description : Canonical-authentication decision tests (issue #69)
 
 The rival fixtures below are the shapes the devnet rows meet: a
@@ -9,7 +9,7 @@ weak authenticator's designed acceptance of the rival is itself
 asserted: it is the CA03 control, and a control that could not
 accept would prove nothing.
 -}
-module Conformance.AuthenticateSpec (spec) where
+module Conformance.Support.Authenticate (spec) where
 
 import Data.Map.Strict qualified as Map
 import Test.Hspec (
@@ -27,7 +27,7 @@ import Conformance.Authenticate (
  )
 
 spec :: Spec
-spec = describe "Authenticate" $ do
+spec = describe "Appendix: recognising the intended registry" $ do
     let policy = "policy-id-bytes"
         derived = "derived-name-bytes"
         canonical =
@@ -36,28 +36,28 @@ spec = describe "Authenticate" $ do
             Map.singleton policy (Map.singleton "rival-seed-name" 1)
         forged = Map.empty
 
-    it "accepts the canonical registry: policy, derived name, quantity one" $
+    it "Recognises the registry when its token has the expected policy, calculated name and quantity one" $
         authenticate policy derived canonical `shouldBe` AuthAccept
 
-    it "rejects a rival on the derived name, policy present" $
+    it "Rejects a different registry token even when it uses the expected policy" $
         authenticate policy derived rival
             `shouldBe` AuthReject NameMismatch
 
-    it "rejects a forged output: no asset under the canonical policy" $
+    it "Rejects an output with no token under the expected policy" $
         authenticate policy derived forged
             `shouldBe` AuthReject PolicyAbsent
 
-    it "rejects a wrong quantity on the derived name" $ do
+    it "Rejects an output holding two registry tokens instead of one" $ do
         let two = Map.singleton policy (Map.singleton derived 2)
         authenticate policy derived two
             `shouldBe` AuthReject (QuantityNotOne 2)
 
-    it "the weak control accepts the rival: policy+address cannot exclude it" $
+    it "Shows that checking only the policy mistakenly accepts a different registry token" $
         authenticateWeak policy rival `shouldBe` AuthAccept
 
-    it "the weak control still rejects the forged output" $
+    it "Even the policy-only check rejects an output with no registry token" $
         authenticateWeak policy forged `shouldBe` AuthReject PolicyAbsent
 
-    it "weak and strong agree on the canonical registry" $ do
+    it "Both checks recognise the intended registry token" $ do
         authenticate policy derived canonical `shouldBe` AuthAccept
         authenticateWeak policy canonical `shouldBe` AuthAccept

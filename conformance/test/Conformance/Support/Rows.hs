@@ -1,9 +1,9 @@
 {- |
-Module      : Conformance.RowsSpec
+Module      : Conformance.Support.Rows
 Description : Inventory loading and denominator enforcement tests
 License     : Apache-2.0
 -}
-module Conformance.RowsSpec (spec) where
+module Conformance.Support.Rows (spec) where
 
 import Data.Aeson (eitherDecode)
 import Data.ByteString.Lazy qualified as BSL
@@ -31,8 +31,8 @@ import Conformance.Rows (
 import Paths_conformance (getDataFileName)
 
 spec :: Spec
-spec = describe "Rows" $ do
-    it "loads the committed inventory: every row present, owned counted, ids unique" $ do
+spec = describe "Appendix: keeping the published requirements complete" $ do
+    it "Includes every expected requirement once and counts the requirements owned by the registry" $ do
         rows <- loadCommitted
         -- Both sides are read, never written twice: `rows` is the
         -- committed artifact, `expectedRowCount` the pinned count.
@@ -43,20 +43,20 @@ spec = describe "Rows" $ do
             (filter ((/= OutOfScope) . rowState) rows)
             `shouldBe` ownedDenominator
 
-    it "records CK06 out of scope under cardano-keri" $ do
+    it "Identifies checkpoint policy as outside the registry's responsibilities" $ do
         rows <- loadCommitted
         case filter ((== "CK06") . rowId) rows of
             [ck06] -> rowState ck06 `shouldBe` OutOfScope
-            _ -> expectationFailure "inventory has no single CK06"
+            _ -> expectationFailure "inventory has no single checkpoint-policy requirement"
 
-    it "carries no executed rows in the committed file" $ do
+    it "Does not store claims of completed tests in the requirements file" $ do
         rows <- loadCommitted
         filter (isExecutedPlan . rowState) rows `shouldBe` []
 
-    it "rejects an empty inventory" $
+    it "Rejects an empty list of requirements" $
         validateInventory [] `shouldSatisfy` isLeft
 
-    it "rejects a shortened inventory naming the count" $ do
+    it "Rejects a missing requirement and reports the remaining count" $ do
         rows <- loadCommitted
         case validateInventory (drop 1 rows) of
             Left err ->
@@ -65,7 +65,7 @@ spec = describe "Rows" $ do
                 expectationFailure
                     ("a " <> show (expectedRowCount - 1) <> "-row inventory validated")
 
-    it "rejects duplicate row ids" $ do
+    it "Rejects two requirements with the same identifier" $ do
         rows <- loadCommitted
         case rows of
             [] -> expectationFailure "committed inventory is empty"
@@ -73,11 +73,11 @@ spec = describe "Rows" $ do
                 validateInventory (r : rows)
                     `shouldSatisfy` isLeft
 
-    it "rejects an unknown row state" $
+    it "Rejects an unrecognised requirement status" $
         (eitherDecode badStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 
-    it "rejects the executed state in rows.json" $
+    it "Rejects a completed-test claim typed directly into the requirements file" $
         (eitherDecode executedStateRow :: Either String Row)
             `shouldSatisfy` isLeft
 

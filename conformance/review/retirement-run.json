@@ -1,0 +1,1070 @@
+{
+  "basis": {
+    "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+    "blueprint": "/nix/store/ak23z27s6a36jzm2vzzkm83bfgl6i4f0-mpf-plutus-blueprint-0.0.0",
+    "controlPackage": "/nix/store/5b94pxvnq7h385y5z47nf619lf7g8vi6-conformance",
+    "note": "Local working-tree evidence, not exact-final-commit remote CI. After the public book run began, the obsolete storyWithRemainingTokens wrapper was removed; its normal story was unchanged. The final package compiled and ran both controls. The final renderer exactly reproduced the public book from its successful receipts.",
+    "scope": "Interim per-theorem observation; not the generic driver and complete-boundary replay design.",
+    "workingTreeHadChanges": true
+  },
+  "controls": {
+    "wrong-burn": {
+      "exitStatus": 1,
+      "registration": [
+        {
+          "actual": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+          "checkedObservation": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "control": "wrong-burn",
+          "expected": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "holdings": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "mapping": {
+            "keys": [
+              {
+                "bytes": "616c696365",
+                "id": 1
+              }
+            ],
+            "policies": [
+              {
+                "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "id": 2
+              },
+              {
+                "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+                "id": 1
+              },
+              {
+                "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+                "id": 4
+              },
+              {
+                "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+                "id": 3
+              }
+            ],
+            "wallets": [
+              {
+                "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+                "id": 1
+              }
+            ]
+          },
+          "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+          "passed": true,
+          "scenario": {
+            "config": {
+              "absentPolicy": 3,
+              "activePolicy": 2,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 4
+            },
+            "key": 1,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          },
+          "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+          "theorem": "Singular.Statements.insert_active_transaction_row",
+          "transaction": "187fa440e2290067a807f686ea72148b1579716016b3f15c9e6b0531456386bc"
+        }
+      ],
+      "retirement": {
+        "actual": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 0
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "control": "wrong-burn",
+        "expected": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": false,
+        "registration": "187fa440e2290067a807f686ea72148b1579716016b3f15c9e6b0531456386bc",
+        "rootAfter": "8aa350349a4964fe0ee54c03cac2d5b33db04e0c98a302cf21861dcdaa7f4452",
+        "rootBefore": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+        "scenario": {
+          "lovelace": 4000000,
+          "registration": {
+            "config": {
+              "absentPolicy": 3,
+              "activePolicy": 2,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 4
+            },
+            "key": 1,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          }
+        },
+        "source": {
+          "name": "616c696365",
+          "outref": "187fa440e2290067a807f686ea72148b1579716016b3f15c9e6b0531456386bc#TxIx {unTxIx = 1}",
+          "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "quantity": 1
+        },
+        "statementDigest": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+        "theorem": "Singular.Statements.update_terminal_transaction_row",
+        "transaction": "d234622fa60bfa1a046c50e325a70535ed39054fe96edf5da388d3da156ab6d4"
+      }
+    },
+    "wrong-retirement-leaf": {
+      "exitStatus": 1,
+      "registration": [
+        {
+          "actual": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+          "checkedObservation": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "control": "wrong-retirement-leaf",
+          "expected": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "holdings": {
+            "address": 1,
+            "key": 1,
+            "policy": 2,
+            "quantity": 1
+          },
+          "mapping": {
+            "keys": [
+              {
+                "bytes": "616c696365",
+                "id": 1
+              }
+            ],
+            "policies": [
+              {
+                "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "id": 2
+              },
+              {
+                "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+                "id": 1
+              },
+              {
+                "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+                "id": 4
+              },
+              {
+                "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+                "id": 3
+              }
+            ],
+            "wallets": [
+              {
+                "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+                "id": 1
+              }
+            ]
+          },
+          "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+          "passed": true,
+          "scenario": {
+            "config": {
+              "absentPolicy": 3,
+              "activePolicy": 2,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 4
+            },
+            "key": 1,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          },
+          "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+          "theorem": "Singular.Statements.insert_active_transaction_row",
+          "transaction": "c481dc5201ced5f585b16bb0db66eb393e6779bde477920486e671482489bcf3"
+        }
+      ],
+      "retirement": {
+        "actual": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "after": 0,
+          "before": 1,
+          "leaf": "active",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "control": "wrong-retirement-leaf",
+        "expected": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": false,
+        "registration": "c481dc5201ced5f585b16bb0db66eb393e6779bde477920486e671482489bcf3",
+        "rootAfter": "8aa350349a4964fe0ee54c03cac2d5b33db04e0c98a302cf21861dcdaa7f4452",
+        "rootBefore": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+        "scenario": {
+          "lovelace": 4000000,
+          "registration": {
+            "config": {
+              "absentPolicy": 3,
+              "activePolicy": 2,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 4
+            },
+            "key": 1,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          }
+        },
+        "source": {
+          "name": "616c696365",
+          "outref": "c481dc5201ced5f585b16bb0db66eb393e6779bde477920486e671482489bcf3#TxIx {unTxIx = 1}",
+          "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "quantity": 1
+        },
+        "statementDigest": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+        "theorem": "Singular.Statements.update_terminal_transaction_row",
+        "transaction": "5853c0909e653743cfc75c344006850dd794d701b14e6edbb192793d4ab710a6"
+      }
+    }
+  },
+  "publicBook": {
+    "appendixExamples": 133,
+    "command": "nix run --quiet .#conformance-tests -- --book BOOK.md",
+    "cwd": "conformance",
+    "exitStatus": 0,
+    "receipts": [
+      {
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "blueprint": "state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa",
+        "cpu": 381634134,
+        "derivation": null,
+        "dirty": true,
+        "edge": {
+          "activePolicy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+          "approvalName": "d05293fe0a23ab69423f9422faa5ed9fb53f7690eccc36533359daed2d3f590b",
+          "approvalRecomputed": "d05293fe0a23ab69423f9422faa5ed9fb53f7690eccc36533359daed2d3f590b",
+          "configAfter": [
+            "1000000",
+            "30000",
+            "30000",
+            "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+            "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+            "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+            "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d"
+          ],
+          "configBefore": [
+            "1000000",
+            "30000",
+            "30000",
+            "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+            "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+            "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+            "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d"
+          ],
+          "delivered": [
+            {
+              "name": "616c696365",
+              "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+              "quantity": 1
+            }
+          ],
+          "duplicate": {
+            "claimedMint": null,
+            "controlMint": null,
+            "controlTxid": "40d6a66627926d37139105e539fa34e76778b838901246bc7fdd8476be9a870b",
+            "distinguisher": "the committed trie already binds this key",
+            "entailedMint": null,
+            "hashes": [
+              "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5"
+            ],
+            "keys": [
+              "616c696365"
+            ],
+            "trace": null,
+            "txid": "a98ee2a77aaa3aa9333ce917cba0cd371d6e3585e47e4d0cffecc2976e5950c0"
+          },
+          "foldTxid": "e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df",
+          "key": "616c696365",
+          "keyedMint": {
+            "claimedMint": [
+              {
+                "name": "6361726f6c",
+                "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "quantity": 2
+              }
+            ],
+            "controlMint": [
+              {
+                "name": "6361726f6c",
+                "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "quantity": 1
+              },
+              {
+                "name": "6461766964",
+                "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "quantity": 1
+              }
+            ],
+            "controlTxid": "c94e10f469c1caf031db6f1762b64fb4706b726f51905d6e9f6f06acbf17d4ac",
+            "distinguisher": "claimed both units at one key; the edges entail one at each",
+            "entailedMint": [
+              {
+                "name": "6361726f6c",
+                "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "quantity": 1
+              },
+              {
+                "name": "6461766964",
+                "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+                "quantity": 1
+              }
+            ],
+            "hashes": [
+              "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5"
+            ],
+            "keys": [
+              "6361726f6c",
+              "6461766964"
+            ],
+            "trace": null,
+            "txid": "15476adf668a4823823763b6b11e887c62d318023d439c656fe03d1c5f6e952f"
+          },
+          "maxFee": 1000000,
+          "minted": [
+            {
+              "name": "616c696365",
+              "policy": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+              "quantity": 1
+            }
+          ],
+          "observedAddress": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+          "openParameters": 0,
+          "openPolicy": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+          "refunds": [],
+          "requestLovelace": 4000000,
+          "requestedAddress": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+          "sequence": [
+            {
+              "committed": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+              "rootAfter": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+              "rootBefore": "0000000000000000000000000000000000000000000000000000000000000000",
+              "txid": "e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df"
+            },
+            {
+              "committed": "395834ff004fbc966cd94dfda3e663a41c26c8b75c946108970d1fe2f037cd8e",
+              "rootAfter": "395834ff004fbc966cd94dfda3e663a41c26c8b75c946108970d1fe2f037cd8e",
+              "rootBefore": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+              "txid": "40d6a66627926d37139105e539fa34e76778b838901246bc7fdd8476be9a870b"
+            },
+            {
+              "committed": "294ed0f3552e2cfac13a29ecba488b5940988dc00a5bca7dab6e6ecd5866003a",
+              "rootAfter": "294ed0f3552e2cfac13a29ecba488b5940988dc00a5bca7dab6e6ecd5866003a",
+              "rootBefore": "395834ff004fbc966cd94dfda3e663a41c26c8b75c946108970d1fe2f037cd8e",
+              "txid": "c94e10f469c1caf031db6f1762b64fb4706b726f51905d6e9f6f06acbf17d4ac"
+            }
+          ],
+          "signers": []
+        },
+        "mem": 1160402,
+        "node": "cardano-node 10.7.0 - linux-x86_64 - ghc-9.6",
+        "outcome": "accepted",
+        "partial": null,
+        "refusal": null,
+        "rejected": null,
+        "retirement": null,
+        "row": "CG21",
+        "transactions": [
+          "e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df"
+        ],
+        "txSize": 1199,
+        "venue": "node-submit",
+        "verdict": "agrees-with-model"
+      },
+      {
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "blueprint": "state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa",
+        "cpu": 402956277,
+        "derivation": null,
+        "dirty": true,
+        "edge": null,
+        "mem": 1200234,
+        "node": "cardano-node 10.7.0 - linux-x86_64 - ghc-9.6",
+        "outcome": "accepted",
+        "partial": null,
+        "refusal": null,
+        "rejected": null,
+        "retirement": {
+          "absent": {
+            "claimedMint": null,
+            "controlMint": null,
+            "controlTxid": "c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665",
+            "distinguisher": "the control retired a key that IS Active in this same cage; this one was witnessed Absent",
+            "entailedMint": null,
+            "hashes": [
+              "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
+              "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+              "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2"
+            ],
+            "keys": [
+              "6e657665722d616374697665"
+            ],
+            "trace": null,
+            "txid": "e41d65de7f134d9682761d9b943f5c4ec7b6fbe3d1f5a55ef038961fdf6e8d34"
+          },
+          "activePolicy": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+          "insertTxid": "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435",
+          "key": "616c696365",
+          "leaf": "Terminal",
+          "mint": [
+            {
+              "name": "616c696365",
+              "policy": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+              "quantity": -1
+            }
+          ],
+          "quantities": {
+            "after": 0,
+            "before": 1
+          },
+          "retireTxid": "c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665",
+          "roots": {
+            "active": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+            "beforeInsert": "0000000000000000000000000000000000000000000000000000000000000000",
+            "terminal": "8aa350349a4964fe0ee54c03cac2d5b33db04e0c98a302cf21861dcdaa7f4452"
+          },
+          "source": {
+            "name": "616c696365",
+            "outref": "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435#TxIx {unTxIx = 1}",
+            "policy": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+            "quantity": 1
+          },
+          "unknown": {
+            "claimedMint": null,
+            "controlMint": null,
+            "controlTxid": "360c7fc8884b06eadbbfec02fe05d6cc387fa4fb2cd374fba78c4b8d18c901ca",
+            "distinguisher": "the control retired a key that IS Active in this same cage; this one was never inserted at all",
+            "entailedMint": null,
+            "hashes": [
+              "492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5",
+              "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+              "84f2508f9156d5255e6ee40c10cb971a41d0f70b48f9774cbf7a247f"
+            ],
+            "keys": [
+              "6e657665722d72656769737465726564"
+            ],
+            "trace": null,
+            "txid": "ba41148bb4bb9b0ecfe451f1e5749dcf0ecd553035591f03fda62bd6415b8967"
+          }
+        },
+        "row": "CG22",
+        "transactions": [
+          "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435",
+          "c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665",
+          "360c7fc8884b06eadbbfec02fe05d6cc387fa4fb2cd374fba78c4b8d18c901ca",
+          "ba41148bb4bb9b0ecfe451f1e5749dcf0ecd553035591f03fda62bd6415b8967",
+          "e41d65de7f134d9682761d9b943f5c4ec7b6fbe3d1f5a55ef038961fdf6e8d34"
+        ],
+        "txSize": 1158,
+        "venue": "node-submit",
+        "verdict": "agrees-with-model"
+      }
+    ],
+    "registration": [
+      {
+        "actual": {
+          "address": 1,
+          "key": 2,
+          "policy": 5,
+          "quantity": 1
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "address": 1,
+          "key": 2,
+          "policy": 5,
+          "quantity": 1
+        },
+        "control": null,
+        "expected": {
+          "address": 1,
+          "key": 2,
+          "policy": 5,
+          "quantity": 1
+        },
+        "holdings": {
+          "address": 1,
+          "key": 2,
+          "policy": 5,
+          "quantity": 1
+        },
+        "mapping": {
+          "keys": [
+            {
+              "bytes": "616c696365",
+              "id": 1
+            },
+            {
+              "bytes": "636f6e74726f6c",
+              "id": 2
+            }
+          ],
+          "policies": [
+            {
+              "bytes": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+              "id": 2
+            },
+            {
+              "bytes": "2d49e99a6ea262c9efb5151b618fc60bc87a44645c1029dd976a1e72",
+              "id": 7
+            },
+            {
+              "bytes": "31e23f20931cf5df22b6af1a2b8301819af4cca8679f127315cbdd81",
+              "id": 6
+            },
+            {
+              "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+              "id": 1
+            },
+            {
+              "bytes": "84f2508f9156d5255e6ee40c10cb971a41d0f70b48f9774cbf7a247f",
+              "id": 5
+            },
+            {
+              "bytes": "ae67d0901a0918d0fc5bc9a0e91dc47bc0b54062121d4ff0985e0561",
+              "id": 3
+            },
+            {
+              "bytes": "d331a8e9809624876921459652280538e70ced69141751770341e4d7",
+              "id": 4
+            }
+          ],
+          "wallets": [
+            {
+              "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+              "id": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": true,
+        "scenario": {
+          "config": {
+            "absentPolicy": 6,
+            "activePolicy": 5,
+            "applicationPolicy": 1,
+            "maxFee": 1000000,
+            "processTime": 30000,
+            "retractTime": 30000,
+            "root": [],
+            "terminalPolicy": 7
+          },
+          "key": 2,
+          "lovelace": 4000000,
+          "owner": 1,
+          "recipient": 1
+        },
+        "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+        "theorem": "Singular.Statements.insert_active_transaction_row",
+        "transaction": "02008c3aa517849a14d43bd5c3bb864aefd1340a2c6088f9348a4cd6c790bd48"
+      },
+      {
+        "actual": {
+          "address": 1,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "address": 1,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "control": null,
+        "expected": {
+          "address": 1,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "holdings": {
+          "address": 1,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "mapping": {
+          "keys": [
+            {
+              "bytes": "616c696365",
+              "id": 1
+            }
+          ],
+          "policies": [
+            {
+              "bytes": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+              "id": 2
+            },
+            {
+              "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+              "id": 1
+            },
+            {
+              "bytes": "ae67d0901a0918d0fc5bc9a0e91dc47bc0b54062121d4ff0985e0561",
+              "id": 3
+            },
+            {
+              "bytes": "d331a8e9809624876921459652280538e70ced69141751770341e4d7",
+              "id": 4
+            }
+          ],
+          "wallets": [
+            {
+              "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+              "id": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": true,
+        "scenario": {
+          "config": {
+            "absentPolicy": 3,
+            "activePolicy": 2,
+            "applicationPolicy": 1,
+            "maxFee": 1000000,
+            "processTime": 30000,
+            "retractTime": 30000,
+            "root": [],
+            "terminalPolicy": 4
+          },
+          "key": 1,
+          "lovelace": 4000000,
+          "owner": 1,
+          "recipient": 1
+        },
+        "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+        "theorem": "Singular.Statements.insert_active_transaction_row",
+        "transaction": "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435"
+      },
+      {
+        "actual": {
+          "address": 2,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "address": 2,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "control": null,
+        "expected": {
+          "address": 2,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "holdings": {
+          "address": 2,
+          "key": 1,
+          "policy": 2,
+          "quantity": 1
+        },
+        "mapping": {
+          "keys": [
+            {
+              "bytes": "616c696365",
+              "id": 1
+            }
+          ],
+          "policies": [
+            {
+              "bytes": "2622efb11382d8eb3af0e8d33f29bc0d870cb31ed08af6e523fb17eb",
+              "id": 2
+            },
+            {
+              "bytes": "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9",
+              "id": 1
+            },
+            {
+              "bytes": "8c30c6a0bf45e90f1ffb96d68ca7564012535bce3312e3479514e02d",
+              "id": 4
+            },
+            {
+              "bytes": "ee1e096be552604c6d0f508f4dab85d08295b2ae32bab016d053a0eb",
+              "id": 3
+            }
+          ],
+          "wallets": [
+            {
+              "bytes": "60c8b220bd0f03dd00fc17af8b4ef1732eee7870c95b1170db3411d8c6",
+              "id": 2
+            },
+            {
+              "bytes": "60f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6",
+              "id": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": true,
+        "scenario": {
+          "config": {
+            "absentPolicy": 3,
+            "activePolicy": 2,
+            "applicationPolicy": 1,
+            "maxFee": 1000000,
+            "processTime": 30000,
+            "retractTime": 30000,
+            "root": [],
+            "terminalPolicy": 4
+          },
+          "key": 1,
+          "lovelace": 4000000,
+          "owner": 1,
+          "recipient": 2
+        },
+        "statementDigest": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+        "theorem": "Singular.Statements.insert_active_transaction_row",
+        "transaction": "e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df"
+      }
+    ],
+    "retirement": [
+      {
+        "actual": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": 1
+            }
+          ]
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": 1
+            }
+          ]
+        },
+        "control": null,
+        "expected": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 2,
+              "policy": 5,
+              "quantity": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": true,
+        "registration": "02008c3aa517849a14d43bd5c3bb864aefd1340a2c6088f9348a4cd6c790bd48",
+        "rootAfter": "45042761f7b148255cf953e558d4ebae4d4ee802ecf9245dae6c416632ffbd50",
+        "rootBefore": "efb5ae839a5e94c7b6921f82ed43be24c604012aaefc71b56c26f232b4dfb72e",
+        "scenario": {
+          "lovelace": 4000000,
+          "registration": {
+            "config": {
+              "absentPolicy": 6,
+              "activePolicy": 5,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 7
+            },
+            "key": 2,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          }
+        },
+        "source": {
+          "name": "636f6e74726f6c",
+          "outref": "02008c3aa517849a14d43bd5c3bb864aefd1340a2c6088f9348a4cd6c790bd48#TxIx {unTxIx = 1}",
+          "policy": "84f2508f9156d5255e6ee40c10cb971a41d0f70b48f9774cbf7a247f",
+          "quantity": 1
+        },
+        "statementDigest": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+        "theorem": "Singular.Statements.update_terminal_transaction_row",
+        "transaction": "360c7fc8884b06eadbbfec02fe05d6cc387fa4fb2cd374fba78c4b8d18c901ca"
+      },
+      {
+        "actual": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "base": "e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2",
+        "checkedObservation": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "control": null,
+        "expected": {
+          "after": 0,
+          "before": 1,
+          "leaf": "terminal",
+          "mint": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": -1
+            }
+          ],
+          "spent": [
+            {
+              "key": 1,
+              "policy": 2,
+              "quantity": 1
+            }
+          ]
+        },
+        "oracle": "/nix/store/ppbbdj66ya8jjywd17bq5fs4rjgfkbmz-registration-lean-oracle/bin/registration-oracle",
+        "passed": true,
+        "registration": "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435",
+        "rootAfter": "8aa350349a4964fe0ee54c03cac2d5b33db04e0c98a302cf21861dcdaa7f4452",
+        "rootBefore": "c35baac1ae86c6a791e4de21d571b5eddedd2cc9cf6ac4a34cefe807a13b088f",
+        "scenario": {
+          "lovelace": 4000000,
+          "registration": {
+            "config": {
+              "absentPolicy": 3,
+              "activePolicy": 2,
+              "applicationPolicy": 1,
+              "maxFee": 1000000,
+              "processTime": 30000,
+              "retractTime": 30000,
+              "root": [],
+              "terminalPolicy": 4
+            },
+            "key": 1,
+            "lovelace": 4000000,
+            "owner": 1,
+            "recipient": 1
+          }
+        },
+        "source": {
+          "name": "616c696365",
+          "outref": "d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435#TxIx {unTxIx = 1}",
+          "policy": "07a0933cccecc0fa1afc7704453cf4ec052a13554a79f28c1ad546d2",
+          "quantity": 1
+        },
+        "statementDigest": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+        "theorem": "Singular.Statements.update_terminal_transaction_row",
+        "transaction": "c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665"
+      }
+    ]
+  }
+}

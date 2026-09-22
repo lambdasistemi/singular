@@ -1,16 +1,25 @@
-# Singular consumer conformance (issue #63)
+# The registry's promises and evidence
 
-Row runner for epic 18: executes the generic registry operations the
-naming demonstration can never exercise against a real devnet, with
-attributable refusals, executing negative controls and measurements
-against the devnet protocol maxima.
+A registry commits a map of keys to a root. Requests ask it to change a key;
+folds apply those requests. A consumer needs to know what this registry
+promises, what has been demonstrated, and what remains uncovered.
+
+Read [the product book](BOOK.md), then follow [the test reading path](test/README.md)
+from registration to batch behavior. The stories are generated from the same
+DSL programs that execute. The appendix checks our evidence machinery.
+
+The book distinguishes receipt validation from chain execution. To gather
+new chain evidence, use the runner below. Row identifiers here are command
+arguments; the book uses the requirements' own words.
+
+## Run against a devnet
 
 ```sh
 nix run ./conformance#conformance -- list
 nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05
 ```
 
-`list` prints the complete 41-row inventory from `rows.json` with each
+`list` prints the complete 44-row inventory from `rows.json` with each
 row's state (`executed` / `bound-elsewhere` / `uncovered` /
 `out-of-scope`). `run` executes rows against a real devnet; the
 blueprint comes from the caller at run time:
@@ -24,7 +33,7 @@ The runner sets its own unique `TMPDIR` before starting a node and
 never touches the default path, so concurrent devnet lanes on one host
 keep their databases.
 
-`rows.json` carries the complete inventory: the 40 owned consumer rows
+`rows.json` carries the complete inventory: the 43 owned consumer rows
 plus CK06 (cardano-keri's checkpoint policy), recorded as out-of-scope
 so the boundary is visible. `rows.json` never carries `executed` —
 that state is computed from run receipts, never typed. A `run` writes
@@ -40,3 +49,11 @@ nix run --quiet .#conformance -- list --receipts ./out
 (`CONFORMANCE_RECEIPTS=DIR` when the flag is absent; default none.)
 CK06 is out of scope and recorded in `docs/consumer-conformance.md`,
 never claimed.
+
+## Registration checked against executable Lean
+
+The [registration story](lib/Conformance/Edge/Register.hs) receives its context
+from the caller and checks the real delivery against a packaged Lean executable.
+See [the example and its failing control](test/README.md). This first comparison
+covers delivery to the requested recipient; it does not establish full theorem
+coverage or replace the other live checks.

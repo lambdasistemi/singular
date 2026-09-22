@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
-Module      : Conformance.EdgeFixtures
+Module      : Conformance.Fixture.ActiveRegistration
 Description : The complete receipt artifact and its JSON mutations
 License     : Apache-2.0
 
@@ -19,7 +19,12 @@ than listed, and the extent is asserted at its known size before any
 mutant runs, so a fixture broken for an unrelated reason cannot make
 every mutant pass for the wrong reason.
 -}
-module Conformance.EdgeFixtures (
+module Conformance.Fixture.ActiveRegistration (
+    otherName,
+    otherAddress,
+    otherApproval,
+    emptyValue,
+    unlandedTx,
     activeAsset,
     activeHex,
     approvalHex,
@@ -28,7 +33,6 @@ module Conformance.EdgeFixtures (
     completeEdge,
     completeReceipt,
     configPins,
-    dirCounter,
     duplicateLeg,
     dupControlTx,
     dupTx,
@@ -61,21 +65,16 @@ module Conformance.EdgeFixtures (
     stateScriptHex,
     walletAddr,
     withEdge,
+    withScopedReceiptDir,
 ) where
 
 import Data.Aeson (Value (..), encode, object, toJSON, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
-import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.List (sort)
-import System.Directory (
-    createDirectoryIfMissing,
-    getTemporaryDirectory,
-    removeDirectoryRecursive,
- )
 import System.FilePath ((</>))
-import System.IO.Unsafe (unsafePerformIO)
+import System.IO.Temp (withSystemTempDirectory)
 import Paths_conformance (getDataFileName)
 
 import Conformance.Receipt (loadReceipts)
@@ -221,7 +220,7 @@ keyedMintLeg =
         , ("controlMint", entailedMint)
         ]
 
-{- | The complete CG21 edge observation: the fold, every fine conjunct
+{- | The complete active-registration observation: the fold, every fine conjunct
 of @insert_active_transaction_row@, the landed-fold sequence, and both
 refusal legs with their accepting controls.
 -}
@@ -255,7 +254,7 @@ completeEdge =
         , "keyedMint" .= keyedMintLeg
         ]
 
--- | The CG21 receipt the runner writes, with a complete observation.
+-- | The active-registration receipt the runner writes, with a complete observation.
 completeReceipt :: Value
 completeReceipt =
     object
@@ -343,21 +342,23 @@ complete.
 optionalLegKeys :: [String]
 optionalLegKeys = ["trace"]
 
+{- | Run an action in a temporary directory that belongs to this example alone.
+
+The operating system picks the name, so a second process running the same
+example cannot land on it, and the directory is released on the way out whether
+the action returns or throws. A counter kept beside the fixture could do
+neither: every process starts one at zero, and a release written after the
+action is skipped when the action fails.
+-}
+withScopedReceiptDir :: (FilePath -> IO a) -> IO a
+withScopedReceiptDir = withSystemTempDirectory "conformance-edge-spec"
+
 -- | Write one receipt into a fresh directory and load it.
 loadOne :: Value -> IO (Either String Int)
-loadOne receipt = do
-    tmp <- getTemporaryDirectory
-    n <- atomicModifyIORef' dirCounter (\i -> (i + 1, i))
-    let dir = tmp </> ("conformance-edge-spec-" <> show n)
-    createDirectoryIfMissing True dir
+loadOne receipt = withScopedReceiptDir $ \dir -> do
     BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
     result <- loadReceipts dir
-    removeDirectoryRecursive dir
     pure (fmap length result)
-
-dirCounter :: IORef Int
-dirCounter = unsafePerformIO (newIORef 0)
-{-# NOINLINE dirCounter #-}
 
 -- | Load the committed fixture receipts through the real loader. Both
 -- rows in @test/fixtures/receipts@ are valid, so this genuinely
@@ -368,3 +369,23 @@ loadTwoFixtures = do
     dir <- getDataFileName "test/fixtures/receipts"
     fmap length <$> loadReceipts dir
 
+
+-- | A contrasting value for a refused observation.
+otherName :: Value
+otherName = String "6f74686572"
+
+-- | A contrasting value for a refused observation.
+otherAddress :: Value
+otherAddress = String "60ffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+-- | A contrasting value for a refused observation.
+otherApproval :: Value
+otherApproval = String "00112233445566778899001122334455667788990011223344556677"
+
+-- | A contrasting value for a refused observation.
+emptyValue :: Value
+emptyValue = String ""
+
+-- | A contrasting value for a refused observation.
+unlandedTx :: Value
+unlandedTx = String "ff66666666666666666666666666666666666666666666666666666666666666"
