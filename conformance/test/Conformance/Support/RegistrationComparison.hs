@@ -97,6 +97,78 @@ raiseMintQuantity value = case value of
         _ -> error "mint is not an array"
     _ -> error "observations are not an object"
 
+
+-- | Where a value sits inside an observation.
+data Step = Field Text | Index Int
+    deriving (Eq, Show)
+
+-- | Every leaf path in a value, discovered by walking it.
+leafPaths :: Value -> [[Step]]
+leafPaths value = case value of
+    Object fields ->
+        [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- leafPaths inner]
+    Array entries ->
+        [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- leafPaths inner]
+    _ -> [[]]
+
+-- | Every array inside a value, including the empty ones.
+arrayPaths :: Value -> [[Step]]
+arrayPaths value = case value of
+    Object fields ->
+        [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- arrayPaths inner]
+    Array entries ->
+        [] : [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- arrayPaths inner]
+    _ -> []
+
+-- | Change the value at a path: a number grows, a string gains a suffix, a
+-- boolean flips. Nothing else in the observation moves.
+perturbAt :: [Step] -> Value -> Value
+perturbAt [] value = case value of
+    Number n -> Number (n + 1)
+    String s -> String (s <> "-changed")
+    Bool b -> Bool (not b)
+    Null -> String "changed"
+    other -> other
+perturbAt (Field name : rest) value = case value of
+    Object fields -> case KM.lookup (Key.fromText name) fields of
+        Just inner -> Object (KM.insert (Key.fromText name) (perturbAt rest inner) fields)
+        Nothing -> value
+    _ -> value
+perturbAt (Index index : rest) value = case value of
+    Array entries
+        | index < V.length entries ->
+            Array (entries V.// [(index, perturbAt rest (entries V.! index))])
+    _ -> value
+
+-- | Append one element to the array at a path, so an empty list is covered too.
+appendAt :: [Step] -> Value -> Value
+appendAt [] value = case value of
+    Array entries -> Array (V.snoc entries (String "appended"))
+    other -> other
+appendAt (Field name : rest) value = case value of
+    Object fields -> case KM.lookup (Key.fromText name) fields of
+        Just inner -> Object (KM.insert (Key.fromText name) (appendAt rest inner) fields)
+        Nothing -> value
+    _ -> value
+appendAt (Index index : rest) value = case value of
+    Array entries
+        | index < V.length entries ->
+            Array (entries V.// [(index, appendAt rest (entries V.! index))])
+    _ -> value
+
+{- | The one leaf the comparison is allowed to ignore: a transaction output's
+lovelace, which the model names @outputMinimumAda@ and states as a logical zero.
+-}
+isOutputMinimumAda :: Text -> [Step] -> Bool
+isOutputMinimumAda "tx" [Field "outputs", Index _, Field "lovelace"] = True
+isOutputMinimumAda _ _ = False
+
+-- | Put a changed observation back beside the others.
+replacing :: Text -> Value -> Value -> Value
+replacing name inner value = case value of
+    Object fields -> Object (KM.insert (Key.fromText name) inner fields)
+    _ -> value
+
 spec :: Spec
 spec = describe "Comparing a registration with the model" $ do
     it "accounts for every observation the model declares" $ do
@@ -161,6 +233,48 @@ spec = describe "Comparing a registration with the model" $ do
         Identity.bind "mallory" 555 first `shouldSatisfy` either (const True) (const False)
         Identity.bind "alice" 555 first `shouldSatisfy` either (const False) (const True)
 
+
+    it "reports a change to any observable value, and ignores only the unobservable one" $ do
+        value <- corpus
+        declared <- either error pure (declaredSurface value)
+        let observations = part "observations" (row "DR02-register-active" value)
+            -- Discovered by walking the row, never listed here.
+            changes =
+                [ (name, path, replacing name (perturbAt path inner) observations)
+                | name <- declaredObservations declared
+                , inner <- [part name observations]
+                , path <- leafPaths inner
+                ]
+            growths =
+                [ (name, path, replacing name (appendAt path inner) observations)
+                | name <- declaredObservations declared
+                , inner <- [part name observations]
+                , path <- arrayPaths inner
+                ]
+        -- Every declared observation contributes at least one perturbation.
+        -- An empty array such as `custody` or `paid` has no leaf to change, so
+        -- its discovered variant is the one with an element appended.
+        [ name
+            | name <- declaredObservations declared
+            , null [() | (n, _, _) <- changes <> growths, n == name]
+            ]
+            `shouldBe` []
+        -- and the transaction contributes the fields a reader would name
+        let txLeaves = [path | ("tx", path, _) <- changes]
+        map (Field "outputs" :) [[Index 1, Field "address"], [Index 1, Field "datum"]]
+            `shouldSatisfy` all (`elem` txLeaves)
+        txLeaves `shouldSatisfy` any (\path -> Field "assets" `elem` path)
+        -- The wrong-signer control: signers is an empty list, so its discovered
+        -- variant is the one with an element appended, and it must be refused.
+        [path | ("tx", path, _) <- growths, path == [Field "signers"]]
+            `shouldBe` [[Field "signers"]]
+        -- Exactly one leaf may be ignored, and it is the named unobservable.
+        let ignored = [(name, path) | (name, path, _) <- changes, isOutputMinimumAda name path]
+        ignored `shouldSatisfy` not . null
+        [(name, path) | (name, path, _) <- changes <> growths, isOutputMinimumAda name path]
+            `shouldBe` ignored
+        mapM_ (requireVerdict declared observations) (changes <> growths)
+
     it "reproduces every row's approval name and destination commitment" $ do
         value <- corpus
         let approvals =
@@ -214,3 +328,17 @@ checkApproval (scenario, approval) = do
                         `shouldBe` Just (number (part "commitment" out))
                 _ -> pure ()
         _ -> pure ()
+
+requireVerdict :: Declared -> Value -> (Text, [Step], Value) -> IO ()
+requireVerdict declared expected (name, path, changed)
+    | isOutputMinimumAda name path =
+        case compareRegistration declared expected changed of
+            Right _ -> pure ()
+            Left differences ->
+                error ("the unobservable leaf " <> show path <> " was compared: " <> show differences)
+    | otherwise =
+        case compareRegistration declared expected changed of
+            Right _ -> error ("a changed " <> show name <> " at " <> show path <> " was accepted")
+            Left differences ->
+                map differenceObservation differences
+                    `shouldSatisfy` elem name
