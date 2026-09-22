@@ -161,12 +161,190 @@ def unreachable_modules(root):
     return sorted(on_disk - seen)
 
 
+
+
+# ---------------------------------------------------------------------------
+# The generic model driver (#209 S01, R01-R04).
+#
+# The driver is one executable over the model's own law: given a scenario it
+# runs `Singular.step` and reports the declared boundary observations of what
+# the law actually did. These checks exist so that the four ways of faking that
+# are detected rather than reported as conformance.
+# ---------------------------------------------------------------------------
+
+REFUSAL_LITERAL = re.compile(r'"([a-z]+(?:-[a-z]+)+)"')
+
+
+def model_refusal_vocabulary(root):
+    """Every refusal reason `Singular.refusal` can produce, read off the model.
+
+    The expected value is obtained from the producer rather than typed here, so
+    a reason the model cannot say — an infrastructure error dressed up as a
+    ledger refusal — has nowhere to hide. The subject of the assertion is the
+    driver's executed output; this only supplies the vocabulary it is held to.
+    """
+    source = (root / 'lean/Singular/Model.lean').read_text(encoding='utf-8')
+    body = source.split('\ndef refusal ', 1)[1].split('\n/--', 1)[0]
+    vocabulary = set(REFUSAL_LITERAL.findall(body))
+    assert vocabulary, 'EMPTY EXTENT: no refusal reasons discovered in Singular.refusal'
+    return vocabulary
+
+DRIVER_SCHEMA = 'singular-driver-corpus-v1'
+
+# The outcome classes a scenario may land in. `accepted` and `refused` are the
+# model speaking; `unsupported` is the driver saying it cannot reach the case.
+# A crashed driver produces none of these, which is the point: an execution
+# failure can never be read as a domain refusal.
+DRIVER_OUTCOMES = {'accepted', 'refused', 'unsupported'}
+
+
+def driver_surface(corpus):
+    """The declared boundary: what the driver says it can do and see."""
+    surface = corpus['surface']
+    for field in ('declaration', 'definitionDigest', 'protocolVersion',
+                  'operations', 'observations', 'unobservable'):
+        assert field in surface, f'driver surface omits {field} (D01)'
+    assert surface['operations'], 'EMPTY EXTENT: driver declares no operations'
+    assert surface['observations'], 'EMPTY EXTENT: driver declares no observations'
+    return surface
+
+
+def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary):
+    """R01-R03 over every scenario the driver executed.
+
+    R01 is the one that needs saying out loud: a scenario's observations must
+    cover the WHOLE declared boundary. A per-theorem projection — a row that
+    reports only the two fields its own theorem happens to talk about — is
+    exactly the substitution the requirement forbids, and it is caught here by
+    comparing each accepted row's observation keys against the declared set
+    rather than against the theorem's interest.
+    """
+    surface = driver_surface(corpus)
+    declared = set(surface['observations'])
+    scenarios = corpus['scenarios']
+    assert scenarios, 'EMPTY EXTENT: driver corpus carries no scenarios'
+
+    ids = [s['id'] for s in scenarios]
+    assert len(set(ids)) == len(ids), 'duplicate driver scenario identity'
+
+    seen_outcomes = set()
+    accepted = refused = 0
+    for s in scenarios:
+        sid = s['id']
+        outcome = s['outcome']
+        assert outcome in DRIVER_OUTCOMES, f'{sid}: unknown outcome class {outcome!r}'
+        seen_outcomes.add(outcome)
+
+        # R02 — the scenario is bound to a theorem that exists, at the digest
+        # the manifest records. A stale binding names a real theorem whose
+        # statement has since changed; comparing digests is what catches it.
+        assert s['operation'] in surface['operations'], \
+            f'{sid}: operation {s["operation"]!r} is not a declared operation (D01)'
+        theorem = s['theorem']
+        assert theorem in generic_names, f'{sid}: unknown theorem binding {theorem}'
+        assert s['statementSha256'] == statement_digests[theorem], \
+            f'{sid}: stale theorem binding — {theorem} statement digest moved'
+
+        # R02 — a setup trace is a trace of accepted transitions. A scenario
+        # that needs a non-empty starting state must have REACHED it by running
+        # the law, not by being handed a constructed state.
+        for i, stp in enumerate(s['setup']):
+            assert stp['accepted'] is True, \
+                f'{sid}: setup step {i} was not an accepted transition ' \
+                f'({stp.get("reason")!r}); a refused setup cannot establish a starting state'
+        if s['requiresReachableState']:
+            assert s['setup'], \
+                f'{sid}: claims a reachable non-initial starting state with an empty setup trace'
+
+        if outcome == 'accepted':
+            accepted += 1
+            # R03 — a checked law premise precedes an accepted observation.
+            premise = s['premise']
+            assert premise['checked'] is True, \
+                f'{sid}: accepted without checking its law premise'
+            assert premise['declaration'].startswith('Singular.'), \
+                f'{sid}: premise {premise["declaration"]!r} is not a model declaration'
+            # R01 — the complete declared boundary, not a projection of it.
+            observed = set(s['observations'])
+            assert observed == declared, (
+                f'{sid}: observations are a projection of the declared boundary; '
+                f'missing {sorted(declared - observed)}, undeclared {sorted(observed - declared)}')
+            assert s['reason'] is None, f'{sid}: accepted rows carry no refusal reason'
+        elif outcome == 'refused':
+            refused += 1
+            # R03 — a refusal is the model's, with the model's own words.
+            assert s['reason'], f'{sid}: refused with no reason'
+            assert s['reason'] in vocabulary, (
+                f'{sid}: refusal reason {s["reason"]!r} is not one the model can produce; '
+                f'a transport or process failure is an execution failure, never a ledger refusal')
+            assert s['observations'] is None, \
+                f'{sid}: refused rows observe nothing — there was no transition to observe'
+            assert s['premise']['checked'] is False, \
+                f'{sid}: a refused request has no accepted observation to justify'
+        else:
+            assert s['reason'], f'{sid}: unsupported rows must name what is unsupported'
+            assert s['observations'] is None, f'{sid}: unsupported rows observe nothing'
+
+    # Each class must actually occur, or the classification is untested.
+    assert accepted, 'driver corpus contains no accepted transition'
+    assert refused, 'driver corpus contains no domain refusal'
+    assert {'accepted', 'refused'} <= seen_outcomes, \
+        f'driver outcome classes exercised: {sorted(seen_outcomes)}'
+
+    # R02 — a mutant is only a mutant relative to the witness it perturbs.
+    witnesses = {s['id'] for s in scenarios if s['kind'] == 'witness'}
+    for s in scenarios:
+        if s['kind'] == 'mutant':
+            assert s['mutates'] in witnesses, \
+                f'{s["id"]}: mutant of unknown witness {s["mutates"]!r}'
+            assert s['mutates'] != s['id'], f'{s["id"]}: mutant of itself'
+    return accepted, refused, len(scenarios)
+
+
+TRANSLATION_HEADING = '## The model driver translation'
+TRANSLATION_ROW = re.compile(r'^\| `([^`]+)` \| (realization|identity|unobservable) \| (.+?) \|$', re.M)
+
+
+def check_translation(root, surface):
+    """R04 — the constitution states the concrete realization of every declared
+    law and observation, the identity rules, and the named unobservable fields.
+
+    Mechanical reconciliation only, in both directions: a declared name with no
+    row fails, and a row naming something the driver does not declare fails.
+    Whether a stated realization is TRUE is a semantic review, not this check,
+    and this check must never be read as establishing it.
+    """
+    text = (root / '.specify/memory/constitution.md').read_text(encoding='utf-8')
+    assert TRANSLATION_HEADING in text, \
+        f'the constitution states no model driver translation ({TRANSLATION_HEADING!r} absent) — R04'
+    section = text.split(TRANSLATION_HEADING, 1)[1]
+    rows = {}
+    for name, kind, body in TRANSLATION_ROW.findall(section):
+        assert body.strip(), f'translation row {name} states nothing'
+        rows.setdefault(kind, {})[name] = body.strip()
+
+    declared = set(surface['operations']) | set(surface['observations'])
+    stated = set(rows.get('realization', {}))
+    assert stated == declared, (
+        'constitutional translation does not reconcile with the declared surface; '
+        f'undeclared rows: {sorted(stated - declared)}; '
+        f'unmapped declarations: {sorted(declared - stated)}')
+
+    named_unobservable = set(rows.get('unobservable', {}))
+    assert named_unobservable == set(surface['unobservable']), (
+        'named unobservable fields differ between the driver surface and the constitution; '
+        f'constitution-only: {sorted(named_unobservable - set(surface["unobservable"]))}; '
+        f'driver-only: {sorted(set(surface["unobservable"]) - named_unobservable)}')
+    assert rows.get('identity'), 'the translation states no identity rules (D05, R04)'
+    return len(declared), len(named_unobservable), len(rows['identity'])
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, default=Path.cwd())
     parser.add_argument('--binary', type=Path)
     parser.add_argument('--naming-binary', type=Path)
     parser.add_argument('--lifecycle-binary', type=Path)
+    parser.add_argument('--driver-binary', type=Path)
     parser.add_argument('--axioms-report', type=Path, help='saved output of `lake env lean tools/axioms.lean`')
     parser.add_argument('--export', action='store_true')
     args = parser.parse_args()
@@ -271,6 +449,34 @@ def main():
     check_or_compare(root / 'lean/lifecycle-corpus.json',
                      json.dumps(lifecycle_corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'lifecycle corpus')
+
+    # --- the generic model driver (#209 S01) ---------------------------------
+    # Run the driver over the same source extent as the generic corpus, compare
+    # its output byte-for-byte with the committed scenarios, then check what the
+    # scenarios claim. The driver is the subject here: if it cannot run, no row
+    # below can report anything, which is the intended shape of its absence.
+    driver_binary = args.driver_binary or root / '.lake/build/bin/singular-driver'
+    assert Path(driver_binary).exists(), (
+        f'model driver binary missing: {driver_binary} — R01 is unimplemented, '
+        'so no scenario, observation or translation row below can be established')
+    driver_corpus = json.loads(subprocess.check_output([str(driver_binary)]))
+    assert driver_corpus['schema'] == DRIVER_SCHEMA, \
+        f'driver corpus schema {driver_corpus["schema"]!r} != {DRIVER_SCHEMA!r}'
+    corpus_envelope(driver_corpus, sources, generic_manifest_path,
+                    'statementsSha256', 'lean/Singular/Statements.lean',
+                    'lean/Singular/Model.lean', 'lean/DriverMain.lean')
+    statement_digests = {r['name']: r['statementSha256'] for r in generic_records}
+    accepted, refused, total = check_driver_scenarios(
+        driver_corpus, generic_names, statement_digests, model_refusal_vocabulary(root))
+    check_or_compare(root / 'lean/driver-corpus.json',
+                     json.dumps(driver_corpus, indent=2, sort_keys=True) + '\n',
+                     args.export, 'driver corpus')
+    mapped, unobservable, identities = check_translation(root, driver_corpus['surface'])
+    print(f'driver: {total} scenarios ({accepted} accepted, {refused} refused) over '
+          f'{len(driver_corpus["surface"]["operations"])} declared operations and '
+          f'{len(driver_corpus["surface"]["observations"])} declared observations')
+    print(f'translation: {mapped} declarations realized in the constitution, '
+          f'{identities} identity rules, {unobservable} named unobservable fields')
 
     # X2 — the theorem page must equal the generic manifest exactly: every
     # declaration present, no phantoms, and the stated total derived from the
