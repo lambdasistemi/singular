@@ -1,7 +1,5 @@
 module Singular.Registry.TypesSpec (spec) where
 
-import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Types
 import Data.ByteString qualified as BS
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal (
@@ -12,6 +10,8 @@ import PlutusTx.IsData.Class (
     FromData (..),
     ToData (..),
  )
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Types
 import Test.Hspec
 import Test.QuickCheck
 
@@ -119,7 +119,7 @@ genCageDatum =
     oneof
         [ RequestDatum <$> genRequest
         , StateDatum <$> genTokenState
-        , AbsentCustody <$> genBS <*> genBS
+        , AbsentCustody <$> genBS
         ]
 
 genMigration :: Gen Migration
@@ -314,6 +314,13 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genCageDatum roundtrips
+        it "decodes and re-encodes absent custody as refund-only constructor 2" $ do
+            let wire = BuiltinData (Constr 2 [B "refund-only"])
+                decoded = fromBuiltinData wire :: Maybe CageDatum
+            fmap toBuiltinData decoded `shouldBe` Just wire
+        it "rejects the retired two-field absent-custody payload" $ do
+            let wire = BuiltinData (Constr 2 [B "duplicated-key", B "refund"])
+            (fromBuiltinData wire :: Maybe CageDatum) `shouldBe` Nothing
         it "RequestDatum uses constructor 0" $
             property $
                 forAll (RequestDatum <$> genRequest) $

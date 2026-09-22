@@ -33,23 +33,27 @@ import Data.Either (isLeft, isRight)
 import Data.Word (Word8)
 import Test.Hspec
 
+import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Lens.Micro ((&), (.~))
+import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins (toBuiltin)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
+import Singular.Registry.TxBuilder.ConnectedFold (ConnectedSpend (..))
 import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     computeScriptHash,
+    extractCageDatum,
+    mkInlineDatum,
     policyIdFromPin,
     scriptFromBytes,
-    mkInlineDatum,
     toPlcData,
     txInToRef,
  )
@@ -62,17 +66,19 @@ import Singular.Registry.TxBuilder.Update (
 import Singular.Registry.Types (
     CageDatum (..),
     Edge,
-    edgeInsertAbsent,
-    edgeUpdateActive,
-    edgeUpdateTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenId (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
+    edgeDeleteAbsent,
+    edgeInsertAbsent,
+    edgeUpdateActive,
+    edgeUpdateTerminal,
  )
 
 import Data.Map.Strict qualified as Map
+import Data.Maybe (isJust)
 import Data.Text qualified as T
 
 -- ---------------------------------------------------------
@@ -188,8 +194,111 @@ decide edge =
 
 spec :: Spec
 spec = do
+    custodyIdentity
     holderSelection
     burnSourceRequired
+
+-- ---------------------------------------------------------
+-- #178: absent custody identity comes from its sole asset
+-- ---------------------------------------------------------
+
+custodyRef :: TxIn
+custodyRef = holderIn 8
+
+refund :: ByteString
+refund = serialiseAddr (cageAddrFromCfg cfg Testnet)
+
+refundOnly, retiredTwoField :: PLC.Data
+refundOnly = PLC.Constr 2 [PLC.B refund]
+retiredTwoField = PLC.Constr 2 [PLC.B keyA, PLC.B refund]
+
+custodyValue :: SBS.ShortByteString -> ByteString -> Integer -> MaryValue
+custodyValue policy key quantity =
+    MaryValue
+        (Coin 10000000)
+        ( MultiAsset
+            ( Map.singleton
+                (policyIdFromPin policy)
+                (Map.singleton (AssetName (SBS.toShort key)) quantity)
+            )
+        )
+
+twoAssetCustodyValue :: MaryValue
+twoAssetCustodyValue =
+    MaryValue
+        (Coin 10000000)
+        ( MultiAsset
+            ( Map.fromList
+                [
+                    ( policyIdFromPin (cfgAbsentPolicy cfg)
+                    , Map.singleton (AssetName (SBS.toShort keyA)) 1
+                    )
+                ,
+                    ( policyIdFromPin (cfgActivePolicy cfg)
+                    , Map.singleton (AssetName (SBS.toShort keyB)) 1
+                    )
+                ]
+            )
+        )
+
+custodyWith :: PLC.Data -> MaryValue -> (TxIn, TxOut ConwayEra)
+custodyWith datum value =
+    ( custodyRef
+    , mkBasicTxOut (cageAddrFromCfg cfg Testnet) value
+        & datumTxOutL .~ mkInlineDatum datum
+    )
+
+decideCustody :: (TxIn, TxOut ConwayEra) -> Either String RegistryDuties
+decideCustody held =
+    registryDuties
+        cfg
+        emptyPParams
+        tokenState
+        custodyContext
+        [requestFor edgeDeleteAbsent]
+        [True]
+  where
+    cageScript = scriptFromBytes "t178 cage" (SBS.toShort (BS.pack [0x58]))
+    custodyContext =
+        witnessScripts
+            { rcCageScript = Just cageScript
+            , rcCageUtxos = [held]
+            }
+
+expectAssetRefusal :: (TxIn, TxOut ConwayEra) -> Expectation
+expectAssetRefusal held@(_, out) = do
+    extractCageDatum out `shouldSatisfy` isJust
+    (() <$ decideCustody held) `shouldSatisfy` isLeft
+
+custodyIdentity :: Spec
+custodyIdentity = describe "#178: absent custody derives identity from its sole asset" $ do
+    it "selects a refund-only custody carrying one absent asset" $ do
+        let held = custodyWith refundOnly (custodyValue (cfgAbsentPolicy cfg) keyA 1)
+        extractCageDatum (snd held) `shouldSatisfy` isJust
+        case decideCustody held of
+            Left err -> expectationFailure err
+            Right duties -> map (fst . csUtxo) (rdSpends duties) `shouldBe` [custodyRef]
+
+    it "does not use the retired datum key as an identity fallback" $
+        ( ()
+            <$ decideCustody
+                (custodyWith retiredTwoField (custodyValue (cfgAbsentPolicy cfg) keyA 1))
+        )
+            `shouldSatisfy` isLeft
+
+    it "refuses refund-only custody with no non-ADA asset" $
+        expectAssetRefusal (custodyWith refundOnly (MaryValue (Coin 10000000) mempty))
+
+    it "refuses refund-only custody with two non-ADA assets" $
+        expectAssetRefusal (custodyWith refundOnly twoAssetCustodyValue)
+
+    it "refuses refund-only custody under the wrong policy" $
+        expectAssetRefusal
+            (custodyWith refundOnly (custodyValue (cfgActivePolicy cfg) keyA 1))
+
+    it "refuses refund-only custody with a quantity other than one" $
+        expectAssetRefusal
+            (custodyWith refundOnly (custodyValue (cfgAbsentPolicy cfg) keyA 2))
 
 burnSourceRequired :: Spec
 burnSourceRequired = describe "#177 I177-BUILDER: updateTerminal sources its burn from a holder" $ do

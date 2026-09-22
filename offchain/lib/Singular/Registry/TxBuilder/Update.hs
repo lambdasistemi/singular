@@ -730,7 +730,7 @@ registryDuties cfg pp st ctx reqUtxos processed =
                             <> "; the burn must name one source"
                         )
     -- C6: the absent token sits at the cage, alone, under a custody datum
-    -- naming its key and the address the deposit goes back to.
+    -- naming the address the deposit goes back to. Its sole asset is its key.
     lockCustody key refund floorAda = do
         let value =
                 MaryValue
@@ -738,7 +738,7 @@ registryDuties cfg pp st ctx reqUtxos processed =
                     (MultiAsset (Map.singleton (policyIdOf (cfgAbsentPolicy cfg)) (Map.singleton (AssetName (SBS.toShort key)) 1)))
             out =
                 mkBasicTxOut cageAddr value
-                    & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody key refund))
+                    & datumTxOutL .~ mkInlineDatum (toPlcData (AbsentCustody refund))
         requireMinAda "custody" out
         pure mempty{rdOutputs = [out]}
     -- T1/T2: the minted token lands in exactly the output the request
@@ -804,14 +804,27 @@ registryDuties cfg pp st ctx reqUtxos processed =
         case
             [ (u, refund, coin)
             | u@(_, o) <- rcCageUtxos ctx
-            , Just (AbsentCustody k refund) <- [extractCageDatum o]
-            , k == key
+            , Just (AbsentCustody refund) <- [extractCageDatum o]
+            , Just (policy, name) <- [custodyAssetOf o]
+            , policy == policyIdOf (cfgAbsentPolicy cfg)
+            , name == AssetName (SBS.toShort key)
             , let Coin coin = o ^. coinTxOutL
             ]
             of
             [c] -> Right c
             [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
             _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
+    custodyAssetOf out =
+        case out ^. valueTxOutL of
+            MaryValue _ (MultiAsset policies) ->
+                case
+                    [ (policy, name, quantity)
+                    | (policy, names) <- Map.toList policies
+                    , (name, quantity) <- Map.toList names
+                    ]
+                    of
+                    [(policy, name, 1)] -> Just (policy, name)
+                    _ -> Nothing
     requireMinAda what out =
         let Coin minAda = getMinCoinTxOut @ConwayEra pp out
             Coin got = out ^. coinTxOutL

@@ -12,13 +12,22 @@ use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
   Datum, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
-use cardano/transaction
-use lib
 use lib.{approvalName}
 use types.{
-  AbsentCustody, CageDatum, Request, RequestDatum, State,
-  StateDatum, TokenId,
+  AbsentCustody, CageDatum, Request, RequestDatum, State, StateDatum, TokenId,
 }
+
+/// The retired two-field constructor, retained only as a negative wire
+/// control. Its two leading arms keep absent custody at constructor index 2.
+type LegacyCageDatum {
+  LegacyRequest(Data)
+  LegacyState(Data)
+  LegacyAbsentCustody(ByteArray, ByteArray)
+}
+
+// ----------------------------------------------------------------------------
+// Registry configuration
+// ----------------------------------------------------------------------------
 
 /// Registry-mode fixtures (#157): the shared vocabulary the cage's row
 /// tests are written in.
@@ -29,11 +38,6 @@ use types.{
 /// not describe a real trie fails loudly at construction instead of
 /// quietly proving nothing. A hand-typed root would agree with itself
 /// forever.
-
-// ----------------------------------------------------------------------------
-// Registry configuration
-// ----------------------------------------------------------------------------
-
 pub const cagePolicy: ByteArray = "policy_id"
 
 pub const appPolicy: ByteArray =
@@ -220,7 +224,10 @@ fn nth(digests: List<ByteArray>, index: Int) -> ByteArray {
 /// the given occupied slots: the four sibling digests on `myKey`'s path
 /// through the node's binary merkle tree, in the order the library
 /// reads them (`neighbor_8 ‖ neighbor_4 ‖ neighbor_2 ‖ neighbor_1`).
-pub fn branchStep(entries: List<(Int, ByteArray)>, myKey: ByteArray) -> ProofStep {
+pub fn branchStep(
+  entries: List<(Int, ByteArray)>,
+  myKey: ByteArray,
+) -> ProofStep {
   let level0 = slotsOf(entries)
   let level1 = pairUp(level0)
   let level2 = pairUp(level1)
@@ -449,11 +456,31 @@ pub fn deliveryOutputN(
 }
 
 /// The cage's own custody of a minted absent token.
+pub fn custodyDatum(_key: ByteArray, refund: ByteArray) -> CageDatum {
+  AbsentCustody { refund }
+}
+
 pub fn custodyOutput(key: ByteArray, refund: ByteArray, lovelace: Int) -> Output {
   Output {
     address: cageAddress(),
     value: merge(from_lovelace(lovelace), from_asset(absentPolicy, key, 1)),
-    datum: InlineDatum(AbsentCustody { key, refund }),
+    datum: InlineDatum(custodyDatum(key, refund)),
+    reference_script: None,
+  }
+}
+
+/// The old two-field wire at constructor index 2. It is deliberately built as
+/// raw data so this refusal control survives the production type correction.
+pub fn legacyCustodyOutput(
+  key: ByteArray,
+  refund: ByteArray,
+  lovelace: Int,
+) -> Output {
+  let legacy: Data = LegacyAbsentCustody(key, refund)
+  Output {
+    address: cageAddress(),
+    value: merge(from_lovelace(lovelace), from_asset(absentPolicy, key, 1)),
+    datum: InlineDatum(legacy),
     reference_script: None,
   }
 }
@@ -472,6 +499,26 @@ pub fn custodyInput(
   Input {
     output_reference: custodyRef(index),
     output: custodyOutput(key, refund, lovelace),
+  }
+}
+
+/// A custody input whose complete value is supplied by the row. The datum is
+/// produced through the same helper as ordinary custody; only the asset extent
+/// is varied.
+pub fn custodyInputWithValue(
+  index: Int,
+  key: ByteArray,
+  refund: ByteArray,
+  value: Value,
+) -> Input {
+  Input {
+    output_reference: custodyRef(index),
+    output: Output {
+      address: cageAddress(),
+      value,
+      datum: InlineDatum(custodyDatum(key, refund)),
+      reference_script: None,
+    },
   }
 }
 
@@ -562,11 +609,9 @@ pub fn foldTxWith(
   }
 }
 
-/// A custody UTxO whose datum names a different key than the token it
-/// actually carries, and the extra-asset variant: the shapes T3 refuses.
-pub fn custodyOutputMismatched(
+/// A custody UTxO carrying another non-ADA asset: the shape T3 refuses.
+pub fn custodyOutputWithExtra(
   tokenKey: ByteArray,
-  datumKey: ByteArray,
   refund: ByteArray,
   lovelace: Int,
   extra: Value,
@@ -577,7 +622,7 @@ pub fn custodyOutputMismatched(
       merge(from_lovelace(lovelace), from_asset(absentPolicy, tokenKey, 1)),
       extra,
     ),
-    datum: InlineDatum(AbsentCustody { key: datumKey, refund }),
+    datum: InlineDatum(custodyDatum(tokenKey, refund)),
     reference_script: None,
   }
 }

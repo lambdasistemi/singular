@@ -264,9 +264,10 @@ data CageDatum
     | -- | Current token state (Constr 1)
       StateDatum !OnChainTokenState
     | -- | The cage's own custody of an absent token (Constr 2, #157
-      -- D-CUSTODY; appended, so 0 and 1 never move): the registry key
-      -- it witnesses and the address the inserter named for the refund.
-      AbsentCustody !ByteString !ByteString
+      -- D-CUSTODY; appended, so 0 and 1 never move): the address the
+      -- inserter named for the refund. The registry key is the sole
+      -- non-ADA asset carried by the output.
+      AbsentCustody !ByteString
     deriving stock (Show, Eq)
 
 {- | Minting redeemer. Matches Aiken
@@ -620,9 +621,9 @@ instance ToData CageDatum where
     toBuiltinData (StateDatum s) =
         mkD $
             Constr 1 [unD (toBuiltinData s)]
-    toBuiltinData (AbsentCustody k refund) =
+    toBuiltinData (AbsentCustody refund) =
         mkD $
-            Constr 2 [bsToD k, bsToD refund]
+            Constr 2 [bsToD refund]
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of
@@ -632,8 +633,8 @@ instance FromData CageDatum where
         Constr 1 [d] ->
             StateDatum
                 <$> fromBuiltinData (mkD d)
-        Constr 2 [k, refund] ->
-            AbsentCustody <$> bsFromD k <*> bsFromD refund
+        Constr 2 [refund] ->
+            AbsentCustody <$> bsFromD refund
         _ -> Nothing
 
 instance UnsafeFromData CageDatum where
@@ -644,7 +645,7 @@ instance UnsafeFromData CageDatum where
         Constr 1 [d] ->
             StateDatum $
                 unsafeFromBuiltinData (mkD d)
-        Constr 2 [B k, B refund] -> AbsentCustody k refund
+        Constr 2 [B refund] -> AbsentCustody refund
         _ -> error "unsafeFromBuiltinData: CageDatum"
 
 instance ToData Migration where

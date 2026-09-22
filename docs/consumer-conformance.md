@@ -153,7 +153,12 @@ with this wire: `edge-inadmissible` for a tag outside `0`-`6`, and
 | --- | --- | --- |
 | 0 | `RequestDatum` | `RequestDatum` |
 | 1 | `StateDatum` | `StateDatum` |
-| 2 | — | `AbsentCustody { key, refund }` |
+| 2 | — | `AbsentCustody { refund }` |
+
+The absent custody key is the identity of the output's sole non-ADA asset,
+which must have quantity one under the registry's pinned absent policy. It is
+not duplicated in the datum. The retired two-field constructor-2 wire is
+therefore incompatible and must not decode as `AbsentCustody`.
 
 ### Redeemers that are gone
 
