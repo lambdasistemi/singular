@@ -1,5 +1,6 @@
-import Singular.Model
+import Singular.Driver
 open Singular
+open Singular.Driver
 open Lean
 
 /-! The generic registry-mode corpus: every R2 edge accepted, the full
@@ -236,22 +237,6 @@ def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
 
-def datumFormName : DatumForm → String
-  | .inline => "inline"
-  | .hashed => "hashed"
-
-/-- One keyed asset, spelled with the on-chain identity the model pins: the
-kind's policy and the asset name, which is the key. -/
-def assetJson (c : Config) (p : Asset × Int) : Json :=
-  Json.mkObj
-    [ ("kind", toJson p.1.1), ("key", toJson p.1.2)
-    , ("policy", toJson (kindPolicy c p.1.1))
-    , ("assetName", toJson (tokenAssetName p.1.1 p.1.2))
-    , ("quantity", toJson p.2) ]
-
-def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
-  Json.arr ((ds.map (assetJson c)).toArray)
-
 /-- The lovelace the request input carries, above the registry's tip ceiling. -/
 def txLovelace : Nat := 5
 
@@ -278,43 +263,6 @@ to be absent. -/
 def otherRegistry : Config :=
   { cfg with maxFee := 9, processTime := 20, retractTime := 30
            , activePolicy := 80, absentPolicy := 90, terminalPolicy := 100 }
-
-def txRoleName : TxRole → String
-  | .state => "state" | .request => "request"
-  | .destination => "destination" | .cage => "cage"
-  | .witness => "witness"
-
-def txInputJson (c : Config) (i : TxInput) : Json :=
-  Json.mkObj
-    [ ("role", toJson (txRoleName i.role))
-    , ("datum", toJson (datumFormName i.datum))
-    , ("stateToken", toJson i.stateTokens)
-    , ("approvalQuantity", toJson i.approvals)
-    , ("lovelace", toJson i.lovelace)
-    , ("assets", assetsJson c i.assets) ]
-
-def txOutputJson (c : Config) (o : TxOutput) : Json :=
-  Json.mkObj
-    [ ("role", toJson (txRoleName o.role))
-    , ("datum", toJson (datumFormName o.datum))
-    , ("address", match o.address with | none => Json.null | some a => toJson a)
-    , ("stateToken", toJson o.stateTokens)
-    , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
-    , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
-    , ("assets", assetsJson c o.assets)
-    , ("custodyDatum", toJson o.custodyDatum)
-    , ("lovelace", toJson o.lovelace) ]
-
-/-- The built transaction, serialized. Every field comes from the `Tx` the model
-constructed; nothing here is assembled beside it. -/
-def txJson (c : Config) (tx : Tx) : Json :=
-  Json.mkObj
-    [ ("inputs", Json.arr ((tx.inputs.map (txInputJson c)).toArray))
-    , ("outputs", Json.arr ((tx.outputs.map (txOutputJson c)).toArray))
-    , ("mint", assetsJson c tx.mint)
-    , ("signers", toJson tx.signers)
-    , ("refunds", Json.arr ((tx.refunds.map fun p =>
-        Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray)) ]
 
 /-- The transaction this row is about, built by the model from the executed
 step. -/

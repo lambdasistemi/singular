@@ -15,9 +15,11 @@
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
+    "formal/Driver.lean": "286255c500c3d6bc069538e21535940f97ef9c5283baefd8608390aa74f5a860",
+    "formal/DriverMain.lean": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
     "formal/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "323d9d5a3c1ddda039fba8361a3a930e5985dad667792b45d7a325344c1d0e3b",
+    "formal/Main.lean": "e842fa245b4b54f1aea0c9322096f3ced5a4853dace865d4fdaeb71102d05597",
     "formal/Model.lean": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
@@ -30,13 +32,13 @@
     "formal/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "formal/Singular.lean": "053a3d35812747e76f19727313d3e7c1c48bde56a835e41fed8d6fb6a45579f7",
+    "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "formal/Statements.lean": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
     "formal/theorem-debt.json": "3c159da967606c9390129ffeceafc5bce628316b3dd211e44a44b1e2ef0b7625",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "50e74b09768f400dfab316063c4a3b0bacb8c2d470f16aea4da4de71b58a5944"
+    "corpus.json": "f5f2855c8e1448ad0768950e59cc8c278fb60055afd2da61b8e28f3875b3e644"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,

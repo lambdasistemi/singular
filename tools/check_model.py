@@ -311,6 +311,153 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary)
     return accepted, refused, len(scenarios)
 
 
+# --- independent derivation -------------------------------------------------
+#
+# Everything above reads what the driver SAYS. That is not enough on its own: a
+# driver that never called `Singular.step` and simply printed well-shaped JSON —
+# the right keys, a plausible leaf, a reason spelled from the model's own
+# vocabulary — would satisfy all of it. So the checker re-derives the model's
+# commitment from the state the driver reported and compares. A fabricated row
+# cannot produce a correct FNV-1a root over a trie it did not compute, and the
+# constants below are read off the model source rather than written here.
+
+STATE_BYTE_ARM = re.compile(r'\| \.(\w+) => (0x[0-9A-Fa-f]+)')
+UNKNOWN_BYTE = re.compile(r'\| \.unknown => (0x[0-9A-Fa-f]+)')
+DELTA_ARM = re.compile(r'^\s*\| \.(\w+) => \[(.*)\]$', re.M)
+TRANSITION_ARM = re.compile(
+    r'^\s*\| \.(\w+), (\.unknown|\.known \.\w+) => some (\(\.known \.\w+\)|\.unknown)$', re.M)
+
+
+def leaf_name(spelling):
+    """A Lean leaf spelling as the corpus writes it: `null` for an unbound key."""
+    spelling = spelling.strip('()')
+    return None if spelling == '.unknown' else spelling.split('.')[-1]
+DELTA_CELL = re.compile(r'\(\.(\w+), (-?\d+)\)')
+
+
+def model_constants(root):
+    """The leaf byte table and the R2 delta table, read off the model."""
+    source = (root / 'lean/Singular/Model.lean').read_text(encoding='utf-8')
+    state_body = source.split('\ndef stateByte ', 1)[1].split('\n/--', 1)[0]
+    leaf_bytes = {name: int(value, 16) for name, value in STATE_BYTE_ARM.findall(state_body)}
+    assert leaf_bytes, 'EMPTY EXTENT: no state bytes discovered in Singular.stateByte'
+    leaf_body = source.split('\ndef leafByte ', 1)[1].split('\n/--', 1)[0]
+    unknown = UNKNOWN_BYTE.search(leaf_body)
+    assert unknown, 'Singular.leafByte states no byte for an unbound key'
+    leaf_bytes[None] = int(unknown.group(1), 16)
+
+    delta_body = source.split('\ndef delta (e : Edge)', 1)[1].split('\n/--', 1)[0]
+    deltas = {edge: [(kind, int(qty)) for kind, qty in DELTA_CELL.findall(cells)]
+              for edge, cells in DELTA_ARM.findall(delta_body)}
+    assert deltas, 'EMPTY EXTENT: no delta rows discovered in Singular.delta'
+    return leaf_bytes, deltas
+
+
+def model_transitions(root):
+    """The R2 from-to column, read off `Singular.transition`.
+
+    This is the law's core, and re-deriving the expected after-leaf from it is
+    what separates a transition that happened from a driver reporting a state.
+    An internally consistent row that simply echoes its starting state passes
+    every other check here and fails this one.
+    """
+    source = (root / 'lean/Singular/Model.lean').read_text(encoding='utf-8')
+    body = source.split('\ndef transition (e : Edge) (before : Leaf)', 1)[1].split('\n/--', 1)[0]
+    table = {(edge, leaf_name(before)): leaf_name(after)
+             for edge, before, after in TRANSITION_ARM.findall(body)}
+    assert table, 'EMPTY EXTENT: no transitions discovered in Singular.transition'
+    return table
+
+
+def fnv1a(data):
+    """The model's canonical commitment function, `Singular.fnv1a`."""
+    acc = 14695981039346656037
+    for byte in data:
+        acc = ((acc ^ byte) * 16777619) % (1 << 64)
+    return acc
+
+
+def u64bytes(value):
+    return [(value >> shift) & 0xFF for shift in (56, 48, 40, 32, 24, 16, 8, 0)]
+
+
+def root_of(trie, leaf_bytes):
+    """`Singular.rootOf`: FNV-1a over the sorted (key, leaf byte) pairs."""
+    data = []
+    for entry in sorted(trie, key=lambda e: e['key']):
+        key = entry['key'] & 0xFF
+        data += u64bytes(fnv1a([key])) + [key, leaf_bytes[entry['leaf']]]
+    return u64bytes(fnv1a(data))
+
+
+def check_derived(corpus, leaf_bytes, deltas, transitions):
+    """Re-derive what the law must have produced, for every row.
+
+    Every state the driver reports — each setup step's, and an accepted row's
+    result — must carry the root the model's commitment function gives for its
+    own trie. That binds the whole trace to real execution, including a refused
+    row, whose starting state had to be reached by running the law.
+    """
+    derived = 0
+    for s in corpus['scenarios']:
+        sid = s['id']
+        states = [('start', s['start'])]
+        states += [(f'setup step {i}', stp['state']) for i, stp in enumerate(s['setup'])
+                   if stp['accepted']]
+        if s['observations'] is not None:
+            states.append(('result', s['observations']['state']))
+        for where, state in states:
+            expected = root_of(state['trie'], leaf_bytes)
+            assert state['config']['root'] == expected, (
+                f'{sid}: {where} reports a root the model does not commit to for its own '
+                f'trie — the state was not produced by executing the law')
+            derived += 1
+        if s['observations'] is None:
+            continue
+
+        obs = s['observations']
+        assert obs['root'] == obs['config']['root'], \
+            f'{sid}: the reported root and the config root disagree'
+        key = s['request']['key']
+        leaf = next((e['leaf'] for e in obs['state']['trie'] if e['key'] == key), None)
+        assert obs['leaf'] == leaf, (
+            f'{sid}: reports leaf {obs["leaf"]!r} while its own produced trie holds '
+            f'{leaf!r} at key {key}')
+
+        # The transition itself, derived from the model's R2 table rather than
+        # read back off the row: the state the law was applied to decides what
+        # the leaf must now be. A row that echoes its own starting state is
+        # internally consistent and fails here.
+        before = s['setup'][-1]['state'] if s['setup'] else s['start']
+        before_leaf = next((e['leaf'] for e in before['trie'] if e['key'] == key), None)
+        assert (s['operation'], before_leaf) in transitions, (
+            f'{sid}: accepted {s["operation"]} on a {before_leaf!r} leaf, which the R2 '
+            f'table refuses')
+        expected_leaf = transitions[(s['operation'], before_leaf)]
+        assert obs['leaf'] == expected_leaf, (
+            f'{sid}: {s["operation"]} on a {before_leaf!r} leaf must produce '
+            f'{expected_leaf!r}; the row reports {obs["leaf"]!r}')
+        derived += 1
+
+        # The mint is the edge's R2 row, keyed by the request's key, named by
+        # the registry's pinned policy for the kind.
+        policies = {'active': obs['config']['activePolicy'],
+                    'absent': obs['config']['absentPolicy'],
+                    'terminal': obs['config']['terminalPolicy']}
+        expected_mint = [{'kind': kind, 'key': key, 'quantity': qty,
+                          'policy': policies[kind], 'assetName': key}
+                         for kind, qty in deltas[s['operation']]]
+        actual_mint = [{k: m[k] for k in ('kind', 'key', 'quantity', 'policy', 'assetName')}
+                       for m in obs['mint']]
+        assert actual_mint == expected_mint, (
+            f'{sid}: mint {actual_mint} is not the R2 delta of {s["operation"]} at key '
+            f'{key}, which is {expected_mint}')
+        assert obs['tx']['mint'] == obs['mint'], \
+            f'{sid}: the transaction mints something other than the executed step did'
+        derived += 3
+    assert derived, 'EMPTY EXTENT: nothing was independently derived'
+    return derived
+
 TRANSLATION_HEADING = '## The model driver translation'
 TRANSLATION_ROW = re.compile(r'^\| `?([^|`]+?)`? \| (realization|identity|unobservable) \| (.+?) \|$', re.M)
 
@@ -359,6 +506,10 @@ def main():
     parser.add_argument('--export', action='store_true')
     args = parser.parse_args()
     root = args.root.resolve()
+
+    # Name the source that actually ran, so a receipt cites the checker it
+    # was produced by rather than the one someone assumed.
+    print(f'provenance: check_model.py sha256={digest(Path(__file__).read_bytes())}')
 
     audit_sources(root)
     generic_records = statement_inventory(root / 'lean/Singular/Statements.lean', 'Singular.Statements.')
@@ -482,6 +633,8 @@ def main():
     statement_digests = {r['name']: r['statementSha256'] for r in generic_records}
     accepted, refused, total = check_driver_scenarios(
         driver_corpus, generic_names, statement_digests, model_refusal_vocabulary(root))
+    leaf_bytes, deltas = model_constants(root)
+    derived = check_derived(driver_corpus, leaf_bytes, deltas, model_transitions(root))
     check_or_compare(root / 'lean/driver-corpus.json',
                      json.dumps(driver_corpus, indent=2, sort_keys=True) + '\n',
                      args.export, 'driver corpus')
@@ -489,6 +642,8 @@ def main():
     print(f'driver: {total} scenarios ({accepted} accepted, {refused} refused) over '
           f'{len(driver_corpus["surface"]["operations"])} declared operations and '
           f'{len(driver_corpus["surface"]["observations"])} declared observations')
+    print(f'derived: {derived} observations re-derived from the model rather than trusted '
+          f'(roots, leaves and R2 mints)')
     print(f'translation: {mapped} declarations realized in the constitution, '
           f'{identities} identity rules, {unobservable} named unobservable fields')
 
