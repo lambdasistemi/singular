@@ -274,6 +274,20 @@ completeReceipt =
         , "venue" .= String "node-submit"
         , "partial" .= Null
         , "edge" .= completeEdge
+        , "steps" .=
+            [ object
+                [ "registry" .= (1 :: Int)
+                , "edge" .= String "insertActive"
+                , "request" .= object ["key" .= keyHex]
+                , "tamper" .= Null
+                , "model" .= object ["outcome" .= String "accepted"]
+                , "chain" .= object ["outcome" .= String "accepted", "txid" .= foldTx]
+                , "comparison" .= String "agrees"
+                , "compared" .= ["mint", "outputs", "refunds", "signers", "config", "holdings", "custody", "leaf", "root" :: String]
+                , "unobserved" .= ([] :: [String])
+                , "perturbation" .= object ["refused" .= (1 :: Int), "byObservation" .= object [], "exempt" .= ([] :: [String])]
+                ]
+            ]
         , "derivation" .= Null
         ]
 

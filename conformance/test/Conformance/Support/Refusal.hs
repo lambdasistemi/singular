@@ -200,8 +200,6 @@ heldRowReceipt =
         , receiptRejected = Nothing
         , receiptDirty = False
         , receiptPartial = Nothing
-        , receiptEdge = Nothing
-        , receiptRetirement = Nothing
 
         , receiptDerivation = Nothing
         , receiptSteps = Nothing

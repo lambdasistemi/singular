@@ -8,7 +8,7 @@ import Conformance.Story.Live
     , compareWithModel, observe, submit, tamper
     )
 
-story :: Context reg wal -> Story reg wal step obs cmp ins ret bat ref ()
+story :: Context reg wal -> Story reg wal step obs cmp ()
 story (Context registry recipient) = do
     _ <- theorem insertActiveRow $
         clause "Registration delivers one active token to the requested recipient"

@@ -34,9 +34,8 @@ missing is the **rule**: the model states no obligation about who must sign, so
 child that states and proves the signer rules from the validator's actual
 behaviour and removes `requiredSigners` from that vocabulary.
 
-[`RegistrationOracle.lean`](../lean/RegistrationOracle.lean) is no longer on the
-registration path. It serves connected retirement, which replays a registration
-in Lean before retiring it, until #223 moves that onto the same evaluator.
+The registration and retirement chapters now use the same driver evaluator.
+The former per-theorem retirement evaluator has been removed.
 
 Run it from `conformance/`:
 

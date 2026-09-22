@@ -1,20 +1,23 @@
 -- | The retirement effect computed by the model after a real registration.
 module Conformance.Lean.Retirement
     ( UpdateTerminal
-    , retirementEffect
+    , modelComparison
     , updateTerminalRow
     ) where
 
 import Conformance.Story.Binding (mkBoundObligation)
-import Conformance.Story.Live (LiveI (CheckRetirementEffect))
+import Conformance.Story.Live (LiveI (Observe, Compare))
 import Conformance.Story.Specification (LeanCheck, Theorem, action, bindCheck, bindTheorem)
 
 -- | The accepted retirement declaration.
 data UpdateTerminal
 
 -- | Check burn, witness consumption, remaining holdings and the committed leaf.
-retirementEffect :: LeanCheck (LiveI reg wal step obs cmp ins ret bat ref) UpdateTerminal ret
-retirementEffect = bindCheck updateTerminalRow (action . CheckRetirementEffect)
+modelComparison :: LeanCheck (LiveI reg wal step obs cmp) UpdateTerminal step
+modelComparison = bindCheck updateTerminalRow $ \step -> do
+    observation <- action (Observe step)
+    _ <- action (Compare step observation)
+    pure ()
 
 -- | The revision and statement digest resolved before the live clause runs.
 updateTerminalRow :: Theorem UpdateTerminal

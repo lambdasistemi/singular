@@ -8,7 +8,7 @@ import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Story.Live (Context (..), renderLive)
 import Conformance.Rows (Row (..), RowState (..))
-import Conformance.Receipt (Receipt (..), RetirementEvidence (..), RetirementQuantities (..))
+import Conformance.Receipt (Receipt (..))
 
 -- | Called only after both live stories and their observations have succeeded.
 renderBook :: [Row] -> [Receipt] -> String
@@ -24,7 +24,7 @@ renderBook requirements receipts =
         <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry.\n\n"
         <> renderLive (Retire.story (Context "retirement" "holder wallet") (Context "comparison" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of a registration is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction, including the transaction's signers value, which a check changes to prove the difference is reported. Two things are named rather than compared: a ledger makes every output carry a minimum ada and the model says nothing about it, so outputMinimumAda is removed from both sides and earns no pass; and the model states no obligation about who must sign, so requiredSigners stays a named unobservable until the signer rules are stated and proved. Retirement effects still come from the oracle replay, which starts each example in an empty registry. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.\n\n"
+        <> "Every declared observation of an accepted request is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction, including the transaction's signers value, which a check changes to prove the difference is reported. Two things are named rather than compared: a ledger makes every output carry a minimum ada and the model says nothing about it, so outputMinimumAda is removed from both sides and earns no pass; and the model states no obligation about who must sign, so requiredSigners stays a named unobservable until the signer rules are stated and proved. Retirement uses the same driver comparison after each request, with a separate fresh registry for the unknown-key control. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -37,16 +37,10 @@ renderBook requirements receipts =
             <> (if receiptDirty receipt then " (working tree had changes)." else " (clean working tree).") <> "\n\n"
             <> "Node: `" <> T.unpack (receiptNode receipt) <> "`. Compiled validators: `"
             <> T.unpack (receiptBlueprint receipt) <> "`.\n\n"
-            <> maybe "" (\steps -> if receiptRow receipt == "CG21"
-                then "Registration compared " <> show (length steps) <> " requests: "
-                    <> show (length (filter (hasOutcome "accepted") steps)) <> " accepted and "
-                    <> show (length (filter (hasOutcome "refused") steps)) <> " refused on chain.\n\n"
-                else "") (receiptSteps receipt)
-            <> maybe "" (\retired -> "Retirement passed: the holder's active-token quantity changed from **"
-                <> show (rqBefore (rtQuantities retired)) <> "** to **" <> show (rqAfter (rtQuantities retired))
-                <> "**, the token was burned, and the key became Terminal.\n\nRegistration transaction: `"
-                <> T.unpack (rtInsertTxid retired) <> "`. Retirement transaction: `"
-                <> T.unpack (rtRetireTxid retired) <> "`.\n\n") (receiptRetirement receipt)
+            <> maybe "" (\steps -> case receiptRow receipt of
+                "CG21" -> "Registration compared " <> outcomeCounts steps
+                "CG22" -> "Retirement compared " <> outcomeCounts steps
+                _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
         <> T.unpack (rowExpected row) <> ". Planned evidence status: " <> stateName (rowState row)
         <> ".\n\nSource: " <> T.unpack (rowSource row) <> ".\n\n"
@@ -59,3 +53,6 @@ renderBook requirements receipts =
             Just (Object chain) -> KM.lookup "outcome" chain == Just (String expected)
             _ -> False
         _ -> False
+    outcomeCounts steps = show (length steps) <> " requests: "
+        <> show (length (filter (hasOutcome "accepted") steps)) <> " accepted and "
+        <> show (length (filter (hasOutcome "refused") steps)) <> " refused on chain.\n\n"

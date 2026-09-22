@@ -87,8 +87,6 @@ import Control.Monad.Operational qualified as Operational
 import Conformance.Story.Specification qualified as Specification
 import Conformance.Story.Live qualified as Live
 import Conformance.Story.Identity qualified as Identity
-import Conformance.Lean.Registration qualified as Lean
-import Conformance.Lean.Retirement qualified as LeanRetirement
 import Conformance.Compare.Registration qualified as Compare
 import Conformance.Compare.Perturbation qualified as Perturbation
 import Conformance.Lean.Oracle qualified as LeanOracle
@@ -125,10 +123,9 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.ByteString.Base16 qualified as Base16
 import Data.List (intercalate, isInfixOf, nub, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Ord (Down (..))
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -236,9 +233,7 @@ import MPF.Proof.Insertion (MPFProof (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
-    Blueprint (..),
     NamingCodes (..),
-    Validator (..),
     applyBytesParam,
     applyDataParam,
     applyPreviousPolicies,
@@ -325,7 +320,6 @@ import Singular.Registry.Types (
     edgeInsertAbsent,
     edgeInsertActive,
     edgeUpdateActive,
-    edgeUpdateTerminal,
     edgeWitnessTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
@@ -396,16 +390,10 @@ import Conformance.Receipt (
     ConstructorStanding (..),
     DerivationEvidence (..),
     DerivationOutcome (..),
-    FoldStep (..),
     Outcome (..),
     PartialInfo (..),
     Receipt (..),
     RefusalInfo (..),
-    RefusalLeg (..),
-    RetirementEvidence (..),
-    RetirementQuantities (..),
-    RetirementRoots (..),
-    RetirementSource (..),
     Verdict (..),
     derivationMatches,
     derivationVenue,
@@ -2819,7 +2807,10 @@ shape once used. The pot is a pure collateral input (never a
 regular input), ada-only and key-witnessed.
 -}
 collateralPot :: Env -> IO TxIn
-collateralPot env = do
+collateralPot env = fst <$> collateralPotWithChange env
+
+collateralPotWithChange :: Env -> IO (TxIn, (TxIn, TxOut ConwayEra))
+collateralPotWithChange env = do
     let prov = envProv env
     (funderIn, funderOut) <- largestWalletUtxo prov
     let Coin avail = funderOut ^. coinTxOutL
@@ -2841,8 +2832,20 @@ collateralPot env = do
                         ]
                 & feeTxBodyL .~ Coin fee
     tx <- submitWithGenesis (envSubmit env) (mkBasicTx body)
-    -- the pot is the split's first output (index 0), deterministically
-    pure (TxIn (txIdTx tx) (TxIx 0))
+    -- The fresh change output is the next fold's exact ada-only funder.
+    -- Carry its outref directly: a node query immediately after the split
+    -- can still expose the consumed predecessor.
+    let potIn = TxIn (txIdTx tx) (TxIx 0)
+        changeIn = TxIn (txIdTx tx) (TxIx 1)
+    let awaitVisible 0 = failWith "collateral split is not yet visible in wallet UTxOs"
+        awaitVisible n = do
+            utxos <- Cage.queryUTxOs prov genesisAddr
+            if all (`elem` map fst utxos) [potIn, changeIn]
+                then pure ()
+                else threadDelay 1_000_000 >> awaitVisible (n - 1)
+    awaitVisible (30 :: Int)
+    pure (potIn, (changeIn, mkBasicTxOut genesisAddr
+        (MaryValue (Coin change) mempty)))
 
 -- | Sleep until the devnet's POSIX-ms clock reaches @targetMs@.
 sleepUntilMs :: Env -> Integer -> IO ()
@@ -2913,6 +2916,9 @@ data FoldSpec = FoldSpec
     -- ^ validity upper bound; @Nothing@: earliest request deadline
     , fsLower :: Maybe SlotNo
     , fsRefs :: [(TxIn, TxOut ConwayEra)]
+    , fsHolderUtxos :: [(TxIn, TxOut ConwayEra)]
+    , fsFunder :: Maybe (TxIn, TxOut ConwayEra)
+    , fsOmitUnfundedBurn :: Bool
     -- ^ The cage's reference outputs, published once at its boot and
     -- copied here by `rowSpec`. Reading them rather than asking for them
     -- matters: asking publishes, and five awaited publications inside a
@@ -2929,7 +2935,7 @@ assembleFoldSpec env fs = do
     let prov = envProv env
 
     pp <- Cage.queryProtocolParams prov
-    funder <- largestWalletUtxo prov
+    funder <- maybe (largestWalletUtxo prov) pure (fsFunder fs)
     require "hand-build: funder carries tokens" (adaOnly (snd funder))
     -- #157: a booked request carries the approval that certifies its
     -- edge, so it is no longer ada-only.
@@ -2943,7 +2949,7 @@ assembleFoldSpec env fs = do
     oldState <- case extractCageDatum (snd (fsState fs)) of
         Just (StateDatum s) -> pure s
         _ -> failWith "hand-build: state output has no StateDatum"
-    duties <-
+    duties0 <-
         case registryDuties
             (fsCfg fs)
             pp
@@ -2953,6 +2959,13 @@ assembleFoldSpec env fs = do
             (foldSpecProcessed fs) of
             Right d -> pure d
             Left err -> failWith ("hand-build: " <> err)
+    -- A retirement request against an Absent or unknown key has no active
+    -- witness to burn. Remove that impossible mint from the refusal probe so
+    -- the balanced transaction can reach the state script. An accepted
+    -- submission is a finding in submitEdge, never a passing refusal.
+    let duties = if fsOmitUnfundedBurn fs
+            then duties0{rdMints = []}
+            else duties0
     -- A near-now upper bound: the tx is submitted immediately after
     -- assembly, and a slot 30s+ ahead lands past the node's ledger
     -- translation horizon (epoch-safe-zone) and fails phase 1.
@@ -3003,6 +3016,7 @@ assembleFoldSpec env fs = do
                 ( fst (fsState fs)
                     : fst funder
                     : map fst (fsReqs fs)
+                        <> map fst (rdInputs duties)
                         <> map (fst . csUtxo) (rdSpends duties)
                 )
         integrity = computeScriptIntegrity pp redeemers
@@ -3107,11 +3121,13 @@ assembleFoldSpec env fs = do
             -- owes take the deposit that rode its request; what is left
             -- over is change.
             custodyCoins = [outCoin o | sp <- rdSpends duties, let (_, o) = csUtxo sp]
+            witnessCoins = [outCoin o | (_, o) <- rdInputs duties]
             dutyCoins = map outCoin (rdOutputs duties)
             change =
                 sum reqCoins
                     + funderCoin
                     + sum custodyCoins
+                    + sum witnessCoins
                     - sum refunds
                     - sum dutyCoins
                     - feeAmt
@@ -3131,6 +3147,7 @@ assembleFoldSpec env fs = do
                     ( fst (fsState fs')
                         : fst funder'
                         : map fst (fsReqs fs')
+                            <> map fst (rdInputs duties)
                             <> map (fst . csUtxo) (rdSpends duties)
                     )
             statePurpose =
@@ -3463,6 +3480,9 @@ rowSpec cage tid state reqs actions root units =
         , fsUpper = Nothing
         , fsLower = Nothing
         , fsRefs = rcRefs cage
+        , fsHolderUtxos = []
+        , fsFunder = Nothing
+        , fsOmitUnfundedBurn = False
         }
 
 -- | Twice the measured units: the declared budget of a refusing
@@ -4634,29 +4654,6 @@ runCG21 env = do
 
 -- The live interpreter's handles contain values observed during this run.
 -- They cannot be constructed by a story or supplied by a JSON fixture.
-data LiveRegistration = LiveRegistration
-    { lrCage :: RowCage
-    , lrKey :: ByteString
-    , lrWallet :: Addr
-    , lrTx :: ConwayTx
-    , lrStep :: FoldStep
-    , lrBefore :: OnChainTokenState
-    , lrAfter :: OnChainTokenState
-    , lrRequest :: TxOut ConwayEra
-    }
-
-data LiveRetirement = LiveRetirement
-    { ltRegistration :: LiveRegistration
-    , ltTx :: ConwayTx
-    , ltRoot :: Root
-    , ltChainRoot :: ByteString
-    , ltBefore :: Integer
-    , ltAfter :: Integer
-    , ltSource :: RetirementSource
-    , ltBeforeState :: OnChainTokenState
-    , ltRequest :: TxOut ConwayEra
-    }
-
 data StepOutcome
     = StepAccepted ConwayTx (Integer, Integer, Integer)
     | StepRefused ConwayTx (Maybe T.Text) [T.Text]
@@ -4670,6 +4667,7 @@ data LiveStep = LiveStep
     , lsModelRequest :: Value
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
+    , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
     , lsOutcome :: StepOutcome
     }
 
@@ -4683,7 +4681,7 @@ data LiveState = LiveState
     }
 
 -- | Interpret shared story instructions against the running node and builders.
-runLive :: Env -> Live.Story RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg res -> IO res
+runLive :: Env -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
 runLive env program = do
     identities <- newLiveIdentities
     starts <- newIORef Map.empty
@@ -4693,7 +4691,7 @@ runLive env program = do
     registryIds <- newIORef Map.empty
     go (LiveState identities starts traces keys wallets registryIds) program
   where
-    go :: LiveState -> Live.Story RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg res -> IO res
+    go :: LiveState -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
     go state body = case Operational.view body of
         Operational.Return result -> pure result
         Specification.Action instruction Operational.:>>= next ->
@@ -4704,7 +4702,7 @@ runLive env program = do
             require "live theorem binding is missing or stale" (Binding.resolveBinding manifest binding)
             emit "theorem" (Binding.boName binding)
             runClauses state binding (Specification.clauses body') >>= go state . next
-    runClauses :: LiveState -> Binding.Binding -> Operational.Program (Specification.Clause thm (Live.LiveI RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg)) res -> IO res
+    runClauses :: LiveState -> Binding.Binding -> Operational.Program (Specification.Clause thm (Live.LiveI RowCage Addr LiveStep Value Value)) res -> IO res
     runClauses state binding body = case Operational.view body of
         Operational.Return result -> pure result
         Specification.Clause title check actions Operational.:>>= next -> do
@@ -4714,42 +4712,12 @@ runLive env program = do
             observation <- go state actions
             _ <- go state (Specification.checkAction check observation)
             runClauses state binding (next observation)
-    interpret :: LiveState -> Live.LiveI RowCage Addr LiveStep Value Value LiveRegistration LiveRetirement () RefusalLeg obs -> IO obs
+    interpret :: LiveState -> Live.LiveI RowCage Addr LiveStep Value Value obs -> IO obs
     interpret state instruction = case instruction of
         Live.Submit registry request -> submitEdge env state registry Nothing request
         Live.Tamper alteration registry request -> submitEdge env state registry (Just alteration) request
         Live.Observe step -> observeStep env state step
         Live.Compare step observation -> compareStep env state step observation
-        Live.CheckRetirementEffect retirement ->
-            checkRetirementAgainstLean env (liveIds state) retirement
-        Live.CheckRegistrationDelivery registration ->
-            checkRegistrationAgainstLean env (liveIds state) registration
-        Live.RegisterKey registry key wallet -> do
-            let bytes = TE.encodeUtf8 (T.pack key)
-            prepareRegistrationIdentities (liveIds state) registry bytes wallet
-            registerLive env registry bytes wallet
-        Live.ExpectActiveToken registration wallet quantity -> checkRegistrationLive env registration wallet quantity
-        Live.RetireRegistration registry registration -> retireLive env registry registration
-        Live.ExpectRetired retirement expected -> checkRetirementLive env retirement expected
-        Live.ExpectAbsentRetirementRefused registry wallet control keyText -> do
-            requireSameRegistry registry (lrCage (ltRegistration control))
-            let key = TE.encodeUtf8 (T.pack keyText)
-            _ <- bookLive env registry key edgeInsertAbsent wallet
-            _ <- landLive env registry key edgeInsertAbsent
-            _ <- bookRetirementLive env registry key
-            tid <- cageTid registry
-            refusedRetirement env registry tid key (txIdHex (ltTx control))
-                "the control retired a key that IS Active in this same cage; this one was witnessed Absent"
-                "the chain ACCEPTED retirement of an Absent key"
-        Live.ExpectUnknownRetirementRefused registry control keyText -> do
-            requireSameRegistry registry (lrCage (ltRegistration control))
-            let key = TE.encodeUtf8 (T.pack keyText)
-            _ <- bookRetirementLive env registry key
-            tid <- cageTid registry
-            refusedRetirement env registry tid key (txIdHex (ltTx control))
-                "the control retired a key that IS Active in this same cage; this one was never inserted at all"
-                "the chain ACCEPTED retirement of a never-registered key"
-
 -- | One story instruction books exactly one request. All later work keeps its
 -- outref, so a refused request left at the script cannot leak into a fold.
 submitEdge :: Env -> LiveState -> RowCage -> Maybe Live.Tamper -> Live.EdgeRequest Addr -> IO LiveStep
@@ -4765,7 +4733,7 @@ submitEdge env state cage alteration request = do
     when (Map.notMember registry knownRegistries) $
         modifyIORef' (liveRegistryIds state)
             (Map.insert registry (fromIntegral (Map.size knownRegistries) + 1))
-    before <- cg21State env cage
+    before <- readRegistryState env cage
     starts <- readIORef (liveStarts state)
     case Map.lookup registry starts of
         Nothing -> do
@@ -4797,27 +4765,49 @@ submitEdge env state cage alteration request = do
         deposit = bond - stateMaxFee before
     require "booked request holds less than the on-chain processing tip" (deposit >= 0)
     modelRequest <- storyModelRequest ids cfg request deposit
+    alternate <- case alteration of
+        Nothing -> pure Nothing
+        Just Live.RedirectDelivery -> Just <$> (if wallet == genesisAddr
+            then snd <$> secondWallet env else pure genesisAddr)
+    witness <- storyWitness env cfg key wallet
     stateUtxo <- cageStateUtxo env cage
-    (proofs, root) <- cg21Proofs env cage tid [named]
+    (proofs, root) <- storyProofs env cage tid [named]
     units <- declaredSpec env cage
-    pot <- collateralPot env
-    unsigned <- assembleFoldWithFee env
-        (rowSpec cage tid stateUtxo [named] (map Update proofs) root units)
-            { fsCollateral = Just pot, fsSigners = Just [] }
+    (pot, funder) <- collateralPotWithChange env
+    let spec = (rowSpec cage tid stateUtxo [named] (map Update proofs) root units)
+            { fsCollateral = Just pot, fsSigners = Just []
+            , fsHolderUtxos = maybe [] pure witness, fsFunder = Just funder
+            , fsOmitUnfundedBurn = Live.requestEdge request == Live.UpdateTerminal
+                && isNothing witness }
+    trial <- assembleFoldWithFee env spec
+    measured <- try @SomeException (measureUnits env trial)
+    -- Evaluation can consume the entire short validity interval on a busy
+    -- node. Assemble the same one-request shape again immediately before
+    -- submission; its fresh upper bound cannot age during measurement.
+    now <- currentPosixMs
+    upper <- trySlots (envProv env) [now + 8_000, now + 7_500, now + 7_000]
+    unsigned <- assembleFoldWithFee env spec{fsUpper = Just upper}
     let allInputs = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
     pending <- pendingRequests env cage
     require "generic step spent another pending request"
         (filter (`elem` map fst pending) allInputs == [reqIn])
-    alternate <- if wallet == genesisAddr then snd <$> secondWallet env else pure genesisAddr
-    let candidate = case alteration of
+    let wanted = Set.insert pot (unsigned ^. bodyTxL . inputsTxBodyL)
+    visible <- fmap Map.fromList $ fmap concat $ mapM (Cage.queryUTxOs (envProv env))
+        [genesisAddr, wallet, requestAddrFromCfg cfg tid (network cfg),
+         cageAddrFromCfg cfg (network cfg)]
+    emit "step-inputs" ("request=" <> T.unpack (txInToText reqIn)
+        <> " collateral=" <> T.unpack (txInToText pot)
+        <> " funder=" <> T.unpack (txInToText (fst funder))
+        <> " visible=" <> show (map txInToText (Map.keys visible)))
+    require "generic fold has an input missing from the chain snapshot"
+        (all (`Map.member` visible) (Set.toList wanted))
+    let candidate = case alternate of
             Nothing -> unsigned
-            Just Live.RedirectDelivery ->
-                unsigned & bodyTxL . outputsTxBodyL %~ fmap
-                    (\out -> if containsStoryAsset cfg key out
-                        then out & addrTxOutL .~ alternate
-                        else out)
+            Just redirectTo -> unsigned & bodyTxL . outputsTxBodyL %~ fmap
+                (\out -> if containsStoryAsset cfg key out
+                    then out & addrTxOutL .~ redirectTo
+                    else out)
         signed = addKeyWitness genesisSignKey candidate
-    measured <- try @SomeException (measureUnits env unsigned)
     result <- submitTxResilient (envSubmit env) signed
     case result of
         Submitted _ -> do
@@ -4829,17 +4819,17 @@ submitEdge env state cage alteration request = do
                 Nothing -> pure ()
             awaitTx
             rowCommit env cage key edge
-            after <- cg21State env cage
+            after <- readRegistryState env cage
             (mem, cpu) <- either (failWith . displayException) pure measured
             modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, txSizeBytes signed)])
             pure (LiveStep cage request alteration reqOut modelRequest bond
-                (Just after) (StepAccepted signed (mem, cpu, txSizeBytes signed)))
+                (Just after) witness (StepAccepted signed (mem, cpu, txSizeBytes signed)))
         Rejected reason -> do
             let explanation = T.unpack (TE.decodeUtf8Lenient reason)
                 marker = stateMarkerOf cfg
-            pure (LiveStep cage request alteration reqOut modelRequest bond Nothing
+            pure (LiveStep cage request alteration reqOut modelRequest bond Nothing witness
                 (case matchRefusal marker explanation of
-                    Right () -> StepRefused signed (cg21TraceIn explanation)
+                    Right () -> StepRefused signed (storyRefusalTag explanation)
                         (map T.pack (refusalScriptHashes explanation))
                     Left mismatch -> StepUnsupported (T.pack ("unattributed node rejection: " <> show mismatch))))
 
@@ -4855,6 +4845,17 @@ storyReferences env cage key edge
                 , outAssets out == Map.singleton absentPolicy (Map.singleton key 1)] of
             [u] -> pure [u]
             _ -> failWith ("no single observed custody UTxO for " <> show key)
+
+storyWitness :: Env -> CageConfig -> ByteString -> Addr -> IO (Maybe (TxIn, TxOut ConwayEra))
+storyWitness env cfg key wallet = do
+    utxos <- Cage.queryUTxOs (envProv env) wallet
+    let policy = SBS.fromShort (cfgActivePolicy cfg)
+        candidates = [u | u@(_, out) <- utxos
+            , (Map.lookup policy (outAssets out) >>= Map.lookup key) == Just 1]
+    case candidates of
+        [] -> pure Nothing
+        [u] -> pure (Just u)
+        _ -> failWith ("more than one active witness input for " <> show key)
 
 containsStoryAsset :: CageConfig -> ByteString -> TxOut ConwayEra -> Bool
 containsStoryAsset cfg key out =
@@ -4932,42 +4933,48 @@ observeAcceptedStep env state step transaction = do
         activePolicy = policyIdFromPin (cfgActivePolicy cfg)
     holdings <- fmap concat $ mapM (walletHoldings ids keys activeBytes) wallets
     cageOutputs <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
-    require "active registration unexpectedly created custody"
-        (null [() | (_, out) <- cageOutputs, Just (AbsentCustody _) <- [extractCageDatum out]])
+    custody <- mapM (observeCustody ids cfg) [out
+        | (_, out) <- cageOutputs, Just (AbsentCustody _) <- [extractCageDatum out]
+        , Map.member (SBS.fromShort (cfgAbsentPolicy cfg)) (outAssets out)]
     let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
-    mint <- mapM (\(policy, name, quantity) -> observeModelMint ids policy name quantity)
+    mint <- mapM (\(policy, name, quantity) -> observeStepMint ids cfg policy name quantity)
         [ (cg21PolicyBytes policy, SBS.fromShort name, quantity)
         | (policy, names) <- Map.toList minted
         , (AssetName name, quantity) <- Map.toList names ]
-    (addressBytes, delivered) <- cg21Delivery activePolicy requestedKey transaction
-    let expectedAsset = AssetEntry (hexT activeBytes) (hexT requestedKey) 1
-    require "accepted active step did not deliver one named token" (delivered == [expectedAsset])
-    deliveredWallet <- case [wallet | wallet <- wallets,
-            hexT (serialiseAddr wallet) == addressBytes] of
-        [wallet] -> pure wallet
-        _ -> failWith "delivered token address was not allocated by an action"
-    destination <- observeIdentity (liveWallets ids)
-        (WalletIdentity (serialiseAddr deliveredWallet))
+    destination <- case Live.requestEdge (lsRequest step) of
+        Live.InsertActive -> observedDelivery activePolicy requestedKey wallets
+        Live.UpdateActive -> observedDelivery activePolicy requestedKey wallets
+        Live.WitnessTerminal -> observedDelivery
+            (policyIdFromPin (cfgTerminalPolicy cfg)) requestedKey wallets
+        _ -> pure 0
     let owner = object
-            [ "config" .= config, "custody" .= ([] :: [Value])
+            [ "config" .= config, "custody" .= custody
             , "held" .= holdings, "trie" .= trie ]
-    requestApproval <- cg21ApprovalOn cfg (lsRequestOut step)
+    requestApproval <- storyApprovalOn cfg (lsRequestOut step)
     (_, recomputed) <- cg21RequestFacts (lsRequestOut step)
     require "request approval disagrees with its chain-read datum" (requestApproval == recomputed)
     ownerId <- observeIdentity (liveWallets ids)
         (WalletIdentity (serialiseAddr genesisAddr))
     commitment <- maybe (failWith "request commitment cannot be derived") pure $
-        Compare.approvalAssetName "insertActive" requestedId ownerId destination
-    -- The model's transaction is a logical projection. Every field here is
-    -- backed by a chain read or a checked request datum above.
-    let tx = observedTx config mint destination commitment (lsRequestLovelace step)
+        Compare.approvalAssetName (T.pack (Live.edgeName (Live.requestEdge (lsRequest step))))
+            requestedId ownerId destination
+    tx <- observedStepTx env ids step transaction config mint destination commitment custody
     pure $ object
-        [ "config" .= config, "custody" .= ([] :: [Value])
+        [ "config" .= config, "custody" .= custody
         , "held" .= holdings, "leaf" .= leaf, "mint" .= mint
         , "paid" .= ([] :: [Value]), "root" .= root
         , "state" .= owner, "tx" .= tx ]
   where
     ids = liveIds state
+    observedDelivery policy key wallets = do
+        (addressBytes, delivered) <- storyDelivery policy key transaction
+        let expectedAsset = AssetEntry (hexT (cg21PolicyBytes policy)) (hexT key) 1
+        require "accepted edge did not deliver one named token" (delivered == [expectedAsset])
+        deliveredWallet <- case [wallet | wallet <- wallets,
+                hexT (serialiseAddr wallet) == addressBytes] of
+            [wallet] -> pure wallet
+            _ -> failWith "delivered token address was not allocated by an action"
+        observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr deliveredWallet))
     translateLeaf (key, value) = do
         identifier <- observeIdentity (liveKeys ids) (KeyIdentity key)
         (ordinal, name) <- if value == leafAbsent then pure (0, String "absent")
@@ -5001,6 +5008,103 @@ classifyLeaves membership observedRoot = do
         [leaves] -> pure leaves
         matches -> failWith ("concrete root identifies " <> show (length matches)
             <> " leaf assignments over this registry's allocated keys")
+
+observeCustody :: LiveIdentities -> CageConfig -> TxOut ConwayEra -> IO Value
+observeCustody ids cfg out = do
+    refund <- case extractCageDatum out of
+        Just (AbsentCustody address) -> pure address
+        _ -> failWith "custody output has no Absent custody datum"
+    let policy = SBS.fromShort (cfgAbsentPolicy cfg)
+    (key, quantity) <- case Map.toList (outAssets out) of
+        [(actualPolicy, names)] | actualPolicy == policy -> case Map.toList names of
+            [(name, count)] -> pure (name, count)
+            _ -> failWith "custody output does not hold one named asset"
+        _ -> failWith "custody output has assets outside this registry's Absent pin"
+    require "custody output does not hold exactly one Absent token" (quantity == 1)
+    keyId <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    refundId <- observeIdentity (liveWallets ids) (WalletIdentity refund)
+    let Coin amount = out ^. coinTxOutL
+    pure (object ["key" .= keyId, "refundAddress" .= refundId, "value" .= amount])
+
+observeStepMint :: LiveIdentities -> CageConfig -> ByteString -> ByteString -> Integer -> IO Value
+observeStepMint ids cfg policy key quantity = do
+    kind <- case [name | (pin, name) <-
+            [(cfgActivePolicy cfg, "active"), (cfgAbsentPolicy cfg, "absent"),
+             (cfgTerminalPolicy cfg, "terminal")], SBS.fromShort pin == policy] of
+        [name] -> pure (name :: T.Text)
+        _ -> failWith "mint names a policy outside the registry's witness pins"
+    policyId <- observeIdentity (livePolicies ids) (PolicyIdentity policy)
+    keyId <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    pure (object ["kind" .= kind, "key" .= keyId, "policy" .= policyId,
+        "assetName" .= keyId, "quantity" .= quantity])
+
+observedStepTx :: Env -> LiveIdentities -> LiveStep -> ConwayTx -> Value -> [Value]
+    -> Integer -> Integer -> [Value] -> IO Value
+observedStepTx _env ids step transaction config mint destination commitment custody = do
+    let cfg = rcCfg (lsCage step)
+        edge = Live.requestEdge (lsRequest step)
+        requestKeyBytes = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
+        actualInputs = transaction ^. bodyTxL . inputsTxBodyL
+        outputValues = toList (transaction ^. bodyTxL . outputsTxBodyL)
+        stateOutputs = [out | out <- outputValues,
+            Just (StateDatum _) <- [extractCageDatum out]]
+    require "accepted fold has no unique chain state output" (length stateOutputs == 1)
+    witnessInputs <- case (edge, lsWitness step) of
+        (Live.UpdateTerminal, Just (source, _)) -> do
+            require "retirement did not spend its observed active witness"
+                (source `Set.member` actualInputs)
+            asset <- observeStepMint ids cfg (SBS.fromShort (cfgActivePolicy cfg))
+                requestKeyBytes 1
+            pure [object ["role" .= String "witness", "datum" .= String "inline",
+                "stateToken" .= (0 :: Integer), "approvalQuantity" .= (0 :: Integer),
+                "lovelace" .= (0 :: Integer), "assets" .= [asset]]]
+        (Live.UpdateTerminal, Nothing) -> failWith "retirement has no observed active witness"
+        _ -> pure []
+    let positive = [asset | asset@(Object fields) <- mint,
+            KM.lookup "kind" fields `elem` [Just (String "active"), Just (String "terminal")],
+            case KM.lookup "quantity" fields of Just (Number q) -> q > 0; _ -> False]
+        newCustody = [out | out <- outputValues,
+            Just (AbsentCustody _) <- [extractCageDatum out]]
+    cageOutputs <- case edge of
+        Live.InsertAbsent -> case newCustody of
+            [out] -> do
+                entry <- observeCustody ids cfg out
+                require "new custody was not observed at the cage" (entry `elem` custody)
+                keyId <- storyField "key" entry
+                refundId <- storyField "refundAddress" entry
+                value <- storyField "value" entry
+                asset <- observeStepMint ids cfg (SBS.fromShort (cfgAbsentPolicy cfg))
+                    requestKeyBytes 1
+                require "new custody is for a different key" (keyId ==
+                    fromMaybe Null (case lsModelRequest step of
+                        Object fields -> KM.lookup "key" fields
+                        _ -> Nothing))
+                pure [object ["role" .= String "cage", "datum" .= String "inline",
+                    "address" .= (0 :: Integer), "stateToken" .= (0 :: Integer),
+                    "inlineConfig" .= Null, "commitment" .= Null,
+                    "assets" .= [asset], "custodyDatum" .= [refundId],
+                    "lovelace" .= value]]
+            _ -> failWith "insertAbsent did not create one Absent custody output"
+        _ -> pure []
+    let requestInput = object ["role" .= String "request", "datum" .= String "inline",
+            "stateToken" .= (0 :: Integer), "approvalQuantity" .= (1 :: Integer),
+            "lovelace" .= lsRequestLovelace step, "assets" .= ([] :: [Value])]
+        stateInput = object ["role" .= String "state", "datum" .= String "inline",
+            "stateToken" .= (1 :: Integer), "approvalQuantity" .= (0 :: Integer),
+            "lovelace" .= (0 :: Integer), "assets" .= ([] :: [Value])]
+        stateOutput = object ["role" .= String "state", "datum" .= String "inline",
+            "address" .= Null, "stateToken" .= (1 :: Integer),
+            "inlineConfig" .= config, "commitment" .= Null,
+            "assets" .= ([] :: [Value]), "custodyDatum" .= Null,
+            "lovelace" .= (0 :: Integer)]
+        destinationOutput = object ["role" .= String "destination", "datum" .= String "inline",
+            "address" .= destination, "stateToken" .= (0 :: Integer),
+            "inlineConfig" .= Null, "commitment" .= commitment,
+            "assets" .= positive, "custodyDatum" .= Null,
+            "lovelace" .= (0 :: Integer)]
+    pure (object ["inputs" .= (stateInput : requestInput : witnessInputs),
+        "outputs" .= (stateOutput : destinationOutput : cageOutputs),
+        "mint" .= mint, "signers" .= ([] :: [Value]), "refunds" .= ([] :: [Value])])
 
 -- | Ask the same driver for every edge. Setup is only the earlier accepted,
 -- compared requests of this registry; a tamper never joins it.
@@ -5087,12 +5191,28 @@ compareStep env state step observation = do
             , "compared" .= compared, "unobserved" .= unobserved
             , "perturbation" .= perturbation ]
     modifyIORef' (envLiveRecords env) (<> [record])
+    let chainDetail = case lsOutcome step of
+            StepAccepted transaction _ -> " txid=" <> txIdHex transaction
+            StepRefused transaction trace hashes ->
+                " txid=" <> txIdHex transaction <> " trace=" <> show trace
+                    <> " scriptHashes=" <> show hashes
+            StepUnsupported reason -> " reason=" <> T.unpack reason
+    emit "step" (Live.edgeName (Live.requestEdge (lsRequest step))
+        <> " key=" <> show (Live.requestKey (lsRequest step))
+        <> " tamper=" <> maybe "none" Live.tamperName (lsTamper step)
+        <> " model=" <> show modelOutcome <> " modelReason=" <> show modelReason
+        <> " chain=" <> show chainOutcome <> chainDetail
+        <> " comparison=" <> T.unpack comparison)
     case comparison of
         "agrees" -> when (lsTamper step == Nothing && chainOutcome == String "accepted") $
             modifyIORef' (liveTraces state)
                 (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
-        "unsupported" -> emit "gap" ("unsupported " <> Live.edgeName (Live.requestEdge (lsRequest step))
-            <> " for " <> Live.requestKey (lsRequest step))
+        "unsupported" -> case Live.requestEdge (lsRequest step) of
+            Live.DeleteActive -> emit "gap" ("unsupported deleteActive for " <> Live.requestKey (lsRequest step))
+            Live.WitnessTerminal -> emit "gap" ("unsupported witnessTerminal for " <> Live.requestKey (lsRequest step))
+            _ -> failWith ("applicable edge is unsupported: "
+                <> Live.edgeName (Live.requestEdge (lsRequest step))
+                <> " for " <> Live.requestKey (lsRequest step))
         _ -> failWith ("model and chain disagree for " <> Live.edgeName (Live.requestEdge (lsRequest step))
             <> " at " <> Live.requestKey (lsRequest step)
             <> ": model=" <> show modelOutcome <> " chain=" <> show chainOutcome)
@@ -5103,6 +5223,19 @@ storyField name value = case value of
     Object fields -> maybe (failWith ("model response omits " <> T.unpack name)) pure
         (KM.lookup (Key.fromText name) fields)
     _ -> failWith "model response is not an object"
+
+renderDifferences :: [Compare.Difference] -> String
+renderDifferences differences =
+    unlines
+        [ T.unpack (Compare.differenceObservation difference)
+            <> " differs from Lean\nexpected: "
+            <> jsonText (Compare.differenceExpected difference)
+            <> "\nobserved: "
+            <> jsonText (Compare.differenceObserved difference)
+        | difference <- differences
+        ]
+  where
+    jsonText = T.unpack . TE.decodeUtf8 . BSL.toStrict . encode
 
 
 -- Mapping allocation is confined to context/actions. Observation is read-only.
@@ -5138,90 +5271,6 @@ prepareRegistrationIdentities ids cage key recipient = do
     mapM_ (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
         [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
 
-registrationScenario :: LiveIdentities -> LiveRegistration -> IO Value
-registrationScenario ids registration = do
-    let cfg = rcCfg (lrCage registration)
-        before = lrBefore registration
-        key = lrKey registration
-    require "the Lean lifecycle requires a freshly booted empty registry"
-        (unOnChainRoot (stateRoot before) == emptyRoot)
-    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
-    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
-    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    modelPolicies <- mapM (observeIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
-        [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
-    (application, active, absent, terminal) <- case modelPolicies of
-        [a, b, c, d] -> pure (a, b, c, d)
-        _ -> failWith "registration context has an incomplete policy mapping"
-    (funds, _) <- cg21RequestFacts (lrRequest registration)
-    pure $ object
-            [ "config" .= object
-                [ "root" .= ([] :: [Integer]), "maxFee" .= stateMaxFee before
-                , "processTime" .= stateProcessTime before, "retractTime" .= stateRetractTime before
-                , "applicationPolicy" .= application, "activePolicy" .= active
-                , "absentPolicy" .= absent, "terminalPolicy" .= terminal ]
-            , "key" .= modelKey, "owner" .= owner, "recipient" .= recipient, "lovelace" .= funds ]
-
--- The oracle's bounded example assumes a freshly booted registry. Establish
--- this from the actual pre-fold state, not by resetting a nonempty model state.
--- | Say which model observation disagreed, and with what.
-renderDifferences :: [Compare.Difference] -> String
-renderDifferences differences =
-    unlines
-        [ T.unpack (Compare.differenceObservation difference)
-            <> " differs from Lean\nexpected: "
-            <> jsonText (Compare.differenceExpected difference)
-            <> "\nobserved: "
-            <> jsonText (Compare.differenceObserved difference)
-        | difference <- differences
-        ]
-  where
-    jsonText = T.unpack . TE.decodeUtf8 . BSL.toStrict . encode
-
-{- | The abstract scenario this run represents, for the model evaluator.
-
-The context is the registry the caller established, read off the chain: its
-real fee and timing pins travel as ordinary model fields, so the model is asked
-what it says about *this* registry rather than about a fixed one.
--}
-registrationEvaluation :: LiveIdentities -> LiveRegistration -> IO Value
-registrationEvaluation ids registration = do
-    let cfg = rcCfg (lrCage registration)
-        before = lrBefore registration
-        key = lrKey registration
-    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
-    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
-    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    (application, active, absent, terminal) <- observePins ids cfg
-    (funds, _) <- cg21RequestFacts (lrRequest registration)
-    pure $
-        object
-            [ "id" .= String "live-registration"
-            , "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
-            , "statementSha256" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
-            , "start"
-                .= object
-                    [ "config" .= abstractConfig before application active absent terminal (Compare.rootOf [])
-                    , "trie" .= ([] :: [Value])
-                    , "custody" .= ([] :: [Value])
-                    , "held" .= ([] :: [Value])
-                    ]
-            , "setup" .= ([] :: [Value])
-            , "request"
-                .= object
-                    [ "edge" .= String "insertActive"
-                    , "key" .= modelKey
-                    , "owner" .= owner
-                    , "refundAddress" .= (0 :: Integer)
-                    , "deposit" .= (0 :: Integer)
-                    , "output" .= recipient
-                    , "applicationPolicy" .= application
-                    , "approval" .= String "canonical"
-                    ]
-            , "lovelace" .= funds
-            ]
-
--- | The registry's four pinned policies, looked up rather than allocated.
 observePins :: LiveIdentities -> CageConfig -> IO (Integer, Integer, Integer, Integer)
 observePins ids cfg = do
     pins <-
@@ -5255,126 +5304,6 @@ is the chain's own answer rather than a label assumed from the request. The
 abstract root is then recomputed from that translated trie, never compared with
 the concrete authenticated-map hash.
 -}
-observedRegistration :: Env -> LiveIdentities -> LiveRegistration -> Maybe String -> IO Value
-observedRegistration env ids registration control = do
-    -- The unknown-identity control makes the observation meet a concrete value
-    -- the run never bound. Translation is lookup-only, so it must fail here
-    -- rather than hand the stranger the identifier the model expected.
-    case control of
-        Just "unknown-identity" ->
-            () <$ observeIdentity (liveWallets ids) (WalletIdentity (BS.replicate 28 0xAB))
-        _ -> pure ()
-    let cfg = rcCfg (lrCage registration)
-        after = lrAfter registration
-        key = lrKey registration
-        policy = policyIdFromPin (cfgActivePolicy cfg)
-        transaction = lrTx registration
-    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
-    ownerId <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
-    (application, active, absent, terminal) <- observePins ids cfg
-    leaf <- observeSingleKeyLeaf key (unOnChainRoot (stateRoot after))
-    leafBytes <- case leaf of
-        String "absent" -> pure 0
-        String "active" -> pure 1
-        String "terminal" -> pure 2
-        _ -> failWith "the chain commitment is not a single registered key"
-    held <- cg21HeldAt env (lrWallet registration) policy key
-    let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
-    mint <-
-        mapM
-            (\(p, name, quantity) -> observeModelMint ids p name quantity)
-            [ (cg21PolicyBytes p, SBS.fromShort name, quantity)
-            | (p, names) <- Map.toList minted
-            , (AssetName name, quantity) <- Map.toList names
-            ]
-    (funds, _) <- cg21RequestFacts (lrRequest registration)
-    commitment <-
-        maybe (failWith "the model commitment of this request is not derivable") pure $
-            Compare.approvalAssetName "insertActive" modelKey ownerId recipient
-    let trie = [object ["key" .= modelKey, "leaf" .= leaf]]
-        root = Compare.rootOf [(modelKey, leafBytes)]
-        config = abstractConfig after application active absent terminal root
-        holdings =
-            [ object ["key" .= modelKey, "kind" .= String "active", "output" .= recipient]
-            | held > 0
-            ]
-    pure $
-        object
-            [ "config" .= config
-            , "custody" .= ([] :: [Value])
-            , "held" .= holdings
-            , "leaf" .= leaf
-            , "mint" .= mint
-            , "paid" .= ([] :: [Value])
-            , "root" .= root
-            , "state"
-                .= object
-                    ["config" .= config, "custody" .= ([] :: [Value]), "held" .= holdings, "trie" .= trie]
-            , "tx" .= observedTx config mint recipient commitment funds
-            ]
-
-{- | The transaction, as the model declares one.
-
-Its shape is the model's: which inputs and outputs a registration has, what
-each carries, and what was minted. Per-output minimum ada is deliberately
-absent — it is a named unobservable, the model states a logical zero, and the
-comparison leaves it alone on both sides rather than inventing an equality.
-
-`signers` is empty because the model declares no required-signer obligation.
-That is the R05 gap, and reporting the chain's real signers here would be
-claiming a correspondence the model never made.
--}
-observedTx :: Value -> [Value] -> Integer -> Integer -> Integer -> Value
-observedTx config mint recipient commitment requestLovelace =
-    object
-        [ "inputs"
-            .= [ object
-                    [ "role" .= String "state", "datum" .= String "inline"
-                    , "stateToken" .= (1 :: Integer), "approvalQuantity" .= (0 :: Integer)
-                    , "lovelace" .= (0 :: Integer), "assets" .= ([] :: [Value])
-                    ]
-               , object
-                    [ "role" .= String "request", "datum" .= String "inline"
-                    , "stateToken" .= (0 :: Integer), "approvalQuantity" .= (1 :: Integer)
-                    , "lovelace" .= requestLovelace, "assets" .= ([] :: [Value])
-                    ]
-               ]
-        , "outputs"
-            .= [ object
-                    [ "role" .= String "state", "datum" .= String "inline"
-                    , "address" .= Null, "stateToken" .= (1 :: Integer)
-                    , "inlineConfig" .= config, "commitment" .= Null
-                    , "assets" .= ([] :: [Value]), "custodyDatum" .= Null
-                    , "lovelace" .= (0 :: Integer)
-                    ]
-               , object
-                    [ "role" .= String "destination", "datum" .= String "inline"
-                    , "address" .= recipient, "stateToken" .= (0 :: Integer)
-                    , "inlineConfig" .= Null, "commitment" .= commitment
-                    , "assets" .= mint, "custodyDatum" .= Null
-                    , "lovelace" .= (0 :: Integer)
-                    ]
-               ]
-        , "mint" .= mint
-        , "signers" .= ([] :: [Value])
-        , "refunds" .= ([] :: [Value])
-        ]
-
--- | One minted asset, named the way the model names it.
-observeModelMint :: LiveIdentities -> ByteString -> ByteString -> Integer -> IO Value
-observeModelMint ids policy key quantity = do
-    modelPolicy <- observeIdentity (livePolicies ids) (PolicyIdentity policy)
-    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    pure $
-        object
-            [ "kind" .= String "active"
-            , "key" .= modelKey
-            , "policy" .= modelPolicy
-            , "assetName" .= modelKey
-            , "quantity" .= quantity
-            ]
-
 -- | Ask the model about a registry whose context differs from this one's.
 bumpEvaluationField :: Text -> Value -> Value
 bumpEvaluationField name value = case value of
@@ -5404,244 +5333,6 @@ bumpObservedMint value = case value of
         _ -> value
     _ -> value
 
-checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
-checkRegistrationAgainstLean env ids registration = do
-    let transaction = lrTx registration
-    evaluation <- registrationEvaluation ids registration
-    corpusPath <- requireEnv "CONFORMANCE_DRIVER_CORPUS"
-    corpusValue <- eitherDecodeFileStrict corpusPath >>= either failWith pure
-    declaredSurface <- either failWith pure (Compare.declaredSurface corpusValue)
-    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
-    -- The model evaluator, over the context this registry actually has. A
-    -- changed context is a changed question, so the control perturbs what the
-    -- model is asked and the comparison must then refuse the unchanged chain.
-    let asked = case control of
-            Just "wrong-fee" -> bumpEvaluationField "maxFee" evaluation
-            Just "wrong-timing" -> bumpEvaluationField "processTime" evaluation
-            _ -> evaluation
-    evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
-    row <- LeanOracle.expectedObservation evaluator [] asked >>= either failWith pure
-    expected <- case row of
-        Object fields | Just observations <- KM.lookup "observations" fields -> pure observations
-        _ -> failWith "the model evaluator returned no observations"
-    actual <- observedRegistration env ids registration control
-    let observed = case control of
-            Just "wrong-delivery" -> bumpObservedMint actual
-            _ -> actual
-        outcome = Compare.compareRegistration declaredSurface expected observed
-        checked = either (Left . renderDifferences) (const (Right ())) outcome
-    wallets <- Identity.bindings <$> readIORef (liveWallets ids)
-    policies <- Identity.bindings <$> readIORef (livePolicies ids)
-    keys <- Identity.bindings <$> readIORef (liveKeys ids)
-    let report = object
-            [ "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
-            , "statementDigest" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
-            , "evaluator" .= evaluator
-            , "base" .= envBase env, "transaction" .= txIdHex transaction
-            , "asked" .= asked, "expected" .= expected
-            , "actual" .= actual, "checkedObservation" .= observed
-            , "control" .= control, "passed" .= either (const False) (const True) checked
-            , "mapping" .= object
-                [ "wallets" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (WalletIdentity bytes, identifier) <- wallets]
-                , "policies" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (PolicyIdentity bytes, identifier) <- policies]
-                , "keys" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (KeyIdentity bytes, identifier) <- keys] ] ]
-    BSL.writeFile (envReceiptsDir env </> "registration-lean.json") (encode report)
-    BSL.writeFile (envReceiptsDir env </> ("registration-lean-" <> txIdHex transaction <> ".json")) (encode report)
-    emit "Lean expected" (show expected)
-    emit "chain observed" (show actual)
-    when (observed /= actual) $ emit "control" "deliberately changed the observation presented to the Lean comparison"
-    either failWith pure checked
-    emit "PASS" ("delivery agrees with the executable Lean model; tx=" <> txIdHex transaction)
-
--- The model replays the observed registration before retirement. The concrete
--- root bounds this example to that single-key history; no state is invented.
-checkRetirementAgainstLean :: Env -> LiveIdentities -> LiveRetirement -> IO ()
-checkRetirementAgainstLean env ids retirement = do
-    let registration = ltRegistration retirement
-        key = lrKey registration
-        before = ltBeforeState retirement
-        transaction = ltTx retirement
-        source = ltSource retirement
-    registrationInput <- registrationScenario ids registration
-    require "retirement starts from a different state than the observed registration"
-        (stateRoot before == stateRoot (lrAfter registration)
-            && cg21Pins before == cg21Pins (lrAfter registration))
-    beforeLeaf <- observeSingleKeyLeaf key (unOnChainRoot (stateRoot before))
-    require "the observed registration state is not a single active key" (beforeLeaf == String "active")
-    request <- case extractCageDatum (ltRequest retirement) of
-        Just (RequestDatum observed) -> pure observed
-        _ -> failWith "retirement request datum is missing"
-    require "retirement request names a different edge or key"
-        (requestEdge request == edgeUpdateTerminal && requestKey request == key)
-    let BuiltinByteString ownerBytes = requestOwner request
-    require "retirement request names a different owner" (ownerBytes == addrKeyHashBytes genesisAddr)
-    require "retirement request changed the empty destination"
-        (requestDestination request == (BS.empty, BS.empty))
-    (funds, _) <- cg21RequestFacts (ltRequest retirement)
-    let scenario = object ["registration" .= registrationInput, "lovelace" .= funds]
-    oracle <- requireEnv "CONFORMANCE_LEAN_ORACLE"
-    expected <- LeanOracle.expectedObservation oracle ["retirement"] scenario >>= either failWith pure
-    let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
-    mint <- mapM (\(policy, name, quantity) -> observeModelAsset ids policy name quantity)
-        [(cg21PolicyBytes policy, SBS.fromShort name, quantity)
-        | (policy, names) <- Map.toList minted, (AssetName name, quantity) <- Map.toList names]
-    sourcePolicy <- either failWith pure (Base16.decode (TE.encodeUtf8 (rsPolicy source)))
-    sourceKey <- either failWith pure (Base16.decode (TE.encodeUtf8 (rsName source)))
-    sourceAsset <- observeModelAsset ids sourcePolicy sourceKey (rsQuantity source)
-    let spent = if rsOutref source `elem` map txInToText (Set.toList (transaction ^. bodyTxL . inputsTxBodyL))
-            then [sourceAsset] else []
-    leaf <- observeSingleKeyLeaf key (ltChainRoot retirement)
-    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
-    let observation minting remaining currentLeaf = object
-            [ "before" .= ltBefore retirement, "after" .= remaining
-            , "mint" .= minting, "spent" .= spent, "leaf" .= currentLeaf ]
-        actual = observation mint (ltAfter retirement) leaf
-        changedMint = [object ["policy" .= policy, "key" .= name, "quantity" .= (0 :: Integer)]
-            | Object asset <- mint
-            , Just policy <- [KM.lookup "policy" asset], Just name <- [KM.lookup "key" asset]]
-        observed = case control of
-            Just "wrong-burn" -> observation changedMint (ltAfter retirement) leaf
-            Just "token-remains" -> observation mint (ltAfter retirement + 1) leaf
-            Just "wrong-retirement-leaf" -> observation mint (ltAfter retirement) beforeLeaf
-            _ -> actual
-        checked = LeanOracle.compareObservation expected observed
-    let report = object
-            [ "theorem" .= Binding.boName (Specification.theoremBinding LeanRetirement.updateTerminalRow)
-            , "statementDigest" .= Binding.boDigest (Specification.theoremBinding LeanRetirement.updateTerminalRow)
-            , "oracle" .= oracle, "base" .= envBase env, "registration" .= txIdHex (lrTx registration)
-            , "transaction" .= txIdHex transaction, "scenario" .= scenario, "expected" .= expected
-            , "actual" .= actual, "checkedObservation" .= observed, "control" .= control
-            , "passed" .= either (const False) (const True) checked
-            , "rootBefore" .= hexT (unOnChainRoot (stateRoot before))
-            , "rootAfter" .= hexT (ltChainRoot retirement), "source" .= source ]
-    BSL.writeFile (envReceiptsDir env </> ("retirement-lean-" <> txIdHex transaction <> ".json")) (encode report)
-    emit "Lean retirement expected" (show expected)
-    emit "chain retirement observed" (show actual)
-    either failWith pure checked
-    emit "PASS" ("retirement agrees with the executable Lean model; tx=" <> txIdHex transaction)
-
-observeModelAsset :: LiveIdentities -> ByteString -> ByteString -> Integer -> IO Value
-observeModelAsset ids policy key quantity = do
-    modelPolicy <- observeIdentity (livePolicies ids) (PolicyIdentity policy)
-    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
-    pure (object ["policy" .= modelPolicy, "key" .= modelKey, "quantity" .= quantity])
-
--- Classify the actual commitment by rebuilding each possible one-key trie.
--- This is the concrete hash representation of a leaf, not a guessed leaf label.
-observeSingleKeyLeaf :: ByteString -> ByteString -> IO Value
-observeSingleKeyLeaf key observedRoot
-    | observedRoot == emptyRoot = pure Null
-    | otherwise = do
-        candidates <- mapM (\(label, value) -> do
-            trie <- mkPureTrie
-            root <- CageTrie.insert trie key value
-            pure (label, unRoot root))
-            [("absent", leafAbsent), ("active", leafActive), ("terminal", leafTerminal)]
-        case [label | (label, root) <- candidates, root == observedRoot] of
-            [label] -> pure (String label)
-            _ -> failWith "chain commitment is not a recognized single-key registry state"
-
-requireSameRegistry :: RowCage -> RowCage -> IO ()
-requireSameRegistry first second = do
-    a <- cageTid first
-    b <- cageTid second
-    require "story attempted to use a result from a different registry" (a == b)
-
-bookLive :: Env -> RowCage -> ByteString -> Edge -> Addr -> IO (TxIn, TxOut ConwayEra)
-bookLive env registry key edge recipient = do
-    tid <- cageTid registry
-    let cfg = rcCfg registry
-    bookEdge env cfg tid genesisAddr genesisSignKey key edge
-        (serialiseAddr recipient, BS.empty) [] (defaultTipCoin cfg + cgDeposit)
-
-bookRetirementLive :: Env -> RowCage -> ByteString -> IO (TxIn, TxOut ConwayEra)
-bookRetirementLive env registry key = do
-    tid <- cageTid registry
-    let cfg = rcCfg registry
-    bookEdge env cfg tid genesisAddr genesisSignKey key edgeUpdateTerminal
-        (BS.empty, BS.empty) [] (defaultTipCoin cfg + cgDeposit)
-
-landLive :: Env -> RowCage -> ByteString -> Edge -> IO ConwayTx
-landLive env registry key edge = do
-    tid <- cageTid registry
-    context <- rowRegistryContext env registry tid
-    unsigned <- updateTokenWithDuties (rcCfg registry) (envProv env) (envTm env) tid genesisAddr context
-    signed <- submitWithGenesis (envSubmit env) unsigned
-    rowCommit env registry key edge
-    pure signed
-
-registerLive :: Env -> RowCage -> ByteString -> Addr -> IO LiveRegistration
-registerLive env registry key recipient = do
-    emit "story" ("Request and apply registration of " <> show key)
-    (_, request) <- bookLive env registry key edgeInsertActive recipient
-    before <- cg21State env registry
-    (transaction, observation, _) <- cg21Fold env registry [key]
-    after <- cg21State env registry
-    pure (LiveRegistration registry key recipient transaction observation before after request)
-
-checkRegistrationLive :: Env -> LiveRegistration -> Addr -> Integer -> IO ()
-checkRegistrationLive env registration wallet quantity = do
-    let registry = lrCage registration
-        cfg = rcCfg registry
-        key = lrKey registration
-        policy = policyIdFromPin (cfgActivePolicy cfg)
-        expectedAsset = AssetEntry (hexT (cg21PolicyBytes policy)) (hexT key) quantity
-        transaction = lrTx registration
-    require "the story changed the registration recipient" (wallet == lrWallet registration)
-    held <- cg21HeldAt env wallet policy key
-    require ("live registration: expected " <> show quantity <> " active tokens, observed " <> show held) (held == quantity)
-    (address, delivered) <- cg21Delivery policy key transaction
-    require "active token went to a different address" (address == hexT (serialiseAddr wallet))
-    require "delivered token identity or quantity differs from the story" (delivered == [expectedAsset])
-    require "mint differs from the token the story requires" (cg21MintedOf policy transaction == [expectedAsset])
-    require "registration unexpectedly paid a refund" (null (cg21RefundsOf transaction))
-    require "registration unexpectedly required a signer" (null (cg21SignersOf transaction))
-    require "registration changed a non-root setting" (cg21Pins (lrBefore registration) == cg21Pins (lrAfter registration))
-    require "the chain root differs from the applied request's committed root"
-        (fsRootAfter (lrStep registration) == fsCommitted (lrStep registration))
-    parameters <- cg21OpenParameters env
-    require "the open application unexpectedly takes parameters" (parameters == 0)
-    approval <- cg21ApprovalOn cfg (lrRequest registration)
-    (funds, recomputed) <- cg21RequestFacts (lrRequest registration)
-    require "the approval does not bind the requested destination" (approval == recomputed)
-    require "the request does not cover the processing tip" (funds >= stateMaxFee (lrBefore registration))
-    emit "PASS" ("registered " <> show key <> ": token delivered to the requested wallet; tx=" <> txIdHex transaction)
-
-retireLive :: Env -> RowCage -> LiveRegistration -> IO LiveRetirement
-retireLive env registry registration = do
-    requireSameRegistry registry (lrCage registration)
-    require "this retirement backend requires the funded requester to hold and sign for its token" (lrWallet registration == genesisAddr)
-    let cfg = rcCfg registry
-        key = lrKey registration
-    before <- activeHeldFor env cfg key
-    require "retirement must start with the active token created by registration" (before == 1)
-    source <- activeSourceFor env cfg key
-    beforeState <- cg21State env registry
-    (_, request) <- bookRetirementLive env registry key
-    transaction <- landLive env registry key edgeUpdateTerminal
-    tid <- cageTid registry
-    root <- withTrie (envTm env) tid CageTrie.getRoot
-    held <- activeHeldFor env cfg key
-    chain <- committedRootOf env registry
-    pure (LiveRetirement registration transaction root chain before held source beforeState request)
-
-checkRetirementLive :: Env -> LiveRetirement -> Integer -> IO ()
-checkRetirementLive _env retirement expected = do
-    let registration = ltRegistration retirement
-        cfg = rcCfg (lrCage registration)
-        key = lrKey registration
-        transaction = ltTx retirement
-        roots = [fsRootBefore (lrStep registration), fsRootAfter (lrStep registration), hexText (unRoot (ltRoot retirement))]
-    require ("live retirement: expected " <> show expected <> " remaining tokens, observed " <> show (ltAfter retirement)) (ltAfter retirement == expected)
-    require "the chain does not carry the root of the Terminal leaf" (ltChainRoot retirement == unRoot (ltRoot retirement))
-    require "retirement did not burn exactly the registered key's active token"
-        (activeMintOf transaction cfg == [AssetEntry (hexText (activePolicyBytes cfg)) (hexText key) (-1)])
-    require "retirement did not consume the observed token-bearing input"
-        (rsOutref (ltSource retirement) `elem` map txInToText (Set.toList (transaction ^. bodyTxL . inputsTxBodyL)))
-    require "registration and retirement did not produce three distinct roots" (length (nub roots) == 3)
-    emit "PASS" ("retired " <> show key <> ": original active token burned and leaf is Terminal; tx=" <> txIdHex transaction)
-
-
 -- ---------------------------------------------------------
 -- CG21 helpers (#184)
 -- ---------------------------------------------------------
@@ -5654,95 +5345,11 @@ hexT = T.pack . hex
 cg21PolicyBytes :: PolicyID -> ByteString
 cg21PolicyBytes (PolicyID sh) = scriptHashBytes sh
 
-{- | The open application's declared parameter count, READ from the
-blueprint entry rather than written down here. A parameterless policy's
-compiled hash IS its policy id, so a blueprint that grew a parameter
-must change this observation instead of being contradicted by it.
--}
-cg21OpenParameters :: Env -> IO Integer
-cg21OpenParameters env = do
-    ebp <- loadBlueprint (envBlueprintPath env)
-    bp <- case ebp of
-        Left err -> failWith ("CG21: blueprint does not parse: " <> err)
-        Right b -> pure b
-    case [v | v <- validators bp, vTitle v == "open.open.mint"] of
-        (v : _) -> pure (fromIntegral (vParameters v))
-        [] -> failWith "CG21: open.open.mint is not in this blueprint"
-
 -- | The cage's live eight-field state datum.
-cg21State :: Env -> RowCage -> IO OnChainTokenState
-cg21State env cage = do
+readRegistryState :: Env -> RowCage -> IO OnChainTokenState
+readRegistryState env cage = do
     (_, out) <- cageStateUtxo env cage
     extractState out
-
-{- | The seven non-root pins of the state datum. The eighth field is
-the root, and the fold is allowed to move exactly that one.
--}
-cg21Pins :: OnChainTokenState -> [T.Text]
-cg21Pins s =
-    [ T.pack (show (stateMaxFee s))
-    , T.pack (show (stateProcessTime s))
-    , T.pack (show (stateRetractTime s))
-    , pin (stateAppPolicy s)
-    , pin (stateActivePolicy s)
-    , pin (stateAbsentPolicy s)
-    , pin (stateTerminalPolicy s)
-    ]
-  where
-    pin (BuiltinByteString b) = hexT b
-
--- | The registry root the chain currently carries.
-cg21ChainRoot :: Env -> RowCage -> IO T.Text
-cg21ChainRoot env cage = do
-    s <- cg21State env cage
-    pure (hexT (unOnChainRoot (stateRoot s)))
-
-{- | Fold every pending request through the library builder, commit each
-landed key into the manager's trie, and record what the roots did.
-
-The commit is not bookkeeping. The speculative session inside
-'updateTokenWithDuties' starts from the COMMITTED trie and is discarded,
-so a caller that skips it re-proves the next fold against the boot state
-and that fold submits an empty proof. The root either side is recorded
-and a root that did not move fails the row here, where the cause is
-still visible.
--}
-cg21Fold ::
-    Env -> RowCage -> [ByteString] -> IO (ConwayTx, FoldStep, (Integer, Integer, Integer))
-cg21Fold env cage keys = do
-    tid <- cageTid cage
-    let cfg = rcCfg cage
-    rootBefore <- cg21ChainRoot env cage
-    ctx <- rowRegistryContext env cage tid
-    unsigned <- updateTokenWithDuties cfg (envProv env) (envTm env) tid genesisAddr ctx
-    -- Measured BEFORE the submission: evaluation resolves the spending
-    -- script through the UTxO the fold is about to consume, and once it
-    -- is consumed the node cannot point the redeemer at anything.
-    (mem, cpu) <- measureUnits env unsigned
-    signed <- submitWithGenesis (envSubmit env) unsigned
-    -- The measured fold is what `declaredSpec` doubles for the hand
-    -- assembly below, so the duplicate pair declares a budget that
-    -- reaches the occupancy check rather than a guess.
-    writeIORef (rcUnits cage) (mem, cpu)
-    mapM_ (\k -> rowCommit env cage k edgeInsertActive) keys
-    rootAfter <- cg21ChainRoot env cage
-    committed <- withTrie (envTm env) tid CageTrie.getRoot
-    require
-        ( "CG21: a landed fold left the registry root where it found it (0x"
-            <> T.unpack rootBefore
-            <> "); the next proof would be built against a stale trie"
-        )
-        (rootBefore /= rootAfter)
-    pure
-        ( signed
-        , FoldStep
-            { fsTxid = T.pack (txIdHex signed)
-            , fsRootBefore = rootBefore
-            , fsRootAfter = rootAfter
-            , fsCommitted = hexT (unRoot committed)
-            }
-        , (mem, cpu, txSizeBytes signed)
-        )
 
 {- | Assemble a fold of whatever is pending, WITHOUT evaluating it.
 
@@ -5756,13 +5363,13 @@ verdict to the node — which is what a refusal on chain means.
 This is the builder BOTH halves of the duplicate pair use, so the pair
 differs in the key's occupancy and in nothing else.
 -}
-cg21Proofs ::
+storyProofs ::
     Env ->
     RowCage ->
     TokenId ->
     [(TxIn, TxOut ConwayEra)] ->
     IO ([[ProofStep]], Root)
-cg21Proofs env cage tid reqs = do
+storyProofs env cage tid reqs = do
     attempt <- try @SomeException (speculativeApplyAll env cage tid reqs)
     case attempt of
         Right ok -> pure ok
@@ -5780,27 +5387,11 @@ cg21Proofs env cage tid reqs = do
 {- | Fold through the harness's own assembly, submit, commit, and record
 what the roots did — the accepting half of the duplicate pair.
 -}
-cg21TraceIn :: String -> Maybe T.Text
-cg21TraceIn text =
+storyRefusalTag :: String -> Maybe T.Text
+storyRefusalTag text =
     case [n | n <- ["key-exists", "net-mint-mismatch"], n `isInfixOf` text] of
         (n : _) -> Just (T.pack n)
         [] -> Nothing
-
-{- | Submit a transaction that must be refused, and attribute the
-refusal to the state script before recording it.
-
-An accepted transaction here is a FINDING and fails the run; a refusal
-that does not attribute fails the run naming the mismatch. Neither can
-pass quietly as "refused".
--}
-cg21MintedOf :: PolicyID -> ConwayTx -> [AssetEntry]
-cg21MintedOf policy tx = case tx ^. bodyTxL . mintTxBodyL of
-    MultiAsset ma ->
-        [ AssetEntry (hexT (cg21PolicyBytes policy)) (hexT (SBS.fromShort an)) q
-        | (p, names) <- Map.toList ma
-        , p == policy
-        , (AssetName an, q) <- Map.toList names
-        ]
 
 {- | Where the fold actually delivered, and what that output holds.
 
@@ -5808,9 +5399,9 @@ Read off the accepted transaction's own outputs rather than off the
 address the harness queried: querying by address and then reporting that
 address back would compare a value with itself.
 -}
-cg21Delivery ::
+storyDelivery ::
     PolicyID -> ByteString -> ConwayTx -> IO (T.Text, [AssetEntry])
-cg21Delivery policy key tx =
+storyDelivery policy key tx =
     case [o | o <- toList (tx ^. bodyTxL . outputsTxBodyL), holds o] of
         [o] ->
             pure
@@ -5824,7 +5415,7 @@ cg21Delivery policy key tx =
                 )
         outs ->
             failWith
-                ( "CG21: the fold has "
+                ( "generic edge: the fold has "
                     <> show (length outs)
                     <> " outputs carrying the active token at this key, want one"
                 )
@@ -5837,27 +5428,9 @@ cg21Delivery policy key tx =
             , (AssetName an, _) <- Map.toList names
             ]
 
-{- | The quantity the destination address actually holds at this key,
-queried from the chain. The fold's own output says where the token went;
-this says it is still there and spendable from that address.
--}
-cg21HeldAt :: Env -> Addr -> PolicyID -> ByteString -> IO Integer
-cg21HeldAt env addr policy key = do
-    utxos <- Cage.queryUTxOs (envProv env) addr
-    pure
-        ( sum
-            [ q
-            | (_, out) <- utxos
-            , (p, names) <- Map.toList (rawAssets out)
-            , p == policy
-            , (AssetName an, q) <- Map.toList names
-            , SBS.fromShort an == key
-            ]
-        )
-
 -- | The approval asset the request UTxO actually carries.
-cg21ApprovalOn :: CageConfig -> TxOut ConwayEra -> IO T.Text
-cg21ApprovalOn cfg out =
+storyApprovalOn :: CageConfig -> TxOut ConwayEra -> IO T.Text
+storyApprovalOn cfg out =
     case [ SBS.fromShort an
          | (p, names) <- Map.toList (rawAssets out)
          , p == policyIdFromPin (cfgApplicationPolicy cfg)
@@ -5866,7 +5439,7 @@ cg21ApprovalOn cfg out =
         [n] -> pure (hexT n)
         ns ->
             failWith
-                ( "CG21: the request UTxO carries "
+                ( "generic edge: the request UTxO carries "
                     <> show (length ns)
                     <> " approvals, want one"
                 )
@@ -5883,7 +5456,7 @@ cg21RequestFacts :: TxOut ConwayEra -> IO (Integer, T.Text)
 cg21RequestFacts out = do
     rq <- case extractCageDatum out of
         Just (RequestDatum r) -> pure r
-        _ -> failWith "CG21: the request UTxO carries no request datum"
+        _ -> failWith "generic edge: the request UTxO carries no request datum"
     -- #183: the request states its C2 row itself; there is nothing to
     -- derive. A tag outside the table names no approval binding, so a
     -- row that reads one would be reading a fact that does not exist.
@@ -5898,24 +5471,6 @@ cg21RequestFacts out = do
         ( lovelace
         , hexT (approvalName edgeIx (requestKey rq) owner (requestDestination rq))
         )
-
-{- | The refund obligations this fold creates, read off its own
-redeemer.
-
-The state script derives refunds from the fold's ACTIONS: only a
-`Rejected` action (constructor 1) owes anything, and `sumRefunds` is the
-rule that checks them. A batch whose actions are all `Update`
-(constructor 0) owes none, which is the model's @refunds := []@ — read
-from the transaction the node validated rather than from what the
-harness meant to build.
--}
-cg21RefundsOf :: ConwayTx -> [Integer]
-cg21RefundsOf tx = [c | c <- requestActionConstrs tx, c /= 0]
-
--- | The signers the fold declares it requires. The model says none.
-cg21SignersOf :: ConwayTx -> [T.Text]
-cg21SignersOf tx =
-    map (T.pack . show) (Set.toList (tx ^. bodyTxL . reqSignerHashesTxBodyL))
 
 -- | One envelope, with the generic body computed by Compare instructions.
 writeStoryReceipt :: Env -> T.Text -> [Value] -> IO ()
@@ -5942,8 +5497,6 @@ writeStoryReceipt env row records = do
             , receiptBase = T.pack (envBase env)
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
-            , receiptEdge = Nothing
-            , receiptRetirement = Nothing
             , receiptDerivation = Nothing
             , receiptSteps = Just records
             , receiptNode = T.pack (envNode env)
@@ -6055,231 +5608,23 @@ against `state.terminalRefusal`.
 -}
 runCG22 :: Env -> IO ()
 runCG22 env = do
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     require "unknown retirement story control"
         (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains", Just "wrong-burn", Just "wrong-retirement-leaf"])
     registry <- ensureRowCage env "story-retirement" 30_000 30_000
     comparison <- ensureRowCage env "story-unknown-key comparison" 30_000 30_000
     _ <- largestWalletUtxo (envProv env)
-    result <- runLive env (RetirementStory.story
+    _ <- runLive env (RetirementStory.story
         (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
-    let registration = Live.retirementRegistration result
-        retired = Live.retiredRegistration result
-        cfg = rcCfg (lrCage registration)
-        insertTx = lrTx registration
-        retireTx = ltTx retired
-        controlTx = ltTx (Live.unknownControl result)
-        unknownLeg = Live.unknownRefusal result
-        absentLeg = Live.absentRefusal result
-    (mem, cpu) <- readIORef (rcUnits (lrCage registration))
-    writeRetirementReceipt env "CG22"
-        [txIdHex insertTx, txIdHex retireTx, txIdHex controlTx, T.unpack (rlTxid unknownLeg), T.unpack (rlTxid absentLeg)]
-        (Just mem) (Just cpu) (Just (txSizeBytes retireTx))
-        RetirementEvidence
-            { rtActivePolicy = hexText (activePolicyBytes cfg)
-            , rtKey = hexText (lrKey registration)
-            , rtInsertTxid = T.pack (txIdHex insertTx)
-            , rtRetireTxid = T.pack (txIdHex retireTx)
-            , rtRoots = RetirementRoots
-                { rrBeforeInsert = fsRootBefore (lrStep registration)
-                , rrActive = fsRootAfter (lrStep registration)
-                , rrTerminal = hexText (unRoot (ltRoot retired))
-                }
-            , rtQuantities = RetirementQuantities (ltBefore retired) (ltAfter retired)
-            , rtMint = activeMintOf retireTx cfg
-            , rtSource = ltSource retired
-            , rtLeaf = "Terminal"
-            , rtUnknown = unknownLeg
-            , rtAbsent = absentLeg
-            }
-    emit "CG22" "the witness the insert delivered was burned from its holder, the leaf reads Terminal, and the Unknown and Absent retirements were refused against an accepting control"
-
-{- | The registry's own committed root, read off a row cage's state UTxO
-on chain. This is how a LEAF is observed: `Trie.lookup` answers with the
-key's hash rather than its value, while a trie with a different leaf at
-a key has a different root.
--}
-committedRootOf :: Env -> RowCage -> IO ByteString
-committedRootOf env cage = do
-    (_, out) <- cageStateUtxo env cage
-    case extractCageDatum out of
-        Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))
-        _ -> failWith "row cage: the state UTxO carries no state datum"
-
-{- | Submit a fold the chain must REFUSE, and record the leg: the refused
-transaction's id, the script hashes the failure is attributed to, the
-honest trace (`Nothing` unless the ledger surfaced one), the accepting
-control, and what differs between the two.
-
-The fold is HAND-ASSEMBLED rather than taken from
-`updateTokenWithDuties`. That builder evaluates on the node and raises
-the failure as its own error, so it produces no transaction — and a row
-whose claim is "the chain refused this, here is the transaction" needs
-one to point at. Assembling it directly is the same path every other
-refusal row in this suite uses.
-
-An ACCEPTANCE here is reported as a finding, never relabelled.
--}
-refusedRetirement ::
-    Env ->
-    RowCage ->
-    TokenId ->
-    -- | the key under test, named by the refused batch
-    ByteString ->
-    -- | the accepting control's txid
-    String ->
-    -- | the one fact that differs from the control
-    String ->
-    -- | what to say if the chain accepts
-    String ->
-    IO RefusalLeg
-refusedRetirement env cage tid key controlTxid distinguisher acceptedMsg = do
-    state <- cageStateUtxo env cage
-    reqUtxos <- pendingRequests env cage
-    (proofs, newRoot) <- speculativeApplyAll env cage tid reqUtxos
-    pp <- Cage.queryProtocolParams (envProv env)
-    -- The budget is per REDEEMER and the ledger caps their SUM, so the
-    -- transaction maximum handed to each one over-subscribes it by the
-    -- number of purposes (`ExUnitsTooBigUTxO`). A quarter each leaves
-    -- room for the state spend, the request spends and the mints, and
-    -- is far more than a fold needs to reach the refusal under test.
-    let ExUnits maxMem maxSteps = pp ^. ppMaxTxExUnitsL
-        share = ExUnits (maxMem `div` 4) (maxSteps `div` 4)
-    unsigned <-
-        assembleFoldWithFee
-            env
-            (rowSpec cage tid state reqUtxos (map Update proofs) newRoot share)
-    let signed = addKeyWitness genesisSignKey unsigned
-    result <- submitTxResilient (envSubmit env) signed
-    case result of
-        Submitted _ -> awaitTx >> failWith acceptedMsg
-        Rejected reason -> do
-            let text = T.unpack (TE.decodeUtf8Lenient reason)
-                hashes = refusalScriptHashes text
-            -- A phase-2 failure names the script that refused. A phase-1
-            -- rejection names none, and would mean the chain refused
-            -- this transaction for its shape rather than for the leaf
-            -- under test — so the reason travels with the complaint.
-            require
-                ( "CG22: the refusal carries no script-hash attribution, so \
-                  \it is not the cage refusing: "
-                    <> take 600 text
-                )
-                (not (null hashes))
-            pure
-                RefusalLeg
-                    { rlTxid = T.pack (txIdHex signed)
-                    , rlHashes = map T.pack hashes
-                    , -- A phase-2 failure carries an EMPTY Plutus log
-                      -- list, so the validator's own trace is normally
-                      -- not recoverable. `Nothing` rather than a guess;
-                      -- the NAMES are asserted in the Aiken suite.
-                      rlTrace = Nothing
-                    , rlControlTxid = T.pack controlTxid
-                    , rlDistinguisher = T.pack distinguisher
-                    , rlKeys = [hexT key]
-                    , rlClaimed = Nothing
-                    , rlEntailed = Nothing
-                    , rlControlMint = Nothing
-                    }
-
--- | The quantity the genesis wallet holds of this key's active witness.
-activeHeldFor :: Env -> CageConfig -> ByteString -> IO Integer
-activeHeldFor env cfg key = do
-    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
-    pure (sum [q | (_, o) <- utxos, (_, q) <- activeEntriesOf cfg key o])
-
-{- | The wallet UTxO carrying this key's active witness, by outref and
-quantity, read off the chain before the retirement spends it.
--}
-activeSourceFor :: Env -> CageConfig -> ByteString -> IO RetirementSource
-activeSourceFor env cfg key = do
-    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
-    case [(i, q) | (i, o) <- utxos, (_, q) <- activeEntriesOf cfg key o] of
-        [(i, q)] ->
-            pure
-                RetirementSource
-                    { rsOutref = txInToText i
-                    , rsPolicy = hexText (activePolicyBytes cfg)
-                    , rsName = hexText key
-                    , rsQuantity = q
-                    }
-        carriers ->
-            failWith
-                ( "CG22: the wallet holds "
-                    <> show (length carriers)
-                    <> " carriers of this key's active witness, not one"
-                )
-
--- | This output's holdings under the active policy at this key.
-activeEntriesOf ::
-    CageConfig -> ByteString -> TxOut ConwayEra -> [(ByteString, Integer)]
-activeEntriesOf cfg key out =
-    let MaryValue _ (MultiAsset ma) = out ^. valueTxOutL
-        policy = policyIdFromPin (cfgActivePolicy cfg)
-     in [ (SBS.fromShort n, q)
-        | (p, names) <- Map.toList ma
-        , p == policy
-        , (AssetName n, q) <- Map.toList names
-        , SBS.fromShort n == key
-        ]
-
--- | Everything a transaction moves under the ACTIVE policy, by key.
-activeMintOf :: ConwayTx -> CageConfig -> [AssetEntry]
-activeMintOf tx cfg =
-    let MultiAsset ma = tx ^. bodyTxL . mintTxBodyL
-        policy = policyIdFromPin (cfgActivePolicy cfg)
-     in [ AssetEntry
-            (hexText (activePolicyBytes cfg))
-            (hexText (SBS.fromShort n))
-            q
-        | (p, names) <- Map.toList ma
-        , p == policy
-        , (AssetName n, q) <- Map.toList names
-        ]
-
-activePolicyBytes :: CageConfig -> ByteString
-activePolicyBytes = SBS.fromShort . cfgActivePolicy
-
-hexText :: ByteString -> T.Text
-hexText = TE.decodeUtf8 . Base16.encode
-
-{- | A receipt carrying retirement evidence (#177). Everything else is
-`writeRowReceipt`'s; only the extra object differs, so the two cannot
-drift on the fields they share.
--}
-writeRetirementReceipt ::
-    Env ->
-    String ->
-    [String] ->
-    Maybe Integer ->
-    Maybe Integer ->
-    Maybe Integer ->
-    RetirementEvidence ->
-    IO ()
-writeRetirementReceipt env row txs mem cpu size retirement =
-    writeReceiptFile (envReceiptsDir env) $
-        Receipt
-            { receiptRow = T.pack row
-            , receiptOutcome = Accepted
-            , receiptVerdict = AgreesWithModel
-            , receiptTransactions = map T.pack txs
-            , receiptRefusal = Nothing
-            , receiptRejected = Nothing
-            , receiptMem = mem
-            , receiptCpu = cpu
-            , receiptTxSize = size
-            , receiptBase = T.pack (envBase env)
-            , receiptDirty = envDirty env
-            , receiptPartial = Nothing
-            , receiptEdge = Nothing
-            , receiptRetirement = Just retirement
-            , receiptDerivation = Nothing
-            , receiptSteps = Nothing
-            , receiptNode = T.pack (envNode env)
-            , receiptBlueprint = T.pack (envBlueprint env)
-            , receiptVenue = "node-submit"
-            }
+    records <- readIORef (envLiveRecords env)
+    require "CG22 did not compare its seven requests" (length records == 7)
+    require "retirement chapter has a disagreement or unsupported step"
+        (all (\record -> case record of
+            Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+            _ -> False) records)
+    writeStoryReceipt env "CG22" records
 
 -- | Every pending request UTxO of a row cage, in tx-input order.
 pendingRequests :: Env -> RowCage -> IO [(TxIn, TxOut ConwayEra)]
@@ -6971,8 +6316,6 @@ writeRowReceipt env row outcome verdict txs refusal rejected mem cpu size venue 
             , receiptBase = T.pack (envBase env)
             , receiptDirty = envDirty env
             , receiptPartial = Nothing
-            , receiptEdge = Nothing
-            , receiptRetirement = Nothing
 
             , receiptDerivation = derivation
             , receiptSteps = Nothing
@@ -7376,8 +6719,6 @@ writeCSReceipt dir row outcome verdict txs refusal rejected mem cpu size venue b
             , receiptBase = T.pack base
             , receiptDirty = dirty
             , receiptPartial = partial
-            , receiptEdge = Nothing
-            , receiptRetirement = Nothing
 
             , receiptDerivation = Nothing
             , receiptSteps = Nothing
@@ -8918,7 +8259,7 @@ foldSpecContext env fs = do
             , rcCageScript = Just (mkCageScript cfg)
             , rcCageUtxos = utxos
             , rcDatums = [(recordDatumHash, recordDatum)]
-            , rcHolderUtxos = []
+            , rcHolderUtxos = fsHolderUtxos fs
             , -- A refusal row exists to watch the chain refuse a fold the
               -- builder cannot discharge duties for; it must still be built.
               rcAllowInadmissible = True
