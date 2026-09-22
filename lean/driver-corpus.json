@@ -1,0 +1,1025 @@
+{
+  "corpusSourceSha256": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
+  "modelSha256": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
+  "payloadSha256": "5f63893972e779550554ea8ecca7f7dc7ef155e0d50e500d682004fa50c8c1c3",
+  "scenarios": [
+    {
+      "id": "DR01-register-absent",
+      "kind": "witness",
+      "lovelace": 5,
+      "mutates": null,
+      "observations": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            76,
+            17,
+            37,
+            97,
+            141,
+            77,
+            126,
+            137
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [
+          {
+            "key": 5,
+            "refundAddress": 91,
+            "value": 55
+          }
+        ],
+        "held": [],
+        "leaf": "absent",
+        "mint": [
+          {
+            "assetName": 5,
+            "key": 5,
+            "kind": "absent",
+            "policy": 9,
+            "quantity": 1
+          }
+        ],
+        "paid": [],
+        "root": [
+          76,
+          17,
+          37,
+          97,
+          141,
+          77,
+          126,
+          137
+        ],
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 0,
+            "processTime": 0,
+            "retractTime": 0,
+            "root": [
+              76,
+              17,
+              37,
+              97,
+              141,
+              77,
+              126,
+              137
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [
+            {
+              "key": 5,
+              "refundAddress": 91,
+              "value": 55
+            }
+          ],
+          "held": [],
+          "trie": [
+            {
+              "key": 5,
+              "leaf": "absent"
+            }
+          ]
+        },
+        "tx": {
+          "inputs": [
+            {
+              "approvalQuantity": 0,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "approvalQuantity": 1,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 5,
+              "role": "request",
+              "stateToken": 0
+            }
+          ],
+          "mint": [
+            {
+              "assetName": 5,
+              "key": 5,
+              "kind": "absent",
+              "policy": 9,
+              "quantity": 1
+            }
+          ],
+          "outputs": [
+            {
+              "address": null,
+              "assets": [],
+              "commitment": null,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": {
+                "absentPolicy": 9,
+                "activePolicy": 8,
+                "applicationPolicy": 7,
+                "maxFee": 0,
+                "processTime": 0,
+                "retractTime": 0,
+                "root": [
+                  76,
+                  17,
+                  37,
+                  97,
+                  141,
+                  77,
+                  126,
+                  137
+                ],
+                "terminalPolicy": 10
+              },
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "address": 0,
+              "assets": [],
+              "commitment": 372747933,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": null,
+              "lovelace": 0,
+              "role": "destination",
+              "stateToken": 0
+            },
+            {
+              "address": 0,
+              "assets": [
+                {
+                  "assetName": 5,
+                  "key": 5,
+                  "kind": "absent",
+                  "policy": 9,
+                  "quantity": 1
+                }
+              ],
+              "commitment": null,
+              "custodyDatum": [
+                91
+              ],
+              "datum": "inline",
+              "inlineConfig": null,
+              "lovelace": 55,
+              "role": "cage",
+              "stateToken": 0
+            }
+          ],
+          "refunds": [],
+          "signers": []
+        }
+      },
+      "operation": "insertAbsent",
+      "outcome": "accepted",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": null,
+      "request": {
+        "approval": {
+          "assetName": 372747933,
+          "destination": 0,
+          "edge": "insertAbsent",
+          "key": 5,
+          "owner": 91,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 55,
+        "edge": "insertAbsent",
+        "key": 5,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 91
+      },
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46",
+      "theorem": "Singular.Statements.insert_absent_transaction_row"
+    },
+    {
+      "id": "DR02-register-active",
+      "kind": "witness",
+      "lovelace": 5,
+      "mutates": null,
+      "observations": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            26,
+            122,
+            121,
+            111,
+            253,
+            168,
+            231,
+            64
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [
+          {
+            "key": 42,
+            "kind": "active",
+            "output": 555
+          }
+        ],
+        "leaf": "active",
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": 1
+          }
+        ],
+        "paid": [],
+        "root": [
+          26,
+          122,
+          121,
+          111,
+          253,
+          168,
+          231,
+          64
+        ],
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 0,
+            "processTime": 0,
+            "retractTime": 0,
+            "root": [
+              26,
+              122,
+              121,
+              111,
+              253,
+              168,
+              231,
+              64
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [
+            {
+              "key": 42,
+              "kind": "active",
+              "output": 555
+            }
+          ],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "active"
+            }
+          ]
+        },
+        "tx": {
+          "inputs": [
+            {
+              "approvalQuantity": 0,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "approvalQuantity": 1,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 5,
+              "role": "request",
+              "stateToken": 0
+            }
+          ],
+          "mint": [
+            {
+              "assetName": 42,
+              "key": 42,
+              "kind": "active",
+              "policy": 8,
+              "quantity": 1
+            }
+          ],
+          "outputs": [
+            {
+              "address": null,
+              "assets": [],
+              "commitment": null,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": {
+                "absentPolicy": 9,
+                "activePolicy": 8,
+                "applicationPolicy": 7,
+                "maxFee": 0,
+                "processTime": 0,
+                "retractTime": 0,
+                "root": [
+                  26,
+                  122,
+                  121,
+                  111,
+                  253,
+                  168,
+                  231,
+                  64
+                ],
+                "terminalPolicy": 10
+              },
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "address": 555,
+              "assets": [
+                {
+                  "assetName": 42,
+                  "key": 42,
+                  "kind": "active",
+                  "policy": 8,
+                  "quantity": 1
+                }
+              ],
+              "commitment": 1604014105,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": null,
+              "lovelace": 0,
+              "role": "destination",
+              "stateToken": 0
+            }
+          ],
+          "refunds": [],
+          "signers": []
+        }
+      },
+      "operation": "insertActive",
+      "outcome": "accepted",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": null,
+      "request": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "theorem": "Singular.Statements.insert_active_transaction_row"
+    },
+    {
+      "id": "DR03-retire-registered",
+      "kind": "witness",
+      "lovelace": 5,
+      "mutates": null,
+      "observations": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            26,
+            122,
+            121,
+            112,
+            0,
+            168,
+            235,
+            249
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "leaf": "terminal",
+        "mint": [
+          {
+            "assetName": 42,
+            "key": 42,
+            "kind": "active",
+            "policy": 8,
+            "quantity": -1
+          }
+        ],
+        "paid": [],
+        "root": [
+          26,
+          122,
+          121,
+          112,
+          0,
+          168,
+          235,
+          249
+        ],
+        "state": {
+          "config": {
+            "absentPolicy": 9,
+            "activePolicy": 8,
+            "applicationPolicy": 7,
+            "maxFee": 0,
+            "processTime": 0,
+            "retractTime": 0,
+            "root": [
+              26,
+              122,
+              121,
+              112,
+              0,
+              168,
+              235,
+              249
+            ],
+            "terminalPolicy": 10
+          },
+          "custody": [],
+          "held": [],
+          "trie": [
+            {
+              "key": 42,
+              "leaf": "terminal"
+            }
+          ]
+        },
+        "tx": {
+          "inputs": [
+            {
+              "approvalQuantity": 0,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "approvalQuantity": 1,
+              "assets": [],
+              "datum": "inline",
+              "lovelace": 5,
+              "role": "request",
+              "stateToken": 0
+            },
+            {
+              "approvalQuantity": 0,
+              "assets": [
+                {
+                  "assetName": 42,
+                  "key": 42,
+                  "kind": "active",
+                  "policy": 8,
+                  "quantity": 1
+                }
+              ],
+              "datum": "inline",
+              "lovelace": 0,
+              "role": "witness",
+              "stateToken": 0
+            }
+          ],
+          "mint": [
+            {
+              "assetName": 42,
+              "key": 42,
+              "kind": "active",
+              "policy": 8,
+              "quantity": -1
+            }
+          ],
+          "outputs": [
+            {
+              "address": null,
+              "assets": [],
+              "commitment": null,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": {
+                "absentPolicy": 9,
+                "activePolicy": 8,
+                "applicationPolicy": 7,
+                "maxFee": 0,
+                "processTime": 0,
+                "retractTime": 0,
+                "root": [
+                  26,
+                  122,
+                  121,
+                  112,
+                  0,
+                  168,
+                  235,
+                  249
+                ],
+                "terminalPolicy": 10
+              },
+              "lovelace": 0,
+              "role": "state",
+              "stateToken": 1
+            },
+            {
+              "address": 555,
+              "assets": [],
+              "commitment": 2958227895,
+              "custodyDatum": null,
+              "datum": "inline",
+              "inlineConfig": null,
+              "lovelace": 0,
+              "role": "destination",
+              "stateToken": 0
+            }
+          ],
+          "refunds": [],
+          "signers": []
+        }
+      },
+      "operation": "updateTerminal",
+      "outcome": "accepted",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": null,
+      "request": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "requiresReachableState": true,
+      "setup": [
+        {
+          "accepted": true,
+          "reason": null,
+          "request": {
+            "approval": {
+              "assetName": 1604014105,
+              "destination": 555,
+              "edge": "insertActive",
+              "key": 42,
+              "owner": 42,
+              "policy": 7,
+              "signatures": []
+            },
+            "claimed": [],
+            "deposit": 0,
+            "edge": "insertActive",
+            "key": 42,
+            "output": 555,
+            "owner": 42,
+            "refundAddress": 0
+          },
+          "state": {
+            "config": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 0,
+              "processTime": 0,
+              "retractTime": 0,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "custody": [],
+            "held": [
+              {
+                "key": 42,
+                "kind": "active",
+                "output": 555
+              }
+            ],
+            "trie": [
+              {
+                "key": 42,
+                "leaf": "active"
+              }
+            ]
+          }
+        }
+      ],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+      "theorem": "Singular.Statements.update_terminal_transaction_row"
+    },
+    {
+      "id": "DR04-register-absent-unapproved",
+      "kind": "mutant",
+      "lovelace": 5,
+      "mutates": "DR01-register-absent",
+      "observations": null,
+      "operation": "insertAbsent",
+      "outcome": "refused",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": "no-approval",
+      "request": {
+        "approval": null,
+        "claimed": [],
+        "deposit": 55,
+        "edge": "insertAbsent",
+        "key": 5,
+        "output": 0,
+        "owner": 91,
+        "refundAddress": 91
+      },
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d",
+      "theorem": "Singular.Statements.insert_absent_inversion"
+    },
+    {
+      "id": "DR05-register-active-twice",
+      "kind": "mutant",
+      "lovelace": 5,
+      "mutates": "DR02-register-active",
+      "observations": null,
+      "operation": "insertActive",
+      "outcome": "refused",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": "key-exists",
+      "request": {
+        "approval": {
+          "assetName": 1604014105,
+          "destination": 555,
+          "edge": "insertActive",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "insertActive",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "requiresReachableState": true,
+      "setup": [
+        {
+          "accepted": true,
+          "reason": null,
+          "request": {
+            "approval": {
+              "assetName": 1604014105,
+              "destination": 555,
+              "edge": "insertActive",
+              "key": 42,
+              "owner": 42,
+              "policy": 7,
+              "signatures": []
+            },
+            "claimed": [],
+            "deposit": 0,
+            "edge": "insertActive",
+            "key": 42,
+            "output": 555,
+            "owner": 42,
+            "refundAddress": 0
+          },
+          "state": {
+            "config": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 0,
+              "processTime": 0,
+              "retractTime": 0,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "custody": [],
+            "held": [
+              {
+                "key": 42,
+                "kind": "active",
+                "output": 555
+              }
+            ],
+            "trie": [
+              {
+                "key": 42,
+                "leaf": "active"
+              }
+            ]
+          }
+        }
+      ],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b",
+      "theorem": "Singular.Statements.insert_active_inversion"
+    },
+    {
+      "id": "DR06-retire-unregistered",
+      "kind": "mutant",
+      "lovelace": 5,
+      "mutates": "DR03-retire-registered",
+      "observations": null,
+      "operation": "updateTerminal",
+      "outcome": "refused",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": "key-unknown",
+      "request": {
+        "approval": {
+          "assetName": 2958227895,
+          "destination": 555,
+          "edge": "updateTerminal",
+          "key": 42,
+          "owner": 42,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 0,
+        "edge": "updateTerminal",
+        "key": 42,
+        "output": 555,
+        "owner": 42,
+        "refundAddress": 0
+      },
+      "requiresReachableState": false,
+      "setup": [],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 0,
+          "retractTime": 0,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470",
+      "theorem": "Singular.Statements.update_terminal_inversion"
+    }
+  ],
+  "schema": "singular-driver-corpus-v1",
+  "sourceHashes": {
+    "lean/DriverMain.lean": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
+    "lean/Main.lean": "e842fa245b4b54f1aea0c9322096f3ced5a4853dace865d4fdaeb71102d05597",
+    "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
+    "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
+    "lean/Singular/Driver.lean": "286255c500c3d6bc069538e21535940f97ef9c5283baefd8608390aa74f5a860",
+    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
+    "lean/Singular/Model.lean": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
+    "lean/Singular/Statements.lean": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+  },
+  "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db",
+  "surface": {
+    "declaration": "Singular.Driver.runSurface",
+    "definitionDigest": "15532557153383378181",
+    "observations": [
+      "config",
+      "custody",
+      "held",
+      "leaf",
+      "mint",
+      "paid",
+      "root",
+      "state",
+      "tx"
+    ],
+    "operations": [
+      "insertAbsent",
+      "insertActive",
+      "updateActive",
+      "updateTerminal",
+      "deleteAbsent",
+      "deleteActive",
+      "witnessTerminal"
+    ],
+    "protocolVersion": 1,
+    "unobservable": [
+      "concreteTrieHash",
+      "registryAddress",
+      "requiredSigners",
+      "scriptExecutionUnits",
+      "transactionId",
+      "utxoReference"
+    ]
+  },
+  "theoremManifestSha256": "3c159da967606c9390129ffeceafc5bce628316b3dd211e44a44b1e2ef0b7625"
+}

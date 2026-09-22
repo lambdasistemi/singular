@@ -30,6 +30,7 @@ GENERIC_SOURCES = [
     'lean/Main.lean',
     'lean/Singular.lean',
     'lean/Singular/Audit.lean',
+    'lean/Singular/Driver.lean',
     'lean/Singular/Lemmas.lean',
     'lean/Singular/Model.lean',
     'lean/Singular/Statements.lean',
@@ -279,9 +280,18 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary)
                 f'a transport or process failure is an execution failure, never a ledger refusal')
             assert s['observations'] is None, \
                 f'{sid}: refused rows observe nothing — there was no transition to observe'
-            assert s['premise']['checked'] is False, \
-                f'{sid}: a refused request has no accepted observation to justify'
+            # A refusal is the LAW saying no, which means the law ran, which
+            # means its premise held on the state it ran against. A refusal
+            # reported without a checked premise is the driver failing to reach
+            # the case, and that is `unsupported`, not a ledger refusal.
+            assert s['premise']['checked'] is True, \
+                f'{sid}: refused without establishing the premise the law was applied under'
         else:
+            # `unsupported` carries no premise constraint on purpose: it covers
+            # a setup that would not run and a premise that does not hold (both
+            # unestablished) as well as a transaction the model cannot build
+            # from an accepted step (established). What makes it distinct is
+            # that it observes nothing and says what it could not reach.
             assert s['reason'], f'{sid}: unsupported rows must name what is unsupported'
             assert s['observations'] is None, f'{sid}: unsupported rows observe nothing'
 
@@ -302,7 +312,7 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary)
 
 
 TRANSLATION_HEADING = '## The model driver translation'
-TRANSLATION_ROW = re.compile(r'^\| `([^`]+)` \| (realization|identity|unobservable) \| (.+?) \|$', re.M)
+TRANSLATION_ROW = re.compile(r'^\| `?([^|`]+?)`? \| (realization|identity|unobservable) \| (.+?) \|$', re.M)
 
 
 def check_translation(root, surface):
@@ -462,7 +472,11 @@ def main():
     driver_corpus = json.loads(subprocess.check_output([str(driver_binary)]))
     assert driver_corpus['schema'] == DRIVER_SCHEMA, \
         f'driver corpus schema {driver_corpus["schema"]!r} != {DRIVER_SCHEMA!r}'
-    corpus_envelope(driver_corpus, sources, generic_manifest_path,
+    # The driver's extent is the generic one plus its own producer: a change to
+    # either moves the driver corpus identity.
+    driver_sources = dict(sources)
+    driver_sources['lean/DriverMain.lean'] = digest((root / 'lean/DriverMain.lean').read_bytes())
+    corpus_envelope(driver_corpus, driver_sources, generic_manifest_path,
                     'statementsSha256', 'lean/Singular/Statements.lean',
                     'lean/Singular/Model.lean', 'lean/DriverMain.lean')
     statement_digests = {r['name']: r['statementSha256'] for r in generic_records}

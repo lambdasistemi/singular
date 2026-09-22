@@ -1,7 +1,7 @@
 name = "singular"
 version = "0.1.0"
 srcDir = "lean"
-defaultTargets = ["Singular", "singular-corpus", "naming-corpus", "lifecycle-corpus"]
+defaultTargets = ["Singular", "singular-corpus", "naming-corpus", "lifecycle-corpus", "singular-driver"]
 
 [[lean_lib]]
 name = "Singular"
@@ -17,3 +17,7 @@ root = "NamingMain"
 [[lean_exe]]
 name = "lifecycle-corpus"
 root = "LifecycleMain"
+
+[[lean_exe]]
+name = "singular-driver"
+root = "DriverMain"
