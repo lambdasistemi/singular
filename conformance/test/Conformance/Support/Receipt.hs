@@ -38,6 +38,7 @@ import Conformance.Receipt (
     loadReceipts,
     maxReceiptBytes,
  )
+import Conformance.Book (renderBook)
 import Conformance.Rows (
     Row (..),
     RowState (..),
@@ -426,6 +427,8 @@ stepRoundTrip = describe "Saving compared live requests" $
 -- written receipt, so none can pass merely because JSON round-trips.
 liveStepChecks :: Spec
 liveStepChecks = describe "Checking compared requests in live receipts" $ do
+    it "publishes the unnamed request sequence beside the two chapters" $
+        renderBook [] [acceptedLive] `shouldSatisfy` isInfixOf "## A sequence no chapter names"
     it "accepts a complete compared request" $
         loadLive acceptedLive `shouldReturn` Right 1
     it "rejects a live chapter with no step records" $
