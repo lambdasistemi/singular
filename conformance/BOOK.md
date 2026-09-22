@@ -4,21 +4,21 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2` (working tree had changes).
+Code revision: `300c58bdb36cdb72f2fdc4575a1bb720b7232181` (working tree had changes).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Registration passed: exactly one active token reached the requested recipient.
 
-Transaction: `e39a3d2311eefc2072029a9e31d4813cac8bd48ff3417228950db317b0c772df`.
+Transaction: `07687c56c71be5caecd74317f5c7c5c0416e4074a75812a0847c270df9fe93ca`.
 
-Code revision: `e512c7a1d1ec7175cdbd8af6bc04ac5deb30f0a2` (working tree had changes).
+Code revision: `300c58bdb36cdb72f2fdc4575a1bb720b7232181` (working tree had changes).
 
-Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:492c5595b83b5deba587db17ea819cf769a930f379cd3ecbde56d2a5 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
 Retirement passed: the holder's active-token quantity changed from **1** to **0**, the token was burned, and the key became Terminal.
 
-Registration transaction: `d48b400517488f7a8a502dfd4879c070d80464b18a1cdbac1905a2e1bab3c435`. Retirement transaction: `c149e848f6cce3b2ca58c012277744dc9bdcebdb260d6660910f93a00e35f665`.
+Registration transaction: `aeeec1f981851c97d07995a38e4d03a4ad99c34d6c409f3e02f47cf846799bbc`. Retirement transaction: `13d47ac87a051c43ff3d006ed16600362a1b47853b4a65c5906e2003ca31fd40`.
 
 ## Register a key and receive its active token
 
@@ -100,7 +100,7 @@ Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `8
 
 ## What these runs do not establish
 
-Registration delivery and successful retirement effects are compared with executable Lean output. The oracle replays registration before retirement; each example starts in an empty registry. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.
+Every declared observation of a registration is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction, including the transaction's signers value, which a check changes to prove the difference is reported. Two things are named rather than compared: a ledger makes every output carry a minimum ada and the model says nothing about it, so outputMinimumAda is removed from both sides and earns no pass; and the model states no obligation about who must sign, so requiredSigners stays a named unobservable until the signer rules are stated and proved. Retirement effects still come from the oracle replay, which starts each example in an empty registry. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.
 
 ## Requirements inventory
 

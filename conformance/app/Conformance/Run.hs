@@ -89,6 +89,7 @@ import Conformance.Story.Live qualified as Live
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Lean.Registration qualified as Lean
 import Conformance.Lean.Retirement qualified as LeanRetirement
+import Conformance.Compare.Registration qualified as Compare
 import Conformance.Lean.Oracle qualified as LeanOracle
 import Conformance.Story.Binding qualified as Binding
 import Conformance.Edge.Register qualified as RegistrationStory
@@ -103,8 +104,10 @@ import Control.Exception (
     try,
  )
 import Control.Monad (unless, when)
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson (
+    eitherDecodeFileStrict,
     Value (..),
     FromJSON (..),
     eitherDecode,
@@ -130,6 +133,8 @@ import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Vector qualified as Vector
+import Data.Word (Word8)
 import Data.Text.Encoding qualified as TE
 import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
@@ -4594,7 +4599,14 @@ runCG21 :: Env -> IO ()
 runCG21 env = do
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     require "unknown registration story control"
-        (control `elem` [Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address", Just "token-remains", Just "wrong-burn", Just "wrong-retirement-leaf"])
+        ( control
+            `elem` [ Nothing, Just "wrong-delivery", Just "wrong-policy", Just "wrong-address"
+                   , Just "token-remains", Just "wrong-burn", Just "wrong-retirement-leaf"
+                   -- #222: ask the model about a different registry, and meet an
+                   -- identity the run never bound.
+                   , Just "wrong-fee", Just "wrong-timing", Just "unknown-identity"
+                   ]
+        )
     registry <- ensureRowCage env "story-registration" 30_000 30_000
     (_, recipient) <- secondWallet env
     result <- runLive env (RegistrationStory.story (Live.Context registry recipient))
@@ -4828,51 +4840,282 @@ registrationScenario ids registration = do
 
 -- The oracle's bounded example assumes a freshly booted registry. Establish
 -- this from the actual pre-fold state, not by resetting a nonempty model state.
-checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
-checkRegistrationAgainstLean env ids registration = do
+-- | Say which model observation disagreed, and with what.
+renderDifferences :: [Compare.Difference] -> String
+renderDifferences differences =
+    unlines
+        [ T.unpack (Compare.differenceObservation difference)
+            <> " differs from Lean\nexpected: "
+            <> jsonText (Compare.differenceExpected difference)
+            <> "\nobserved: "
+            <> jsonText (Compare.differenceObserved difference)
+        | difference <- differences
+        ]
+  where
+    jsonText = T.unpack . TE.decodeUtf8 . BSL.toStrict . encode
+
+{- | The abstract scenario this run represents, for the model evaluator.
+
+The context is the registry the caller established, read off the chain: its
+real fee and timing pins travel as ordinary model fields, so the model is asked
+what it says about *this* registry rather than about a fixed one.
+-}
+registrationEvaluation :: LiveIdentities -> LiveRegistration -> IO Value
+registrationEvaluation ids registration = do
     let cfg = rcCfg (lrCage registration)
+        before = lrBefore registration
+        key = lrKey registration
+    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
+    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    (application, active, absent, terminal) <- observePins ids cfg
+    (funds, _) <- cg21RequestFacts (lrRequest registration)
+    pure $
+        object
+            [ "id" .= String "live-registration"
+            , "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
+            , "statementSha256" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
+            , "start"
+                .= object
+                    [ "config" .= abstractConfig before application active absent terminal (Compare.rootOf [])
+                    , "trie" .= ([] :: [Value])
+                    , "custody" .= ([] :: [Value])
+                    , "held" .= ([] :: [Value])
+                    ]
+            , "setup" .= ([] :: [Value])
+            , "request"
+                .= object
+                    [ "edge" .= String "insertActive"
+                    , "key" .= modelKey
+                    , "owner" .= owner
+                    , "refundAddress" .= (0 :: Integer)
+                    , "deposit" .= (0 :: Integer)
+                    , "output" .= recipient
+                    , "applicationPolicy" .= application
+                    , "approval" .= String "canonical"
+                    ]
+            , "lovelace" .= funds
+            ]
+
+-- | The registry's four pinned policies, looked up rather than allocated.
+observePins :: LiveIdentities -> CageConfig -> IO (Integer, Integer, Integer, Integer)
+observePins ids cfg = do
+    pins <-
+        mapM
+            (observeIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
+            [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+    case pins of
+        [a, b, c, d] -> pure (a, b, c, d)
+        _ -> failWith "registry context has an incomplete policy mapping"
+
+-- | A registry configuration in the model's vocabulary, over an abstract root.
+abstractConfig :: OnChainTokenState -> Integer -> Integer -> Integer -> Integer -> [Word8] -> Value
+abstractConfig state application active absent terminal root =
+    object
+        [ "root" .= root
+        , "maxFee" .= stateMaxFee state
+        , "processTime" .= stateProcessTime state
+        , "retractTime" .= stateRetractTime state
+        , "applicationPolicy" .= application
+        , "activePolicy" .= active
+        , "absentPolicy" .= absent
+        , "terminalPolicy" .= terminal
+        ]
+
+{- | What the chain shows, in the model's vocabulary.
+
+Every value here is read off the registration that actually happened and
+translated through bindings recorded while the run was constructed. The leaf is
+classified by rebuilding the candidate tries against the real commitment, so it
+is the chain's own answer rather than a label assumed from the request. The
+abstract root is then recomputed from that translated trie, never compared with
+the concrete authenticated-map hash.
+-}
+observedRegistration :: Env -> LiveIdentities -> LiveRegistration -> Maybe String -> IO Value
+observedRegistration env ids registration control = do
+    -- The unknown-identity control makes the observation meet a concrete value
+    -- the run never bound. Translation is lookup-only, so it must fail here
+    -- rather than hand the stranger the identifier the model expected.
+    case control of
+        Just "unknown-identity" ->
+            () <$ observeIdentity (liveWallets ids) (WalletIdentity (BS.replicate 28 0xAB))
+        _ -> pure ()
+    let cfg = rcCfg (lrCage registration)
+        after = lrAfter registration
         key = lrKey registration
         policy = policyIdFromPin (cfgActivePolicy cfg)
         transaction = lrTx registration
-    scenario <- registrationScenario ids registration
-    application <- observeIdentity (livePolicies ids) (PolicyIdentity (SBS.fromShort (cfgApplicationPolicy cfg)))
-    owner <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
-    oracle <- requireEnv "CONFORMANCE_LEAN_ORACLE"
-    expected <- LeanOracle.expectedObservation oracle [] scenario >>= either failWith pure
-    -- Select the output carrying the requested asset, then observe its complete
-    -- non-ADA value and address. A missing/wrong asset or extra asset fails.
-    output <- case [ out | out <- toList (transaction ^. bodyTxL . outputsTxBodyL)
-                        , Just names <- [Map.lookup policy (rawAssets out)]
-                        , Map.member (AssetName (SBS.toShort key)) names ] of
-        [out] -> pure out
-        outs -> failWith ("delivery observation found " <> show (length outs) <> " destination candidates")
-    (observedPolicy, observedKey, quantity) <- case
-        [(p, SBS.fromShort name, q) | (p, names) <- Map.toList (rawAssets output), (AssetName name, q) <- Map.toList names] of
-        [asset] -> pure asset
-        _ -> failWith "delivery observation is not one asset at one destination"
-    addressId <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (output ^. addrTxOutL)))
-    policyId <- observeIdentity (livePolicies ids) (PolicyIdentity (cg21PolicyBytes observedPolicy))
-    keyId <- observeIdentity (liveKeys ids) (KeyIdentity observedKey)
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    recipient <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr (lrWallet registration)))
+    ownerId <- observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr genesisAddr))
+    (application, active, absent, terminal) <- observePins ids cfg
+    leaf <- observeSingleKeyLeaf key (unOnChainRoot (stateRoot after))
+    leafBytes <- case leaf of
+        String "absent" -> pure 0
+        String "active" -> pure 1
+        String "terminal" -> pure 2
+        _ -> failWith "the chain commitment is not a single registered key"
     held <- cg21HeldAt env (lrWallet registration) policy key
+    let MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
+    mint <-
+        mapM
+            (\(p, name, quantity) -> observeModelMint ids p name quantity)
+            [ (cg21PolicyBytes p, SBS.fromShort name, quantity)
+            | (p, names) <- Map.toList minted
+            , (AssetName name, quantity) <- Map.toList names
+            ]
+    (funds, _) <- cg21RequestFacts (lrRequest registration)
+    commitment <-
+        maybe (failWith "the model commitment of this request is not derivable") pure $
+            Compare.approvalAssetName "insertActive" modelKey ownerId recipient
+    let trie = [object ["key" .= modelKey, "leaf" .= leaf]]
+        root = Compare.rootOf [(modelKey, leafBytes)]
+        config = abstractConfig after application active absent terminal root
+        holdings =
+            [ object ["key" .= modelKey, "kind" .= String "active", "output" .= recipient]
+            | held > 0
+            ]
+    pure $
+        object
+            [ "config" .= config
+            , "custody" .= ([] :: [Value])
+            , "held" .= holdings
+            , "leaf" .= leaf
+            , "mint" .= mint
+            , "paid" .= ([] :: [Value])
+            , "root" .= root
+            , "state"
+                .= object
+                    ["config" .= config, "custody" .= ([] :: [Value]), "held" .= holdings, "trie" .= trie]
+            , "tx" .= observedTx config mint recipient commitment funds
+            ]
+
+{- | The transaction, as the model declares one.
+
+Its shape is the model's: which inputs and outputs a registration has, what
+each carries, and what was minted. Per-output minimum ada is deliberately
+absent — it is a named unobservable, the model states a logical zero, and the
+comparison leaves it alone on both sides rather than inventing an equality.
+
+`signers` is empty because the model declares no required-signer obligation.
+That is the R05 gap, and reporting the chain's real signers here would be
+claiming a correspondence the model never made.
+-}
+observedTx :: Value -> [Value] -> Integer -> Integer -> Integer -> Value
+observedTx config mint recipient commitment requestLovelace =
+    object
+        [ "inputs"
+            .= [ object
+                    [ "role" .= String "state", "datum" .= String "inline"
+                    , "stateToken" .= (1 :: Integer), "approvalQuantity" .= (0 :: Integer)
+                    , "lovelace" .= (0 :: Integer), "assets" .= ([] :: [Value])
+                    ]
+               , object
+                    [ "role" .= String "request", "datum" .= String "inline"
+                    , "stateToken" .= (0 :: Integer), "approvalQuantity" .= (1 :: Integer)
+                    , "lovelace" .= requestLovelace, "assets" .= ([] :: [Value])
+                    ]
+               ]
+        , "outputs"
+            .= [ object
+                    [ "role" .= String "state", "datum" .= String "inline"
+                    , "address" .= Null, "stateToken" .= (1 :: Integer)
+                    , "inlineConfig" .= config, "commitment" .= Null
+                    , "assets" .= ([] :: [Value]), "custodyDatum" .= Null
+                    , "lovelace" .= (0 :: Integer)
+                    ]
+               , object
+                    [ "role" .= String "destination", "datum" .= String "inline"
+                    , "address" .= recipient, "stateToken" .= (0 :: Integer)
+                    , "inlineConfig" .= Null, "commitment" .= commitment
+                    , "assets" .= mint, "custodyDatum" .= Null
+                    , "lovelace" .= (0 :: Integer)
+                    ]
+               ]
+        , "mint" .= mint
+        , "signers" .= ([] :: [Value])
+        , "refunds" .= ([] :: [Value])
+        ]
+
+-- | One minted asset, named the way the model names it.
+observeModelMint :: LiveIdentities -> ByteString -> ByteString -> Integer -> IO Value
+observeModelMint ids policy key quantity = do
+    modelPolicy <- observeIdentity (livePolicies ids) (PolicyIdentity policy)
+    modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
+    pure $
+        object
+            [ "kind" .= String "active"
+            , "key" .= modelKey
+            , "policy" .= modelPolicy
+            , "assetName" .= modelKey
+            , "quantity" .= quantity
+            ]
+
+-- | Ask the model about a registry whose context differs from this one's.
+bumpEvaluationField :: Text -> Value -> Value
+bumpEvaluationField name value = case value of
+    Object fields -> case KM.lookup "start" fields of
+        Just (Object start) -> case KM.lookup "config" start of
+            Just (Object config) -> case KM.lookup (Key.fromText name) config of
+                Just (Number current) ->
+                    let raised = Object (KM.insert (Key.fromText name) (Number (current + 1)) config)
+                     in Object (KM.insert "start" (Object (KM.insert "config" raised start)) fields)
+                _ -> value
+            _ -> value
+        _ -> value
+    _ -> value
+
+-- | Present a delivered quantity the chain did not deliver.
+bumpObservedMint :: Value -> Value
+bumpObservedMint value = case value of
+    Object fields -> case KM.lookup "mint" fields of
+        Just (Array assets) -> case toList assets of
+            Object asset : rest ->
+                let raised = case KM.lookup "quantity" asset of
+                        Just (Number quantity) ->
+                            Object (KM.insert "quantity" (Number (quantity + 1)) asset)
+                        _ -> Object asset
+                 in Object (KM.insert "mint" (Array (Vector.fromList (raised : rest))) fields)
+            _ -> value
+        _ -> value
+    _ -> value
+
+checkRegistrationAgainstLean :: Env -> LiveIdentities -> LiveRegistration -> IO ()
+checkRegistrationAgainstLean env ids registration = do
+    let transaction = lrTx registration
+    evaluation <- registrationEvaluation ids registration
+    corpusPath <- requireEnv "CONFORMANCE_DRIVER_CORPUS"
+    corpusValue <- eitherDecodeFileStrict corpusPath >>= either failWith pure
+    declaredSurface <- either failWith pure (Compare.declaredSurface corpusValue)
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
-    let normalized a p k q = object ["address" .= a, "policy" .= p, "key" .= k, "quantity" .= q]
-        actual = normalized addressId policyId keyId quantity
-        observed = case control of
-            Just "wrong-delivery" -> normalized addressId policyId keyId (quantity + 1)
-            Just "wrong-policy" -> normalized addressId application keyId quantity
-            Just "wrong-address" -> normalized owner policyId keyId quantity
+    -- The model evaluator, over the context this registry actually has. A
+    -- changed context is a changed question, so the control perturbs what the
+    -- model is asked and the comparison must then refuse the unchanged chain.
+    let asked = case control of
+            Just "wrong-fee" -> bumpEvaluationField "maxFee" evaluation
+            Just "wrong-timing" -> bumpEvaluationField "processTime" evaluation
+            _ -> evaluation
+    evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
+    row <- LeanOracle.expectedObservation evaluator [] asked >>= either failWith pure
+    expected <- case row of
+        Object fields | Just observations <- KM.lookup "observations" fields -> pure observations
+        _ -> failWith "the model evaluator returned no observations"
+    actual <- observedRegistration env ids registration control
+    let observed = case control of
+            Just "wrong-delivery" -> bumpObservedMint actual
             _ -> actual
-        holdings = normalized addressId policyId keyId held
-        checked = LeanOracle.compareObservation expected observed >> LeanOracle.compareObservation expected holdings
+        outcome = Compare.compareRegistration declaredSurface expected observed
+        checked = either (Left . renderDifferences) (const (Right ())) outcome
     wallets <- Identity.bindings <$> readIORef (liveWallets ids)
     policies <- Identity.bindings <$> readIORef (livePolicies ids)
     keys <- Identity.bindings <$> readIORef (liveKeys ids)
     let report = object
             [ "theorem" .= Binding.boName (Specification.theoremBinding Lean.insertActiveRow)
             , "statementDigest" .= Binding.boDigest (Specification.theoremBinding Lean.insertActiveRow)
-            , "oracle" .= oracle, "base" .= envBase env, "transaction" .= txIdHex transaction
-            , "scenario" .= scenario, "expected" .= expected
-            , "actual" .= actual, "checkedObservation" .= observed, "holdings" .= holdings
+            , "evaluator" .= evaluator
+            , "base" .= envBase env, "transaction" .= txIdHex transaction
+            , "asked" .= asked, "expected" .= expected
+            , "actual" .= actual, "checkedObservation" .= observed
             , "control" .= control, "passed" .= either (const False) (const True) checked
             , "mapping" .= object
                 [ "wallets" .= [object ["bytes" .= hexT bytes, "id" .= identifier] | (WalletIdentity bytes, identifier) <- wallets]

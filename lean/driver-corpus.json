@@ -1,7 +1,7 @@
 {
   "corpusSourceSha256": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
   "modelSha256": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
-  "payloadSha256": "5f63893972e779550554ea8ecca7f7dc7ef155e0d50e500d682004fa50c8c1c3",
+  "payloadSha256": "4d6d6ec23f543fdbc1df0c762e547bc56f4bf4f234cf276c35a59e2abecd22e5",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -982,7 +982,7 @@
     "lean/Main.lean": "e842fa245b4b54f1aea0c9322096f3ced5a4853dace865d4fdaeb71102d05597",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "286255c500c3d6bc069538e21535940f97ef9c5283baefd8608390aa74f5a860",
+    "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
     "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
     "lean/Singular/Model.lean": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
     "lean/Singular/Statements.lean": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
@@ -990,7 +990,7 @@
   "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
-    "definitionDigest": "15532557153383378181",
+    "definitionDigest": "5766693268324097889",
     "observations": [
       "config",
       "custody",
@@ -1014,6 +1014,7 @@
     "protocolVersion": 1,
     "unobservable": [
       "concreteTrieHash",
+      "outputMinimumAda",
       "registryAddress",
       "requiredSigners",
       "scriptExecutionUnits",

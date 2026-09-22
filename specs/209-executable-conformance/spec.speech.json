@@ -1,6 +1,10 @@
 {
   "user-stories": [
     {
+      "text": "As paolino, I want to see all acceptance tests as DSL with interpreters over devnet and Lean evaluators. That is the outcome the four narrower stories here add up to, and the twelve invariants serve it. One description, two interpreters: one executing against a real devnet, one evaluating the Lean. A test that exists in only one of them is not finished, and a test that exists outside the DSL is not in scope of the claim.",
+      "pause": 400
+    },
+    {
       "text": "Four readers are owed something here. A consumer reads a registration promise and runs its example against a real registry, seeing the complete declared observations compared with Lean. A holder retires a registration created in the same run, both transitions agreeing with Lean, and refusal examples agree on whether the request succeeds.",
       "pause": 400
     },
@@ -41,6 +45,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "877b28e396214b43eee8d8f44af1ee2409cec2af6ac46af1fc626658e21f3a49"
+    "sha256": "1e25110ccfc889e5aa5e9573712a86902fb87824d1e62f8d631a4958c7730627"
   }
 }

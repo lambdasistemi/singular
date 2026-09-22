@@ -15,6 +15,7 @@ import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild (childModeVariable, holdScopedDirectories)
 import Conformance.Support.Identity qualified as Identity
+import Conformance.Support.RegistrationComparison qualified as RegistrationComparison
 import Conformance.Support.Specification qualified as Specification
 
 -- | Normally the suite. With the rendezvous variable set, the second process
@@ -39,6 +40,7 @@ suite = do
         Rows.spec
         Identity.spec
         Fixture.spec
+        RegistrationComparison.spec
         Specification.spec
         Control.spec
         BindingControl.spec

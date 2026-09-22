@@ -13,10 +13,30 @@ A clause for another theorem or observation type does not compile.
 
 That clause executes the real transaction builder on a local Cardano devnet.
 The interpreter maps actual wallet, policy and key identities to stable model
-IDs, asks the [Lean program](../lean/RegistrationOracle.lean) for the expected
-delivery, and compares both the accepted transaction output and queried holdings.
-The Lean program's delivery projection is proved from
-`Singular.Statements.insert_active_transaction_row`.
+IDs, then asks the [model evaluator](../lean/DriverTransport.lean) about the
+registry this run actually established — its own fee and timing pins travel with
+the question. The evaluator calls `Singular.Driver.runSurface` and answers with
+the complete declared boundary, and every one of those nine observations is
+compared with what the chain did: configuration, custody, held tokens, leaf,
+mint, payments, root, the resulting state and the transaction.
+
+One leaf is deliberately not compared. A ledger makes every output carry a
+minimum ada and the model says nothing about it, so an output's `lovelace` is a
+logical zero; `outputMinimumAda` names that, it is removed from both sides
+before the transaction is compared, and it is the only such leaf.
+
+Signers sit in a transitional state worth stating exactly. The transaction's
+`signers` **value** is compared like any other field — it is empty on both
+sides today, and a check appends an element to it and requires the difference
+to be reported, so the comparison cannot stop noticing it. What is still
+missing is the **rule**: the model states no obligation about who must sign, so
+`requiredSigners` remains a named unobservable and earns no pass. #228 is the
+child that states and proves the signer rules from the validator's actual
+behaviour and removes `requiredSigners` from that vocabulary.
+
+[`RegistrationOracle.lean`](../lean/RegistrationOracle.lean) is no longer on the
+registration path. It serves connected retirement, which replays a registration
+in Lean before retiring it, until #223 moves that onto the same evaluator.
 
 Run it from `conformance/`:
 

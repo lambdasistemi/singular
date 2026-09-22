@@ -21,6 +21,15 @@ edges, external deployments or merge.
 
 ## User stories
 
+> As paolino, I want to see all acceptance tests as DSL with interpreters over
+> devnet and Lean evaluators.
+
+That is the outcome the four narrower stories below add up to, and the twelve
+invariants serve it. One description, two interpreters: one executing against a
+real devnet, one evaluating the Lean. A test that exists in only one of them is
+not finished, and a test that exists outside the DSL is not in scope of the
+claim.
+
 - A consumer reads a registration promise and can run its example against a
   real registry, seeing the complete declared observations compared with Lean.
 - A holder retires a registration created in the same run; both transitions
