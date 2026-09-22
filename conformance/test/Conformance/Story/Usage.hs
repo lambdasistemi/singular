@@ -8,6 +8,7 @@ import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 import Conformance.Story
 import Conformance.Support.RegistrationReport (insertActiveRow)
 import Conformance.Edge.Register qualified as Register
+import Conformance.Edge.Retire qualified as Retire
 import Conformance.Story.Live qualified as Live
 
 story :: Program StoryI ()
@@ -35,3 +36,9 @@ spec = do
         rendered `shouldSatisfy` isInfixOf "redirect delivery"
         rendered `shouldSatisfy` isInfixOf "untampered control"
         rendered `shouldSatisfy` (not . isInfixOf "batch")
+    it "The retirement chapter describes registration and retirement as model edge requests" $ do
+        let rendered = Live.renderLive (Retire.story
+                (Live.Context "retirement" "holder") (Live.Context "comparison" "holder"))
+        rendered `shouldSatisfy` isInfixOf "Submit **insertActive**"
+        rendered `shouldSatisfy` isInfixOf "Submit **updateTerminal**"
+        rendered `shouldSatisfy` isInfixOf "Submit **insertAbsent**"
