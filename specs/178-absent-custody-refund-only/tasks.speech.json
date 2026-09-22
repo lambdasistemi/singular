@@ -1,11 +1,11 @@
 {
   "contract": [
     {
-      "text": "The wire slice corrects the datum, derives identity from the complete asset set, preserves the custody consumers and documents every copy. The second slice adds the executable conformance row and its registration after the DSL merge. Final readiness requires both slices, every review approval and the exact-head verification. The ticket owner checks tasks only on evidence-bound acceptance."
+      "text": "The wire delivery corrects the datum, derives identity from the complete asset set, preserves the custody and refund obligations, and documents every copy. Its frozen local gate, five reviews and exact-head continuous integration checks are complete. The epic owner split the conformance row, registration and unregistered-row control into a separate residual dependent on the description language. That obligation remains required and is not satisfied by this delivery. Reference selection remains uncovered, existing authority holds remain held, and the naming mirror is unchanged. Task checks record delivery and review readiness; acceptance and merge remain with the epic owner."
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0da34e61761267bb598184de74207b2290719568a8a11ee8c967b2584cca20d8"
+    "sha256": "072437bc17e719690bf2962abccdf8a28387af643313aa265f30a2044ac8a93b"
   }
 }
