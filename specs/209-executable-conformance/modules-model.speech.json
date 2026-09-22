@@ -1,0 +1,20 @@
+{
+  "component-responsibilities": [
+    {
+      "text": "Seven components and who owns each. The Lean model interface owns the generic protocol and serialization of the existing law and observations, depending on the accepted model and never on Haskell or a theorem-specific adapter. The Lean corpus owns theorem-bound witnesses, mutants and required setup traces, sharing source definitions with the existing corpus and simulator consumers. The constitutional translation defines the concrete law and observation mappings, identities and unobservable fields, and governs the support abstraction and generated limitations.",
+      "pause": 400
+    },
+    {
+      "text": "The conformance support abstraction observes the real system and translates it under that translation, owning identity maps and field comparisons. The story specification and domain stories own the generic typed theorem and clause structure and the stakeholder stories, consuming corpus bindings and support observations through the interpreter. Execution contexts establish resources outside the stories, with conformance and end to end supplying contexts while sharing scenario execution and comparisons. And the inventory, book and CI component joins theorem bindings, scenarios and executed receipts, renders the same language, and reports missing coverage.",
+      "pause": 400
+    },
+    {
+      "text": "Three closing rules: promote reusable model codecs into the nearest model-owned interface module rather than cloning encoders into conformance, never create one oracle and proof pair per theorem, and preserve simulator corpus compatibility. The data contracts are D01 through D06 and the interface contracts are F01 through F05.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "c45fbb168cb156b13058348c74fd2dee27a2733b1261e6124b945d8acb78449d"
+  }
+}

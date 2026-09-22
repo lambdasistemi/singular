@@ -1,0 +1,24 @@
+{
+  "boundary-data-contracts": [
+    {
+      "text": "Six boundary data contracts. D01, surface identity: a qualified model declaration, definition digest, model revision and protocol version, where a scenario names only declared operations. D02, the scenario: stable corpus identity, theorem and statement bindings, quantified inputs, state, actions and parameters, and a setup trace wherever reachability is required, with witness and mutant relationships explicit; unsupported or unreachable concrete setups are classified and never become a fabricated successful run.",
+      "pause": 400
+    },
+    {
+      "text": "D03, the driver result: an accepted transition with declared boundary observations, or a domain refusal with its reason, while parse, unsupported-operation and process errors are distinct execution failures and no partially decoded success is admitted. D04, the concrete observation: the actual operation outcome and every observable field the constitutional translation names, with input provenance and missing fields explicit and no missing value replaced by a model expectation.",
+      "pause": 400
+    },
+    {
+      "text": "D05, the context and identity state: externally supplied runtime resources with typed concrete-to-abstract identity maps that persist across the scenario trace; allocation is allowed only during setup and action, and observation is lookup-only. D06, the execution receipt: candidate, tree, model and corpus identities, scenario and theorem bindings, actual and expected observations, comparison outcome, controls applied, execution command and provenance; rendered status derives from receipts, and historical receipts are immutable evidence, not current passes.",
+      "pause": 400
+    },
+    {
+      "text": "One ordering rule closes the page: ordering, quantities, datum shapes, signers and refunds, concrete funding and change, and root realization must be defined before the support abstraction may exclude or normalize them. Proof-only fields remain visible limitations and never satisfy the consumer-coverage requirement by fiat.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "2457d09eef2baa3424b1874a6406837fc687eb5069e1da9059f69021b790f4ad"
+  }
+}

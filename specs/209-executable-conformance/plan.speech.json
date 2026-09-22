@@ -1,0 +1,36 @@
+{
+  "slices": [
+    {
+      "text": "Five slices on the existing issue branch and pull request, preserving the earlier candidate and its historical evidence. S01 integrates the current base and delivers the constitutional translation, the generic model driver and a replayable registration and retirement protocol. S02 moves registration onto the shared concrete abstraction with complete declared observations. S03 connects retirement and the applicable refusals through the same driver. S04 migrates the keyed-mint batch and shares context with end to end. S05 delivers the whole-project consumer inventory, the ratchet, CI execution and the reader-facing book.",
+      "pause": 400
+    },
+    {
+      "text": "The order is fixed: S01 precedes S02, S02 precedes S03, and S04 consumes the stabilized abstraction. Opus owns implementation and tests, Grok independently checks committed checkpoints, and the ticket owner owns specs, gate synthesis and disposition. Muse and GLM may perform bounded mechanical tasks with no semantic authority. The mechanical theorem and CI inventory may be prepared in parallel without claiming coverage.",
+      "pause": 400
+    }
+  ],
+  "scope": [
+    {
+      "text": "S01 may touch the constitution, the Lean interface, corpus and build files, conformance packaging with focused checks, and the CI and justfile integration needed to run them. Accepted model functions and theorem meanings stay frozen. The existing onchain and offchain implementation is outside S01, later fences are assigned per slice before dispatch, and no worker creates new issues, edits unrelated branches, merges or deploys.",
+      "pause": 400
+    }
+  ],
+  "verification-and-publication": [
+    {
+      "text": "Two independent worker tables map acceptance rows to verbatim workflow commands and the owner synthesizes their union; a job nobody cited is a missing CI job. Required new checks become CI changes inside the slice, never private substitute acceptance gates. Uncited falsification is recorded as none cited, not an invented historical red.",
+      "pause": 400
+    },
+    {
+      "text": "Workers run checks and keep compact receipts binding command, candidate or tree, inputs, exit, duration and evidence hash. The owner does not implement or run the subject tests; Grok reviews committed checkpoints and receipts, including failure modes, without rewriting the worker's code. Only the ticket owner pushes, after checkpoint approval and the required checks, keeping PR and gist previews current under the standing publication authorization.",
+      "pause": 400
+    },
+    {
+      "text": "Candidate, review, acceptance, merge and release remain distinct. The ceilings are one hundred lines per spec artifact and one hundred forty per worker packet, and an oversized mandate is split rather than stretched.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "6f59048cfe7598ffc6f53dcd2d1b24e0cd865ef2cd2ab7ee4c56cd0e894d47c0"
+  }
+}
