@@ -33,7 +33,6 @@ module Conformance.Fixture.ActiveRegistration (
     completeEdge,
     completeReceipt,
     configPins,
-    dirCounter,
     duplicateLeg,
     dupControlTx,
     dupTx,
@@ -66,21 +65,16 @@ module Conformance.Fixture.ActiveRegistration (
     stateScriptHex,
     walletAddr,
     withEdge,
+    withScopedReceiptDir,
 ) where
 
 import Data.Aeson (Value (..), encode, object, toJSON, (.=))
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
-import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.List (sort)
-import System.Directory (
-    createDirectoryIfMissing,
-    getTemporaryDirectory,
-    removeDirectoryRecursive,
- )
 import System.FilePath ((</>))
-import System.IO.Unsafe (unsafePerformIO)
+import System.IO.Temp (withSystemTempDirectory)
 import Paths_conformance (getDataFileName)
 
 import Conformance.Receipt (loadReceipts)
@@ -348,21 +342,23 @@ complete.
 optionalLegKeys :: [String]
 optionalLegKeys = ["trace"]
 
+{- | Run an action in a temporary directory that belongs to this example alone.
+
+The operating system picks the name, so a second process running the same
+example cannot land on it, and the directory is released on the way out whether
+the action returns or throws. A counter kept beside the fixture could do
+neither: every process starts one at zero, and a release written after the
+action is skipped when the action fails.
+-}
+withScopedReceiptDir :: (FilePath -> IO a) -> IO a
+withScopedReceiptDir = withSystemTempDirectory "conformance-edge-spec"
+
 -- | Write one receipt into a fresh directory and load it.
 loadOne :: Value -> IO (Either String Int)
-loadOne receipt = do
-    tmp <- getTemporaryDirectory
-    n <- atomicModifyIORef' dirCounter (\i -> (i + 1, i))
-    let dir = tmp </> ("conformance-edge-spec-" <> show n)
-    createDirectoryIfMissing True dir
+loadOne receipt = withScopedReceiptDir $ \dir -> do
     BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
     result <- loadReceipts dir
-    removeDirectoryRecursive dir
     pure (fmap length result)
-
-dirCounter :: IORef Int
-dirCounter = unsafePerformIO (newIORef 0)
-{-# NOINLINE dirCounter #-}
 
 -- | Load the committed fixture receipts through the real loader. Both
 -- rows in @test/fixtures/receipts@ are valid, so this genuinely

@@ -36,6 +36,7 @@ ci:
     python3 tools/check_site.py site
     just check-presentation
     just rename-registry-test
+    bash tools/no-global-fixture-state.sh
 
 # #108: the rename tool must re-run cleanly on a pre-rename tree, be a no-op
 # on the second run, and its gate must catch strays planted in .sh files.
