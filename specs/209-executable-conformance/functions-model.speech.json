@@ -1,7 +1,7 @@
 {
   "new-interface-contracts": [
     {
-      "text": "Five protocol signatures, stated as signatures rather than implementation bodies. runSurface executes a scenario against a surface identity using the existing model law and observations, with a structured refusal kept distinct from an execution failure. loadScenario validates revision, digests and theorem bindings from a bound corpus, so no scenario is invented on the code side. observeBoundary reads actual outputs and queries over lookup-only identities and fails when an observation is missing or unallocated. compareBoundary covers the entire declared observable boundary, success and refusal, and every difference names its model field. executeScenario preserves connected state and identity history, checks each step, and records real evidence into an execution receipt.",
+      "text": "Five protocol signatures, stated as signatures rather than implementation bodies. Ticket 221 binds their concrete model declarations and codecs before the migration in ticket 222 onwards. runSurface executes a scenario against a surface identity using the existing model law and observations, with a structured refusal kept distinct from an execution failure. loadScenario validates revision, digests and theorem bindings from a bound corpus, so no scenario is invented on the code side. observeBoundary reads actual outputs and queries over lookup-only identities and fails when an observation is missing or unallocated. compareBoundary covers the entire declared observable boundary, success and refusal, and every difference names its model field. executeScenario preserves connected state and identity history, checks each step, and records real evidence into an execution receipt.",
       "pause": 400
     },
     {
@@ -11,6 +11,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "95961d516099d41fd17bed46ea734b7f059caaf902bac084e50e79a3c9fb5859"
+    "sha256": "a070dbe32645e59ab0d50fa40fd75c439161fd3a2fc20b43f1d29c3333f5f364"
   }
 }

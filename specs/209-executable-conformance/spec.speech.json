@@ -11,7 +11,7 @@
   ],
   "requirements-and-blocking-invariants": [
     {
-      "text": "Twelve requirements, each blocking for its assigned slice. One model-owned driver exposes the executable law and declared boundary observations. Model-owned scenarios carry theorem bindings, parameters and lawful setup traces where reachability is required. Acceptance and domain refusal are kept distinct from parse, process and infrastructure errors, so a broken runner never earns refusal evidence and an unexecuted law never earns acceptance.",
+      "text": "Twelve requirements, each blocking for its assigned child ticket. One model-owned driver exposes the executable law and declared boundary observations. Model-owned scenarios carry theorem bindings, parameters and lawful setup traces where reachability is required. Acceptance and domain refusal are kept distinct from parse, process and infrastructure errors, so a broken runner never earns refusal evidence and an unexecuted law never earns acceptance.",
       "pause": 400
     },
     {
@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "Product claims use the typed theorem and clause language with total execution and rendering, so no instruction can silently disappear from the book. Refusal replay fails when model and implementation disagree, every project theorem has an executable consumer or a named unmet requirement, end to end tests reuse the same scenario and comparison logic, and CI runs the suite into a readable, receipt-derived book with gaps visible. A later slice's incompleteness stays visible and cannot be claimed by an earlier slice's green gate.",
+      "text": "Product claims use the typed theorem and clause language with total execution and rendering, so no instruction can silently disappear from the book. Refusal replay fails when model and implementation disagree, every project theorem has an executable consumer or a named unmet requirement, end to end tests reuse the same scenario and comparison logic, and CI runs the suite into a readable, receipt-derived book with gaps visible. A later child's incompleteness stays visible and cannot be claimed by an earlier child's green gate, and a merged child's pull request closes only its own ticket.",
       "pause": 400
     },
     {
@@ -35,12 +35,12 @@
   ],
   "limits": [
     {
-      "text": "This ticket builds the machinery and migrates implemented behavior; it cannot claim unimplemented edges work. The every-theorem consumer requirement remains unmet until the complete inventory has evidence, and missing cases stay explicit. BDD library selection and general resource abstractions are deferred, and the existing authentication and publication gaps require explicit task accounting.",
+      "text": "This epic builds the machinery and migrates implemented behavior across its six children, and no child may claim unimplemented edges work. The every-theorem consumer requirement remains unmet until the complete inventory has evidence, and missing cases stay explicit. BDD library selection and general resource abstractions are deferred, and the existing authentication and publication gaps require explicit task accounting.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "ec99c5f281069372dc82659fa30c8b3241dc393a97bbe8d8ce167b3321e6ceb1"
+    "sha256": "877b28e396214b43eee8d8f44af1ee2409cec2af6ac46af1fc626658e21f3a49"
   }
 }

@@ -1,7 +1,7 @@
 # New interface contracts
 
-These are protocol signatures, not implementation bodies. S01 binds their
-concrete model declarations and codecs before downstream migration.
+These are protocol signatures, not implementation bodies. #221 binds their
+concrete model declarations and codecs before the migration in #222 onwards.
 
 | ID | Interface | Constraint |
 |---|---|---|

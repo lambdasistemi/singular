@@ -2,10 +2,22 @@
 
 Authority: the operator's 2026-09-22 instructions to set these ticket specs,
 drive Opus and Grok workers, and use Muse or GLM for mechanical parts.
-This continues #209 and PR #217 from bf97f105. It authorizes the model,
-constitution and CI integration required by the accepted work plan, superseding
-the earlier conformance-only fence for these named tasks. It does not authorize
-changes to registry semantics, unrelated edges, external deployments or merge.
+
+**#209 is a parent epic with six child tickets, each with its own pull
+request**: #220 the executable book DSL and its resource lifetime (PR 217),
+#221 the generic Lean model driver (PR 226), then #222 registration observation
+comparison, #223 connected retirement and refusals, #224 batch and shared E2E
+contexts, and #225 theorem consumers, receipts and the book.
+
+**PR 226 delivers #221 and nothing else.** It carries this epic plan for
+context so a reader can see where the driver sits, and it neither authorizes
+nor implements #220 or #222-#225; each of those is its own ticket, its own
+fence and its own pull request.
+
+This authorizes the model, constitution and CI integration required by the
+accepted work plan, superseding the earlier conformance-only fence for these
+named tasks. It does not authorize changes to registry semantics, unrelated
+edges, external deployments or merge.
 
 ## User stories
 
@@ -20,8 +32,9 @@ changes to registry semantics, unrelated edges, external deployments or merge.
 
 ## Requirements and blocking invariants
 
-All invariants below are BLOCKING for their assigned slice. Incomplete later
-slices remain visible and cannot be claimed by an earlier slice's green gate.
+All invariants below are BLOCKING for their assigned child ticket. Incomplete
+later children remain visible and cannot be claimed by an earlier child's green
+gate, and a merged child's pull request closes only its own ticket.
 
 | ID | Required behavior | Failure that must be detected |
 |---|---|---|
@@ -52,8 +65,8 @@ stale bindings. Controls must reach their claimed boundary, not merely exit 1.
 
 ## Limits
 
-This ticket builds the machinery and migrates implemented behavior. It cannot
-claim unimplemented edges work. The every-theorem consumer requirement remains
+This epic builds the machinery and migrates implemented behavior across its
+six children. No child may claim unimplemented edges work. The every-theorem consumer requirement remains
 unmet until the complete inventory has evidence; missing cases stay explicit.
 BDD library selection and general resource abstractions are deferred. Existing
 authentication/publication gaps (#210/#218) require explicit task accounting.
