@@ -58,7 +58,7 @@ module Singular.Registry.Driver (
     tokenIdOfBootTx,
 ) where
 
-import Control.Monad (unless, when)
+import Control.Monad (unless, void, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BS8
@@ -337,7 +337,7 @@ foldEdgeWith reg key edge mDest = do
     -- Building a fold is not folding it: the edge only lands once the
     -- transaction is on chain, and only then may the mirror move.
     signed <- regSubmit reg unsigned
-    withTrie (regTm reg) (regTid reg) $ \t -> () <$ walkEdge t key edge
+    withTrie (regTm reg) (regTid reg) $ \t -> void (walkEdge t key edge)
     rootAfter <- mirrorRoot reg
     when (unRoot rootBefore == unRoot rootAfter) $
         error

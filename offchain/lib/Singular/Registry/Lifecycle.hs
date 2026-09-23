@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- | Funding and evaluation for the public-node lifecycle. The devnet row
@@ -141,7 +142,7 @@ fundingRequirement pp outs =
 fundingProvider :: [TxIn] -> Provider IO -> Provider IO
 fundingProvider reserved prov =
     prov
-        { queryUTxOs = \addr -> filter available <$> queryUTxOs prov addr
+        { queryUTxOs = fmap (filter available) . queryUTxOs prov
         }
   where
     available (i, out) =
@@ -167,7 +168,7 @@ fundLifecycle prov submit pp outs = do
         draft = mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList outs)
     unsigned <- either (fail . show) (pure . balancedTx) (balanceTx pp inputs [] funderAddr draft)
     let signed = addKeyWitness funderSignKey unsigned
-    submitTx submit signed >>= \result -> case result of
+    submitTx submit signed >>= \case
         Submitted _ -> pure ()
         Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
     awaitTx signed

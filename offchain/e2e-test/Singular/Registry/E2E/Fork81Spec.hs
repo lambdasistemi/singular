@@ -17,6 +17,7 @@ on the real packaged patched validator, a fresh devnet must
 module Singular.Registry.E2E.Fork81Spec (spec) where
 
 import Control.Exception (ErrorCall, fromException, try)
+import Control.Monad (void)
 import Data.ByteString (ByteString)
 import Data.IORef (newIORef, readIORef)
 import System.Environment (lookupEnv)
@@ -159,7 +160,7 @@ fork81Spec stateBytes requestBytes = do
                 reg <-
                     bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
                 let tokenId = registryTokenId reg
-                    foldInsert k = () <$ foldEdge reg k edgeInsertAbsent
+                    foldInsert k = void (foldEdge reg k edgeInsertAbsent)
                 foldInsert "cs07-fork-A"
                 foldInsert "cs07-fork-B1294"
                 -- The previously-refused fold (CS07): its proof's sole step
@@ -212,7 +213,7 @@ fork81Spec stateBytes requestBytes = do
                 codes <- loadRegistryCodesFromEnv
                 reg <-
                     bootRegistry cfg codes prov (submitWithGenesis submit) genesisAddr tm
-                let foldInsert k = () <$ foldEdge reg k edgeInsertAbsent
+                let foldInsert k = void (foldEdge reg k edgeInsertAbsent)
                 foldInsert "cs07-fork-A"
                 foldInsert "cs07-fork-B1294"
                 foldInsert "cs07-fork-C11"

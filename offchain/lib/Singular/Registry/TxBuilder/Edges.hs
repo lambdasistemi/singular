@@ -54,7 +54,7 @@ module Singular.Registry.TxBuilder.Edges (
     registryContextFor,
 ) where
 
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -505,16 +505,14 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
     -- row outside the table is one only an adversarial caller wants, so
     -- it is refused here rather than carried to a fold that would refuse
     -- it `edge-inadmissible` anyway.
-    if edge < edgeInsertAbsent || edge > edgeWitnessTerminal
-        then
-            error
-                ( "bookEdge: edge "
-                    <> show edge
-                    <> " on key "
-                    <> show key
-                    <> " is not one of the seven admissible edges"
-                )
-        else pure ()
+    when (edge < edgeInsertAbsent || edge > edgeWitnessTerminal) $
+        error
+            ( "bookEdge: edge "
+                <> show edge
+                <> " on key "
+                <> show key
+                <> " is not one of the seven admissible edges"
+            )
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov payerAddr
     (feeIn, feeOut) <-

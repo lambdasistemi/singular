@@ -639,8 +639,8 @@ registryDuties cfg pp st ctx reqUtxos processed =
                     Coin settled = getMinCoinTxOut @ConwayEra pp (at first)
                 pure mempty{rdOutputs = [at settled]}
     mintsFor edge key =
-        fmap mconcat $
-            mapM
+        mconcat
+            <$> mapM
                 ( \(kind, quantity) -> do
                     script <- case Map.lookup kind (rcWitnessScripts ctx) of
                         Just s -> Right s

@@ -79,7 +79,7 @@ module Singular.Registry.Deployment (
 ) where
 
 import Control.Exception (ErrorCall (..), throwIO)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Aeson (
     FromJSON (..),
     ToJSON (..),
@@ -331,9 +331,9 @@ cageConfigFor dep parts = do
     seedIn <- parseOutRef (depSeedOutRef dep)
     -- The manifest keeps its own vocabulary for the pin it recorded; the
     -- field it names is the one #157 C7 renamed the active policy.
-    if T.pack (hex (SBS.fromShort (partsActivePolicy parts))) /= depRepresentativePolicy dep
-        then Left "this release's registry-bound active policy differs from the deployment"
-        else pure ()
+    when
+        (T.pack (hex (SBS.fromShort (partsActivePolicy parts))) /= depRepresentativePolicy dep)
+        $ Left "this release's registry-bound active policy differs from the deployment"
     let stateHash = computeScriptHash (partsStateBytes parts)
         stateHex = T.pack (hex (scriptHashBytes stateHash))
     if stateHex /= depStatePolicy dep
@@ -526,10 +526,9 @@ resolveStateUtxo prov cfg tok = do
         Just u -> pure u
         Nothing ->
             die
-                ( "no output at the registry address carries the recorded \
-                  \token; the node does not know this deployment (wrong \
-                  \network, or the registry was never booted here)"
-                )
+                "no output at the registry address carries the recorded \
+                \token; the node does not know this deployment (wrong \
+                \network, or the registry was never booted here)"
 
 -- ---------------------------------------------------------
 -- Attaching

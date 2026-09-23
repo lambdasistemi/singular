@@ -6,7 +6,7 @@ Module      : Singular.Registry.E2E.DriverSpec
 Description : The boot-and-fold driver discharges the mirror obligation
 License     : Apache-2.0
 
-#190. A fold's speculative session starts from the COMMITTED trie and is
+Issue 190. A fold's speculative session starts from the COMMITTED trie and is
 discarded, so a caller that lands a fold without mirroring the edge builds
 its next proof against a root the chain no longer has. Before this driver
 the obligation lived in a comment: `Fork81Spec` honoured it, the #173 edge

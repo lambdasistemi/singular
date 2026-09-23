@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -118,7 +119,7 @@ spec = aroundAll withDevnetSocket $
                 -- positive maximum transaction size is a value only a
                 -- real ledger state carries), and the address derived
                 -- from the key file holds the funds the run spends.
-                observed `shouldSatisfy` \o -> case o of
+                observed `shouldSatisfy` \case
                     Just (maxTxSize, utxoCount) ->
                         maxTxSize > 0 && utxoCount > 0
                     Nothing -> False

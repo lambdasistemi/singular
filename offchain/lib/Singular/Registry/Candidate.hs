@@ -57,7 +57,7 @@ resolveCandidate = do
     headOut <- try (readProcess "git" ["rev-parse", "HEAD"] "") :: IO (Either SomeException String)
     statusOut <- try (readProcess "git" ["status", "--porcelain"] "") :: IO (Either SomeException String)
     let dirty = case statusOut of
-            Right status -> not (null (filter (/= '\n') status))
+            Right status -> any (/= '\n') status
             Left _ -> True
     case (override, headOut) of
         (Just sha, _) -> pure (Right (sha, dirty, CandidateFromEnv))
@@ -68,10 +68,9 @@ resolveCandidate = do
                 Just sha -> Right (sha, dirty, CandidateFromReleaseCommit)
                 Nothing ->
                     Left
-                        ( "candidate: cannot establish repository revision: \
-                          \no CANDIDATE_SHA, no git HEAD, and no RELEASE-COMMIT \
-                          \in any parent directory"
-                        )
+                        "candidate: cannot establish repository revision: \
+                        \no CANDIDATE_SHA, no git HEAD, and no RELEASE-COMMIT \
+                        \in any parent directory"
 
 {- | The RELEASE-COMMIT file of a release archive above the working
 directory (#91): runners execute from @offchain/@ inside the

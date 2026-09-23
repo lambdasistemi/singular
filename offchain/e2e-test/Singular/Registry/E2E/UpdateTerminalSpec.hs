@@ -288,17 +288,13 @@ book ::
     Edge ->
     (ByteString, ByteString) ->
     IO TxIn
-book cfg codes prov submit tokenId key edge dest =
+book cfg codes prov submit =
     Edges.bookEdgeTo
         cfg
         codes
         prov
         (submitWithGenesis submit)
         genesisAddr
-        tokenId
-        key
-        edge
-        dest
 
 {- | Build and submit the fold of whatever is pending, WITHOUT mirroring.
 The refusal rows use this: a fold that never lands must not move the
@@ -366,8 +362,8 @@ activeHeldAt prov cfg key = do
             | (_, out) <- walletUtxos
             , let MaryValue _ (MultiAsset ma) = out ^. valueTxOutL
             , (p, names) <- Map.toList ma
-            , (AssetName n, q) <- Map.toList names
             , p == policy
+            , (AssetName n, q) <- Map.toList names
             , SBS.fromShort n == key
             ]
 

@@ -3,6 +3,7 @@ module Naming.RegisterSpec (spec) where
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
+import Data.Maybe (isNothing)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Naming.Register
@@ -60,8 +61,7 @@ spec = describe "Naming.Register (issue #77 derivations)" $ do
             property $
                 forAll genControl $ \control ->
                     forAll genCommitment $ \commitment ->
-                        decodeAddress (insertApprovalName control commitment)
-                            == Nothing
+                        isNothing (decodeAddress (insertApprovalName control commitment))
         it "binds the control address: a different control gives a different name" $
             property $
                 forAll genControl $ \control1 ->
@@ -86,7 +86,7 @@ spec = describe "Naming.Register (issue #77 derivations)" $ do
         it "never decodes as a canonical address" $
             property $
                 forAll (BS.pack <$> listOf arbitrary) $ \spelling ->
-                    decodeAddress (representativeName spelling) == Nothing
+                    isNothing (decodeAddress (representativeName spelling))
         it "matches b2sum -l 256 for alice without a newline" $
             representativeName (TE.encodeUtf8 (T.pack "alice"))
                 `shouldBe` mustHex "e11d814979372c883b50bdb0ffadb1eaf0898bf54fd4fbf298af126fbabbda4c"
