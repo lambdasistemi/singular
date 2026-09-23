@@ -1,5 +1,22 @@
 <!--
 Sync impact report
+Version: 1.3.0 -> 1.4.0 (required signers become an obligation)
+Amended: 2026-09-23
+Authority: user ruling 2026-09-23 narrowing issue #228 to the fold's required
+signers.
+Changed obligations: `requiredSigners` is no longer a named unobservable field.
+The model proves that no fold requires a signer
+(`Singular.Statements.fold_requires_no_signer`), so the `tx` row's `signers`
+carries that obligation: a consumer reads the submitted transaction's required
+signers and compares them with the model's empty list.
+Modified principles: none.
+Synchronized: `Singular.Driver.declaredUnobservable` drops the name in the same
+change; tools/check_model.py reconciles the two in both directions, and the
+driver's surface digest moves with it.
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.2.0 -> 1.3.0 (per-output minimum ada named unobservable)
 Amended: 2026-09-22
 Added sections: none. The model driver translation names one further
@@ -222,7 +239,7 @@ one.
 | `paid` | realization | the executed result's own `paid` list of (address, value) payments, which is non-empty exactly for the two edges that consume an absent token. |
 | `root` | realization | `Singular.rootOf` over the produced trie — FNV-1a over the sorted (key, leaf byte) list. This is the model's own commitment function and is stated as abstract; see the unobservable rows below. |
 | `state` | realization | the complete `Singular.RegistryState` after the step, serialized by the model's own instance so the row is a replayable input rather than a picture of an output. |
-| `tx` | realization | the transaction `Singular.txOf` builds from the same executed step: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. The driver builds no transaction of its own. |
+| `tx` | realization | the transaction `Singular.txOf` builds from the same executed step: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. The driver builds no transaction of its own. `signers` carries an obligation: `Singular.Statements.fold_requires_no_signer` proves it empty for every fold, and a consumer compares it with the submitted transaction's required signers, each translated to the wallet identity whose payment key it is. |
 | model declaration | identity | a scenario names an operation only through `Singular.Driver.edgeName`, which reads the model's own `ToJson Edge`, so the driver holds no second vocabulary for the seven edges. |
 | theorem binding | identity | a scenario carries a theorem's qualified name and the `statementSha256` that `lean/theorem-debt.json` records for it. A statement that moves makes the binding stale and fails; a name alone would not. |
 | surface digest | identity | `definitionDigest` is taken over the declared operation, observation and unobservable names together, so a silently widened or narrowed surface changes it. |
@@ -232,7 +249,6 @@ one.
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
 | `outputMinimumAda` | unobservable | the minimum ada a ledger requires every output to carry. The model says nothing about it, so an output's `lovelace` is a logical zero rather than an amount; a consumer compares every other field of a transaction and leaves this one alone rather than reconstructing an equality the model never claimed. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
-| `requiredSigners` | unobservable | `Singular.requiredSigners` is `[]` for every request; the model does not yet say who must sign. The transaction's `signers` field therefore carries no obligation. |
 | `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |
 | `transactionId` | unobservable | the built transaction has no identity until a ledger accepts it. |
 | `utxoReference` | unobservable | inputs are modelled by role, not by concrete output reference. |
@@ -269,4 +285,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.3.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-22
+**Version**: 1.4.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-23
