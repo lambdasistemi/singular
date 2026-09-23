@@ -53,9 +53,11 @@ library
     , cardano-ledger-mary
     , cardano-node-clients
     , cardano-node-clients:devnet
+    , cardano-node-clients:utxo-indexer-lib
     , cardano-slotting
     , cardano-tx-tools:tx-build
     , containers             >=0.6  && <0.8
+    , contra-tracer
     , crypton
     , directory
     , filepath

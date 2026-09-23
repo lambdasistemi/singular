@@ -55,6 +55,8 @@ module Singular.Registry.Node (
     awaitTx,
     awaitTxId,
     awaitTxWindow,
+    withDevnetIndexer,
+    awaitIndexed,
     awaitConnection,
     confirmDeadline,
     txUpperBoundSlot,
@@ -74,7 +76,7 @@ module Singular.Registry.Node (
 ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, race, waitCatch)
+import Control.Concurrent.Async (Async, async, cancel, link, race, waitCatch)
 import Control.Exception (ErrorCall (..), SomeException, displayException, bracket, throwIO, try)
 import Control.Monad (unless)
 import Data.Time.Clock (getCurrentTime)
@@ -106,7 +108,7 @@ import Codec.Binary.Bech32 qualified as Bech32
 import Lens.Micro ((^.))
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
-import Cardano.Crypto.Hash (hashFromBytes)
+import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
@@ -114,7 +116,7 @@ import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL, vldtTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
 import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
-import Cardano.Ledger.Hashes (ScriptHash, unsafeMakeSafeHash)
+import Cardano.Ledger.Hashes (ScriptHash, extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
@@ -134,11 +136,25 @@ import Cardano.Node.Client.N2C.Connection (
     newLTxSChannel,
     runNodeClient,
  )
+import Cardano.Node.Client.N2C.Probe (defaultProbeConfig)
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
+import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (Submitter)
+import Cardano.Node.Client.UTxOIndexer.Follower (
+    ChainSyncConfig (..),
+    FollowerHandle (..),
+    InterestSet (..),
+    withChainSyncFollower,
+ )
+import Cardano.Node.Client.UTxOIndexer.Indexer (
+    IndexerHandle (..),
+    withInMemoryIndexer,
+ )
+import Cardano.Node.Client.UTxOIndexer.Types qualified as Indexer
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Tracer (nullTracer)
 import Singular.Registry.Ledger (Coin (..), ConwayEra, PParams)
 import Singular.Registry.Provider qualified as Cage
 
@@ -432,13 +448,15 @@ devnetGenesis = case runMode of
 
 {- | Hand a runner the socket of a node: the devnet this spawns, or the
 one the joiner named. Callers that build their own client from a socket
-path use this; the rest use 'withNode'.
+path use this; the rest use 'withNode'. The devnet is followed by
+'withDevnetIndexer' for the whole run, so its submissions confirm
+through 'awaitIndexed'.
 -}
 withNodeSocket :: (FilePath -> IO a) -> IO a
 withNodeSocket k = case runMode of
     Devnet -> do
         gDir <- genesisDir
-        withCardanoNode gDir (\sock _startMs -> k sock)
+        withCardanoNode gDir (\sock _startMs -> withDevnetIndexer sock (k sock))
     External e -> k (extSocket e)
 
 -- | 'withNodeMode' at this process's 'runMode'.
@@ -705,6 +723,79 @@ awaitChain what observe = go confirmationAttempts
             Nothing -> do
                 threadDelay (confirmationPollSeconds * 1_000_000)
                 go (n - 1)
+
+{- | The devnet indexer this process follows, installed by
+'withDevnetIndexer'. 'awaitIndexed' is the only reader, for the same
+reason 'openSession' is 'awaitTx''s: every submission site already runs
+inside the session that knows the chain.
+-}
+devnetIndexer :: IORef (Maybe IndexerHandle)
+devnetIndexer = unsafePerformIO (newIORef Nothing)
+{-# NOINLINE devnetIndexer #-}
+
+{- | Follow the devnet at a socket with an in-memory UTxO indexer for
+the duration of an action, so 'awaitIndexed' returns on the block that
+carries a transaction rather than on a clock.
+
+Devnet only: the follower starts from the chain's origin, which on the
+factory devnet is minutes old and on a public network is its whole
+history. A follower failure is re-thrown in the calling thread.
+-}
+withDevnetIndexer :: FilePath -> IO a -> IO a
+withDevnetIndexer sock action =
+    withInMemoryIndexer $ \idx ->
+        withChainSyncFollower nullTracer follow idx $ \follower -> do
+            link (fhAsync follower)
+            bracket
+                (writeIORef devnetIndexer (Just idx))
+                (const (writeIORef devnetIndexer Nothing))
+                (const action)
+  where
+    follow =
+        ChainSyncConfig
+            { csRelaySocket = sock
+            , csNetworkMagic = devnetMagic
+            , csByronEpochSlots = 42
+            , csReadyThresholdSlots = 60
+            , csSecurityParamK = 2160
+            , csReconnectPolicy = defaultReconnectPolicy
+            , csProbeConfig = defaultProbeConfig
+            , csInterestSet = IndexAll
+            }
+
+{- | Wait until the devnet indexer has applied the block carrying a
+submitted transaction, observed as the transaction's first output;
+name the transaction when it is not indexed within the confirmation
+window.
+-}
+awaitIndexed :: ConwayTx -> IO ()
+awaitIndexed tx = do
+    idx <-
+        readIORef devnetIndexer
+            >>= maybe
+                ( die
+                    "awaitIndexed was called outside withDevnetIndexer; \
+                    \a runner must confirm inside the devnet it follows"
+                )
+                pure
+    let TxId h = txIdTx tx
+    seen <-
+        awaitTxIn
+            idx
+            (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+            (Just window)
+    case seen of
+        Just _ -> pure ()
+        Nothing ->
+            die
+                ( "transaction "
+                    <> show (txIdTx tx)
+                    <> " was accepted by the node but not indexed within "
+                    <> show window
+                    <> " seconds"
+                )
+  where
+    window = confirmationAttempts * confirmationPollSeconds
 
 {- | The settling wait a runner takes after a submission it does not
 carry the transaction for.

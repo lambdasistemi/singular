@@ -84,7 +84,7 @@ import Singular.Registry.Ledger (
     TokenId (..),
  )
 import Singular.Registry.Driver qualified as Driver
-import Singular.Registry.Node (awaitConnection)
+import Singular.Registry.Node (awaitConnection, awaitIndexed, withDevnetIndexer)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (
@@ -369,7 +369,7 @@ submitWithGenesis submit unsignedTx = do
     result <-
         submitTx submit signedTx
     assertSubmitted result
-    awaitTx
+    awaitIndexed signedTx
     pure signedTx
 
 fastRetractCfg :: CageConfig -> CageConfig
@@ -407,7 +407,7 @@ withE2E ::
     IO a
 withE2E stateBytes requestBytes action = do
     gDir <- genesisDir
-    withCardanoNode gDir $ \sock _startMs -> do
+    withCardanoNode gDir $ \sock _startMs -> withDevnetIndexer sock $ do
         lsqCh <- newLSQChannel 16
         ltxsCh <- newLTxSChannel 16
         nodeThread <-
@@ -493,8 +493,6 @@ assertSubmitted (Submitted _) = pure ()
 assertSubmitted (Rejected reason) =
     expectationFailure $
         "Tx rejected: " <> show reason
-awaitTx :: IO ()
-awaitTx = threadDelay 5_000_000
 
 -- ---------------------------------------------------------
 -- Config
