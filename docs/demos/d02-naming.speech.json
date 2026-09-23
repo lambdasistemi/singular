@@ -1,30 +1,24 @@
 {
-  "model-and-fictional-inputs": [
+  "preprod-play-to-record": [
     {
-      "text": "Alice is a fictional spelling for model key forty-two. The Lean naming lifecycle keeps the registry root equal while the name holder maintains a destination or recovers control. The address and policy numbers in the fixture are not live Cardano assets.",
+      "text": "The presenter will create and export a fresh identity with keripy, register and advance it with Cardano KERI on preprod, then maintain and recover a name through the released Singular interface. The connected naming release and mapping are still missing.",
       "pause": 500
     }
   ],
-  "presenter-path-1015-minutes": [
+  "presenter-path-1015-minutes-when-connected": [
     {
-      "text": "Pause the short recording after each frame. Ask what changes in the name record, what remains equal in the registry, and why an unsigned maintenance or wrong recovery reveal refuses.",
+      "text": "The presenter will show the identity event, registry and naming transactions, current destination readback, and two named refusals. Every observed result must be read from preprod.",
       "pause": 500
     }
   ],
-  "play-the-lean-rehearsal": [
+  "recording-gate": [
     {
-      "text": "The embedded eighty-column cast runs the Lean lifecycle program and asserts the returned rows. It shows a model rehearsal, with no node transaction or devnet receipt.",
-      "pause": 500
-    }
-  ],
-  "what-the-dated-card-still-needs": [
-    {
-      "text": "The dated naming card needs a release-bound connected devnet run with transaction IDs, policy identities and fresh record readbacks. The model cast cannot stand in for those observations.",
+      "text": "No naming cast is attached yet. The dated story needs a released interface, confirmed preprod transaction IDs and fresh identity and name readbacks before a recording is published.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "d02-naming.md",
-    "sha256": "e4d86db4eb4b1a45ff67bf1785fcff1c3b365b24aefcf91183cd4df0b1d526e8"
+    "sha256": "1e60753068a15307bfdfae666f9c4f60b3c776728541c80eb0f43790c41abf8e"
   }
 }

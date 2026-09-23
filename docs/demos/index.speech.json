@@ -1,12 +1,12 @@
 {
   "choose-a-dated-play": [
     {
-      "text": "Choose a dated play and check its evidence boundary. The first registry handoff keeps its original draft pull request and preview. The naming play is a Lean rehearsal. The escrow journey still needs connected preprod evidence.",
+      "text": "Choose a dated play and check its evidence boundary. The registry handoff, naming journey and escrow journey are preprod targets. Each cast requires real keripy and Cardano KERI operations plus the released Singular transactions and readbacks for that story.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "index.md",
-    "sha256": "40bae8bcbf1059c9a5c129abbc5abc7f116924bbccd9052feacda7bc1449ba42"
+    "sha256": "d0cfe180232836c0c8b74942e83d671c1e76656d3e0e945855a702e0eb2d4e29"
   }
 }

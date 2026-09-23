@@ -1,51 +1,46 @@
-# Maintain and recover a name — 23 October target
+# Maintain and recover a name — 23 October preprod target
 
-As a name holder, I want to keep the same name while changing its payment destination and recovering control with my precommitted key, so that a payer can use my current destination. This page rehearses that story in the accepted Lean model. The [dated project card](https://github.com/orgs/lambdasistemi/projects/4/views/5) requires a separate connected devnet run before its target is accepted.
+As a name holder, I want to keep the same name while changing its payment destination and recovering control with my precommitted key, so that a payer can use my current destination.
 
-## Model and fictional inputs
+This is a **Cardano preprod target**, not a completed demonstration. The presenter will use keripy `kli` to create and rotate the controller's KERI identity and a released `ckeri` command to submit and read back each connected Cardano action. The Singular naming commands and preprod release needed to join that journey are still missing. The [dated project card](https://github.com/orgs/lambdasistemi/projects/4/views/5) remains a review target.
 
-The source is Singular commit `a6e5edbc2dafa82eb34116a1de2b6503f87c6692`: [naming lifecycle](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/NamingLifecycle.lean), SHA-256 `ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56`, with the [naming fixture](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/Naming.lean) and [Lean execution rows](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/LifecycleMain.lean). The demo spelling **alice** means model key `42`. The fixture's address bytes, policy numbers and commitments are synthetic model inputs. They are not real Cardano assets, a payment address to use, or signatures seen by a node.
+## Preprod play to record
 
 ```mermaid
 sequenceDiagram
-    participant Holder as Current controller
-    participant Record as Model name record
-    participant Recovery as Precommitted controller
-    Holder->>Record: Maintain payment destination
-    Record-->>Holder: Accept with registry root equal
-    Recovery->>Record: Reveal commitment and sign
-    Record-->>Recovery: Accept with same key and registry root
-    Holder->>Record: Change without required signature
-    Record-->>Holder: Refuse controller-signature
+    participant Holder as Name holder
+    participant KLI as keripy kli
+    participant CKERI as ckeri
+    participant Names as Singular naming release
+    participant Chain as Cardano preprod
+    Holder->>KLI: Incept and export controller KEL
+    KLI-->>CKERI: CESR events and signatures
+    CKERI->>Chain: Register connected identity
+    Holder->>Names: Register name and set destination
+    Names->>Chain: Submit naming transaction
+    Holder->>KLI: Rotate to precommitted recovery keys
+    KLI-->>CKERI: Witnessed rotation export
+    CKERI->>Chain: Advance connected identity
+    Holder->>Names: Recover name and set current destination
+    Names->>Chain: Submit naming transaction
+    CKERI->>Chain: Read current identity
+    Names->>Chain: Read current name destination
 ```
 
-The recorder executes `lean/LifecycleMain.lean`, asserts its returned maintenance and recovery rows, then shows those model results. It does not replay a Cardano transaction. The two root-equality rows report what the Lean computed; no independent validator or devnet check is inferred from them.
+The accepted [naming lifecycle model](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/NamingLifecycle.lean) at `a6e5edbc2dafa82eb34116a1de2b6503f87c6692` defines maintenance, recovery and refusals. Its synthetic address bytes and key `42` are model fixtures. They are not preprod assets, keys or transactions. The Cardano KERI to Singular registry mapping remains open in [KERI #435](https://github.com/lambdasistemi/cardano-keri/issues/435), so the preprod sequence above cannot yet be claimed as a connected implementation.
 
-## Presenter path: 10–15 minutes
+## Presenter path: 10–15 minutes when connected
 
-| Time | Action | Ask the audience to observe |
+| Time | Action | Required observation |
 | --- | --- | --- |
-| 0–2 min | State the name holder's goal and identify key `42` as fictional. | The registry key identifies the name; the fixture carries the destination. |
-| 2–5 min | Play maintenance and root-equality frames. | Lean rows `LM01` and `LM04` hold; maintenance leaves the registry root equal. |
-| 5–7 min | Play the unauthorized frame. | Missing controller signature yields `controller-signature`. |
-| 7–10 min | Play recovery and root-equality frames. | The committed key is accepted; the registry root remains equal. |
-| 10–12 min | Play wrong reveal and missing signer frames. | `recovery-commitment` and `recovery-required-signer` are refused. |
-| 12–15 min | Review the devnet gate below. | No transaction, policy identity or fresh record readback was shown. |
+| 0–2 min | Identify the preprod manifest, released `ckeri`, keripy version and fresh demo wallet. | Release and policy identities are pinned. |
+| 2–5 min | Use `kli` to incept and export a fresh AID, then register it through `ckeri`. | CESR digest, transaction ID and fresh AID readback agree. |
+| 5–8 min | Register the name and set its payment destination using the released Singular interface. | Name policy, transaction ID and destination readback agree. |
+| 8–11 min | Rotate through `kli`, advance through `ckeri`, then recover the name. | Same name identifier, new controller and current destination are read from preprod. |
+| 11–15 min | Attempt unauthorized maintenance and wrong recovery evidence. | Each refusal is attributed to its actual validator or client boundary. |
 
-## Play the Lean rehearsal
+## Recording gate
 
-<div id="d02-naming-cast" aria-label="Singular naming Lean rehearsal"></div>
-<script>
-window.addEventListener("load", function () {
-  AsciinemaPlayer.create("../assets/video/d02-naming-model.cast",
-    document.getElementById("d02-naming-cast"), {
-      cols: 80, rows: 24, autoPlay: false, preload: true, controls: true
-    });
-});
-</script>
+The asciicast must record the real `kli`, `ckeri` and Singular commands and their preprod readbacks. Invented identities may be generated for the demo, but their actual AID, asset IDs, transaction IDs and refusals must come from that run. No preprod cast is attached yet. The earlier Lean and Node recording is model evidence and does not demonstrate this user story.
 
-[Download the 80-column asciicast](assets/video/d02-naming-model.cast). From a checkout, run `node demo/naming-lifecycle-demo.mjs --fast` for the asserted Lean rows, or `bash demo/record-naming-lifecycle-demo.sh` to record and validate the cast. The recording is SHA-256 `84a2457d5f444825024baa37901798ffb3558c54f8a556ec9e52498ef81d9424`.
-
-## What the dated card still needs
-
-The [Singular naming epic](https://github.com/lambdasistemi/singular/issues/174) must supply a released registry handoff and a connected devnet naming run: register a name, maintain the destination, recover with the committed controller, read the fresh record, and refuse unauthorized maintenance. The evidence must bind the release, policy identities, transaction IDs and node readbacks. Until those exist, this is a **model rehearsal candidate**, not a playable devnet or preprod acceptance result.
+The [Singular naming epic](https://github.com/lambdasistemi/singular/issues/174) must supply the released naming interface and transaction path. The Cardano KERI registry mapping must bind the two accepted models before connected acceptance. Until then, the page is a play plan, with no claim of naming preprod acceptance.

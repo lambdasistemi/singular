@@ -21,7 +21,7 @@ sequenceDiagram
     Escrow-->>Bob: Pay current destination if witness valid
 ```
 
-The accepted Singular model at `a6e5edbc2dafa82eb34116a1de2b6503f87c6692` supplies the [registry edges](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/Model.lean) and [naming lifecycle](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/NamingLifecycle.lean). The latter has synthetic model address bytes, not a preprod wallet. The cast for the [23 October naming rehearsal](d02-naming.md) covers only maintenance and recovery Lean rows. It does not execute this escrow journey. There is no cast of an accepted preprod payment here.
+The accepted Singular model at `a6e5edbc2dafa82eb34116a1de2b6503f87c6692` supplies the [registry edges](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/Model.lean) and [naming lifecycle](https://raw.githubusercontent.com/lambdasistemi/singular/a6e5edbc2dafa82eb34116a1de2b6503f87c6692/lean/Singular/NamingLifecycle.lean). Their synthetic model address bytes are not a preprod wallet. The [23 October naming play](d02-naming.md) is also awaiting connected `kli`, `ckeri` and Singular commands. There is no cast of an accepted preprod escrow payment here.
 
 ## Presenter path: 10–15 minutes when runnable
 
