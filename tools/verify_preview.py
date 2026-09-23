@@ -26,7 +26,6 @@ names = [
     "docs/theorems/index.html",
     "docs/simulation/index.html",
     "docs/first-demo/index.html",
-    "docs/assets/video/first-registry-model-demo.cast",
     "css/asciinema-player.css",
     "js/asciinema-player.min.js",
     "artifacts/contracts/naming-lifecycle-contract.txt",
