@@ -7,7 +7,7 @@ Lambda Sistemi Project 4, the Cardano KERI demo schedule.
 Added section: Issue tracking. Every Singular issue, including closed issues,
 must appear in the project; creation and reconciliation must be automatic.
 Modified principles: none; the behavioral and model obligations are unchanged.
-Synchronized: AGENTS.md and docs/project4-intake.md.
+Synchronized: AGENTS.md and .github/PROJECT4_INTAKE.md.
 Templates: no Spec Kit templates exist; the PR template already requires
 constitution review and needs no change.
 Follow-up: enable Project 4's built-in auto-add rule for this repository with

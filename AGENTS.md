@@ -24,5 +24,5 @@ Every Singular issue belongs in [Lambda Sistemi Project 4](https://github.com/or
 After creating an issue, verify its project membership and repair or report a
 failed automatic intake. Project membership does not set its schedule or prove
 acceptance; the constitution defines the reconciliation obligation. See
-[docs/project4-intake.md](docs/project4-intake.md) for the project rule and
+[.github/PROJECT4_INTAKE.md](.github/PROJECT4_INTAKE.md) for the project rule and
 inventory check.
