@@ -24,6 +24,12 @@ Both modes build the same N2C provider and submitter over a socket, so
 external mode is not a second implementation of the runners — it is the
 same code reached with a different socket and a different wallet.
 
+Every session follows its chain with an in-memory UTxO indexer: the
+devnet from its origin, an external node from its tip when the session
+opens. Confirmations are the indexer's on both. Address reads are the
+indexer's on the devnet and the node's on an external chain, whose
+older outputs the indexer never saw.
+
 The network magic is verified by the node-to-client handshake itself:
 'runNodeClient' negotiates the requested magic and a node running
 another network rejects the connection. 'withNodeMode' turns that
@@ -91,18 +97,19 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Short qualified as SBS
 import Data.Char (isSpace)
 import Data.Foldable (for_, toList)
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isNothing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, getEnvironment)
 import System.FilePath ((</>))
@@ -113,6 +120,8 @@ import Text.Read (readMaybe)
 
 import Codec.Binary.Bech32 qualified as Bech32
 import Lens.Micro ((&), (.~), (^.))
+import Ouroboros.Consensus.HardFork.Combinator.AcrossEras (OneEraHash (..))
+import Ouroboros.Network.Block qualified as Chain
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
@@ -153,6 +162,7 @@ import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Node.Client.Types (BlockPoint)
 import Cardano.Node.Client.UTxOIndexer.Follower (
     ChainSyncConfig (..),
     FollowerHandle (..),
@@ -441,8 +451,6 @@ data NodeSession = NodeSession
     -- ^ Network the funding address is built for
     , nsPParams :: PParams ConwayEra
     -- ^ Protocol parameters queried from the running node
-    , nsTxInLive :: TxIn -> IO Bool
-    -- ^ Query an output by its exact transaction input reference
     , nsScriptRegistered :: ScriptHash -> IO Bool
     -- ^ Whether this script has a registered reward account, including zero balance
     , nsTipSlot :: IO SlotNo
@@ -499,36 +507,46 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
     External e -> connect (NetworkMagic (extMagic e)) (extSocket e)
   where
     connect magic sock = do
-        wallet <- walletForMode mode
         lsqCh <- newLSQChannel 16
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
-                let nodeProv = adaptProvider (mkN2CProvider lsqCh)
-                    submitter = mkN2CSubmitter ltxsCh
-                awaitConnection magic sock nodeThread nodeProv
-                pp <- Cage.queryProtocolParams nodeProv
-                prov <- followedProvider nodeProv submitter
-                for_ fundingFloor (checkFunding prov (walletAddr wallet))
-                announce mode magic sock (walletAddr wallet)
-                let sess =
-                        NodeSession
-                            { nsProvider = prov
-                            , nsSubmitter = submitter
-                            , nsMagic = magic
-                            , nsNetwork = walletNetwork wallet
-                            , nsPParams = pp
-                            , nsTxInLive = \i -> Map.member i <$> N2C.queryUTxOByTxIn (mkN2CProvider lsqCh) (Set.singleton i)
-                            , nsScriptRegistered = \h -> do
-                                let credential = ScriptHashObj h
-                                Map.member credential <$> N2C.queryStakeRewards (mkN2CProvider lsqCh) (Set.singleton credential)
-                            , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot (mkN2CProvider lsqCh)
-                            , nsMode = mode
-                            }
-                bracket_
-                    (writeIORef openSession (Just sess))
-                    (writeIORef openSession Nothing)
-                    (k sess)
+                let n2c = mkN2CProvider lsqCh
+                awaitConnection magic sock nodeThread (adaptProvider n2c)
+                case mode of
+                    Devnet -> session magic sock n2c ltxsCh
+                    External _ -> do
+                        tip <- N2C.ledgerChainPoint <$> N2C.queryLedgerSnapshot n2c
+                        followChain magic publicByronEpochSlots (startingAt tip) sock $
+                            session magic sock n2c ltxsCh
+    session magic sock n2c ltxsCh = do
+        wallet <- walletForMode mode
+        let nodeProv = adaptProvider n2c
+            submitter = mkN2CSubmitter ltxsCh
+        pp <- Cage.queryProtocolParams nodeProv
+        prov <- followedProvider nodeProv submitter
+        for_ fundingFloor (checkFunding prov (walletAddr wallet))
+        announce mode magic sock (walletAddr wallet)
+        let sess =
+                NodeSession
+                    { nsProvider = prov
+                    , nsSubmitter = submitter
+                    , nsMagic = magic
+                    , nsNetwork = walletNetwork wallet
+                    , nsPParams = pp
+                    , nsScriptRegistered = \h -> do
+                        let credential = ScriptHashObj h
+                        Map.member credential <$> N2C.queryStakeRewards n2c (Set.singleton credential)
+                    , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot n2c
+                    , nsMode = mode
+                    }
+        bracket_
+            (writeIORef openSession (Just sess))
+            (writeIORef openSession Nothing)
+            (k sess)
+    -- Byron epoch length of the public networks; a follower started at
+    -- the tip never decodes a Byron block, but the codec needs one.
+    publicByronEpochSlots = 21_600
 
 {- | The session this process currently has open, installed by
 'withNodeMode'. 'awaitTx' is the only reader: it needs the chain the
@@ -629,17 +647,18 @@ txIdFromHex what txid = do
     h <- maybe (die (what <> ": transaction id is not 32 bytes")) pure (hashFromBytes raw)
     pure (TxId (unsafeMakeSafeHash h))
 
-{- | Wait until output zero of a transaction is on the chain, or the
-chain's tip passes the deadline. Where an indexer follows the chain
-it reports the block that carries the output; elsewhere the node is
-asked for that one output reference, never for an address's whole
-UTxO set.
+{- | Wait until the indexer following the session's chain reports the
+block that carries output zero of a transaction, or the chain's tip
+passes the deadline. The node is asked only for its tip, and only
+while the output has not appeared.
 -}
 confirmOutputZero :: NodeSession -> String -> TxId -> SlotNo -> IO ()
 confirmOutputZero sess label tid deadline =
-    readIORef devnetIndexer >>= maybe (poll wanted) indexed
+    readIORef chainFollower
+        >>= maybe
+            (die (label <> ": no indexer follows this session's chain"))
+            (indexed . followingIndexer)
   where
-    wanted = TxIn tid (TxIx 0)
     indexed idx = do
         let TxId h = tid
         seen <-
@@ -652,13 +671,6 @@ confirmOutputZero sess label tid deadline =
             Nothing -> do
                 tip <- nsTipSlot sess
                 whenExpired label tip deadline (indexed idx)
-    poll i = do
-        live <- nsTxInLive sess i
-        unless live $ do
-            tip <- nsTipSlot sess
-            whenExpired label tip deadline $ do
-                threadDelay (confirmationPollSeconds * 1_000_000)
-                poll i
 
 {- | The poll-until deadline for a transaction: its own validity upper
 bound plus a two-minute margin; the historical fixed window when it
@@ -757,33 +769,61 @@ awaitChain what observe = go confirmationAttempts
                 threadDelay (confirmationPollSeconds * 1_000_000)
                 go (n - 1)
 
-{- | The devnet indexer this process follows, installed by
-'withDevnetIndexer'. 'awaitIndexed' and 'followedProvider' are its
-readers, for the same reason 'openSession' is 'awaitTx''s: every
-submission and every read already runs inside the session that knows
-the chain.
+{- | The indexer this process follows its chain with, installed by
+'followChain'. 'awaitIndexed', 'confirmOutputZero' and
+'followedProvider' are its readers, for the same reason 'openSession'
+is 'awaitTx''s: every submission and every read already runs inside
+the session that knows the chain.
 -}
-devnetIndexer :: IORef (Maybe IndexerHandle)
-devnetIndexer = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE devnetIndexer #-}
+chainFollower :: IORef (Maybe Following)
+chainFollower = unsafePerformIO (newIORef Nothing)
+{-# NOINLINE chainFollower #-}
 
-{- | Follow the devnet at a socket with an in-memory UTxO indexer for
-the duration of an action, so 'awaitIndexed' returns on the block that
-carries a transaction rather than on a clock.
+-- | An indexer following a chain, and where it started.
+data Following = Following
+    { followingIndexer :: IndexerHandle
+    , followingFromOrigin :: Bool
+    {- ^ Whether every block of the chain went through the indexer, so
+    that its view of an address lacks only the genesis outputs
+    -}
+    }
 
-Devnet only: the follower starts from the chain's origin, which on the
-factory devnet is minutes old and on a public network is its whole
-history. A follower failure is re-thrown in the calling thread.
+{- | Follow the devnet at a socket from its origin for the duration of
+an action: 'awaitIndexed' returns on the block that carries a
+transaction, and 'followedProvider' answers address reads. The
+factory devnet's origin is minutes old.
 -}
 withDevnetIndexer :: FilePath -> IO a -> IO a
-withDevnetIndexer sock action =
+withDevnetIndexer = followChain devnetMagic 42 Nothing
+
+{- | Follow the chain of the node at a socket with an in-memory UTxO
+indexer for the duration of an action, from a named block or, given
+none, from the chain's origin. A public network's origin is its whole
+history, so a session there starts at the node's tip: every
+transaction it submits lands in a later block. A follower failure is
+re-thrown in the calling thread.
+-}
+followChain ::
+    NetworkMagic ->
+    Word64 ->
+    Maybe (Indexer.SlotNo, Indexer.BlockHash) ->
+    FilePath ->
+    IO a ->
+    IO a
+followChain magic byronEpochSlots start sock action =
     withInMemoryIndexer $ \idx ->
         withChainSyncFollower nullTracer follow idx $ \follower -> do
             link (fhAsync follower)
             bracket_
-                (writeIORef devnetIndexer (Just idx))
+                ( writeIORef chainFollower $
+                    Just
+                        Following
+                            { followingIndexer = idx
+                            , followingFromOrigin = isNothing start
+                            }
+                )
                 ( do
-                    writeIORef devnetIndexer Nothing
+                    writeIORef chainFollower Nothing
                     writeIORef fundingIndexed False
                 )
                 action
@@ -791,8 +831,9 @@ withDevnetIndexer sock action =
     follow =
         ChainSyncConfig
             { csRelaySocket = sock
-            , csNetworkMagic = devnetMagic
-            , csByronEpochSlots = 42
+            , csNetworkMagic = magic
+            , csByronEpochSlots = byronEpochSlots
+            , csStartPoint = start
             , csReadyThresholdSlots = 60
             , csSecurityParamK = 2160
             , csReconnectPolicy = defaultReconnectPolicy
@@ -800,21 +841,28 @@ withDevnetIndexer sock action =
             , csInterestSet = IndexAll
             }
 
-{- | Wait until the devnet indexer has applied the block carrying a
-submitted transaction, observed as the transaction's first output;
-name the transaction when it is not indexed within the confirmation
-window.
+-- | The block a follower starting at a chain point names; none at origin.
+startingAt :: BlockPoint -> Maybe (Indexer.SlotNo, Indexer.BlockHash)
+startingAt = \case
+    Chain.GenesisPoint -> Nothing
+    Chain.BlockPoint (SlotNo s) (OneEraHash h) ->
+        Just (Indexer.SlotNo s, Indexer.BlockHash (SBS.fromShort h))
+
+{- | Wait until the followed chain's indexer has applied the block
+carrying a submitted transaction, observed as the transaction's first
+output; name the transaction when it is not indexed within the
+confirmation window.
 -}
 awaitIndexed :: ConwayTx -> IO ()
 awaitIndexed tx = do
     idx <-
-        readIORef devnetIndexer
+        readIORef chainFollower
             >>= maybe
                 ( die
-                    "awaitIndexed was called outside withDevnetIndexer; \
-                    \a runner must confirm inside the devnet it follows"
+                    "awaitIndexed was called outside followChain; \
+                    \a runner must confirm inside the chain it follows"
                 )
-                pure
+                (pure . followingIndexer)
     let TxId h = txIdTx tx
     seen <-
         awaitTxIn
@@ -836,10 +884,12 @@ awaitIndexed tx = do
 
 {- | The provider a runner reads the chain through.
 
-Inside 'withDevnetIndexer', address reads are answered by the indexer
-that follows the devnet rather than by the node's @GetUTxOByAddress@,
-which filters the node's whole UTxO set on every call. Elsewhere the
-node's provider is returned unchanged.
+Where an indexer has followed the chain from its origin (the devnet),
+address reads are answered by that indexer rather than by the node's
+@GetUTxOByAddress@, which filters the node's whole UTxO set on every
+call. Elsewhere — a public network followed from its tip, whose older
+outputs the indexer never saw — the node's provider is returned
+unchanged.
 
 The indexer sees only what blocks carry, and the funding wallet's
 genesis outputs are in the ledger's initial state, not in any block.
@@ -851,14 +901,12 @@ address read for as long as the indexer runs.
 -}
 followedProvider :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
 followedProvider node submit =
-    readIORef devnetIndexer
-        >>= maybe
-            (pure node)
-            ( \idx -> do
-                indexFunding idx node submit
-                writeIORef fundingIndexed True
-                pure node{Cage.queryUTxOs = indexedUTxOs idx}
-            )
+    readIORef chainFollower >>= \case
+        Just Following{followingIndexer = idx, followingFromOrigin = True} -> do
+            indexFunding idx node submit
+            writeIORef fundingIndexed True
+            pure node{Cage.queryUTxOs = indexedUTxOs idx}
+        _ -> pure node
 
 {- | Whether the followed devnet's funding read is done, after which a
 node address read is a defect: the indexer answers every one.
