@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -43,6 +44,15 @@ import Test.Hspec (
  )
 
 import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
+import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
+import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
+    genesisDir,
+    genesisSignKey,
+    mkSignKey,
+    rawSerialiseSignKeyDSIGN,
+ )
 import Singular.Registry.Node (
     ExternalNode (..),
     NodeMode (..),
@@ -54,15 +64,6 @@ import Singular.Registry.Node (
     withNodeMode,
  )
 import Singular.Registry.Provider qualified as Cage
-import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    genesisDir,
-    genesisSignKey,
-    mkSignKey,
-    rawSerialiseSignKeyDSIGN,
- )
 
 {- | A signing key file in the @cardano-cli@ text-envelope form — the
 file a joiner produces with @cardano-cli address key-gen@.
@@ -118,7 +119,7 @@ spec = aroundAll withDevnetSocket $
                 -- positive maximum transaction size is a value only a
                 -- real ledger state carries), and the address derived
                 -- from the key file holds the funds the run spends.
-                observed `shouldSatisfy` \o -> case o of
+                observed `shouldSatisfy` \case
                     Just (maxTxSize, utxoCount) ->
                         maxTxSize > 0 && utxoCount > 0
                     Nothing -> False

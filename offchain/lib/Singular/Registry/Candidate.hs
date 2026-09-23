@@ -12,11 +12,11 @@ directory (the runners execute from @offchain/@ inside the extracted
 archive). A revision that cannot be established fails closed, never
 "unknown".
 -}
-module Singular.Registry.Candidate
-    ( CandidateSource (..)
-    , resolveCandidate
-    , sourceName
-    ) where
+module Singular.Registry.Candidate (
+    CandidateSource (..),
+    resolveCandidate,
+    sourceName,
+) where
 
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
@@ -44,19 +44,20 @@ sourceName CandidateFromEnv = "env"
 sourceName CandidateFromGitHead = "git"
 sourceName CandidateFromReleaseCommit = "release-commit"
 
--- | Candidate revision, derived not told: an explicit override wins for
--- smoke runs, else the invocation repository's HEAD, else the
--- RELEASE-COMMIT file of the release archive the working directory sits
--- in. A revision that cannot be established fails closed — never
--- "unknown". Worktree cleanliness rides along as before: a @git status@
--- that cannot be read counts as dirty.
+{- | Candidate revision, derived not told: an explicit override wins for
+smoke runs, else the invocation repository's HEAD, else the
+RELEASE-COMMIT file of the release archive the working directory sits
+in. A revision that cannot be established fails closed — never
+"unknown". Worktree cleanliness rides along as before: a @git status@
+that cannot be read counts as dirty.
+-}
 resolveCandidate :: IO (Either String (String, Bool, CandidateSource))
 resolveCandidate = do
     override <- lookupEnv "CANDIDATE_SHA"
     headOut <- try (readProcess "git" ["rev-parse", "HEAD"] "") :: IO (Either SomeException String)
     statusOut <- try (readProcess "git" ["status", "--porcelain"] "") :: IO (Either SomeException String)
     let dirty = case statusOut of
-            Right status -> not (null (filter (/= '\n') status))
+            Right status -> any (/= '\n') status
             Left _ -> True
     case (override, headOut) of
         (Just sha, _) -> pure (Right (sha, dirty, CandidateFromEnv))
@@ -67,15 +68,15 @@ resolveCandidate = do
                 Just sha -> Right (sha, dirty, CandidateFromReleaseCommit)
                 Nothing ->
                     Left
-                        ( "candidate: cannot establish repository revision: \
-                          \no CANDIDATE_SHA, no git HEAD, and no RELEASE-COMMIT \
-                          \in any parent directory"
-                        )
+                        "candidate: cannot establish repository revision: \
+                        \no CANDIDATE_SHA, no git HEAD, and no RELEASE-COMMIT \
+                        \in any parent directory"
 
--- | The RELEASE-COMMIT file of a release archive above the working
--- directory (#91): runners execute from @offchain/@ inside the
--- extracted archive, so the file sits in a parent directory. Empty
--- entries do not shadow: the walk continues.
+{- | The RELEASE-COMMIT file of a release archive above the working
+directory (#91): runners execute from @offchain/@ inside the
+extracted archive, so the file sits in a parent directory. Empty
+entries do not shadow: the walk continues.
+-}
 releaseCommitAbove :: IO (Maybe String)
 releaseCommitAbove = do
     cwd <- getCurrentDirectory

@@ -26,6 +26,7 @@ import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Alonzo.TxBody (
     scriptIntegrityHashTxBodyL,
  )
+import Cardano.Ledger.Api.PParams (PParams, ppCollateralPercentageL)
 import Cardano.Ledger.Api.Tx (
     bodyTxL,
     estimateMinFeeTx,
@@ -37,31 +38,23 @@ import Cardano.Ledger.Api.Tx.Body (
     collateralReturnTxBodyL,
     feeTxBodyL,
     inputsTxBodyL,
-    referenceInputsTxBodyL,
-    totalCollateralTxBodyL,
     mintTxBodyL,
     mkBasicTxBody,
     outputsTxBodyL,
+    referenceInputsTxBodyL,
+    totalCollateralTxBodyL,
  )
-import Cardano.Ledger.Api.Tx.Out (
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    referenceScriptTxOutL,
- )
+import Cardano.Ledger.Api.Tx.Out (coinTxOutL, datumTxOutL, mkBasicTxOut, referenceScriptTxOutL, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
     rdmrsTxWitsL,
     scriptTxWitsL,
  )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (Inject (inject), StrictMaybe (..))
 import Cardano.Ledger.Conway.Scripts (
     ConwayPlutusPurpose (..),
  )
-import Cardano.Ledger.Api.PParams (PParams, ppCollateralPercentageL)
-import Cardano.Ledger.BaseTypes (Inject (inject))
 import Cardano.Ledger.Core (TxOut, hashScript)
-import Cardano.Ledger.Api.Tx.Out (valueTxOutL)
 import Cardano.Ledger.Mary.Value (
     MaryValue (..),
     MultiAsset (..),
@@ -265,7 +258,10 @@ bootTokenImpl cfg prov addr = do
     -- bytes, which under-pays a boot that references fifteen kilobytes
     -- of state validator.
     pure
-        ( declareCollateral pp allInputUtxos addr
+        ( declareCollateral
+            pp
+            allInputUtxos
+            addr
             (payForReferenceScripts pp (SBS.length (cageScriptBytes cfg)) balanced)
         )
 

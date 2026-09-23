@@ -43,6 +43,11 @@ import Cardano.Ledger.Api.Tx.Out (
  )
 import Cardano.Ledger.BaseTypes (Inject (..))
 
+import Cardano.Tx.Balance (
+    BalanceResult (..),
+    balanceTx,
+ )
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -57,11 +62,6 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types (
     Edge,
  )
-import Cardano.Tx.Balance (
-    BalanceResult (..),
-    balanceTx,
- )
-import Cardano.Tx.Ledger (ConwayTx)
 
 {- | Build the request transaction for one C2 edge (#183).
 

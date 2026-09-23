@@ -1,17 +1,17 @@
 module Main (main) where
 
-import Singular.Registry.BlueprintParametersSpec qualified
-import Singular.Registry.TxBuilder.BookEdgeSpec qualified
-import Singular.Registry.TxBuilder.BurnSourceSpec qualified
-import Singular.Registry.CandidateSpec qualified
-import Singular.Registry.FailureMatchSpec qualified
-import Singular.Registry.NodeSpec qualified
-import Singular.Registry.LifecycleSpec qualified
-import Singular.Registry.TypesSpec qualified
 import Naming.CompleteVerifySpec qualified
+import Naming.RecordValueSpec qualified
 import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
-import Naming.RecordValueSpec qualified
+import Singular.Registry.BlueprintParametersSpec qualified
+import Singular.Registry.CandidateSpec qualified
+import Singular.Registry.FailureMatchSpec qualified
+import Singular.Registry.LifecycleSpec qualified
+import Singular.Registry.NodeSpec qualified
+import Singular.Registry.TxBuilder.BookEdgeSpec qualified
+import Singular.Registry.TxBuilder.BurnSourceSpec qualified
+import Singular.Registry.TypesSpec qualified
 import Test.Hspec (hspec)
 
 main :: IO ()

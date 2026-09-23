@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- | Funding and evaluation for the public-node lifecycle. The devnet row
@@ -39,8 +40,8 @@ import Cardano.Ledger.Api.Tx.In (TxIn (..))
 import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL, getMinCoinTxOut, mkBasicTxOut, referenceScriptTxOutL, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Coin (CoinPerByte (..))
+import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
@@ -110,9 +111,10 @@ sizedOutput :: Bool -> PParams ConwayEra -> TxOut ConwayEra -> TxOut ConwayEra
 sizedOutput False _ out = out
 sizedOutput True pp out = out & coinTxOutL .~ minimumCoin pp out
 
--- | The lovelace one request output must lock: the tip plus the
--- deposit the fold returns. Named for what it locks, not for the datum
--- field, which is the deposit alone (#183).
+{- | The lovelace one request output must lock: the tip plus the
+deposit the fold returns. Named for what it locks, not for the datum
+field, which is the deposit alone (#183).
+-}
 requestLockedCoin :: PParams ConwayEra -> CageConfig -> TokenId -> Addr -> ByteString -> Edge -> Integer -> Coin
 requestLockedCoin pp cfg tok addr spelling edge now =
     let draft =
@@ -138,13 +140,15 @@ fundingRequirement pp outs =
 
 -- | Keep request funding away from references and inputs reserved for later steps.
 fundingProvider :: [TxIn] -> Provider IO -> Provider IO
-fundingProvider reserved prov = prov
-    { queryUTxOs = \addr -> filter available <$> queryUTxOs prov addr
-    }
+fundingProvider reserved prov =
+    prov
+        { queryUTxOs = fmap (filter available) . queryUTxOs prov
+        }
   where
-    available (i, out) = i `notElem` reserved
-        && out ^. referenceScriptTxOutL == SNothing
-        && (let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL in Map.null assets)
+    available (i, out) =
+        i `notElem` reserved
+            && out ^. referenceScriptTxOutL == SNothing
+            && (let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL in Map.null assets)
 
 -- | Fund exactly the requested actors, then return the confirmed output references.
 fundLifecycle :: Provider IO -> Submitter IO -> PParams ConwayEra -> [TxOut ConwayEra] -> IO [(TxIn, TxOut ConwayEra)]
@@ -164,7 +168,7 @@ fundLifecycle prov submit pp outs = do
         draft = mkBasicTx (mkBasicTxBody & outputsTxBodyL .~ StrictSeq.fromList outs)
     unsigned <- either (fail . show) (pure . balancedTx) (balanceTx pp inputs [] funderAddr draft)
     let signed = addKeyWitness funderSignKey unsigned
-    submitTx submit signed >>= \result -> case result of
+    submitTx submit signed >>= \case
         Submitted _ -> pure ()
         Rejected reason -> fail ("lifecycle funding rejected: " <> show reason)
     awaitTx signed

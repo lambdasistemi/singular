@@ -93,6 +93,7 @@ import Singular.Registry.Types (
     edgeUpdateTerminal,
  )
 
+import Control.Monad (void)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Text qualified as T
@@ -195,14 +196,15 @@ witnessScripts =
 -- | What the builder decides this single request owes.
 decide :: Edge -> Either String ()
 decide edge =
-    ()
-        <$ registryDuties
+    void
+        ( registryDuties
             cfg
             emptyPParams
             tokenState
             witnessScripts
             [requestFor edge]
             [True]
+        )
 
 -- ---------------------------------------------------------
 -- The rows
@@ -285,7 +287,7 @@ decideCustody held =
 expectAssetRefusal :: (TxIn, TxOut ConwayEra) -> Expectation
 expectAssetRefusal held@(_, out) = do
     extractCageDatum out `shouldSatisfy` isJust
-    (() <$ decideCustody held) `shouldSatisfy` isLeft
+    void (decideCustody held) `shouldSatisfy` isLeft
 
 custodyIdentity :: Spec
 custodyIdentity = describe "#178: absent custody derives identity from its sole asset" $ do
@@ -297,10 +299,10 @@ custodyIdentity = describe "#178: absent custody derives identity from its sole 
             Right duties -> map (fst . csUtxo) (rdSpends duties) `shouldBe` [custodyRef]
 
     it "does not use the retired datum key as an identity fallback" $
-        ( ()
-            <$ decideCustody
+        void
+            ( decideCustody
                 (custodyWith retiredTwoField (custodyValue (cfgAbsentPolicy cfg) keyA 1))
-        )
+            )
             `shouldSatisfy` isLeft
 
     it "refuses refund-only custody with no non-ADA asset" $
@@ -379,7 +381,7 @@ ledger values that have no `Show`, and a row that only asks WHETHER the
 builder refused does not need them.
 -}
 refusedWith :: RegistryContext -> Edge -> Either String ()
-refusedWith ctx edge = () <$ decideWith ctx edge
+refusedWith ctx edge = void (decideWith ctx edge)
 
 {- | The rows that need the candidate inventory: selection is exact in
 both directions, and the selected UTxO is the one the fold consumes.
@@ -531,8 +533,8 @@ deletionBurnSource =
                     map fst (rdInputs d) `shouldBe` [holderIn 2]
 
         it "refuses the deletion when nothing holds the key's witness" $
-            (() <$ decideDeletion []) `shouldSatisfy` isLeft
+            void (decideDeletion []) `shouldSatisfy` isLeft
 
         it "does not sweep another key's holder into the deletion" $
-            (() <$ decideDeletion [boundHolder 1 keyB 1])
+            void (decideDeletion [boundHolder 1 keyB 1])
                 `shouldSatisfy` isLeft

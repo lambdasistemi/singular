@@ -96,12 +96,12 @@ module Singular.Registry.TxBuilder.Internal (
 ) where
 
 import Data.ByteString (ByteString)
-import Data.Maybe (fromMaybe)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isHexDigit)
 import Data.List (isInfixOf, isPrefixOf, tails)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
@@ -197,6 +197,12 @@ import PlutusTx.IsData.Class (
     ToData (..),
  )
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Balance (
+    BalanceResult (..),
+    balanceTx,
+ )
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Blueprint (
     applyRequestParams,
  )
@@ -215,23 +221,17 @@ import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Types (
     CageDatum (..),
     Edge,
+    OnChainRequest (..),
+    OnChainTokenId (..),
+    OnChainTxOutRef (..),
+    ProofStep,
     edgeDeleteAbsent,
     edgeDeleteActive,
     edgeInsertAbsent,
     edgeInsertActive,
     edgeUpdateActive,
     edgeUpdateTerminal,
-    ProofStep,
-    OnChainRequest (..),
-    OnChainTokenId (..),
-    OnChainTxOutRef (..),
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Balance (
-    BalanceResult (..),
-    balanceTx,
- )
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty MPF root (32 zero bytes).
 emptyRoot :: ByteString
@@ -695,13 +695,14 @@ extractOwnerBytes out =
                 "extractOwnerBytes: \
                 \not a request"
 
--- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
--- routing): exactly `input lovelace − tip`, floored at min-UTxO with the
--- top-up funded visibly. No fee share is deducted here and none is
--- invented (fees ride funding inputs; the validator pins per-owner floors
--- and exact lock accumulation instead of an aggregate envelope). THE shared
--- helper for every rejected-refund emission — `Reject` and manual paths
--- call it; processed rows emit no refunds at all (their bond locks).
+{- | Compute a rejected row's refund output (NOTE-014 item A2, delegated
+routing): exactly `input lovelace − tip`, floored at min-UTxO with the
+top-up funded visibly. No fee share is deducted here and none is
+invented (fees ride funding inputs; the validator pins per-owner floors
+and exact lock accumulation instead of an aggregate envelope). THE shared
+helper for every rejected-refund emission — `Reject` and manual paths
+call it; processed rows emit no refunds at all (their bond locks).
+-}
 computeRefund ::
     PParams ConwayEra ->
     Network ->
@@ -842,11 +843,10 @@ evalScriptHash s =
 
 findAfter :: String -> String -> Maybe String
 findAfter needle hay =
-    case
-        [ drop (length needle) t
-        | t <- tails hay
-        , needle `isPrefixOf` t
-        ] of
+    case [ drop (length needle) t
+         | t <- tails hay
+         , needle `isPrefixOf` t
+         ] of
         (r : _) -> Just r
         [] -> Nothing
 
@@ -911,7 +911,6 @@ walkEdge trie key edge
         _ <- delete trie key
         _ <- insert trie key leaf
         pure before
-
 
 {- | What an edge owes the mint, as @(kind, quantity)@ over the three token
 policies: kind 0 absent, 1 active, 2 terminal.

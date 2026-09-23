@@ -75,12 +75,11 @@ module Singular.Registry.Node (
     checkFunding,
 ) where
 
+import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, link, race, waitCatch)
-import Control.Exception (ErrorCall (..), SomeException, displayException, bracket, throwIO, try)
+import Control.Exception (ErrorCall (..), SomeException, bracket, bracket_, displayException, throwIO, try)
 import Control.Monad (unless)
-import Data.Time.Clock (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Aeson (eitherDecodeStrict, withObject, (.:))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString (ByteString)
@@ -88,20 +87,22 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Char (isSpace)
-import Data.Foldable (toList)
+import Data.Foldable (for_, toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Word (Word32)
-import System.Environment (getArgs, getEnvironment)
 import System.Directory (createDirectoryIfMissing)
+import System.Environment (getArgs, getEnvironment)
+import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcess)
-import System.FilePath ((</>))
 import Text.Read (readMaybe)
 
 import Codec.Binary.Bech32 qualified as Bech32
@@ -223,7 +224,7 @@ nodeModeFromArgs args env
     mSock = flag "--node-socket" `orElse` lookup "SINGULAR_NODE_SOCKET" env
     mMagic = flag "--network-magic" `orElse` lookup "SINGULAR_NETWORK_MAGIC" env
     mSkey = flag "--wallet-skey" `orElse` lookup "SINGULAR_WALLET_SKEY" env
-    orElse a b = maybe b Just a
+    orElse a b = a <|> b
     need f e = maybe (Left (missing f e)) Right
     missing f e =
         "external-node mode is partially configured: "
@@ -299,8 +300,8 @@ echoKoios evDir tag raw = case runMode of
                     , "https://preprod.koios.rest/api/v1/submittx"
                     ]
                     ""
-                )
-                :: IO (Either SomeException String)
+                ) ::
+                IO (Either SomeException String)
         case r of
             Right body -> writeFile koiosPath body
             Left err -> writeFile koiosPath (displayException err)
@@ -471,9 +472,10 @@ around it; an external node is left alone.
 withNodeMode :: NodeMode -> (NodeSession -> IO a) -> IO a
 withNodeMode = withNodeModeAndFunding (Just defaultFundingFloor)
 
--- | The lifecycle runners calculate their complete funding plans from the
--- live parameters before submitting. A fixed 100 ADA floor here would reject
--- wallets that can afford those plans, and would block read-only estimates.
+{- | The lifecycle runners calculate their complete funding plans from the
+live parameters before submitting. A fixed 100 ADA floor here would reject
+wallets that can afford those plans, and would block read-only estimates.
+-}
 withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
 withNodeForPlannedFunding = withNodeModeAndFunding Nothing runMode
 
@@ -493,9 +495,7 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                 let prov = adaptProvider (mkN2CProvider lsqCh)
                 awaitConnection magic sock nodeThread prov
                 pp <- Cage.queryProtocolParams prov
-                case fundingFloor of
-                    Just floorRequired -> checkFunding prov (walletAddr wallet) floorRequired
-                    Nothing -> pure ()
+                for_ fundingFloor (checkFunding prov (walletAddr wallet))
                 announce mode magic sock (walletAddr wallet)
                 let sess =
                         NodeSession
@@ -511,10 +511,10 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
                             , nsTipSlot = N2C.ledgerTipSlot <$> N2C.queryLedgerSnapshot (mkN2CProvider lsqCh)
                             , nsMode = mode
                             }
-                bracket
+                bracket_
                     (writeIORef openSession (Just sess))
-                    (const (writeIORef openSession Nothing))
-                    (const (k sess))
+                    (writeIORef openSession Nothing)
+                    (k sess)
 
 {- | The session this process currently has open, installed by
 'withNodeMode'. 'awaitTx' is the only reader: it needs the chain the
@@ -528,7 +528,7 @@ openSession = unsafePerformIO (newIORef Nothing)
 
 -- | Registration is global to a script credential, shared by registries.
 scriptStakeRegistered :: ScriptHash -> IO Bool
-scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (\s -> nsScriptRegistered s h)
+scriptStakeRegistered h = readIORef openSession >>= maybe (die "scriptStakeRegistered called outside a node session") (`nsScriptRegistered` h)
 
 -- | Read the live tip for a transaction built in the active session.
 currentTipSlot :: IO SlotNo
@@ -746,10 +746,10 @@ withDevnetIndexer sock action =
     withInMemoryIndexer $ \idx ->
         withChainSyncFollower nullTracer follow idx $ \follower -> do
             link (fhAsync follower)
-            bracket
+            bracket_
                 (writeIORef devnetIndexer (Just idx))
-                (const (writeIORef devnetIndexer Nothing))
-                (const action)
+                (writeIORef devnetIndexer Nothing)
+                action
   where
     follow =
         ChainSyncConfig

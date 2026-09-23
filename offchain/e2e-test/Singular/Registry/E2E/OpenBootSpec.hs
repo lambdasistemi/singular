@@ -37,6 +37,7 @@ module Singular.Registry.E2E.OpenBootSpec (spec) where
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.List (nub)
+import Data.Maybe (isNothing)
 import System.Environment (lookupEnv)
 import Test.Hspec
 
@@ -116,7 +117,7 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
     it "pins the parameterless open policy and the three witnesses, and the eight-field datum decodes with no naming input" $ do
         -- "with no naming input" is a fact about this run.
         naming <- lookupEnv "NAMING_BLUEPRINT"
-        unless (naming == Nothing) $
+        unless (isNothing naming) $
             expectationFailure
                 "A173-BOOT: NAMING_BLUEPRINT is set; this row must boot with no naming input at all"
 

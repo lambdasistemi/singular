@@ -55,8 +55,8 @@ module Singular.Registry.Types (
     ConsumerRedeemer (..),
 ) where
 
-import Data.ByteString (ByteString)
 import Cardano.Ledger.BaseTypes (SlotNo (..))
+import Data.ByteString (ByteString)
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal (
     BuiltinByteString (..),
@@ -164,20 +164,23 @@ data OnChainRequest = OnChainRequest
     , requestKey :: !ByteString
     -- ^ Trie key to operate on
     , requestEdge :: !Edge
-    -- ^ The C2 row index this request names (#183). The edge names the
-    -- trie move and its leaf bytes; no value bytes travel here.
+    {- ^ The C2 row index this request names (#183). The edge names the
+    trie move and its leaf bytes; no value bytes travel here.
+    -}
     , requestDeposit :: !Integer
-    -- ^ The deposit (lovelace) the request rides with, over and above
-    -- the tip. Must equal the request output's lovelace less
-    -- @state.tip@ at fold time; the fold returns it to the destination.
+    {- ^ The deposit (lovelace) the request rides with, over and above
+    the tip. Must equal the request output's lovelace less
+    @state.tip@ at fold time; the fold returns it to the destination.
+    -}
     , requestSubmittedAt :: !Integer
     -- ^ POSIX time (ms) when the request was submitted
     , requestDestination :: !(ByteString, ByteString)
-    -- ^ Where this request's minted token goes, and the hash of the
-    -- inline datum the receiving output must carry (#157 D-DEST;
-    -- appended last). Encoded as a two-element list, exactly as Aiken
-    -- encodes a tuple. Empty datum hash means a datum-less output; for
-    -- edge 0 the address component is the refund address.
+    {- ^ Where this request's minted token goes, and the hash of the
+    inline datum the receiving output must carry (#157 D-DEST;
+    appended last). Encoded as a two-element list, exactly as Aiken
+    encodes a tuple. Empty datum hash means a datum-less output; for
+    edge 0 the address component is the refund address.
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -197,20 +200,24 @@ data OnChainTokenState = OnChainTokenState
     , stateRetractTime :: !Integer
     -- ^ Requester retract window duration (ms)
     , stateAppPolicy :: !BuiltinByteString
-    -- ^ The application policy that certifies requests (#157 C4): a
-    -- request whose operation changes the trie is folded only if its
-    -- UTxO carries one asset under this policy whose name is the
-    -- request's approval binding.
+    {- ^ The application policy that certifies requests (#157 C4): a
+    request whose operation changes the trie is folded only if its
+    UTxO carries one asset under this policy whose name is the
+    request's approval binding.
+    -}
     , stateActivePolicy :: !BuiltinByteString
-    -- ^ The policy that mints the ACTIVE token (renamed from the
-    -- representative policy). Under it the asset name is the registry
-    -- key itself (#157 D-ASSET).
+    {- ^ The policy that mints the ACTIVE token (renamed from the
+    representative policy). Under it the asset name is the registry
+    key itself (#157 D-ASSET).
+    -}
     , stateAbsentPolicy :: !BuiltinByteString
-    -- ^ The policy that mints the ABSENT token, held in the cage's own
-    -- custody beside the inserter's refund address.
+    {- ^ The policy that mints the ABSENT token, held in the cage's own
+    custody beside the inserter's refund address.
+    -}
     , stateTerminalPolicy :: !BuiltinByteString
-    -- ^ The policy that mints the TERMINAL token: a name is over,
-    -- forever.
+    {- ^ The policy that mints the TERMINAL token: a name is over,
+    forever.
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -263,10 +270,11 @@ data CageDatum
       RequestDatum !OnChainRequest
     | -- | Current token state (Constr 1)
       StateDatum !OnChainTokenState
-    | -- | The cage's own custody of an absent token (Constr 2, #157
-      -- D-CUSTODY; appended, so 0 and 1 never move): the address the
-      -- inserter named for the refund. The registry key is the sole
-      -- non-ADA asset carried by the output.
+    | {- | The cage's own custody of an absent token (Constr 2, #157
+      D-CUSTODY; appended, so 0 and 1 never move): the address the
+      inserter named for the refund. The registry key is the sole
+      non-ADA asset carried by the output.
+      -}
       AbsentCustody !ByteString
     deriving stock (Show, Eq)
 
@@ -370,10 +378,11 @@ data Neighbor = Neighbor
     }
     deriving stock (Show, Eq)
 
--- | The active-token policy as plain bytes (issue #77 E-001, renamed by
--- #157 C7): unwraps the `BuiltinByteString` for hex comparison in
--- verifiers. Named for the field it reads — no alias of the
--- representative policy survives.
+{- | The active-token policy as plain bytes (issue #77 E-001, renamed by
+#157 C7): unwraps the `BuiltinByteString` for hex comparison in
+verifiers. Named for the field it reads — no alias of the
+representative policy survives.
+-}
 stateActivePolicyBytes :: OnChainTokenState -> ByteString
 stateActivePolicyBytes st = case stateActivePolicy st of
     BuiltinByteString bs -> bs

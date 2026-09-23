@@ -13,7 +13,6 @@ module Singular.Registry.AssetName (
     deriveAssetName,
 ) where
 
-import Singular.Registry.Types (OnChainTxOutRef (..))
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Bits (shiftR)
 import Data.ByteArray (convert)
@@ -23,6 +22,7 @@ import Data.Word (Word16)
 import PlutusTx.Builtins.Internal (
     BuiltinByteString (..),
  )
+import Singular.Registry.Types (OnChainTxOutRef (..))
 
 {- | Derive the asset name from an output reference,
 matching Aiken's @lib.assetName@:
