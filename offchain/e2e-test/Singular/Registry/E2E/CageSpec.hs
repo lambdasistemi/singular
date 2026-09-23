@@ -60,7 +60,6 @@ import Cardano.Node.Client.N2C.Provider (
 import Cardano.Node.Client.N2C.Submitter (
     mkN2CSubmitter,
  )
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (
     SubmitResult (..),
     Submitter (..),
@@ -83,7 +82,7 @@ import Singular.Registry.Ledger (
     ConwayEra,
     TokenId (..),
  )
-import Singular.Registry.Node (awaitConnection, awaitIndexed, withDevnetIndexer)
+import Singular.Registry.Node (adaptProvider, awaitConnection, awaitIndexed, followedProvider, withDevnetIndexer)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (
@@ -416,13 +415,11 @@ withE2E stateBytes requestBytes action = do
                     sock
                     lsqCh
                     ltxsCh
-        -- Build Provider (adapt from
-        -- cardano-node-clients Provider)
-        let n2cProv = mkN2CProvider lsqCh
-            prov = adaptProvider n2cProv
-        awaitConnection (NetworkMagic 42) sock nodeThread prov
-        -- Build Submitter
+        let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+        awaitConnection (NetworkMagic 42) sock nodeThread nodeProv
         let submit = mkN2CSubmitter ltxsCh
+        -- Address reads from here on are the indexer's.
+        prov <- followedProvider nodeProv submit
         -- Build TrieManager
         tm <- mkPureTrieManager
         -- Verify connection works
@@ -462,25 +459,6 @@ withE2E stateBytes requestBytes action = do
         result <- action cfg prov submit tm
         cancel nodeThread
         pure result
-
-{- | Adapt a @cardano-node-clients@ 'Provider' to a
-@Cage@ 'Provider'. The record fields are
-identical.
--}
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs =
-            N2C.queryUTxOs p
-        , Cage.queryProtocolParams =
-            N2C.queryProtocolParams p
-        , Cage.evaluateTx =
-            N2C.evaluateTx p
-        , Cage.posixMsToSlot =
-            N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot =
-            N2C.posixMsCeilSlot p
-        }
 
 -- ---------------------------------------------------------
 -- Helpers

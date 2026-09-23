@@ -331,11 +331,13 @@ import Singular.Registry.Types (
  )
 import Singular.Registry.Node (
     NodeMode (..),
+    adaptProvider,
     awaitConnection,
     awaitIndexed,
     checkFunding,
     defaultFundingFloor,
     devnetGenesis,
+    followedProvider,
     funderAddr,
     funderSignKey,
     runMode,
@@ -358,7 +360,6 @@ import Cardano.Node.Client.N2C.Connection (
  )
 import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
-import Cardano.Node.Client.Provider qualified as N2C
 import Cardano.Node.Client.Submitter (
     SubmitResult (..),
     Submitter (..),
@@ -977,9 +978,10 @@ runSession
                     sock
                     lsqCh
                     ltxsCh
-        let prov = adaptProvider (mkN2CProvider lsqCh)
-        awaitConnection sessionMagic sock nodeThread prov
+        let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+        awaitConnection sessionMagic sock nodeThread nodeProv
         let submit = mkN2CSubmitter ltxsCh
+        prov <- followedProvider nodeProv submit
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
@@ -1314,16 +1316,6 @@ largestWalletUtxo prov = do
     case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
         [] -> failWith "genesis wallet has no ada-only UTxO; cannot fund"
         u : _ -> pure u
-
-adaptProvider :: N2C.Provider IO -> Cage.Provider IO
-adaptProvider p =
-    Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
-        , Cage.queryProtocolParams = N2C.queryProtocolParams p
-        , Cage.evaluateTx = N2C.evaluateTx p
-        , Cage.posixMsToSlot = N2C.posixMsToSlot p
-        , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
-        }
 
 -- ---------------------------------------------------------
 -- Rows
@@ -6681,10 +6673,11 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 sock
                 lsqCh
                 ltxsCh
-    let prov = adaptProvider (mkN2CProvider lsqCh)
-    awaitConnection sessionMagic sock nodeThread prov
+    let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+    awaitConnection sessionMagic sock nodeThread nodeProv
     let submit = mkN2CSubmitter ltxsCh
-        stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
+    prov <- followedProvider nodeProv submit
+    let stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =
             "state:"
                 <> stateMarker
@@ -7679,9 +7672,10 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 sock
                 lsqCh
                 ltxsCh
-    let prov = adaptProvider (mkN2CProvider lsqCh)
-    awaitConnection sessionMagic sock nodeThread prov
+    let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+    awaitConnection sessionMagic sock nodeThread nodeProv
     let submit = mkN2CSubmitter ltxsCh
+    prov <- followedProvider nodeProv submit
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov

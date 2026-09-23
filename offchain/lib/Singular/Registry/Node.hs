@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Registry.Node
 Description : Node and funding-wallet entry point for every runner
@@ -57,6 +59,8 @@ module Singular.Registry.Node (
     awaitTxWindow,
     withDevnetIndexer,
     awaitIndexed,
+    adaptProvider,
+    followedProvider,
     awaitConnection,
     confirmDeadline,
     txUpperBoundSlot,
@@ -79,7 +83,7 @@ import Control.Applicative ((<|>))
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, link, race, waitCatch)
 import Control.Exception (ErrorCall (..), SomeException, bracket, bracket_, displayException, throwIO, try)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Aeson (eitherDecodeStrict, withObject, (.:))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString (ByteString)
@@ -92,6 +96,7 @@ import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Time.Clock (getCurrentTime)
@@ -106,26 +111,30 @@ import System.Process (readProcess)
 import Text.Read (readMaybe)
 
 import Codec.Binary.Bech32 qualified as Bech32
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Network.Magic (NetworkMagic (..))
 
 import Cardano.Crypto.Hash (hashFromBytes, hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (outputsTxBodyL, vldtTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, valueTxOutL)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL, vldtTxBodyL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..), StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Binary (decodeFull')
+import Cardano.Ledger.Core (eraProtVerLow)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Hashes (ScriptHash, extractHash, unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
+import Cardano.Ledger.Val (inject, (<->))
 
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
     SignKeyDSIGN,
+    addKeyWitness,
     devnetMagic,
     genesisDir,
     genesisSignKey,
@@ -142,7 +151,7 @@ import Cardano.Node.Client.N2C.Provider (mkN2CProvider)
 import Cardano.Node.Client.N2C.Reconnect (defaultReconnectPolicy)
 import Cardano.Node.Client.N2C.Submitter (mkN2CSubmitter)
 import Cardano.Node.Client.Provider qualified as N2C
-import Cardano.Node.Client.Submitter (Submitter)
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Node.Client.UTxOIndexer.Follower (
     ChainSyncConfig (..),
     FollowerHandle (..),
@@ -725,9 +734,10 @@ awaitChain what observe = go confirmationAttempts
                 go (n - 1)
 
 {- | The devnet indexer this process follows, installed by
-'withDevnetIndexer'. 'awaitIndexed' is the only reader, for the same
-reason 'openSession' is 'awaitTx''s: every submission site already runs
-inside the session that knows the chain.
+'withDevnetIndexer'. 'awaitIndexed' and 'followedProvider' are its
+readers, for the same reason 'openSession' is 'awaitTx''s: every
+submission and every read already runs inside the session that knows
+the chain.
 -}
 devnetIndexer :: IORef (Maybe IndexerHandle)
 devnetIndexer = unsafePerformIO (newIORef Nothing)
@@ -748,7 +758,10 @@ withDevnetIndexer sock action =
             link (fhAsync follower)
             bracket_
                 (writeIORef devnetIndexer (Just idx))
-                (writeIORef devnetIndexer Nothing)
+                ( do
+                    writeIORef devnetIndexer Nothing
+                    writeIORef fundingIndexed False
+                )
                 action
   where
     follow =
@@ -796,6 +809,94 @@ awaitIndexed tx = do
                 )
   where
     window = confirmationAttempts * confirmationPollSeconds
+
+{- | The provider a runner reads the chain through.
+
+Inside 'withDevnetIndexer', address reads are answered by the indexer
+that follows the devnet rather than by the node's @GetUTxOByAddress@,
+which filters the node's whole UTxO set on every call. Elsewhere the
+node's provider is returned unchanged.
+
+The indexer sees only what blocks carry, and the funding wallet's
+genesis outputs are in the ledger's initial state, not in any block.
+So this first reads the funding wallet from the node — the run's one
+node address read — and spends every output the indexer does not know
+into one output a block carries. From then on the node and the indexer
+agree on that address, and 'adaptProvider' refuses any further node
+address read for as long as the indexer runs.
+-}
+followedProvider :: Cage.Provider IO -> Submitter IO -> IO (Cage.Provider IO)
+followedProvider node submit =
+    readIORef devnetIndexer
+        >>= maybe
+            (pure node)
+            ( \idx -> do
+                indexFunding idx node submit
+                writeIORef fundingIndexed True
+                pure node{Cage.queryUTxOs = indexedUTxOs idx}
+            )
+
+{- | Whether the followed devnet's funding read is done, after which a
+node address read is a defect: the indexer answers every one.
+-}
+fundingIndexed :: IORef Bool
+fundingIndexed = unsafePerformIO (newIORef False)
+{-# NOINLINE fundingIndexed #-}
+
+-- | Every output at an address as the indexer holds it, in the node's order.
+indexedUTxOs :: IndexerHandle -> Addr -> IO [(TxIn, TxOut ConwayEra)]
+indexedUTxOs idx addr = do
+    rows <- snapshotAt idx (Indexer.Address (serialiseAddr addr))
+    Map.toList . Map.fromList <$> traverse decodeRow rows
+  where
+    decodeRow (Indexer.TxIn tid ix, Indexer.TxOut bytes) = do
+        h <- maybe (bad tid "the transaction id is not 32 bytes") pure (hashFromBytes tid)
+        out <- either (bad tid . show) pure (decodeFull' (eraProtVerLow @ConwayEra) bytes)
+        pure (TxIn (TxId (unsafeMakeSafeHash h)) (TxIx (fromIntegral ix)), out)
+    bad tid why =
+        die
+            ( "an indexed output of transaction "
+                <> BC.unpack (B16.encode tid)
+                <> " does not decode: "
+                <> why
+            )
+
+{- | Read the funding wallet from the node and spend the outputs the
+indexer has not seen into one self-payment, confirmed through the
+indexer. On the factory devnet that is the single genesis output.
+-}
+indexFunding :: IndexerHandle -> Cage.Provider IO -> Submitter IO -> IO ()
+indexFunding idx node submit = do
+    held <- Cage.queryUTxOs node funderAddr
+    known <- map fst <$> indexedUTxOs idx funderAddr
+    let unseen = filter ((`notElem` known) . fst) held
+        value = foldMap ((^. valueTxOutL) . snd) unseen
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.fromList (map fst unseen)
+                & outputsTxBodyL
+                    .~ StrictSeq.singleton
+                        (mkBasicTxOut funderAddr (value <-> inject sweepFee))
+                & feeTxBodyL .~ sweepFee
+        tx = addKeyWitness funderSignKey (mkBasicTx body)
+    unless (null unseen) $
+        submitTx submit tx >>= \case
+            Submitted _ -> do
+                awaitIndexed tx
+                hPutStrLn stderr $
+                    "node: "
+                        <> show (length unseen)
+                        <> " funding output(s) outside any block moved into one"
+            Rejected reason ->
+                die
+                    ( "moving the funding wallet's genesis outputs into a \
+                      \block was refused: "
+                        <> BC.unpack reason
+                    )
+  where
+    -- Above the minimum fee of a key-witnessed self-payment with a
+    -- handful of inputs; the devnet's genesis wallet has one.
+    sweepFee = Coin 1_000_000
 
 {- | The settling wait a runner takes after a submission it does not
 carry the transaction for.
@@ -874,11 +975,23 @@ awaitConnection (NetworkMagic magic) sock nodeThread prov = do
                        \failure: "
                     <> show outcome
 
--- | The cage provider over an N2C provider.
+{- | The cage provider over an N2C provider. Its address reads are the
+node's @GetUTxOByAddress@, refused once 'followedProvider' has handed
+the reads of a followed devnet to its indexer.
+-}
 adaptProvider :: N2C.Provider IO -> Cage.Provider IO
 adaptProvider p =
     Cage.Provider
-        { Cage.queryUTxOs = N2C.queryUTxOs p
+        { Cage.queryUTxOs = \addr -> do
+            followed <- readIORef fundingIndexed
+            when followed $
+                die
+                    ( "GetUTxOByAddress for "
+                        <> bech32Address addr
+                        <> " sent to the node of a followed devnet after its \
+                           \funding read: read through followedProvider"
+                    )
+            N2C.queryUTxOs p addr
         , Cage.queryProtocolParams = N2C.queryProtocolParams p
         , Cage.evaluateTx = N2C.evaluateTx p
         , Cage.posixMsToSlot = N2C.posixMsToSlot p
