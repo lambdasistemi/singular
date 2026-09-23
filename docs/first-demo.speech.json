@@ -1,0 +1,30 @@
+{
+  "story-and-assets": [
+    {
+      "text": "ORCHID-42 is a fictional label for model key forty-two. The funder, holder and outputs are model numbers, not Cardano addresses or token identifiers. The cast prints the exact Lean source hash read at run time.",
+      "pause": 400
+    }
+  ],
+  "run-of-show": [
+    {
+      "text": "The presenter follows one continuous key: record an absence, refuse a mismatched approval, book the key and return custody, retire it, attest its terminal state twice, then try two operations the model refuses. Pause the short cast at each frame and ask the audience what changed.",
+      "pause": 500
+    }
+  ],
+  "replay-the-cast": [
+    {
+      "text": "Play or pause the embedded cast on this page. It loads the recorded file from the same site, so it works on the preview and the published page. The source script can also be run without pauses, and the recorder validates the resulting file.",
+      "pause": 400
+    }
+  ],
+  "what-remains-for-8-october": [
+    {
+      "text": "This is a model rehearsal. The actual handoff still requires a downloaded release archive, connected devnet transactions, policy and script identities, node readbacks, refusal traces and uncovered conformance rows. A simulator verdict does not provide those ledger receipts.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "first-demo.md",
+    "sha256": "ef6493e0b31ae587e2bd9ef4e80a59a98f7e94560bb71e8dd0be513369430737"
+  }
+}

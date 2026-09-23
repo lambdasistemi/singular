@@ -21,6 +21,7 @@ nav:
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md
+      - First demo model play: docs/first-demo.md
       - Decisions and abstractions: docs/decisions.md
       - Model coverage: docs/model-ledger.md
       - Theorem statements: docs/theorems.md
@@ -54,6 +55,7 @@ theme:
     - content.code.copy
 plugins:
   - search
+  - asciinema-player
 markdown_extensions:
   - tables
   - admonition
