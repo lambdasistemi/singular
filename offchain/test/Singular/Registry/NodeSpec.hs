@@ -21,10 +21,10 @@ import Lens.Micro ((&), (.~))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Alonzo.Core (TopTx, Tx)
 import Cardano.Ledger.Api.Era (ConwayEra)
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody, vldtTxBodyL)
-import Cardano.Ledger.Alonzo.Core (TopTx, Tx)
 import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (..))
 import Singular.Registry.Node (
     ExternalNode (..),
@@ -112,16 +112,18 @@ spec = describe "the chain a runner selects" $ do
 
     it "refuses a magic that is not a number" $
         case nodeModeFromArgs
-            (["--node-socket", "/s", "--wallet-skey", "j.skey"]
-                <> ["--network-magic", "preprod"])
+            ( ["--node-socket", "/s", "--wallet-skey", "j.skey"]
+                <> ["--network-magic", "preprod"]
+            )
             [] of
             Right mode -> fail ("a non-numeric magic selected " <> show mode)
             Left err -> err `shouldSatisfy` isInfixOf "not a number"
 
     it "refuses mainnet" $
         case nodeModeFromArgs
-            (["--node-socket", "/s", "--wallet-skey", "j.skey"]
-                <> ["--network-magic", "764824073"])
+            ( ["--node-socket", "/s", "--wallet-skey", "j.skey"]
+                <> ["--network-magic", "764824073"]
+            )
             [] of
             Right mode -> fail ("mainnet's magic selected " <> show mode)
             Left err -> err `shouldSatisfy` isInfixOf "mainnet"

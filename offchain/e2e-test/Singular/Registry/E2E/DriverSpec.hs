@@ -43,6 +43,7 @@ import Test.Hspec (
     shouldNotBe,
  )
 
+import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Singular.Registry.Blueprint (
     extractCompiledCode,
     loadBlueprint,
@@ -59,7 +60,6 @@ import Singular.Registry.Driver (
     renderRoot,
  )
 import Singular.Registry.Ledger (Root (..))
-import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Singular.Registry.TxBuilder.Edges qualified as Edges
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)

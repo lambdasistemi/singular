@@ -22,13 +22,13 @@ import Data.ByteString.Short qualified as SBS
 import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Hashes (ScriptHash)
 
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Ledger (Coin (..))
 import Singular.Registry.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
  )
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 {- | Configuration for the cage script transaction
 builders.
@@ -61,25 +61,30 @@ data CageConfig = CageConfig
     , defaultTip :: !Coin
     -- ^ Default oracle tip for newly booted tokens
     , cfgApplicationPolicy :: !ShortByteString
-    -- ^ The application policy the registry pins (28 raw bytes, #157 C4,
-    -- D-BOOT): the naming application script's applied hash, derived from
-    -- `naming-onchain/script-identity.json` for the registry identity this
-    -- boot creates. It certifies every request that changes the trie.
-    -- Never a literal.
+    {- ^ The application policy the registry pins (28 raw bytes, #157 C4,
+    D-BOOT): the naming application script's applied hash, derived from
+    `naming-onchain/script-identity.json` for the registry identity this
+    boot creates. It certifies every request that changes the trie.
+    Never a literal.
+    -}
     , cfgActivePolicy :: !ShortByteString
-    -- ^ The active-token policy (28 raw bytes, #157 C5/C7, D-BOOT): the
-    -- applied hash of `witness(1, registry)`. Renamed from the
-    -- representative policy it became. Derived, never a literal.
+    {- ^ The active-token policy (28 raw bytes, #157 C5/C7, D-BOOT): the
+    applied hash of `witness(1, registry)`. Renamed from the
+    representative policy it became. Derived, never a literal.
+    -}
     , cfgAbsentPolicy :: !ShortByteString
-    -- ^ The absent-token policy (28 raw bytes, D-BOOT): the applied hash
-    -- of `witness(0, registry)`. Derived, never a literal.
+    {- ^ The absent-token policy (28 raw bytes, D-BOOT): the applied hash
+    of `witness(0, registry)`. Derived, never a literal.
+    -}
     , cfgTerminalPolicy :: !ShortByteString
-    -- ^ The terminal-token policy (28 raw bytes, D-BOOT): the applied hash
-    -- of `witness(2, registry)`. Derived, never a literal.
+    {- ^ The terminal-token policy (28 raw bytes, D-BOOT): the applied hash
+    of `witness(2, registry)`. Derived, never a literal.
+    -}
     , cfgConsumerScript :: !ShortByteString
-    -- ^ Applied consumer script bytes (the witness every consuming
-    -- `Modify` attaches for its hook withdrawal). Builders refuse to
-    -- build consuming batches when empty (loud, fail-closed).
+    {- ^ Applied consumer script bytes (the witness every consuming
+    `Modify` attaches for its hook withdrawal). Builders refuse to
+    build consuming batches when empty (loud, fail-closed).
+    -}
     , network :: !Network
     -- ^ Target network (Mainnet or Testnet)
     }

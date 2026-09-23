@@ -31,9 +31,6 @@ import Aiken.Codegen (
     var,
     (.==),
  )
-import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Proof (serializeProof, toProofSteps)
-import Singular.Registry.Types
 import Control.Lens (simple)
 import Crypto.Hash (Blake2b_256, Digest, hash)
 import Data.Aeson ((.=))
@@ -74,6 +71,9 @@ import PlutusTx.Builtins.Internal (
     BuiltinData (..),
  )
 import PlutusTx.IsData.Class (ToData (..))
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Proof (serializeProof, toProofSteps)
+import Singular.Registry.Types
 import System.Environment (getArgs)
 
 -- -----------------------------------------------------------

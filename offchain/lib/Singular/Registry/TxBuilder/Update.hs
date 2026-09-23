@@ -43,20 +43,17 @@ import Cardano.Ledger.Api.Tx (
 import Cardano.Ledger.Api.Tx.Body (
     feeTxBodyL,
  )
-import Cardano.Ledger.Api.Tx.Out (
-    TxOut,
-    coinTxOutL,
-    datumTxOutL,
-    mkBasicTxOut,
-    valueTxOutL,
- )
-import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Keys (KeyHash)
-import Cardano.Tx.Build (Guard)
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
-import Cardano.Ledger.Api.Tx.Out (getMinCoinTxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, coinTxOutL, datumTxOutL, getMinCoinTxOut, mkBasicTxOut, referenceScriptTxOutL, valueTxOutL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Conway.Scripts (
+    ConwayPlutusPurpose,
+ )
+import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Keys (KeyHash)
+import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..), PolicyID (..))
+import Cardano.Ledger.Plutus.ExUnits (ExUnits)
+import Cardano.Tx.Build (Guard)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
@@ -66,12 +63,11 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
     RawRedeemer (..),
  )
-import Cardano.Ledger.Conway.Scripts (
-    ConwayPlutusPurpose,
- )
-import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Plutus.ExUnits (ExUnits)
 
+import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Config (
     CageConfig (..),
  )
@@ -90,21 +86,17 @@ import Singular.Registry.Trie (
     TrieManager (..),
  )
 import Singular.Registry.TxBuilder.Internal
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Types (
     CageDatum (..),
-    edgeInsertAbsent,
-    edgeWitnessTerminal,
     OnChainRequest (..),
     OnChainRoot (..),
     OnChainTokenState (..),
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
+    edgeInsertAbsent,
+    edgeWitnessTerminal,
  )
-import Cardano.Slotting.Slot (SlotNo)
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Empty query GADT (no context needed).
 data NoCtx a
@@ -502,11 +494,12 @@ data RegistryDuties = RegistryDuties
     , rdSpends :: [ConnectedSpend]
     , rdSigners :: [KeyHash Guard]
     , rdInputs :: [(TxIn, TxOut ConwayEra)]
-    -- ^ #177 I177-BUILDER: ordinary (non-script) inputs the edge needs
-    -- the transaction to consume. A retirement or a deletion of an
-    -- active key burns an asset it does not create, so the holder UTxO
-    -- carrying that asset has to ride in as an input; a mint of `-1` with nothing to burn is a transaction
-    -- whose only possible outcome is a refusal.
+    {- ^ #177 I177-BUILDER: ordinary (non-script) inputs the edge needs
+    the transaction to consume. A retirement or a deletion of an
+    active key burns an asset it does not create, so the holder UTxO
+    carrying that asset has to ride in as an input; a mint of `-1` with nothing to burn is a transaction
+    whose only possible outcome is a refusal.
+    -}
     }
 
 instance Semigroup RegistryDuties where
@@ -533,25 +526,28 @@ data RegistryContext = RegistryContext
     , rcCageUtxos :: [(TxIn, TxOut ConwayEra)]
     , rcDatums :: [(ByteString, PLC.Data)]
     , rcAllowInadmissible :: Bool
-    -- ^ Build a fold even when a request takes no admissible edge, so a
-    -- row that exists to watch the chain REFUSE one can produce the
-    -- transaction it submits. An honest builder leaves this off and
-    -- fails early, naming the request.
+    {- ^ Build a fold even when a request takes no admissible edge, so a
+    row that exists to watch the chain REFUSE one can produce the
+    transaction it submits. An honest builder leaves this off and
+    fails early, naming the request.
+    -}
     , rcHolderUtxos :: [(TxIn, TxOut ConwayEra)]
-    -- ^ #177 I177-BUILDER: the candidate inputs a burn may be sourced
-    -- from — the outputs that actually HOLD registry witnesses. A
-    -- retirement or an active deletion destroys an asset it does not
-    -- create, so the fold has to consume the holder's own UTxO; with
-    -- nothing in this
-    -- inventory the builder fails naming the key rather than emitting a
-    -- mint the cage refuses `token-missing`. Left empty, the builder
-    -- queries the fold's own wallet address.
+    {- ^ #177 I177-BUILDER: the candidate inputs a burn may be sourced
+    from — the outputs that actually HOLD registry witnesses. A
+    retirement or an active deletion destroys an asset it does not
+    create, so the fold has to consume the holder's own UTxO; with
+    nothing in this
+    inventory the builder fails naming the key rather than emitting a
+    mint the cage refuses `token-missing`. Left empty, the builder
+    queries the fold's own wallet address.
+    -}
     , rcRefUtxos :: [(TxIn, TxOut ConwayEra)]
-    -- ^ Outputs carrying the fold's scripts as reference scripts. The
-    -- state validator alone is fifteen kilobytes, so a fold that
-    -- attaches it, the request script and a token policy does not fit
-    -- in a transaction; with references every purpose resolves through
-    -- them instead.
+    {- ^ Outputs carrying the fold's scripts as reference scripts. The
+    state validator alone is fifteen kilobytes, so a fold that
+    attaches it, the request script and a token policy does not fit
+    in a transaction; with references every purpose resolves through
+    them instead.
+    -}
     }
 
 {- | The obligations this set of requests creates, or the reason they
@@ -565,9 +561,10 @@ registryDuties ::
     OnChainTokenState ->
     RegistryContext ->
     [(TxIn, TxOut ConwayEra)] ->
-    -- | Whether each request is PROCESSED by this fold. A rejected
-    -- request takes no edge: it owes its owner a refund, and the
-    -- approval that certified it was never spent.
+    {- | Whether each request is PROCESSED by this fold. A rejected
+    request takes no edge: it owes its owner a refund, and the
+    approval that certified it was never spent.
+    -}
     [Bool] ->
     Either String RegistryDuties
 registryDuties cfg pp st ctx reqUtxos processed =
@@ -674,20 +671,20 @@ registryDuties cfg pp st ctx reqUtxos processed =
         | edge == 5 = burnSource (cfgActivePolicy cfg) key
         | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
         | otherwise = Left ("registryDuties: unknown edge " <> show edge)
-    {- #177 I177-BUILDER, #236: the retirement and the deletion of an
-    active key burn a token they must first hold. `deltaOf 3` and
-    `deltaOf 5` are both `[(active, -1)]` with no carrier output, so the
-    asset the mint destroys has to arrive on an input — the Lean row's
-    witness input,
-    @{ role := .witness, assets := [((.active, r.key), 1)] }@.
-
-    Selection is exact in both directions: the policy is THIS registry's
-    active pin and the name is THIS key, so a holder of another key or
-    another policy is not a candidate and cannot be swept in. Exactly
-    one candidate must hold exactly one unit; none, several, or a
-    different quantity is the state the cage refuses `token-missing`,
-    and the builder says so here rather than emitting a transaction
-    whose only possible outcome is that refusal. -}
+    -- \| #177 I177-BUILDER, #236: the retirement and the deletion of an
+    --    active key burn a token they must first hold. `deltaOf 3` and
+    --    `deltaOf 5` are both `[(active, -1)]` with no carrier output, so the
+    --    asset the mint destroys has to arrive on an input — the Lean row's
+    --    witness input,
+    --    the witness input carrying one active token for `r.key`.
+    --
+    --    Selection is exact in both directions: the policy is THIS registry's
+    --    active pin and the name is THIS key, so a holder of another key or
+    --    another policy is not a candidate and cannot be swept in. Exactly
+    --    one candidate must hold exactly one unit; none, several, or a
+    --    different quantity is the state the cage refuses `token-missing`,
+    --    and the builder says so here rather than emitting a transaction
+    --    whose only possible outcome is that refusal.
     burnSource policy key =
         let policyId = policyIdOf policy
             name = AssetName (SBS.toShort key)
@@ -804,28 +801,24 @@ registryDuties cfg pp st ctx reqUtxos processed =
                 , rdOutputs = [out]
                 }
     findCustody key =
-        case
-            [ (u, refund, coin)
-            | u@(_, o) <- rcCageUtxos ctx
-            , Just (AbsentCustody refund) <- [extractCageDatum o]
-            , Just (policy, name) <- [custodyAssetOf o]
-            , policy == policyIdOf (cfgAbsentPolicy cfg)
-            , name == AssetName (SBS.toShort key)
-            , let Coin coin = o ^. coinTxOutL
-            ]
-            of
+        case [ (u, refund, coin)
+             | u@(_, o) <- rcCageUtxos ctx
+             , Just (AbsentCustody refund) <- [extractCageDatum o]
+             , Just (policy, name) <- [custodyAssetOf o]
+             , policy == policyIdOf (cfgAbsentPolicy cfg)
+             , name == AssetName (SBS.toShort key)
+             , let Coin coin = o ^. coinTxOutL
+             ] of
             [c] -> Right c
             [] -> Left ("registryDuties: no custody UTxO for key " <> show key)
             _ -> Left ("registryDuties: more than one custody UTxO for key " <> show key)
     custodyAssetOf out =
         case out ^. valueTxOutL of
             MaryValue _ (MultiAsset policies) ->
-                case
-                    [ (policy, name, quantity)
-                    | (policy, names) <- Map.toList policies
-                    , (name, quantity) <- Map.toList names
-                    ]
-                    of
+                case [ (policy, name, quantity)
+                     | (policy, names) <- Map.toList policies
+                     , (name, quantity) <- Map.toList names
+                     ] of
                     [(policy, name, 1)] -> Just (policy, name)
                     _ -> Nothing
     requireMinAda what out =

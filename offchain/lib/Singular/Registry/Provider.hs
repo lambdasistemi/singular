@@ -32,13 +32,13 @@ import Cardano.Ledger.Api.Tx.Out (TxOut)
 import Cardano.Ledger.Plutus (ExUnits)
 import Cardano.Slotting.Slot (SlotNo (..))
 
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (
     Addr,
     ConwayEra,
     PParams,
     TxIn,
  )
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | Per-script evaluation result.
 type EvaluateTxResult era =

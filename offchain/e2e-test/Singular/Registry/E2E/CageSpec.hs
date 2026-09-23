@@ -78,12 +78,12 @@ import Singular.Registry.Blueprint (
 import Singular.Registry.Config (
     CageConfig (..),
  )
+import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Ledger (
     Coin (..),
     ConwayEra,
     TokenId (..),
  )
-import Singular.Registry.Driver qualified as Driver
 import Singular.Registry.Node (awaitConnection, awaitIndexed, withDevnetIndexer)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
@@ -112,7 +112,7 @@ import Singular.Registry.TxBuilder.Update (
     RegistryContext,
     updateTokenWithDuties,
  )
-import Singular.Registry.Types (Edge, edgeInsertAbsent, edgeInsertActive, OnChainTxOutRef)
+import Singular.Registry.Types (Edge, OnChainTxOutRef, edgeInsertAbsent, edgeInsertActive)
 
 {- | Full cage protocol E2E test spec.
 Skips when @REGISTRY_BLUEPRINT@ is not set.

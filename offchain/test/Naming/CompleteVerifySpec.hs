@@ -11,7 +11,7 @@ executable and is proved by the VERIFIED-COMPLETE run, not here.
 module Naming.CompleteVerifySpec (spec) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
+import Data.ByteString qualified as BS
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 import Naming.Verify (

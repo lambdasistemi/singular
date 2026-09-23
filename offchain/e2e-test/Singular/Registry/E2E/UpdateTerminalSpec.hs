@@ -75,8 +75,8 @@ import Singular.Registry.Blueprint (
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId, TxIn)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.TxBuilder.Edges qualified as Edges
@@ -92,11 +92,11 @@ import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
     Edge,
+    OnChainRoot (..),
+    OnChainTokenState (..),
     edgeInsertAbsent,
     edgeInsertActive,
     edgeUpdateTerminal,
-    OnChainRoot (..),
-    OnChainTokenState (..),
  )
 
 import Singular.Registry.E2E.CageSpec (

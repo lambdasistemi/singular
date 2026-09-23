@@ -77,10 +77,8 @@ module Singular.Registry.Node (
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, cancel, link, race, waitCatch)
-import Control.Exception (ErrorCall (..), SomeException, displayException, bracket, throwIO, try)
+import Control.Exception (ErrorCall (..), SomeException, bracket, displayException, throwIO, try)
 import Control.Monad (unless)
-import Data.Time.Clock (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Aeson (eitherDecodeStrict, withObject, (.:))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString (ByteString)
@@ -95,13 +93,15 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Word (Word32)
-import System.Environment (getArgs, getEnvironment)
 import System.Directory (createDirectoryIfMissing)
+import System.Environment (getArgs, getEnvironment)
+import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcess)
-import System.FilePath ((</>))
 import Text.Read (readMaybe)
 
 import Codec.Binary.Bech32 qualified as Bech32
@@ -299,8 +299,8 @@ echoKoios evDir tag raw = case runMode of
                     , "https://preprod.koios.rest/api/v1/submittx"
                     ]
                     ""
-                )
-                :: IO (Either SomeException String)
+                ) ::
+                IO (Either SomeException String)
         case r of
             Right body -> writeFile koiosPath body
             Left err -> writeFile koiosPath (displayException err)
@@ -471,9 +471,10 @@ around it; an external node is left alone.
 withNodeMode :: NodeMode -> (NodeSession -> IO a) -> IO a
 withNodeMode = withNodeModeAndFunding (Just defaultFundingFloor)
 
--- | The lifecycle runners calculate their complete funding plans from the
--- live parameters before submitting. A fixed 100 ADA floor here would reject
--- wallets that can afford those plans, and would block read-only estimates.
+{- | The lifecycle runners calculate their complete funding plans from the
+live parameters before submitting. A fixed 100 ADA floor here would reject
+wallets that can afford those plans, and would block read-only estimates.
+-}
 withNodeForPlannedFunding :: (NodeSession -> IO a) -> IO a
 withNodeForPlannedFunding = withNodeModeAndFunding Nothing runMode
 

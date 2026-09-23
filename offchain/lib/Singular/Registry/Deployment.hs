@@ -78,8 +78,8 @@ module Singular.Registry.Deployment (
     renderAddrBytes,
 ) where
 
-import Control.Monad (unless)
 import Control.Exception (ErrorCall (..), throwIO)
+import Control.Monad (unless)
 import Data.Aeson (
     FromJSON (..),
     ToJSON (..),
@@ -191,10 +191,11 @@ data Deployment = Deployment
     , depApplicationHash :: Text
     -- ^ Naming application validator hash
     , depRepresentativePolicy :: Text
-    -- ^ The registry-bound ACTIVE token policy: `witness(1, registry)`
-    -- applied (#157 C5/C7). Renamed from the representative policy it
-    -- became; the manifest key keeps its spelling so existing manifests
-    -- and the attach check still read it.
+    {- ^ The registry-bound ACTIVE token policy: `witness(1, registry)`
+    applied (#157 C5/C7). Renamed from the representative policy it
+    became; the manifest key keeps its spelling so existing manifests
+    and the attach check still read it.
+    -}
     , depProcessTime :: Integer
     -- ^ Phase-1 window (ms) the registry was booted with
     , depRetractTime :: Integer
@@ -303,9 +304,10 @@ data CageParts = CageParts
     { partsStateBytes :: SBS.ShortByteString
     , partsRequestBytes :: SBS.ShortByteString
     , partsApplicationPolicy :: SBS.ShortByteString
-    -- ^ The application policy the registry pins (#157 D-BOOT): the
-    -- naming application script's applied hash for this registry
-    -- identity, read from the partitions' `script-identity.json`.
+    {- ^ The application policy the registry pins (#157 D-BOOT): the
+    naming application script's applied hash for this registry
+    identity, read from the partitions' `script-identity.json`.
+    -}
     , partsActivePolicy :: SBS.ShortByteString
     -- ^ The active-token policy: `witness(1, registry)` applied.
     , partsAbsentPolicy :: SBS.ShortByteString

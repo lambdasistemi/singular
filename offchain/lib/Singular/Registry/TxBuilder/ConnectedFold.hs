@@ -41,7 +41,6 @@ import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
@@ -49,15 +48,18 @@ import Cardano.Ledger.Api.Tx.Out (
     mkBasicTxOut,
     valueTxOutL,
  )
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
-import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.Mary.Value (AssetName, PolicyID)
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Slotting.Slot (SlotNo)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (ToData (..))
 
+import Cardano.Tx.Build qualified as Tx
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     ConwayEra,
@@ -81,8 +83,6 @@ import Singular.Registry.Types (
     RequestAction (..),
     UpdateRedeemer (..),
  )
-import Cardano.Tx.Build qualified as Tx
-import Cardano.Tx.Ledger (ConwayTx)
 
 -- | A raw Plutus-data redeemer for attached (non-registry) purposes.
 newtype RawRedeemer = RawRedeemer PLC.Data
@@ -123,16 +123,18 @@ data ConnectedFoldArgs = ConnectedFoldArgs
     , cfaSigners :: [KeyHash Guard]
     , cfaRefUtxos :: [(TxIn, TxOut ConwayEra)]
     , cfaAttachScripts :: [Script ConwayEra]
-    -- | Skip local script evaluation, stating generous budgets instead,
-    -- so the LEDGER executes every purpose for real. Adversarial use
-    -- only: the duplicate fold must be refused on-chain (attributed to
-    -- the refusing script) rather than at local estimation.
     , cfaSkipEval :: Bool
+    {- ^ Skip local script evaluation, stating generous budgets instead,
+    so the LEDGER executes every purpose for real. Adversarial use
+    only: the duplicate fold must be refused on-chain (attributed to
+    the refusing script) rather than at local estimation.
+    -}
     , cfaAdjustRoot :: Root -> Root
     }
 
--- | Build the connected fold transaction (unsigned), returning the
--- computed new root the state continuation carries.
+{- | Build the connected fold transaction (unsigned), returning the
+computed new root the state continuation carries.
+-}
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
 connectedFoldTx args = do
     let cfg = cfaCfg args
@@ -195,18 +197,19 @@ connectedFoldTx args = do
         Right tx -> pure (tx, newRoot)
         Left err -> error ("connectedFold: build failed: " <> show err)
 
--- | Generous per-purpose budget stated when local evaluation is
--- skipped (adversarial path only); the ledger re-executes for real.
--- Sized 2026-09-13 from MEASURED minima (NOTE-023): the crosswired
--- exhibit tx overspent 3M mem (needed 5.39M+ and counting — the error
--- reports the next step only, not completion) and 200M cpu (needed
--- 200.05M+); the honest consumer measures 295M cpu on tiny Aiken
--- fixtures; the full-fold app script likewise exceeds 3M/200M (double
--- budget failure on the same tx). 14M mem / 1B steps per purpose sits
--- at 10% of this devnet's tx limits (140M mem / 10B steps) with ~3x
--- headroom over every measured minimum; stated fees (~0.9 ADA/purpose)
--- stay covered by folder funding (balance fails loudly otherwise).
--- Revisit if ledgers tighten limits or scripts grow.
+{- | Generous per-purpose budget stated when local evaluation is
+skipped (adversarial path only); the ledger re-executes for real.
+Sized 2026-09-13 from MEASURED minima (NOTE-023): the crosswired
+exhibit tx overspent 3M mem (needed 5.39M+ and counting — the error
+reports the next step only, not completion) and 200M cpu (needed
+200.05M+); the honest consumer measures 295M cpu on tiny Aiken
+fixtures; the full-fold app script likewise exceeds 3M/200M (double
+budget failure on the same tx). 14M mem / 1B steps per purpose sits
+at 10% of this devnet's tx limits (140M mem / 10B steps) with ~3x
+headroom over every measured minimum; stated fees (~0.9 ADA/purpose)
+stay covered by folder funding (balance fails loudly otherwise).
+Revisit if ledgers tighten limits or scripts grow.
+-}
 generousUnits :: ExUnits
 generousUnits = ExUnits 14_000_000 1_000_000_000
 
@@ -286,11 +289,12 @@ computeUpperSlot prov oldState reqUtxos = do
                     (\d -> round ((posixSec + d) * 1000))
                     [30, 5, 2]
 
--- | The TxBuild program: registry spends, attached spends and mints,
--- outputs, witnesses. Processed requests lock into the state output
--- (see `prepareState`); no refund outputs are emitted here because
--- connected folds only ever process (`Update`); rejected rows are built
--- by the reject path with `computeRefund`. No owner signature.
+{- | The TxBuild program: registry spends, attached spends and mints,
+outputs, witnesses. Processed requests lock into the state output
+(see `prepareState`); no refund outputs are emitted here because
+connected folds only ever process (`Update`); rejected rows are built
+by the reject path with `computeRefund`. No owner signature.
+-}
 buildProgram ::
     CageConfig ->
     TxIn ->
@@ -364,9 +368,11 @@ buildProgram
         mapM_ Tx.requireSignature extraSigners
         Tx.collateral (fst feeUtxo)
         Tx.validTo upperSlot
--- | Replay accepted fold inputs into the manager's persistent trie so
--- later proof computations start from the chain's root. Call only with
--- inputs the ledger accepted, in fold order.
+
+{- | Replay accepted fold inputs into the manager's persistent trie so
+later proof computations start from the chain's root. Call only with
+inputs the ledger accepted, in fold order.
+-}
 syncFoldedRequests ::
     TrieManager IO ->
     TokenId ->

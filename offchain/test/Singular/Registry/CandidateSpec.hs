@@ -1,15 +1,15 @@
 module Singular.Registry.CandidateSpec (spec) where
 
-import Singular.Registry.Candidate (CandidateSource (..), resolveCandidate, sourceName)
 import Control.Exception (finally)
-import System.Directory
-    ( createDirectory
-    , getTemporaryDirectory
-    , getCurrentDirectory
-    , removeDirectoryRecursive
-    , removeFile
-    , setCurrentDirectory
-    )
+import Singular.Registry.Candidate (CandidateSource (..), resolveCandidate, sourceName)
+import System.Directory (
+    createDirectory,
+    getCurrentDirectory,
+    getTemporaryDirectory,
+    removeDirectoryRecursive,
+    removeFile,
+    setCurrentDirectory,
+ )
 import System.Environment (lookupEnv, setEnv, unsetEnv)
 import System.FilePath ((</>))
 import System.IO (hClose, openTempFile)
@@ -44,8 +44,9 @@ spec = describe "Singular.Registry.Candidate" $ do
 candidateSha :: String
 candidateSha = "9f2c6e5b1a0d4f8e3c7b2a6d5e1f0c9b8a7d6e5f"
 
--- | A unique empty temporary directory, outside any git repository,
--- removed afterwards.
+{- | A unique empty temporary directory, outside any git repository,
+removed afterwards.
+-}
 withSandbox :: (FilePath -> IO a) -> IO a
 withSandbox act = do
     root <- getTemporaryDirectory
@@ -62,8 +63,9 @@ within dir act = do
     setCurrentDirectory dir
     act `finally` setCurrentDirectory original
 
--- | Hide the CANDIDATE_SHA override for the duration, restoring it
--- afterwards.
+{- | Hide the CANDIDATE_SHA override for the duration, restoring it
+afterwards.
+-}
 withoutCandidateOverride :: IO a -> IO a
 withoutCandidateOverride act = do
     saved <- lookupEnv "CANDIDATE_SHA"

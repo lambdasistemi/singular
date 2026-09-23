@@ -50,9 +50,9 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.Types (
     CageDatum (..),
-    edgeInsertAbsent,
     OnChainRoot (..),
     OnChainTokenState (..),
+    edgeInsertAbsent,
  )
 
 import Singular.Registry.Driver (

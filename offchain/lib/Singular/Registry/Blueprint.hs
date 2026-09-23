@@ -144,12 +144,13 @@ data Validator = Validator
     , vCompiledCode :: Maybe Text
     -- ^ Hex-encoded double-CBOR PlutusV3 script
     , vParameters :: Int
-    -- ^ How many parameters this validator applies. A blueprint omits
-    -- the array entirely for a parameterless validator, so an absent
-    -- `parameters` key reads as zero. This is what makes a
-    -- parameterless policy's compiled hash its policy id, with no
-    -- applied hash to derive, so a consumer that wants to state it
-    -- should READ it here rather than write the number down.
+    {- ^ How many parameters this validator applies. A blueprint omits
+    the array entirely for a parameterless validator, so an absent
+    `parameters` key reads as zero. This is what makes a
+    parameterless policy's compiled hash its policy id, with no
+    applied hash to derive, so a consumer that wants to state it
+    should READ it here rather than write the number down.
+    -}
     }
     deriving stock (Show, Eq)
 
