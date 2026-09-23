@@ -124,7 +124,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (intercalate, isInfixOf, nub, sortOn, stripPrefix)
+import Data.List (intercalate, isInfixOf, nub, sort, sortOn, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
@@ -224,7 +224,7 @@ import Cardano.Ledger.Core (
     hashScript,
  )
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
-import Cardano.Ledger.Hashes (ScriptHash)
+import Cardano.Ledger.Hashes (KeyHash (..), ScriptHash)
 import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..), txInToText)
@@ -4612,13 +4612,9 @@ runCG21 env = do
     -- emitted only after all six outcomes and comparisons have completed.
     records <- readIORef (envLiveRecords env)
     require "CG21 did not compare its six requests" (length records == 6)
-    -- Every step agrees with the model, except the extra-signer tamper, which
-    -- must be reported as a difference.
     require "registration chapter has a disagreement or unsupported step"
         (all (\record -> case record of
-            Object fields -> case KM.lookup "tamper" fields of
-                Just (String "extra-signer") -> KM.lookup "comparison" fields == Just (String "differs")
-                _ -> KM.lookup "comparison" fields == Just (String "agrees")
+            Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
             _ -> False) records)
     writeStoryReceipt env "CG21" records
 
@@ -4972,7 +4968,7 @@ observeAcceptedStep env state step transaction = do
     commitment <- maybe (failWith "request commitment cannot be derived") pure $
         Compare.approvalAssetName (T.pack (Live.edgeName (Live.requestEdge (lsRequest step))))
             requestedId ownerId destination
-    tx <- observedStepTx env ids step transaction config orderedMint destination commitment custody paid
+    tx <- observedStepTx env ids wallets step transaction config orderedMint destination commitment custody paid
     pure $ object
         [ "config" .= config, "custody" .= custody
         , "held" .= holdings, "leaf" .= leaf, "mint" .= orderedMint
@@ -5064,6 +5060,16 @@ observePaidCustody ids transaction (source, custodyOut) = do
     recipient <- observeIdentity (liveWallets ids) (WalletIdentity refund)
     pure [object ["address" .= recipient, "value" .= amount]]
 
+-- | A required signer of the submitted transaction, in the model's vocabulary:
+-- the identity of the registry wallet whose payment key it is. A key no wallet
+-- of this registry pays to is refused, never given a fresh identity.
+observeSigner :: LiveIdentities -> [Addr] -> KeyHash Guard -> IO Integer
+observeSigner ids wallets (KeyHash signer) =
+    case [wallet | wallet <- wallets, addrKeyHashBytes wallet == hashToBytes signer] of
+        [wallet] -> observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr wallet))
+        [] -> failWith ("required signer " <> hex (hashToBytes signer) <> " is no wallet of this registry")
+        _ -> failWith ("required signer " <> hex (hashToBytes signer) <> " is the payment key of more than one wallet")
+
 observeStepMint :: LiveIdentities -> CageConfig -> ByteString -> ByteString -> Integer -> IO Value
 observeStepMint ids cfg policy key quantity = do
     kind <- case [name | (pin, name) <-
@@ -5076,9 +5082,9 @@ observeStepMint ids cfg policy key quantity = do
     pure (object ["kind" .= kind, "key" .= keyId, "policy" .= policyId,
         "assetName" .= keyId, "quantity" .= quantity])
 
-observedStepTx :: Env -> LiveIdentities -> LiveStep -> ConwayTx -> Value -> [Value]
+observedStepTx :: Env -> LiveIdentities -> [Addr] -> LiveStep -> ConwayTx -> Value -> [Value]
     -> Integer -> Integer -> [Value] -> [Value] -> IO Value
-observedStepTx _env ids step transaction config mint destination commitment custody paid = do
+observedStepTx _env ids wallets step transaction config mint destination commitment custody paid = do
     let cfg = rcCfg (lsCage step)
         edge = Live.requestEdge (lsRequest step)
         requestKeyBytes = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
@@ -5149,9 +5155,11 @@ observedStepTx _env ids step transaction config mint destination commitment cust
             "inlineConfig" .= Null, "commitment" .= commitment,
             "assets" .= positive, "custodyDatum" .= Null,
             "lovelace" .= (0 :: Integer)]
+    signers <- mapM (observeSigner ids wallets)
+        (toList (transaction ^. bodyTxL . reqSignerHashesTxBodyL))
     pure (object ["inputs" .= (stateInput : requestInput : custodyInputs <> witnessInputs),
         "outputs" .= (stateOutput : destinationOutput : cageOutputs),
-        "mint" .= mint, "signers" .= ([] :: [Value]), "refunds" .= paid])
+        "mint" .= mint, "signers" .= sort signers, "refunds" .= paid])
   where
     custodyInput source = do
         require "absent custody was not spent by the accepted fold"
@@ -5223,14 +5231,16 @@ compareStep env state step observation = do
             pure ("agrees", [], [], Null, [])
         -- The ledger accepts the extra signer. The same comparison every
         -- untampered step gets must then report exactly the difference the
-        -- tamper made; reporting none, or another, is a disagreement.
+        -- tamper made: that detection is the tamper's agreement, as the
+        -- ledger's refusal is the redirected delivery's. Reporting none, or
+        -- another, is a disagreement.
         (Just Live.ExtraSigner, String "accepted", String "accepted") -> do
             expected <- storyField "observations" row
             let differing = case Compare.compareRegistration declared expected presented of
                     Right _ -> []
                     Left differences -> reportedDifferences differences
             pure ( if not (null differing) && differing == tamperDifferences Live.ExtraSigner
-                    then "differs" else "disagrees"
+                    then "agrees" else "disagrees"
                  , [], [], Null, differing )
         (Just _, _, _) -> pure ("disagrees", [], [], Null, [])
         (Nothing, String "accepted", String "accepted") -> do
@@ -5274,13 +5284,11 @@ compareStep env state step observation = do
         <> " comparison=" <> T.unpack comparison
         <> concatMap (\(name, path) -> " differs=" <> T.unpack name <> ":" <> renderStepPath path) differing)
     case comparison of
-        "agrees" -> when (lsTamper step == Nothing && chainOutcome == String "accepted") $
+        -- Every fold the ledger accepted moved the chain as the model's request
+        -- does, a tampered one included, so later questions start from it.
+        "agrees" -> when (chainOutcome == String "accepted") $
             modifyIORef' (liveTraces state)
                 (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
-        -- A tampered fold the ledger accepted moved the chain exactly as the
-        -- model's request does, so later questions start from it too.
-        "differs" -> modifyIORef' (liveTraces state)
-            (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
         "unsupported" -> case lsOutcome step of
             StepUnsupported reason -> emit "gap" (Live.edgeName (Live.requestEdge (lsRequest step))
                 <> " for " <> Live.requestKey (lsRequest step) <> ": " <> T.unpack reason)
