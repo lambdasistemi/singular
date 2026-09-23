@@ -111,13 +111,13 @@
     "name": "Singular.Statements.delete_absent_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "95b092734fc82923fd9c5eac37677fd70b84a95e4e11e72961383165acf07057"
+    "statementSha256": "b040a97d18406c2a0be100516a5f9f5ea3f7c1bcc606a0c26eab4eb38828bce5"
   },
   {
     "name": "Singular.Statements.delete_active_inversion",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "7ebff03121cd4b0ef44ed54a7ac71af32e142a3eadf60ef7eefa3fa40e49de90"
+    "statementSha256": "39b91a52340027b5062725a24c38ee9cb5e568518b6c44727946556be0a903f8"
   },
   {
     "name": "Singular.Statements.witness_terminal_inversion",
@@ -159,7 +159,7 @@
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+    "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",

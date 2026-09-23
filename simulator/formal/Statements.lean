@@ -672,8 +672,8 @@ theorem delete_absent_inversion (s : RegistryState) (r : Request) (t : Result)
       ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
       ap.destination = requestDestination r ∧
       ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
-    t.state.trie = trieSet s.trie r.key .unknown ∧
-    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
+    t.state.trie = trieErase s.trie r.key ∧
+    t.state.config = { s.config with root := rootOf (trieErase s.trie r.key) } ∧
     t.state.custody = s.custody.filter (·.key != r.key) ∧
     t.state.held = s.held ∧
     t.mint = [((.absent, r.key), -1)] ∧ t.paid = [(c.refundAddress, c.value)] := by
@@ -738,8 +738,8 @@ theorem delete_active_inversion (s : RegistryState) (r : Request) (t : Result)
       ap.edge = r.edge ∧ ap.key = r.key ∧ ap.owner = r.owner ∧
       ap.destination = requestDestination r ∧
       ap.assetName = approvalAssetName ap.edge ap.key ap.owner ap.destination) ∧
-    t.state.trie = trieSet s.trie r.key .unknown ∧
-    t.state.config = { s.config with root := rootOf (trieSet s.trie r.key .unknown) } ∧
+    t.state.trie = trieErase s.trie r.key ∧
+    t.state.config = { s.config with root := rootOf (trieErase s.trie r.key) } ∧
     t.state.custody = s.custody ∧
     t.state.held = (s.held.filter fun h => !(h.key == r.key && h.kind == .active)) ∧
     t.mint = [((.active, r.key), -1)] ∧ t.paid = [] := by
@@ -1248,7 +1248,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
         s'.held.any (fun x => x.key == r'.key && x.kind == .active) = false →
         admitsFor s'.config r' r'.approval = true →
         txOf s' r' lovelace = .error "token-missing") ∧
-    txOf { s with trie := trieSet s.trie r.key .unknown } r lovelace
+    txOf { s with trie := trieErase s.trie r.key } r lovelace
       = .error "key-unknown" ∧
     txOf { s with trie := trieSet s.trie r.key (.known .absent) } r lovelace
       = .error "not-booked" ∧

@@ -62,6 +62,38 @@ theorem trieGet_set_of_ne (t : Trie) (k k' : Key) (l : Leaf) (h : k' ≠ k) :
   simp only [trieGet]
   rw [filter_key_ne t k k' l h]
 
+/-- An erased key reads `unknown`: the lookup default, not a stored entry. -/
+@[simp] theorem trieGet_erase_eq (t : Trie) (k : Key) :
+    trieGet (trieErase t k) k = .unknown := by
+  have hnone : (trieErase t k).filter (·.1 == k) = [] :=
+    filter_filter_none t _ _ (by
+      intro x hx
+      have hx1 : x.1 = k := by simpa using hx
+      simp [hx1])
+  simp only [trieGet, hnone]
+  rfl
+
+theorem trieGet_erase_of_ne (t : Trie) (k k' : Key) (h : k' ≠ k) :
+    trieGet (trieErase t k) k' = trieGet t k' := by
+  simp only [trieGet, trieErase]
+  rw [filter_filter_congr _ _ _ (by
+    intro x hx
+    have hx1 : x.1 = k' := by simpa using hx
+    exact show (x.1 != k) = true by rw [hx1]; simpa using h)]
+
+/-- Every pair `trieSet` stores is the written pair or was already stored. -/
+theorem mem_trieSet (t : Trie) (k : Key) (l : Leaf) (p : Key × Leaf)
+    (hp : p ∈ trieSet t k l) : p = (k, l) ∨ p ∈ t := by
+  simp only [trieSet, List.mem_cons] at hp
+  rcases hp with hp | hp
+  · exact Or.inl hp
+  · exact Or.inr (List.mem_filter.mp hp).1
+
+/-- Every pair `trieErase` keeps was already stored. -/
+theorem mem_trieErase (t : Trie) (k : Key) (p : Key × Leaf)
+    (hp : p ∈ trieErase t k) : p ∈ t :=
+  (List.mem_filter.mp hp).1
+
 /-! ### Counting -/
 
 /-- Consing a holding changes a count only at the consed key and kind. -/
@@ -241,8 +273,8 @@ theorem applyEdge_updateTerminal (s : RegistryState) (a : Action) (he : a.edge =
 /-- Effects of an admitted `deleteAbsent`. -/
 theorem applyEdge_deleteAbsent (s : RegistryState) (a : Action) (he : a.edge = .deleteAbsent)
     (c : Custody) (hc : s.custody.find? (·.key == a.key) = some c) :
-    (applyEdge s a).state.trie = trieSet s.trie a.key .unknown ∧
-    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key .unknown) } ∧
+    (applyEdge s a).state.trie = trieErase s.trie a.key ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieErase s.trie a.key) } ∧
     (applyEdge s a).state.custody = s.custody.filter (·.key != a.key) ∧
     (applyEdge s a).state.held = s.held ∧
     (applyEdge s a).mint = [((.absent, a.key), -1)] ∧
@@ -251,16 +283,16 @@ theorem applyEdge_deleteAbsent (s : RegistryState) (a : Action) (he : a.edge = .
 
 /-- Effects of an admitted `deleteActive`. -/
 theorem applyEdge_deleteActive (s : RegistryState) (a : Action) (he : a.edge = .deleteActive) :
-    (applyEdge s a).state.trie = trieSet s.trie a.key .unknown ∧
-    (applyEdge s a).state.config = { s.config with root := rootOf (trieSet s.trie a.key .unknown) } ∧
+    (applyEdge s a).state.trie = trieErase s.trie a.key ∧
+    (applyEdge s a).state.config = { s.config with root := rootOf (trieErase s.trie a.key) } ∧
     (applyEdge s a).state.custody = s.custody ∧
     (applyEdge s a).state.held =
       (s.held.filter fun h => !(h.key == a.key && h.kind == .active)) ∧
     (applyEdge s a).mint = [((.active, a.key), -1)] ∧ (applyEdge s a).paid = [] := by
-  have h1 : (applyEdge s a).state.trie = trieSet s.trie a.key .unknown := by
+  have h1 : (applyEdge s a).state.trie = trieErase s.trie a.key := by
     simp only [applyEdge, he]
   have h2 : (applyEdge s a).state.config =
-      { s.config with root := rootOf (trieSet s.trie a.key .unknown) } := by
+      { s.config with root := rootOf (trieErase s.trie a.key) } := by
     simp only [applyEdge, he]
   have h3 : (applyEdge s a).state.custody = s.custody := by
     simp only [applyEdge, he]
@@ -696,11 +728,11 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           simp [kindCount, hheld]]
         by_cases hk : key = a.key
         · subst hk
-          rw [htrie, trieGet_set_eq]
+          rw [htrie, trieGet_erase_eq]
           constructor
           · intro hEq; rw [(hA1 a.key).mp hEq] at hb; exact absurd hb (by decide)
           · intro hEq; exact Leaf.noConfusion hEq
-        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hA1 key
+        · rw [htrie, trieGet_erase_of_ne _ _ _ hk]; exact hA1 key
       · intro key
         rw [show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
           simp [kindCount, hheld]]
@@ -708,13 +740,13 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
       · intro key
         by_cases hk : key = a.key
         · subst hk
-          rw [htrie, trieGet_set_eq,
+          rw [htrie, trieGet_erase_eq,
             show custodyCount (applyEdge s a).state a.key = 0 from by
               simp [custodyCount, hcust, countCustody_filter_zero]]
           constructor
           · intro hEq; exact absurd hEq (by decide)
           · intro hEq; exact Leaf.noConfusion hEq
-        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+        · rw [htrie, trieGet_erase_of_ne _ _ _ hk,
             show custodyCount (applyEdge s a).state key = custodyCount s key from by
               simpa [custodyCount, hcust] using countCustody_filter_out s.custody a.key key hk]
           exact hC1 key
@@ -733,7 +765,7 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           intro hEq
           have := hTerm hh hmem hk
           rw [hEq, hb] at this; exact absurd this (by decide)
-        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        rw [htrie, trieGet_erase_of_ne _ _ _ hne]
         exact hTerm hh hmem hk
       · intro c' hmem
         rw [hcust] at hmem
@@ -741,7 +773,7 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           intro hEq
           have := (List.mem_filter.mp hmem).2
           rw [hEq] at this; simp at this
-        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        rw [htrie, trieGet_erase_of_ne _ _ _ hne]
         exact hCleaf c' (List.mem_filter.mp hmem).1
       · intro c₁ h1 c₂ h2 hk
         rw [hcust] at h1 h2
@@ -752,13 +784,13 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
       · intro key
         by_cases hk : key = a.key
         · subst hk
-          rw [htrie, trieGet_set_eq,
+          rw [htrie, trieGet_erase_eq,
             show kindCount (applyEdge s a).state .active a.key = 0 from by
               simpa [kindCount, hheld] using countHeld_filter_active_zero s.held a.key]
           constructor
           · intro hEq; exact absurd hEq (by decide)
           · intro hEq; exact absurd hEq (by decide)
-        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk,
+        · rw [htrie, trieGet_erase_of_ne _ _ _ hk,
             show kindCount (applyEdge s a).state .active key = kindCount s .active key from by
               simpa [kindCount, hheld] using
                 countHeld_filter_active_out s.held a.key .active key hk]
@@ -778,11 +810,11 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           simp [custodyCount, hcust]]
         by_cases hk : key = a.key
         · subst hk
-          rw [htrie, trieGet_set_eq]
+          rw [htrie, trieGet_erase_eq]
           constructor
           · intro hEq; rw [(hC1 a.key).mp hEq] at hb; exact absurd hb (by decide)
           · intro hEq; exact absurd hEq (by decide)
-        · rw [htrie, trieGet_set_of_ne _ _ _ _ hk]; exact hC1 key
+        · rw [htrie, trieGet_erase_of_ne _ _ _ hk]; exact hC1 key
       · intro key
         rw [show custodyCount (applyEdge s a).state key = custodyCount s key from by
           simp [custodyCount, hcust]]
@@ -794,7 +826,7 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           intro hEq
           have := hTerm hh hmem' hk
           rw [hEq, hb] at this; exact absurd this (by decide)
-        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        rw [htrie, trieGet_erase_of_ne _ _ _ hne]
         exact hTerm hh hmem' hk
       · intro c hmem
         rw [hcust] at hmem
@@ -802,7 +834,7 @@ theorem step_ok_consistent (s : RegistryState) (a : Action) (t : Result)
           intro hEq
           have := hCleaf c hmem
           rw [hEq, hb] at this; exact absurd this (by decide)
-        rw [htrie, trieGet_set_of_ne _ _ _ _ hne]
+        rw [htrie, trieGet_erase_of_ne _ _ _ hne]
         exact hCleaf c hmem
       · intro c₁ h1 c₂ h2 hk
         rw [hcust] at h1 h2
@@ -833,9 +865,9 @@ theorem step_preserves_terminal (s : RegistryState) (a : Action) (t : Result) (k
       rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
     · obtain ⟨c, hfind, _⟩ := custody_entry_of_present s a.key hpres
       obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_deleteAbsent s a he c hfind
-      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+      rw [h1, trieGet_erase_of_ne _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
     · obtain ⟨h1, _, _, _, _, _⟩ := applyEdge_deleteActive s a he
-      rw [h1, trieGet_set_of_ne _ _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
+      rw [h1, trieGet_erase_of_ne _ _ _ (fun hEq => hne hEq.symm)]; exact hterm
 
 /-- An admitted step never removes a holding it did not consume; a terminal
 attestation is never consumed by any edge. -/
@@ -930,5 +962,36 @@ theorem reachable_consistent (s : RegistryState) (h : Reachable s) : Consistent 
       fun c hm => absurd hm (by simp),
       fun c₁ h1 _ _ => absurd h1 (by simp)⟩
   | next _ hok ih => exact step_ok_consistent _ _ _ ih hok
+
+/-- No edge stores an `unknown` leaf: the writing edges store a known state and
+the deleting edges only remove pairs. -/
+theorem applyEdge_no_stored_unknown (s : RegistryState) (a : Action)
+    (h : ∀ p ∈ s.trie, p.2 ≠ .unknown) :
+    ∀ p ∈ (applyEdge s a).state.trie, p.2 ≠ .unknown := by
+  intro p hp
+  have written : ∀ st : State, p ∈ trieSet s.trie a.key (.known st) → p.2 ≠ .unknown := by
+    intro st hmem
+    rcases mem_trieSet _ _ _ _ hmem with rfl | hold
+    · exact Leaf.noConfusion
+    · exact h p hold
+  cases he : a.edge <;> simp only [applyEdge, he] at hp
+  · exact written _ hp
+  · exact written _ hp
+  · exact written _ hp
+  · exact written _ hp
+  · exact h p (mem_trieErase _ _ _ hp)
+  · exact h p (mem_trieErase _ _ _ hp)
+  · exact h p hp
+
+/-- A reachable registry stores no `unknown` leaf. `unknown` is only ever the
+lookup answer for a key the trie does not hold. -/
+theorem reachable_no_stored_unknown (s : RegistryState) (h : Reachable s) :
+    ∀ p ∈ s.trie, p.2 ≠ .unknown := by
+  induction h with
+  | initial c => intro p hp; simp at hp
+  | next _ hok ih =>
+    obtain ⟨_, ht⟩ := step_eq_ok _ _ _ hok
+    subst ht
+    exact applyEdge_no_stored_unknown _ _ ih
 
 end Singular

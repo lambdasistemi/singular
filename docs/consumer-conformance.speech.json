@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "62e939d59277ec17b0ad7e4dd98ce9d75c92eb6f73461ae02e2989a84151589d"
+    "sha256": "aeddf090503c9777609705477082876ac724a06cf7780fc5df93e56e741ab484"
   },
   "historical-execution-reports": [
     {
@@ -240,10 +240,6 @@
     },
     {
       "text": "The former two-request batch allocation check is no longer a current conformance claim. The driver evaluates one request per transaction, leaving the per-kind-and-key mint rule without an executable consumer in these chapters. Earlier batch results remain historical to their own source revisions.",
-      "pause": 400
-    },
-    {
-      "text": "An earlier unnamed sequence reached an accepted delete-Absent fold after five agreeing accepted steps. Lean retains an explicit unknown trie entry after deletion while the chain removes the key and computes a different root and state output. The burn, refund, custody and transaction inputs agree. This is a published model and chain disagreement. The running sequence omits that request and compares the other applicable edges; delete-Active and witness-Terminal remain unsupported.",
       "pause": 400
     }
   ]

@@ -271,17 +271,6 @@ these chapters. The old batch evidence remains historical to its own
 revision. The former receipt-field appendix examples were removed with
 their schema; new appendix checks validate the generic step records.
 
-An earlier unnamed sequence reached an accepted `deleteAbsent` fold after
-five agreeing accepted steps. Lean keeps the deleted key as an explicit
-`unknown` entry (`trieSet`, `lean/Singular/Model.lean:243`, committed by
-`rootOf`, lines 247–255); the chain removes the key. The root and state
-observations differ, while the burn, refund, custody and transaction inputs
-agree. The transaction's state output carries the differing root.
-This is a published model/chain disagreement, with its devnet evidence in
-`handoffs/receipts/delete-absent-finding/`. The running sequence omits this
-request and compares the remaining applicable edges; it reports
-`deleteActive` and `witnessTerminal` as unsupported.
-
 #### The wire these rows and the archive verb speak
 
 Everything on this page, and the release archive's packaged

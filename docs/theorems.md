@@ -43,8 +43,8 @@ consequences rather than as separate arguments.
 | `Singular.Statements.active_witness_unique` | W1 — the active witness is unique | `76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | PROVED |
 | `Singular.Statements.biconditional_supply_sync` | S3 — sync: biconditional supply is 1 iff the key is in that token's state | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | PROVED |
 | `Singular.Statements.booked_at_most_once` | L1 — a key is booked at most once at a time; the batch is atomic; a request is spent once | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | PROVED |
-| `Singular.Statements.delete_absent_inversion` | — | `95b092734fc82923fd9c5eac37677fd70b84a95e4e11e72961383165acf07057` | PROVED |
-| `Singular.Statements.delete_active_inversion` | — | `7ebff03121cd4b0ef44ed54a7ac71af32e142a3eadf60ef7eefa3fa40e49de90` | PROVED |
+| `Singular.Statements.delete_absent_inversion` | — | `b040a97d18406c2a0be100516a5f9f5ea3f7c1bcc606a0c26eab4eb38828bce5` | PROVED |
+| `Singular.Statements.delete_active_inversion` | — | `39b91a52340027b5062725a24c38ee9cb5e568518b6c44727946556be0a903f8` | PROVED |
 | `Singular.Statements.empty_fold_error` | — | `8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | PROVED |
 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
 | `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
@@ -64,7 +64,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.termination` | T1 — a Terminal leaf is never moved, so the key is never re-booked | `daae0dd7f3dbce91850f546e619f4247a3a7688fbdaf6018f96e7213b5f91027` | PROVED |
 | `Singular.Statements.update_active_inversion` | — | `fccc7684da82d92656d5ea79fe3d80749245000052a088a97742ae1df7b20982` | PROVED |
 | `Singular.Statements.update_terminal_inversion` | — | `55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470` | PROVED |
-| `Singular.Statements.update_terminal_transaction_row` | T1 — the transaction an admitted `updateTerminal` builds: three inputs, the third spending the key's one active witness so the burn has a source, two outputs of which the destination holds no token, the keyed mint of `-1`, no refunds, no required signer — plus the `terminal-immutable`, `key-unknown`, `not-booked` and `token-missing` refusals, each exhibited | `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b` | PROVED |
+| `Singular.Statements.update_terminal_transaction_row` | T1 — the transaction an admitted `updateTerminal` builds: three inputs, the third spending the key's one active witness so the burn has a source, two outputs of which the destination holds no token, the keyed mint of `-1`, no refunds, no required signer — plus the `terminal-immutable`, `key-unknown`, `not-booked` and `token-missing` refusals, each exhibited | `c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2` | PROVED |
 | `Singular.Statements.witness_kinds_exclude` | W4 — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
 | `Singular.Statements.witness_terminal_inversion` | — | `1c7af35ddacb820a451811ad329012ea5e45797da9878d2d8681b31589b02288` | PROVED |
 

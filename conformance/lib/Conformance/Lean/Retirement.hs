@@ -23,5 +23,5 @@ modelComparison = bindCheck updateTerminalRow $ \step -> do
 updateTerminalRow :: Theorem UpdateTerminal
 updateTerminalRow = bindTheorem $ mkBoundObligation
     "Singular.Statements.update_terminal_transaction_row"
-    "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
-    "871c5df529d30357e4da7f6f9f141dc02c103bf6"
+    "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+    "88957e41876911a993c5d9a338f8ab006c9f6843"
