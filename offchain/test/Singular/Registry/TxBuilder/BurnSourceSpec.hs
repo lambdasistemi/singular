@@ -35,18 +35,32 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
-import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out (
+    TxOut,
+    datumTxOutL,
+    mkBasicTxOut,
+    valueTxOutL,
+ )
 import Cardano.Ledger.BaseTypes (Network (Testnet))
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Mary.Value (
+    AssetName (..),
+    MaryValue (..),
+    MultiAsset (..),
+    PolicyID (..),
+ )
 import Cardano.Ledger.TxIn (TxIn)
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins (toBuiltin)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
-import Singular.Registry.TxBuilder.ConnectedFold (ConnectedSpend (..))
+import Singular.Registry.TxBuilder.ConnectedFold (
+    ConnectedMint (..),
+    ConnectedSpend (..),
+ )
 import Singular.Registry.TxBuilder.Internal (
     cageAddrFromCfg,
     computeScriptHash,
@@ -54,6 +68,7 @@ import Singular.Registry.TxBuilder.Internal (
     mkInlineDatum,
     policyIdFromPin,
     scriptFromBytes,
+    scriptHashBytes,
     toPlcData,
     txInToRef,
  )
@@ -72,6 +87,7 @@ import Singular.Registry.Types (
     OnChainTokenState (..),
     OnChainTxOutRef,
     edgeDeleteAbsent,
+    edgeDeleteActive,
     edgeInsertAbsent,
     edgeUpdateActive,
     edgeUpdateTerminal,
@@ -197,6 +213,7 @@ spec = do
     custodyIdentity
     holderSelection
     burnSourceRequired
+    deletionBurnSource
 
 -- ---------------------------------------------------------
 -- #178: absent custody identity comes from its sole asset
@@ -401,3 +418,121 @@ holderSelection = describe "#177 I177-BUILDER: the burn source is selected exact
         case decideWith (holding [holderOf 1 keyA 1]) retirement of
             Left err -> expectationFailure err
             Right d -> rdOutputs d `shouldBe` []
+
+-- ---------------------------------------------------------
+-- #236: deleteActive burns the witness it holds
+-- ---------------------------------------------------------
+
+{- | `deleteActive` (edge 5) destroys the key's active witness as
+`updateTerminal` does: @deltaOf 5 = [(active, -1)]@, and Lean's
+`applyEdge` for `.deleteActive` drops the key's active holding. The
+ledger balances a burn only against an input carrying the burned asset,
+so the fold has to consume the holder's own UTxO and create no carrier.
+
+The asset under test is not typed into the fixture. Its policy is the
+hash of the witness script the builder mints under for the active kind,
+read from the context, and the registry's active pin is set to that
+hash, so the holder, the mint and the selection name one asset.
+-}
+deletion :: Edge
+deletion = edgeDeleteActive
+
+activeWitness :: Script ConwayEra
+activeWitness = case Map.lookup 1 (rcWitnessScripts witnessScripts) of
+    Just s -> s
+    Nothing -> error "BurnSourceSpec fixture: no active witness script"
+
+activeId :: PolicyID
+activeId = PolicyID (hashScript activeWitness)
+
+-- | The registry whose active pin is the policy the builder mints under.
+boundCfg :: CageConfig
+boundCfg =
+    cfg
+        { cfgActivePolicy =
+            SBS.toShort (scriptHashBytes (hashScript activeWitness))
+        }
+
+-- | One wallet UTxO holding `quantity` of `boundCfg`'s active witness.
+boundHolder :: Int -> ByteString -> Integer -> (TxIn, TxOut ConwayEra)
+boundHolder i key quantity =
+    ( holderIn i
+    , mkBasicTxOut
+        (cageAddrFromCfg cfg Testnet)
+        ( MaryValue
+            (Coin 2000000)
+            ( MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin (cfgActivePolicy boundCfg))
+                    (Map.singleton (AssetName (SBS.toShort key)) quantity)
+                )
+            )
+        )
+    )
+
+decideDeletion ::
+    [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
+decideDeletion utxos =
+    registryDuties
+        boundCfg
+        emptyPParams
+        tokenState
+        (holding utxos)
+        [requestFor deletion]
+        [True]
+
+-- | Quantity of the active witness for `key` an output carries.
+carried :: ByteString -> TxOut ConwayEra -> Integer
+carried key out = case out ^. valueTxOutL of
+    MaryValue _ (MultiAsset m) ->
+        maybe
+            0
+            (Map.findWithDefault 0 (AssetName (SBS.toShort key)))
+            (Map.lookup activeId m)
+
+-- | Net quantity of the active witness for `key` the duties mint.
+minted :: ByteString -> RegistryDuties -> Integer
+minted key d =
+    sum
+        [ q
+        | m <- rdMints d
+        , cmPolicy m == activeId
+        , Just q <- [Map.lookup (AssetName (SBS.toShort key)) (cmAssets m)]
+        ]
+
+{- | The witness shape of one deletion: mint @-1@, exactly one input
+carrying quantity 1 of the asset, and no output carrying any of it.
+Plain inputs and script-spent inputs are counted together, so a witness
+that rode in by either route counts once.
+-}
+witnessShape :: ByteString -> RegistryDuties -> Expectation
+witnessShape key d = do
+    minted key d `shouldBe` (-1)
+    let ins = map snd (rdInputs d) <> map (snd . csUtxo) (rdSpends d)
+    filter (/= 0) (map (carried key) ins) `shouldBe` [1]
+    filter (/= 0) (map (carried key) (rdOutputs d)) `shouldBe` []
+
+deletionBurnSource :: Spec
+deletionBurnSource =
+    describe "#236: deleteActive sources its burn from a holder" $ do
+        -- The fixture binds one asset: a holder built from the pin
+        -- carries what the builder's mint policy names. Without this
+        -- every `carried` below could read 0 and prove nothing.
+        it "binds the holder's asset to the builder's active mint policy" $
+            carried keyA (snd (boundHolder 1 keyA 1)) `shouldBe` 1
+
+        -- Two keys held, so a builder that swept the inventory, or took
+        -- its head, cannot pass.
+        it "burns -1 from the one input holding the key's witness, outputs none" $
+            case decideDeletion [boundHolder 1 keyB 1, boundHolder 2 keyA 1] of
+                Left err -> expectationFailure err
+                Right d -> do
+                    witnessShape keyA d
+                    map fst (rdInputs d) `shouldBe` [holderIn 2]
+
+        it "refuses the deletion when nothing holds the key's witness" $
+            (() <$ decideDeletion []) `shouldSatisfy` isLeft
+
+        it "does not sweep another key's holder into the deletion" $
+            (() <$ decideDeletion [boundHolder 1 keyB 1])
+                `shouldSatisfy` isLeft
