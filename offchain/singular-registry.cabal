@@ -601,6 +601,7 @@ test-suite e2e-tests
     , base
     , base16-bytestring
     , bytestring
+    , cardano-strict-containers
     , cardano-ledger-api
     , cardano-ledger-core
     , cardano-ledger-mary

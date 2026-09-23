@@ -61,6 +61,7 @@ module Singular.Registry.Node (
     awaitIndexed,
     adaptProvider,
     followedProvider,
+    nodeAddressReads,
     awaitConnection,
     confirmDeadline,
     txUpperBoundSlot,
@@ -92,7 +93,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Char (isSpace)
 import Data.Foldable (for_, toList)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
@@ -119,7 +120,7 @@ import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL, vldtTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut, valueTxOutL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
 import Cardano.Ledger.BaseTypes (Network (..), SlotNo (..), StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Binary (decodeFull')
 import Cardano.Ledger.Core (eraProtVerLow)
@@ -476,7 +477,8 @@ withNode = withNodeMode runMode
 {- | Open a session in a named mode: connect, negotiate the magic,
 query live protocol parameters, refuse to start when the funding wallet
 cannot pay, and run the body. The devnet is spawned and torn down
-around it; an external node is left alone.
+around it, and followed by an indexer that answers the session's
+address reads and confirmations; an external node is left alone.
 -}
 withNodeMode :: NodeMode -> (NodeSession -> IO a) -> IO a
 withNodeMode = withNodeModeAndFunding (Just defaultFundingFloor)
@@ -492,7 +494,8 @@ withNodeModeAndFunding :: Maybe FundingFloor -> NodeMode -> (NodeSession -> IO a
 withNodeModeAndFunding fundingFloor mode k = case mode of
     Devnet -> do
         gDir <- genesisDir
-        withCardanoNode gDir (\sock _startMs -> connect devnetMagic sock)
+        withCardanoNode gDir $ \sock _startMs ->
+            withDevnetIndexer sock (connect devnetMagic sock)
     External e -> connect (NetworkMagic (extMagic e)) (extSocket e)
   where
     connect magic sock = do
@@ -501,15 +504,17 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
-                let prov = adaptProvider (mkN2CProvider lsqCh)
-                awaitConnection magic sock nodeThread prov
-                pp <- Cage.queryProtocolParams prov
+                let nodeProv = adaptProvider (mkN2CProvider lsqCh)
+                    submitter = mkN2CSubmitter ltxsCh
+                awaitConnection magic sock nodeThread nodeProv
+                pp <- Cage.queryProtocolParams nodeProv
+                prov <- followedProvider nodeProv submitter
                 for_ fundingFloor (checkFunding prov (walletAddr wallet))
                 announce mode magic sock (walletAddr wallet)
                 let sess =
                         NodeSession
                             { nsProvider = prov
-                            , nsSubmitter = mkN2CSubmitter ltxsCh
+                            , nsSubmitter = submitter
                             , nsMagic = magic
                             , nsNetwork = walletNetwork wallet
                             , nsPParams = pp
@@ -548,9 +553,9 @@ currentTipSlot = readIORef openSession >>= maybe (die "currentTipSlot called out
 A fixed sleep is a devnet assumption: the factory devnet makes a block
 about every second, a public test network about every twenty, so a
 five-second wait calibrated on the devnet silently becomes a race on
-preprod. This polls for an output the transaction actually created —
-the strongest evidence a local state query carries — and names the
-transaction when it never appears.
+preprod. This waits for the transaction's first output — the strongest
+evidence the chain carries — and names the transaction when it never
+appears.
 
 The wait is bounded by the transaction's own validity upper bound plus
 a two-minute margin, not by a fixed poll count: a transaction that is
@@ -562,34 +567,17 @@ stays its only bound.
 -}
 awaitTx :: ConwayTx -> IO ()
 awaitTx tx = do
-    ms <- readIORef openSession
-    sess <- case ms of
-        Just s -> pure s
-        Nothing ->
-            die
-                "awaitTx was called outside a node session; a runner must \
-                \wait for confirmation inside withNode"
-    addr <- case toList (tx ^. bodyTxL . outputsTxBodyL) of
-        (out : _) -> pure (out ^. addrTxOutL)
+    sess <- sessionFor "awaitTx"
+    case toList (tx ^. bodyTxL . outputsTxBodyL) of
+        _ : _ -> pure ()
         [] ->
             die
                 ( "cannot confirm transaction "
-                    <> show txid
+                    <> show (txIdTx tx)
                     <> ": it creates no output to observe"
                 )
     deadline <- windowDeadlineFor sess tx
-    pollTx sess addr deadline
-  where
-    txid = txIdTx tx
-    pollTx sess addr deadline = do
-        utxos <- Cage.queryUTxOs (nsProvider sess) addr
-        if any (\(TxIn i _, _) -> i == txid) utxos
-            then pure ()
-            else do
-                tip <- nsTipSlot sess
-                whenExpired (show txid) tip deadline $ do
-                    threadDelay (confirmationPollSeconds * 1_000_000)
-                    pollTx sess addr deadline
+    confirmOutputZero sess (show (txIdTx tx)) (txIdTx tx) deadline
 
 {- | Confirm a just-submitted transaction by observing output zero.
 Call before a dependent transaction spends that output. This supports
@@ -601,44 +589,76 @@ rather than by this fixed window.
 -}
 awaitTxId :: String -> IO ()
 awaitTxId txid = do
-    raw <- either (const (die "awaitTxId: transaction id is not hex")) pure (B16.decode (BC.pack txid))
-    h <- maybe (die "awaitTxId: transaction id is not 32 bytes") pure (hashFromBytes raw)
-    sess <- readIORef openSession >>= maybe (die "awaitTxId called outside a node session") pure
-    let wanted = TxIn (TxId (unsafeMakeSafeHash h)) (TxIx 0)
-    awaitChain ("transaction " <> txid <> " output 0") $ do
-        live <- nsTxInLive sess wanted
-        pure (if live then Just () else Nothing)
+    sess <- sessionFor "awaitTxId"
+    wanted <- txIdFromHex "awaitTxId" txid
+    deadline <- fixedWindowDeadline (nsProvider sess)
+    confirmOutputZero sess txid wanted deadline
 
 {- | Confirm a just-submitted transaction by observing output zero,
-polling until the transaction's own validity upper bound plus a
-two-minute margin. The runner holds the transaction it just built and
-signed, so the wait can be exactly as long as the transaction can
-still land — and the failure names the expired window instead of a
-fixed poll count. A transaction with no upper bound cannot expire;
-the fixed window of 'awaitTxId' stays its bound.
+until the transaction's own validity upper bound plus a two-minute
+margin. The runner holds the transaction it just built and signed, so
+the wait can be exactly as long as the transaction can still land —
+and the failure names the expired window instead of a fixed poll
+count. A transaction with no upper bound cannot expire; the fixed
+window of 'awaitTxId' stays its bound.
 -}
 awaitTxWindow :: ConwayTx -> String -> IO ()
 awaitTxWindow tx txid = do
-    ms <- readIORef openSession
-    sess <- case ms of
-        Just s -> pure s
-        Nothing ->
-            die
-                "awaitTxWindow was called outside a node session; a runner \
-                \must wait for confirmation inside withNode"
+    sess <- sessionFor "awaitTxWindow"
     deadline <- windowDeadlineFor sess tx
-    raw <- either (const (die "awaitTxWindow: transaction id is not hex")) pure (B16.decode (BC.pack txid))
-    h <- maybe (die "awaitTxWindow: transaction id is not 32 bytes") pure (hashFromBytes raw)
-    let wanted = TxIn (TxId (unsafeMakeSafeHash h)) (TxIx 0)
-    go sess wanted deadline
+    wanted <- txIdFromHex "awaitTxWindow" txid
+    confirmOutputZero sess txid wanted deadline
+
+-- | The open session, or name the confirmation called outside one.
+sessionFor :: String -> IO NodeSession
+sessionFor what =
+    readIORef openSession
+        >>= maybe
+            ( die
+                ( what
+                    <> " was called outside a node session; a runner must \
+                       \wait for confirmation inside withNode"
+                )
+            )
+            pure
+
+-- | A transaction id from its hex rendering.
+txIdFromHex :: String -> String -> IO TxId
+txIdFromHex what txid = do
+    raw <- either (const (die (what <> ": transaction id is not hex"))) pure (B16.decode (BC.pack txid))
+    h <- maybe (die (what <> ": transaction id is not 32 bytes")) pure (hashFromBytes raw)
+    pure (TxId (unsafeMakeSafeHash h))
+
+{- | Wait until output zero of a transaction is on the chain, or the
+chain's tip passes the deadline. Where an indexer follows the chain
+it reports the block that carries the output; elsewhere the node is
+asked for that one output reference, never for an address's whole
+UTxO set.
+-}
+confirmOutputZero :: NodeSession -> String -> TxId -> SlotNo -> IO ()
+confirmOutputZero sess label tid deadline =
+    readIORef devnetIndexer >>= maybe (poll wanted) indexed
   where
-    go sess wanted deadline = do
-        live <- nsTxInLive sess wanted
+    wanted = TxIn tid (TxIx 0)
+    indexed idx = do
+        let TxId h = tid
+        seen <-
+            awaitTxIn
+                idx
+                (Indexer.TxIn (hashToBytes (extractHash h)) 0)
+                (Just confirmationPollSeconds)
+        case seen of
+            Just _ -> pure ()
+            Nothing -> do
+                tip <- nsTipSlot sess
+                whenExpired label tip deadline (indexed idx)
+    poll i = do
+        live <- nsTxInLive sess i
         unless live $ do
             tip <- nsTipSlot sess
-            whenExpired txid tip deadline $ do
+            whenExpired label tip deadline $ do
                 threadDelay (confirmationPollSeconds * 1_000_000)
-                go sess wanted deadline
+                poll i
 
 {- | The poll-until deadline for a transaction: its own validity upper
 bound plus a two-minute margin; the historical fixed window when it
@@ -674,10 +694,14 @@ confirmDeadline :: Cage.Provider IO -> ConwayTx -> IO SlotNo
 confirmDeadline prov tx =
     case txUpperBoundSlot tx of
         Just bound -> (bound +) <$> twoMinutesInSlots prov
-        Nothing -> do
-            now <- getCurrentTime
-            let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
-            Cage.posixMsToSlot prov (nowMs + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000)
+        Nothing -> fixedWindowDeadline prov
+
+-- | The slot the historical fixed confirmation window ends at, from now.
+fixedWindowDeadline :: Cage.Provider IO -> IO SlotNo
+fixedWindowDeadline prov = do
+    now <- getCurrentTime
+    let nowMs = round (utcTimeToPOSIXSeconds now * 1000) :: Integer
+    Cage.posixMsToSlot prov (nowMs + fromIntegral (confirmationAttempts * confirmationPollSeconds) * 1000)
 
 {- | The validity upper bound a transaction carries, if any. The fold,
 update and retract builders pin one (request deadline, phase-2 end);
@@ -861,14 +885,16 @@ indexedUTxOs idx addr = do
                 <> why
             )
 
-{- | Read the funding wallet from the node and spend the outputs the
-indexer has not seen into one self-payment, confirmed through the
-indexer. On the factory devnet that is the single genesis output.
+{- | Read the devnet's genesis wallet — the one that funds a devnet run —
+from the node and spend the outputs the indexer has not seen into one
+self-payment, confirmed through the indexer. On the factory devnet
+that is the single genesis output.
 -}
 indexFunding :: IndexerHandle -> Cage.Provider IO -> Submitter IO -> IO ()
 indexFunding idx node submit = do
-    held <- Cage.queryUTxOs node funderAddr
-    known <- map fst <$> indexedUTxOs idx funderAddr
+    Wallet{walletAddr = addr, walletSignKey = key} <- walletForMode Devnet
+    held <- Cage.queryUTxOs node addr
+    known <- map fst <$> indexedUTxOs idx addr
     let unseen = filter ((`notElem` known) . fst) held
         value = foldMap ((^. valueTxOutL) . snd) unseen
         body =
@@ -876,9 +902,9 @@ indexFunding idx node submit = do
                 & inputsTxBodyL .~ Set.fromList (map fst unseen)
                 & outputsTxBodyL
                     .~ StrictSeq.singleton
-                        (mkBasicTxOut funderAddr (value <-> inject sweepFee))
+                        (mkBasicTxOut addr (value <-> inject sweepFee))
                 & feeTxBodyL .~ sweepFee
-        tx = addKeyWitness funderSignKey (mkBasicTx body)
+        tx = addKeyWitness key (mkBasicTx body)
     unless (null unseen) $
         submitTx submit tx >>= \case
             Submitted _ -> do
@@ -991,12 +1017,21 @@ adaptProvider p =
                         <> " sent to the node of a followed devnet after its \
                            \funding read: read through followedProvider"
                     )
+            atomicModifyIORef' addressReads (\n -> (n + 1, ()))
             N2C.queryUTxOs p addr
         , Cage.queryProtocolParams = N2C.queryProtocolParams p
         , Cage.evaluateTx = N2C.evaluateTx p
         , Cage.posixMsToSlot = N2C.posixMsToSlot p
         , Cage.posixMsCeilSlot = N2C.posixMsCeilSlot p
         }
+
+-- | How many @GetUTxOByAddress@ this process has sent to a node.
+nodeAddressReads :: IO Int
+nodeAddressReads = readIORef addressReads
+
+addressReads :: IORef Int
+addressReads = unsafePerformIO (newIORef 0)
+{-# NOINLINE addressReads #-}
 
 -- ---------------------------------------------------------
 -- Funding

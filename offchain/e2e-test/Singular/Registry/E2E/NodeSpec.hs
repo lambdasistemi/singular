@@ -13,7 +13,7 @@ magic are handed to 'withNodeMode' as configuration, exactly as a
 joiner's preprod node is. Nothing here calls the devnet path, so a
 divergence between the two would fail it.
 
-Three claims, each with the control that shows the check can fail:
+Four claims, each with the control that shows the check can fail:
 
 * a session opens over a supplied socket and magic and queries live
   protocol parameters (control: the wrong magic is refused by name);
@@ -22,6 +22,9 @@ Three claims, each with the control that shows the check can fail:
 * an unfunded key is refused before any transaction, by a diagnostic
   that names the address and the faucet (control: the funded key in the
   first claim reaches the body).
+* a submission is confirmed without the node being asked for an
+  address's UTxO set (control: the confirmed output is then read back
+  from the node).
 -}
 module Singular.Registry.E2E.NodeSpec (spec) where
 
@@ -30,10 +33,12 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf)
+import Data.Sequence.Strict qualified as StrictSeq
+import Data.Set qualified as Set
 import System.Directory (getTemporaryDirectory, removeFile)
 import System.IO (hClose, hPutStr, openTempFile)
 
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec (
     Spec,
     aroundAll,
@@ -43,23 +48,36 @@ import Test.Hspec (
     shouldSatisfy,
  )
 
+import Cardano.Ledger.Api.Era (ConwayEra)
 import Cardano.Ledger.Api.PParams (ppMaxTxSizeL)
+import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
+import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, inputsTxBodyL, mkBasicTxBody, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Out (TxOut, mkBasicTxOut, valueTxOutL)
+import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.Val (inject, (<->))
 import Cardano.Node.Client.E2E.Devnet (withCardanoNode)
 import Cardano.Node.Client.E2E.Setup (
     Ed25519DSIGN,
     SignKeyDSIGN,
+    addKeyWitness,
     genesisDir,
     genesisSignKey,
     mkSignKey,
     rawSerialiseSignKeyDSIGN,
  )
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Node (
     ExternalNode (..),
     NodeMode (..),
     NodeSession (..),
     Wallet (..),
+    awaitTx,
     bech32Address,
     loadWallet,
+    nodeAddressReads,
     walletForMode,
     withNodeMode,
  )
@@ -89,6 +107,21 @@ withDevnetSocket :: (FilePath -> IO ()) -> IO ()
 withDevnetSocket k = do
     gDir <- genesisDir
     withCardanoNode gDir (\sock _startMs -> k sock)
+
+-- | Every output the wallet holds, paid back to it in one output.
+selfPayment :: Wallet -> [(TxIn, TxOut ConwayEra)] -> ConwayTx
+selfPayment wallet held =
+    addKeyWitness (walletSignKey wallet) (mkBasicTx body)
+  where
+    fee = Coin 1_000_000
+    value = foldMap ((^. valueTxOutL) . snd) held
+    body =
+        mkBasicTxBody
+            & inputsTxBodyL .~ Set.fromList (map fst held)
+            & outputsTxBodyL
+                .~ StrictSeq.singleton
+                    (mkBasicTxOut (walletAddr wallet) (value <-> inject fee))
+            & feeTxBodyL .~ fee
 
 -- | A key with no history on any chain, and therefore no funds.
 unfundedKey :: SignKeyDSIGN Ed25519DSIGN
@@ -123,6 +156,29 @@ spec = aroundAll withDevnetSocket $
                     Just (maxTxSize, utxoCount) ->
                         maxTxSize > 0 && utxoCount > 0
                     Nothing -> False
+
+        it
+            "confirms a submission without asking the node for an \
+            \address's UTxO set"
+            $ \sock -> withSkeyFile genesisSignKey $ \skey -> do
+                let mode = External (ExternalNode sock 42 skey)
+                withNodeMode mode $ \sess -> do
+                    wallet <- walletForMode mode
+                    held <-
+                        Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+                    let tx = selfPayment wallet held
+                    submitTx (nsSubmitter sess) tx >>= \case
+                        Submitted _ -> pure ()
+                        Rejected why ->
+                            fail ("the self-payment was refused: " <> BC.unpack why)
+                    before <- nodeAddressReads
+                    awaitTx tx
+                    after <- nodeAddressReads
+                    after `shouldBe` before
+                    landed <-
+                        Cage.queryUTxOs (nsProvider sess) (walletAddr wallet)
+                    map fst landed
+                        `shouldSatisfy` elem (TxIn (txIdTx tx) (TxIx 0))
 
         it
             "refuses a magic the node does not run, naming the magic and \
