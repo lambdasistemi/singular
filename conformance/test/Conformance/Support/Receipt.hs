@@ -28,6 +28,7 @@ import Test.Hspec (
     shouldSatisfy,
  )
 
+import Conformance.Book (renderBook)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -38,7 +39,6 @@ import Conformance.Receipt (
     loadReceipts,
     maxReceiptBytes,
  )
-import Conformance.Book (renderBook)
 import Conformance.Rows (
     Row (..),
     RowState (..),
@@ -406,18 +406,19 @@ stepRoundTrip :: Spec
 stepRoundTrip = describe "Saving compared live requests" $
     it "Preserves the model and chain outcomes of a retirement step" $ do
         let step :: Value
-            step = object
-                [ "registry" .= (1 :: Integer)
-                , "edge" .= ("updateTerminal" :: String)
-                , "request" .= object ["key" .= (2 :: Integer)]
-                , "tamper" .= (Nothing :: Maybe String)
-                , "model" .= object ["outcome" .= ("refused" :: String), "reason" .= ("not-booked" :: String)]
-                , "chain" .= object ["outcome" .= ("refused" :: String), "txid" .= ("a1" :: String)]
-                , "comparison" .= ("agrees" :: String)
-                , "compared" .= ([] :: [String])
-                , "unobserved" .= ([] :: [String])
-                , "perturbation" .= (Nothing :: Maybe Value)
-                ]
+            step =
+                object
+                    [ "registry" .= (1 :: Integer)
+                    , "edge" .= ("updateTerminal" :: String)
+                    , "request" .= object ["key" .= (2 :: Integer)]
+                    , "tamper" .= (Nothing :: Maybe String)
+                    , "model" .= object ["outcome" .= ("refused" :: String), "reason" .= ("not-booked" :: String)]
+                    , "chain" .= object ["outcome" .= ("refused" :: String), "txid" .= ("a1" :: String)]
+                    , "comparison" .= ("agrees" :: String)
+                    , "compared" .= ([] :: [String])
+                    , "unobserved" .= ([] :: [String])
+                    , "perturbation" .= (Nothing :: Maybe Value)
+                    ]
             receipt = smallReceipt{receiptRow = "CG22", receiptSteps = Just [step]}
         case eitherDecode (encode receipt) :: Either String Receipt of
             Left err -> fail ("compared request receipt does not parse: " <> err)
@@ -431,6 +432,8 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         renderBook [] [acceptedLive] `shouldSatisfy` isInfixOf "## A sequence no chapter names"
     it "accepts a complete compared request" $
         loadLive acceptedLive `shouldReturn` Right 1
+    it "Rejects registration evidence submitted under a different requirement" $
+        loadLive acceptedLive{receiptRow = "CG02"} >>= (`shouldSatisfy` isLeft)
     it "rejects a live chapter with no step records" $
         loadLive acceptedLive{receiptSteps = Nothing} >>= (`shouldSatisfy` isLeft)
     it "rejects a step whose accepted transaction is absent from the envelope" $
@@ -449,22 +452,27 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
             >>= (`shouldSatisfy` isLeft)
 
 acceptedLive :: Receipt
-acceptedLive = smallReceipt
-    { receiptRow = "CG21"
-    , receiptSteps = Just [object
-        [ "registry" .= (1 :: Int)
-        , "edge" .= ("insertActive" :: String)
-        , "request" .= object ["key" .= ("example" :: String)]
-        , "tamper" .= (Nothing :: Maybe String)
-        , "model" .= object ["outcome" .= ("accepted" :: String)]
-        , "chain" .= object ["outcome" .= ("accepted" :: String), "txid" .= ("abc123" :: String)]
-        , "comparison" .= ("agrees" :: String)
-        , "compared" .= ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx" :: String]
-        , "unobserved" .= ([] :: [String])
-        , "perturbation" .= object
-            ["refused" .= (1 :: Int), "byObservation" .= object [], "exempt" .= ([] :: [String])]
-        ]]
-    }
+acceptedLive =
+    smallReceipt
+        { receiptRow = "CG21"
+        , receiptSteps =
+            Just
+                [ object
+                    [ "registry" .= (1 :: Int)
+                    , "edge" .= ("insertActive" :: String)
+                    , "request" .= object ["key" .= ("example" :: String)]
+                    , "tamper" .= (Nothing :: Maybe String)
+                    , "model" .= object ["outcome" .= ("accepted" :: String)]
+                    , "chain" .= object ["outcome" .= ("accepted" :: String), "txid" .= ("abc123" :: String)]
+                    , "comparison" .= ("agrees" :: String)
+                    , "compared" .= ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx" :: String]
+                    , "unobserved" .= ([] :: [String])
+                    , "perturbation"
+                        .= object
+                            ["refused" .= (1 :: Int), "byObservation" .= object [], "exempt" .= ([] :: [String])]
+                    ]
+                ]
+        }
 
 setField :: (ToJSON a) => String -> a -> Value -> Value
 setField name value (Object fields) = Object (KM.insert (Key.fromString name) (toJSON value) fields)

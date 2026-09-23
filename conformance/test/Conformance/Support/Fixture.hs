@@ -1,12 +1,12 @@
--- | How an example owns the temporary directory it works in.
---
--- Appendix material: evidence about our own harness, not about the registry.
--- It is here because an example that shares a directory with a concurrent run
--- is an example whose result was decided by something other than the registry.
+{- | How an example owns the temporary directory it works in.
+
+Appendix material: evidence about our own harness, not about the registry.
+It is here because an example that shares a directory with a concurrent run
+is an example whose result was decided by something other than the registry.
+-}
 module Conformance.Support.Fixture (spec) where
 
-import Conformance.Fixture.ActiveRegistration (
-    completeReceipt,
+import Conformance.Fixture.Receipt (
     loadOne,
     withScopedReceiptDir,
  )
@@ -58,7 +58,7 @@ spec = describe "How an example owns its temporary files" $ do
             waitForFile (claimedFile rendezvous)
             held <- lines <$> readFile (claimedFile rendezvous)
 
-            result <- loadOne completeReceipt
+            result <- loadOne
             survived <- mapM (\dir -> doesFileExist (dir </> "receipt-CG02.json")) held
 
             writeFile (releaseFile rendezvous) ""
