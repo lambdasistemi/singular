@@ -18,6 +18,10 @@ import Conformance.Compare.Registration (
     rootOf,
     approvalAssetName,
  )
+import Conformance.Compare.Perturbation
+    ( Step (..), leafPaths, arrayPaths, perturbAt, appendAt
+    , isOutputMinimumAda, replacing
+    )
 import Conformance.Story.Identity (identify, observe)
 import Conformance.Story.Identity qualified as Identity
 import Data.Aeson (Value (..), eitherDecodeFileStrict)
@@ -97,77 +101,6 @@ raiseMintQuantity value = case value of
         _ -> error "mint is not an array"
     _ -> error "observations are not an object"
 
-
--- | Where a value sits inside an observation.
-data Step = Field Text | Index Int
-    deriving (Eq, Show)
-
--- | Every leaf path in a value, discovered by walking it.
-leafPaths :: Value -> [[Step]]
-leafPaths value = case value of
-    Object fields ->
-        [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- leafPaths inner]
-    Array entries ->
-        [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- leafPaths inner]
-    _ -> [[]]
-
--- | Every array inside a value, including the empty ones.
-arrayPaths :: Value -> [[Step]]
-arrayPaths value = case value of
-    Object fields ->
-        [Field (Key.toText name) : rest | (name, inner) <- KM.toList fields, rest <- arrayPaths inner]
-    Array entries ->
-        [] : [Index index : rest | (index, inner) <- zip [0 ..] (V.toList entries), rest <- arrayPaths inner]
-    _ -> []
-
--- | Change the value at a path: a number grows, a string gains a suffix, a
--- boolean flips. Nothing else in the observation moves.
-perturbAt :: [Step] -> Value -> Value
-perturbAt [] value = case value of
-    Number n -> Number (n + 1)
-    String s -> String (s <> "-changed")
-    Bool b -> Bool (not b)
-    Null -> String "changed"
-    other -> other
-perturbAt (Field name : rest) value = case value of
-    Object fields -> case KM.lookup (Key.fromText name) fields of
-        Just inner -> Object (KM.insert (Key.fromText name) (perturbAt rest inner) fields)
-        Nothing -> value
-    _ -> value
-perturbAt (Index index : rest) value = case value of
-    Array entries
-        | index < V.length entries ->
-            Array (entries V.// [(index, perturbAt rest (entries V.! index))])
-    _ -> value
-
--- | Append one element to the array at a path, so an empty list is covered too.
-appendAt :: [Step] -> Value -> Value
-appendAt [] value = case value of
-    Array entries -> Array (V.snoc entries (String "appended"))
-    other -> other
-appendAt (Field name : rest) value = case value of
-    Object fields -> case KM.lookup (Key.fromText name) fields of
-        Just inner -> Object (KM.insert (Key.fromText name) (appendAt rest inner) fields)
-        Nothing -> value
-    _ -> value
-appendAt (Index index : rest) value = case value of
-    Array entries
-        | index < V.length entries ->
-            Array (entries V.// [(index, appendAt rest (entries V.! index))])
-    _ -> value
-
-{- | The one leaf the comparison is allowed to ignore: a transaction output's
-lovelace, which the model names @outputMinimumAda@ and states as a logical zero.
--}
-isOutputMinimumAda :: Text -> [Step] -> Bool
-isOutputMinimumAda "tx" [Field "outputs", Index _, Field "lovelace"] = True
-isOutputMinimumAda _ _ = False
-
--- | Put a changed observation back beside the others.
-replacing :: Text -> Value -> Value -> Value
-replacing name inner value = case value of
-    Object fields -> Object (KM.insert (Key.fromText name) inner fields)
-    _ -> value
 
 spec :: Spec
 spec = describe "Comparing a registration with the model" $ do

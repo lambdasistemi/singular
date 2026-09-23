@@ -4,51 +4,67 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
-Code revision: `300c58bdb36cdb72f2fdc4575a1bb720b7232181` (working tree had changes).
+Code revision: `755124fd3fcea4129d2b81ffe79be4bf6c0e06ed` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
-Registration passed: exactly one active token reached the requested recipient.
+Registration compared 5 requests: 3 accepted and 2 refused on chain.
 
-Transaction: `07687c56c71be5caecd74317f5c7c5c0416e4074a75812a0847c270df9fe93ca`.
+Unsupported chain folds: 0.
 
-Code revision: `300c58bdb36cdb72f2fdc4575a1bb720b7232181` (working tree had changes).
+Code revision: `755124fd3fcea4129d2b81ffe79be4bf6c0e06ed` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
 
-Retirement passed: the holder's active-token quantity changed from **1** to **0**, the token was burned, and the key became Terminal.
+Unnamed sequence compared 7 requests: 5 accepted and 0 refused on chain.
 
-Registration transaction: `aeeec1f981851c97d07995a38e4d03a4ad99c34d6c409f3e02f47cf846799bbc`. Retirement transaction: `13d47ac87a051c43ff3d006ed16600362a1b47853b4a65c5906e2003ca31fd40`.
+Unsupported chain folds: 2.
+
+Code revision: `755124fd3fcea4129d2b81ffe79be4bf6c0e06ed` (clean working tree).
+
+Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.
+
+Retirement compared 7 requests: 5 accepted and 2 refused on chain.
+
+Unsupported chain folds: 0.
 
 ## Register a key and receive its active token
 
-A requester registers a new key for a recipient. The recipient must receive exactly one active token for that key. A fresh key must work; registering the same key again must fail. The batch example checks that a correct token total cannot hide a wrong allocation between keys.
+A requester submits two distinct active registrations and then repeats one key. A redirected delivery is tried beside the same untampered request. Every step is compared with the executable registry model.
 
 Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
 
 ### Registration delivers one active token to the requested recipient
 
-- Request registration of **alice** in **registration**, deliver to the recipient wallet, and apply the request on chain.
+- Submit **insertActive** for **alice** in **registration**, using the recipient wallet.
 
-- Compare the observed delivery and queried holdings with the Lean executable's result.
+- Observe the complete registry, token, leaf and transaction boundary after **alice**.
 
-- Check on chain that the recipient wallet holds exactly **1 active token(s)** for **alice**; check its policy, destination, mint and resulting registry state.
+- Compare **alice** and its observation with the executable registry model.
 
-- Successfully register the fresh key **bob** in **registration** for the recipient wallet, through the transaction builder used by the duplicate attempt.
+- Submit **insertActive** for **bob** in **registration**, using the recipient wallet.
 
-- Check on chain that the recipient wallet holds exactly **1 active token(s)** for **bob**; check its policy, destination, mint and resulting registry state.
+- Observe the complete registry, token, leaf and transaction boundary after **bob**.
 
-Formal specification: `Singular.Statements.fold_batch_claimed_mint_by_kind_key` @ `265c595`. Statement digest: `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988`.
+- Compare **bob** and its observation with the executable registry model.
 
-```text
-assetKindTotal (claimedMint [b₁, b₂]) k
-assetSame (claimedMint [b₁, b₂]) (actualMint [b₁, b₂]) = false
-foldBatch s [b₁, b₂] = .error "net-mint-mismatch"
-```
+- Submit **insertActive** for **alice** in **registration**, using the recipient wallet.
 
-- Request **carol** and **david** in **registration** for the recipient wallet. Submit a balanced transaction putting both tokens at the first key: require a state-script rejection. Apply the same requests with one token per key: require success and read back the allocation.
+- Observe the complete registry, token, leaf and transaction boundary after **alice**.
 
-- Try to register **alice** again in **registration**. Require the state script to reject it; **bob** is the successful comparison.
+- Compare **alice** and its observation with the executable registry model.
+
+- Submit **insertActive** for **redirect** in **registration** with redirect delivery. The same request without redirection is the untampered control.
+
+- Observe the complete registry, token, leaf and transaction boundary after **redirect**.
+
+- Compare **redirect** and its observation with the executable registry model.
+
+- Submit **insertActive** for **redirect** in **registration**, using the recipient wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **redirect**.
+
+- Compare **redirect** and its observation with the executable registry model.
 
 ## Retire a registration and burn its active token
 
@@ -58,49 +74,105 @@ Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265
 
 ### The holder receives the token that will be retired
 
-- Request registration of **alice** in **retirement**, deliver to the holder wallet, and apply the request on chain.
+- Submit **insertActive** for **alice** in **retirement**, using the holder wallet.
 
-- Compare the observed delivery and queried holdings with the Lean executable's result.
+- Observe the complete registry, token, leaf and transaction boundary after **alice**.
 
-- Check on chain that the holder wallet holds exactly **1 active token(s)** for **alice**; check its policy, destination, mint and resulting registry state.
-
-Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `871c5df529d30357e4da7f6f9f141dc02c103bf6`. Statement digest: `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b`.
-
-### Retirement spends and burns that token and leaves the key Terminal
-
-- Request retirement of the **alice** registration just created in **retirement**. Apply it using the active token held by its recipient.
-
-- Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result.
-
-- Check that **alice** now has a Terminal leaf, the holder has **0 active token(s)** remaining, and exactly its original token was consumed and burned.
-
-- In **retirement**, establish **never-active** as Absent for the holder wallet through a real transaction, then try to retire it. Require a script rejection, compared with the successful retirement of **alice**.
-
-Formal specification: `Singular.Statements.insert_active_transaction_row` @ `265c595edd72eab10f3b08a36cb010ad407cf48b`. Statement digest: `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
-
-### The comparison holder receives a token in the fresh registry
-
-- Request registration of **control** in **comparison**, deliver to the holder wallet, and apply the request on chain.
-
-- Compare the observed delivery and queried holdings with the Lean executable's result.
-
-- Check on chain that the holder wallet holds exactly **1 active token(s)** for **control**; check its policy, destination, mint and resulting registry state.
+- Compare **alice** and its observation with the executable registry model.
 
 Formal specification: `Singular.Statements.update_terminal_transaction_row` @ `871c5df529d30357e4da7f6f9f141dc02c103bf6`. Statement digest: `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b`.
 
-### The comparison retirement burns its own registration token
+### Retirement burns the holder's token and leaves the key Terminal
 
-- Request retirement of the **control** registration just created in **comparison**. Apply it using the active token held by its recipient.
+- Submit **updateTerminal** for **alice** in **retirement**, using the holder wallet.
 
-- Compare the burn, spent witness, remaining holdings and committed leaf with the Lean retirement result.
+- Observe the complete registry, token, leaf and transaction boundary after **alice**.
 
-- Check that **control** now has a Terminal leaf, the holder has **0 active token(s)** remaining, and exactly its original token was consumed and burned.
+- Compare **alice** and its observation with the executable registry model.
 
-- Try to retire **never-registered**, which was never registered in **comparison**. Require a script rejection, compared with the successful retirement of **control** in this same registry.
+- Submit **insertAbsent** for **never-active** in **retirement**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **never-active**.
+
+- Compare **never-active** and its observation with the executable registry model.
+
+- Submit **updateTerminal** for **never-active** in **retirement**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **never-active**.
+
+- Compare **never-active** and its observation with the executable registry model.
+
+- Submit **insertActive** for **control** in **comparison**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **control**.
+
+- Compare **control** and its observation with the executable registry model.
+
+- Submit **updateTerminal** for **control** in **comparison**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **control**.
+
+- Compare **control** and its observation with the executable registry model.
+
+- Submit **updateTerminal** for **never-registered** in **comparison**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **never-registered**.
+
+- Compare **never-registered** and its observation with the executable registry model.
+
+## A sequence no chapter names
+
+This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.
+
+- Submit **insertAbsent** for **sequence-active** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-active**.
+
+- Compare **sequence-active** and its observation with the executable registry model.
+
+- Submit **updateActive** for **sequence-active** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-active**.
+
+- Compare **sequence-active** and its observation with the executable registry model.
+
+- Submit **updateTerminal** for **sequence-active** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-active**.
+
+- Compare **sequence-active** and its observation with the executable registry model.
+
+- Submit **insertActive** for **sequence-direct** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-direct**.
+
+- Compare **sequence-direct** and its observation with the executable registry model.
+
+- Submit **insertAbsent** for **sequence-absent** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-absent**.
+
+- Compare **sequence-absent** and its observation with the executable registry model.
+
+- Submit **witnessTerminal** for **sequence-active** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-active**.
+
+- Compare **sequence-active** and its observation with the executable registry model.
+
+- Submit **deleteActive** for **sequence-direct** in **sequence**, using the holder wallet.
+
+- Observe the complete registry, token, leaf and transaction boundary after **sequence-direct**.
+
+- Compare **sequence-direct** and its observation with the executable registry model.
+
+### A deletion that disagrees with the model
+
+An earlier devnet sequence submitted deletion of an Absent key after five agreeing accepted requests. The chain accepted the deletion, consumed custody, burned the Absent token and paid the recorded refund. Lean keeps the deleted key as an explicit unknown entry (`trieSet`, `lean/Singular/Model.lean:243`, committed by `rootOf`, lines 247–255); the chain removes the key. Their root and state observations differ. This is a model/chain disagreement, so the deletion is not counted as an agreeing request in this running sequence. Evidence: `handoffs/receipts/delete-absent-finding/s3-sequence-03.log` (SHA-256 e8488067883cebd9d408cd53ad0d5f26dadf0f36f4de35fe4e5a36de278abcb9).
 
 ## What these runs do not establish
 
-Every declared observation of a registration is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction, including the transaction's signers value, which a check changes to prove the difference is reported. Two things are named rather than compared: a ledger makes every output carry a minimum ada and the model says nothing about it, so outputMinimumAda is removed from both sides and earns no pass; and the model states no obligation about who must sign, so requiredSigners stays a named unobservable until the signer rules are stated and proved. Retirement effects still come from the oracle replay, which starts each example in an empty registry. Batch allocation and refusal checks still use Haskell predicates. The requirement that every Lean theorem has an executable consumer remains unmet. These examples exercise the open registry on one local devnet and one protocol-parameter set. They do not establish every case in the formal model. Signature-set invariance is not observed. Retirement of an already Terminal key and retirement without the token remain compiled-script controls rather than live examples here. The naming application's additional approval behavior is outside these stories.
+Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada and the rule for required signers remain named unobservables. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.
 
 ## Requirements inventory
 
@@ -383,5 +455,25 @@ Source: Singular.Statements.update_terminal_transaction_row and Singular.Stateme
 ## Appendix: checking the evidence machinery
 
 The report-validation tests remain under `test/Conformance/Support`. They check missing and contradictory evidence, report parsing and preservation, and refusal attribution. They run alongside the live stories but do not replace them. Authentication tests are still compiled but unwired, tracked in #210.
+
+### witnessTerminal — observed gap
+
+Reading a Terminal key is not yet supported: the node rejects the booking transaction before a fold is submitted.
+
+The observed reason follows from the receipt.
+
+```text
+HardForkApplyTxErrFromEra S (S (S (S (S (S (Z (WrapApplyTxErr {unwrapApplyTxErr = ConwayApplyTxError (ConwayUtxowFailure (UtxoFailure (UtxosFailure (ValidationTagMismatch (IsValid True) (FailedUnexpectedly (PlutusFailure "\nThe PlutusV3 script failed:\nBase64-encoded script bytes:\n\"WQKqAQEAKYAKuiq6GroKq5+queqrnauaSIiIiWYAJkZTABMAgAGYBBgEgAzcOkAAkRLMAEwATAHN1QAUTMiMpgAkYAQAMiMjMAEAEAMiWYAIAMUwAQPYeoAAiZGSzABM3IgCgAxWYAJm48AUAGJm6VIAAzATMBEAJL1wRTABA9h6gABAPRMwBABDAVADQDxuuMA8AEwEgAUBBMlmACZuHSACMAs3VAAxS9b3tjBE3VmAeYBhuqABQChkZgAgAm6swDzAQMBAwEDAQMAw3VGAeASRLMAEAGKYAQPYeoAAiZGSzABM3IgDgAxWYAJm48AcAGJm6VIAAzARMA8AJL1wRTABA9h6gABANRMwBABDATADQDRuuMA0AEwEAAUA4kRLMAEyWYAIAMUoRMjMAEAEAIiWYAIAMUoxMlmACYBZgIm6oAGKzABM3EG60wFTASN1QAKQAETMAMAMwFgAopQQEEUoICAzAFAEN1xgKAAoCRAQGAGADFKMVmACYA5gGm6oAmJkZGRkswATAWABjMAE3WmAqAJN1xgKgBzdcYCoAU3WGAqACkREZGZEswATAdADiswAZgArMAEzcSkAAAPEzcSAOkAVFKCAupQpRQF0UoRMyJZgAgAwAorMAEwHwAYmSzABmACZuvMwEADwAUwBBdh5nwH/AKUKUUBpFKEVmADMAEzceACblDNxRm4ozcUZuKmAClGkAFAKXkgCQCDdcYD4A5uuMB8wIAB6UKUUBpFKEUooDRAaG64wHgAYASA4QHApQMA4AxAXRZAaG64wGgATdcYDQARgNAAosgJjAVABMBQAEwEwATAON1QBMWQDCAYGACACbrjALMAg3VABESzABABil64ImYBhgEmAaACZgBABGAcACgFosgDBgEAAmAGbqgCIpNE2VkAEAQ==\"\nThe script hash is:ScriptHash \"7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9\"\nThe plutus evaluation error is: CekError An error has occurred:\nThe machine terminated because of an error, either from a built-in function or from an explicit use of 'error'.\nCaused by: error\nThe protocol version is: Version 10\nScriptInfo: MintingScript 7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9\nTxInfo:\n  TxId: fb13d0ac326af3023307e9c37571e4951ab2a37a3413b34c9f6ea1b83729ecc0\n  Inputs: [ 5aa4eeb8eb524b6f7588a6c4cd8ac66680afc5eb8661f281f034df232159e79b!3 -> - Value {getValue = Map {unMap = [(,Map {unMap = [(\"\",29999999329303397)]})]}} addressed to\n                                                                                    PubKeyCredential: f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6 (no staking credential)\n                                                                                    with datum\n                                                                                    no datum\n                                                                                    with referenceScript\n                                                                                     ]\n  Reference inputs: []\n  Outputs: [ - Value {getValue = Map {unMap = [(,Map {unMap = [(\"\",4000000)]}),(7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9,Map {unMap = [(0xd837bcaad19a6d7d3cd356b107e306b5327e6e64ec13b8db519a5a03dfd90c1b,1)]})]}} addressed to\n               ScriptCredential: 2c35c56e49ac29e2560f330d33820fef63f12b7373a0e0f3beae5b71 (no staking credential)\n               with datum\n               inline datum :  <<<gwrkeqPtNSliABgTZVaWDlkQUkvki3QWKPPNGW42N2A=>,\n               +SMx2ILTXgWXjFWDUqZsYfR2g44eL9HErn/A1g==,\n               c2VxdWVuY2UtYWN0aXZl,\n               6,\n               3000000,\n               1790118054524,\n               [YPkjMdiC014Fl4xVg1KmbGH0doOOHi/RxK5/wNY=, ]>>\n               with referenceScript\n\n           , - Value {getValue = Map {unMap = [(,Map {unMap = [(\"\",29999999323303397)]})]}} addressed to\n               PubKeyCredential: f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6 (no staking credential)\n               with datum\n               no datum\n               with referenceScript\n                ]\n  Fee: 2000000\n  Value minted: UnsafeMintValue {unMintValue = Map {unMap = [(7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9,Map {unMap = [(0xd837bcaad19a6d7d3cd356b107e306b5327e6e64ec13b8db519a5a03dfd90c1b,1)]})]}}\n  TxCerts: []\n  Wdrl: []\n  Valid range: (-\8734 , +\8734)\n  Signatories: [f92331d882d35e05978c558352a66c61f476838e1e2fd1c4ae7fc0d6]\n  Redeemers: [ ( Minting 7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9\n             , <6,\n             c2VxdWVuY2UtYWN0aXZl,\n             +SMx2ILTXgWXjFWDUqZsYfR2g44eL9HErn/A1g==,\n             [YPkjMdiC014Fl4xVg1KmbGH0doOOHi/RxK5/wNY=, ]> ) ]\n  Datums: []\n  Votes: []\n  Proposal Procedures: []\n  Current Treasury Amount: \n  Treasury Donation: \nRedeemer:\n  <6,\n  c2VxdWVuY2UtYWN0aXZl,\n  +SMx2ILTXgWXjFWDUqZsYfR2g44eL9HErn/A1g==,\n  [YPkjMdiC014Fl4xVg1KmbGH0doOOHi/RxK5/wNY=, ]>\n" "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" :| []))))) :| [])})))))))
+```
+
+### deleteActive — observed gap
+
+Deleting an active key is not yet supported: the transaction builder adds no burn of the active token for this edge, so the assembled transaction does not balance and the node rejects it before any script runs. The missing duty is in `offchain/lib/Singular/Registry/TxBuilder/Update.hs` (`dutiesFor` for edge 5).
+
+The observed reason follows from the receipt.
+
+```text
+unattributed node rejection: HardForkApplyTxErrFromEra S (S (S (S (S (S (Z (WrapApplyTxErr {unwrapApplyTxErr = ConwayApplyTxError (ConwayUtxowFailure (UtxoFailure (ValueNotConservedUTxO Mismatch (RelEQ) {supplied: MaryValue (Coin 29999999324103397) (MultiAsset (fromList [(PolicyID {policyID = ScriptHash "67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20"},fromList [("830ae47aa3ed3529620018136556960e5910524be48b741628f3cd196e363760",1)]),(PolicyID {policyID = ScriptHash "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"},fromList [("c68206c63316bc6c934e6e97a18c258d5206876837da21e34ff05d68c448c0ca",1)])])), expected: MaryValue (Coin 29999999324103397) (MultiAsset (fromList [(PolicyID {policyID = ScriptHash "37c5f765be64afca5e109e65fc0bd1512545f367f18bdc74f9ee6a43"},fromList [("73657175656e63652d646972656374",1)]),(PolicyID {policyID = ScriptHash "67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20"},fromList [("830ae47aa3ed3529620018136556960e5910524be48b741628f3cd196e363760",1)]),(PolicyID {policyID = ScriptHash "7a9e1742831da087e14275f99552ef8cc825ad7f6c30d309abe100f9"},fromList [("c68206c63316bc6c934e6e97a18c258d5206876837da21e34ff05d68c448c0ca",1)])]))})) :| [])})))))))
+```
 
 The generated book is committed to the repository and is not yet reachable from the documentation site, tracked as #218. The general census of Haskell specification bindings remains tracked in #213.

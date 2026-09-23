@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "ba0d46c72758c1979917fce321a7542b2348ef97fb7a62eb037262b7c22e8f8a"
+    "sha256": "62e939d59277ec17b0ad7e4dd98ce9d75c92eb6f73461ae02e2989a84151589d"
   },
   "historical-execution-reports": [
     {
@@ -229,25 +229,21 @@
       "text": "The released interface follows the eight-field registry-mode state contract. The historical reports below retain their original transaction identities, measurements and limitations; they are not current execution claims. Coverage requires fresh receipts bound to the source and blueprint being replayed, and a build or a green check of expected debt grants no coverage."
     }
   ],
-  "the-insertactive-edge-on-the-open-registry-173-executed-in-184": [
+  "model-compared-registration-and-retirement-candidate-229": [
     {
-      "text": "CG21 runs in the generic session on a registry booted under the parameterless open application. One insertActive folds, and the receipt carries what the chain did with it: the open policy and its parameter count read from the blueprint, the fold transaction, the active policy and key, the mint, the address the request named beside the address the token was found at, and the single token that landed there.",
+      "text": "A local clean candidate ran registration and retirement on a Cardano devnet. Its retained receipts contain five and seven model-and-chain steps. The driver supplies the model outcome and nine declared observations for every accepted step. This is candidate evidence, not merge, release or independent acceptance.",
       "pause": 400
     },
     {
-      "text": "The row makes three distinct observations. The accepted fold places exactly one active token at the address the request named, with empty refunds and signers, the approval binding that destination, a covered tip, the seven non-root configuration pins unchanged and the resulting root committed. A same-key duplicate is refused at the state script, with a fresh key through the same builder accepted in the same run as its control. A two-key batch claiming both units at one key, against the one each its edges entail, is refused at the state script, with the correctly distributed batch accepted as its control.",
+      "text": "Two distinct active registrations were accepted. Repeating an occupied key was refused by the state script. Redirecting delivery was refused beside the same untampered request accepted. A connected retirement burned the token from its preceding registration. The Absent-key and unknown-key retirement attempts were refused beside accepted controls. Empty node traces remain empty; the receipts retain the responsible script hash.",
       "pause": 400
     },
     {
-      "text": "The last two are different facts. The duplicate is refused because the key is taken, before the mint is looked at, so its leg carries no mint arithmetic at all. The keyed-mint witness needs a batch whose claimed mint agrees per kind and disagrees per kind and key, which is the exact fault a per-kind sum cannot see, and its leg carries both mints so the loader can compare them. A runner that only refused the duplicate would pass while the keyed guard was broken. Each refusal carries its own accepting control, bound to a fold that actually landed in the same run.",
+      "text": "The former two-request batch allocation check is no longer a current conformance claim. The driver evaluates one request per transaction, leaving the per-kind-and-key mint rule without an executable consumer in these chapters. Earlier batch results remain historical to their own source revisions.",
       "pause": 400
     },
     {
-      "text": "The refusal names are asserted elsewhere, and the page says where. Both refusals are observed on chain, in phase two, attributed to the state script by its hash. What the receipt does not carry is the name the validator traced: a script-execution failure reaches the node with an empty Plutus log list, so key-exists and net-mint-mismatch are not recoverable from the ledger's error text. The receipt records the absence rather than guessing, and the names are asserted in the compiled Aiken suite against the single construction site each one has. So the row establishes that the chain refused those two shapes and accepted their controls, not which branch named them.",
-      "pause": 400
-    },
-    {
-      "text": "One limit is worth stating plainly. The cage decides occupancy with the forestry library total exclusion check, which answers false both for a key the trie already binds and for a malformed exclusion proof. The validator cannot tell them apart, so both are refused under the name key-exists. Nothing the model refuses is admitted, so the guard is conservative in the safe direction, but the name is imprecise for the malformed proof case and a key-exists refusal on its own does not establish that the key was occupied.",
+      "text": "An earlier unnamed sequence reached an accepted delete-Absent fold after five agreeing accepted steps. Lean retains an explicit unknown trie entry after deletion while the chain removes the key and computes a different root and state output. The burn, refund, custody and transaction inputs agree. This is a published model and chain disagreement. The running sequence omits that request and compares the other applicable edges; delete-Active and witness-Terminal remain unsupported.",
       "pause": 400
     }
   ]

@@ -1,14 +1,7 @@
 -- | Two real requests: a wrong allocation is rejected, the correct one succeeds.
-module Conformance.Fold.KeyedMint (story, keyedMintFold, conjuncts) where
+module Conformance.Fold.KeyedMint (keyedMintFold, conjuncts) where
 
-import Conformance.Story.Live
 import Conformance.Story.Binding (Binding, mkBoundObligation)
-
--- | Both requests belong to the registry and recipient established by the caller.
-story :: reg -> wal -> Story reg wal ins ret bat ref bat
-story registry recipient = do
-    linkedTo keyedMintFold conjuncts
-    compareBatchAllocation registry recipient "carol" "david"
 
 -- | The batch-allocation obligation.
 keyedMintFold :: Binding

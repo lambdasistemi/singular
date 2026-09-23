@@ -200,10 +200,9 @@ heldRowReceipt =
         , receiptRejected = Nothing
         , receiptDirty = False
         , receiptPartial = Nothing
-        , receiptEdge = Nothing
-        , receiptRetirement = Nothing
 
         , receiptDerivation = Nothing
+        , receiptSteps = Nothing
         }
 
 -- | A phase-2 node refusal naming the expected script.

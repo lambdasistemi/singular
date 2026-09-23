@@ -9,20 +9,26 @@ matches the base. The fixture receipts carry base @fixture-base@;
 -}
 module Conformance.Support.Receipt (spec) where
 
-import Data.Aeson (eitherDecode, encode)
+import Data.Aeson (ToJSON, Value (..), eitherDecode, encode, object, toJSON, (.=))
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KM
 import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
+import System.FilePath ((</>))
+import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (
     Spec,
     describe,
     it,
     shouldBe,
+    shouldReturn,
     shouldSatisfy,
  )
 
+import Conformance.Book (renderBook)
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -46,7 +52,8 @@ import Paths_conformance (getDataFileName)
 
 spec :: Spec
 spec = describe "Appendix: deciding whether a run report counts as evidence" $ do
-    retirementRoundTrip
+    stepRoundTrip
+    liveStepChecks
     it "Preserves every result category when saving and reading it back" $
         forM_ [minBound :: Verdict .. maxBound] $ \v ->
             case eitherDecode (encode v) :: Either String Verdict of
@@ -359,10 +366,8 @@ smallReceipt =
         , receiptBlueprint = "blueprint"
         , receiptVenue = "node-submit"
         , receiptPartial = Nothing
-        , receiptEdge = Nothing
-        , receiptRetirement = Nothing
-
         , receiptDerivation = Nothing
+        , receiptSteps = Nothing
         }
 
 oversizedReceipt :: Receipt
@@ -397,59 +402,86 @@ loadCommitted = do
         Left err -> fail err
         Right rows -> pure rows
 
-{- | #177 I177-CONFORMANCE: the retirement evidence a receipt
-carries.
-
-Gate S names the vocabulary exactly — policy and key, both txids, the
-three distinct roots, the 1 -> 0 quantity transition, the exact keyed
-`-1` mint, the token-bearing source input, the `Terminal` leaf, and the
-two refusal legs with their accepting controls — and the CI step reads
-those fields back out of the written file. A receipt type that PARSES
-such a file and then drops the object on the way out would satisfy every
-loader test in this suite and still hand CI an empty observation.
-
-So the assertion is a ROUND TRIP through the real `Receipt` codec: what
-comes back out must still carry the retirement the row observed. This is
-the schema half of the row; the values are established by the live run.
--}
-retirementRoundTrip :: Spec
-retirementRoundTrip = describe "Saving reports about retiring an active token" $
-    it "Keeps the retirement details when reading and saving a report" $ do
-        let decoded = eitherDecode cg22Receipt :: Either String Receipt
-        case decoded of
-            Left err -> fail ("retirement receipt does not parse: " <> err)
-            Right r -> do
-                let out = show (encode r)
-                mapM_
-                    (\field -> out `shouldSatisfy` isInfixOf field)
-                    [ "retirement"
-                    , "insertTxid"
-                    , "retireTxid"
-                    , "beforeInsert"
-                    , "terminal"
-                    , "quantities"
-                    , "Terminal"
+stepRoundTrip :: Spec
+stepRoundTrip = describe "Saving compared live requests" $
+    it "Preserves the model and chain outcomes of a retirement step" $ do
+        let step :: Value
+            step =
+                object
+                    [ "registry" .= (1 :: Integer)
+                    , "edge" .= ("updateTerminal" :: String)
+                    , "request" .= object ["key" .= (2 :: Integer)]
+                    , "tamper" .= (Nothing :: Maybe String)
+                    , "model" .= object ["outcome" .= ("refused" :: String), "reason" .= ("not-booked" :: String)]
+                    , "chain" .= object ["outcome" .= ("refused" :: String), "txid" .= ("a1" :: String)]
+                    , "comparison" .= ("agrees" :: String)
+                    , "compared" .= ([] :: [String])
+                    , "unobserved" .= ([] :: [String])
+                    , "perturbation" .= (Nothing :: Maybe Value)
                     ]
+            receipt = smallReceipt{receiptRow = "CG22", receiptSteps = Just [step]}
+        case eitherDecode (encode receipt) :: Either String Receipt of
+            Left err -> fail ("compared request receipt does not parse: " <> err)
+            Right decoded -> receiptSteps decoded `shouldBe` Just [step]
 
-{- | A retirement receipt in the exact shape the evidence reader consumes. Every value here is
-a placeholder standing in for one the live row observes; the point of
-the fixture is the SHAPE, which the codec must preserve.
--}
-cg22Receipt :: BSL.ByteString
-cg22Receipt =
-    "{\"row\":\"CG22\",\"outcome\":\"accepted\",\"verdict\":\"agrees-with-model\"\
-    \,\"transactions\":[\"aa\"],\"base\":\"fixture-base\",\"dirty\":false\
-    \,\"node\":\"node\",\"blueprint\":\"bp\",\"venue\":\"node-submit\"\
-    \,\"retirement\":{\"activePolicy\":\"p\",\"key\":\"k\"\
-    \,\"insertTxid\":\"a1\",\"retireTxid\":\"a2\"\
-    \,\"roots\":{\"beforeInsert\":\"r0\",\"active\":\"r1\",\"terminal\":\"r2\"}\
-    \,\"quantities\":{\"before\":1,\"after\":0}\
-    \,\"mint\":[{\"policy\":\"p\",\"name\":\"k\",\"quantity\":-1}]\
-    \,\"source\":{\"outref\":\"o#0\",\"policy\":\"p\",\"name\":\"k\",\"quantity\":1}\
-    \,\"leaf\":\"Terminal\"\
-    \,\"unknown\":{\"txid\":\"b1\",\"hashes\":[\"h\"],\"trace\":null\
-    \,\"controlTxid\":\"b2\",\"distinguisher\":\"the key is not bound\"\
-    \,\"keys\":[\"k\"]}\
-    \,\"absent\":{\"txid\":\"c1\",\"hashes\":[\"h\"],\"trace\":null\
-    \,\"controlTxid\":\"c2\",\"distinguisher\":\"the leaf is Absent\"\
-    \,\"keys\":[\"k\"]}}}"
+-- The step body is a public evidence claim. These checks load an actual
+-- written receipt, so none can pass merely because JSON round-trips.
+liveStepChecks :: Spec
+liveStepChecks = describe "Checking compared requests in live receipts" $ do
+    it "publishes the unnamed request sequence beside the two chapters" $
+        renderBook [] [acceptedLive] `shouldSatisfy` isInfixOf "## A sequence no chapter names"
+    it "accepts a complete compared request" $
+        loadLive acceptedLive `shouldReturn` Right 1
+    it "Rejects registration evidence submitted under a different requirement" $
+        loadLive acceptedLive{receiptRow = "CG02"} >>= (`shouldSatisfy` isLeft)
+    it "rejects a live chapter with no step records" $
+        loadLive acceptedLive{receiptSteps = Nothing} >>= (`shouldSatisfy` isLeft)
+    it "rejects a step whose accepted transaction is absent from the envelope" $
+        loadLive acceptedLive{receiptTransactions = []} >>= (`shouldSatisfy` isLeft)
+    it "rejects agreement when the model and chain outcome classes differ" $
+        loadLive (changeStep (setField "chain" (object ["outcome" .= ("refused" :: String)])) acceptedLive)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects accepted agreement with an omitted observation" $
+        loadLive (changeStep (setField "compared" (["mint"] :: [String])) acceptedLive)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects accepted agreement without perturbation evidence" $
+        loadLive (changeStep (setField "perturbation" Null) acceptedLive)
+            >>= (`shouldSatisfy` isLeft)
+    it "rejects a claimed redirected-delivery agreement without a script hash" $
+        loadLive (changeStep (setField "tamper" ("redirect-delivery" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` isLeft)
+
+acceptedLive :: Receipt
+acceptedLive =
+    smallReceipt
+        { receiptRow = "CG21"
+        , receiptSteps =
+            Just
+                [ object
+                    [ "registry" .= (1 :: Int)
+                    , "edge" .= ("insertActive" :: String)
+                    , "request" .= object ["key" .= ("example" :: String)]
+                    , "tamper" .= (Nothing :: Maybe String)
+                    , "model" .= object ["outcome" .= ("accepted" :: String)]
+                    , "chain" .= object ["outcome" .= ("accepted" :: String), "txid" .= ("abc123" :: String)]
+                    , "comparison" .= ("agrees" :: String)
+                    , "compared" .= ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx" :: String]
+                    , "unobserved" .= ([] :: [String])
+                    , "perturbation"
+                        .= object
+                            ["refused" .= (1 :: Int), "byObservation" .= object [], "exempt" .= ([] :: [String])]
+                    ]
+                ]
+        }
+
+setField :: (ToJSON a) => String -> a -> Value -> Value
+setField name value (Object fields) = Object (KM.insert (Key.fromString name) (toJSON value) fields)
+setField _ _ value = value
+
+changeStep :: (Value -> Value) -> Receipt -> Receipt
+changeStep f receipt = receipt{receiptSteps = fmap (map f) (receiptSteps receipt)}
+
+loadLive :: Receipt -> IO (Either String Int)
+loadLive receipt = withSystemTempDirectory "conformance-live-receipt" $ \dir -> do
+    BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
+    fmap length <$> loadReceipts dir

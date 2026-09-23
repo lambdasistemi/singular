@@ -13,10 +13,9 @@ module Conformance.Support.FixtureChild (
     waitForFile,
 ) where
 
-import Conformance.Fixture.ActiveRegistration (completeReceipt, withScopedReceiptDir)
+import Conformance.Fixture.Receipt (fixtureReceipt, withScopedReceiptDir)
 import Control.Concurrent (threadDelay)
-import Data.Aeson (encode)
-import qualified Data.ByteString.Lazy as BSL
+import Data.ByteString.Lazy qualified as BSL
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
 
@@ -63,5 +62,6 @@ holdScopedDirectories count rendezvous = go count []
         writeFile (claimedFile rendezvous) (unlines (reverse claimed))
         waitForFile (releaseFile rendezvous)
     go n claimed = withScopedReceiptDir $ \dir -> do
-        BSL.writeFile (dir </> "receipt-CG02.json") (encode completeReceipt)
+        receipt <- fixtureReceipt
+        BSL.writeFile (dir </> "receipt-CG02.json") receipt
         go (n - 1) (dir : claimed)

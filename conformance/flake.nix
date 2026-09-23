@@ -240,27 +240,6 @@
           cp .lake/build/bin/driver-transport $out/bin/
         '';
 
-        registrationOracle = modelPkgs.runCommand "registration-lean-oracle" {
-          nativeBuildInputs = [ modelPkgs.lean4 modelPkgs.stdenv.cc ];
-          meta.mainProgram = "registration-oracle";
-        } ''
-          mkdir work
-          cp -r ${../lean} work/lean
-          cp ${../lakefile.toml} work/lakefile.toml
-          chmod -R u+w work
-          cp ${./lean/RegistrationOracle.lean} work/lean/RegistrationOracle.lean
-          cat >> work/lakefile.toml <<'EOF'
-
-          [[lean_exe]]
-          name = "registration-oracle"
-          root = "RegistrationOracle"
-          EOF
-          cd work
-          lake build registration-oracle
-          mkdir -p $out/bin
-          cp .lake/build/bin/registration-oracle $out/bin/
-        '';
-
         # The row runner, wrapped so it brings the locked cardano-node
         # on its own PATH like the offchain journey runners, with the
         # devnet genesis defaulting to this suite's own copy
@@ -284,7 +263,6 @@
           mkdir -p $out/bin
           makeWrapper ${pkgs.lib.getExe components.exes.conformance} $out/bin/conformance \
             --prefix PATH : ${cardanoNode}/bin \
-            --set CONFORMANCE_LEAN_ORACLE ${pkgs.lib.getExe registrationOracle} \
             --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
             --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
             --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
@@ -335,7 +313,7 @@
       in
       {
         packages = {
-          inherit conformance registrationOracle driverTransport;
+          inherit conformance driverTransport;
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;

@@ -70,6 +70,7 @@ library
   exposed-modules:
     Conformance.Book
     Conformance.Compare.Registration
+    Conformance.Compare.Perturbation
     Conformance.Authenticate
     Conformance.Receipt
     Conformance.Refusal
@@ -83,6 +84,7 @@ library
     Conformance.Lean.Oracle
     Conformance.Edge.Register
     Conformance.Edge.Retire
+    Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
   build-depends:
     , aeson >=2.1 && <2.3
@@ -94,6 +96,7 @@ library
     , operational >=0.2.4.2 && <0.3
     , process >=1.6 && <1.7
     , text >=2.0 && <2.2
+    , vector >=0.13 && <0.14
 
 executable conformance
   import:           warnings
@@ -147,23 +150,13 @@ test-suite conformance-tests
   hs-source-dirs:   test
   main-is:          Main.hs
   other-modules:
-    Conformance.Support.RegistrationReport
-    Conformance.Fixture.ActiveRegistration
-    Conformance.Support.BatchReport
-    Conformance.Story
-    Conformance.Story.BindingControl
-    Conformance.Story.Build
-    Conformance.Story.Control
-    Conformance.Story.Discover
-    Conformance.Story.Instruction
-    Conformance.Story.Render
-    Conformance.Story.Run
+    Conformance.Fixture.Receipt
     Conformance.Story.Usage
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
     Conformance.Support.RegistrationComparison
     Conformance.Support.FixtureChild
-    Conformance.Support.Observation
+    Conformance.Support.Binding
     Conformance.Support.Receipt
     Conformance.Support.Refusal
     Conformance.Support.Rows
@@ -181,7 +174,6 @@ test-suite conformance-tests
     , hspec >=2.7 && <2.12
     , operational >=0.2.4.2 && <0.3
     , process >=1.6 && <1.7
-    , template-haskell
     , temporary >=1.3 && <1.4
     , text >=2.0 && <2.2
     , vector >=0.13 && <0.14

@@ -1,30 +1,28 @@
--- | Register a real key, observe its token, then exercise the refusal boundaries.
+-- | One registration program, expressed only as edge requests and comparisons.
 module Conformance.Edge.Register (story, insertActiveRow) where
 
-import Conformance.Fold.KeyedMint qualified as Batch (story)
-import Conformance.Lean.Registration (insertActiveRow, registrationDelivery)
+import Conformance.Lean.Registration (insertActiveRow, modelComparison)
 import Conformance.Story.Specification (clause, theorem)
 import Conformance.Story.Live
-    ( Context (Context)
-    , RegistrationRun (RegistrationRun)
-    , Story
-    , expectActiveToken
-    , expectDuplicateRegistrationRefused
-    , registerFreshKey
-    , registerKey
+    ( Context (Context), Edge (..), EdgeRequest (..), Story, Tamper (..)
+    , compareWithModel, observe, submit, tamper
     )
 
--- | The caller supplies an empty open registry and a funded recipient.
-story :: Context reg wal -> Story reg wal ins ret bat ref (RegistrationRun reg ins bat ref)
+story :: Context reg wal -> Story reg wal step obs cmp ()
 story (Context registry recipient) = do
-    registration <- theorem insertActiveRow $
+    _ <- theorem insertActiveRow $
         clause "Registration delivers one active token to the requested recipient"
-            registrationDelivery $
-                registerKey registry "alice" recipient
-    expectActiveToken registration recipient 1
-
-    fresh <- registerFreshKey registry "bob" recipient
-    expectActiveToken fresh recipient 1
-    batch <- Batch.story registry recipient
-    duplicate <- expectDuplicateRegistrationRefused registry registration fresh
-    pure (RegistrationRun registry registration fresh batch duplicate)
+            modelComparison $
+                submit registry (EdgeRequest InsertActive "alice" recipient)
+    checked (EdgeRequest InsertActive "bob" recipient)
+    checked (EdgeRequest InsertActive "alice" recipient)
+    let redirected = EdgeRequest InsertActive "redirect" recipient
+    tampered <- tamper RedirectDelivery registry redirected
+    compared tampered
+    checked redirected
+  where
+    checked request = submit registry request >>= compared
+    compared step = do
+        observation <- observe step
+        _ <- compareWithModel step observation
+        pure ()
