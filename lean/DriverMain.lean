@@ -57,7 +57,7 @@ def insertActiveDigest : String :=
   "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+  "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"

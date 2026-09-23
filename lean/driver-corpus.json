@@ -1,7 +1,7 @@
 {
-  "corpusSourceSha256": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
-  "modelSha256": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
-  "payloadSha256": "4d6d6ec23f543fdbc1df0c762e547bc56f4bf4f234cf276c35a59e2abecd22e5",
+  "corpusSourceSha256": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
+  "modelSha256": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+  "payloadSha256": "dbbbafd53992ee753a8ca927b59e7b9a8a875c626f474327552afff0ed50b367",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -742,7 +742,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b",
+      "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2",
       "theorem": "Singular.Statements.update_terminal_transaction_row"
     },
     {
@@ -978,16 +978,16 @@
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "6e12f0a2dcf5cc58ce12801d7bd89950b4f255e43d124e6cc0dfb10e137b2cff",
-    "lean/Main.lean": "e842fa245b4b54f1aea0c9322096f3ced5a4853dace865d4fdaeb71102d05597",
+    "lean/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
+    "lean/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
-    "lean/Singular/Lemmas.lean": "4866e4d3b1036bbf41099247edf14c84084abf84e62ea9628c1cef28055853c4",
-    "lean/Singular/Model.lean": "3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89",
-    "lean/Singular/Statements.lean": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db"
+    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
+    "lean/Singular/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+    "lean/Singular/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b"
   },
-  "statementsSha256": "4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db",
+  "statementsSha256": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
     "definitionDigest": "5766693268324097889",
@@ -1022,5 +1022,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "3c159da967606c9390129ffeceafc5bce628316b3dd211e44a44b1e2ef0b7625"
+  "theoremManifestSha256": "cfc4c7b3f0600b038ed802a0aecb83521467ac2df54b523549cf0d86d2dfba03"
 }

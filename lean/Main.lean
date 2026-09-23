@@ -359,7 +359,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+  "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
