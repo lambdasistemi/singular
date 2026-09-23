@@ -6190,23 +6190,18 @@ submittedAtDatum out = case extractCageDatum out of
     Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
     _ -> failWith "deadline: request output has no RequestDatum"
 
-{- | Wait until past the given deadline ms (phase-3 entry for
-Rejected folds). Polls the clock; fails closed on timeout rather
-than submitting a wrong-phase transaction.
+{- | Wait until two seconds past the given deadline ms (phase-3 entry
+for Rejected folds), sleeping exactly the remaining time. A deadline
+more than a hundred seconds away fails closed rather than submitting
+a wrong-phase transaction.
 -}
 waitPhase3 :: Integer -> IO ()
-waitPhase3 deadline = go (20 :: Int)
-  where
-    go n = do
-        now <- currentPosixMs
-        if now > deadline + 2000
-            then pure ()
-            else
-                if n <= 0
-                    then
-                        failWith
-                            "phase-3 wait timed out; refusing to submit a wrong-phase fold"
-                    else threadDelay 5_000_000 >> go (n - 1)
+waitPhase3 deadline = do
+    now <- currentPosixMs
+    let remaining = deadline + 2001 - now
+    when (remaining > 100_000) $
+        failWith "phase-3 wait timed out; refusing to submit a wrong-phase fold"
+    when (remaining > 0) $ threadDelay (fromIntegral remaining * 1000)
 
 {- | The fold's validity upper slot, replicating the library's
 deadline: the earliest request deadline mapped to a slot, with the
