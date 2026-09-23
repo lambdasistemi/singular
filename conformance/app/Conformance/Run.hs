@@ -95,7 +95,7 @@ import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.Sequence qualified as SequenceStory
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel, poll)
+import Control.Concurrent.Async (async, cancel)
 import Control.Exception (
     ErrorCall (..),
     SomeException,
@@ -137,6 +137,7 @@ import Data.Word (Word8)
 import Data.Text.Encoding qualified as TE
 import Data.Time (getCurrentTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import GHC.Clock (getMonotonicTime)
 import Lens.Micro ((&), (%~), (.~), (^.))
 import System.Directory (
     createDirectoryIfMissing,
@@ -331,11 +332,15 @@ import Singular.Registry.Types (
     UpdateRedeemer (..),
  )
 import Singular.Registry.Node (
+    NodeMode (..),
+    awaitConnection,
+    awaitIndexed,
     checkFunding,
     defaultFundingFloor,
     devnetGenesis,
     funderAddr,
     funderSignKey,
+    runMode,
     sessionMagic,
     withNodeSocket,
  )
@@ -974,14 +979,9 @@ runSession
                     sock
                     lsqCh
                     ltxsCh
-        threadDelay 3_000_000
-        status <- poll nodeThread
-        case status of
-            Nothing -> pure ()
-            Just _ ->
-                failWith "node connection closed before queries ran"
         let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
+        awaitConnection sessionMagic sock nodeThread prov
+        let submit = mkN2CSubmitter ltxsCh
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
@@ -1411,7 +1411,7 @@ designateSplit prov submit label = do
                 ( "designation split refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    awaitTx
+    awaitTx tx
     after <- Cage.queryUTxOs prov genesisAddr
     let txid = txIdHex tx
         mine =
@@ -1450,7 +1450,7 @@ runCA01 env w = do
                 ( "CA01: the node refused the canonical boot: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    awaitTx
+    awaitTx signedBoot
     let size = txSizeBytes signedBoot
     emitMeasure env "CA01-boot" mem cpu size
     tid <- extractTokenId cfg signedBoot
@@ -1563,7 +1563,7 @@ runCA02 env w = do
                        \reported, not relabelled"
                 )
         Submitted _ -> pure ()
-    awaitTx
+    awaitTx signedRival
     let size = txSizeBytes signedRival
     emitMeasure env "CA02-rival-boot" mem cpu size
     tidR <- extractTokenId cfgR signedRival
@@ -1993,7 +1993,7 @@ runCA05 env w = do
                        \nobody's permission"
                 )
         Submitted _ -> pure ()
-    awaitTx
+    awaitTx signed
     let size = txSizeBytes signed
     emitMeasure env "CA05-forged" 0 0 size
     -- read the forgery back from the chain
@@ -2748,7 +2748,7 @@ registerStakeCredential env _bytes h = do
                    \staking credential refused: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
-    awaitTx
+    awaitTx signed
     emit
         "stake"
         ( "staking credential 0x"
@@ -3268,7 +3268,15 @@ signer); a refusal is a loud failure naming the reason.
 -- a locally rejected transaction never entered the ledger, and no
 -- collateral moves).
 submitTxResilient :: Submitter IO -> ConwayTx -> IO SubmitResult
-submitTxResilient submit tx = go (4 :: Int)
+submitTxResilient submit tx = do
+    start <- getMonotonicTime
+    result <- go (4 :: Int)
+    end <- getMonotonicTime
+    let answer = case result of
+            Submitted _ -> "accepted"
+            Rejected _ -> "refused"
+    emit "submit" (txIdHex tx <> " " <> answer <> " after " <> millis (end - start))
+    pure result
   where
     go 0 = submitTx submit tx
     go n = do
@@ -3289,7 +3297,7 @@ submitExpectAccepted :: Env -> ConwayTx -> IO ConwayTx
 submitExpectAccepted env tx = do
     result <- submitTxResilient (envSubmit env) tx
     case result of
-        Submitted _ -> awaitTx >> pure tx
+        Submitted _ -> awaitTx tx >> pure tx
         Rejected reason ->
             failWith
                 ( "expected acceptance, the node refused: "
@@ -4817,7 +4825,7 @@ submitEdge env state cage alteration request = do
                                 <> " for " <> Live.requestKey request <> " (" <> txIdHex signed <> ")")
                         Just Live.ExtraSigner -> pure ()
                         Nothing -> pure ()
-                    awaitTx
+                    awaitTx signed
                     rowCommit env cage key edge
                     after <- readRegistryState env cage
                     (mem, cpu) <- either (failWith . displayException) pure measured
@@ -6182,23 +6190,18 @@ submittedAtDatum out = case extractCageDatum out of
     Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
     _ -> failWith "deadline: request output has no RequestDatum"
 
-{- | Wait until past the given deadline ms (phase-3 entry for
-Rejected folds). Polls the clock; fails closed on timeout rather
-than submitting a wrong-phase transaction.
+{- | Wait until two seconds past the given deadline ms (phase-3 entry
+for Rejected folds), sleeping exactly the remaining time. A deadline
+more than a hundred seconds away fails closed rather than submitting
+a wrong-phase transaction.
 -}
 waitPhase3 :: Integer -> IO ()
-waitPhase3 deadline = go (20 :: Int)
-  where
-    go n = do
-        now <- currentPosixMs
-        if now > deadline + 2000
-            then pure ()
-            else
-                if n <= 0
-                    then
-                        failWith
-                            "phase-3 wait timed out; refusing to submit a wrong-phase fold"
-                    else threadDelay 5_000_000 >> go (n - 1)
+waitPhase3 deadline = do
+    now <- currentPosixMs
+    let remaining = deadline + 2001 - now
+    when (remaining > 100_000) $
+        failWith "phase-3 wait timed out; refusing to submit a wrong-phase fold"
+    when (remaining > 0) $ threadDelay (fromIntegral remaining * 1000)
 
 {- | The fold's validity upper slot, replicating the library's
 deadline: the earliest request deadline mapped to a slot, with the
@@ -6368,15 +6371,30 @@ submitWithGenesis submit unsignedTx = do
     let signedTx = addKeyWitness genesisSignKey unsignedTx
     result <- submitTxResilient submit signedTx
     case result of
-        Submitted _ -> awaitTx >> pure signedTx
+        Submitted _ -> awaitTx signedTx >> pure signedTx
         Rejected reason ->
             failWith
                 ( "transaction rejected: "
                     <> T.unpack (TE.decodeUtf8Lenient reason)
                 )
 
-awaitTx :: IO ()
-awaitTx = threadDelay 5_000_000
+{- | Wait until a submitted transaction is on chain, and log how long
+that took. On the factory devnet the chain-sync indexer reports the
+block that carries it; against an external node the historical fixed
+five-second wait is unchanged.
+-}
+awaitTx :: ConwayTx -> IO ()
+awaitTx tx = case runMode of
+    Devnet -> do
+        start <- getMonotonicTime
+        awaitIndexed tx
+        end <- getMonotonicTime
+        emit "confirm" (txIdHex tx <> " indexed after " <> millis (end - start))
+    External _ -> threadDelay 5_000_000
+
+-- | A monotonic-clock duration in whole milliseconds, for the run log.
+millis :: Double -> String
+millis seconds = show (round (seconds * 1000) :: Integer) <> " ms"
 
 -- ---------------------------------------------------------
 -- Measurements (CL01 for these rows)
@@ -6627,14 +6645,9 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 sock
                 lsqCh
                 ltxsCh
-    threadDelay 3_000_000
-    status <- poll nodeThread
-    case status of
-        Nothing -> pure ()
-        Just _ ->
-            failWith "node connection closed before queries ran"
     let prov = adaptProvider (mkN2CProvider lsqCh)
-        submit = mkN2CSubmitter ltxsCh
+    awaitConnection sessionMagic sock nodeThread prov
+    let submit = mkN2CSubmitter ltxsCh
         stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =
             "state:"
@@ -7630,14 +7643,9 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 sock
                 lsqCh
                 ltxsCh
-    threadDelay 3_000_000
-    status <- poll nodeThread
-    case status of
-        Nothing -> pure ()
-        Just _ ->
-            failWith "node connection closed before queries ran"
     let prov = adaptProvider (mkN2CProvider lsqCh)
-        submit = mkN2CSubmitter ltxsCh
+    awaitConnection sessionMagic sock nodeThread prov
+    let submit = mkN2CSubmitter ltxsCh
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov
@@ -7852,7 +7860,7 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         signed = addKeyWitness payerSk unsigned
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Submitted _ -> awaitTx
+        Submitted _ -> awaitTx signed
         Rejected reason ->
             failWith
                 ( "bookEdge refused (edge "
@@ -8223,7 +8231,7 @@ consolidateWallet prov submit = do
             result <- submitTxResilient submit signed
             case result of
                 Submitted _ -> do
-                    awaitTx
+                    awaitTx signed
                     emit
                         "funding"
                         ( show (length clean)
@@ -8292,7 +8300,7 @@ carveSeed env = do
         signed = addKeyWitness genesisSignKey (mkBasicTx body)
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Submitted _ -> awaitTx
+        Submitted _ -> awaitTx signed
         Rejected reason ->
             failWith
                 ( "carveSeed refused: "
@@ -8359,7 +8367,7 @@ publishRefScript env script = do
         signed = addKeyWitness genesisSignKey (mkBasicTx body)
     result <- submitTxResilient (envSubmit env) signed
     case result of
-        Submitted _ -> awaitTx
+        Submitted _ -> awaitTx signed
         Rejected reason ->
             failWith
                 ( "publishRefScript refused: "
