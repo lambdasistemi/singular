@@ -25,7 +25,7 @@ module Conformance.Compare.Registration (
     edgeOrdinal,
 ) where
 
-import Data.Aeson (Value (..), object, (.:), (.=))
+import Data.Aeson (Value (..), encode, object, (.:), (.=))
 import Data.Maybe (fromMaybe)
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
@@ -33,6 +33,7 @@ import Data.Aeson.Types (parseEither)
 import Data.Bits (shiftR, xor, (.&.))
 import Data.List (sort, sortOn)
 import Data.Text (Text)
+import Data.Vector qualified as V
 import Data.Word (Word64, Word8)
 
 -- | What the model says it can see, read off the driver surface.
@@ -152,10 +153,21 @@ compareRegistration declared expected observed =
     disagreeing =
         [ Difference name left right
         | name <- sort (declaredObservations declared)
-        , Just left <- [withoutOutputMinimumAda name <$> at name expected]
-        , Just right <- [withoutOutputMinimumAda name <$> at name observed]
+        , Just left <- [comparable name <$> at name expected]
+        , Just right <- [comparable name <$> at name observed]
         , left /= right
         ]
+    comparable name = heldAsMultiset name . withoutOutputMinimumAda name
+    -- Neither the model nor the chain orders a wallet's holdings, so `held`,
+    -- alone and inside `state`, is compared as a multiset.
+    heldAsMultiset name value = case (name, value) of
+        ("held", Array holdings) -> Array (sortHoldings holdings)
+        ("state", Object fields) -> case KM.lookup "held" fields of
+            Just (Array holdings) ->
+                Object (KM.insert "held" (Array (sortHoldings holdings)) fields)
+            _ -> value
+        _ -> value
+    sortHoldings = V.fromList . sortOn encode . V.toList
 
 {- | @Singular.rootOf@: FNV-1a over the sorted (key, leaf byte) pairs.
 
