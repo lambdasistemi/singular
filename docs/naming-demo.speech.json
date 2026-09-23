@@ -59,12 +59,12 @@
   ],
   "_source": {
     "file": "naming-demo.md",
-    "sha256": "7e38f6fff606156512aa41b1cd4ce3c985451b6ec66d4481e5bcd1a671fc1cd8"
+    "sha256": "f3479a1a44ee332949f7031acd663b683469cd6abace004809d2a21008e8c57c"
   },
   "finding-alice": [
     {
       "pause": 400,
-      "text": "The asset name is the registry key. Given the registry's active policy id, alice's witness is that policy plus the raw bytes of the word alice — no hash, no controller, no prefix and no incarnation enters it. Query Koios for that policy and asset name, and the holding address and inline datum identify the live record or the completion-only custody a pending ending put it in. The three policies share the one convention, so the same query answers three questions about the same name: an absent witness says somebody has staked a deposit on the name being free, an active witness says it is booked, and a terminal witness says it is over. That is the whole reader protocol: presence of a token, never the root and never a history walk."
+      "text": "The asset name is the registry key. The historical Koios query shows how to find the live witness under each policy, but it is not the read path for the dated preprod demos. Those require an indexed chain point and freshness. The holding address and inline datum identify the live record or completion custody. The token at that output is the witness read; this example does not query the root or walk history."
     }
   ],
   "how-a-name-moves-in-the-registry": [

@@ -103,7 +103,14 @@ printf %s alice | xxd -p
 # 616c696365
 ```
 
-To find the live UTxO on preprod, substitute the published active policy id and query [Koios Asset UTxOs](https://api.koios.rest/#post-/asset_utxos):
+The following Koios queries are a historical diagnostic for the earlier
+preprod naming walkthrough. The [dated naming and escrow plays](demos/index.md)
+require an indexed read path with a recorded chain point and freshness;
+[registry follower #107](https://github.com/lambdasistemi/singular/issues/107)
+tracks that path. A Koios response alone does not satisfy those plays.
+
+For that historical query, substitute the published active policy id and use
+[Koios Asset UTxOs](https://api.koios.rest/#post-/asset_utxos):
 
 ```sh
 policy_id='<published active policy id>'
@@ -135,8 +142,9 @@ for policy in "$absent_policy" "$active_policy" "$terminal_policy"; do
 done
 ```
 
-This is the whole reader protocol: presence of a token, never the root and
-never a history walk.
+The token's presence at a live output is the witness being read; this example
+does not query the root or walk history. A connected demonstration also records
+which indexed chain state supplied that output.
 
 ## What you see when it is refused
 
