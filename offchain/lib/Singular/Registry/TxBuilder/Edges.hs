@@ -11,8 +11,9 @@ processed edge but a read rides on an approval the naming application's
 mint arm certified (#157 C4, D-APPROVAL). A caller that wants a fold to
 land therefore needs three things this module supplies: the four policy
 pins derived from the naming partition's own compiled code, a booking
-transaction that mints the approval and creates the request carrying it,
-and the duties context the fold discharges its obligations from.
+transaction that carries each edge's certification — which edges get
+an approval, what it is, and nothing at all for a read — and the duties
+context the fold discharges its obligations from.
 
 The state validator alone is fifteen kilobytes, so a fold that attaches
 it, the request validator and a token policy does not fit in a
@@ -39,6 +40,9 @@ module Singular.Registry.TxBuilder.Edges (
     adaOnlyOut,
 
     -- * Booking one edge
+    BookingApproval (..),
+    bookingApproval,
+    certifyBooking,
     bookEdge,
     bookEdgeTo,
     edgeDeposit,
@@ -64,7 +68,7 @@ import Lens.Micro ((&), (.~), (^.))
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     collateralInputsTxBodyL,
     feeTxBodyL,
@@ -87,7 +91,7 @@ import Cardano.Ledger.Api.Tx.Out (
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL, scriptTxWitsL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (Script, extractHash, hashScript)
+import Cardano.Ledger.Core (PParams, Script, extractHash, hashScript)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Mary.Value (
     AssetName (..),
@@ -136,9 +140,9 @@ import Singular.Registry.TxBuilder.Update (
  )
 import Singular.Registry.Types (
     Edge,
+    edgeInsertAbsent,
     edgeInsertActive,
     edgeUpdateActive,
-    edgeInsertAbsent,
     edgeWitnessTerminal,
  )
 
@@ -253,7 +257,6 @@ publishRefScript prov submit payerAddr script = do
     signed <- submit (mkBasicTx body)
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
-
 {- | Publish the state validator as a reference output, once, before any
 boot (#177).
 
@@ -343,10 +346,107 @@ custody an absence creates — it is never the folder's.
 edgeDeposit :: Integer
 edgeDeposit = 3_000_000
 
-{- | Book one tree edge: the naming application's mint arm certifies
-which edge this is, for whom and where it delivers, and the request
-carries that approval to the fold.
+{- | What a tree-edge booking carries so the naming application
+certifies it (DM-1): the asset it mints, the @Approve@ redeemer the
+mint arm reads, and the application script that witnesses the mint.
+The asset name hashes the same @(edge, key, owner, destination)@ the
+redeemer carries, so one value binds both (DM-1-BIND).
 -}
+data BookingApproval = BookingApproval
+    { baAsset :: MultiAsset
+    -- ^ Exactly one asset, quantity 1, under the application policy.
+    , baRedeemer :: PLC.Data
+    {- ^ The @Approve@ constructor over @[edge, key, owner,
+    [destinationAddress, destinationDatumHash]]@.
+    -}
+    , baScript :: Script ConwayEra
+    -- ^ The naming application script, the mint's witness.
+    }
+
+{- | The booking certification decision, in one place (#240): which
+edges carry an approval and what it is. A tree edge (0–5) carries the
+approval 'approvalName' binds; @edgeWitnessTerminal@ carries none,
+because @open.ak@ refuses to certify a read and the cage never looks
+for one — a booking that minted anyway is a transaction the node can
+only reject. Admissibility of @edge@ stays the caller's check.
+-}
+bookingApproval ::
+    NamingCodes ->
+    -- | Admissible edge, 0..6
+    Edge ->
+    -- | Registry key
+    ByteString ->
+    -- | Booker's key hash bytes
+    ByteString ->
+    -- | Destination: address bytes, datum hash
+    (ByteString, ByteString) ->
+    Maybe BookingApproval
+bookingApproval codes edge key owner dest
+    | edge == edgeWitnessTerminal = Nothing
+    | otherwise =
+        Just
+            BookingApproval
+                { baAsset =
+                    MultiAsset
+                        ( Map.singleton
+                            appPolicy
+                            (Map.singleton (AssetName (SBS.toShort name)) 1)
+                        )
+                , baRedeemer =
+                    PLC.Constr
+                        0
+                        [ PLC.I edge
+                        , PLC.B key
+                        , PLC.B owner
+                        , PLC.List [PLC.B destAddr, PLC.B destHash]
+                        ]
+                , baScript = appScript
+                }
+  where
+    name = approvalName edge key owner dest
+    appScript = scriptFromBytes "naming-application" (ncApplication codes)
+    appPolicy = PolicyID (hashScript appScript)
+    (destAddr, destHash) = dest
+
+{- | Put a booking's certification into the transaction (DM-1b): with
+an approval, the mint, its redeemer, the script witness, the collateral
+and the script-integrity hash; without one, the booking unchanged — no
+redeemers, no witness, no collateral, and so no script-integrity hash,
+which the ledger computes for any transaction that could run a script.
+-}
+certifyBooking ::
+    -- | Protocol parameters, for the script-integrity hash
+    PParams ConwayEra ->
+    -- | Ada-only input, collateral when an approval is present
+    TxIn ->
+    Maybe BookingApproval ->
+    -- | The booking with inputs, outputs, fee and signers set
+    ConwayTx ->
+    ConwayTx
+certifyBooking pp collateral mApproval unsigned =
+    case mApproval of
+        Nothing -> unsigned
+        Just approval ->
+            let redeemers =
+                    Redeemers
+                        ( Map.singleton
+                            (ConwayMinting (AsIx 0))
+                            ( toLedgerData (RawRedeemer (baRedeemer approval))
+                            , generousUnits
+                            )
+                        )
+             in unsigned
+                    & bodyTxL . mintTxBodyL .~ baAsset approval
+                    & bodyTxL . collateralInputsTxBodyL .~ Set.singleton collateral
+                    & bodyTxL
+                        . scriptIntegrityHashTxBodyL
+                        .~ computeScriptIntegrity pp redeemers
+                    & witsTxL . rdmrsTxWitsL .~ redeemers
+                    & witsTxL . scriptTxWitsL
+                        .~ Map.singleton
+                            (hashScript (baScript approval))
+                            (baScript approval)
+
 {- | Book an edge, routing its minted token to the destination
 `edgeDestinationOf` chooses for it.
 -}
@@ -384,6 +484,10 @@ The open story therefore names a WALLET, and the request carries that
 choice. Nothing on chain changes: the cage already checks the
 destination the request declares, and this is the off-chain builder
 learning to say something it could not say before.
+
+Which edges carry an approval, what it is, and how the transaction
+carries it is decided once, in 'bookingApproval' and 'certifyBooking':
+a tree edge mints and certifies, and a read books nothing at all.
 -}
 bookEdgeTo ::
     CageConfig ->
@@ -424,24 +528,8 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        dest@(destAddr, destHash) = dest0
-        name = approvalName edge key owner dest
-        appScript = scriptFromBytes "naming-application" (ncApplication codes)
-        appPolicy = PolicyID (hashScript appScript)
-        approval =
-            MultiAsset
-                ( Map.singleton
-                    appPolicy
-                    (Map.singleton (AssetName (SBS.toShort name)) 1)
-                )
-        approveRedeemer =
-            PLC.Constr
-                0
-                [ PLC.I edge
-                , PLC.B key
-                , PLC.B owner
-                , PLC.List [PLC.B destAddr, PLC.B destHash]
-                ]
+        dest = dest0
+        approval = bookingApproval codes edge key owner dest
         requestAddr = requestAddrFromCfg cfg tokenId (network cfg)
         -- #183: the datum binds the DEPOSIT, not the tip. The output
         -- holds `bond` = tip + deposit, and the fold checks
@@ -451,21 +539,14 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
         -- equality silently, so the booking refuses instead.
         datum = mkRequestDatumWith tokenId payerAddr key edge edgeDeposit now dest
         reqOut =
-            mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
+            mkBasicTxOut requestAddr (MaryValue (Coin bond) (maybe mempty baAsset approval))
                 & datumTxOutL .~ mkInlineDatum datum
         Coin minAda = getMinCoinTxOut pp reqOut
     unless (change > 0) $
         error ("bookEdge: the payer wallet is too small (" <> show feeBal <> ")")
     unless (bond >= minAda) $
         error ("bookEdge: the bond is under min-ADA: " <> show bond)
-    let redeemers =
-            Redeemers
-                ( Map.singleton
-                    (ConwayMinting (AsIx 0))
-                    (toLedgerData (RawRedeemer approveRedeemer), generousUnits)
-                )
-        integrity = computeScriptIntegrity pp redeemers
-        body =
+    let body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton feeIn
                 & outputsTxBodyL
@@ -474,16 +555,9 @@ bookEdgeTo cfg codes prov submit payerAddr tokenId key edge dest0 = do
                         , mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
                         ]
                 & feeTxBodyL .~ Coin fee
-                & mintTxBodyL .~ approval
-                & collateralInputsTxBodyL .~ Set.singleton feeIn
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
-                & scriptIntegrityHashTxBodyL .~ integrity
-        unsigned =
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ Map.singleton (hashScript appScript) appScript
-                & witsTxL . rdmrsTxWitsL .~ redeemers
+        unsigned = certifyBooking pp feeIn approval (mkBasicTx body)
     signed <- submit unsigned
     pure (TxIn (txIdTx signed) (TxIx 0))
 

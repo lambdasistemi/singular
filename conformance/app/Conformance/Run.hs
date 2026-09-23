@@ -312,8 +312,6 @@ import Singular.Registry.TxBuilder.Update (
 import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedMint (..),
     ConnectedSpend (..),
-    RawRedeemer (..),
-    generousUnits,
  )
 import Singular.Registry.Types (
     CageDatum (..),
@@ -4757,7 +4755,10 @@ submitEdge env state cage alteration request = do
             ("conformance: bookEdge refused (edge " <> show edge <> ", key " <> show key <> "): ")
             (displayException failure) of
             Just nodeReason -> do
-                modelRequest <- storyModelRequest ids cfg request cgDeposit
+                let (_, _, codes) = envCodes env
+                    decided = RegistryEdges.bookingApproval codes edge key
+                        (addrKeyHashBytes genesisAddr) destination
+                modelRequest <- storyModelRequest ids cfg request cgDeposit (Left decided)
                 pure (LiveStep cage request alteration Nothing modelRequest 0 Nothing Nothing Nothing
                     (StepUnsupported (T.pack nodeReason)))
             Nothing -> throwIO failure
@@ -4765,7 +4766,7 @@ submitEdge env state cage alteration request = do
             let Coin bond = reqOut ^. coinTxOutL
                 deposit = bond - stateMaxFee before
             require "booked request holds less than the on-chain processing tip" (deposit >= 0)
-            modelRequest <- storyModelRequest ids cfg request deposit
+            modelRequest <- storyModelRequest ids cfg request deposit (Right reqOut)
             alternate <- case alteration of
                 Nothing -> pure Nothing
                 Just Live.RedirectDelivery -> Just <$> (if wallet == genesisAddr
@@ -4872,8 +4873,9 @@ containsStoryAsset cfg key out =
     any (\policy -> maybe False (Map.member key) (Map.lookup policy (outAssets out)))
         (map SBS.fromShort [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg])
 
-storyModelRequest :: LiveIdentities -> CageConfig -> Live.EdgeRequest Addr -> Integer -> IO Value
-storyModelRequest ids cfg request deposit = do
+storyModelRequest :: LiveIdentities -> CageConfig -> Live.EdgeRequest Addr -> Integer
+    -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra) -> IO Value
+storyModelRequest ids cfg request deposit requestOut = do
     let wallet = Live.requestWallet request
         key = TE.encodeUtf8 (T.pack (Live.requestKey request))
     modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
@@ -4885,14 +4887,22 @@ storyModelRequest ids cfg request deposit = do
             Live.DeleteAbsent -> (destination, 0)
             Live.InsertActive -> (0, destination)
             Live.UpdateActive -> (0, destination)
-            Live.WitnessTerminal -> (destination, 0)
+            Live.WitnessTerminal -> (0, destination)
             _ -> (0, 0)
+    -- The described approval is what the booked request UTxO carries. A
+    -- refused booking left no request UTxO to read; there the description
+    -- states the approval the booking decision put in the refused
+    -- transaction.
+    let canonical = maybe Null (const (String "canonical"))
+    approval <- case requestOut of
+        Left decided -> pure (canonical decided)
+        Right out -> canonical . snd <$> storyApprovalOn cfg out
     pure $ object
         [ "edge" .= Live.edgeName (Live.requestEdge request)
         , "key" .= modelKey, "owner" .= owner
         , "refundAddress" .= refundAddress, "deposit" .= deposit
         , "output" .= output, "applicationPolicy" .= application
-        , "approval" .= String "canonical"
+        , "approval" .= approval
         ]
 
 -- | Observation only looks up identities allocated while acting. The
@@ -4940,8 +4950,11 @@ observeAcceptedStep env state step transaction = do
     (application, active, absent, terminal) <- observePins ids cfg
     let config = abstractConfig after application active absent terminal root
         activeBytes = SBS.fromShort (cfgActivePolicy cfg)
+        terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
         activePolicy = policyIdFromPin (cfgActivePolicy cfg)
-    holdings <- fmap concat $ mapM (walletHoldings ids keys activeBytes) wallets
+    holdings <- fmap concat $ mapM
+        (walletHoldings ids keys [("active", activeBytes), ("terminal", terminalBytes)])
+        wallets
     cageOutputs <- Cage.queryUTxOs (envProv env) (cageAddrFromCfg cfg (network cfg))
     custody <- mapM (observeCustody ids cfg) [out
         | (_, out) <- cageOutputs, Just (AbsentCustody _) <- [extractCageDatum out]
@@ -4968,15 +4981,21 @@ observeAcceptedStep env state step transaction = do
             [ "config" .= config, "custody" .= custody
             , "held" .= holdings, "trie" .= trie ]
     requestOut <- maybe (failWith "accepted step has no booked request output") pure (lsRequestOut step)
-    requestApproval <- storyApprovalOn cfg requestOut
-    (_, recomputed) <- cg21RequestFacts requestOut
-    require "request approval disagrees with its chain-read datum" (requestApproval == recomputed)
+    (_, requestName) <- storyApprovalOn cfg requestOut
+    -- The recomputation binds the approval the request carries; with none
+    -- there is nothing to bind and the check is not made.
+    case requestName of
+        Nothing -> pure ()
+        Just approval -> do
+            (_, recomputed) <- cg21RequestFacts requestOut
+            require "request approval disagrees with its chain-read datum" (approval == recomputed)
     ownerId <- observeIdentity (liveWallets ids)
         (WalletIdentity (serialiseAddr genesisAddr))
     commitment <- maybe (failWith "request commitment cannot be derived") pure $
         Compare.approvalAssetName (T.pack (Live.edgeName (Live.requestEdge (lsRequest step))))
             requestedId ownerId destination
-    tx <- observedStepTx env ids wallets step transaction config orderedMint destination commitment custody paid
+    tx <- observedStepTx env ids wallets step transaction config orderedMint destination
+        commitment custody paid requestOut
     pure $ object
         [ "config" .= config, "custody" .= custody
         , "held" .= holdings, "leaf" .= leaf, "mint" .= orderedMint
@@ -5006,17 +5025,20 @@ observeAcceptedStep env state step transaction = do
             else if value == leafTerminal then pure (2, String "terminal")
             else failWith ("unrecognized trie leaf for " <> show key)
         pure (identifier, ordinal, name)
-    walletHoldings identities keys activeBytes wallet = do
+    -- A wallet holds the active and terminal witnesses the folds routed to
+    -- it; the absent witness stays in the cage's custody.
+    walletHoldings identities keys kinds wallet = do
         utxos <- Cage.queryUTxOs (envProv env) wallet
         addressId <- observeIdentity (liveWallets identities) (WalletIdentity (serialiseAddr wallet))
         fmap concat $ mapM (\key -> do
             keyId <- observeIdentity (liveKeys identities) (KeyIdentity key)
-            let quantity = sum
+            pure [ object ["key" .= keyId, "kind" .= String kind, "output" .= addressId]
+                 | (kind, policyBytes) <- kinds
+                 , _ <- [1 .. sum
                     [ q | (_, out) <- utxos
-                        , Just names <- [Map.lookup activeBytes (outAssets out)]
-                        , Just q <- [Map.lookup key names] ]
-            pure [object ["key" .= keyId, "kind" .= String "active", "output" .= addressId]
-                 | _ <- [1 .. quantity]]) keys
+                        , Just names <- [Map.lookup policyBytes (outAssets out)]
+                        , Just q <- [Map.lookup key names] ]]
+                 ]) keys
 
 classifyLeaves :: [(ByteString, Bool)] -> ByteString -> IO [(ByteString, ByteString)]
 classifyLeaves membership observedRoot = do
@@ -5091,8 +5113,8 @@ observeStepMint ids cfg policy key quantity = do
         "assetName" .= keyId, "quantity" .= quantity])
 
 observedStepTx :: Env -> LiveIdentities -> [Addr] -> LiveStep -> ConwayTx -> Value -> [Value]
-    -> Integer -> Integer -> [Value] -> [Value] -> IO Value
-observedStepTx _env ids wallets step transaction config mint destination commitment custody paid = do
+    -> Integer -> Integer -> [Value] -> [Value] -> TxOut ConwayEra -> IO Value
+observedStepTx _env ids wallets step transaction config mint destination commitment custody paid requestOut = do
     let cfg = rcCfg (lsCage step)
         edge = Live.requestEdge (lsRequest step)
         requestKeyBytes = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
@@ -5147,8 +5169,9 @@ observedStepTx _env ids wallets step transaction config mint destination commitm
                     "lovelace" .= value]]
             _ -> failWith "insertAbsent did not create one Absent custody output"
         _ -> pure []
+    (requestQuantity, _) <- storyApprovalOn cfg requestOut
     let requestInput = object ["role" .= String "request", "datum" .= String "inline",
-            "stateToken" .= (0 :: Integer), "approvalQuantity" .= (1 :: Integer),
+            "stateToken" .= (0 :: Integer), "approvalQuantity" .= requestQuantity,
             "lovelace" .= lsRequestLovelace step, "assets" .= ([] :: [Value])]
         stateInput = object ["role" .= String "state", "datum" .= String "inline",
             "stateToken" .= (1 :: Integer), "approvalQuantity" .= (0 :: Integer),
@@ -5565,20 +5588,40 @@ storyDelivery policy key tx =
             , (AssetName an, _) <- Map.toList names
             ]
 
--- | The approval asset the request UTxO actually carries.
-storyApprovalOn :: CageConfig -> TxOut ConwayEra -> IO T.Text
+-- | The approval the booked request UTxO carries, read off the chain as
+-- FR-4 counts it: the total quantity under the application policy, paired
+-- with the approval's name when exactly one name is carried at quantity 1.
+-- Quantity 0 with no name is a request that carries no approval. Any other
+-- shape — a second name, one name at a quantity other than 1, or any asset
+-- under a foreign policy — fails the run naming the count found, rather
+-- than being described as either shape.
+storyApprovalOn :: CageConfig -> TxOut ConwayEra -> IO (Integer, Maybe T.Text)
 storyApprovalOn cfg out =
-    case [ SBS.fromShort an
-         | (p, names) <- Map.toList (rawAssets out)
-         , p == policyIdFromPin (cfgApplicationPolicy cfg)
-         , (AssetName an, _) <- Map.toList names
-         ] of
-        [n] -> pure (hexT n)
-        ns ->
+    let app = policyIdFromPin (cfgApplicationPolicy cfg)
+        onApplication =
+            [ (SBS.fromShort an, quantity)
+            | (p, names) <- Map.toList (rawAssets out)
+            , p == app
+            , (AssetName an, quantity) <- Map.toList names
+            ]
+        foreignPolicies =
+            [ p
+            | (p, names) <- Map.toList (rawAssets out)
+            , p /= app
+            , not (Map.null names)
+            ]
+    in case (onApplication, foreignPolicies) of
+        ([(an, 1)], []) -> pure (1, Just (hexT an))
+        ([], []) -> pure (0, Nothing)
+        _ ->
             failWith
                 ( "generic edge: the request UTxO carries "
-                    <> show (length ns)
-                    <> " approvals, want one"
+                    <> show (length onApplication)
+                    <> " approval names totalling "
+                    <> show (sum (map snd onApplication))
+                    <> " under the application policy and "
+                    <> show (length foreignPolicies)
+                    <> " assets under foreign policies, want one name at quantity 1 or none"
                 )
 
 {- | What the request's OWN datum says: the lovelace it carries, and the
@@ -5786,14 +5829,7 @@ runSequence env = do
     expectedSequenceOutcome (Object fields) =
         case (KM.lookup "edge" fields, KM.lookup "comparison" fields) of
             (Just (String edge), Just (String "agrees")) ->
-                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent", "deleteActive"]
-            (Just (String edge), Just (String "unsupported"))
-                | edge == "witnessTerminal" ->
-                    case KM.lookup "chain" fields of
-                        Just (Object chain) -> case KM.lookup "reason" chain of
-                            Just (String reason) -> not (T.null reason)
-                            _ -> False
-                        _ -> False
+                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent", "deleteActive", "witnessTerminal"]
             _ -> False
     expectedSequenceOutcome _ = False
 
@@ -7733,10 +7769,13 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
         emit ("probe-insert-" <> T.unpack (TE.decodeUtf8Lenient key)) (show (proofStepConstrs unsignedFold))
         pure (signedFold, unsignedFold)
 
-{- | Book one registry-mode edge (#157 C2, C4, D-DEST): mint the approval
-that certifies it under the registry's pinned application policy, and
-create the request that carries it.
+{- | Book one registry-mode edge (#157 C2, C4, D-DEST): create the request
+and, for a tree edge, mint the approval that certifies it under the
+registry's pinned application policy. A Terminal read carries none (#240).
 
+Which edges carry an approval, what it is and how the booking transaction
+carries it are the library's decision, 'RegistryEdges.bookingApproval' and
+'RegistryEdges.certifyBooking'; this booking constructs none of its own.
 The approval's asset name IS the binding — the edge index, the key, the
 owner and the destination, hashed together — and the cage recomputes it
 from the request at fold time. A booking and a fold therefore cannot
@@ -7785,34 +7824,21 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         (u : _) -> pure u
     -- A spent approval is not burned at the fold, so it comes back to the
     -- funder and rides in the wallet from then on. The booking carries
-    -- whatever its input holds through to its own change, and collateral
-    -- is taken from an ada-only output, which is all the ledger accepts.
+    -- whatever its input holds through to its own change, and collateral,
+    -- spent only when an approval is minted, is taken from an ada-only
+    -- output, which is all the ledger accepts.
     collateralIn <- case sortOn (Down . (^. coinTxOutL) . snd) (filter (adaOnlyOut . snd) utxos) of
         [] -> failWith "bookEdge: payer wallet has no ada-only output for collateral"
         ((i, _) : _) -> pure i
     now <- currentPosixMs
     let MaryValue (Coin feeBal) carried = feeOut ^. valueTxOutL
         Coin tipVal = defaultTip cfg
-        -- The booking runs the application's mint arm, and the fee it
-        -- owes scales with the budget declared for it.
+        -- A tree-edge booking runs the application's mint arm, and the
+        -- fee it owes scales with the budget declared for it.
         fee = 2_000_000
         change = feeBal - bond - fee
         owner = addrKeyHashBytes payerAddr
-        (destAddr, destHash) = dest
-        name = approvalName edge key owner dest
-        appScript = scriptFromBytes "naming-application" (ncApplication codes)
-        appPolicy = PolicyID (hashScript appScript)
-        approval =
-            MultiAsset
-                (Map.singleton appPolicy (Map.singleton (AssetName (SBS.toShort name)) 1))
-        approveRedeemer =
-            PLC.Constr
-                0
-                [ PLC.I edge
-                , PLC.B key
-                , PLC.B owner
-                , PLC.List [PLC.B destAddr, PLC.B destHash]
-                ]
+        approval = RegistryEdges.bookingApproval codes edge key owner dest
         requestAddr = requestAddrFromCfg cfg tid (network cfg)
         -- #183: the datum binds the DEPOSIT, not the tip. The output
         -- holds `bond` = tip + deposit and the fold checks
@@ -7821,7 +7847,8 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
         -- would break the equality silently.
         datum = mkRequestDatumWith tid payerAddr key edge (bond - tipVal) now dest
         reqOut =
-            mkBasicTxOut requestAddr (MaryValue (Coin bond) approval)
+            mkBasicTxOut requestAddr
+                (MaryValue (Coin bond) (maybe mempty RegistryEdges.baAsset approval))
                 & datumTxOutL .~ mkInlineDatum datum
         Coin minAda = getMinCoinTxOut @ConwayEra pp reqOut
     require
@@ -7830,14 +7857,7 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
     require
         ("bookEdge: bond under min-ADA: " <> show bond)
         (bond >= minAda)
-    let redeemers =
-            Redeemers
-                ( Map.singleton
-                    (ConwayMinting (AsIx 0))
-                    (toLedgerData (RawRedeemer approveRedeemer), generousUnits)
-                )
-        integrity = computeScriptIntegrity pp redeemers
-        body =
+    let body =
             mkBasicTxBody
                 & inputsTxBodyL .~ Set.singleton feeIn
                 & referenceInputsTxBodyL .~ Set.fromList (map fst refIns)
@@ -7847,16 +7867,10 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
                         , mkBasicTxOut payerAddr (MaryValue (Coin change) carried)
                         ]
                 & feeTxBodyL .~ Coin fee
-                & mintTxBodyL .~ approval
-                & collateralInputsTxBodyL .~ Set.singleton collateralIn
                 & reqSignerHashesTxBodyL
                     .~ Set.singleton (addrWitnessKeyHash owner)
-                & scriptIntegrityHashTxBodyL .~ integrity
         unsigned =
-            mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ Map.singleton (hashScript appScript) appScript
-                & witsTxL . rdmrsTxWitsL .~ redeemers
+            RegistryEdges.certifyBooking pp collateralIn approval (mkBasicTx body)
         signed = addKeyWitness payerSk unsigned
     result <- submitTxResilient (envSubmit env) signed
     case result of
@@ -7876,8 +7890,10 @@ bookEdge env cfg tid payerAddr payerSk key edge dest refIns bond = do
             <> show edge
             <> " on key "
             <> show key
-            <> " certified by approval 0x"
-            <> hex name
+            <> maybe
+                " with no approval"
+                (const (" certified by approval 0x" <> hex (approvalName edge key owner dest)))
+                approval
         )
     pure (TxIn (txIdTx signed) (TxIx 0), reqOut)
 

@@ -96,7 +96,5 @@ renderBook requirements receipts =
             _ -> ""
         _ -> ""
     gapReason _ = ""
-    gapExplanation "witnessTerminal" =
-        "Reading a Terminal key is not yet supported: the node rejects the booking transaction before a fold is submitted.\n\n"
     gapExplanation _ =
         "The attempted operation did not produce a supported fold.\n\n"

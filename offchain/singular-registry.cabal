@@ -546,6 +546,7 @@ test-suite cage-tests
   main-is:          Main.hs
   other-modules:
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec
@@ -562,8 +563,10 @@ test-suite cage-tests
     , cardano-ledger-api
     , cardano-ledger-alonzo
     , cardano-ledger-allegra
+    , cardano-ledger-conway
     , cardano-ledger-core
     , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
     , containers
     , base16-bytestring
     , bytestring
@@ -573,6 +576,7 @@ test-suite cage-tests
     , hspec
     , microlens
     , plutus-core
+    , plutus-ledger-api
     , plutus-tx
     , QuickCheck
     , text
