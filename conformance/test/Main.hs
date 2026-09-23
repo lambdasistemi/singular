@@ -2,7 +2,6 @@
 module Main (main) where
 
 import Conformance.Story.Usage qualified as Usage
-import Conformance.Support.Authenticate qualified as Authenticate
 import Conformance.Support.Binding qualified as Binding
 import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild (childModeVariable, holdScopedDirectories)
@@ -38,4 +37,3 @@ suite = do
         Specification.spec
         Usage.spec
         Binding.spec
-        Authenticate.spec

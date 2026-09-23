@@ -54,7 +54,7 @@ nix run --quiet .#conformance-appendix-tests
 ```
 
 The appendix checks the receipt loader, comparison machinery and rendering.
-It does not replace a devnet run. The current successful S2 candidate has
-86 appendix examples, five registration steps and seven retirement steps.
+It does not replace a devnet run. The appendix has 97 examples; the live
+chapters retain five registration steps and seven retirement steps.
 The former field-level tests for a removed per-theorem receipt body are not
 counted as current evidence.
