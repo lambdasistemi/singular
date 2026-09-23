@@ -170,10 +170,11 @@ updateTokenWithDuties cfg prov tm tid addr ctx0 = do
         if null (rcCageUtxos ctx0)
             then queryUTxOs prov (cageAddrFromCfg cfg (network cfg))
             else pure (rcCageUtxos ctx0)
-    -- #177 I177-BUILDER: the candidate burn sources. A retirement
-    -- destroys an asset it does not create, so the fold has to consume
-    -- the UTxO that HOLDS it; left unset, the inventory is the fold's
-    -- own wallet, which is where `insertActive` delivered it.
+    -- #177 I177-BUILDER: the candidate burn sources. A retirement or a
+    -- deletion of an active key destroys an asset it does not create,
+    -- so the fold has to consume the UTxO that HOLDS it; left unset,
+    -- the inventory is the fold's own wallet, which is where
+    -- `insertActive` delivered it.
     holderUtxos <-
         if null (rcHolderUtxos ctx0)
             then queryUTxOs prov addr
@@ -445,10 +446,10 @@ buildProgram
         mapM_
             (\sp -> Tx.spendScript (fst (csUtxo sp)) (csRedeemer sp))
             (rdSpends duties)
-        -- #177 I177-BUILDER: the retirement's burn source. It is an
-        -- ordinary input, not a script spend: the active witness sits at
-        -- the holder's own address, and the key that signs the fold is
-        -- the key that owns it.
+        -- #177 I177-BUILDER: the burn source of a retirement or of an
+        -- active deletion. It is an ordinary input, not a script spend:
+        -- the active witness sits at the holder's own address, and the
+        -- key that signs the fold is the key that owns it.
         mapM_ (Tx.spend . fst) (rdInputs duties)
         mapM_
             (\m -> Tx.mint (cmPolicy m) (cmAssets m) (cmRedeemer m))
@@ -502,9 +503,9 @@ data RegistryDuties = RegistryDuties
     , rdSigners :: [KeyHash Guard]
     , rdInputs :: [(TxIn, TxOut ConwayEra)]
     -- ^ #177 I177-BUILDER: ordinary (non-script) inputs the edge needs
-    -- the transaction to consume. The retirement burns an asset it does
-    -- not create, so the holder UTxO carrying that asset has to ride in
-    -- as an input; a mint of `-1` with nothing to burn is a transaction
+    -- the transaction to consume. A retirement or a deletion of an
+    -- active key burns an asset it does not create, so the holder UTxO
+    -- carrying that asset has to ride in as an input; a mint of `-1` with nothing to burn is a transaction
     -- whose only possible outcome is a refusal.
     }
 
@@ -539,8 +540,9 @@ data RegistryContext = RegistryContext
     , rcHolderUtxos :: [(TxIn, TxOut ConwayEra)]
     -- ^ #177 I177-BUILDER: the candidate inputs a burn may be sourced
     -- from — the outputs that actually HOLD registry witnesses. A
-    -- retirement destroys an asset it does not create, so the fold has
-    -- to consume the holder's own UTxO; with nothing in this
+    -- retirement or an active deletion destroys an asset it does not
+    -- create, so the fold has to consume the holder's own UTxO; with
+    -- nothing in this
     -- inventory the builder fails naming the key rather than emitting a
     -- mint the cage refuses `token-missing`. Left empty, the builder
     -- queries the fold's own wallet address.
@@ -669,13 +671,14 @@ registryDuties cfg pp st ctx reqUtxos processed =
         | edge == 2 = (<>) <$> spendCustody key <*> deliver (cfgActivePolicy cfg) key dest destHash floorAda
         | edge == 3 = burnSource (cfgActivePolicy cfg) key
         | edge == 4 = spendCustody key
-        | edge == 5 = pure mempty
+        | edge == 5 = burnSource (cfgActivePolicy cfg) key
         | edge == 6 = deliver (cfgTerminalPolicy cfg) key dest destHash floorAda
         | otherwise = Left ("registryDuties: unknown edge " <> show edge)
-    {- #177 I177-BUILDER: the retirement burns a token it must first
-    hold. `deltaOf 3` is `[(active, -1)]` and there is no carrier
-    output, so the asset the mint destroys has to arrive on an input —
-    the Lean row's witness input,
+    {- #177 I177-BUILDER, #236: the retirement and the deletion of an
+    active key burn a token they must first hold. `deltaOf 3` and
+    `deltaOf 5` are both `[(active, -1)]` with no carrier output, so the
+    asset the mint destroys has to arrive on an input — the Lean row's
+    witness input,
     @{ role := .witness, assets := [((.active, r.key), 1)] }@.
 
     Selection is exact in both directions: the policy is THIS registry's
@@ -720,7 +723,7 @@ registryDuties cfg pp st ctx reqUtxos processed =
                         ( "registryDuties: no input in hand carries the \
                           \active witness for key "
                             <> show key
-                            <> "; a retirement that burns it must consume it"
+                            <> "; an edge that burns it must consume it"
                         )
                 _ ->
                     Left
