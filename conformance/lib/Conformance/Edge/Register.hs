@@ -20,6 +20,7 @@ story (Context registry recipient) = do
     tampered <- tamper RedirectDelivery registry redirected
     compared tampered
     checked redirected
+    tamper ExtraSigner registry (EdgeRequest InsertActive "cosigned" recipient) >>= compared
   where
     checked request = submit registry request >>= compared
     compared step = do

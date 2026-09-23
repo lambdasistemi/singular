@@ -34,11 +34,17 @@ data EdgeRequest wal = EdgeRequest
     }
     deriving stock (Eq, Show)
 
-data Tamper = RedirectDelivery
+{- | A change to the submitted transaction the model's request does not make.
+'RedirectDelivery' sends the delivered token elsewhere; the ledger must refuse
+it. 'ExtraSigner' adds one required signer the model does not require; the
+ledger accepts it, and the comparison must report the transaction's signers.
+-}
+data Tamper = RedirectDelivery | ExtraSigner
     deriving stock (Eq, Show, Enum, Bounded)
 
 tamperName :: Tamper -> String
 tamperName RedirectDelivery = "redirect-delivery"
+tamperName ExtraSigner = "extra-signer"
 
 type Story reg wal step obs cmp = Specification.Story (LiveI reg wal step obs cmp)
 
@@ -127,6 +133,10 @@ renderAction instruction rest = case instruction of
     Tamper RedirectDelivery registry request ->
         step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
             <> "** in **" <> registry <> "** with redirect delivery. The same request without redirection is the untampered control.")
+            (rest (requestKey request))
+    Tamper ExtraSigner registry request ->
+        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
+            <> "** in **" <> registry <> "** with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers.")
             (rest (requestKey request))
     Observe handle ->
         step ("Observe the complete registry, token, leaf and transaction boundary after **" <> handle <> "**.")
