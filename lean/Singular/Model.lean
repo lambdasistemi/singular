@@ -243,8 +243,14 @@ def trieGet (t : Trie) (k : Key) : Leaf :=
 def trieSet (t : Trie) (k : Key) (l : Leaf) : Trie :=
   (k, l) :: t.filter (fun p => p.1 != k)
 
+/-- Remove a key. A deleted key is a non-member: no pair of it is kept, so it
+reads `unknown` by the lookup default and contributes nothing to the root. -/
+def trieErase (t : Trie) (k : Key) : Trie :=
+  t.filter (fun p => p.1 != k)
+
 /-- The commitment byte of a leaf in the root: a bound key commits to its
-state's codec byte; `unknown` is a non-membership entry. -/
+state's codec byte. `0xFF` is the codec of the lookup answer `unknown`; the root
+commits only stored pairs, and a reachable registry stores no `unknown` leaf. -/
 def leafByte (l : Leaf) : UInt8 :=
   match l with | .unknown => 0xFF | .known s => stateByte s
 
@@ -537,12 +543,12 @@ def applyEdge (s : RegistryState) (a : Action) : Result :=
              , config := { s.config with root := rootOf trie }
              , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
     | .deleteAbsent =>
-      let trie := trieSet s.trie a.key .unknown
+      let trie := trieErase s.trie a.key
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , custody := s.custody.filter (·.key != a.key) }
     | .deleteActive =>
-      let trie := trieSet s.trie a.key .unknown
+      let trie := trieErase s.trie a.key
       { s with trie := trie
              , config := { s.config with root := rootOf trie }
              , held := s.held.filter fun h => !(h.key == a.key && h.kind == .active) }
