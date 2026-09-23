@@ -76,8 +76,6 @@ renderBook requirements receipts =
             _ -> ""
         _ -> ""
     gapReason _ = ""
-    gapExplanation "deleteActive" =
-        "Deleting an active key is not yet supported: the transaction builder adds no burn of the active token for this edge, so the assembled transaction does not balance and the node rejects it before any script runs. The missing duty is in `offchain/lib/Singular/Registry/TxBuilder/Update.hs` (`dutiesFor` for edge 5).\n\n"
     gapExplanation "witnessTerminal" =
         "Reading a Terminal key is not yet supported: the node rejects the booking transaction before a fold is submitted.\n\n"
     gapExplanation _ =

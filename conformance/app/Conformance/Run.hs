@@ -5689,9 +5689,9 @@ runSequence env = do
     expectedSequenceOutcome (Object fields) =
         case (KM.lookup "edge" fields, KM.lookup "comparison" fields) of
             (Just (String edge), Just (String "agrees")) ->
-                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent"]
+                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent", "deleteActive"]
             (Just (String edge), Just (String "unsupported"))
-                | edge `elem` ["deleteActive", "witnessTerminal"] ->
+                | edge == "witnessTerminal" ->
                     case KM.lookup "chain" fields of
                         Just (Object chain) -> case KM.lookup "reason" chain of
                             Just (String reason) -> not (T.null reason)
