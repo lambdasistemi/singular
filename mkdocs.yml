@@ -7,6 +7,10 @@ docs_dir: .docs-source
 site_dir: site
 nav:
   - Home: index.md
+  - Dated demos:
+      - Index: docs/demos/index.md
+      - 23 October — Maintain and recover a name: docs/demos/d02-naming.md
+      - 30 October — Name Your Address stretch: docs/demos/d03-escrow.md
   - Design:
       - Responsibilities: docs/overview.md
       - Lifecycle and custody: docs/lifecycle.md
