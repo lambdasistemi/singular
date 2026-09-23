@@ -23,8 +23,9 @@ perturbation evidence when accepted, and where the comparison found the
 observation to differ. The registration chapter records a same-key refusal, a
 redirected-delivery attempt beside an accepted untampered control, and a
 registration submitted with one extra required signer: the ledger accepts it
-and the comparison reports the transaction's signers. The retirement chapter records a connected active-token
-burn, an Absent-key refusal and an unknown-key refusal. A refusal names the
+and the comparison reports the transaction's signers. The retirement chapter
+records a connected active-token burn, an Absent-key refusal and an unknown-key
+refusal. A refusal names the
 state script hash; an empty node trace is recorded as empty, without inventing
 a script reason.
 

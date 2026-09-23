@@ -455,6 +455,9 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects an extra-signer agreement whose comparison reported no difference" $
         loadLive (changeStep (setField "differences" ([] :: [Value])) extraSignerLive)
             >>= (`shouldSatisfy` isLeft)
+    it "publishes the extra required signer with the difference the comparison detected" $
+        renderBook [] [extraSignerLive]
+            `shouldSatisfy` isInfixOf "the comparison detected the difference at `tx.signers`"
     it "rejects an untampered agreement that reports a difference" $
         loadLive (changeStep (setField "differences" [signerDifference]) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
