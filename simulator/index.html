@@ -4075,7 +4075,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
+  "corpusSourceSha256": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4204,20 +4204,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
-  "payloadSha256": "c0f86d75eada5c568258755a88f3a5594de4224c79eb4ed397fe237ed38c3d28",
+  "modelSha256": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
+  "payloadSha256": "0771a0cf6474994e83bf0fbe7005f0737300fc3e7d648e5b70435cf333fc689e",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
+    "lean/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
-    "lean/Singular/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b"
+    "lean/Singular/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
+    "lean/Singular/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307"
   },
-  "statementsSha256": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b",
-  "theoremManifestSha256": "cfc4c7b3f0600b038ed802a0aecb83521467ac2df54b523549cf0d86d2dfba03",
+  "statementsSha256": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307",
+  "theoremManifestSha256": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4800,6 +4800,12 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
+  },
+  {
+    "name": "Singular.Statements.fold_requires_no_signer",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece"
   }
 ]
 ;const IDENTITY={
@@ -4823,8 +4829,8 @@ const STORIES=[
     "formal/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
     "formal/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
-    "formal/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+    "formal/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
+    "formal/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4837,19 +4843,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b",
+    "formal/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "cfc4c7b3f0600b038ed802a0aecb83521467ac2df54b523549cf0d86d2dfba03",
+    "formal/theorem-debt.json": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "4802b2f590110994f93008ac745115f2b4989f918e8452fb3b776c76b32a3968"
+    "corpus.json": "f30c43f4ec7600a666b4fdddd917f305e31d79609b434a364e23c8ac68ae3a38"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 28,
+  "theorems": 29,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4891,9 +4897,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+  "modelSha256": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "3ba653c3972fa8179d3cbb901c466fefbd477a2666b67551020fc78e251e2da7",
+  "payloadSha256": "231ede00207b114c3aad26aa282659faf4faf1b8aeba0fc01cec7f1700153d9a",
   "queues": [
     {
       "actual": true,
@@ -4985,13 +4991,13 @@ const STORIES=[
   "sourceHashes": {
     "lean/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
+    "lean/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+    "lean/Singular/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5002,7 +5008,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b"
+    "lean/Singular/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307"
   },
   "spellings": [
     {
@@ -5120,7 +5126,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "eb8245609f3db1edb949894f478f5397c27780d2ef8bd36769e06db91976b97e",
+  "payloadSha256": "ee42666e48694259874a62601f5c9274ee9be3c66aebdcd69cd28c8932d09e6a",
   "recovery": [
     {
       "detail": true,
@@ -5193,13 +5199,13 @@ const STORIES=[
   "sourceHashes": {
     "lean/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
+    "lean/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
+    "lean/Singular/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5210,7 +5216,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b"
+    "lean/Singular/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307"
   },
   "steps": [
     {

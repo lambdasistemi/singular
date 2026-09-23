@@ -1,7 +1,7 @@
 {
   "corpusSourceSha256": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
-  "modelSha256": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
-  "payloadSha256": "dbbbafd53992ee753a8ca927b59e7b9a8a875c626f474327552afff0ed50b367",
+  "modelSha256": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
+  "payloadSha256": "d254adfd69beaaf2ab8890a725c12cf2cb1650e836bbbe5f032d36768c1e0b70",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -979,15 +979,15 @@
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
     "lean/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
-    "lean/Main.lean": "31bfe938fcee7eff0f52ac737184b42ef31d06f5f3ddc5ed701f361a53e77d28",
+    "lean/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "40713c64c8d59ad7d16ad4a9a4552cd550c9021e01a400d7944d1d2933057b8e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "d0eae5fc7a32b644a4fdcc583fc016125b7093b359583432c01a18ea8951a3e1",
-    "lean/Singular/Statements.lean": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b"
+    "lean/Singular/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
+    "lean/Singular/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307"
   },
-  "statementsSha256": "31d820f06c461e9f0f8e4b894a590a1a00b9d58435038e5ba9ccbc1ca2c56b7b",
+  "statementsSha256": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
     "definitionDigest": "5766693268324097889",
@@ -1022,5 +1022,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "cfc4c7b3f0600b038ed802a0aecb83521467ac2df54b523549cf0d86d2dfba03"
+  "theoremManifestSha256": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2"
 }

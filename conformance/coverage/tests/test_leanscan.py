@@ -101,21 +101,20 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree: 92 = 49 manifest-bound + 43 unclassified.
+    """The frozen tree: 93 = 50 manifest-bound + 43 unclassified.
 
-    The registry's 28 statements include the absent-insertion transaction
-    row; naming contributes 7, lifecycle 9 and wire encoding 5. Deleting a key
-    by erasure added six helpers: trieGet_erase_eq, trieGet_erase_of_ne,
-    mem_trieSet, mem_trieErase, applyEdge_no_stored_unknown and
-    reachable_no_stored_unknown. The predecessor population was 86 = 49 + 37.
+    The registry's 29 statements include the absent-insertion transaction
+    row and the statement that no fold requires a signer; naming contributes
+    7, lifecycle 9 and wire encoding 5. No helper was added or retired. The
+    predecessor population was 92 = 49 + 43.
     """
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 92, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 93, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
-        self.assertEqual(len(statements), 49)
+        self.assertEqual(len(statements), 50)
 
     def test_attributed_count_at_base(self):
         # The fourth is the @[simp] on trieGet_erase_eq.

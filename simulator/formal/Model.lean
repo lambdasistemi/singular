@@ -688,6 +688,12 @@ permissionless — neither `refusal` nor `applyEdge` reads a signature, which is
 stated as invariance under the approval's signature set. -/
 def requiredSigners (_r : Request) : List Nat := []
 
+/-- The same request with its approval carrying a different signature set. A
+request without an approval has no signature set to change and is returned as
+it is. -/
+def withSignatures (r : Request) (sigs : List (List Nat)) : Request :=
+  { r with approval := r.approval.map fun ap => { ap with signatures := sigs } }
+
 /-- The open application's parameters: none. The open registry protects nobody
 by design, so there is no registry identity to apply the policy to; one policy
 id, one blueprint, no applied hash to derive. -/
