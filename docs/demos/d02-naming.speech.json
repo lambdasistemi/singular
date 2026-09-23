@@ -1,7 +1,7 @@
 {
   "preprod-play-to-record": [
     {
-      "text": "The presenter will create and export a fresh identity with keripy, register and advance it with Cardano KERI on preprod, then maintain and recover a name through the released Singular interface. The connected naming release and mapping are still missing.",
+      "text": "The presenter will create and export a fresh identity with keripy, register and advance it with Cardano KERI on preprod, then maintain and recover a name through the released Singular interface. The connected naming release and mapping are still missing. Singular version two point zero point zero is a planned milestone tag, not an existing release. Identity readback uses the Cardano KERI follower store.",
       "pause": 500
     }
   ],
@@ -19,6 +19,6 @@
   ],
   "_source": {
     "file": "d02-naming.md",
-    "sha256": "1e60753068a15307bfdfae666f9c4f60b3c776728541c80eb0f43790c41abf8e"
+    "sha256": "ab33b5dcbf0c57e8bd00f57c21dac0715a35edf2fd6da1ab6543ca51bcd35f0e"
   }
 }

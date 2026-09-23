@@ -2,6 +2,8 @@
 
 As a name holder, I want to keep the same name while changing its payment destination and recovering control with my precommitted key, so that a payer can use my current destination.
 
+**Planned release tag:** Singular `v2.0.0` (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.
+
 This is a **Cardano preprod target**, not a completed demonstration. The presenter will use keripy `kli` to create and rotate the controller's KERI identity and a released `ckeri` command to submit and read back each connected Cardano action. The Singular naming commands and preprod release needed to join that journey are still missing. The [dated project card](https://github.com/orgs/lambdasistemi/projects/4/views/5) remains a review target.
 
 ## Preprod play to record

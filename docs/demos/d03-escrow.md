@@ -2,6 +2,8 @@
 
 As Bob, I want to lock funds against the ordered names Alice then Bob, so Alice can claim at her current destination after recovery and I can claim only after Alice's name ends permanently. This [dated project card](https://github.com/orgs/lambdasistemi/projects/4/views/5) is **not yet playable as a connected preprod journey**.
 
+**Planned release tag:** Singular `v2.0.0` (naming and escrow milestone). This is a milestone target; the tag waits for the 30 October release gate, a built archive and connected preprod receipts. Candidate plays do not publish it.
+
 ## Planned play
 
 ```mermaid
