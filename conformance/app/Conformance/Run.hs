@@ -5075,16 +5075,19 @@ observedStepTx _env ids step transaction config mint destination commitment cust
         stateOutputs = [out | out <- outputValues,
             Just (StateDatum _) <- [extractCageDatum out]]
     require "accepted fold has no unique chain state output" (length stateOutputs == 1)
-    witnessInputs <- case (edge, lsWitness step) of
-        (Live.UpdateTerminal, Just (source, _)) -> do
-            require "retirement did not spend its observed active witness"
+    let witnessInput what source = do
+            require (what <> " did not spend its observed active witness")
                 (source `Set.member` actualInputs)
             asset <- observeStepMint ids cfg (SBS.fromShort (cfgActivePolicy cfg))
                 requestKeyBytes 1
             pure [object ["role" .= String "witness", "datum" .= String "inline",
                 "stateToken" .= (0 :: Integer), "approvalQuantity" .= (0 :: Integer),
                 "lovelace" .= (0 :: Integer), "assets" .= [asset]]]
+    witnessInputs <- case (edge, lsWitness step) of
+        (Live.UpdateTerminal, Just (source, _)) -> witnessInput "retirement" source
         (Live.UpdateTerminal, Nothing) -> failWith "retirement has no observed active witness"
+        (Live.DeleteActive, Just (source, _)) -> witnessInput "deletion" source
+        (Live.DeleteActive, Nothing) -> failWith "deletion has no observed active witness"
         _ -> pure []
     custodyInputs <- case (edge, lsCustody step) of
         (Live.UpdateActive, Just (source, _)) -> custodyInput source
@@ -5689,9 +5692,9 @@ runSequence env = do
     expectedSequenceOutcome (Object fields) =
         case (KM.lookup "edge" fields, KM.lookup "comparison" fields) of
             (Just (String edge), Just (String "agrees")) ->
-                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent"]
+                edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal", "deleteAbsent", "deleteActive"]
             (Just (String edge), Just (String "unsupported"))
-                | edge `elem` ["deleteActive", "witnessTerminal"] ->
+                | edge == "witnessTerminal" ->
                     case KM.lookup "chain" fields of
                         Just (Object chain) -> case KM.lookup "reason" chain of
                             Just (String reason) -> not (T.null reason)

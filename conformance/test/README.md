@@ -36,10 +36,10 @@ The book command requires both chapter receipts and the unnamed sequence
 receipt before rendering success. Its inventory statuses are computed from
 receipts; uncovered requirements remain visible. The two-request batch mint
 rule is a gap because the driver evaluates one request per transaction.
-`deleteActive` is unsupported because its assembled transaction lacks the
-active-token burn and fails balancing before any script runs. The node rejects
-`witnessTerminal` while booking its request. Both carry their observed reasons
-as gaps, without claiming a completed fold.
+`deleteActive` burns the active token from the holder's own UTxO, which the
+fold consumes, and is compared with the model like the other accepted edges.
+The node rejects `witnessTerminal` while booking its request; that step carries
+its observed reason as a gap, without claiming a completed fold.
 
 For the appendix alone, run:
 
