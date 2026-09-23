@@ -474,6 +474,11 @@ stepsComplete path receipt steps
             model = at "outcome" =<< at "model" step
             chain = at "outcome" =<< at "chain" step
             comparison = at "comparison" step
+            -- Where the comparison found the observation to differ. A receipt
+            -- written before steps carried the field reports none.
+            differences = maybe (Array Vector.empty) id (at "differences" step)
+            signerDifference = Array (Vector.singleton (Object (KM.fromList
+                [("observation", String "tx"), ("path", String "signers")])))
         case (model, chain, comparison) of
             (Just (String m), Just (String c), Just (String verdict))
                 | m `elem` ["accepted", "refused", "unsupported"]
@@ -487,8 +492,9 @@ stepsComplete path receipt steps
             _ -> Right ()
         case (tamper, comparison, model, chain) of
             (Just Null, Just (String "agrees"), m, c)
-                | m == c -> Right ()
-                | otherwise -> failure "untampered agreement changes the outcome class"
+                | m /= c -> failure "untampered agreement changes the outcome class"
+                | differences /= Array Vector.empty -> failure "untampered agreement reports differences"
+                | otherwise -> Right ()
             (Just (String "redirect-delivery"), Just (String "agrees"),
                 Just (String "accepted"), Just (String "refused")) ->
                     case at "hashes" =<< (at "refusal" =<< at "chain" step) of
@@ -496,8 +502,17 @@ stepsComplete path receipt steps
                         _ -> failure "tamper refusal has no attributed script hashes"
             (Just (String "redirect-delivery"), Just (String "agrees"), _, _) ->
                 failure "tamper agreement does not have model acceptance and chain refusal"
+            -- An extra required signer is accepted by the ledger; its agreement
+            -- is the comparison reporting exactly that signer difference.
+            (Just (String "extra-signer"), Just (String "agrees"),
+                Just (String "accepted"), Just (String "accepted"))
+                | differences == signerDifference -> Right ()
+                | otherwise -> failure "extra-signer agreement does not report exactly the signer difference"
+            (Just (String "extra-signer"), Just (String "agrees"), _, _) ->
+                failure "extra-signer agreement does not have model and chain acceptance"
             (Just Null, _, _, _) -> Right ()
             (Just (String "redirect-delivery"), _, _, _) -> Right ()
+            (Just (String "extra-signer"), _, _, _) -> Right ()
             _ -> failure "unknown tamper"
         case (at "compared" step, at "unobserved" step) of
             (Just (Array names), Just (Array _))

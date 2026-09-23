@@ -1471,5 +1471,32 @@ theorem fold_batch_claimed_mint_by_kind_key :
     intro k
     cases k <;> rfl
 
+/-- Nobody must sign a fold, at any of the seven edges.
+
+For every state, every request of every edge and every lovelace: a transaction
+the model builds requires no signer, and neither the step nor the transaction
+changes when the request's approval carries a different signature set. The
+empty signer list is therefore a consequence of the law — no refusal and no
+edge reads a signature — rather than a default the transaction happens to
+carry. -/
+theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Nat)
+    (sigs : List (List Nat)) :
+    (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
+    step s (withSignatures r sigs) = step s r ∧
+    txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed⟩ := r
+  refine ⟨?_, ?_, ?_⟩
+  · intro tx h
+    unfold txOf at h
+    split at h
+    · exact Except.noConfusion h
+    · injection h with h
+      rw [← h]
+      rfl
+  -- Every field the step and the transaction read is the same field of the
+  -- same request: only the signature set moved, and nothing reads it.
+  · cases approval <;> rfl
+  · cases approval <;> rfl
+
 end Statements
 end Singular

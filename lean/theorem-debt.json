@@ -166,5 +166,11 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
+  },
+  {
+    "name": "Singular.Statements.fold_requires_no_signer",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece"
   }
 ]

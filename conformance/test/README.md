@@ -13,15 +13,19 @@ and reads the chain result. Every accepted step compares the driver's nine
 declared observations: configuration, custody, held tokens, leaf, mint,
 payments, root, state and transaction. A discovered-value perturbation check
 must make the comparison fail for each observed leaf and array, except the
-declared `outputMinimumAda` leaf. `requiredSigners` remains a named model gap;
-the transaction's observed signer value is still compared.
+declared `outputMinimumAda` leaf. The transaction's signers are read from the
+submitted transaction's required signers, each translated to the wallet whose
+payment key it is, and compared with the model, which requires none.
 
 Each chapter writes one receipt with a `steps` array. Every step records its
 request, model outcome, chain outcome, comparison and the observation and
-perturbation evidence when accepted. The registration chapter records a
-same-key refusal and a redirected-delivery attempt beside an accepted
-untampered control. The retirement chapter records a connected active-token
-burn, an Absent-key refusal and an unknown-key refusal. A refusal names the
+perturbation evidence when accepted, and where the comparison found the
+observation to differ. The registration chapter records a same-key refusal, a
+redirected-delivery attempt beside an accepted untampered control, and a
+registration submitted with one extra required signer: the ledger accepts it
+and the comparison reports the transaction's signers. The retirement chapter
+records a connected active-token burn, an Absent-key refusal and an unknown-key
+refusal. A refusal names the
 state script hash; an empty node trace is recorded as empty, without inventing
 a script reason.
 

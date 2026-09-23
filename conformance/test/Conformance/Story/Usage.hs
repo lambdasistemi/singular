@@ -5,8 +5,9 @@ module Conformance.Story.Usage (spec) where
 
 import Control.Monad.Operational (ProgramViewT (Return, (:>>=)), view)
 import Data.Either (isLeft)
-import Data.List (isInfixOf)
-import Test.Hspec (Spec, it, shouldSatisfy)
+import Data.List (isInfixOf, isPrefixOf, tails)
+import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
+import Conformance.Book (renderBook)
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.Sequence qualified as Sequence
@@ -20,6 +21,11 @@ spec = do
         rendered `shouldSatisfy` isInfixOf "redirect delivery"
         rendered `shouldSatisfy` isInfixOf "untampered control"
         rendered `shouldSatisfy` (not . isInfixOf "batch")
+    it "The book names the extra required signer only where the registration story submits it" $ do
+        let phrase = "required signer the model does not require"
+            story = Live.renderLive (Register.story (Live.Context "registration" "recipient wallet"))
+        occurrences phrase story `shouldSatisfy` (>= 1)
+        occurrences phrase (renderBook [] []) `shouldBe` occurrences phrase story
     it "The retirement chapter describes registration and retirement as model edge requests" $ do
         let rendered = Live.renderLive (Retire.story
                 (Live.Context "retirement" "holder") (Live.Context "comparison" "holder"))
@@ -40,6 +46,9 @@ spec = do
         let original :: Live.Story String String String String String ()
             original = Sequence.story (Live.Context "sequence" "holder")
         Live.validateLive (dropFirstCompare original) `shouldSatisfy` isLeft
+
+occurrences :: String -> String -> Int
+occurrences needle = length . filter (needle `isPrefixOf`) . tails
 
 -- | Mutation of the actual sequence program: remove exactly its first Compare.
 dropFirstCompare :: Live.Story String String String String String ()

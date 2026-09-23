@@ -517,6 +517,50 @@ def deletionFailures : List String :=
        | .error why => [s!"{name}: updateTerminal after deletion refused {why}"]
        | .ok _ => [s!"{name}: updateTerminal after deletion accepted"])
 
+/-- The signature sets each admitted fold is folded again with: one signer, and
+two signatures from different keys. -/
+def signatureSets : List (List (List Nat)) := [[[1]], [[2], [3, 4]]]
+
+/-- The fold of one accepted case, with an approval to sign. `witnessTerminal`
+needs none, so its request is given a stray one — admitted all the same — or
+changing the signature set would change nothing and exhibit nothing. -/
+def signedAction (c : Case) : Request :=
+  match c.action.approval with
+  | some _ => c.action
+  | none => { c.action with approval := apFor c.action.edge c.action.key c.action.owner
+                                          (requestDestination c.action) }
+
+def sameTx : Except String Tx → Except String Tx → Bool
+  | .ok a, .ok b => a == b
+  | .error x, .error y => x == y
+  | _, _ => false
+
+def sameStep : Except String Result → Except String Result → Bool
+  | .ok a, .ok b => a == b
+  | .error x, .error y => x == y
+  | _, _ => false
+
+/-- What an accepted edge violates of `fold_requires_no_signer`: the model built
+no transaction for the admitted fold, the transaction requires a signer, the
+signature set did not change the request, or the step or the transaction moved
+with it. One row per edge, all seven. -/
+def signerFailures : List String :=
+  [accInsertAbsent, accInsertActive, accUpdateActive, accUpdateTerminal,
+   accDeleteAbsent, accDeleteActive, accWitnessTerminal].flatMap fun c =>
+    let r := signedAction c
+    match txOf c.before r txLovelace with
+    | .error why => [s!"{c.id}: the model built no transaction ({why})"]
+    | .ok tx =>
+      (if tx.signers.isEmpty then [] else [s!"{c.id}: requires signers {tx.signers}"]) ++
+      signatureSets.flatMap fun sigs =>
+        let signed := withSignatures r sigs
+        (if signed == r then [s!"{c.id}: signatures {sigs} left the request unchanged"] else []) ++
+        (if sameStep (step c.before signed) (step c.before r) then []
+         else [s!"{c.id}: the step moved with signatures {sigs}"]) ++
+        (if sameTx (txOf c.before signed txLovelace) (txOf c.before r txLovelace) then []
+         else [s!"{c.id}: the transaction moved with signatures {sigs}"])
+
+
 def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
   accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
 
@@ -581,6 +625,8 @@ def main : IO Unit := do
       throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")
   unless deletionFailures.isEmpty do
     throw (IO.userError s!"deletion keeps the key: {deletionFailures}")
+  unless signerFailures.isEmpty do
+    throw (IO.userError s!"a fold requires a signer: {signerFailures}")
   unless leafByte .unknown == 0xFF do
     throw (IO.userError "the unknown lookup answer lost its 0xFF codec byte")
   unless batchEmpty.isSome && batchMint.isSome do throw (IO.userError "fold rows failed")

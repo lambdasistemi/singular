@@ -7,7 +7,7 @@
   ],
   "exact-declaration-inventory": [
     {
-      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name. The absent-insertion transaction statement now binds a refund-only custody payload, its deposit, and the key recovered from its sole absent asset, together with the constructed transaction and logical root effects. Its proof does not certify the current on-chain wire.",
+      "text": "Every declaration keeps its qualified name and a digest of its statement text, so a changed or missing obligation is detectable rather than merely unlikely. The column beside each name says what it states, because a theorem can be true and narrower than its name. The absent-insertion transaction statement now binds a refund-only custody payload, its deposit, and the key recovered from its sole absent asset, together with the constructed transaction and logical root effects. Its proof does not certify the current on-chain wire. One statement covers who must sign a fold: at every one of the seven edges the transaction the model builds requires no signer, and neither the step nor the transaction changes when the approval carries a different set of signatures.",
       "pause": 400
     }
   ],
@@ -25,6 +25,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "de0db91c6c94f13c3d3f1fd92419c1e92e4d487fa79dc9ee6a75e1f1b2ee237a"
+    "sha256": "f92c6b74764eab098da66b9254609979f4b185fd55cf80061a30b0101a3149ed"
   }
 }

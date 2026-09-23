@@ -1,6 +1,8 @@
 -- | A book rendered from the same programs the live backend executes.
 module Conformance.Book (renderBook) where
 
+import Data.Foldable (toList)
+import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Aeson (Value (..))
 import Data.Aeson.KeyMap qualified as KM
@@ -28,7 +30,7 @@ renderBook requirements receipts =
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada and the rule for required signers remain named unobservables. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -43,7 +45,7 @@ renderBook requirements receipts =
             <> "Node: `" <> T.unpack (receiptNode receipt) <> "`. Compiled validators: `"
             <> T.unpack (receiptBlueprint receipt) <> "`.\n\n"
             <> maybe "" (\steps -> case receiptRow receipt of
-                "CG21" -> "Registration compared " <> outcomeCounts steps
+                "CG21" -> "Registration compared " <> outcomeCounts steps <> concatMap detection steps
                 "CG22" -> "Retirement compared " <> outcomeCounts steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
@@ -63,6 +65,24 @@ renderBook requirements receipts =
         <> show (length (filter (hasOutcome "accepted") steps)) <> " accepted and "
         <> show (length (filter (hasOutcome "refused") steps)) <> " refused on chain.\n\n"
         <> "Unsupported chain folds: " <> show (length (filter (hasOutcome "unsupported") steps)) <> ".\n\n"
+    -- A tamper the ledger accepted, and the difference the comparison detected
+    -- in the transaction it built: read from the step, never typed here.
+    detection value = case value of
+        Object fields -> case (KM.lookup "tamper" fields, KM.lookup "comparison" fields
+                              , KM.lookup "differences" fields, KM.lookup "chain" fields) of
+            (Just (String name), Just (String "agrees"), Just (Array differences), Just (Object chain))
+                | not (null differences)
+                , Just (String "accepted") <- KM.lookup "outcome" chain
+                , Just (String txid) <- KM.lookup "txid" chain ->
+                    "The " <> T.unpack name <> " registration was accepted on chain (transaction `"
+                        <> T.unpack txid <> "`); the comparison detected the difference at "
+                        <> intercalate ", " [ "`" <> T.unpack observation <> "." <> T.unpack path <> "`"
+                                            | Object difference <- toList differences
+                                            , Just (String observation) <- [KM.lookup "observation" difference]
+                                            , Just (String path) <- [KM.lookup "path" difference] ]
+                        <> ".\n\n"
+            _ -> ""
+        _ -> ""
     gapEvidence receipt
         | receiptRow receipt == "sequence" = maybe "" (concatMap gapReason) (receiptSteps receipt)
         | otherwise = ""

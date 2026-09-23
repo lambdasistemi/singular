@@ -300,6 +300,7 @@ jobs:
           #    CG21 receipt; this asserts the same promises at the CI
           #    boundary, against the compiled blueprint's own hashes, so a
           #    loader that stopped checking cannot make the row pass here.
+          #    #228's sixth step registers an extra signer and both sides accept it.
           open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title == "open.open.mint") | (.parameters // []) | length] | first' "$blueprint")"
           [ "$open_params" -eq 0 ] || { echo "FAIL: open.open.mint declares $open_params parameters; CG21 reports a parameterless open application"; exit 1; }
           e="${CONFORMANCE_RECEIPTS}/receipt-CG21.json"
@@ -312,12 +313,17 @@ jobs:
             ([.steps[] | select(.tamper == "redirect-delivery") | .request][0]) as $tampered |
             .row == "CG21" and .outcome == "accepted"
             and .verdict == "agrees-with-model" and .venue == "node-submit"
-            and (.steps | length) == 5
+            and (.steps | length) == 6
             and all(.steps[]; .comparison == "agrees")
-            and all(.steps[] | select(.model.outcome == "accepted" and .chain.outcome == "accepted");
+            and all(.steps[] | select(.tamper == null and .model.outcome == "accepted"
+                    and .chain.outcome == "accepted");
                     (.chain.txid | txid) and complete)
-            and ([.steps[] | select(.model.outcome == "accepted" and .chain.outcome == "accepted")]
+            and ([.steps[] | select(.tamper == null and .model.outcome == "accepted"
+                    and .chain.outcome == "accepted")]
                  | length) == 3
+            and any(.steps[]; .tamper == "extra-signer" and .model.outcome == "accepted"
+                    and .chain.outcome == "accepted" and (.chain.txid | txid)
+                    and .differences == [{"observation":"tx","path":"signers"}])
             and any(.steps[]; .edge == "insertActive" and .model.outcome == "refused"
                     and .chain.outcome == "refused" and (.chain.refusal.hashes | index($state) != null))
             and any(.steps[]; .tamper == "redirect-delivery" and .model.outcome == "accepted"

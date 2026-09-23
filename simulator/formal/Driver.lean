@@ -115,7 +115,7 @@ carry a minimum, and this model says nothing about it, so a transaction output's
 consumer compares every other field of a transaction and leaves this one alone,
 rather than quietly reconstructing an equality the model never claimed. -/
 def declaredUnobservable : List String :=
-  ["concreteTrieHash", "outputMinimumAda", "registryAddress", "requiredSigners",
+  ["concreteTrieHash", "outputMinimumAda", "registryAddress",
    "scriptExecutionUnits", "transactionId", "utxoReference"]
 
 /-- D01: the surface identity a scenario is executed against. -/

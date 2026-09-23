@@ -450,6 +450,17 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects a claimed redirected-delivery agreement without a script hash" $
         loadLive (changeStep (setField "tamper" ("redirect-delivery" :: String)) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
+    it "accepts an extra required signer the comparison reported in the transaction's signers" $
+        loadLive extraSignerLive `shouldReturn` Right 1
+    it "rejects an extra-signer agreement whose comparison reported no difference" $
+        loadLive (changeStep (setField "differences" ([] :: [Value])) extraSignerLive)
+            >>= (`shouldSatisfy` isLeft)
+    it "publishes the extra required signer with the difference the comparison detected" $
+        renderBook [] [extraSignerLive]
+            `shouldSatisfy` isInfixOf "the comparison detected the difference at `tx.signers`"
+    it "rejects an untampered agreement that reports a difference" $
+        loadLive (changeStep (setField "differences" [signerDifference]) acceptedLive)
+            >>= (`shouldSatisfy` isLeft)
 
 acceptedLive :: Receipt
 acceptedLive =
@@ -473,6 +484,22 @@ acceptedLive =
                     ]
                 ]
         }
+
+-- | The registration folded with one required signer the model does not
+-- require: the ledger accepts it, and the comparison reports exactly the
+-- transaction's signers.
+extraSignerLive :: Receipt
+extraSignerLive =
+    changeStep
+        ( setField "tamper" ("extra-signer" :: String)
+            . setField "compared" ([] :: [String])
+            . setField "perturbation" Null
+            . setField "differences" [signerDifference]
+        )
+        acceptedLive
+
+signerDifference :: Value
+signerDifference = object ["observation" .= ("tx" :: String), "path" .= ("signers" :: String)]
 
 setField :: (ToJSON a) => String -> a -> Value -> Value
 setField name value (Object fields) = Object (KM.insert (Key.fromString name) (toJSON value) fields)

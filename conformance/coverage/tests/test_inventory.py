@@ -66,15 +66,13 @@ def binding_violations(
 
 class RealInventoryTest(unittest.TestCase):
     def test_real_tree_reconciles(self):
-        # Deleting a key by erasure adds six unclassified helpers
-        # (trieGet_erase_eq, trieGet_erase_of_ne, mem_trieSet, mem_trieErase,
-        # applyEdge_no_stored_unknown, reachable_no_stored_unknown):
-        # 92 = 49 + 43, previously 86 = 49 + 37. The registry has 28
-        # statements; naming, lifecycle and wire retain 7, 9 and 5.
+        # The statement that no fold requires a signer adds one manifest-bound
+        # obligation: 93 = 50 + 43, previously 92 = 49 + 43. The registry has
+        # 29 statements; naming, lifecycle and wire retain 7, 9 and 5.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 49)
+        self.assertEqual(inv.manifest_bound, 50)
         self.assertEqual(inv.unclassified, 43)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 92)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 93)
 
     def test_real_manifests_match_extraction_byte_for_byte(self):
         # build_inventory re-runs check_model.statement_inventory and compares
