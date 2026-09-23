@@ -95,7 +95,7 @@ import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.Sequence qualified as SequenceStory
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel, poll)
+import Control.Concurrent.Async (async, cancel)
 import Control.Exception (
     ErrorCall (..),
     SomeException,
@@ -331,6 +331,7 @@ import Singular.Registry.Types (
     UpdateRedeemer (..),
  )
 import Singular.Registry.Node (
+    awaitConnection,
     checkFunding,
     defaultFundingFloor,
     devnetGenesis,
@@ -974,14 +975,9 @@ runSession
                     sock
                     lsqCh
                     ltxsCh
-        threadDelay 3_000_000
-        status <- poll nodeThread
-        case status of
-            Nothing -> pure ()
-            Just _ ->
-                failWith "node connection closed before queries ran"
         let prov = adaptProvider (mkN2CProvider lsqCh)
-            submit = mkN2CSubmitter ltxsCh
+        awaitConnection sessionMagic sock nodeThread prov
+        let submit = mkN2CSubmitter ltxsCh
         checkFunding prov funderAddr defaultFundingFloor
         tm <- mkPureTrieManager
         mirror <- newMirror
@@ -6627,14 +6623,9 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                 sock
                 lsqCh
                 ltxsCh
-    threadDelay 3_000_000
-    status <- poll nodeThread
-    case status of
-        Nothing -> pure ()
-        Just _ ->
-            failWith "node connection closed before queries ran"
     let prov = adaptProvider (mkN2CProvider lsqCh)
-        submit = mkN2CSubmitter ltxsCh
+    awaitConnection sessionMagic sock nodeThread prov
+    let submit = mkN2CSubmitter ltxsCh
         stateMarker = hex (scriptHashBytes (computeScriptHash stateBytes))
         blueprintIdStr =
             "state:"
@@ -7630,14 +7621,9 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
                 sock
                 lsqCh
                 ltxsCh
-    threadDelay 3_000_000
-    status <- poll nodeThread
-    case status of
-        Nothing -> pure ()
-        Just _ ->
-            failWith "node connection closed before queries ran"
     let prov = adaptProvider (mkN2CProvider lsqCh)
-        submit = mkN2CSubmitter ltxsCh
+    awaitConnection sessionMagic sock nodeThread prov
+    let submit = mkN2CSubmitter ltxsCh
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
     (seed, _) <- largestWalletUtxo prov

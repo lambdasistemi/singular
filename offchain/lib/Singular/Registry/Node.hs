@@ -55,6 +55,7 @@ module Singular.Registry.Node (
     awaitTx,
     awaitTxId,
     awaitTxWindow,
+    awaitConnection,
     confirmDeadline,
     txUpperBoundSlot,
     nodeIsExternal,
@@ -73,7 +74,7 @@ module Singular.Registry.Node (
 ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (Async, async, cancel, poll)
+import Control.Concurrent.Async (Async, async, cancel, race, waitCatch)
 import Control.Exception (ErrorCall (..), SomeException, displayException, bracket, throwIO, try)
 import Control.Monad (unless)
 import Data.Time.Clock (getCurrentTime)
@@ -471,9 +472,8 @@ withNodeModeAndFunding fundingFloor mode k = case mode of
         ltxsCh <- newLTxSChannel 16
         bracket (async (runNodeClient magic sock lsqCh ltxsCh)) cancel $
             \nodeThread -> do
-                threadDelay 3_000_000
-                verifyConnection magic sock nodeThread
                 let prov = adaptProvider (mkN2CProvider lsqCh)
+                awaitConnection magic sock nodeThread prov
                 pp <- Cage.queryProtocolParams prov
                 case fundingFloor of
                     Just floorRequired -> checkFunding prov (walletAddr wallet) floorRequired
@@ -750,20 +750,27 @@ announce mode (NetworkMagic magic) sock addr =
         Devnet -> "devnet"
         External _ -> "external"
 
-{- | Name the two ways a fresh connection fails: the node is not there,
+{- | Wait until a freshly started node client answers its first query,
+or name the two ways a fresh connection fails: the node is not there,
 and the node runs a different network than the magic asserted.
+
+Either failure ends the client thread, so racing the first query
+against that ending waits exactly as long as the connection takes
+rather than a fixed settling sleep.
 -}
-verifyConnection ::
-    (Show e) =>
+awaitConnection ::
+    (Show a) =>
     NetworkMagic ->
     FilePath ->
-    Async (Either e ()) ->
+    Async a ->
+    Cage.Provider IO ->
     IO ()
-verifyConnection (NetworkMagic magic) sock nodeThread = do
-    status <- poll nodeThread
-    case status of
-        Nothing -> pure ()
-        Just outcome ->
+awaitConnection (NetworkMagic magic) sock nodeThread prov = do
+    answered <-
+        race (waitCatch nodeThread) (Cage.queryProtocolParams prov)
+    case answered of
+        Right _ -> pure ()
+        Left outcome ->
             die $
                 "the node at "
                     <> sock

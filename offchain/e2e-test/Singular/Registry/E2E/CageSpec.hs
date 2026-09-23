@@ -20,7 +20,7 @@ module Singular.Registry.E2E.CageSpec (
 ) where
 
 import Control.Concurrent (threadDelay)
-import Control.Concurrent.Async (async, cancel, poll)
+import Control.Concurrent.Async (async, cancel)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Lens.Micro ((^.))
@@ -84,6 +84,7 @@ import Singular.Registry.Ledger (
     TokenId (..),
  )
 import Singular.Registry.Driver qualified as Driver
+import Singular.Registry.Node (awaitConnection)
 import Singular.Registry.Provider qualified as Cage
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie.PureManager (
@@ -416,27 +417,11 @@ withE2E stateBytes requestBytes action = do
                     sock
                     lsqCh
                     ltxsCh
-        threadDelay 3_000_000
-        -- Verify connection
-        status <- poll nodeThread
-        case status of
-            Just (Left err) ->
-                error $
-                    "Node connection failed: "
-                        <> show err
-            Just (Right (Left err)) ->
-                error $
-                    "Node connection error: "
-                        <> show err
-            Just (Right (Right ())) ->
-                error
-                    "Node connection closed \
-                    \unexpectedly"
-            Nothing -> pure ()
         -- Build Provider (adapt from
         -- cardano-node-clients Provider)
         let n2cProv = mkN2CProvider lsqCh
             prov = adaptProvider n2cProv
+        awaitConnection (NetworkMagic 42) sock nodeThread prov
         -- Build Submitter
         let submit = mkN2CSubmitter ltxsCh
         -- Build TrieManager
