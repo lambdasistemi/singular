@@ -5075,16 +5075,19 @@ observedStepTx _env ids step transaction config mint destination commitment cust
         stateOutputs = [out | out <- outputValues,
             Just (StateDatum _) <- [extractCageDatum out]]
     require "accepted fold has no unique chain state output" (length stateOutputs == 1)
-    witnessInputs <- case (edge, lsWitness step) of
-        (Live.UpdateTerminal, Just (source, _)) -> do
-            require "retirement did not spend its observed active witness"
+    let witnessInput what source = do
+            require (what <> " did not spend its observed active witness")
                 (source `Set.member` actualInputs)
             asset <- observeStepMint ids cfg (SBS.fromShort (cfgActivePolicy cfg))
                 requestKeyBytes 1
             pure [object ["role" .= String "witness", "datum" .= String "inline",
                 "stateToken" .= (0 :: Integer), "approvalQuantity" .= (0 :: Integer),
                 "lovelace" .= (0 :: Integer), "assets" .= [asset]]]
+    witnessInputs <- case (edge, lsWitness step) of
+        (Live.UpdateTerminal, Just (source, _)) -> witnessInput "retirement" source
         (Live.UpdateTerminal, Nothing) -> failWith "retirement has no observed active witness"
+        (Live.DeleteActive, Just (source, _)) -> witnessInput "deletion" source
+        (Live.DeleteActive, Nothing) -> failWith "deletion has no observed active witness"
         _ -> pure []
     custodyInputs <- case (edge, lsCustody step) of
         (Live.UpdateActive, Just (source, _)) -> custodyInput source
