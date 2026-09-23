@@ -359,7 +359,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b"
+  "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -481,6 +481,42 @@ def tokenPoliciesJson : Json :=
     , ("absent", toJson (kindPolicy cfg .absent))
     , ("terminal", toJson (kindPolicy cfg .terminal)) ]
 
+/-- A deleted key is a non-member. Each row deletes key 42 from a registry that
+stored it, alone or beside key 8, and names the registry the same requests build
+without key 42. Both sides are computed by the model; nothing is typed. -/
+def deletionRows : List (String × Except String Result × RegistryState) :=
+  [ ("deleteAbsent of the only key",
+      step (witnessed s0 42) (req .deleteAbsent 42 91 0), s0)
+  , ("deleteAbsent beside another key",
+      step (witnessed (witnessed s0 8) 42) (req .deleteAbsent 42 91 0), witnessed s0 8)
+  , ("deleteActive of the only key",
+      step (booked s0 42) (req .deleteActive 42 42 0), s0)
+  , ("deleteActive beside another key",
+      step (booked (booked s0 8) 42) (req .deleteActive 42 42 0), booked s0 8) ]
+
+/-- What a deletion row violates: a stored `unknown` leaf, a registry other than
+the one that never stored the key, a lookup other than `unknown`, or a later
+`updateTerminal` of the key refused for a reason other than `key-unknown`. -/
+def deletionFailures : List String :=
+  deletionRows.flatMap fun (name, result, never) =>
+    match result with
+    | .error why => [s!"{name}: refused {why}"]
+    | .ok t =>
+      (if t.state.trie.all (fun p => p.2 != .unknown) then []
+       else [s!"{name}: trie stores an unknown leaf {repr t.state.trie}"]) ++
+      (if t.state.trie == never.trie then []
+       else [s!"{name}: trie {repr t.state.trie} != {repr never.trie}"]) ++
+      (if t.state.config.root == never.config.root then []
+       else [s!"{name}: root {repr t.state.config.root.toList} != {repr never.config.root.toList}"]) ++
+      (if t.state == never then []
+       else [s!"{name}: registry differs from the one that never stored the key"]) ++
+      (if trieGet t.state.trie 42 == .unknown then []
+       else [s!"{name}: lookup of the deleted key is {repr (trieGet t.state.trie 42)}"]) ++
+      (match step t.state (req .updateTerminal 42 42 555) with
+       | .error "key-unknown" => []
+       | .error why => [s!"{name}: updateTerminal after deletion refused {why}"]
+       | .ok _ => [s!"{name}: updateTerminal after deletion accepted"])
+
 def cases : List Case := [accInsertAbsent, accInsertActive, accUpdateActive,
   accUpdateTerminal, accDeleteAbsent, accDeleteActive, accWitnessTerminal] ++ refusals ++ readRows ++ custodyRows
 
@@ -543,6 +579,10 @@ def main : IO Unit := do
   for (id, expected, before) in retirementRefusalRows do
     unless retireRefusal before == expected do
       throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")
+  unless deletionFailures.isEmpty do
+    throw (IO.userError s!"deletion keeps the key: {deletionFailures}")
+  unless leafByte .unknown == 0xFF do
+    throw (IO.userError "the unknown lookup answer lost its 0xFF codec byte")
   unless batchEmpty.isSome && batchMint.isSome do throw (IO.userError "fold rows failed")
   let foldJson := foldRows.map fun p =>
     Json.mkObj [("id", p.1), ("ok", p.2.1), ("reason", p.2.2),

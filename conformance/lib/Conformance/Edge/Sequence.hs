@@ -14,6 +14,7 @@ story (Context registry holder) = do
     checked (EdgeRequest UpdateTerminal "sequence-active" holder)
     checked (EdgeRequest InsertActive "sequence-direct" holder)
     checked (EdgeRequest InsertAbsent "sequence-absent" holder)
+    checked (EdgeRequest DeleteAbsent "sequence-absent" holder)
     checked (EdgeRequest WitnessTerminal "sequence-active" holder)
     checked (EdgeRequest DeleteActive "sequence-direct" holder)
   where

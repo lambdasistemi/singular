@@ -41,12 +41,6 @@ active-token burn and fails balancing before any script runs. The node rejects
 `witnessTerminal` while booking its request. Both carry their observed reasons
 as gaps, without claiming a completed fold.
 
-`deleteAbsent` is published as a model/chain disagreement. Its accepted chain
-deletion removes the key from the authenticated map, while the bound Lean model
-retains an explicit `unknown` entry and computes a different root. The running
-sequence omits that request; its other applicable edges are still compared.
-See the retained devnet comparison in the commit-owner handoff.
-
 For the appendix alone, run:
 
 ```sh

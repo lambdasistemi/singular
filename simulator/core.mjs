@@ -173,10 +173,10 @@ export function applyEdge(s,a){
   case 'updateTerminal':{const t=withTrie('terminal');
    return {state:{...s,...t,held:s.held.filter(h=>!(h.key===a.key&&h.kind==='active'))},
      mint:delta(a.edge),paid:[]};}
-  case 'deleteAbsent':{const t=withTrie(null);
+  case 'deleteAbsent':{const trie=s.trie.filter(p=>p.key!==a.key),t={trie,config:{...s.config,root:rootOf(trie)}};
    return {state:{...s,...t,custody:s.custody.filter(c=>c.key!==a.key)},
      mint:delta(a.edge),paid:entry?[{destination:entry.refundAddress,value:entry.value}]:[]};}
-  case 'deleteActive':{const t=withTrie(null);
+  case 'deleteActive':{const trie=s.trie.filter(p=>p.key!==a.key),t={trie,config:{...s.config,root:rootOf(trie)}};
    return {state:{...s,...t,held:s.held.filter(h=>!(h.key===a.key&&h.kind==='active'))},
      mint:delta(a.edge),paid:[]};}
   case 'witnessTerminal':
