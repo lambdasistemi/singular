@@ -1,0 +1,28 @@
+{
+  "run-the-checks": [
+    {
+      "text": "From the repository root, run the root build gate. From offchain, run the lint app and the component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, every executable and every test suite without executing them. A member failure fails the carrier.",
+      "pause": 400
+    }
+  ],
+  "where-the-source-list-comes-from": [
+    {
+      "text": "The Cabal file declares source directories for lint discovery and components for the build carrier. Two naming sources compiled directly by scripts join lint discovery. Discovered files flow to the formatter boundary; hint clean directories flow to HLint. The component build uses the Cabal library, executable and test sets. Each result reaches CI with its own extent.",
+      "pause": 400
+    },
+    {
+      "text": "Lint discovery deduplicates nested directories and fails closed on missing declarations or empty source sets. A maintenance control put malformed Haskell in a newly covered tracked directory, ran the actual lint app, and restored the file byte for byte.",
+      "pause": 400
+    }
+  ],
+  "current-boundaries": [
+    {
+      "text": "The inventory, formatting, HLint and component build extents are separate. This ticket leaves the two independent verifier sources unchanged, so they remain in the inventory and build carrier but outside the formatter. HLint omits named directories with existing hint debt. A green lint run does not certify those omitted directories. Epic integration issue 278 must close every temporary gap and cover code beyond offchain Haskell before the epic can claim complete lint and format coverage.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "offchain-development.md",
+    "sha256": "a7c3460e9274044768d6cab84eb61bdf1415380e858efb0e9677dcb1fd4162a3"
+  }
+}
