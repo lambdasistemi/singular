@@ -1,26 +1,30 @@
+-- Provenance (verify before trusting these bytes):
+--
+--   * release: epic 15 v0.2.0 — the accepted naming contract
+--   * release commit: @13231f58833b8feb57f4b0f9b1117bfcfba0c07d@
+--     (annotated tag @e9fdbf2afa7d99a42f2476434c1dfb3f90d7a1d5@)
+--   * release asset: @singular-docs-0.2.0.tar.gz@
+--   * asset sha256:
+--     @acbabdf54a271251bd73bf9d84ab2c901107045a7dd77d28a391f22cdd53b0e5@
+--   * source inside the archive:
+--     @simulator/lifecycle-corpus.json@, @wire@ array, fields
+--     @expectedBytes@ / @malformedBytes@ / @redirectedBytes@ / fixtures
+--   * extraction: 2026-09-10, mechanically copied from
+--     the archive copy whose sha256 was verified against the value above
+--   * inventory adopted: 2026-09-17, for the registry-mode corpus of #156.
+--     Two rows were renamed and two left the corpus; NO BYTE CHANGED. The
+--     adoption is recorded per constant below and the drift check compares
+--     the same bytes against the renamed rows.
+--
+-- The provenance header stays as plain line comments because the drift
+-- check (naming/drift/Main.hs, extractRelease) reads this file as text
+-- and requires exactly one '--   * release: ' line; a block-Haddock
+-- rewrap removes that line and the check exits 2 before comparing.
+
 {- | The four epic-15 wire vectors, vendored byte-for-byte from the
-accepted contract so the suite needs no network.
-
-Provenance (verify before trusting these bytes):
-
-  * release: epic 15 v0.2.0 — the accepted naming contract
-  * release commit: @13231f58833b8feb57f4b0f9b1117bfcfba0c07d@
-    (annotated tag @e9fdbf2afa7d99a42f2476434c1dfb3f90d7a1d5@)
-  * release asset: @singular-docs-0.2.0.tar.gz@
-  * asset sha256:
-    @acbabdf54a271251bd73bf9d84ab2c901107045a7dd77d28a391f22cdd53b0e5@
-  * source inside the archive:
-    @simulator/lifecycle-corpus.json@, @wire@ array, fields
-    @expectedBytes@ / @malformedBytes@ / @redirectedBytes@ / fixtures
-  * extraction: 2026-09-10, mechanically copied from
-    the archive copy whose sha256 was verified against the value above
-  * inventory adopted: 2026-09-17, for the registry-mode corpus of #156.
-    Two rows were renamed and two left the corpus; NO BYTE CHANGED. The
-    adoption is recorded per constant below and the drift check compares
-    the same bytes against the renamed rows.
-
-These are the contract's bytes. If the codec disagrees with them, the
-vectors are right and the codec is wrong.
+accepted contract so the suite needs no network. These are the
+contract's bytes. If the codec disagrees with them, the vectors are
+right and the codec is wrong.
 -}
 module Naming.Wire.Vectors (
     wd01Id,

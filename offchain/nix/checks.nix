@@ -64,12 +64,18 @@ in
       fourmolu_excluded="journey/verifier journey/retire-verify"
       fmt_files=$(printf '%s\n' $files | grep -vE "^($(echo $fourmolu_excluded | tr ' ' '|'))/")
       [ -n "$fmt_files" ] || { echo "lint: formatter extent is empty" >&2; exit 1; }
-      # Fail closed on an inert exclusion: every configured exclusion must
-      # provably remove at least one discovered file, so a pattern that
-      # matches nothing (the F-003-1 defect) fails the command instead of
-      # silently widening the formatter extent.
+      # Fail closed on an inert exclusion by asserting the EFFECT, not a
+      # precondition: no configured exclusion may leave any file in the
+      # formatter argument set (the F-003-1 defect — a pattern matching
+      # nothing, leaving 69 files in fmt_files — fails here), and each
+      # must have had at least one discovered file to remove (a typo'd
+      # exclusion name fails the second check).
       for x in $fourmolu_excluded; do
-        printf '%s\n' $files | grep -q "^$x/" || { echo "lint: configured Fourmolu exclusion removed no discovered file: $x" >&2; exit 1; }
+        if printf '%s\n' $fmt_files | grep -q "^$x/"; then
+          echo "lint: configured Fourmolu exclusion did not remove its files from the formatter set: $x" >&2
+          exit 1
+        fi
+        printf '%s\n' $files | grep -q "^$x/" || { echo "lint: configured Fourmolu exclusion matched no discovered file: $x" >&2; exit 1; }
       done
       # The GHC option only lets fourmolu parse the postpositive-qualified
       # imports of the two direct-GHC naming sources; sources without that
