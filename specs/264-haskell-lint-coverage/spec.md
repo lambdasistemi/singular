@@ -16,7 +16,7 @@ while doing the work.
 | ID | Requirement | Observable result |
 | --- | --- | --- |
 | R264-1 | Lint discovers every included active Haskell source directory, including the Cabal executables and naming sources beyond the four currently scanned directories. | The existing `.#lint` command rejects a deliberately malformed file placed in a newly covered active directory; the same command passes after removal. The inventory below explains any exclusion. |
-| R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and affected components build. |
+| R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and affected components build through the new CI carrier. |
 | R264-3 | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the relevant components. |
 | R264-4 | Keep formatting changes separate and mechanical. | A reviewer can identify layout-only source diffs apart from the two configuration files. Signatures, strictness, imports, and behavior remain stable. |
 
@@ -62,5 +62,7 @@ they require their own reviewable diff.
 CI currently runs `(cd offchain && nix run --quiet .#lint)` and root
 `nix build --quiet .#build-gate`. The root build gate closes root docs/model
 packages, not all off-chain Cabal components. Selected registry workflow jobs
-build off-chain targets. Full affected-component CI build coverage is held as
-`MISSING-CI-JOB` in ticket question Q-001 until the epic owner resolves it.
+build off-chain targets. The epic owner answered Q-001 by authorizing a new
+off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. Until
+that job is present and green on the candidate, full build coverage remains
+`MISSING-CI-JOB`.
