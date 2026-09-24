@@ -70,6 +70,31 @@
         components =
           project.project.hsPkgs.singular-registry.components;
 
+        # #264 T264-05: hermetic build closure over every component the
+        # Cabal package declares — the library, every executable, and
+        # every test suite — quantified over the haskell.nix component
+        # attrsets, so a new Cabal component joins the closure without a
+        # maintained name list here. Building a test component compiles
+        # it and runs nothing. The joined manifest records the exact
+        # closure for reconciliation against the Cabal inventory (19
+        # components at intake: 1 library, 15 executables, 3 test
+        # suites).
+        componentBuild = pkgs.symlinkJoin {
+          name = "singular-registry-component-build";
+          paths =
+            [ components.library ]
+            ++ pkgs.lib.attrValues components.exes
+            ++ pkgs.lib.attrValues components.tests
+            ++ [
+              (pkgs.writeTextDir "component-build-manifest"
+                (pkgs.lib.concatStringsSep "\n" (
+                  [ "library singular-registry" ]
+                  ++ map (n: "exe " + n) (pkgs.lib.attrNames components.exes)
+                  ++ map (n: "test " + n) (pkgs.lib.attrNames components.tests)
+                ) + "\n"))
+            ];
+        };
+
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
 
@@ -318,6 +343,10 @@
       in
       {
         packages = {
+          # #264 T264-05: the complete off-chain component build carrier
+          # (epic answer A-001). CI builds it with
+          # `nix build --quiet .#component-build` from offchain.
+          component-build = componentBuild;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`

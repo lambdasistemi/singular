@@ -50,6 +50,29 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: (cd offchain && nix run --quiet .#lint)
+  offchain-component-build:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Off-chain component build
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #264 (epic answer A-001): build the library, every executable and
+      # every test suite the offchain Cabal package declares — build only,
+      # nothing executes.
+      - run: nix build --quiet .#component-build
+        working-directory: offchain
   model:
     if: github.event.action != 'closed'
     needs: build-gate
