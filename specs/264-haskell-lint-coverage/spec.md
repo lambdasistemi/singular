@@ -30,7 +30,7 @@ flowchart LR
 | R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and the classified supported components build through the new CI carrier. |
 | R264-3 | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the supported components; identify every unbuilt legacy executable. |
 | R264-4 | Keep formatting changes separate and mechanical. | A reviewer can identify layout-only source diffs apart from the two configuration files. Signatures, strictness, imports, and behavior remain stable. |
-| R264-5 | Classify every Cabal component against live required workflows and shipped command closure. | The inventory labels every declaration as built here, covered by another required job with command, or unbuildable/unverified with issue and reason. An unknown new component makes the inventory gate fail; a selected included component's failure makes the carrier fail. Control mutations are restored byte-for-byte. |
+| R264-5 | Classify every Cabal component against live required workflows and currently supported command closure. | The inventory labels every declaration as built here, covered by another required job with command, or unbuildable/unverified with issue and reason. An unknown new component or omitted-classification drift makes the inventory gate fail; a selected included component's failure makes the carrier fail. Control mutations are restored byte-for-byte. |
 
 ## Source inventory at intake
 
@@ -75,12 +75,12 @@ CI currently runs `(cd offchain && nix run --quiet .#lint)` and root
 `nix build --quiet .#build-gate`. The root build gate closes root docs/model
 packages, not all off-chain Cabal components. Selected registry workflow jobs
 build off-chain targets. The epic owner answered Q-001 by authorizing a new
-off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. A-005
-narrows its required scope to the supported components used by current required
-workflows and shipped registry commands, plus the library and its test
-components. The carrier must reject an unclassified new component and any
-build failure in its included set. A green carrier establishes only that set,
-never a package-wide build.
+off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. A-005,
+A-008 and A-009 narrow its required scope to the components used by current
+required workflows and currently supported registry commands, plus the library
+and its test components. The carrier must reject an unclassified new component,
+omitted-classification drift and any build failure in its included set. A green
+carrier establishes only that set, never a package-wide build.
 
 ## Candidate boundary and epic completion
 
@@ -114,6 +114,16 @@ full component carrier run found a pre-existing compile error in
 `connected-verifier`; its failed receipt is retained. A-005 assigns that
 executable's repair to [#282](https://github.com/lambdasistemi/singular/issues/282)
 and requires it to remain declared and marked unbuildable/unverified in this
-ticket's component inventory. #278 still owns lint and formatting of its
-source. The final candidate must publish the classification of every declared
-component and demonstrate that the narrower carrier and its controls run.
+ticket's component inventory. The next carrier run directly failed at
+`recovery-rows`, which imports the removed `registerConsumerImpl`. A-008 maps
+the named retired D6 NYA journeys `recovery-rows`, `retirement-rows` and
+`repair-rows` to [#172](https://github.com/lambdasistemi/singular/issues/172)
+after exact source/workflow and current dependency checks. A-009 maps
+`register-rows`, which D6 does not name, to
+[#283](https://github.com/lambdasistemi/singular/issues/283) as a separate
+unbuildable/unverified command. The current carrier receipt does not prove
+those other executables' own build results. All five remain declared and
+exposed. The proposed inventory has 14 included and five unverified members,
+subject to actual command closure. #278 still owns lint and formatting of
+every retained source. The final candidate must publish all 19 declarations'
+classification and demonstrate the narrower carrier and its controls.

@@ -13,18 +13,18 @@
   ],
   "evidence-limit": [
     {
-      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. The new CI carrier builds the classified supported components used by required workflows and shipped commands, plus the library and tests. Its inventory must name every unbuilt declaration, and a green result is not a package-wide build claim.",
+      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. The new CI carrier builds the classified components used by required workflows and currently supported commands, plus the library and tests. Its inventory must name every unbuilt declaration and reject unknown or drifted omissions. A green result is not a package-wide build claim.",
       "pause": 400
     }
   ],
   "candidate-boundary-and-epic-completion": [
     {
-      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and the excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first complete component build exposed a pre-existing connected verifier compile error. Issue 282 owns that repair; the executable stays declared and unverified in this ticket.",
+      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first all-component build exposed a pre-existing connected verifier failure, owned by issue 282. A later carrier directly failed at recovery rows. Retired journeys are unverified under issue 172; register rows is separately unverified under issue 283. All five remain declared, and the later run proves no direct build result for the other omitted commands.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "aa0e477dc00b4cc1c1144c0d2a3e7582b3df3d7e59d4f77cf83d4b73b24ebbdb"
+    "sha256": "79e2139fb57877744d7110efc4ab0420ed1956b89b403bbd25464161bfb84c0b"
   }
 }
