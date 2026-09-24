@@ -1,13 +1,13 @@
 {
   "run-the-checks": [
     {
-      "text": "From the repository root, run the root build gate. From offchain, run the lint app and the component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, every executable and every test suite without executing them. A member failure fails the carrier.",
+      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and supported workflow and shipped-command components without executing them. An included member failure fails the carrier; its green result is not a package-wide build.",
       "pause": 400
     }
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for the build carrier. Two naming sources compiled directly by scripts join lint discovery. Sixty-seven eligible files flow to Fourmolu; two preserved verifier files remain a formatter gap. Hint clean directories flow to HLint. The component build uses the Cabal library, executable and test sets. Each result reaches CI with its own extent.",
+      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Sixty-seven eligible files flow to Fourmolu; two preserved verifier files remain a formatter gap. Hint clean directories flow to HLint. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
       "pause": 400
     },
     {
@@ -17,12 +17,12 @@
   ],
   "current-boundaries": [
     {
-      "text": "The inventory, formatting, HLint and component build extents are separate. This ticket leaves the two independent verifier sources unchanged, so they remain in the inventory and build carrier but outside the formatter. HLint omits named directories with existing hint debt. A green lint run does not certify those omitted directories. Epic integration issue 278 must close every temporary gap and cover code beyond offchain Haskell before the epic can claim complete lint and format coverage.",
+      "text": "The inventory, formatting, HLint and component build extents are separate. This ticket leaves the two independent verifier sources unchanged, so they remain in the source inventory but outside the formatter. Connected verifier stays declared and exported, while issue 282 owns its pre-existing build failure; this ticket does not claim it works. HLint omits named directories with existing hint debt. A green lint run does not certify those omitted directories. Epic integration issue 278 must close every temporary lint and format gap and cover code beyond offchain Haskell before the epic can claim complete coverage.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "4d431ef978f733328e051c99bde1677e922846ace3ae61a16a07f5c4484a8611"
+    "sha256": "ec558aaa0b9e034495f2f88d5ea6b3f173f806a1d914c947e4d6962dd70a0d1b"
   }
 }

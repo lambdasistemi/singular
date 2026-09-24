@@ -13,18 +13,18 @@
   ],
   "evidence-limit": [
     {
-      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. A new CI carrier is authorized for the complete off-chain component set. Until it runs and passes on the candidate, that build coverage is still missing.",
+      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. The new CI carrier builds the classified supported components used by required workflows and shipped commands, plus the library and tests. Its inventory must name every unbuilt declaration, and a green result is not a package-wide build claim.",
       "pause": 400
     }
   ],
   "candidate-boundary-and-epic-completion": [
     {
-      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and the excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first complete component build exposed a pre-existing connected verifier compile error, so the build acceptance row remains held.",
+      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and the excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first complete component build exposed a pre-existing connected verifier compile error. Issue 282 owns that repair; the executable stays declared and unverified in this ticket.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6ed9ebc1572fd1ac6a7bcaa7bb141bf0098af221fff39197c1e86a64c97f4198"
+    "sha256": "aa0e477dc00b4cc1c1144c0d2a3e7582b3df3d7e59d4f77cf83d4b73b24ebbdb"
   }
 }

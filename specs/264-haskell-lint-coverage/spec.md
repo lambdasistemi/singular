@@ -2,8 +2,9 @@
 
 As a contributor, I want the existing lint command to inspect the active Haskell
 sources used by registry components, so that a malformed source in a newly
-included directory fails the command I already run. I want every affected
-component to build with its existing public interface and command name.
+included directory fails the command I already run. I want the supported
+components consumed by current required workflows and shipped registry
+commands to build with their existing public interfaces and command names.
 
 The accepted Lean revision for this maintenance slice is
 `0b9b461205d4ef5a67bb41fba56d88b2a3a0ded1`. This slice changes no Lean
@@ -14,7 +15,9 @@ while doing the work.
 ```mermaid
 flowchart LR
     A[Active Haskell sources] -->|discovered by| B[Existing lint command]
-    C[Cabal components] -->|built by| D[New offchain CI carrier]
+    C[Cabal components] -->|classified by| I[Complete inventory]
+    I -->|supported members| D[New offchain CI carrier]
+    I -->|unverified members| U[Named issue and reason]
     B -->|result| E[Contributor]
     D -->|result| E
 ```
@@ -24,9 +27,10 @@ flowchart LR
 | ID | Requirement | Observable result |
 | --- | --- | --- |
 | R264-1 | Lint discovers every included active Haskell source directory, including the Cabal executables and naming sources beyond the four currently scanned directories. | The existing `.#lint` command rejects a deliberately malformed file placed in a newly covered active directory; the same command passes after removal. The inventory below explains any exclusion. |
-| R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and affected components build through the new CI carrier. |
-| R264-3 | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the relevant components. |
+| R264-2 | Remove only repeated dependency declarations from the Cabal component that contains them. | The Cabal declaration is unambiguous and the classified supported components build through the new CI carrier. |
+| R264-3 | Preserve public library exports and executable names. | Compare the exact before and after Cabal declarations and build the supported components; identify every unbuilt legacy executable. |
 | R264-4 | Keep formatting changes separate and mechanical. | A reviewer can identify layout-only source diffs apart from the two configuration files. Signatures, strictness, imports, and behavior remain stable. |
+| R264-5 | Classify every Cabal component against live required workflows and shipped command closure. | The inventory labels every declaration as built here, covered by another required job with command, or unbuildable/unverified with issue and reason. An unknown new component makes the inventory gate fail; a selected included component's failure makes the carrier fail. Control mutations are restored byte-for-byte. |
 
 ## Source inventory at intake
 
@@ -71,9 +75,12 @@ CI currently runs `(cd offchain && nix run --quiet .#lint)` and root
 `nix build --quiet .#build-gate`. The root build gate closes root docs/model
 packages, not all off-chain Cabal components. Selected registry workflow jobs
 build off-chain targets. The epic owner answered Q-001 by authorizing a new
-off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. Until
-that job is present and green on the candidate, full build coverage remains
-`MISSING-CI-JOB`.
+off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. A-005
+narrows its required scope to the supported components used by current required
+workflows and shipped registry commands, plus the library and its test
+components. The carrier must reject an unclassified new component and any
+build failure in its included set. A green carrier establishes only that set,
+never a package-wide build.
 
 ## Candidate boundary and epic completion
 
@@ -102,7 +109,11 @@ Epic #272 can claim all-code lint and format coverage only after [final
 integration #278](https://github.com/lambdasistemi/singular/issues/278) maps
 every tracked code source to actual checks, including code beyond off-chain
 Haskell. This ticket supplies the bounded off-chain foundation and reports its
-gaps. The independent verifier source fence remains in force here. The
-component build carrier still includes both verifier executables; its first
-real run found a pre-existing compile error in `connected-verifier`, so the
-complete build acceptance row is held until the epic rules on that failure.
+gaps. The independent verifier source fence remains in force here. The first
+full component carrier run found a pre-existing compile error in
+`connected-verifier`; its failed receipt is retained. A-005 assigns that
+executable's repair to [#282](https://github.com/lambdasistemi/singular/issues/282)
+and requires it to remain declared and marked unbuildable/unverified in this
+ticket's component inventory. #278 still owns lint and formatting of its
+source. The final candidate must publish the classification of every declared
+component and demonstrate that the narrower carrier and its controls run.
