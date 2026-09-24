@@ -1,0 +1,24 @@
+{
+  "preprod-play-to-record": [
+    {
+      "text": "The presenter will create and export a fresh identity with keripy, register and advance it with Cardano KERI on preprod, then maintain and recover a name through the released Singular interface. The connected naming release and mapping are still missing. Singular version two point zero point zero is a planned milestone tag, not an existing release. Identity readback uses the Cardano KERI follower store.",
+      "pause": 500
+    }
+  ],
+  "presenter-path-1015-minutes-when-connected": [
+    {
+      "text": "The presenter will show the identity event, registry and naming transactions, current destination readback, and two named refusals. Every observed result must be read from preprod.",
+      "pause": 500
+    }
+  ],
+  "recording-gate": [
+    {
+      "text": "No naming cast is attached yet. The dated story needs a released interface, confirmed preprod transaction IDs and fresh identity and name readbacks before a recording is published.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "d02-naming.md",
+    "sha256": "ab33b5dcbf0c57e8bd00f57c21dac0715a35edf2fd6da1ab6543ca51bcd35f0e"
+  }
+}

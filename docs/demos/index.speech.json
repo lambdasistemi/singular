@@ -1,0 +1,18 @@
+{
+  "choose-a-dated-play": [
+    {
+      "text": "Choose a dated preprod play and check its evidence boundary. Cardano KERI uses its follower store for identity actions, while Singular needs a persistent registry read path. Each cast requires real keripy and Cardano KERI operations plus the released Singular transactions and readbacks.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "index.md",
+    "sha256": "ffb82ca32aed55e48b77eb107d1623e620db036eb791ff5b994bdbe94385a619"
+  },
+  "planned-major-release-tags": [
+    {
+      "text": "The registry handoff targets Singular version one point zero point zero. Naming and escrow target version two point zero point zero after the connected D zero three gate. These are planned tags, not published releases.",
+      "pause": 500
+    }
+  ]
+}

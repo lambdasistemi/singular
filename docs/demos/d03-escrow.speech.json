@@ -1,0 +1,24 @@
+{
+  "planned-play": [
+    {
+      "text": "Bob's ordered escrow play has two connected runs. One lets Alice recover and claim at her current destination. The second requires Alice's completed retirement and a terminal witness before Bob claims. These are planned preprod observations, not results shown on this page. Singular version two point zero point zero remains a planned tag until the connected release gate.",
+      "pause": 500
+    }
+  ],
+  "presenter-path-1015-minutes-when-runnable": [
+    {
+      "text": "A future presenter will show the release and manifest, both connected claims, then the early claim, wrong destination and missing witness refusals with transaction and script evidence.",
+      "pause": 500
+    }
+  ],
+  "missing-interface-and-evidence": [
+    {
+      "text": "The escrow validator, command line, completion repair and preprod journey must produce a runnable release script and node receipts. Until then, the connected journey is not playable.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "d03-escrow.md",
+    "sha256": "aad0e7f9e029d31de983d6c0e48f4ad51f3db1530e2d39c9c729ff878f9f3f39"
+  }
+}
