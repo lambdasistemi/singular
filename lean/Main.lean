@@ -232,7 +232,7 @@ manifest detaches the row from its proof and is caught there. -/
 
 def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def transactionRowStatement : String :=
-  "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+  "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
 def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
 def keyedMintStatement : String :=
   "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
@@ -303,7 +303,7 @@ def absentResult : Except String Result := step s0 absentRequest
 def absentTx : Except String Tx := txOf s0 absentRequest txLovelace
 
 def absentRowTheorem : String := "Singular.Statements.insert_absent_transaction_row"
-def absentRowStatement : String := "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+def absentRowStatement : String := "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
 
 /-- Check the constructed value independently of its constructors, so changing
 those constructors cannot silently change the exported expectations. -/
@@ -324,7 +324,7 @@ def absentTxCorrect : Bool :=
           , { role := .cage, datum := .inline, address := some 0, stateTokens := 0
             , config := none, commitment := none, assets := [((.absent, 42), 1)]
             , custodyDatum := some [91], lovelace := 200 } ]
-      , mint := [((.absent, 42), 1)], signers := [], refunds := [] } &&
+      , mint := [((.absent, 42), 1)], signers := [], refunds := [(0, 200)] } &&
     (tx.outputs.filter (fun o => o.role == .cage)).map custodyKey == [some 42] &&
     t.state.trie == trieSet s0.trie 42 (.known .absent) &&
     onlyRootChanged cfg t.state.config && t.state.config.root == rootOf t.state.trie &&
@@ -359,7 +359,7 @@ step. -/
 
 def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def retirementRowStatement : String :=
-  "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+  "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
 
 /-- The state an accepted `insertActive` at key 42 produced: the leaf reads
 `Active` and its one active token is held at output 555. -/
@@ -658,12 +658,13 @@ def settleInsertActive : SettleCase :=
 def settleDeleteActiveRequest : Request :=
   { req .deleteActive 8 42 99 with deposit := 55, tip := 7 }
 
-/-- The fold delivering nothing: the model's own transaction, plus the owner's
-refund. -/
+/-- The fold delivering nothing: the model's own transaction, its owner output
+carrying the deposit back. -/
 def settleDeleteActive : SettleCase :=
+  let outs := txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)
   { exit := .fold .deleteActive, request := settleDeleteActiveRequest
-  , context := txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)
-  , carrier := ownerOutput 42 settleDeleteActiveRequest.deposit }
+  , context := outs.filter (·.role != .owner)
+  , carrier := (outs.find? (·.role == .owner)).getD (ownerOutput 0 0) }
 
 /-- Reject: the registry continues unchanged, and the owner is refunded. -/
 def settleReject : SettleCase :=
@@ -678,7 +679,7 @@ def settleRetract : SettleCase :=
 
 -- The model's own transactions exist, so the controls above are not vacuous.
 #guard (txOutputs (txOf s0 settleInsertActiveRequest 1)).any (·.role == .destination)
-#guard !(txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)).isEmpty
+#guard (txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)).any (·.role == .owner)
 
 #guard settleInsertActive.untampered == none
 #guard settleInsertActive.shortByOne == some "deposit-returned"
@@ -776,9 +777,6 @@ def leavesRegistry (s : RegistryState) (paid : List (Nat × Nat)) :
   | .ok r => r.state == s && r.mint.isEmpty && r.paid == paid
   | .error _ => false
 
--- A fold of the request's own edge is exactly the edge's step.
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  sameStep (exitStep exitState (.fold e) (exitStepRequest e k)) (step exitState (exitStepRequest e k))
 -- A fold of any other edge is refused, whatever the law would say of the request.
 #guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
   named == e || sameStep (exitStep exitState (.fold e) (exitStepRequest named k))
@@ -827,6 +825,75 @@ def exitTxShape (exit : Exit) (r : Request) (paid : List (Nat × Nat)) :
   match txOfExit exitState .reject (exitStepRequest e k) 3 with
   | .ok tx => tx.outputs.head?.bind (·.config) == some exitState.config
   | .error _ => false
+
+/-! ### Every exit carries its payments
+
+A fold's `paid` is what the exit owes, then the custody refunds its step already
+pays; its transaction carries each floor in the output that pays it, and settles.
+The registry below adds a terminal key to `exitState`, so every edge is admitted at
+one of the keys the rows range over. -/
+
+/-- Keys 3 and 4 active, key 5 terminal, key 6 absent under custody. -/
+def paidState : RegistryState :=
+  match step (booked exitState 5) (req .updateTerminal 5 42 555) with
+  | .ok r => r.state | .error _ => exitState
+
+/-- The keys the payment rows range over: active, terminal, absent, unbound. -/
+def paidKeys : List Nat := [4, 5, 6, 9]
+
+/-- Where a fold of edge `e` pays the deposit of `exitStepRequest e k`, read off the
+rule table: the cage for `insertAbsent`, the named output 99 for the edges that
+deliver a token, the owner 42 for the edges that deliver nothing. -/
+def foldPaysDepositTo : Edge → Nat
+  | .insertAbsent => cageAddress
+  | .insertActive | .updateActive | .witnessTerminal => 99
+  | .updateTerminal | .deleteAbsent | .deleteActive => 42
+
+def deliversToken (e : Edge) : Bool := foldPaysDepositTo e == 99
+def returnsDeposit (e : Edge) : Bool := foldPaysDepositTo e == 42
+
+-- Not vacuous: every edge is admitted at one of the keys.
+#guard exitEdges.all fun e => paidKeys.any fun k =>
+  match step paidState (exitStepRequest e k) with | .ok _ => true | .error _ => false
+
+-- A fold pays the deposit where the rule table says, then what its step pays.
+#guard exitEdges.all fun e => paidKeys.all fun k =>
+  match exitStep paidState (.fold e) (exitStepRequest e k), step paidState (exitStepRequest e k) with
+  | .ok a, .ok b =>
+    a.state == b.state && a.mint == b.mint && a.paid == (foldPaysDepositTo e, 55) :: b.paid
+  | .error x, .error y => x == y
+  | _, _ => false
+
+-- A fold's transaction carries the deposit in the output that pays it: the
+-- destination output of a delivering edge, one owner output of an edge that
+-- delivers nothing, with no datum and naming the approval it returns; and it
+-- refunds exactly what the exit pays.
+#guard exitEdges.all fun e => paidKeys.all fun k =>
+  match exitStep paidState (.fold e) (exitStepRequest e k),
+        txOfExit paidState (.fold e) (exitStepRequest e k) 3 with
+  | .ok t, .ok tx =>
+    (tx.outputs.filter (·.role == .destination)).map (·.lovelace)
+        == [if deliversToken e then 55 else 0] &&
+      tx.outputs.filter (·.role == .owner)
+        == (if returnsDeposit e then
+              [{ ownerOutput 42 55 with
+                 datum := .none, commitment := (exitStepRequest e k).approval.map (·.assetName) }]
+            else []) &&
+      tx.refunds == t.paid
+  | .error x, .error y => x == y
+  | _, _ => false
+
+/-- The nine exits. -/
+def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
+
+-- Every transaction an exit builds settles what the exit owes, and every exit
+-- builds one at some key.
+#guard allExits.all fun x => exitEdges.all fun e => paidKeys.all fun k =>
+  match txOfExit paidState x (exitStepRequest e k) 3 with
+  | .ok tx => settle (obligations x (exitStepRequest e k)) tx.outputs == none
+  | .error _ => true
+#guard allExits.all fun x => exitEdges.any fun e => paidKeys.any fun k =>
+  match txOfExit paidState x (exitStepRequest e k) 3 with | .ok _ => true | .error _ => false
 
 -- The driver's operations are the nine exits: the seven edges by their own
 -- names, then reject and retract; the surface's protocol moved once for it.
@@ -878,8 +945,10 @@ def main : IO Unit := do
     throw (IO.userError s!"T1 updateTerminal burns {repr retireBurned} and its inputs spend {repr retireSpent}: the burn has no source")
   unless retireOutputsPositive do
     throw (IO.userError "T1 updateTerminal: an output is left holding a quantity an output cannot hold")
-  unless (match retireTx with | .ok tx => tx.refunds.isEmpty && tx.signers.isEmpty | .error _ => false) do
-    throw (IO.userError "T1 updateTerminal: refunds or required signers are not empty")
+  unless (match retireTx with
+      | .ok tx => tx.refunds == [(retireRequest.owner, retireRequest.deposit)] && tx.signers.isEmpty
+      | .error _ => false) do
+    throw (IO.userError "T1 updateTerminal: refunds are not the deposit back to the owner, or a signer is required")
   for (id, expected, before) in retirementRefusalRows do
     unless retireRefusal before == expected do
       throw (IO.userError s!"{id}: {retireRefusal before} (expected {expected})")

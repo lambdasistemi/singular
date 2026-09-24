@@ -101,9 +101,11 @@ Every declared observation must be present on both sides and must agree. A name
 the model cannot observe must not appear at all: an observed object that carried
 one would be claiming to have seen what the model has no vocabulary for, so it
 is reported rather than passed over. Those names are carried in the result,
-never compared. For `tx`, every observed output's `lovelace` must be at least
-the corresponding model value; surplus is allowed while every other field is
-compared for equality.
+never compared. The model states lovelace as floors: every observed output's
+`lovelace` in `tx`, and every payment's `value` in `paid` and in `tx.refunds`,
+must be at least the corresponding model value. Surplus is allowed while every
+other field, and the number and order of outputs and payments, is compared for
+equality.
 -}
 compareRegistration :: Declared -> Value -> Value -> Either [Difference] Agreement
 compareRegistration declared expected observed =
@@ -142,31 +144,54 @@ compareRegistration declared expected observed =
         , not (agrees name left right)
         ]
     agrees "tx" expectedTx observedTx = transactionAgrees expectedTx observedTx
+    agrees "paid" expectedPaid observedPaid = floorsAgree "value" expectedPaid observedPaid
     agrees name expectedValue observedValue =
         comparable name expectedValue == comparable name observedValue
     transactionAgrees expectedTx observedTx = case (expectedTx, observedTx) of
         (Object expectedFields, Object observedFields) ->
-            case (KM.lookup "outputs" expectedFields, KM.lookup "outputs" observedFields) of
-                (Just (Array expectedOutputs), Just (Array observedOutputs)) ->
-                    V.length expectedOutputs == V.length observedOutputs
-                        && and (V.zipWith outputFloorMet expectedOutputs observedOutputs)
-                        && stripOutputFloors expectedTx == stripOutputFloors observedTx
+            case ( KM.lookup "outputs" expectedFields
+                 , KM.lookup "outputs" observedFields
+                 , KM.lookup "refunds" expectedFields
+                 , KM.lookup "refunds" observedFields
+                 ) of
+                (Just expectedOutputs, Just observedOutputs, Just expectedRefunds, Just observedRefunds) ->
+                    floorsAgree "lovelace" expectedOutputs observedOutputs
+                        && floorsAgree "value" expectedRefunds observedRefunds
+                        && stripFloors expectedTx == stripFloors observedTx
                 _ -> False
         _ -> False
-    outputFloorMet expectedOutput observedOutput = case (expectedOutput, observedOutput) of
+    -- Two lists of objects agree when they have the same length, each
+    -- observed @field@ reaches the model's, and everything else is equal.
+    floorsAgree field expectedValue observedValue = case (expectedValue, observedValue) of
+        (Array expectedEntries, Array observedEntries) ->
+            V.length expectedEntries == V.length observedEntries
+                && and (V.zipWith (floorMet field) expectedEntries observedEntries)
+                && fmap (without field) expectedEntries == fmap (without field) observedEntries
+        _ -> False
+    floorMet field expectedEntry observedEntry = case (expectedEntry, observedEntry) of
         (Object expectedFields, Object observedFields) ->
-            case (KM.lookup "lovelace" expectedFields, KM.lookup "lovelace" observedFields) of
-                (Just modelFloor, Just observedLovelace) ->
-                    outputFloorAgrees modelFloor observedLovelace
+            case (KM.lookup field expectedFields, KM.lookup field observedFields) of
+                (Just modelFloor, Just observedAmount) ->
+                    outputFloorAgrees modelFloor observedAmount
                 _ -> False
         _ -> False
-    stripOutputFloors value = case value of
-        Object fields -> case KM.lookup "outputs" fields of
-            Just (Array outputs) -> Object (KM.insert "outputs" (Array (fmap stripOutput outputs)) fields)
-            _ -> value
+    stripFloors value = case value of
+        Object fields ->
+            Object
+                ( adjust
+                    (withEntries (without "value"))
+                    "refunds"
+                    (adjust (withEntries (without "lovelace")) "outputs" fields)
+                )
         _ -> value
-    stripOutput value = case value of
-        Object fields -> Object (KM.delete "lovelace" fields)
+    adjust f name fields = case KM.lookup name fields of
+        Just inner -> KM.insert name (f inner) fields
+        Nothing -> fields
+    withEntries f value = case value of
+        Array entries -> Array (fmap f entries)
+        _ -> value
+    without field value = case value of
+        Object fields -> Object (KM.delete field fields)
         _ -> value
     comparable name = heldAsMultiset name
     -- Neither the model nor the chain orders a wallet's holdings, so `held`,
@@ -180,7 +205,9 @@ compareRegistration declared expected observed =
         _ -> value
     sortHoldings = V.fromList . sortOn encode . V.toList
 
--- | The shared acceptance rule for one output's lovelace observation.
+{- | The shared acceptance rule for one lovelace floor the model states: an
+output's lovelace or a payment's value.
+-}
 outputFloorAgrees :: Value -> Value -> Bool
 outputFloorAgrees expected observed = case (expected, observed) of
     (Number modelFloor, Number observedLovelace) -> observedLovelace >= modelFloor

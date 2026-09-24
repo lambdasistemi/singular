@@ -4,7 +4,7 @@ Module      : Conformance.Run.Live
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, containsStoryAsset, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaidCustody, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
+module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, containsStoryAsset, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaid, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
 
 import Conformance.Run.Control
 import Conformance.FoldFixture qualified as FoldFixture
@@ -23,6 +23,7 @@ import Conformance.Story.Live qualified as Live
 import Conformance.Story.Identity qualified as Identity
 import Conformance.Compare.Registration qualified as Compare
 import Conformance.Compare.Perturbation qualified as Perturbation
+import Conformance.Observe.Payments qualified as Payments
 import Conformance.Lean.Oracle qualified as LeanOracle
 import Conformance.Story.Binding qualified as Binding
 import Conformance.PurposeUnits (
@@ -86,9 +87,11 @@ import Cardano.Ledger.Api.Tx.Body (
     outputsTxBodyL,
     reqSignerHashesTxBodyL,
  )
+import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx.Out (
     addrTxOutL,
     coinTxOutL,
+    datumTxOutL,
  )
 import Cardano.Ledger.Core (KeyHash)
 import Cardano.Ledger.Hashes (KeyHash (..))
@@ -123,6 +126,7 @@ import Singular.Registry.TxBuilder.Internal (
     addrKeyHashBytes,
     addrWitnessKeyHash,
     cageAddrFromCfg,
+    cagePolicyIdFromCfg,
     policyIdFromPin,
     currentPosixMs,
     extractCageDatum,
@@ -320,6 +324,7 @@ submitEdge env state cage alteration request = do
                 deposit = bond - stateMaxFee before
             require "booked request holds less than the on-chain processing tip" (deposit >= 0)
             modelRequest <- storyModelRequest ids cfg request deposit (Right reqOut)
+            bindBookedApproval ids cfg reqOut modelRequest
             alternate <- case alteration of
                 Nothing -> pure Nothing
                 Just Live.RedirectDelivery -> Just <$> (if wallet == genesisAddr
@@ -573,12 +578,9 @@ observeAcceptedStep env state step transaction = do
         | (policy, names) <- Map.toList minted
         , (AssetName name, quantity) <- Map.toList names ]
     let orderedMint = sortOn mintKindOrder mint
-    paid <- case (Live.requestEdge (lsRequest step), lsCustody step) of
-        (Live.UpdateActive, Just source) -> observePaidCustody ids transaction source
-        (Live.DeleteAbsent, Just source) -> observePaidCustody ids transaction source
-        (Live.UpdateActive, Nothing) -> failWith "updateActive has no observed custody source"
-        (Live.DeleteAbsent, Nothing) -> failWith "deleteAbsent has no observed custody source"
-        _ -> pure []
+    requestOut <- maybe (failWith "accepted step has no booked request output") pure (lsRequestOut step)
+    payments <- observePaid ids wallets cfg step transaction requestOut
+    let paid = map snd payments
     destination <- case Live.requestEdge (lsRequest step) of
         Live.InsertActive -> observedDelivery activePolicy requestedKey wallets
         Live.UpdateActive -> observedDelivery activePolicy requestedKey wallets
@@ -588,7 +590,6 @@ observeAcceptedStep env state step transaction = do
     let owner = object
             [ "config" .= config, "custody" .= custody
             , "held" .= holdings, "trie" .= trie ]
-    requestOut <- maybe (failWith "accepted step has no booked request output") pure (lsRequestOut step)
     (_, requestName) <- storyApprovalOn cfg requestOut
     -- The recomputation binds the approval the request carries; with none
     -- there is nothing to bind and the check is not made.
@@ -603,7 +604,7 @@ observeAcceptedStep env state step transaction = do
         Compare.approvalAssetName (T.pack (Live.edgeName (Live.requestEdge (lsRequest step))))
             requestedId ownerId destination
     tx <- observedStepTx env ids wallets step transaction config orderedMint destination
-        commitment custody paid requestOut
+        commitment custody paid requestOut tid (map fst payments)
     pure $ object
         [ "config" .= config, "custody" .= custody
         , "held" .= holdings, "leaf" .= leaf, "mint" .= orderedMint
@@ -683,23 +684,133 @@ observeCustody ids cfg out = do
     pure (object ["key" .= keyId, "refundAddress" .= refundId, "value" .= amount])
 
 
--- | Refunds are observed from the custody input and the accepted transaction.
--- The address and value must occur together in one actual ada-only output.
-observePaidCustody :: LiveIdentities -> ConwayTx -> (TxIn, TxOut ConwayEra) -> IO [Value]
-observePaidCustody ids transaction (source, custodyOut) = do
-    require "custody refund did not spend its source"
-        (source `Set.member` (transaction ^. bodyTxL . inputsTxBodyL))
-    refund <- case extractCageDatum custodyOut of
-        Just (AbsentCustody address) -> pure address
-        _ -> failWith "paid custody source has no Absent datum"
-    let Coin amount = custodyOut ^. coinTxOutL
-        matching = [out | out <- toList (transaction ^. bodyTxL . outputsTxBodyL)
-            , serialiseAddr (out ^. addrTxOutL) == refund
-            , out ^. coinTxOutL == Coin amount
-            , Map.null (outAssets out)]
-    require "custody refund has no matching chain output" (length matching == 1)
-    recipient <- observeIdentity (liveWallets ids) (WalletIdentity refund)
-    pure [object ["address" .= recipient, "value" .= amount]]
+-- | The fold's outputs, each beside the reading settlement makes of it: its
+-- address, payment key, lovelace, whether it carries a token this fold
+-- delivers (a positive active or terminal mint), its datum form and the
+-- approvals it holds.
+foldOutputsOf :: CageConfig -> ConwayTx -> [(TxOut ConwayEra, Payments.FoldOutput)]
+foldOutputsOf cfg transaction =
+    [ (out, Payments.FoldOutput
+        { Payments.outputAddress = serialiseAddr (out ^. addrTxOutL)
+        , Payments.outputKey = addrKeyHashBytes (out ^. addrTxOutL)
+        , Payments.outputLovelace = let Coin c = out ^. coinTxOutL in c
+        , Payments.outputCarrier = carries out
+        , Payments.outputDatum = case out ^. datumTxOutL of
+            NoDatum -> "none"
+            DatumHash _ -> "hashed"
+            Datum _ -> "inline"
+        , Payments.outputApprovals =
+            [ hexT name
+            | (name, quantity) <- Map.toList
+                (Map.findWithDefault Map.empty (SBS.fromShort (cfgApplicationPolicy cfg)) (outAssets out))
+            , quantity /= 0 ] })
+    | out <- toList (transaction ^. bodyTxL . outputsTxBodyL) ]
+  where
+    MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
+    delivered =
+        [ (cg21PolicyBytes policy, SBS.fromShort name)
+        | (policy, names) <- Map.toList minted
+        , cg21PolicyBytes policy `elem`
+            [SBS.fromShort (cfgActivePolicy cfg), SBS.fromShort (cfgTerminalPolicy cfg)]
+        , (AssetName name, quantity) <- Map.toList names, quantity > 0 ]
+    carries out = or
+        [ Map.findWithDefault 0 name (Map.findWithDefault Map.empty policy (outAssets out)) /= 0
+        | (policy, name) <- delivered ]
+
+
+-- | The payments of an accepted fold, read off its transaction by
+-- 'Payments.foldPayments', each beside its translation to the identities
+-- allocated while acting. A spent custody is read from its own input, which
+-- the fold must have spent; the owner is the key the booked request's datum
+-- names.
+observePaid :: LiveIdentities -> [Addr] -> CageConfig -> LiveStep -> ConwayTx
+    -> TxOut ConwayEra -> IO [(Payments.Payment, Value)]
+observePaid ids wallets cfg step transaction requestOut = do
+    let edge = Live.requestEdge (lsRequest step)
+        outputs = foldOutputsOf cfg transaction
+        locked = case [c | (out, _) <- outputs, Just (AbsentCustody _) <- [extractCageDatum out]
+                         , let Coin c = out ^. coinTxOutL] of
+            [c] -> Just c
+            _ -> Nothing
+    refund <- case (edge, lsCustody step) of
+        (e, Just (source, custodyOut)) | e `elem` [Live.UpdateActive, Live.DeleteAbsent] -> do
+            require "custody refund did not spend its source"
+                (source `Set.member` (transaction ^. bodyTxL . inputsTxBodyL))
+            case extractCageDatum custodyOut of
+                Just (AbsentCustody address) -> pure (Just address)
+                _ -> failWith "paid custody source has no Absent datum"
+        _ -> pure Nothing
+    owner <- requestOwnerKey requestOut
+    payments <- either failWith pure $ Payments.foldPayments
+        (Payments.FoldFacts edge owner locked refund) (map snd outputs)
+    mapM (\payment -> (,) payment <$> translate payment) payments
+  where
+    translate (Payments.Payment payee value) = do
+        address <- case payee of
+            Payments.Custody -> pure 0
+            Payments.Destination address ->
+                observeIdentity (liveWallets ids) (WalletIdentity address)
+            Payments.Refund address ->
+                observeIdentity (liveWallets ids) (WalletIdentity address)
+            Payments.Owner key -> ownerIdentity ids wallets key
+        pure (object ["address" .= address, "value" .= value])
+
+
+-- | The payment key the booked request's datum names as its owner.
+requestOwnerKey :: TxOut ConwayEra -> IO ByteString
+requestOwnerKey requestOut = case extractCageDatum requestOut of
+    Just (RequestDatum rq) -> let BuiltinByteString key = requestOwner rq in pure key
+    _ -> failWith "accepted fold's request carries no request datum"
+
+
+-- | An owner's identity: the one registry wallet whose payment key it is.
+ownerIdentity :: LiveIdentities -> [Addr] -> ByteString -> IO Integer
+ownerIdentity ids wallets key = case [w | w <- wallets, addrKeyHashBytes w == key] of
+    [wallet] -> observeIdentity (liveWallets ids) (WalletIdentity (serialiseAddr wallet))
+    _ -> failWith ("request owner " <> hex key <> " is not the key of one wallet of this registry")
+
+
+-- | The owner outputs of an accepted fold, one per owner payment, read off the
+-- ledger outputs the chain credits to the owner's key by
+-- 'Payments.readOwner' and put in the model's vocabulary by
+-- 'Payments.ownerOutputObservation', whose returned approval is looked up in
+-- the approvals the run bound while booking. Their registry tokens and the registry
+-- state token they hold are read here, and none may carry a registry state or
+-- custody datum. An owner no output credits has no owner output: the
+-- transaction then differs from the model's in length.
+observeOwnerOutputs :: LiveIdentities -> [Addr] -> CageConfig -> TokenId -> ConwayTx
+    -> [Payments.Payment] -> IO [Value]
+observeOwnerOutputs ids wallets cfg tid transaction payments =
+    fmap concat $ mapM ownerOutput
+        [ key | Payments.Payment (Payments.Owner key) _ <- payments ]
+  where
+    outputs = foldOutputsOf cfg transaction
+    ownerOutput key = do
+      read' <- either failWith pure (Payments.readOwner key (map snd outputs))
+      case read' of
+        Nothing -> pure []
+        Just reading -> do
+            let credited = [out | (out, folded) <- outputs, Payments.creditsOwner key folded]
+            address <- ownerIdentity ids wallets key
+            require "an output crediting the owner carries a registry state or custody datum"
+                (all (isNothing . extractCageDatum) credited)
+            let registryPins =
+                    [ SBS.fromShort (cfgActivePolicy cfg), SBS.fromShort (cfgAbsentPolicy cfg)
+                    , SBS.fromShort (cfgTerminalPolicy cfg) ]
+            assets <- mapM (\(policy, name, quantity) -> observeStepMint ids cfg policy name quantity)
+                [ (policy, name, quantity)
+                | out <- credited
+                , (policy, names) <- Map.toList (outAssets out), policy `elem` registryPins
+                , (name, quantity) <- Map.toList names ]
+            let statePolicy = cg21PolicyBytes (cagePolicyIdFromCfg cfg)
+                stateName = SBS.fromShort (assetNameBytes (unTokenId tid))
+                stateTokens = sum
+                    [ Map.findWithDefault 0 stateName (Map.findWithDefault Map.empty statePolicy (outAssets out))
+                    | out <- credited ]
+            approvals <- readIORef (liveApprovals ids)
+            let approvalOf name = Identity.observe (ApprovalIdentity name) approvals
+            either failWith (pure . pure) $ Payments.ownerOutputObservation address approvalOf
+                assets stateTokens reading
 
 
 -- | A required signer of the submitted transaction, in the model's vocabulary:
@@ -727,8 +838,10 @@ observeStepMint ids cfg policy key quantity = do
 
 
 observedStepTx :: Env -> LiveIdentities -> [Addr] -> LiveStep -> ConwayTx -> Value -> [Value]
-    -> Integer -> Integer -> [Value] -> [Value] -> TxOut ConwayEra -> IO Value
-observedStepTx _env ids wallets step transaction config mint destination commitment custody paid requestOut = do
+    -> Integer -> Integer -> [Value] -> [Value] -> TxOut ConwayEra -> TokenId
+    -> [Payments.Payment] -> IO Value
+observedStepTx _env ids wallets step transaction config mint destination commitment custody paid requestOut
+        tid payments = do
     let cfg = rcCfg (lsCage step)
         edge = Live.requestEdge (lsRequest step)
         requestKeyBytes = TE.encodeUtf8 (T.pack (Live.requestKey (lsRequest step)))
@@ -799,11 +912,12 @@ observedStepTx _env ids wallets step transaction config mint destination commitm
             "address" .= destination, "stateToken" .= (0 :: Integer),
             "inlineConfig" .= Null, "commitment" .= commitment,
             "assets" .= positive, "custodyDatum" .= Null,
-            "lovelace" .= (0 :: Integer)]
+            "lovelace" .= sum [value | Payments.Payment (Payments.Destination _) value <- payments]]
     signers <- mapM (observeSigner ids wallets)
         (toList (transaction ^. bodyTxL . reqSignerHashesTxBodyL))
+    ownerOutputs <- observeOwnerOutputs ids wallets cfg tid transaction payments
     pure (object ["inputs" .= (stateInput : requestInput : custodyInputs <> witnessInputs),
-        "outputs" .= (stateOutput : destinationOutput : cageOutputs),
+        "outputs" .= (stateOutput : destinationOutput : cageOutputs <> ownerOutputs),
         "mint" .= mint, "signers" .= sort signers, "refunds" .= paid])
   where
     custodyInput source = do
@@ -1077,15 +1191,21 @@ newtype PolicyIdentity = PolicyIdentity ByteString deriving stock (Show, Eq, Ord
 newtype KeyIdentity = KeyIdentity ByteString deriving stock (Show, Eq, Ord)
 
 
+-- | A booked approval's asset name, as the hex the chain carries.
+newtype ApprovalIdentity = ApprovalIdentity T.Text deriving stock (Show, Eq, Ord)
+
+
 data LiveIdentities = LiveIdentities
     { liveWallets :: IORef (Identity.Identities WalletIdentity)
     , livePolicies :: IORef (Identity.Identities PolicyIdentity)
     , liveKeys :: IORef (Identity.Identities KeyIdentity)
+    , liveApprovals :: IORef (Identity.Identities ApprovalIdentity)
     }
 
 
 newLiveIdentities :: IO LiveIdentities
-newLiveIdentities = LiveIdentities <$> newIORef Identity.empty <*> newIORef Identity.empty <*> newIORef Identity.empty
+newLiveIdentities = LiveIdentities <$> newIORef Identity.empty <*> newIORef Identity.empty
+    <*> newIORef Identity.empty <*> newIORef Identity.empty
 
 
 allocateIdentity :: Ord identity => IORef (Identity.Identities identity) -> identity -> IO Integer
@@ -1108,6 +1228,34 @@ prepareRegistrationIdentities ids cage key recipient = do
     _ <- allocateIdentity (liveKeys ids) (KeyIdentity key)
     mapM_ (allocateIdentity (livePolicies ids) . PolicyIdentity . SBS.fromShort)
         [cfgApplicationPolicy cfg, cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+
+
+-- | Bind the approval a booked request carries to its model name, while
+-- acting: the model names it by the request's edge, key, owner and
+-- destination identities, as the destination commitment does. Observation
+-- only looks these bindings up.
+bindBookedApproval :: LiveIdentities -> CageConfig -> TxOut ConwayEra -> Value -> IO ()
+bindBookedApproval ids cfg requestOut modelRequest = do
+    (_, booked) <- storyApprovalOn cfg requestOut
+    case booked of
+        Nothing -> pure ()
+        Just name -> do
+            let field key = case modelRequest of
+                    Object fields -> KM.lookup key fields
+                    _ -> Nothing
+                number key = case field key of
+                    Just (Number n) -> Just (truncate n)
+                    _ -> Nothing
+            modelName <- maybe (failWith "booked approval has no model name") pure $ do
+                String edge <- field "edge"
+                key <- number "key"
+                owner <- number "owner"
+                output <- number "output"
+                let destination = if edge == "insertAbsent" then 0 else output
+                Compare.approvalAssetName edge key owner destination
+            approvals <- readIORef (liveApprovals ids)
+            either failWith (writeIORef (liveApprovals ids))
+                (Identity.bind (ApprovalIdentity name) modelName approvals)
 
 
 observePins :: LiveIdentities -> CageConfig -> IO (Integer, Integer, Integer, Integer)

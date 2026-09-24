@@ -8,6 +8,7 @@ import Conformance.Support.FixtureChild (childModeVariable, holdScopedDirectorie
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.Receipt qualified as Receipt
 import Conformance.Support.Refusal qualified as Refusal
+import Conformance.Support.Payments qualified as Payments
 import Conformance.Support.RegistrationComparison qualified as RegistrationComparison
 import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.Specification qualified as Specification
@@ -35,6 +36,7 @@ suite = do
         Identity.spec
         Fixture.spec
         RegistrationComparison.spec
+        Payments.spec
         Specification.spec
         PurposeUnits.spec
         Usage.spec

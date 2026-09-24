@@ -4134,7 +4134,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+  "corpusSourceSha256": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -4263,20 +4263,20 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
-  "payloadSha256": "70e11d34bba12332f55f4cf6e2c50da6c0b56284fe0b0eafe4dadd973ea69ff5",
+  "modelSha256": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
+  "payloadSha256": "f48f6c540c398d1fbac357d7cdddb25de46c73e5e3b7827f82f7841135805f10",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Driver.lean": "e70182ed34d41961d8813d4d88a75caae5a8a1cb2fe3bc5156371f3655952d85",
+    "lean/Singular/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
+    "lean/Singular/Model.lean": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
+    "lean/Singular/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5"
   },
-  "statementsSha256": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
-  "theoremManifestSha256": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
+  "statementsSha256": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5",
+  "theoremManifestSha256": "2a4caecc7241bf7f9e20f09a359dbf635449a0b88274668e7a3924acf695e442",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4310,7 +4310,7 @@ const STORIES=[
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737",
+      "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4391,7 +4391,12 @@ const STORIES=[
             "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 555,
+            "value": 0
+          }
+        ],
         "signers": []
       }
     },
@@ -4439,7 +4444,7 @@ const STORIES=[
         "tip": 0
       },
       "rootMatchesTrie": true,
-      "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46",
+      "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f",
       "theorem": "Singular.Statements.insert_absent_transaction_row",
       "transaction": {
         "inputs": [
@@ -4532,7 +4537,12 @@ const STORIES=[
             "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 0,
+            "value": 200
+          }
+        ],
         "signers": []
       }
     },
@@ -4597,7 +4607,7 @@ const STORIES=[
           "quantity": 1
         }
       ],
-      "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2",
+      "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -4684,9 +4694,25 @@ const STORIES=[
             "lovelace": 0,
             "role": "destination",
             "stateToken": 0
+          },
+          {
+            "address": 42,
+            "assets": [],
+            "commitment": 2958227895,
+            "custodyDatum": null,
+            "datum": "none",
+            "inlineConfig": null,
+            "lovelace": 0,
+            "role": "owner",
+            "stateToken": 0
           }
         ],
-        "refunds": [],
+        "refunds": [
+          {
+            "address": 42,
+            "value": 0
+          }
+        ],
         "signers": []
       }
     }
@@ -4841,19 +4867,19 @@ const STORIES=[
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -4890,6 +4916,18 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044"
+  },
+  {
+    "name": "Singular.Statements.built_transaction_settles",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b5b45e560df2c4d3050466fd00b895dd61280d5b89c834bb2612c52c9b104796"
+  },
+  {
+    "name": "Singular.Statements.retract_pays_exactly_its_obligations",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390"
   }
 ]
 ;const IDENTITY={
@@ -4909,12 +4947,12 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "formal/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
-    "formal/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
+    "formal/Driver.lean": "e70182ed34d41961d8813d4d88a75caae5a8a1cb2fe3bc5156371f3655952d85",
+    "formal/DriverMain.lean": "9c164540c5798f63b41a335abf77f02be807aa512b19ce68b95d39dc6961f3b8",
+    "formal/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
     "formal/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "formal/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
-    "formal/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "formal/Main.lean": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
+    "formal/Model.lean": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
     "formal/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "formal/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -4927,19 +4965,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
+    "formal/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
+    "formal/theorem-debt.json": "2a4caecc7241bf7f9e20f09a359dbf635449a0b88274668e7a3924acf695e442",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "6d33c40f7c3e95eb86037a91231c718df86a5ec79920c7bbf12d15b9fafeda13"
+    "corpus.json": "984971cf833a8be513e147b63399661af9f5dfc6f92322f06ffbade0d792afe1"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 33,
+  "theorems": 35,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4981,9 +5019,9 @@ const STORIES=[
       "id": "NF07-attestation-minted-by-read"
     }
   ],
-  "modelSha256": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+  "modelSha256": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "c4bd6ea347683c72e10a921d05171f1aae88ab18ea46072578485cd2bcd904e7",
+  "payloadSha256": "7b135097088405c2e4359ee081bff805d2e159f008a087c32b850d846b5b9b16",
   "queues": [
     {
       "actual": true,
@@ -5073,15 +5111,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
+    "lean/DriverMain.lean": "9c164540c5798f63b41a335abf77f02be807aa512b19ce68b95d39dc6961f3b8",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "lean/Singular/Driver.lean": "e70182ed34d41961d8813d4d88a75caae5a8a1cb2fe3bc5156371f3655952d85",
+    "lean/Singular/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
+    "lean/Singular/Model.lean": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5092,7 +5130,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5"
   },
   "spellings": [
     {
@@ -5210,7 +5248,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "e90a2114f159eba789a8460c0cbfaf665e758c6d8508c7beae5343942b027729",
+  "payloadSha256": "1642ed2a779529f50abcbe37f9c99ab48d4b8054e781cdac099d0e9c37f6c4df",
   "recovery": [
     {
       "detail": true,
@@ -5281,15 +5319,15 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "dca8094fd3d41e1aabe5b6073f62724fb15df7ad2a9ba96fd0003de31e5b611d",
+    "lean/DriverMain.lean": "9c164540c5798f63b41a335abf77f02be807aa512b19ce68b95d39dc6961f3b8",
     "lean/LifecycleMain.lean": "6cdc35617db78ad7b59a52b698f1b6fa7a505ddbcf237ac76ae26542237b872b",
-    "lean/Main.lean": "35900f7b04d9c0be527c5b526ee304ddf634515b3cd4d7bda7212b308e7e1add",
+    "lean/Main.lean": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
     "lean/NamingMain.lean": "f026113e6b13604012fe817a7c38b4c2f19a469db443c263593b49e5daac8c24",
     "lean/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "59cb8f24600e6d501632aa5eeb8df8873ecb4165c74379100eaa83303b818b58",
-    "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4",
+    "lean/Singular/Driver.lean": "e70182ed34d41961d8813d4d88a75caae5a8a1cb2fe3bc5156371f3655952d85",
+    "lean/Singular/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
+    "lean/Singular/Model.lean": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
     "lean/Singular/Naming.lean": "c833e1c26672b4778e80274e399073cfcb4e3e33336adcca35005eadce3e584f",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -5300,7 +5338,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
+    "lean/Singular/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5"
   },
   "steps": [
     {

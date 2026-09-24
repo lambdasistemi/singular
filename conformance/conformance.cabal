@@ -89,6 +89,7 @@ library
     Conformance.Edge.Retire
     Conformance.Edge.Sequence
     Conformance.Fold.KeyedMint
+    Conformance.Observe.Payments
   build-depends:
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5
@@ -184,6 +185,7 @@ test-suite conformance-tests
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
     Conformance.Support.RegistrationComparison
+    Conformance.Support.Payments
     Conformance.Support.FixtureChild
     Conformance.Support.Binding
     Conformance.Support.Receipt

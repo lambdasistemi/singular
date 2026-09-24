@@ -14,7 +14,7 @@ import Conformance.Compare.Perturbation (
     appendAt,
     arrayPaths,
     checkPerturbations,
-    isOutputMinimumAda,
+    isLovelaceFloor,
     leafPaths,
     perturbAt,
     replacing,
@@ -29,6 +29,7 @@ import Conformance.Compare.Registration (
     declaredSurface,
     rootOf,
  )
+import Conformance.Observe.Payments (OwnerReading (..), ownerOutputObservation)
 import Conformance.Story.Identity (identify, observe)
 import Conformance.Story.Identity qualified as Identity
 import Data.Aeson (Value (..), eitherDecodeFileStrict)
@@ -201,6 +202,67 @@ spec = describe "Comparing a registration with the model" $ do
             Left differences -> error ("an output above its floor disagreed: " <> show differences)
             Right _ -> pure ()
 
+    it "compares every payment's value as a floor, in paid and in the transaction's refunds" $ do
+        value <- corpus
+        declared <- either error pure (declaredSurface value)
+        let payingRows =
+                [ part "observations" scenario
+                | scenario <- scenarios value
+                , part "outcome" scenario == String "accepted"
+                , not (null (items (part "paid" (part "observations" scenario))))
+                ]
+        payingRows `shouldSatisfy` (> 1) . length
+        mapM_ (checkPaymentFloors declared) payingRows
+
+    it "compares a custody refund as a floor: paid in full or more agrees, short is refused" $ do
+        value <- corpus
+        declared <- either error pure (declaredSurface value)
+        -- The refund a custody pays when it is spent is its own recorded
+        -- address and value, read off the model's insert-absent row.
+        let absent = part "observations" (row "DR01-register-absent" value)
+            refunds =
+                [ Object (KM.fromList [("address", part "refundAddress" entry), ("value", part "value" entry)])
+                | entry <- items (part "custody" absent)
+                ]
+        refunds `shouldSatisfy` not . null
+        let observations = appendPayments refunds (part "observations" (row "DR07-reject-registered-twice" value))
+        checkPaymentFloors declared observations
+
+    it "reads the owner output's returned approval off the ledger: another approval is a transaction difference" $ do
+        value <- corpus
+        declared <- either error pure (declaredSurface value)
+        let observations = part "observations" (row "DR03-retire-registered" value)
+            outputs = items (part "outputs" (part "tx" observations))
+            owners = [(index, output) | (index, output) <- zip [0 ..] outputs, part "role" output == String "owner"]
+        (index, modelOwner) <- case owners of
+            [found] -> pure found
+            _ -> error "the retirement row has no single owner output"
+        let commitment = number (part "commitment" modelOwner)
+            reading approvals =
+                OwnerReading
+                    { readingLovelace = number (part "lovelace" modelOwner)
+                    , readingDatum = case part "datum" modelOwner of
+                        String form -> form
+                        _ -> error "datum form is not a string"
+                    , readingApprovals = approvals
+                    }
+            observedWith approvals =
+                either error (\owner -> replaceOutput index owner observations) $
+                    ownerOutputObservation (number (part "address" modelOwner)) approvalOf [] 0 (reading approvals)
+            -- The run's bindings: this request's approval, and another's.
+            approvalOf name = case name of
+                "requested" -> Right commitment
+                "another" -> Right (commitment + 1)
+                _ -> Left "observed an approval no booking established"
+        case compareRegistration declared observations (observedWith ["requested"]) of
+            Left differences -> error ("the request's own returned approval disagreed: " <> show differences)
+            Right _ -> pure ()
+        case compareRegistration declared observations (observedWith ["another"]) of
+            Right _ -> error "an owner output returning another approval was accepted"
+            Left differences -> map differenceObservation differences `shouldBe` ["tx"]
+        ownerOutputObservation 1 approvalOf [] 0 (reading ["unbooked"])
+            `shouldSatisfy` either (const True) (const False)
+
     it "reports only an extra signer when a transaction also has floor surplus" $ do
         value <- corpus
         declared <- either error pure (declaredSurface value)
@@ -264,9 +326,9 @@ spec = describe "Comparing a registration with the model" $ do
         [path | ("tx", path, _) <- growths, path == [Field "signers"]]
             `shouldBe` [[Field "signers"]]
         -- Raising output lovelace is accepted as a floor surplus.
-        let floorSurpluses = [(name, path) | (name, path, _) <- changes, isOutputMinimumAda name path]
+        let floorSurpluses = [(name, path) | (name, path, _) <- changes, isLovelaceFloor name path]
         floorSurpluses `shouldSatisfy` not . null
-        [(name, path) | (name, path, _) <- changes <> growths, isOutputMinimumAda name path]
+        [(name, path) | (name, path, _) <- changes <> growths, isLovelaceFloor name path]
             `shouldBe` floorSurpluses
         mapM_ (requireVerdict declared observations) (changes <> growths)
         case checkPerturbations declared observations observations of
@@ -333,9 +395,74 @@ checkApproval (scenario, approval) = do
                 _ -> pure ()
         _ -> pure ()
 
+{- | Every payment of one row, in @paid@ and in @tx.refunds@: one lovelace more
+than the model's floor agrees, one lovelace less is refused under the
+observation that carries it. The two lists are moved together, as the chain
+reports them together.
+-}
+checkPaymentFloors :: Declared -> Value -> IO ()
+checkPaymentFloors declared observations = do
+    let payments = items (part "paid" observations)
+        refunds = items (part "refunds" (part "tx" observations))
+    refunds `shouldBe` payments
+    mapM_
+        ( \(index, payment) -> do
+            let floor' = number (part "value" payment)
+                moved amount = setPaymentValue index amount observations
+            case compareRegistration declared observations (moved (floor' + 1)) of
+                Left differences -> error ("a payment above its floor disagreed: " <> show differences)
+                Right _ -> pure ()
+            case compareRegistration declared observations (moved (floor' - 1)) of
+                Right _ -> error "a payment below the model's floor was accepted"
+                Left differences ->
+                    sort (map differenceObservation differences) `shouldBe` ["paid", "tx"]
+        )
+        (zip [0 ..] payments)
+
+-- | Replace transaction output @index@.
+replaceOutput :: Int -> Value -> Value -> Value
+replaceOutput index output observations = case part "tx" observations of
+    Object fields -> case part "outputs" (Object fields) of
+        Array outputs ->
+            replacing "tx" (Object (KM.insert "outputs" (Array (outputs V.// [(index, output)])) fields)) observations
+        _ -> error "transaction outputs are not an array"
+    _ -> error "transaction is not an object"
+
+-- | Append payments to both @paid@ and @tx.refunds@, as a fold that also spent them would report.
+appendPayments :: [Value] -> Value -> Value
+appendPayments extra observations =
+    let grow entries = case entries of
+            Array vector -> Array (vector <> V.fromList extra)
+            _ -> error "payments are not an array"
+        tx = case part "tx" observations of
+            Object fields -> Object (KM.insert "refunds" (grow (part "refunds" (Object fields))) fields)
+            _ -> error "transaction is not an object"
+     in replacing "tx" tx (replacing "paid" (grow (part "paid" observations)) observations)
+
+-- | Set the value of payment @index@ in both @paid@ and @tx.refunds@.
+setPaymentValue :: Int -> Integer -> Value -> Value
+setPaymentValue index amount observations =
+    let setValue entries = case entries of
+            Array vector ->
+                Array
+                    ( vector
+                        V.// [
+                                 ( index
+                                 , case vector V.! index of
+                                    Object fields -> Object (KM.insert "value" (Number (fromInteger amount)) fields)
+                                    _ -> error "a payment is not an object"
+                                 )
+                             ]
+                    )
+            _ -> error "payments are not an array"
+        tx = case part "tx" observations of
+            Object fields -> Object (KM.insert "refunds" (setValue (part "refunds" (Object fields))) fields)
+            _ -> error "transaction is not an object"
+     in replacing "tx" tx (replacing "paid" (setValue (part "paid" observations)) observations)
+
 requireVerdict :: Declared -> Value -> (Text, [Step], Value) -> IO ()
 requireVerdict declared expected (name, path, changed)
-    | isOutputMinimumAda name path =
+    | isLovelaceFloor name path =
         case compareRegistration declared expected changed of
             Right _ -> pure ()
             Left differences ->

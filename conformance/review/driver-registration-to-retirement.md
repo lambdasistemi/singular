@@ -6,16 +6,17 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `03f69e6d80829b349b4f0227105eaa35cfa50094649835ba36f2c53d8a04ec35`
-- model: `457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4`
+- driver corpus payload: `4d3d3c33babaed50de04ccf63c3dd5984b035fcfbea95f7477014fd8cf681609`
+- model: `2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27`
 - surface: `Singular.Driver.runSurface`, protocol version 2, digest `13998092095361678048`
 
 ## What the driver is
 
 One executable over the model's own law, not one adapter per theorem. It
 reaches a scenario's starting state by *running* the law over a setup trace,
-checks the law premise on the state it arrived at, applies the request through
-`Singular.step`, and reports the whole declared boundary of what the law did.
+checks the law premise on the state it arrived at, takes the scenario's exit on
+the request through `Singular.exitStep`, and reports the whole declared boundary
+of what the law did.
 
 Declared operations: `insertAbsent`, `insertActive`, `updateActive`, `updateTerminal`, `deleteAbsent`, `deleteActive`, `witnessTerminal`, `reject`, `retract`.
 
@@ -25,9 +26,9 @@ projection and the model check rejects it.
 
 ## The registration
 
-`DR02-register-active`, bound to `Singular.Statements.insert_active_transaction_row` at statement `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737`.
+`DR02-register-active`, bound to `Singular.Statements.insert_active_transaction_row` at statement `f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508`.
 The request is `insertActive` on key 42, owner
-42, routed to output 555, carrying an
+42, routed to output 555, with a deposit of 55 and carrying an
 approval scoped to exactly that tuple. It starts from the empty registry, so
 its setup trace is empty and `requiresReachableState` is false.
 
@@ -38,16 +39,16 @@ Outcome: **accepted**. The complete declared boundary:
 | `leaf` | `active` |
 | `root` | `[26, 122, 121, 111, 253, 168, 231, 64]` |
 | `mint` | `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": 1}]` |
-| `paid` | `[]` |
+| `paid` | `[{"address": 555, "value": 55}]` |
 | `held` | `[{"key": 42, "kind": "active", "output": 555}]` |
 | `custody` | `[]` |
 | `config` | root `[26, 122, 121, 111, 253, 168, 231, 64]`, maxFee 0, application policy 7, active policy 8, absent policy 9, terminal policy 10 |
 | `state` | 1 leaf, 0 custody, 1 held |
-| `tx` | inputs ['state', 'request'], outputs ['state', 'destination'], mint `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": 1}]`, signers `[]`, refunds `[]` |
+| `tx` | inputs ['state', 'request'], outputs (role, lovelace) state 0, destination 55, mint `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": 1}]`, signers `[]`, refunds `[{"address": 555, "value": 55}]` |
 
 ## The retirement of that same registration
 
-`DR03-retire-registered`, bound to `Singular.Statements.update_terminal_transaction_row` at statement `3448ca20f33bba9c3b5092136124f4cb0bf196132f485cae8b1a44343523963b`.
+`DR03-retire-registered`, bound to `Singular.Statements.update_terminal_transaction_row` at statement `6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068`.
 
 This is the row the constitution's lifecycle rule is about. Its starting state
 is not constructed: its setup trace is the registration above, re-executed
@@ -66,16 +67,20 @@ Outcome: **accepted**. The complete declared boundary:
 | `leaf` | `terminal` |
 | `root` | `[26, 122, 121, 112, 0, 168, 235, 249]` |
 | `mint` | `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": -1}]` |
-| `paid` | `[]` |
+| `paid` | `[{"address": 42, "value": 55}]` |
 | `held` | `[]` |
 | `custody` | `[]` |
 | `config` | root `[26, 122, 121, 112, 0, 168, 235, 249]`, maxFee 0, application policy 7, active policy 8, absent policy 9, terminal policy 10 |
 | `state` | 1 leaf, 0 custody, 0 held |
-| `tx` | inputs ['state', 'request', 'witness'], outputs ['state', 'destination'], mint `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": -1}]`, signers `[]`, refunds `[]` |
+| `tx` | inputs ['state', 'request', 'witness'], outputs (role, lovelace) state 0, destination 0, owner 55, mint `[{"assetName": 42, "key": 42, "kind": "active", "policy": 8, "quantity": -1}]`, signers `[]`, refunds `[{"address": 42, "value": 55}]` |
 
 The key moves `active` to `terminal`, the active holding is released, and the
 mint is exactly the keyed burn of the token that registration created — same
-policy, same asset name, quantity -1. No terminal token is minted, because the
+policy, same asset name, quantity -1. A retirement delivers nothing, so its
+deposit goes back to the owner: one owner output, with no datum, carrying the
+deposit and naming the approval it returns, and that payment is the row's
+`paid`. The registration's deposit instead goes with the token, in the
+destination output. No terminal token is minted, because the
 model's R2 table mints one only for `witnessTerminal`.
 
 ## The refusals beside them

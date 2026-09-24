@@ -52,13 +52,13 @@ def lovelace : Nat := 5
 
 def insertAbsentTheorem : String := "Singular.Statements.insert_absent_transaction_row"
 def insertAbsentDigest : String :=
-  "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+  "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+  "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+  "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
 def insertAbsentInversion : String := "Singular.Statements.insert_absent_inversion"
 def insertAbsentInversionDigest : String :=
   "b2ca14e3aa29caef0841c246964e5e64b600eef9ff64c0865677a1219d31525d"
@@ -76,9 +76,13 @@ def onlyRetractOwesTheTipDigest : String :=
   "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
 
 /-- The active registration this corpus retires: key 42, owner 42, routed to
-output 555. One request, reused as the retirement row's setup so the two rows
-share an actual history. -/
-def registerActive : Request := request .insertActive 42 42 555 0 0
+output 555 with deposit 55, which goes there with the token. One request, reused
+as the retirement row's setup so the two rows share an actual history. -/
+def registerActive : Request := request .insertActive 42 42 555 0 55
+
+/-- The retirement of key 42 by owner 42, deposit 55: it delivers nothing, so the
+deposit goes back to the owner. -/
+def retireRegistered : Request := request .updateTerminal 42 42 555 0 55
 
 /-- A second registration of key 42, by owner 43 with deposit 55 and tip 7: the
 law refuses it once 42 is registered, so a folder rejects it and the owner is
@@ -104,7 +108,7 @@ def scenarios : List Scenario :=
     , theoremName := updateTerminalTheorem, statementSha256 := updateTerminalDigest
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive], exit := .fold .updateTerminal
-    , request := request .updateTerminal 42 42 555 0 0, lovelace := lovelace }
+    , request := retireRegistered, lovelace := lovelace }
   , { id := "DR04-register-absent-unapproved"
     , theoremName := insertAbsentInversion, statementSha256 := insertAbsentInversionDigest
     , kind := "mutant", mutates := some "DR01-register-absent"
@@ -122,7 +126,7 @@ def scenarios : List Scenario :=
     , kind := "mutant", mutates := some "DR03-retire-registered"
     , requiresReachableState := false, start := s0, setup := []
     , exit := .fold .updateTerminal
-    , request := request .updateTerminal 42 42 555 0 0, lovelace := lovelace }
+    , request := retireRegistered, lovelace := lovelace }
   , { id := "DR07-reject-registered-twice"
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "witness", mutates := none, requiresReachableState := true

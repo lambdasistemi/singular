@@ -33,6 +33,7 @@ open Lean
 def datumFormName : DatumForm → String
   | .inline => "inline"
   | .hashed => "hashed"
+  | .none => "none"
 
 /-- One keyed asset, spelled with the on-chain identity the model pins: the
 kind's policy and the asset name, which is the key. -/
@@ -120,12 +121,13 @@ model's `rootOf` is FNV-1a over the sorted (key, leaf byte) list — its own
 commitment function — and is NOT the concrete trie hash a chain would carry.
 
 `outputMinimumAda` is the second of that kind: a ledger requires every output to
-carry a minimum, and this model says nothing about it, so a transaction output's
-`lovelace` here is a logical zero rather than an amount, except where the model
-states a floor (the cage output's deposit, a reject's or a retract's owner
-output). It is named so that a
-consumer compares every other field of a transaction and leaves this one alone,
-rather than quietly reconstructing an equality the model never claimed. -/
+carry a minimum, and this model says nothing about it. A transaction output's
+`lovelace` here is therefore a floor, not an amount: what the exit owes the
+recipient the output pays — the cage output's deposit, the destination output's
+deposit for a fold delivering a token, an owner output's payment — and a logical
+zero on an output that pays no recipient. It is named so that a consumer compares
+that field as a floor, observed at least the model's, and never reconstructs the
+ledger minimum as an equality the model never claimed. -/
 def declaredUnobservable : List String :=
   ["concreteTrieHash", "outputMinimumAda", "registryAddress",
    "scriptExecutionUnits", "transactionId", "utxoReference"]

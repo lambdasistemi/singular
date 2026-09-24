@@ -5,7 +5,7 @@ module Conformance.Compare.Perturbation (
     arrayPaths,
     perturbAt,
     appendAt,
-    isOutputMinimumAda,
+    isLovelaceFloor,
     reportedDifferences,
     differingPaths,
     replacing,
@@ -72,9 +72,14 @@ appendAt (Index index : rest) value = case value of
     Array entries | index < V.length entries -> Array (entries V.// [(index, appendAt rest (entries V.! index))])
     _ -> value
 
-isOutputMinimumAda :: Text -> [Step] -> Bool
-isOutputMinimumAda "tx" [Field "outputs", Index _, Field "lovelace"] = True
-isOutputMinimumAda _ _ = False
+{- | A leaf the model states as a lovelace floor: a transaction output's
+lovelace, and a payment's value in @paid@ and in the transaction's refunds.
+-}
+isLovelaceFloor :: Text -> [Step] -> Bool
+isLovelaceFloor "tx" [Field "outputs", Index _, Field "lovelace"] = True
+isLovelaceFloor "tx" [Field "refunds", Index _, Field "value"] = True
+isLovelaceFloor "paid" [Index _, Field "value"] = True
+isLovelaceFloor _ _ = False
 
 {- | Every path at which a reported difference's two sides differ, down to a
 leaf or to an array whose length differs.
@@ -90,9 +95,9 @@ reportedDifferences differences =
 
 surplusFloor :: Text -> [Step] -> Difference -> Bool
 surplusFloor name path difference
-    | isOutputMinimumAda name path = case ( valueAt path (differenceExpected difference)
-                                          , valueAt path (differenceObserved difference)
-                                          ) of
+    | isLovelaceFloor name path = case ( valueAt path (differenceExpected difference)
+                                       , valueAt path (differenceObserved difference)
+                                       ) of
         (Just expected, Just observed) -> outputFloorAgrees expected observed
         _ -> False
     | otherwise = False
@@ -170,12 +175,12 @@ loweredOutputFloors declared expected observed =
     , Just model <- [observationAt name expected]
     , Just actual <- [observationAt name observed]
     , path <- leafPaths model
-    , isOutputMinimumAda name path
+    , isLovelaceFloor name path
     , Just (Number modelFloor) <- [valueAt path model]
     ]
 
 {- | Count every refused change by the observation the comparator named.
-The sole allowed passing change is a transaction output's minimum ada.
+The sole allowed passing change is surplus above a lovelace floor.
 -}
 checkPerturbations :: Declared -> Value -> Value -> Either String (Int, Map.Map Text Int, [String])
 checkPerturbations declared expected observed = do
@@ -186,11 +191,11 @@ checkPerturbations declared expected observed = do
     results <- mapM check changes
     lowered <- mapM checkLowering lowerings
     let refused = [name | Just name <- results <> lowered]
-        exempt = [show path | ((name, path, _), Nothing) <- zip changes results, isOutputMinimumAda name path]
+        exempt = [show path | ((name, path, _), Nothing) <- zip changes results, isLovelaceFloor name path]
     pure (length refused, Map.fromListWith (+) [(name, 1) | name <- refused], exempt)
   where
     check (name, path, changed)
-        | isOutputMinimumAda name path = case compareRegistration declared expected changed of
+        | isLovelaceFloor name path = case compareRegistration declared expected changed of
             Right _ -> Right Nothing
             Left differences -> Left ("outputMinimumAda was compared at " <> show path <> ": " <> show differences)
         | otherwise = case compareRegistration declared expected changed of

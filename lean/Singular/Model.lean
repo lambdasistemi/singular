@@ -637,9 +637,9 @@ consumes one state and produces one), and both the state datum and the
 destination datum are inline because the cage reads them without a preimage.
 Everything else below is read off the model. -/
 
-/-- How an output presents its datum. -/
+/-- How an output presents its datum: inline, by hash, or not at all. -/
 inductive DatumForm where
-  | inline | hashed
+  | inline | hashed | none
   deriving Repr, BEq, DecidableEq
 
 /-- The state token count of the registry's single state UTxO. -/
@@ -865,24 +865,6 @@ def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
         , stateTokens := 0, config := none, commitment := none, assets := assets
         , custodyDatum := some [r.refundAddress], lovelace := r.deposit }]
 
-/-- The transaction an admitted single-request fold builds, or the model's own
-refusal. Every field is the executed step's answer or a definition applied to
-the request; nothing is asserted beside the model. -/
-def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
-  match step s r with
-  | .error why => .error why
-  | .ok t =>
-    .ok { inputs :=
-            [ { role := .state, datum := registryDatumForm
-              , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
-            , { role := .request, datum := registryDatumForm
-              , stateTokens := 0, approvals := approvalsIn r, lovelace := lovelace } ]
-            ++ txBurnInputs t r
-        , outputs := txStateOutput t :: txDestinationOutput t r :: txCageOutputs t r
-        , mint := t.mint
-        , signers := requiredSigners r
-        , refunds := t.paid }
-
 /-! ### Exits and what each one owes
 
 A request leaves the registry's queue by exactly one exit: a fold of one of the
@@ -899,7 +881,7 @@ inductive Exit where
 custody, or the request's owner. -/
 inductive Recipient where
   | destination (address : Nat) | custody | owner (key : Nat)
-  deriving Repr, BEq, DecidableEq
+  deriving Repr, DecidableEq
 
 /-- A payment owed: at least `atLeast` lovelace to `recipient`. -/
 structure Payment where
@@ -938,6 +920,10 @@ def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
   | .destination _ => if paying.isEmpty then "destination" else "deposit-returned"
   | .owner _ => "deposit-returned"
 
+/-- What the payments owe one recipient: their floors, summed. -/
+def owedTo (recipient : Recipient) (payments : List Payment) : Nat :=
+  (payments.filter (·.recipient == recipient)).foldl (· + ·.atLeast) 0
+
 /-- Judge a transaction's outputs against the payments owed: `none` when every
 recipient is paid its summed floor, else the chain's reason for the first
 recipient, in the order the payments are owed, that is not. One exit's judgement
@@ -945,59 +931,94 @@ is `settle (obligations exit request) outputs`; a batch is the concatenation of
 its exits' payments. -/
 def settle (payments : List Payment) (outputs : List TxOutput) : Option String :=
   (payments.map (·.recipient)).eraseDups.findSome? fun recipient =>
-    let owed := (payments.filter (·.recipient == recipient)).foldl (· + ·.atLeast) 0
+    let owed := owedTo recipient payments
     let paying := outputs.filter (paysRecipient recipient)
     if owed ≤ paying.foldl (· + ·.lovelace) 0 then none
     else some (unpaidReason recipient paying)
 
+/-- A payment as the (address, value) pair `Result.paid` carries, at the address
+`paysRecipient` reads for its recipient: the cage's for custody, the named address
+for a destination, and the owner's key for the owner. -/
+def paymentPaid (payment : Payment) : Nat × Nat :=
+  match payment.recipient with
+  | .custody => (cageAddress, payment.atLeast)
+  | .destination address => (address, payment.atLeast)
+  | .owner key => (key, payment.atLeast)
+
 /-- One exit as a model step. A fold of edge `e` is exactly `step` when the
 request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
-retract carries no admission: it leaves the registry state as it was, mints
-nothing, and pays the owner what the exit owes, each payment recorded as the
-(address, value) pair `Result.paid` carries, the owner's key being its address as
-`paysRecipient` reads it. -/
+retract carries no admission: it leaves the registry state as it was and mints
+nothing. Every exit pays what it owes, each payment recorded by `paymentPaid`,
+and then what its step pays: the custody refunds of `updateActive` and
+`deleteAbsent`. -/
 def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
-  match exit with
-  | .fold e => if request.edge == e then step state request else .error "exit-edge-mismatch"
-  | .reject | .retract =>
-    .ok { state := state, mint := []
-        , paid := (obligations exit request).filterMap fun p =>
-            match p.recipient with
-            | .owner key => some (key, p.atLeast)
-            | _ => none }
+  let executed : Except String Result :=
+    match exit with
+    | .fold e => if request.edge == e then step state request else .error "exit-edge-mismatch"
+    | .reject | .retract => .ok (emptyResult state)
+  match executed with
+  | .error why => .error why
+  | .ok t => .ok { t with paid := (obligations exit request).map paymentPaid ++ t.paid }
 
-/-- One owner output per owner payment, at the owner's address, carrying the
-payment's floor. -/
-def ownerOutputs (paid : List (Nat × Nat)) : List TxOutput :=
-  paid.map fun p =>
-    { role := .owner, datum := registryDatumForm, address := some p.1, stateTokens := 0
-    , config := none, commitment := none, assets := [], lovelace := p.2 }
+/-- One owner output per owner payment, at the owner's key, carrying the
+payment's floor, presenting its datum in `datum` and naming `commitment`. -/
+def ownerOutputs (datum : DatumForm) (commitment : Option Nat) (payments : List Payment) :
+    List TxOutput :=
+  payments.filterMap fun payment =>
+    match payment.recipient with
+    | .owner key =>
+      some { role := .owner, datum := datum, address := some key, stateTokens := 0
+           , config := none, commitment := commitment, assets := []
+           , lovelace := payment.atLeast }
+    | _ => Option.none
 
-/-- The transaction an exit builds. A fold's is `txOf` when the request names its
-edge, and none otherwise. A reject is settled inside a transaction that spends the
-registry's state and returns it unchanged, beside the request it spends; a retract
-is its own transaction, spending only the request. Each pays the owner one output
-per payment it owes, mints nothing and requires no signer. -/
+/-- The transaction an exit builds, or the model's refusal. A fold's spends the
+registry's state and the request, and the tokens its mint destroys; it moves the
+state, delivers to the destination the request names, locks custody when its edge
+routes a token there, and pays the owner one output per owner payment: an
+output with no datum that returns the request's approval, so it names that
+approval's asset name as its commitment. A reject is
+settled inside a transaction that spends the registry's state and returns it
+unchanged, beside the request it spends; a retract is its own transaction,
+spending only the request; each pays the owner one output per owner payment and
+requires no signer. Every output that pays a recipient carries the lovelace the
+exit owes it — the destination output its summed destination floor, the cage
+output the deposit — and the transaction refunds exactly what the exit pays. -/
 def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace : Nat) :
     Except String Tx :=
-  match exit with
-  | .fold e => if request.edge == e then txOf state request lovelace else .error "exit-edge-mismatch"
-  | .reject | .retract =>
-    match exitStep state exit request with
-    | .error why => .error why
-    | .ok t =>
-      let requestInput : TxInput :=
-        { role := .request, datum := registryDatumForm
-        , stateTokens := 0, approvals := approvalsIn request, lovelace := lovelace }
-      let stateInput : TxInput :=
-        { role := .state, datum := registryDatumForm
-        , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
-      let spendsState := exit == .reject
-      .ok { inputs := (if spendsState then [stateInput] else []) ++ [requestInput]
-          , outputs := (if spendsState then [txStateOutput t] else []) ++ ownerOutputs t.paid
+  match exitStep state exit request with
+  | .error why => .error why
+  | .ok t =>
+    let owed := obligations exit request
+    let requestInput : TxInput :=
+      { role := .request, datum := registryDatumForm
+      , stateTokens := 0, approvals := approvalsIn request, lovelace := lovelace }
+    let stateInput : TxInput :=
+      { role := .state, datum := registryDatumForm
+      , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+    match exit with
+    | .fold _ =>
+      let destinationFloor := owedTo (.destination (requestDestination request)) owed
+      .ok { inputs := [stateInput, requestInput] ++ txBurnInputs t request
+          , outputs := txStateOutput t
+              :: { txDestinationOutput t request with lovelace := destinationFloor }
+              :: txCageOutputs t request
+              ++ ownerOutputs .none (request.approval.map (·.assetName)) owed
           , mint := t.mint
-          , signers := []
+          , signers := requiredSigners request
           , refunds := t.paid }
+    | .reject =>
+      .ok { inputs := [stateInput, requestInput]
+          , outputs := txStateOutput t :: ownerOutputs registryDatumForm Option.none owed
+          , mint := t.mint, signers := [], refunds := t.paid }
+    | .retract =>
+      .ok { inputs := [requestInput], outputs := ownerOutputs registryDatumForm Option.none owed
+          , mint := t.mint, signers := [], refunds := t.paid }
+
+/-- The transaction an admitted single-request fold builds, or the model's own
+refusal: the transaction of the fold exit the request names. -/
+def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
+  txOfExit s (.fold r.edge) r lovelace
 
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined

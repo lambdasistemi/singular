@@ -147,19 +147,19 @@
     "name": "Singular.Statements.insert_absent_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46"
+    "statementSha256": "8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737"
+    "statementSha256": "f1f50ac910b0ff0f5abb8d371bd82ce5007e8bfe861939c5972d62e8c85e8508"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c85a4eb0a61907d71a0861658097e7ab839655023e39bfc4e11a8209553e31c2"
+    "statementSha256": "6792444e9887f9e579975eae2cca2be00048db6d5a7a8c147b72fe6462eb3068"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
@@ -196,5 +196,17 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044"
+  },
+  {
+    "name": "Singular.Statements.built_transaction_settles",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b5b45e560df2c4d3050466fd00b895dd61280d5b89c834bb2612c52c9b104796"
+  },
+  {
+    "name": "Singular.Statements.retract_pays_exactly_its_obligations",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390"
   }
 ]

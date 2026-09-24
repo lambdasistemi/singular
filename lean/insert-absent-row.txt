@@ -30,11 +30,11 @@ flowchart LR
 | Executable mirror | Lean transaction execution here; simulator replay in #178 | Treating refreshed simulator copies as execution would hide the missing replay |
 
 `Singular.Statements.insert_absent_transaction_row` has statement digest
-`cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46`.
+`8c63e568b81b4e4a81cf3832c88d324ef910925e2733b6593c8e337c81357b3f`.
 Its model source digest is
-`3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89`;
+`2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27`;
 its statements source digest is
-`4a3a8d9cb6843598b0bad55a8fa3b7656593788eee2e10963b241583462266db`.
+`d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5`.
 The manifest and exported corpus bind these identities. The PR records the
 exact candidate commit containing them.
 
@@ -51,7 +51,9 @@ statement binds all of the following together:
   reads the key from that singleton asset list. It does not consult the datum
   or request and has no fallback for an empty, multiple or wrong-kind asset list.
 - The mint is exactly one absent token at the request key, with no other mint,
-  empty required signers and no immediate refunds.
+  and empty required signers. The transaction's one payment is the deposit, to
+  custody at the cage's address (`refunds := [(0, request.deposit)]`): the
+  deposit is locked, not returned.
 - The source key was unknown; the resulting trie inserts `Known Absent`; only
   the configuration root changes and it commits that trie. The logical custody
   record prepends the same key, refund address and deposit; holdings are unchanged;
