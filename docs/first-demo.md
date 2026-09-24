@@ -2,7 +2,11 @@
 
 As a Cardano KERI integrator, I want to see a released Singular registry handle a real identity's registration, retirement and custody, so that I can evaluate the interface that Cardano KERI will consume.
 
+**Planned release tag:** Singular `v1.0.0` (registry handoff milestone). This is the first demo release target, conditional on the built archive and connected preprod replay; no future tag is published by this plan.
+
 **8 October 2026 is a target, not an observed result.** The [project story](https://github.com/orgs/lambdasistemi/projects/4/views/5?pane=issue&itemId=252955454) requires a connected Cardano preprod play. The accepted [Singular Lean model](../lean/Singular/Model.lean) defines expected transitions; the deployed script, released operator command and fresh node readbacks must establish each claimed outcome.
+
+The planned identity read path is the Cardano KERI follower store: use `ckeri` writes with `--store PATH` and status with explicit `--backend local --store PATH`, recording its chain point and freshness. The Singular registry readback needs the persistent indexed proof path tracked by [#107](https://github.com/lambdasistemi/singular/issues/107); the current preprod session follower confirms new transactions, while a node provider handles older outputs. The older Koios-backed V1 cast is a checkpoint baseline only; it cannot stand in for this joined result.
 
 ## Preprod play to record
 
