@@ -20,18 +20,19 @@ module Conformance.Compare.Registration (
     declaredSurface,
     deliveryObservation,
     compareRegistration,
+    outputFloorAgrees,
     rootOf,
     approvalAssetName,
     edgeOrdinal,
 ) where
 
 import Data.Aeson (Value (..), encode, object, (.:), (.=))
-import Data.Maybe (fromMaybe)
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson.Types (parseEither)
 import Data.Bits (shiftR, xor, (.&.))
 import Data.List (sort, sortOn)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Vector qualified as V
 import Data.Word (Word64, Word8)
@@ -100,7 +101,9 @@ Every declared observation must be present on both sides and must agree. A name
 the model cannot observe must not appear at all: an observed object that carried
 one would be claiming to have seen what the model has no vocabulary for, so it
 is reported rather than passed over. Those names are carried in the result,
-never compared.
+never compared. For `tx`, every observed output's `lovelace` must be at least
+the corresponding model value; surplus is allowed while every other field is
+compared for equality.
 -}
 compareRegistration :: Declared -> Value -> Value -> Either [Difference] Agreement
 compareRegistration declared expected observed =
@@ -125,25 +128,6 @@ compareRegistration declared expected observed =
         | name <- sort (declaredUnobservable declared)
         , name `elem` fieldsOf observed
         ]
-    {- The one named unobservable that lives inside an observation rather than
-    beside it: a ledger makes every output carry a minimum ada, and the model
-    says nothing about it, so a transaction output's `lovelace` is a logical
-    zero. It is removed from both sides before `tx` is compared — every other
-    field of every input, output, mint, refund and signer list still has to
-    agree — and it is never counted as a passing observation. -}
-    withoutOutputMinimumAda name value
-        | name /= "tx" = value
-        | otherwise = case value of
-            Object fields -> case KM.lookup "outputs" fields of
-                Just outputs -> Object (KM.insert "outputs" (stripOutputs outputs) fields)
-                Nothing -> value
-            _ -> value
-    stripOutputs value = case value of
-        Array outputs -> Array (fmap dropLovelace outputs)
-        _ -> value
-    dropLovelace value = case value of
-        Object fields -> Object (KM.delete "lovelace" fields)
-        _ -> value
     -- A declared observation absent from either side is not accounted for.
     missing =
         [ Difference name (fromMaybe Null (at name expected)) (fromMaybe Null (at name observed))
@@ -153,11 +137,38 @@ compareRegistration declared expected observed =
     disagreeing =
         [ Difference name left right
         | name <- sort (declaredObservations declared)
-        , Just left <- [comparable name <$> at name expected]
-        , Just right <- [comparable name <$> at name observed]
-        , left /= right
+        , Just left <- [at name expected]
+        , Just right <- [at name observed]
+        , not (agrees name left right)
         ]
-    comparable name = heldAsMultiset name . withoutOutputMinimumAda name
+    agrees "tx" expectedTx observedTx = transactionAgrees expectedTx observedTx
+    agrees name expectedValue observedValue =
+        comparable name expectedValue == comparable name observedValue
+    transactionAgrees expectedTx observedTx = case (expectedTx, observedTx) of
+        (Object expectedFields, Object observedFields) ->
+            case (KM.lookup "outputs" expectedFields, KM.lookup "outputs" observedFields) of
+                (Just (Array expectedOutputs), Just (Array observedOutputs)) ->
+                    V.length expectedOutputs == V.length observedOutputs
+                        && and (V.zipWith outputFloorMet expectedOutputs observedOutputs)
+                        && stripOutputFloors expectedTx == stripOutputFloors observedTx
+                _ -> False
+        _ -> False
+    outputFloorMet expectedOutput observedOutput = case (expectedOutput, observedOutput) of
+        (Object expectedFields, Object observedFields) ->
+            case (KM.lookup "lovelace" expectedFields, KM.lookup "lovelace" observedFields) of
+                (Just modelFloor, Just observedLovelace) ->
+                    outputFloorAgrees modelFloor observedLovelace
+                _ -> False
+        _ -> False
+    stripOutputFloors value = case value of
+        Object fields -> case KM.lookup "outputs" fields of
+            Just (Array outputs) -> Object (KM.insert "outputs" (Array (fmap stripOutput outputs)) fields)
+            _ -> value
+        _ -> value
+    stripOutput value = case value of
+        Object fields -> Object (KM.delete "lovelace" fields)
+        _ -> value
+    comparable name = heldAsMultiset name
     -- Neither the model nor the chain orders a wallet's holdings, so `held`,
     -- alone and inside `state`, is compared as a multiset.
     heldAsMultiset name value = case (name, value) of
@@ -168,6 +179,12 @@ compareRegistration declared expected observed =
             _ -> value
         _ -> value
     sortHoldings = V.fromList . sortOn encode . V.toList
+
+-- | The shared acceptance rule for one output's lovelace observation.
+outputFloorAgrees :: Value -> Value -> Bool
+outputFloorAgrees expected observed = case (expected, observed) of
+    (Number modelFloor, Number observedLovelace) -> observedLovelace >= modelFloor
+    _ -> False
 
 {- | @Singular.rootOf@: FNV-1a over the sorted (key, leaf byte) pairs.
 
@@ -191,8 +208,7 @@ u64bytes :: Word64 -> [Word8]
 u64bytes value =
     [fromIntegral ((value `shiftR` place) .&. 0xFF) | place <- [56, 48, 40, 32, 24, 16, 8, 0]]
 
-
-{- | @Singular.edgeOrdinal@: the byte each edge commits under. -}
+-- | @Singular.edgeOrdinal@: the byte each edge commits under.
 edgeOrdinal :: Text -> Maybe Word8
 edgeOrdinal edge = lookup edge table
   where

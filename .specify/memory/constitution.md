@@ -1,5 +1,20 @@
 <!--
 Sync impact report
+Version: 1.5.0 -> 1.6.0 (transaction output lovelace floors)
+Amended: 2026-09-24
+Authority: issue #258 (parent #209), Amendment 8, T4a.
+Changed obligations: transaction output lovelace is compared against the
+model's per-output floor (`observed >= model`); all other transaction fields
+remain equal, and surplus above the floor remains unobservable.
+Consumers: `Conformance.Compare.Registration`,
+`Conformance.Compare.Perturbation`, its registration comparison tests, and the
+live run's reported-difference rendering.
+Checked: the declared observation and unobservable names remain unchanged;
+`tools/check_model.py` reconciliation is part of the frozen model gate.
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.4.0 -> 1.5.0 (the driver's operations are the exits)
 Amended: 2026-09-24
 Authority: issue #258 (parent #209), whose ruled rule table states where every
@@ -270,7 +285,7 @@ driver reports that reason verbatim and never manufactures one.
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
 | outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.refusal` or `Singular.exitStep` can produce; `unsupported` is the driver failing to reach the case and is never reported as a ledger refusal. |
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
-| `outputMinimumAda` | unobservable | the minimum ada a ledger requires every output to carry. The model says nothing about it, so an output's `lovelace` is a logical zero rather than an amount — except where the model states a floor: the cage output carries the deposit, and a reject's or a retract's owner output carries the payment it owes. A consumer compares every other field of a transaction and leaves this one alone rather than reconstructing an equality the model never claimed. |
+| `outputMinimumAda` | unobservable | The ledger's actual minimum ada remains outside the model. Each transaction output's model `lovelace` is a floor, so a consumer requires observed `lovelace >= model` and compares every other transaction field for equality. Surplus above the model floor remains unobservable. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
 | `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |
 | `transactionId` | unobservable | the built transaction has no identity until a ledger accepts it. |
@@ -308,4 +323,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.5.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-24
+**Version**: 1.6.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-24

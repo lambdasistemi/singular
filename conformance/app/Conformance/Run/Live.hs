@@ -56,7 +56,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (isInfixOf, nub, sort, sortOn, stripPrefix)
+import Data.List (isInfixOf, sort, sortOn, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Set qualified as Set
@@ -961,37 +961,14 @@ tamperDifferences alteration = case alteration of
 
 
 -- | Every path at which a reported difference's two sides differ, down to a
--- leaf or to an array whose length differs. Output minimum ada is left out:
--- the comparison already removes it and it never counts as a difference.
+-- leaf or to an array whose length differs. A below-floor lovelace difference
+-- is part of the transaction disagreement and remains visible here.
 reportedDifferences :: [Compare.Difference] -> [(T.Text, [Perturbation.Step])]
-reportedDifferences differences =
-    [ (name, path)
-    | difference <- differences
-    , let name = Compare.differenceObservation difference
-    , path <- differingPaths (Compare.differenceExpected difference)
-        (Compare.differenceObserved difference)
-    , not (Perturbation.isOutputMinimumAda name path)
-    ]
+reportedDifferences = Perturbation.reportedDifferences
 
 
 differingPaths :: Value -> Value -> [[Perturbation.Step]]
-differingPaths left right
-    | left == right = []
-    | otherwise = case (left, right) of
-        (Object l, Object r) ->
-            [ Perturbation.Field (Key.toText name) : rest
-            | name <- nub (KM.keys l <> KM.keys r)
-            , rest <- case (KM.lookup name l, KM.lookup name r) of
-                (Just a, Just b) -> differingPaths a b
-                _ -> [[]]
-            ]
-        (Array l, Array r)
-            | length l == length r ->
-                [ Perturbation.Index index : rest
-                | (index, a, b) <- zip3 [0 ..] (toList l) (toList r)
-                , rest <- differingPaths a b
-                ]
-        _ -> [[]]
+differingPaths = Perturbation.differingPaths
 
 
 renderStepPath :: [Perturbation.Step] -> String
