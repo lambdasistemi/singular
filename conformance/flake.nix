@@ -269,6 +269,21 @@
             --set-default NAMING_BLUEPRINT ${naming-blueprint}
         '';
 
+        # A separate test binary owns the deliberately insufficient budget.
+        # The public conformance executable never links its fixture module.
+        foldBudgetRegression = pkgs.runCommand "fold-budget-regression" {
+          buildInputs = [ pkgs.makeWrapper ];
+          meta.mainProgram = "fold-budget-regression";
+        } ''
+          mkdir -p $out/bin
+          makeWrapper ${pkgs.lib.getExe components.exes.fold-budget-regression} $out/bin/fold-budget-regression \
+            --prefix PATH : ${cardanoNode}/bin \
+            --set CONFORMANCE_DRIVER_CORPUS ${../lean/driver-corpus.json} \
+            --set CONFORMANCE_MODEL_EVALUATOR ${pkgs.lib.getExe driverTransport} \
+            --set-default E2E_GENESIS_DIR ${src}/conformance/genesis \
+            --set-default NAMING_BLUEPRINT ${naming-blueprint}
+        '';
+
         # The appendix suite compares against the committed driver corpus, so
         # the corpus travels with the binary rather than being copied into the
         # test tree where it could drift from the model.
@@ -305,6 +320,9 @@
               exit 1
             fi
             ${pkgs.lib.getExe appendixTests}
+            echo 'Harness appendix: honest fold budget regression'
+            budget_receipts="$(mktemp -d -t singular-budget-regression.XXXXXX)"
+            ${pkgs.lib.getExe foldBudgetRegression} --receipts-dir "$budget_receipts"
             receipts="$(mktemp -d -t singular-running-book.XXXXXX)"
             ${pkgs.lib.getExe conformance} book --receipts-dir "$receipts" "''${book_args[@]}"
           '';
@@ -313,7 +331,7 @@
       in
       {
         packages = {
-          inherit conformance driverTransport;
+          inherit conformance driverTransport foldBudgetRegression;
           # #157 D-BOOT: the naming partition's blueprint, so the four
           # pins are derived rather than typed.
           inherit naming-blueprint;
@@ -334,6 +352,10 @@
         };
 
         apps = {
+          fold-budget-regression = {
+            type = "app";
+            program = pkgs.lib.getExe foldBudgetRegression;
+          };
           conformance = {
             type = "app";
             program = pkgs.lib.getExe conformance;

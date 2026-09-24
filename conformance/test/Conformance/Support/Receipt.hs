@@ -29,6 +29,9 @@ import Test.Hspec (
  )
 
 import Conformance.Book (renderBook)
+import Conformance.Fixture.NodeRejection (scriptRejection)
+import Conformance.NodeRejection (boundedNodeReason)
+import Data.Text.IO qualified as TIO
 import Conformance.Receipt (
     Outcome (..),
     Receipt (..),
@@ -38,6 +41,7 @@ import Conformance.Receipt (
     derivationMatches,
     loadReceipts,
     maxReceiptBytes,
+    writeReceiptFile,
  )
 import Conformance.Rows (
     Row (..),
@@ -179,6 +183,30 @@ spec = describe "Appendix: deciding whether a run report counts as evidence" $ d
             Left err ->
                 err `shouldSatisfy` ("CG05" `isInfixOf`)
             Right () -> fail "a 20KB receipt passed the bound"
+
+    it "bounds an over-long live node rejection before saving the receipt" $
+        withSystemTempDirectory "long-live-refusal" $ \dir -> do
+            writeReceiptFile dir overlongLiveRefusal
+            bytes <- BSL.readFile (dir </> "receipt-CG21.json")
+            BSL.length bytes `shouldSatisfy` (<= fromIntegral maxReceiptBytes)
+            case eitherDecode bytes of
+                Left err -> fail ("saved receipt does not parse: " <> err)
+                Right saved -> case receiptSteps (saved :: Receipt) of
+                    Just [step] -> case field "rejection" =<< field "refusal" =<< field "chain" step of
+                        Just (String reason) -> T.length reason `shouldBe` 300
+                        _ -> fail "saved live refusal has no bounded node rejection"
+                    _ -> fail "saved receipt has no single live refusal step"
+
+    it "preserves the cause of a node-log budget refusal in the bounded receipt" $ do
+        raw <- getDataFileName "test/fixtures/node-refusals/budget.txt" >>= TIO.readFile
+        assertRecordedCause raw ["ValidationTagMismatch", "overspending the budget"]
+    it "preserves a ledger-constructed script cause bound to the saved node prefix" $ do
+        budget <- getDataFileName "test/fixtures/node-refusals/budget.txt" >>= TIO.readFile
+        evaluation <- getDataFileName "test/fixtures/node-refusals/script-evaluation.txt" >>= TIO.readFile
+        prefix <- getDataFileName "test/fixtures/node-refusals/submit-prefix.txt" >>= TIO.readFile
+        raw <- either fail pure (scriptRejection budget evaluation)
+        T.take (T.length prefix) raw `shouldBe` prefix
+        assertRecordedCause raw ["ValidationTagMismatch", "Caused by: error", "fixture-guard"]
 
     it "Reads an incomplete-coverage report without turning it into a full success" $ do
         dir <- getDataFileName "test/fixtures/partial-valid"
@@ -450,6 +478,19 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects a claimed redirected-delivery agreement without a script hash" $
         loadLive (changeStep (setField "tamper" ("redirect-delivery" :: String)) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
+    it "rejects a refused live request whose receipt omits the node reason and measured units" $
+        loadLive refusedLiveWithoutDetails >>= (`shouldSatisfy` isLeft)
+    it "accepts a budget refusal named by per-purpose measurements" $
+        loadLive budgetRefusalLive `shouldReturn` Right 1
+    it "rejects a budget refusal naming a purpose absent from the evaluation" $
+        loadLive (changeStep (setField "chain" (budgetRefusalChain ["unknown-purpose"])) budgetRefusalLive)
+            >>= (`shouldSatisfy` isLeft)
+    it "retains the node refusal when a failed purpose used a probe allowance" $
+        loadLive (changeStep (setField "chain" (probeRefusalChain "probe-allowance")) refusedLiveWithoutDetails)
+            `shouldReturn` Right 1
+    it "rejects a failed evaluation presented as measured units" $
+        loadLive (changeStep (setField "chain" (probeRefusalChain "twice-measured")) refusedLiveWithoutDetails)
+            >>= (`shouldSatisfy` isLeft)
     it "accepts an extra required signer the comparison reported in the transaction's signers" $
         loadLive extraSignerLive `shouldReturn` Right 1
     it "rejects an extra-signer agreement whose comparison reported no difference" $
@@ -461,6 +502,142 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects an untampered agreement that reports a difference" $
         loadLive (changeStep (setField "differences" [signerDifference]) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
+
+assertRecordedCause :: T.Text -> [T.Text] -> IO ()
+assertRecordedCause raw causes = withSystemTempDirectory "node-cause-receipt" $ \dir -> do
+    let stepReason = boundedNodeReason 4000 raw
+    T.length stepReason `shouldSatisfy` (<= 4000)
+    forM_ causes $ \cause -> stepReason `shouldSatisfy` T.isInfixOf cause
+    stepReason `shouldSatisfy` (not . T.isInfixOf "WTkuAQEAKYAK")
+    putStrLn ("recorded node cause: " <> T.unpack (boundedNodeReason 300 raw))
+    let receipt = smallReceipt {receiptRow = "CG21", receiptSteps = Just
+            [object ["chain" .= object ["outcome" .= ("refused" :: String),
+                "refusal" .= object ["rejection" .= raw]]]]}
+    writeReceiptFile dir receipt
+    bytes <- BSL.readFile (dir </> "receipt-CG21.json")
+    BSL.length bytes `shouldSatisfy` (<= fromIntegral maxReceiptBytes)
+    saved <- either fail pure (eitherDecode bytes)
+    case receiptSteps (saved :: Receipt) of
+        Just [step] -> case field "rejection" =<< field "refusal" =<< field "chain" step of
+            Just (String reason) -> do
+                T.length reason `shouldSatisfy` (<= 300)
+                forM_ causes $ \cause -> reason `shouldSatisfy` T.isInfixOf cause
+            _ -> fail "receipt lacks a rejection reason"
+        _ -> fail "receipt lacks the refused step"
+
+overlongLiveRefusal :: Receipt
+overlongLiveRefusal =
+    smallReceipt
+        { receiptRow = "CG21"
+        , receiptSteps =
+            Just
+                [ object
+                    [ "chain"
+                        .= object
+                            [ "outcome" .= ("refused" :: String)
+                            , "refusal"
+                                .= object
+                                    [ "rejection" .= T.replicate 20_000 "x"
+                                    , "measured" .= object ["units" .= [(1 :: Integer), 2]]
+                                    ]
+                            ]
+                    ]
+                ]
+        }
+
+field :: T.Text -> Value -> Maybe Value
+field name (Object fields) = KM.lookup (Key.fromText name) fields
+field _ _ = Nothing
+
+refusedLiveWithoutDetails :: Receipt
+refusedLiveWithoutDetails =
+    ( changeStep
+        ( setField "tamper" ("redirect-delivery" :: String)
+            . setField
+                "chain"
+                ( object
+                    [ "outcome" .= ("refused" :: String)
+                    , "txid" .= ("abc123" :: String)
+                    , "refusal"
+                        .= object
+                            [ "trace" .= ("deposit-returned" :: String)
+                            , "hashes" .= (["abcdef"] :: [String])
+                            ]
+                    ]
+                )
+            . setField "compared" ([] :: [String])
+            . setField "perturbation" Null
+        )
+        acceptedLive
+    )
+        { receiptOutcome = Refused
+        , receiptTransactions = []
+        , receiptRefusal =
+            Just
+                RefusalInfo
+                    { refusalScript = "state"
+                    , refusalReason = "phase-2 PlutusFailure naming 0xabcdef"
+                    , refusalPhase = "phase-2"
+                    , refusalHashes = ["abcdef"]
+                    , refusalBranch = Nothing
+                    , refusalLimit = Just "live request was refused"
+                    }
+        , receiptRejected = Just "abc123"
+        , receiptMem = Nothing
+        , receiptCpu = Nothing
+        , receiptTxSize = Nothing
+        }
+
+probeRefusalChain :: String -> Value
+probeRefusalChain source = object
+    [ "outcome" .= ("refused" :: String)
+    , "txid" .= ("abc123" :: String)
+    , "refusal" .= object
+        [ "trace" .= (Nothing :: Maybe String)
+        , "hashes" .= (["abcdef"] :: [String])
+        , "kind" .= ("validator" :: String)
+        , "rejection" .= ("node: script refused" :: String)
+        , "budgetPurposes" .= ([] :: [String])
+        , "measured" .= object
+            [ "spend" .= object ["mem" .= (10 :: Integer), "cpu" .= (20 :: Integer)]
+            , "mint" .= object ["error" .= ("evaluation: script refused" :: String)] ]
+        , "declared" .= object
+            [ "spend" .= object ["mem" .= (20 :: Integer), "cpu" .= (40 :: Integer), "source" .= ("twice-measured" :: String)]
+            , "mint" .= object ["mem" .= (80 :: Integer), "cpu" .= (160 :: Integer), "source" .= source] ]
+        ]
+    ]
+
+budgetRefusalLive :: Receipt
+budgetRefusalLive =
+    changeStep (setField "chain" (budgetRefusalChain ["ConwaySpending (AsIx 0)"]))
+        refusedLiveWithoutDetails
+
+budgetRefusalChain :: [String] -> Value
+budgetRefusalChain purposes =
+    object
+        [ "outcome" .= ("refused" :: String)
+        , "txid" .= ("abc123" :: String)
+        , "refusal"
+            .= object
+                [ "trace" .= (Nothing :: Maybe String)
+                , "hashes" .= (["abcdef"] :: [String])
+                , "kind" .= ("budget" :: String)
+                , "rejection" .= ("execution budget exceeded" :: String)
+                , "budgetPurposes" .= purposes
+                , "declared"
+                    .= object
+                        [ "ConwaySpending (AsIx 0)" .= object ["mem" .= (9 :: Integer), "cpu" .= (19 :: Integer)]
+                        , "ConwaySpending (AsIx 1)" .= object ["mem" .= (10 :: Integer), "cpu" .= (20 :: Integer)]
+                        , "ConwayMinting (AsIx 0)" .= object ["mem" .= (6 :: Integer), "cpu" .= (8 :: Integer)]
+                        ]
+                , "measured"
+                    .= object
+                        [ "ConwaySpending (AsIx 0)" .= object ["mem" .= (10 :: Integer), "cpu" .= (20 :: Integer)]
+                        , "ConwaySpending (AsIx 1)" .= object ["mem" .= (10 :: Integer), "cpu" .= (20 :: Integer)]
+                        , "ConwayMinting (AsIx 0)" .= object ["mem" .= (3 :: Integer), "cpu" .= (4 :: Integer)]
+                        ]
+                ]
+        ]
 
 acceptedLive :: Receipt
 acceptedLive =
@@ -485,9 +662,10 @@ acceptedLive =
                 ]
         }
 
--- | The registration folded with one required signer the model does not
--- require: the ledger accepts it, and the comparison reports exactly the
--- transaction's signers.
+{- | The registration folded with one required signer the model does not
+require: the ledger accepts it, and the comparison reports exactly the
+transaction's signers.
+-}
 extraSignerLive :: Receipt
 extraSignerLive =
     changeStep

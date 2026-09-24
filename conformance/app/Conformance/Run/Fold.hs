@@ -25,6 +25,7 @@ import Data.Foldable (toList)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
 import Data.Maybe (fromMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
@@ -187,6 +188,7 @@ data FoldSpec = FoldSpec
     -- ^ one per request, same order
     , fsNewRoot :: Root
     , fsUnits :: ExUnits
+    , fsPurposeUnits :: Map.Map T.Text ExUnits
     , fsFee :: Maybe Integer
     -- ^ @Nothing@: the caller sizes the fee in a second pass
     , fsRefunds :: [Integer]
@@ -367,7 +369,6 @@ assembleFoldSpec env fs = do
             & witsTxL . scriptTxWitsL .~ scripts
             & witsTxL . rdmrsTxWitsL .~ redeemers
   where
-    units = fsUnits fs
     deriveRefunds tipAmount _feeAmt
         | null (fsReqs fs) = pure []
         | otherwise =
@@ -449,11 +450,15 @@ assembleFoldSpec env fs = do
                     )
             statePurpose =
                 ConwaySpending (AsIx (spendingIndex (fst (fsState fs')) inputs))
+            unitsFor purpose =
+                Map.findWithDefault
+                    (fsUnits fs')
+                    (T.pack (show purpose))
+                    (fsPurposeUnits fs')
             stateRef = txInToRef (fst (fsState fs'))
             requestPairs =
-                [ ( ConwaySpending (AsIx (spendingIndex reqIn inputs))
-                  , (toLedgerData (Contribute stateRef), units)
-                  )
+                [ let purpose = ConwaySpending (AsIx (spendingIndex reqIn inputs))
+                   in (purpose, (toLedgerData (Contribute stateRef), unitsFor purpose))
                 | (reqIn, _) <- fsReqs fs'
                 ]
             -- #157 C10: the consumer rewarding purpose is gone; a row that
@@ -461,26 +466,27 @@ assembleFoldSpec env fs = do
             hookPairs = case fsWithdrawal fs' of
                 Nothing -> []
                 Just _ ->
-                    [ (ConwayRewarding (AsIx 0), (toLedgerData (0 :: Integer), units))
+                    [ let purpose = ConwayRewarding (AsIx 0)
+                       in (purpose, (toLedgerData (0 :: Integer), unitsFor purpose))
                     ]
             -- #157: the token policies this fold moves tokens under.
             mintPolicies = map cmPolicy (rdMints duties)
             mintIndex p =
                 AsIx (fromIntegral (length (takeWhile (/= p) (Map.keys (Map.fromList [(q, ()) | q <- mintPolicies])))))
             mintPairs =
-                [ (ConwayMinting (mintIndex (cmPolicy m)), (toLedgerData (cmRedeemer m), units))
+                [ let purpose = ConwayMinting (mintIndex (cmPolicy m))
+                   in (purpose, (toLedgerData (cmRedeemer m), unitsFor purpose))
                 | m <- rdMints duties
                 ]
             pairs =
                 ( statePurpose
-                , (toLedgerData (Modify (fsActions fs')), units)
+                , (toLedgerData (Modify (fsActions fs')), unitsFor statePurpose)
                 )
                     : requestPairs
                     <> hookPairs
                     <> mintPairs
-                    <> [ ( ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
-                         , (toLedgerData (csRedeemer sp), units)
-                         )
+                    <> [ let purpose = ConwaySpending (AsIx (spendingIndex (fst (csUtxo sp)) inputs))
+                          in (purpose, (toLedgerData (csRedeemer sp), unitsFor purpose))
                        | sp <- rdSpends duties
                        ]
         pure (Redeemers (Map.fromList pairs))
@@ -573,6 +579,7 @@ rowSpec cage tid state reqs actions root units =
         , fsActions = actions
         , fsNewRoot = root
         , fsUnits = units
+        , fsPurposeUnits = Map.empty
         , fsFee = Nothing
         , fsRefunds = []
         , fsStateOverride = Nothing

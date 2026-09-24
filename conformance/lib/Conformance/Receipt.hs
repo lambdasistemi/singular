@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Conformance.Receipt
 Description : Run receipts: the only way a row becomes executed
@@ -36,12 +38,14 @@ module Conformance.Receipt (
     declaredConstructors,
     derivationVenue,
     maxReceiptBytes,
+    maxLiveStepReasonChars,
     checkReceiptSize,
     loadReceipts,
     writeReceiptFile,
     currentBase,
 ) where
 
+import Conformance.NodeRejection (boundedNodeReason)
 import Control.Exception (ErrorCall (..), throwIO)
 
 import Data.Aeson (
@@ -58,6 +62,7 @@ import Data.Aeson (
     (.!=),
     (.=),
  )
+import Data.Aeson.Key qualified as Key
 import Data.ByteString.Lazy qualified as BSL
 import Data.Aeson.KeyMap qualified as KM
 import Data.Vector qualified as Vector
@@ -433,12 +438,22 @@ can open is weak evidence, and a size convention would quietly
 break on a later row.
 -}
 writeReceiptFile :: FilePath -> Receipt -> IO ()
-writeReceiptFile dir r = case checkReceiptSize r of
+writeReceiptFile dir r = case checkReceiptSize bounded of
     Left err -> throwIO (ErrorCall err)
     Right () ->
         BSL.writeFile
-            (dir </> ("receipt-" <> T.unpack (receiptRow r) <> ".json"))
-            (encode r)
+            (dir </> ("receipt-" <> T.unpack (receiptRow bounded) <> ".json"))
+            (encode bounded)
+  where
+    bounded = r{receiptSteps = fmap (map boundStepReason) (receiptSteps r)}
+    boundStepReason = updateField "chain" $ updateField "refusal" $ updateField "rejection" $ \case
+        String reason -> String (boundedNodeReason maxLiveStepReasonChars reason)
+        other -> other
+    updateField name f value@(Object fields) =
+        case KM.lookup (Key.fromText name) fields of
+            Just existing -> Object (KM.insert (Key.fromText name) (f existing) fields)
+            Nothing -> value
+    updateField _ _ value = value
 
 {- | Receipts stay readable: the CG05 refusal once embedded the whole
 compiled validator (~30KB of base64) because @show@ on the
@@ -446,6 +461,10 @@ evaluation context prints every script and cost model.
 -}
 maxReceiptBytes :: Int
 maxReceiptBytes = 16384
+
+-- | Keep live node text readable inside each refusal step.
+maxLiveStepReasonChars :: Int
+maxLiveStepReasonChars = 300
 
 -- | Validate the generic evidence body independently of the runner. The
 -- runner computes its values; the loader refuses missing comparisons and
@@ -489,6 +508,11 @@ stepsComplete path receipt steps
             Just (String "unsupported") -> case at "reason" =<< at "chain" step of
                 Just (String reason) | not (T.null reason) -> Right ()
                 _ -> failure "unsupported chain outcome has no observed reason"
+            Just (String "refused") -> case at "refusal" =<< at "chain" step of
+                Just (Object refusal) -> case refusalComplete refusal of
+                    Right () -> Right ()
+                    Left reason -> failure reason
+                _ -> failure "refused live step has no node refusal details"
             _ -> Right ()
         case (tamper, comparison, model, chain) of
             (Just Null, Just (String "agrees"), m, c)
@@ -534,6 +558,51 @@ stepsComplete path receipt steps
                 Just (String "agrees"), _) -> failure "accepted agreement has no perturbation evidence"
             (_, _, _, _, Just Null) -> Right ()
             _ -> failure "unexpected perturbation evidence"
+    refusalComplete refusal = case
+            ( KM.lookup "rejection" refusal
+            , KM.lookup "measured" refusal
+            , KM.lookup "declared" refusal
+            , KM.lookup "budgetPurposes" refusal
+            , KM.lookup "kind" refusal
+            ) of
+        (Just (String reason), Just (Object measured), Just (Object declared), Just (Array budgetNames), Just (String kind))
+            | T.null reason -> Left "refusal has an empty node reason"
+            | T.length reason > maxLiveStepReasonChars -> Left "refusal node reason exceeds its bound"
+            | null (KM.toList measured) -> Left "refusal has no per-purpose measurements"
+            | not (all validMeasurement (KM.elems measured)) -> Left "refusal has an invalid per-purpose measurement"
+            | not (all validDeclaredUnits (KM.elems declared)) -> Left "refusal has invalid per-purpose declarations"
+            | sort (KM.keys measured) /= sort (KM.keys declared) -> Left "refusal measurements and declarations name different purposes"
+            | otherwise -> do
+                names <- traverse budgetName (Vector.toList budgetNames)
+                let actual = sort names
+                    expectedKind = if null actual then "validator" else "budget"
+                if any (`notElem` KM.keys measured) actual
+                    then Left "budget refusal names an unmeasured purpose"
+                    else if not (all (validSource measured) (KM.toList declared))
+                        then Left "failed evaluation is not marked probe-allowance"
+                    else if kind /= expectedKind
+                        then Left "refusal kind does not match its per-purpose unit comparisons"
+                        else Right ()
+        _ -> Left "refused live step lacks bounded reason, per-purpose measurements, declarations or budget names"
+    budgetName (String name)
+        | not (T.null name) = Right (Key.fromText name)
+    budgetName _ = Left "budget refusal names an invalid script purpose"
+    validMeasurement (Object fields) =
+        isJust (unitPair (Object fields))
+            || case KM.lookup "error" fields of
+                Just (String message) -> not (T.null message)
+                _ -> False
+    validMeasurement _ = False
+    validDeclaredUnits value = isJust (unitPair value)
+    validSource measured (purpose, Object declaration) = case KM.lookup purpose measured of
+        Just (Object result) | KM.member "error" result ->
+            KM.lookup "source" declaration == Just (String "probe-allowance")
+        _ -> True
+    validSource _ _ = False
+    unitPair (Object fields) = case (KM.lookup "mem" fields, KM.lookup "cpu" fields) of
+        (Just (Number mem), Just (Number cpu)) -> Just (mem, cpu)
+        _ -> Nothing
+    unitPair _ = Nothing
 
 {- | The size bound, purely: oversized receipts are an error naming
 the row and the byte count.

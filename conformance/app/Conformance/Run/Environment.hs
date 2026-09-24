@@ -6,6 +6,7 @@ License     : Apache-2.0
 module Conformance.Run.Environment (Env (..), RowCage (..), StakeKit (..), CaWorld (..), CaSnap (..), requireEnv, loadCodes, loadNamingCodes, checkNamingPins, genesisAddr, genesisSignKey, checkGenesis, readNodeVersion, requireBase, requireTreeClean, bracketTmpDir, blueprintId, cageCfg, cageCfgWith, shortMarker, extractTokenId, txInHex) where
 
 import Conformance.Run.Control
+import Conformance.FoldFixture qualified as FoldFixture
 
 import Control.Exception (
     SomeException,
@@ -105,6 +106,7 @@ data Env = Env
     , envControl :: Control
     , envBase :: String
     , envDirty :: Bool
+    , envFoldFixture :: FoldFixture.Fixture
     , envNode :: String
     , envBlueprint :: String
     , envBlueprintPath :: FilePath
