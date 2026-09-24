@@ -61,8 +61,6 @@ library
     , crypton
     , directory
     , filepath
-    , directory
-    , filepath
     , memory
     , microlens
     , mts:mpf-write
