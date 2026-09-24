@@ -117,6 +117,8 @@ common live-runner
     Conformance.Run.CsRows
     Conformance.Run.CaRows
     Conformance.Run.Live
+    Conformance.Run.Retraction
+    Conformance.Run.Step
     Conformance.Run.Receipts
     Conformance.Run.Fold
     Conformance.Run.Book
@@ -177,9 +179,13 @@ executable fold-budget-regression
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   test
+  hs-source-dirs:   test app
   main-is:          Main.hs
   other-modules:
+    Conformance.Run.Retraction
+    Conformance.Run.Step
+    Conformance.Support.Retraction
+    Conformance.Support.Step
     Conformance.Fixture.Receipt
     Conformance.Fixture.NodeRejection
     Conformance.Story.Usage
@@ -203,7 +209,16 @@ test-suite conformance-tests
     , bytestring >=0.11 && <0.13
     , conformance
     , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-babbage
     , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-strict-containers
+    , cardano-tx-tools:tx-build
+    , microlens
+    , singular-registry
+    , validation-selective
     , ouroboros-consensus:{ouroboros-consensus, cardano}
     , strict-sop-core
     , containers >=0.6 && <0.8

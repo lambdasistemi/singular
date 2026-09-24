@@ -59,7 +59,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (isInfixOf, nub, sort, sortOn, stripPrefix)
+import Data.List (nub, sort, sortOn, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Sequence.Strict qualified as StrictSeq
@@ -78,21 +78,18 @@ import Cardano.Ledger.Address (
     serialiseAddr,
  )
 
-import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Api.PParams (ppMaxBlockExUnitsL, ppMaxTxExUnitsL)
 import Cardano.Ledger.Api.Tx.Body (
-    collateralInputsTxBodyL,
-    feeTxBodyL,
     inputsTxBodyL,
     mintTxBodyL,
     outputsTxBodyL,
     referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx.Out (
@@ -116,7 +113,6 @@ import Singular.Registry.Ledger (
     Coin (..),
     ExUnits (..),
     ConwayEra,
-    PParams,
     PolicyID (..),
     Root (..),
     TokenId (..),
@@ -141,7 +137,6 @@ import Singular.Registry.TxBuilder.Internal (
     policyIdFromPin,
     currentPosixMs,
     extractCageDatum,
-    computeScriptIntegrity,
     mkInlineDatum,
     requestAddrFromCfg,
     scriptHashBytes,
@@ -181,24 +176,14 @@ import Conformance.Mirror (
     txIdHex,
  )
 import Conformance.Receipt (AssetEntry (..))
-import Conformance.Refusal (
-    matchRefusal,
-    refusalScriptHashes,
+import Conformance.Run.Retraction (declareRetraction)
+import Conformance.Run.Step (
+    StepOutcome (..),
+    StepRejection (..),
+    judgedTransaction,
+    refusedOutcome,
+    storyRefusalTag,
  )
-
--- The live interpreter's handles contain values observed during this run.
--- They cannot be constructed by a story or supplied by a JSON fixture.
-data StepOutcome
-    = StepAccepted ConwayTx (Integer, Integer, Integer)
-    | StepRefused ConwayTx (Maybe T.Text) [T.Text] StepRejection
-    | StepUnsupported T.Text (Maybe StepRejection)
-
-data StepRejection = StepRejection
-    { srText :: T.Text
-    , srMeasured :: PurposeMeasurements
-    , srDeclared :: PurposeUnits
-    , srBudgetExceeded :: [T.Text]
-    }
 
 -- | Keep step diagnostics on one bounded line while retaining the full reason
 -- in memory for the receipt writer's tighter bound.
@@ -347,7 +332,7 @@ submitEdge env state cage exit alteration request = do
                 modelRequest <- storyModelRequest ids cfg exit request cgDeposit (stateMaxFee before)
                     Nothing (Left decided)
                 pure (LiveStep cage request exit alteration Nothing Nothing modelRequest 0 Nothing Nothing
-                    Nothing [] (StepUnsupported (T.pack nodeReason) Nothing))
+                    Nothing [] (StepUnsupported Nothing (T.pack nodeReason) Nothing))
             Nothing -> throwIO failure
         Right named@(reqIn, reqOut) -> do
             let Coin bond = reqOut ^. coinTxOutL
@@ -470,12 +455,7 @@ submitEdge env state cage exit alteration request = do
                                 }
                     pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest bond
                         Nothing witness (custodyOf refs) spent
-                        (if not (null (srBudgetExceeded diagnostic))
-                            then StepRefused signed Nothing [] diagnostic
-                            else case matchRefusal marker explanation of
-                                Right () -> StepRefused signed (storyRefusalTag explanation)
-                                    (map T.pack (refusalScriptHashes explanation)) diagnostic
-                                Left _ -> StepUnsupported (T.pack ("unattributed node rejection: " <> explanation)) (Just diagnostic)))
+                        (refusedOutcome marker signed diagnostic))
   where
     -- A fold spends the custody its edge consumes; a reject and a retraction
     -- consume none.
@@ -576,7 +556,7 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                     then spendStateBeside stateUtxo stateScripts reqIn outputsEdited
                     else Right outputsEdited
             either failWith pure (declareRetraction pp units pot
-                (sum (map (refScriptSize . snd) stateScripts)) edited)
+                (sum (map (refScriptSize . snd) stateScripts)) genesisAddr edited)
     require "the cage publishes no reference output carrying its state validator"
         (not (null stateScripts) || alteration /= Just Live.StateSpent)
     pure (build, pot, Nothing)
@@ -605,38 +585,6 @@ spendStateBeside (stateIn, stateOut) stateScripts reqIn transaction = do
         & bodyTxL . referenceInputsTxBodyL .~ references
         & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList (stateOut : toList (transaction ^. bodyTxL . outputsTxBodyL))
         & witsTxL . rdmrsTxWitsL .~ redeemers)
-
-
-{- | Declare a retraction's per-purpose units (none: keep the builder's), its
-script integrity, collateral and fee: the fee the ledger's estimate asks for
-one key witness and the reference scripts it resolves, plus a margin, the
-difference taken from the change, its last output.
--}
-declareRetraction :: PParams ConwayEra -> Map.Map T.Text ExUnits -> TxIn -> Int -> ConwayTx
-    -> Either String ConwayTx
-declareRetraction pp units pot referenceScriptBytes transaction = do
-    let Redeemers purposes = transaction ^. witsTxL . rdmrsTxWitsL
-        redeemers = Redeemers (Map.mapWithKey
-            (\purpose (datum, current) ->
-                (datum, Map.findWithDefault current (T.pack (show purpose)) units))
-            purposes)
-        declared = transaction
-            & witsTxL . rdmrsTxWitsL .~ redeemers
-            & bodyTxL . scriptIntegrityHashTxBodyL .~ computeScriptIntegrity pp redeemers
-            & bodyTxL . collateralInputsTxBodyL .~ Set.singleton pot
-        Coin before = declared ^. bodyTxL . feeTxBodyL
-        Coin estimated = estimateMinFeeTx pp declared 1 0 referenceScriptBytes
-        fee = estimated + 50_000
-        outputs = toList (declared ^. bodyTxL . outputsTxBodyL)
-    (kept, change) <- case reverse outputs of
-        change : rest | change ^. addrTxOutL == genesisAddr, change ^. datumTxOutL == NoDatum ->
-            Right (reverse rest, change)
-        _ -> Left "the retraction's last output is not its change"
-    let Coin changeCoin = change ^. coinTxOutL
-        rebalanced = change & coinTxOutL .~ Coin (changeCoin + before - fee)
-    pure (declared
-        & bodyTxL . feeTxBodyL .~ Coin fee
-        & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList (kept <> [rebalanced]))
 
 
 -- | Wait for a phase boundary.
@@ -1271,10 +1219,7 @@ compareStep env state step observation = do
     lawOutcome <- storyField "outcome" row
     -- The law accepting is not the model accepting the transaction: the
     -- driver then judges the submitted outputs against what the exit owes.
-    judged <- case (lawOutcome, lsOutcome step) of
-        (String "accepted", StepAccepted transaction _) -> Just <$> judge transaction
-        (String "accepted", StepRefused transaction _ _ _) -> Just <$> judge transaction
-        _ -> pure Nothing
+    judged <- traverse judge (judgedTransaction lawOutcome (lsOutcome step))
     (modelOutcome, modelReason) <- either failWith pure (LeanOracle.modelVerdict row judged)
     let model = object ["outcome" .= modelOutcome, "reason" .= modelReason]
         (chainOutcome, chain) = case lsOutcome step of
@@ -1284,7 +1229,7 @@ compareStep env state step observation = do
                 (String "refused", object
                     [ "outcome" .= String "refused", "txid" .= txIdHex transaction
                     , "refusal" .= withScripts (attributed hashes) (rejectionJson trace hashes rejection) ])
-            StepUnsupported reason diagnostic ->
+            StepUnsupported _ reason diagnostic ->
                 (String "unsupported", object
                     ["outcome" .= String "unsupported", "reason" .= boundedNodeReason maxLiveStepReasonChars reason
                     , "refusal" .= fmap (rejectionJson Nothing []) diagnostic])
@@ -1352,7 +1297,7 @@ compareStep env state step observation = do
                 " txid=" <> txIdHex transaction <> " trace=" <> show trace
                     <> " scriptHashes=" <> show hashes
                     <> rejectionDetail rejection
-            StepUnsupported reason diagnostic -> " reason=" <> T.unpack (oneLine maxStepLineReasonChars reason)
+            StepUnsupported _ reason diagnostic -> " reason=" <> T.unpack (oneLine maxStepLineReasonChars reason)
                 <> maybe "" rejectionDetail diagnostic
     emit "step" (exitNamed
         <> " key=" <> show (Live.requestKey (lsRequest step))
@@ -1369,7 +1314,7 @@ compareStep env state step observation = do
             modifyIORef' (liveTraces state)
                 (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
         "unsupported" -> case lsOutcome step of
-            StepUnsupported reason _ -> emit "gap" (exitNamed
+            StepUnsupported _ reason _ -> emit "gap" (exitNamed
                 <> " for " <> Live.requestKey (lsRequest step) <> ": " <> T.unpack (oneLine maxStepLineReasonChars reason))
             _ -> failWith "unsupported comparison lacks an observed reason"
         _ -> failWith ("model and chain disagree for " <> exitNamed
@@ -1730,12 +1675,6 @@ storyProofs env cage tid reqs = do
 {- | Fold through the harness's own assembly, submit, commit, and record
 what the roots did — the accepting half of the duplicate pair.
 -}
-storyRefusalTag :: String -> Maybe T.Text
-storyRefusalTag text =
-    case [n | n <- ["key-exists", "not-booked", "key-unknown"], n `isInfixOf` text] of
-        (n : _) -> Just (T.pack n)
-        [] -> Nothing
-
 
 {- | Where the fold actually delivered, and what that output holds.
 
