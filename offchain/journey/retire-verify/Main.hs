@@ -44,7 +44,6 @@ import System.IO (hPutStrLn, stderr)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
 import Cardano.Ledger.Api.Tx (
     bodyTxL,
@@ -64,14 +63,15 @@ import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     valueTxOutL,
  )
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), addrTxWitsL, rdmrsTxWitsL, witVKeyHash)
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.BaseTypes (Network (..), TxIx (..))
 import Cardano.Ledger.Binary (
-    decCBOR,
     decodeFullAnnotatorFromHexText,
+    decCBOR,
     natVersion,
  )
-import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (extractHash)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
 import Cardano.Ledger.Keys (KeyHash (..))
@@ -82,7 +82,7 @@ import Cardano.Ledger.Mary.Value (
  )
 import Cardano.Ledger.TxIn (TxId (..))
 import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
-import Data.ByteString.Lazy qualified as BSL
+import qualified Data.ByteString.Lazy as BSL
 import Data.Foldable (toList)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -90,6 +90,19 @@ import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
+import Singular.Registry.Ledger (AssetName (..), ConwayEra)
+import Singular.Registry.TxBuilder.Internal (
+    extractCageDatum,
+    pinScriptHash,
+    scriptHashBytes,
+ )
+import Singular.Registry.Types (
+    CageDatum (..),
+    OnChainRequest (..),
+    OnChainRoot (..),
+    OnChainTokenId (..),
+    OnChainTokenState (..),
+ )
 import Cardano.Tx.Ledger (ConwayTx)
 import Naming.Datum (
     NamingDatum (..),
@@ -108,19 +121,6 @@ import Naming.Wire (
     PaymentCredential (..),
     WireData (..),
     addressPaymentHash,
- )
-import Singular.Registry.Ledger (AssetName (..), ConwayEra)
-import Singular.Registry.TxBuilder.Internal (
-    extractCageDatum,
-    pinScriptHash,
-    scriptHashBytes,
- )
-import Singular.Registry.Types (
-    CageDatum (..),
-    OnChainRequest (..),
-    OnChainRoot (..),
-    OnChainTokenId (..),
-    OnChainTokenState (..),
  )
 
 -- ---------------------------------------------------------
@@ -438,13 +438,12 @@ data VerifiedRetire = VerifiedRetire
     , vrQuorum :: [ByteString]
     }
 
-{- | Verify the permissionless completion closing a verified retire:
-the tx spending the retire's custody outref must burn exactly the
-verified pair while folding the retire's own request in a genuine
-singleton-`Modify` transition, with no required signer and the
-fee owner as the sole witness outside every route. No such tx in
-evidence states custody intact (never assumed spent).
--}
+-- | Verify the permissionless completion closing a verified retire:
+-- the tx spending the retire's custody outref must burn exactly the
+-- verified pair while folding the retire's own request in a genuine
+-- singleton-`Modify` transition, with no required signer and the
+-- fee owner as the sole witness outside every route. No such tx in
+-- evidence states custody intact (never assumed spent).
 verifyCompletionTx ::
     Map.Map String (FilePath, ConwayTx) ->
     ByteString ->
@@ -504,16 +503,15 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
     -- State spend: exactly one input resolving to a state datum;
     -- its redeemer shape gives Modify-ness plus the action count
     -- (mirroring the scripts, which count rather than interpret).
-    stateIns <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> pure []
-                    Just (_, out) -> case extractCageDatum out of
-                        Just (StateDatum st) -> pure [(inRef, st)]
-                        _ -> pure []
-                )
-                (map txInOutRef (txInputs tx))
+    stateIns <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> pure []
+                Just (_, out) -> case extractCageDatum out of
+                    Just (StateDatum st) -> pure [(inRef, st)]
+                    _ -> pure []
+            )
+            (map txInOutRef (txInputs tx))
     (stateIn, stateSt) <- case stateIns of
         [(i, s)] -> pure (i, s)
         _ ->
@@ -536,16 +534,15 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
         [] -> failWith (label <> ": completion has no outputs")
     -- Request fold: exactly one input resolving to a request datum;
     -- co-creation ties it to the retire (same creator txid).
-    reqIns <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> pure []
-                    Just (_, out) -> case extractCageDatum out of
-                        Just (RequestDatum _) -> pure [inRef]
-                        _ -> pure []
-                )
-                (map txInOutRef (txInputs tx))
+    reqIns <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> pure []
+                Just (_, out) -> case extractCageDatum out of
+                    Just (RequestDatum _) -> pure [inRef]
+                    _ -> pure []
+            )
+            (map txInOutRef (txInputs tx))
     reqIn <- case reqIns of
         [r] -> pure r
         _ ->
@@ -568,16 +565,15 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
     -- Fee owner: every payment-key input shares one owner, and the
     -- witness set is exactly that key (fee ownership mechanics — the
     -- Q-file on the no-signature criterion states the interpretation).
-    feeOwners <-
-        fmap concat $
-            mapM
-                ( \inRef -> case resolveOut index inRef of
-                    Nothing -> failWith (label <> ": completion input does not resolve")
-                    Just (_, out) -> case paymentHashOfOut out of
-                        Just h -> pure [h]
-                        Nothing -> pure []
-                )
-                (map txInOutRef (txInputs tx))
+    feeOwners <- fmap concat $
+        mapM
+            ( \inRef -> case resolveOut index inRef of
+                Nothing -> failWith (label <> ": completion input does not resolve")
+                Just (_, out) -> case paymentHashOfOut out of
+                    Just h -> pure [h]
+                    Nothing -> pure []
+            )
+            (map txInOutRef (txInputs tx))
     feeOwner <- case feeOwners of
         (h : t) | all (== h) t -> pure h
         _ -> failWith (label <> ": fee inputs share no single owner")
@@ -629,9 +625,8 @@ verifyCompletionBody index label ctid tx custodyOut vr acceptedTxids = do
             <> hexOf rootAfter
         )
 
-{- | True iff the purpose resolves to the given input through the
-builder's sorted-input index rule (mirrors retireKeysFor).
--}
+-- | True iff the purpose resolves to the given input through the
+-- builder's sorted-input index rule (mirrors retireKeysFor).
 resolvesTo :: ConwayTx -> ConwayPlutusPurpose AsIx ConwayEra -> OutRef -> Bool
 resolvesTo tx (ConwaySpending (AsIx n)) ref =
     fromIntegral n < length inputs && txInOutRef (inputs !! fromIntegral n) == ref
@@ -699,10 +694,9 @@ controlHashOfDatumMaybe datum = case addressPaymentCredential (controlAddress da
 quorumMembersOfDatum :: NamingDatum -> [ByteString]
 quorumMembersOfDatum = quorumMembers . retirementQuorum
 
-{- | The naming-claim inputs of a tx: spent outrefs resolving to outputs
-whose datum decodes as a naming envelope. Returns
-(control-hash, creating-tx).
--}
+-- | The naming-claim inputs of a tx: spent outrefs resolving to outputs
+-- whose datum decodes as a naming envelope. Returns
+-- (control-hash, creating-tx).
 claimControlsOf ::
     Map.Map String (FilePath, ConwayTx) -> ConwayTx -> IO [(ByteString, String)]
 claimControlsOf index tx =
@@ -735,10 +729,9 @@ creationRequestsOf index tx =
   where
     tokenNameOf (OnChainTokenId (BuiltinByteString bs)) = bs
 
-{- | Follow Recover-shaped spends from a record outref to the final
-record (RR units rotate once; LT units have no recover step).
-Returns (spending-txid, spending-tx, final-record-outref).
--}
+-- | Follow Recover-shaped spends from a record outref to the final
+-- record (RR units rotate once; LT units have no recover step).
+-- Returns (spending-txid, spending-tx, final-record-outref).
 followSpendingChain ::
     [String] ->
     Map.Map String (FilePath, ConwayTx) ->
@@ -760,9 +753,8 @@ followSpendingChain acceptedTxids index label ref = do
                     <> ")"
                 )
 
-{- | Transactions (txid, tx) spending an outref with any script-spend
-redeemer present (accepted or refused — outcomes partition later).
--}
+-- | Transactions (txid, tx) spending an outref with any script-spend
+-- redeemer present (accepted or refused — outcomes partition later).
 spendingTxs ::
     Map.Map String (FilePath, ConwayTx) -> OutRef -> [(String, ConwayTx)]
 spendingTxs index ref =
@@ -772,14 +764,13 @@ spendingTxs index ref =
     , not (null (txRedeemerDatas tx))
     ]
 
-{- | If a tx recovers the given record, return the continuation
-record outref (the single naming-datum output). The Recover
-invocation is purpose-bound exactly like Retire: a strict
-Recover-shaped redeemer sitting at the ConwaySpending purpose whose
-sorted-input index resolves to the record (NOTE-027 honesty: no
-untagged redeemer scan — an unrelated Constr 4 elsewhere in the tx
-must not link a rotation that is not there).
--}
+-- | If a tx recovers the given record, return the continuation
+-- record outref (the single naming-datum output). The Recover
+-- invocation is purpose-bound exactly like Retire: a strict
+-- Recover-shaped redeemer sitting at the ConwaySpending purpose whose
+-- sorted-input index resolves to the record (NOTE-027 honesty: no
+-- untagged redeemer scan — an unrelated Constr 4 elsewhere in the tx
+-- must not link a rotation that is not there).
 recoverContinuation :: ConwayTx -> OutRef -> Maybe OutRef
 recoverContinuation tx ref = do
     if recoverBoundTo tx ref then pure () else Nothing
@@ -793,11 +784,10 @@ recoverContinuation tx ref = do
         [i] -> Just (OutRef (txIdHexOf tx) i)
         _ -> Nothing
 
-{- | Whether exactly one strict Recover marker (Constr 4
-[B _, List _, B _]) sits at a ConwaySpending purpose whose
-sorted-input index resolves to the outref (mirrors retireKeysFor's
-index rule).
--}
+-- | Whether exactly one strict Recover marker (Constr 4
+-- [B _, List _, B _]) sits at a ConwaySpending purpose whose
+-- sorted-input index resolves to the outref (mirrors retireKeysFor's
+-- index rule).
 recoverBoundTo :: ConwayTx -> OutRef -> Bool
 recoverBoundTo tx ref =
     case [() | (purpose, dat) <- redeemerPurposes tx, isBound purpose dat] of
@@ -813,27 +803,23 @@ recoverBoundTo tx ref =
     isRecover (PLC.Constr 4 [PLC.B _, PLC.List _, PLC.B _]) = True
     isRecover _ = False
 
-{- | The retire tx spending a record: purpose-bound Retire invocation.
-Every ConwaySpending purpose carrying a strict Retire-shaped
-redeemer resolves through the builder's own index rule (sorted
-inputs, mirroring spendingIndex) and must land on the record;
-exactly one such invocation per tx, exactly one retire tx per
-record across accepted evidence. Refused probes can share that record
-and redeemer shape but never consume it.
-Returns (txid, tx, spelling).
--}
+-- | The retire tx spending a record: purpose-bound Retire invocation.
+-- Every ConwaySpending purpose carrying a strict Retire-shaped
+-- redeemer resolves through the builder's own index rule (sorted
+-- inputs, mirroring spendingIndex) and must land on the record;
+-- exactly one such invocation per tx, exactly one retire tx per
+-- record across accepted evidence. Refused probes can share that record
+-- and redeemer shape but never consume it.
+-- Returns (txid, tx, spelling).
 findRetireTx ::
     [String] ->
-    Map.Map String (FilePath, ConwayTx) ->
-    OutRef ->
-    IO (String, ConwayTx, ByteString)
+    Map.Map String (FilePath, ConwayTx) -> OutRef -> IO (String, ConwayTx, ByteString)
 findRetireTx acceptedTxids index ref = do
     let spenders = filter (\(ctid, _) -> ctid `elem` acceptedTxids) (spendingTxs index ref)
-    bound <-
-        fmap concat $
-            mapM
-                (\(ctid, tx) -> pure [(ctid, tx, kh) | kh <- retireKeysFor tx ref])
-                spenders
+    bound <- fmap concat $
+        mapM
+            (\(ctid, tx) -> pure [(ctid, tx, kh) | kh <- retireKeysFor tx ref])
+            spenders
     case bound of
         [(ctid, tx, kh)] -> pure (ctid, tx, kh)
         _ ->
@@ -842,10 +828,9 @@ findRetireTx acceptedTxids index ref = do
                     <> show (length bound)
                 )
 
-{- | Strict Retire key hashes bound to an outref: redeemer Datas of
-shape Constr 3 [List _, B keyHash] sitting at spending purposes
-whose sorted-input index resolves to the outref.
--}
+-- | Strict Retire key hashes bound to an outref: redeemer Datas of
+-- shape Constr 3 [List _, B keyHash] sitting at spending purposes
+-- whose sorted-input index resolves to the outref.
 retireKeysFor :: ConwayTx -> OutRef -> [ByteString]
 retireKeysFor tx ref =
     [ kh
@@ -867,9 +852,8 @@ redeemerPurposes tx = case tx ^. witsTxL . rdmrsTxWitsL of
     Redeemers m ->
         [(p, d) | (p, (Data d, _)) <- Map.toList m]
 
-{- | Mint triples of a tx: (policy, name, quantity) across all mint
-policies, in map order.
--}
+-- | Mint triples of a tx: (policy, name, quantity) across all mint
+-- policies, in map order.
 mintTriples :: ConwayTx -> [(ByteString, ByteString, Integer)]
 mintTriples tx = case tx ^. bodyTxL . mintTxBodyL of
     MultiAsset ma ->
@@ -881,16 +865,14 @@ mintTriples tx = case tx ^. bodyTxL . mintTxBodyL of
     policyIdBytes (PolicyID sh) = scriptHashBytes sh
     assetNameRaw (AssetName sbs) = SBS.fromShort sbs
 
-{- | Actual key-witness bytes present in a tx (not merely declared
-signatories): every expected signer must appear here.
--}
+-- | Actual key-witness bytes present in a tx (not merely declared
+-- signatories): every expected signer must appear here.
 txWitnesses :: ConwayTx -> [ByteString]
 txWitnesses tx =
     [hashToBytes (unKeyHash (witVKeyHash w)) | w <- toList (tx ^. witsTxL . addrTxWitsL)]
 
-{- | State policy bytes from the state output's own address (the output
-whose datum decodes as a registry state; exactly one per honest tx).
--}
+-- | State policy bytes from the state output's own address (the output
+-- whose datum decodes as a registry state; exactly one per honest tx).
 statePolicyOf :: ConwayTx -> IO ByteString
 statePolicyOf tx = case mapMaybe stateAddr (txOutputs tx) of
     [h] -> pure h
@@ -904,10 +886,9 @@ statePolicyOf tx = case mapMaybe stateAddr (txOutputs tx) of
             _ -> Nothing
         _ -> Nothing
 
-{- | The custody triple: (policy, name, quantity) of the single asset
-at the custody script address (exactly one asset per honest retire;
-policy bound by the caller, never assumed here).
--}
+-- | The custody triple: (policy, name, quantity) of the single asset
+-- at the custody script address (exactly one asset per honest retire;
+-- policy bound by the caller, never assumed here).
 custodyTriple :: ConwayTx -> ByteString -> IO (ByteString, ByteString, Integer)
 custodyTriple tx custodyHash = case mapMaybe custodyAsset (txOutputs tx) of
     [(p, n, q)] -> pure (p, n, q)
@@ -919,17 +900,17 @@ custodyTriple tx custodyHash = case mapMaybe custodyAsset (txOutputs tx) of
     custodyAsset out = case out ^. addrTxOutL of
         addr | addr == custodyAddr -> case out ^. valueTxOutL of
             MaryValue _ (MultiAsset ma) ->
-                case [ (scriptHashBytes psh, SBS.fromShort aname, qty)
-                     | (PolicyID psh, names) <- Map.toList ma
-                     , (AssetName aname, qty) <- Map.toList names
-                     ] of
+                case
+                    [ (scriptHashBytes psh, SBS.fromShort aname, qty)
+                    | (PolicyID psh, names) <- Map.toList ma
+                    , (AssetName aname, qty) <- Map.toList names
+                    ] of
                     [(p, n, q)] -> Just (p, n, q)
                     _ -> Nothing
         _ -> Nothing
 
-{- | The creating datum of a record outref (claim datum for LT units,
-recover successor for RR units — resolved, never assumed).
--}
+-- | The creating datum of a record outref (claim datum for LT units,
+-- recover successor for RR units — resolved, never assumed).
 creatingRecordDatum :: Map.Map String (FilePath, ConwayTx) -> OutRef -> IO NamingDatum
 creatingRecordDatum index ref = case resolveOut index ref of
     Just (_, out) -> case namingDatumOfTxOut out of
