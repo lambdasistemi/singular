@@ -84,6 +84,7 @@ should.
 module Conformance.Run (runForkProbe, runRows) where
 
 import Conformance.Run.Control
+import Conformance.Run.Observe
 import Conformance.Run.Manifest
 
 import Control.Monad.Operational qualified as Operational
@@ -112,14 +113,10 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson (
     eitherDecodeFileStrict,
     Value (..),
-    FromJSON (..),
     eitherDecode,
     encode,
     object,
-    withObject,
     (.=),
-    (.:),
-    (.:?),
  )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -220,7 +217,6 @@ import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Conway.TxCert (ConwayDelegCert (..), ConwayTxCert (..))
 import Cardano.Ledger.Core (
-    eraProtVerLow,
     KeyHash,
     Script,
     eraProtVerHigh,
@@ -1957,47 +1953,6 @@ stateUtxoByToken env w tid = do
                     <> " is live at the cage address"
                 )
 
-{- | One output's assets as the authenticator sees them:
-policy-id bytes @->@ asset-name bytes @->@ quantity.
--}
-outAssets :: TxOut ConwayEra -> Map.Map ByteString (Map.Map ByteString Integer)
-outAssets o = case o ^. valueTxOutL of
-    MaryValue _ (MultiAsset ma) ->
-        Map.fromList
-            [
-                ( scriptHashBytes (policyID pid)
-                , Map.fromList
-                    [ (SBS.fromShort (assetNameBytes an), q)
-                    | (an, q) <- Map.toList qs
-                    ]
-                )
-            | (pid, qs) <- Map.toList ma
-            ]
-
-{- | The no-script-execution detector: the parts of a transaction
-that can only exist because a script executed. CA05's forged payment
-must be empty under it, and the boot tx — which carried the state
-script — must not be, proving the detector can fire.
--}
-txScriptWitnesses :: ConwayTx -> [String]
-txScriptWitnesses tx =
-    [ "script witness"
-    | not (Map.null (tx ^. witsTxL . scriptTxWitsL))
-    ]
-        <> ["redeemers" | redeemersEmpty tx]
-        <> ["mint" | mintEmpty tx]
-  where
-    redeemersEmpty t = case t ^. witsTxL . rdmrsTxWitsL of
-        Redeemers m -> not (Map.null m)
-    mintEmpty t = case t ^. bodyTxL . mintTxBodyL of
-        MultiAsset ma -> not (Map.null ma)
-
-txInTxIdHex :: TxIn -> String
-txInTxIdHex (TxIn (TxId h) _) = hex (hashToBytes (extractHash h))
-
-txInIndex :: TxIn -> Integer
-txInIndex (TxIn _ (TxIx i)) = toInteger i
-
 -- | CG02: Update v1->v2 folds; v2 reads back from the chain.
 runCG02 :: Env -> IO ()
 runCG02 env = do
@@ -2668,15 +2623,6 @@ sleepUntilMs _env targetMs = do
         emit "wait" (show remaining <> " ms to the next phase boundary")
         threadDelay (fromIntegral remaining * 1000)
 
--- | The state script's refusal marker (applied hash hex).
-stateMarkerOf :: CageConfig -> String
-stateMarkerOf cfg = hex (scriptHashBytes (cfgScriptHash cfg))
-
--- | The request script's refusal marker for one cage (applied hash hex).
-requestMarkerOf :: CageConfig -> TokenId -> String
-requestMarkerOf cfg tid =
-    hex (scriptHashBytes (hashScript (mkRequestScript cfg tid)))
-
 -- ---------------------------------------------------------
 -- Issue #70 fold assembly: one FoldSpec, every hand-built shape
 -- ---------------------------------------------------------
@@ -3262,15 +3208,6 @@ paddedRequest env cage payerAddr payerSk key _val bond = do
         dest
         []
         bond
-
-{- | Request datum's (key, edge) and submitted-at, read from a
-live request UTxO.
--}
-requestDatumOf :: TxOut ConwayEra -> ((ByteString, Edge), Integer)
-requestDatumOf out = case extractCageDatum out of
-    Just (RequestDatum rq) ->
-        ((requestKey rq, requestEdge rq), requestSubmittedAt rq)
-    _ -> error "requestDatumOf: not a request UTxO"
 
 {- | A FoldSpec with this cage's defaults: derive refunds and
 signers, no withdrawal, no state override, deadline validity.
@@ -5195,12 +5132,6 @@ differenceJson :: (T.Text, [Perturbation.Step]) -> Value
 differenceJson (name, path) =
     object ["observation" .= name, "path" .= T.pack (drop 1 (renderStepPath path))]
 
-storyField :: T.Text -> Value -> IO Value
-storyField name value = case value of
-    Object fields -> maybe (failWith ("model response omits " <> T.unpack name)) pure
-        (KM.lookup (Key.fromText name) fields)
-    _ -> failWith "model response is not an object"
-
 renderDifferences :: [Compare.Difference] -> String
 renderDifferences differences =
     unlines
@@ -6027,22 +5958,6 @@ assembleFold env (stateIn, stateOut) reqUtxos proofLists newRoot units fee = do
                 )
     adaOnly out = case out ^. valueTxOutL of
         MaryValue _ (MultiAsset ma) -> Map.null ma
-
-extractState :: TxOut ConwayEra -> IO OnChainTokenState
-extractState out = case extractCageDatum out of
-    Just (StateDatum s) -> pure s
-    _ -> failWith "hand-build: state output has no StateDatum"
-
--- | Lovelace in an output, era-pinned for the polymorphic lenses.
-outCoin :: TxOut ConwayEra -> Integer
-outCoin o = let Coin c = o ^. coinTxOutL in c
-
-{- | A request output's submitted-at (ms), from its live datum.
--}
-submittedAtDatum :: TxOut ConwayEra -> IO Integer
-submittedAtDatum out = case extractCageDatum out of
-    Just (RequestDatum rq) -> pure (requestSubmittedAt rq)
-    _ -> failWith "deadline: request output has no RequestDatum"
 
 {- | Wait until two seconds past the given deadline ms (phase-3 entry
 for Rejected folds), sleeping exactly the remaining time. A deadline
@@ -6884,58 +6799,6 @@ expectedStateFromTx tx =
     case [s | out <- toList (tx ^. bodyTxL . outputsTxBodyL), Just (StateDatum s) <- [extractCageDatum out]] of
         [s] -> pure s
         _ -> failWith "CS08: unsigned boot has no single StateDatum"
-
--- ---------------------------------------------------------
--- CS03-CS07: redeemer inspection + remaining rows
--- ---------------------------------------------------------
-
-redeemerPlutusDatas :: ConwayTx -> [PLC.Data]
-redeemerPlutusDatas tx =
-    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-     in [plc | (Data plc, _) <- Map.elems m]
-
-spendingConstrs :: ConwayTx -> [Integer]
-spendingConstrs tx =
-    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-     in [ix | (ConwaySpending _, (Data (PLC.Constr ix _), _)) <- Map.toList m]
-
-mintConstrs :: ConwayTx -> [Integer]
-mintConstrs tx =
-    let Redeemers m = tx ^. witsTxL . rdmrsTxWitsL
-     in [ix | (ConwayMinting _, (Data (PLC.Constr ix _), _)) <- Map.toList m]
-
-requestActionConstrs :: ConwayTx -> [Integer]
-requestActionConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
-  where
-    fromDatum (PLC.Constr 2 [PLC.List actions]) = concatMap fromAction actions
-    fromDatum _ = []
-    fromAction (PLC.Constr ix _) = [ix]
-    fromAction _ = []
-
--- | `ProofStep` indices inside `Update` actions (0 `Branch`, 1 `Fork`,
--- 2 `Leaf`), read from the transaction supplied to the node.
-proofStepConstrs :: ConwayTx -> [Integer]
-proofStepConstrs tx = concatMap fromDatum (redeemerPlutusDatas tx)
-  where
-    fromDatum (PLC.Constr 2 [PLC.List actions]) = concatMap fromAction actions
-    fromDatum _ = []
-    fromAction (PLC.Constr 0 [PLC.List steps]) = concatMap fromStep steps
-    fromAction _ = []
-    fromStep (PLC.Constr ix _) = [ix]
-    fromStep _ = []
-
--- | Every `Fork` step in the tx carries a well-formed 3-field
--- `Neighbor`. Companion to `proofStepConstrs`.
-forkNeighborsWellFormed :: ConwayTx -> Bool
-forkNeighborsWellFormed tx = all fromDatum (redeemerPlutusDatas tx)
-  where
-    fromDatum (PLC.Constr 2 [PLC.List actions]) = all fromAction actions
-    fromDatum _ = True
-    fromAction (PLC.Constr 0 [PLC.List steps]) = all fromStep steps
-    fromAction _ = True
-    fromStep (PLC.Constr 1 [_, PLC.Constr 0 [_, _, _]]) = True
-    fromStep (PLC.Constr 1 _) = False
-    fromStep _ = True
 
 {- | CS07: sequential absence folds exercise Leaf, lone Fork and Branch.
 The C fold uses the exact historical C-over-{A,B} regression; D and E
@@ -7881,16 +7744,6 @@ cageRefUtxos env cfg tid = do
                 )
             pure refs
 
-{- | Can this output fund a transaction? It must hold ada and nothing
-else, because it doubles as collateral, and it must not be one of the
-published reference outputs, because a transaction may not both spend an
-output and reference it.
--}
-adaOnlyOut :: TxOut ConwayEra -> Bool
-adaOnlyOut out =
-    (case out ^. valueTxOutL of MaryValue _ (MultiAsset m) -> Map.null m)
-        && (case out ^. referenceScriptTxOutL of SNothing -> True; SJust _ -> False)
-
 writeCL01Issue70 :: Env -> [String] -> IO ()
 writeCL01Issue70 env rows
     | all (`elem` rows) issue70Rows = do
@@ -7959,12 +7812,6 @@ ensurePresentV1 env = do
                 (claimValue env cgV1)
                 forgedValue
             writeIORef (envKeys env) (True, cgV1)
-
--- | The serialised size of the reference script an output carries.
-refScriptSize :: TxOut ConwayEra -> Int
-refScriptSize out = case out ^. referenceScriptTxOutL of
-    SNothing -> 0
-    SJust s -> fromIntegral (BSL.length (serialize (eraProtVerLow @ConwayEra) s))
 
 {- | Sweep the funder's ada-only outputs back into one.
 
@@ -8089,17 +7936,6 @@ nothing about where it rests.
 atticAddr :: Addr
 atticAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0xaa)
 
-carriesRefScript :: TxOut ConwayEra -> Bool
-carriesRefScript out = case out ^. referenceScriptTxOutL of
-    SNothing -> False
-    SJust _ -> True
-
-mergeAssets ::
-    Map.Map PolicyID (Map.Map AssetName Integer) ->
-    Map.Map PolicyID (Map.Map AssetName Integer) ->
-    Map.Map PolicyID (Map.Map AssetName Integer)
-mergeAssets = Map.unionWith (Map.unionWith (+))
-
 {- | Carve a small ada-only output to seed a cage with.
 
 A boot consumes its seed, so seeding from the largest output strands the
@@ -8145,11 +7981,6 @@ cageUtxosOf env cfg =
 -- | The tip a cage charges, as a plain integer.
 defaultTipCoin :: CageConfig -> Integer
 defaultTipCoin cfg = case defaultTip cfg of Coin c -> c
-
--- | The multi-asset an output carries, in the ledger's own shape.
-rawAssets :: TxOut ConwayEra -> Map.Map PolicyID (Map.Map AssetName Integer)
-rawAssets out = case out ^. valueTxOutL of
-    MaryValue _ (MultiAsset m) -> m
 
 {- | Publish one script as a reference output, once per session.
 

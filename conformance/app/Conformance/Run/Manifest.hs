@@ -10,7 +10,6 @@ import Data.Aeson (
     FromJSON (..),
     eitherDecode,
     withObject,
-    (.=),
     (.:),
     (.:?),
  )
