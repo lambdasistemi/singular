@@ -175,8 +175,9 @@ data Compiled = Compiled
     { cStateBytes :: SBS.ShortByteString
     , cRequestBytes :: SBS.ShortByteString
     , cAppBytes :: SBS.ShortByteString
-    -- ^ The application validator, unapplied: its hash IS the application
-    -- policy the registry pins.
+    {- ^ The application validator, unapplied: its hash IS the application
+    policy the registry pins.
+    -}
     , cWitnessBytes :: SBS.ShortByteString
     -- ^ @witness(kind, registry)@, unapplied.
     , cAbsentBytes :: SBS.ShortByteString

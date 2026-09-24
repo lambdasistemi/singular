@@ -43,18 +43,18 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable qualified as Foldable
-import Data.Word (Word32)
 import Data.List (isInfixOf, isSuffixOf, nub, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Word (Word32)
 import Lens.Micro ((^.))
 import PlutusCore.Data qualified as PLC
 import System.Directory (doesFileExist, listDirectory)
 import System.Environment (getArgs)
-import System.Exit (exitWith, ExitCode (..))
+import System.Exit (ExitCode (..), exitWith)
 import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 
@@ -62,7 +62,7 @@ import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..), Datum (..), binaryDataToData)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body (
     inputsTxBodyL,
     mintTxBodyL,
@@ -71,7 +71,6 @@ import Cardano.Ledger.Api.Tx.Body (
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
 import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, datumTxOutL, valueTxOutL)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.Api.Tx (witsTxL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (extractHash)
@@ -82,13 +81,20 @@ import Cardano.Ledger.TxIn (TxId (..))
 
 import Cardano.Ledger.Binary (DecCBOR (..), decodeFull', decodeFullAnnotator)
 import Cardano.Ledger.Binary.Version (Version)
+import Cardano.Tx.Ledger (ConwayTx)
+import Naming.Datum
+import Naming.Register
+import Naming.Wire (
+    Address (..),
+    WireData (..),
+    addressBytes,
+ )
 import Singular.Registry.Blueprint (
     applyBytesParam,
     applyRequestParams,
     extractCompiledCode,
     loadBlueprint,
  )
-import Singular.Registry.TxBuilder.Internal (extractCageDatum, onChainTokenId)
 import Singular.Registry.Ledger (
     AssetName (..),
     ConwayEra,
@@ -96,6 +102,8 @@ import Singular.Registry.Ledger (
  )
 import Singular.Registry.TxBuilder.Internal (
     computeScriptHash,
+    extractCageDatum,
+    onChainTokenId,
     scriptHashBytes,
  )
 import Singular.Registry.Types (
@@ -105,14 +113,6 @@ import Singular.Registry.Types (
     OnChainTokenState (..),
     stateRepPolicyBytes,
  )
-import Cardano.Tx.Ledger (ConwayTx)
-import Naming.Datum
-import Naming.Register
-import Naming.Wire
-    ( Address (..)
-    , WireData (..)
-    , addressBytes
-    )
 
 -- ---------------------------------------------------------
 -- Verdicts
@@ -211,10 +211,11 @@ main = do
 -- Evidence loading (missing or undecodable is COULD-NOT-EVALUATE)
 -- ---------------------------------------------------------
 
--- | CBOR version for evidence decoding. Runner and verifier share the
--- identical pinned stack; every recomputation below validates the choice
--- (a skew fails loudly as undecodable or as a txid mismatch, never
--- silently).
+{- | CBOR version for evidence decoding. Runner and verifier share the
+identical pinned stack; every recomputation below validates the choice
+(a skew fails loudly as undecodable or as a txid mismatch, never
+silently).
+-}
 evidenceVersion :: Version
 evidenceVersion = maxBound
 
@@ -363,29 +364,28 @@ loadIdentities evidence namingPath registryPath = do
     loadAll = do
         nbp <- either fail pure =<< loadBlueprint namingPath
         mbp <- either fail pure =<< loadBlueprint registryPath
-        case
-            ( extractCompiledCode "application.application" nbp
-            , extractCompiledCode "representative.representative" nbp
-            , extractCompiledCode "state.state" mbp
-            , extractCompiledCode "request.request" mbp
-            ) of
+        case ( extractCompiledCode "application.application" nbp
+             , extractCompiledCode "representative.representative" nbp
+             , extractCompiledCode "state.state" mbp
+             , extractCompiledCode "request.request" mbp
+             ) of
             (Just appBytes, Just repBytes, Just stateBytes, Just reqBytes) -> do
                 let stateHash = computeScriptHash stateBytes
-                    candidates = nub
-                        [ tok
-                        | out <- Map.elems (evUtxos evidence)
-                        , addrCredentialHex out == Just (hexStr (scriptHashBytes stateHash))
-                        , MaryValue _ (MultiAsset assets) <- [out ^. valueTxOutL]
-                        , Just names <- [Map.lookup (PolicyID stateHash) assets]
-                        , [(AssetName tokSbs, 1)] <- [Map.toList names]
-                        , let tok = SBS.fromShort tokSbs
-                        , Just (StateDatum st) <- [outCageDatum out]
-                        , stateRepPolicyBytes st == idRepAppliedHash (assemble tok appBytes repBytes stateBytes reqBytes)
-                        ]
+                    candidates =
+                        nub
+                            [ tok
+                            | out <- Map.elems (evUtxos evidence)
+                            , addrCredentialHex out == Just (hexStr (scriptHashBytes stateHash))
+                            , MaryValue _ (MultiAsset assets) <- [out ^. valueTxOutL]
+                            , Just names <- [Map.lookup (PolicyID stateHash) assets]
+                            , [(AssetName tokSbs, 1)] <- [Map.toList names]
+                            , let tok = SBS.fromShort tokSbs
+                            , Just (StateDatum st) <- [outCageDatum out]
+                            , stateRepPolicyBytes st == idRepAppliedHash (assemble tok appBytes repBytes stateBytes reqBytes)
+                            ]
                 case candidates of
                     [tok] -> pure (assemble tok appBytes repBytes stateBytes reqBytes)
                     _ -> fail "expected one registry with a matching applied representative policy"
-
             _ -> fail "required validator code missing from blueprints"
     assemble tok appBytes repBytes stateBytes reqBytes =
         let appH = scriptHashBytes (computeScriptHash appBytes)
@@ -500,9 +500,10 @@ constrIndex :: PLC.Data -> Maybe Integer
 constrIndex (PLC.Constr i _) = Just i
 constrIndex _ = Nothing
 
--- | A purpose resolved to the validator it runs under. Redeemer
--- constructor indices are per-validator; resolving first is what makes
--- shape classification sound.
+{- | A purpose resolved to the validator it runs under. Redeemer
+constructor indices are per-validator; resolving first is what makes
+shape classification sound.
+-}
 data ResolvedPurpose
     = RStateSpend TxIn Integer
     | RRequestSpend TxIn Integer
@@ -695,8 +696,9 @@ outcomeReason o = case KM.lookup "reason" o of
     Just (Aeson.String s) -> Just (T.unpack s)
     _ -> Nothing
 
--- | The accepted connected folds, first by request spelling anchor.
--- Returns (foldTag, body, requestKeyBytes).
+{- | The accepted connected folds, first by request spelling anchor.
+Returns (foldTag, body, requestKeyBytes).
+-}
 acceptedFolds :: Ctx -> [(String, ConwayTx, ByteString)]
 acceptedFolds ctx =
     [ (tag, tx, reqKey)
@@ -706,8 +708,9 @@ acceptedFolds ctx =
     , Just reqKey <- [foldRequestKey ctx tx]
     ]
 
--- | The request spelling a connected fold consumes (from the request
--- datum of its Contribute input, resolved through retained listings).
+{- | The request spelling a connected fold consumes (from the request
+datum of its Contribute input, resolved through retained listings).
+-}
 foldRequestKey :: Ctx -> ConwayTx -> Maybe ByteString
 foldRequestKey ctx tx = do
     let reqInputs =
@@ -864,8 +867,9 @@ vConnectedRootBefore' ctx tx =
 -- Representative obligations
 -- ---------------------------------------------------------
 
--- | The naming claim a connected fold consumes: the input at the
--- application address carrying the single approval-shaped asset.
+{- | The naming claim a connected fold consumes: the input at the
+application address carrying the single approval-shaped asset.
+-}
 foldClaim :: Ctx -> ConwayTx -> Maybe (TxIn, TxOut ConwayEra, NamingDatum, ByteString)
 foldClaim ctx tx = do
     let ids = ctxIdentities ctx
@@ -882,9 +886,7 @@ foldClaim ctx tx = do
         _ -> Nothing
   where
     singleApproval out = case out ^. valueTxOutL of
-        MaryValue _ (MultiAsset ma) -> case
-            [(n, q) | (_, ns) <- Map.toList ma, (AssetName n, q) <- Map.toList ns, q /= 0]
-            of
+        MaryValue _ (MultiAsset ma) -> case [(n, q) | (_, ns) <- Map.toList ma, (AssetName n, q) <- Map.toList ns, q /= 0] of
             [(n, _)] -> Just (SBS.fromShort n)
             _ -> Nothing
 
@@ -921,9 +923,10 @@ vRepresentativeApplied ctx = case foldActiveBody ctx of
   where
     policyBytes (PolicyID sh) = scriptHashBytes sh
 
--- | The expected representative policy pinned by the consumed state datum
--- (issue #77, E-001 repair): genesis-set, `Modify`-preserved. `Nothing`
--- when no single state input resolves or its datum does not decode.
+{- | The expected representative policy pinned by the consumed state datum
+(issue #77, E-001 repair): genesis-set, `Modify`-preserved. `Nothing`
+when no single state input resolves or its datum does not decode.
+-}
 consumedStateRep :: Ctx -> ConwayTx -> Maybe ByteString
 consumedStateRep ctx tx =
     case [inp | RStateSpend inp 2 <- resolvePurposes ids (evUtxos (ctxEvidence ctx)) tx] of
@@ -960,7 +963,6 @@ vRepresentativeAsset ctx = case foldActiveBody ctx of
 expectedRepName :: Ctx -> ConwayTx -> Maybe ByteString
 expectedRepName ctx tx = representativeName <$> foldRequestKey ctx tx
 
-
 vRepresentativeApproval :: Ctx -> Verdict
 vRepresentativeApproval ctx = case foldActiveBody ctx of
     Nothing -> cne "no anchored fold-active body"
@@ -990,20 +992,24 @@ vRepresentativeKey ctx = case foldActiveBody ctx of
     Nothing -> cne "no anchored fold-active body"
     Just (_tag, tx, _) -> case foldRequestKey ctx tx of
         Just spelling ->
-            let minted = [(n, q) | (PolicyID sh, n, q) <- txMint tx,
-                    scriptHashBytes sh == idRepAppliedHash (ctxIdentities ctx)]
+            let minted =
+                    [ (n, q)
+                    | (PolicyID sh, n, q) <- txMint tx
+                    , scriptHashBytes sh == idRepAppliedHash (ctxIdentities ctx)
+                    ]
              in if minted == [(representativeName spelling, 1)]
-                then established ("minted request spelling hash: " <> show spelling)
-                else refuted "minted representative does not match the request spelling hash"
+                    then established ("minted request spelling hash: " <> show spelling)
+                    else refuted "minted representative does not match the request spelling hash"
         Nothing -> cne "consumed request key does not resolve"
 
 -- ---------------------------------------------------------
 -- Refusal obligations (attribution binds rejection text to blueprint)
 -- ---------------------------------------------------------
 
--- | A refused body of the given shape whose node reason attributes to
--- the expected script. Structural checks corroborate; without the
--- attribution the verdict is COULD-NOT-EVALUATE (NOTE-011).
+{- | A refused body of the given shape whose node reason attributes to
+the expected script. Structural checks corroborate; without the
+attribution the verdict is COULD-NOT-EVALUATE (NOTE-011).
+-}
 refusedAttributed :: Ctx -> Shape -> String -> String -> Maybe Verdict
 refusedAttributed ctx shape operation expectedHex = do
     let candidates =
@@ -1032,8 +1038,9 @@ refusedAttributed ctx shape operation expectedHex = do
                     Just (cne (operation <> ": refusal does not name " <> expectedHex))
                 | otherwise -> Just (refuted (operation <> ": refused without phase-2 evidence"))
 
--- | Derive the request identity from the registry token authenticated by
--- the retained state outputs. Attached runs carry no boot transaction.
+{- | Derive the request identity from the registry token authenticated by
+the retained state outputs. Attached runs carry no boot transaction.
+-}
 requestAppliedHex :: Ctx -> Maybe String
 requestAppliedHex ctx = Just (hexStr (requestHashFor ctx (idRegistryToken (ctxIdentities ctx))))
 
@@ -1059,7 +1066,7 @@ vRefusalInsert ctx = case refusedDuplicates ctx of
                     folds
                         | any (\(_, _, k) -> k == dupKey) folds ->
                             established
-                                ("insert refused by the state validator for the taken spelling; duplicate shape matches the accepted fold's key as "
+                                ( "insert refused by the state validator for the taken spelling; duplicate shape matches the accepted fold's key as "
                                     <> txIdHexTx tx
                                 )
                         | otherwise -> refuted "duplicate key matches no accepted fold"
@@ -1093,11 +1100,12 @@ vRefusalSweep ctx = case requestAppliedHex ctx of
             (cne "no refused Sweep body retained")
             (refusedAttributed ctx SweepSpend "sweep" reqHex)
 
--- | The E-001 refusal cause, recomputed (issue #77): the connected fold
--- naming the correct representative but minting it under a foreign policy
--- is refused with the spent state pinning a different (expected) policy.
--- Reads only submitted bodies, retained outcomes/listings and the built
--- blueprints — never narration or any retained report.
+{- | The E-001 refusal cause, recomputed (issue #77): the connected fold
+naming the correct representative but minting it under a foreign policy
+is refused with the spent state pinning a different (expected) policy.
+Reads only submitted bodies, retained outcomes/listings and the built
+blueprints — never narration or any retained report.
+-}
 vRefusalRepPolicy :: Ctx -> Verdict
 vRefusalRepPolicy ctx = case foreignFolds ctx of
     [] -> cne "no foreign-policy fold body retained"
@@ -1132,12 +1140,13 @@ vRefusalRepPolicy ctx = case foreignFolds ctx of
                 | otherwise -> refuted "representative-policy: refused without phase-2 evidence"
         _ -> cne "representative-policy: fold outcome not retained"
 
--- | Connected folds minting the expected representative name at +1 under a
--- policy that is neither the application policy nor the derived applied
--- representative policy — the structural shape of the E-001 row. Returns
--- (foldTag, body, foreignPolicyHex, expectedName). Honest folds (mint under
--- the pinned policy) and the occupied-key duplicate (pinned mint, refused
--- by state) never match: only a foreign mint qualifies.
+{- | Connected folds minting the expected representative name at +1 under a
+policy that is neither the application policy nor the derived applied
+representative policy — the structural shape of the E-001 row. Returns
+(foldTag, body, foreignPolicyHex, expectedName). Honest folds (mint under
+the pinned policy) and the occupied-key duplicate (pinned mint, refused
+by state) never match: only a foreign mint qualifies.
+-}
 foreignFolds :: Ctx -> [(String, ConwayTx, String, ByteString)]
 foreignFolds ctx =
     [ (tag, tx, foreignHex, expected)
@@ -1172,7 +1181,7 @@ vControlFreeKey ctx = case (refusedDuplicates ctx, acceptedFolds ctx) of
                             Just claimed
                                 | claimed == txIdHexTx tx ->
                                     established
-                                        ("free key accepted: spelling "
+                                        ( "free key accepted: spelling "
                                             <> show k
                                             <> " vs taken "
                                             <> show dupKey
@@ -1191,28 +1200,25 @@ vControlFreeKey ctx = case (refusedDuplicates ctx, acceptedFolds ctx) of
 vControlSupported :: Ctx -> Verdict
 vControlSupported ctx =
     let producers = producerIndex ctx
-        foldOk = case
-            [ tx
-            | (tag, tx) <- bodiesOfShape ctx RegistryFold
-            , isAccepted tag
-            , foldRequestProduced producers tx
-            ] of
+        foldOk = case [ tx
+                      | (tag, tx) <- bodiesOfShape ctx RegistryFold
+                      , isAccepted tag
+                      , foldRequestProduced producers tx
+                      ] of
             (tx : _) -> Just (("fold" :: String), txIdHexTx tx)
             _ -> Nothing
-        requestOk = case
-            [ (tag, tx)
-            | (tag, tx) <- ctxBodies ctx
-            , isAccepted tag
-            , isRequestSubmission tx
-            ] of
+        requestOk = case [ (tag, tx)
+                         | (tag, tx) <- ctxBodies ctx
+                         , isAccepted tag
+                         , isRequestSubmission tx
+                         ] of
             ((_, tx) : _) -> Just ((("request" :: String)), txIdHexTx tx)
             _ -> Nothing
-        retractOk = case
-            [ tx
-            | (tag, tx) <- ctxBodies ctx
-            , isAccepted tag
-            , Just _ <- [retractedRequest producers tx]
-            ] of
+        retractOk = case [ tx
+                         | (tag, tx) <- ctxBodies ctx
+                         , isAccepted tag
+                         , Just _ <- [retractedRequest producers tx]
+                         ] of
             (tx : _) -> Just ((("retract" :: String)), txIdHexTx tx)
             _ -> Nothing
      in case (foldOk, requestOk, retractOk) of
@@ -1220,7 +1226,8 @@ vControlSupported ctx =
                 established "supported fold, request and retraction each accepted; the fold consumes a submitted request and the retract consumes the submitted aged request"
             _ ->
                 cne
-                    ( "supported actions incomplete: fold=" <> show (fst <$> foldOk)
+                    ( "supported actions incomplete: fold="
+                        <> show (fst <$> foldOk)
                         <> " request="
                         <> show (fst <$> requestOk)
                         <> " retract="

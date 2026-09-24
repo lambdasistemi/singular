@@ -191,21 +191,21 @@ import Singular.Registry.TxBuilder.Internal (
     mkInlineDatum,
     onChainTokenId,
     requestAddrFromCfg,
+    scriptFromBytes,
     scriptHashBytes,
     toLedgerData,
     toPlcData,
-    scriptFromBytes,
     txInToRef,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
-    edgeInsertAbsent,
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
     RequestAction (Update),
     UpdateRedeemer (..),
+    edgeInsertAbsent,
  )
 
 -- ---------------------------------------------------------

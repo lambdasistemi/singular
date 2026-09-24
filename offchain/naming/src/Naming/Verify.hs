@@ -29,8 +29,9 @@ import Data.ByteString (ByteString)
 
 import Naming.Register (representativeName)
 
--- | Read one naming token from complete non-ADA value triples. The caller
--- supplies the deployment's allowed approval and representative policies.
+{- | Read one naming token from complete non-ADA value triples. The caller
+supplies the deployment's allowed approval and representative policies.
+-}
 singleNamingToken ::
     [ByteString] ->
     [(ByteString, ByteString, Integer)] ->

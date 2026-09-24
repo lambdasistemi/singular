@@ -68,15 +68,16 @@ Hermetic run (D-011), from @offchain/@:
 -}
 module Main (main) where
 
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , displayException
-    , throwIO
-    , try
-    )
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    displayException,
+    throwIO,
+    try,
+ )
 import Control.Monad (forM, forM_, unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
+import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.Bits (complement)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -85,17 +86,16 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.List (intercalate, isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
-import MPF.Backend.Pure (MPFInMemoryDB)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Ord (Down (..), comparing)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
+import MPF.Backend.Pure (MPFInMemoryDB)
 import PlutusCore.Data qualified as PLC
 import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
@@ -117,7 +117,6 @@ import Cardano.Ledger.Api.Tx.Body (
     scriptIntegrityHashTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.In (TxIn (..))
-import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
     coinTxOutL,
@@ -133,6 +132,7 @@ import Cardano.Ledger.Api.Tx.Wits (
     scriptTxWitsL,
  )
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (Script, extractHash)
 import Cardano.Ledger.Credential (Credential (..), StakeReference (..))
@@ -141,6 +141,26 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
+    addKeyWitness,
+    enterpriseAddr,
+    keyHashFromSignKey,
+    mkSignKey,
+ )
+import Cardano.Node.Client.Ledger (ConwayTx)
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Naming.Datum
+import Naming.Register
+import Naming.Verify (singleNamingToken)
+import Naming.Wire (
+    Address (..),
+    WireData (..),
+    addressBytes,
+    decodeAddress,
+    serialiseWireData,
+ )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
     applyBytesParam,
@@ -148,6 +168,18 @@ import Singular.Registry.Blueprint (
     loadBlueprint,
  )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Deployment (
+    Attached (..),
+    CageParts (..),
+    Deployment (..),
+    attach,
+    deploymentPathFromEnvironment,
+    loadMirror,
+    mirrorPathFor,
+    parseOutRef,
+    readDeployment,
+    saveMirror,
+ )
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
@@ -168,24 +200,11 @@ import Singular.Registry.Node (
     funderSignKey,
     withNodeForPlannedFunding,
  )
-import Singular.Registry.Deployment (
-    Attached (..),
-    CageParts (..),
-    attach,
-    deploymentPathFromEnvironment,
-    loadMirror,
-    mirrorPathFor,
-    readDeployment,
-    Deployment (..),
-    parseOutRef,
-    saveMirror,
- )
 import Singular.Registry.Provider qualified as Cage
-import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
+import Singular.Registry.Trie qualified as Trie
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
-import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
 import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedFoldArgs (..),
     ConnectedMint (..),
@@ -193,13 +212,6 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     RawRedeemer (..),
     connectedFoldTx,
     syncFoldedRequests,
- )
-import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
-import Singular.Registry.Types (
-    OnChainTxOutRef,
-    CageDatum (..),
-    OnChainRoot (..),
-    OnChainTokenState (..),
  )
 import Singular.Registry.TxBuilder.Internal (
     ConsumerBinding (..),
@@ -222,26 +234,14 @@ import Singular.Registry.TxBuilder.Internal (
     spendingIndex,
     txInToRef,
  )
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
-    enterpriseAddr,
-    keyHashFromSignKey,
-    mkSignKey,
+import Singular.Registry.TxBuilder.Register (registerConsumerImpl, registerScriptImpl)
+import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
+import Singular.Registry.Types (
+    CageDatum (..),
+    OnChainRoot (..),
+    OnChainTokenState (..),
+    OnChainTxOutRef,
  )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Naming.Datum
-import Naming.Register
-import Naming.Verify (singleNamingToken)
-import Naming.Wire
-    ( Address (..)
-    , WireData (..)
-    , addressBytes
-    , decodeAddress
-    , serialiseWireData
-    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -757,6 +757,7 @@ the chain does not have and the refusal would name a validator rather
 than the mirror. Comparing the two roots first turns that into one
 sentence about the file.
 -}
+
 {- | The trie an attaching run works from.
 
 A registry that was just deployed holds nothing and has no mirror file
@@ -1021,7 +1022,7 @@ rowLR11 env snap = do
                 { quorumMembers = quorumMembers (retirementQuorum current) <> [envRevealedHash env]
                 }
         tampered =
-            (current {controlAddress = envRevealedCodec env})
+            (current{controlAddress = envRevealedCodec env})
                 { retirementQuorum = tamperedQuorum
                 , nextControlCommitment = envFreshC env
                 }
@@ -1040,7 +1041,7 @@ rowLR11Destination :: Env -> Snap -> IO ()
 rowLR11Destination env snap = do
     current <- chainDatumOf env snap "LR11-destination"
     let tampered =
-            (current {controlAddress = envRevealedCodec env})
+            (current{controlAddress = envRevealedCodec env})
                 { paymentDestination = SomeDestination (envDestCodec env)
                 , nextControlCommitment = envFreshC env
                 }
@@ -1059,7 +1060,7 @@ rowLR11Control :: Env -> Snap -> IO ()
 rowLR11Control env snap = do
     current <- chainDatumOf env snap "LR11-control"
     let tampered =
-            (current {controlAddress = envWrongCodec env})
+            (current{controlAddress = envWrongCodec env})
                 { nextControlCommitment = envFreshC env
                 }
     tx <- recoverTx env snap (serialiseAddr (envRevealedAddr env)) [snapRep snap] (scriptHashBytes (envScriptHash env)) tampered [envRevealedHash env]
@@ -1122,7 +1123,7 @@ rowLR04 env snap1 = do
 rowLR05 :: Env -> Snap -> IO ()
 rowLR05 env snap1 = do
     current <- chainDatumOf env snap1 "LR05"
-    let maintained = current {paymentDestination = SomeDestination (envDestCodec env)}
+    let maintained = current{paymentDestination = SomeDestination (envDestCodec env)}
     tx <- maintainTx env snap1 maintained [envOldHash env]
     let signed = addKeyWitness (mkSignKey oldSeed) (addKeyWitness genesisSignKey tx)
     expectRefused
@@ -1139,7 +1140,7 @@ rowLR05 env snap1 = do
 rowMaintainRecovered :: Env -> Snap -> IO Snap
 rowMaintainRecovered env snap1 = do
     current <- chainDatumOf env snap1 "maintain-recovered"
-    let maintained = current {paymentDestination = SomeDestination (envDestCodec env)}
+    let maintained = current{paymentDestination = SomeDestination (envDestCodec env)}
     tx <- maintainTx env snap1 maintained [envRevealedHash env]
     let signed = addKeyWitness (mkSignKey revealedSeed) (addKeyWitness genesisSignKey tx)
     submitAccepted env "maintain-recovered" signed
@@ -1424,8 +1425,9 @@ changeOut inCoin fee outs =
 -- Setup transactions
 -- ---------------------------------------------------------
 
--- | The snap's representative name: the single token the record carries
--- under the applied representative policy.
+{- | The snap's representative name: the single token the record carries
+under the applied representative policy.
+-}
 snapRep :: Snap -> ByteString
 snapRep snap = case snapTokens snap of
     [(name, _)] -> name
@@ -1492,8 +1494,9 @@ bootRecoveryCage seedRef prov submit tm stateBytes requestBytes repPolicy consum
     emit "boot" "booted the recovery registry cage"
     pure (cfg, tok)
 
--- | Publish the four scripts as reference outputs so connected folds
--- resolve every purpose through reference inputs.
+{- | Publish the four scripts as reference outputs so connected folds
+resolve every purpose through reference inputs.
+-}
 publishRecoveryRefs ::
     Cage.Provider IO ->
     Submitter IO ->
@@ -1629,10 +1632,11 @@ chainRecoveryRoot env = do
              in pure (hex bs)
         _ -> failWith "the state UTxO carries no state datum"
 
--- | Fold one genuine record through the CONNECTED transaction: registry
--- request keyed by the given spelling plus the naming claim, one state
--- Modify, approval burn and representative mint. Returns the fold txid
--- and the record input.
+{- | Fold one genuine record through the CONNECTED transaction: registry
+request keyed by the given spelling plus the naming claim, one state
+Modify, approval burn and representative mint. Returns the fold txid
+and the record input.
+-}
 setupGenuineRecord ::
     Env ->
     ByteString ->
@@ -1991,9 +1995,9 @@ assertChainBytes snap expected label =
                         ( label
                             <> ": the on-chain bytes are not the codec encoding: \
                                \chain=0x"
-                                <> hex chainBytes
-                                <> " codec=0x"
-                                <> hex codecBytes
+                            <> hex chainBytes
+                            <> " codec=0x"
+                            <> hex codecBytes
                         )
         _ ->
             failWith
@@ -2249,8 +2253,8 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            )
-            :: Digest Blake2b_256
+            ) ::
+            Digest Blake2b_256
         )
 
 forgedCommitmentOf :: ByteString -> ByteString

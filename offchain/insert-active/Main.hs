@@ -54,16 +54,16 @@ import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitWith)
 import System.IO (hPutStrLn, stderr)
 
-import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Crypto.Hash.Class (hashToBytes)
+import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
-import Cardano.Ledger.Hashes (extractHash)
-import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Ledger.Api.Tx.Out (referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
 import Cardano.Ledger.Core (valueTxOutL)
+import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.TxIn (TxId (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness, genesisAddr)
 import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
@@ -94,19 +94,19 @@ import Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     computeScriptHash,
     extractCageDatum,
-    scriptFromBytes,
     findStateUtxo,
     leafActive,
     policyIdFromPin,
+    scriptFromBytes,
     scriptHashBytes,
     txInToRef,
  )
 import Singular.Registry.TxBuilder.Update (updateTokenWithDuties)
 import Singular.Registry.Types (
     CageDatum (..),
-    edgeInsertActive,
     OnChainTokenState (..),
     OnChainTxOutRef,
+    edgeInsertActive,
  )
 
 -- ---------------------------------------------------------
