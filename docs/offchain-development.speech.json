@@ -7,7 +7,7 @@
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for the build carrier. Two naming sources compiled directly by scripts join lint discovery. Discovered files flow to the formatter boundary; hint clean directories flow to HLint. The component build uses the Cabal library, executable and test sets. Each result reaches CI with its own extent.",
+      "text": "The Cabal file declares source directories for lint discovery and components for the build carrier. Two naming sources compiled directly by scripts join lint discovery. Sixty-seven eligible files flow to Fourmolu; two preserved verifier files remain a formatter gap. Hint clean directories flow to HLint. The component build uses the Cabal library, executable and test sets. Each result reaches CI with its own extent.",
       "pause": 400
     },
     {
@@ -23,6 +23,6 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "a7c3460e9274044768d6cab84eb61bdf1415380e858efb0e9677dcb1fd4162a3"
+    "sha256": "4d431ef978f733328e051c99bde1677e922846ace3ae61a16a07f5c4484a8611"
   }
 }

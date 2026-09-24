@@ -20,7 +20,8 @@ The root build gate covers the root flake's model, site and other declared build
 flowchart LR
     C[singular-registry.cabal] -->|declares source directories| D[lint discovery]
     N[naming run scripts] -->|add direct GHC sources| D
-    D -->|all discovered Haskell files| F[Fourmolu boundary]
+    D -->|67 eligible Haskell files| F[Fourmolu boundary]
+    D -->|two preserved verifier files| X[Formatter gap]
     D -->|hint clean directories| H[HLint boundary]
     C -->|library, executables, tests| B[component build]
     F -->|format result| CI[CI result]
