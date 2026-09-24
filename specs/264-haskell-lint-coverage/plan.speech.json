@@ -5,8 +5,14 @@
       "pause": 400
     }
   ],
+  "coverage-handoff": [
+    {
+      "text": "The candidate matrix reports inventory, formatter, HLint and component build extents independently. Two verifier files remain outside Fourmolu under this ticket's source fence. Thirteen directories have retained HLint hints. Final epic integration issue 278 owns closure of those gaps and coverage of code beyond offchain Haskell. The complete component build found an existing connected verifier compile failure, which remains a red acceptance row until the epic rules on it. The contributor guide explains the commands and current boundaries.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "plan.md",
-    "sha256": "d42e5e4233d9c48f1c923fe2ac86279659aa14f2b5bd06a4892bef742c476921"
+    "sha256": "e83559a9371c9c7a97e52b95b576724fde62c6511b7db53cb5d692904f7c3244"
   }
 }

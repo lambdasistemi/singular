@@ -17,8 +17,14 @@
       "pause": 400
     }
   ],
+  "candidate-boundary-and-epic-completion": [
+    {
+      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and the excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first complete component build exposed a pre-existing connected verifier compile error, so the build acceptance row remains held.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "spec.md",
-    "sha256": "866020aca8c22a07324f41a81abd248e6f5ab87c744524051af52cf99ad14946"
+    "sha256": "6ed9ebc1572fd1ac6a7bcaa7bb141bf0098af221fff39197c1e86a64c97f4198"
   }
 }

@@ -74,3 +74,35 @@ build off-chain targets. The epic owner answered Q-001 by authorizing a new
 off-chain component build carrier in `ci.yml` and `offchain/flake.nix`. Until
 that job is present and green on the candidate, full build coverage remains
 `MISSING-CI-JOB`.
+
+## Candidate boundary and epic completion
+
+The current local candidate discovers 69 tracked off-chain Haskell files in 22
+source directories: 20 Cabal source-directory values and two direct-GHC naming
+directories. Discovery is broader than enforcement. Under the epic owner's
+source ruling, Fourmolu checks 67 files and leaves the two independent verifier
+files byte-identical to intake. HLint checks 9 directories and excludes 13
+directories with 214 measured hints in the current source state; the earlier
+intake survey found 218 hints before layout and verifier restoration changed
+the measured snapshot. Neither count is a waiver or a claim that excluded
+sources pass. The exact per-directory debt and check boundaries are recorded
+beside the executable lint command and in its candidate matrix.
+
+```mermaid
+flowchart LR
+    A[69 inventoried Haskell files] -->|67 checked| F[Fourmolu]
+    A -->|two independent verifier files| FV[Formatter gap]
+    A -->|41 files in nine directories| H[HLint]
+    A -->|other 28 files| HV[HLint gap]
+    FV -->|must close| E[Epic integration issue 278]
+    HV -->|must close| E
+```
+
+Epic #272 can claim all-code lint and format coverage only after [final
+integration #278](https://github.com/lambdasistemi/singular/issues/278) maps
+every tracked code source to actual checks, including code beyond off-chain
+Haskell. This ticket supplies the bounded off-chain foundation and reports its
+gaps. The independent verifier source fence remains in force here. The
+component build carrier still includes both verifier executables; its first
+real run found a pre-existing compile error in `connected-verifier`, so the
+complete build acceptance row is held until the epic rules on that failure.

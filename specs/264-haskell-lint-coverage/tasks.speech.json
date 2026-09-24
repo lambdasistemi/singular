@@ -1,12 +1,12 @@
 {
   "work-items": [
     {
-      "text": "The work records the active source and interface inventory, removes duplicate dependencies, expands lint and proves a newly covered defect is rejected, reviews layout-only edits, adds the complete component build CI carrier, and records the actual command results and remaining limits.",
+      "text": "The work records the active source and interface inventory, removes duplicate dependencies, expands lint and proves a newly covered defect is rejected, reviews layout-only edits, adds the complete component build CI carrier, and records the actual command results and remaining limits. It also publishes separate check extents, maps retained gaps to epic integration issue 278, and documents contributor commands and source discovery.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "3404630ed13810b861292497259dfae8a574e47d2f9aa4e93b13f12b3d552883"
+    "sha256": "7631c7f5b570700520a4df7900d36e995d9b415b45f03e8d7cd98e1c22cd71cf"
   }
 }

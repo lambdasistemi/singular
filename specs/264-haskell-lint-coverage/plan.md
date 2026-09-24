@@ -44,3 +44,21 @@ The active CI commands are copied verbatim into the frozen gate only after their
 source closure is stated. The new `component-build` row is marked as a CI change
 in this ticket and must be green on the pushed head. The root build gate never
 stands for the off-chain component build.
+
+## Coverage handoff
+
+The exact candidate matrix distinguishes discovered files, Fourmolu files,
+HLint directories and the component build closure. Epic ruling A-003 keeps two
+independent verifier files at their intake bytes and outside Fourmolu in this
+ticket. Existing HLint hints keep 13 directories outside HLint enforcement;
+the current source snapshot measures 214 retained hints, while the intake
+survey measured 218. These are visible gaps assigned to [final epic integration
+#278](https://github.com/lambdasistemi/singular/issues/278), not green lint
+evidence for those files. The final integration child must cover repository code
+beyond off-chain Haskell too.
+
+The new component carrier includes the verifier executables. Its first run
+failed on an intake-era `connected-verifier` import of an unexported library
+symbol. The carrier's closure is correct, but the complete build row remains
+red pending an epic ruling; no component is silently removed. The contributor
+guide at `docs/offchain-development.md` explains the commands and boundaries.
