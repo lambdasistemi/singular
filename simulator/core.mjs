@@ -24,7 +24,7 @@ const configSchema={root:[N],maxFee:N,processTime:N,retractTime:N,applicationPol
 const custody={key:N,refundAddress:N,value:N};
 const holding={key:N,kind:{$enum:KINDS},output:N};
 const stateSchema={config:configSchema,trie:[{key:N,leaf}],custody:[custody],held:[holding]};
-const requestSchema={edge:{$enum:EDGES},key:N,owner:N,refundAddress:N,deposit:N,output:N,
+const requestSchema={edge:{$enum:EDGES},key:N,owner:N,refundAddress:N,deposit:N,tip:N,output:N,
   approval:{$option:approval},claimed:[{kind:{$enum:KINDS},quantity:I}]};
 
 function validate(x,s,p){

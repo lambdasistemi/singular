@@ -1,7 +1,7 @@
 {
   "corpusSourceSha256": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
-  "modelSha256": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
-  "payloadSha256": "a14b892a2e4ffc25ba16c75faa6895033d782e3fb6a94e8cb5643aa63826f9ba",
+  "modelSha256": "6bb0aacb71dc8cb4d4e91184c7a87153b5b8c63306ea6f0fe963d436485654bb",
+  "payloadSha256": "a1d959648bc5298174d7c0622b3933be117396fb2b80d360910e787fd71d86ea",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -210,7 +210,8 @@
         "key": 5,
         "output": 0,
         "owner": 91,
-        "refundAddress": 91
+        "refundAddress": 91,
+        "tip": 0
       },
       "requiresReachableState": false,
       "setup": [],
@@ -435,7 +436,8 @@
         "key": 42,
         "output": 555,
         "owner": 42,
-        "refundAddress": 0
+        "refundAddress": 0,
+        "tip": 0
       },
       "requiresReachableState": false,
       "setup": [],
@@ -656,7 +658,8 @@
         "key": 42,
         "output": 555,
         "owner": 42,
-        "refundAddress": 0
+        "refundAddress": 0,
+        "tip": 0
       },
       "requiresReachableState": true,
       "setup": [
@@ -679,7 +682,8 @@
             "key": 42,
             "output": 555,
             "owner": 42,
-            "refundAddress": 0
+            "refundAddress": 0,
+            "tip": 0
           },
           "state": {
             "config": {
@@ -766,7 +770,8 @@
         "key": 5,
         "output": 0,
         "owner": 91,
-        "refundAddress": 91
+        "refundAddress": 91,
+        "tip": 0
       },
       "requiresReachableState": false,
       "setup": [],
@@ -826,7 +831,8 @@
         "key": 42,
         "output": 555,
         "owner": 42,
-        "refundAddress": 0
+        "refundAddress": 0,
+        "tip": 0
       },
       "requiresReachableState": true,
       "setup": [
@@ -849,7 +855,8 @@
             "key": 42,
             "output": 555,
             "owner": 42,
-            "refundAddress": 0
+            "refundAddress": 0,
+            "tip": 0
           },
           "state": {
             "config": {
@@ -944,7 +951,8 @@
         "key": 42,
         "output": 555,
         "owner": 42,
-        "refundAddress": 0
+        "refundAddress": 0,
+        "tip": 0
       },
       "requiresReachableState": false,
       "setup": [],
@@ -979,15 +987,15 @@
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
     "lean/DriverMain.lean": "7cd7f9cc504e765eff6e93c684e39cb58784b47700bc188bdd7676d387710376",
-    "lean/Main.lean": "3464c51b285ea622d39128a743ebc502ab8b24ae44cec71d6cf65e81cf760fd0",
+    "lean/Main.lean": "27ea099185f6a5ca49779b18a97c19ae0006c04d669eae09f5006f2fc7d656cd",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "c6c67e455db9d4f9971c5ad9c0d3f2058e56d80a21f2a4897672bda4e630c089",
+    "lean/Singular/Driver.lean": "e459877393ae955df49730ed8a08ed7b0866b01e7bd5f2a2ec34c51ebba75c3e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
-    "lean/Singular/Model.lean": "f6b0f824b9ec6a762f7732b18106d3d9bdf936be0b39e5ab63a02f54c4e2e322",
-    "lean/Singular/Statements.lean": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307"
+    "lean/Singular/Model.lean": "6bb0aacb71dc8cb4d4e91184c7a87153b5b8c63306ea6f0fe963d436485654bb",
+    "lean/Singular/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423"
   },
-  "statementsSha256": "866e31a525c69cfd6b15bb4514ea04a447a38b77db50c13be15c5294f8435307",
+  "statementsSha256": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
     "definitionDigest": "17057847551091892576",

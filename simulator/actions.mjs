@@ -10,6 +10,7 @@ export const request=(edge,key,opts={})=>({
   owner:opts.owner??0,
   refundAddress:opts.refundAddress??0,
   deposit:opts.deposit??0,
+  tip:opts.tip??0,
   output:opts.output??0,
   approval:null,
   claimed:opts.claimed??[]});

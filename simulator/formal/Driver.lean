@@ -49,7 +49,7 @@ def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
 def txRoleName : TxRole → String
   | .state => "state" | .request => "request"
   | .destination => "destination" | .cage => "cage"
-  | .witness => "witness"
+  | .witness => "witness" | .owner => "owner"
 
 def txInputJson (c : Config) (i : TxInput) : Json :=
   Json.mkObj
