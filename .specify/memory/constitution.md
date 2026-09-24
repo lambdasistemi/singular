@@ -285,8 +285,9 @@ routed to the user rather than silently incorporated into the new expectations.
 
 Every issue in `lambdasistemi/singular`, whether open or closed, MUST appear in
 [Lambda Sistemi Project 4](https://github.com/orgs/lambdasistemi/projects/4),
-the Cardano KERI demo schedule. This includes epics, child issues, defects and
-work filed outside the current milestone. Project membership, including an
+the shared Cardano KERI and Singular project board. Its demo timeline is one
+view of that board. This includes epics, child issues, defects and work filed
+outside the current milestone. Project membership, including an
 automatically assigned default status, MUST NOT be read as a committed review
 date, delivery estimate, owner assignment or acceptance verdict.
 
