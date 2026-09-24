@@ -20,9 +20,6 @@ import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.Process (readProcess)
 
-
-
-
 import Conformance.Mirror (failWith)
 
 -- ---------------------------------------------------------
