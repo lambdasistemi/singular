@@ -108,6 +108,7 @@ executable conformance
     Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run
+    Conformance.Run.Book
     Conformance.Run.Units
     Conformance.Run.Cage
     Conformance.Run.Wallet
