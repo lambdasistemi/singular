@@ -1,23 +1,23 @@
 use aiken/collection/list.{has}
 use aiken/collection/pairs
-use cardano/assets.{AssetName, PolicyId}
-use cardano/transaction.{OutputReference, Spend, Transaction}
+use cardano/address.{VerificationKey}
+use cardano/assets.{AssetName, PolicyId, lovelace_of, policies}
+use cardano/transaction.{InlineDatum, OutputReference, Spend, Transaction}
+use lib.{edgeInsertAbsent, edgeInsertActive, edgeWitnessTerminal}
 use shared.{
   carriesStateToken, in_phase1, in_phase2, inputByRef, inputOrReferenceByRef,
   is_rejectable, readState,
 }
-use lib.{edgeInsertAbsent, edgeInsertActive, edgeWitnessTerminal}
 use types.{
-  CageDatum, Contribute, Modify, Request, RequestDatum, Retract, State,
-  Sweep, TokenId,
-  UpdateRedeemer,
+  CageDatum, Contribute, Modify, Request, RequestDatum, Retract, State, Sweep,
+  TokenId, UpdateRedeemer,
 }
 
 validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
   spend(
     maybeDatum: Option<CageDatum>,
     redeemer: UpdateRedeemer,
-    _self: OutputReference,
+    self: OutputReference,
     tx: Transaction,
   ) {
     let cageToken = TokenId { assetName: cageTokenName }
@@ -28,7 +28,15 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
       }
       Retract(stateRef) -> {
         expect Some(RequestDatum(request)) = maybeDatum
-        validateRetract(statePolicyId, cageToken, request, stateRef, tx)
+        when
+          retractRefusal(statePolicyId, cageToken, request, self, stateRef, tx)
+        is {
+          None -> True
+          Some(reason) -> {
+            trace reason
+            False
+          }
+        }
       }
       // Ownerless registry (operator ruling NOTE-028/A-003, issue #77
       // repair): seizure is refused for every party — there is no
@@ -56,7 +64,8 @@ fn validateContribute(
   let stateInput = inputByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)
   expect stateSpentWithModify(stateRef, tx)
-  let State { root: _root, tip: _tip, process_time, retract_time, .. } = readState(stateInput)
+  let State { root: _root, tip: _tip, process_time, retract_time, .. } =
+    readState(stateInput)
   let Transaction { validity_range, .. } = tx
   expect
     in_phase1(validity_range, submitted_at, process_time) || is_rejectable(
@@ -82,15 +91,17 @@ fn stateSpentWithModify(stateRef: OutputReference, tx: Transaction) -> Bool {
   }
 }
 
-fn validateRetract(
+/// The spend handler emits this refusal verbatim. Admission is checked before
+/// payment, so a refund cannot authorize a forbidden retraction.
+pub fn retractRefusal(
   statePolicyId: PolicyId,
   cageToken: TokenId,
   request: Request,
+  self: OutputReference,
   stateRef: OutputReference,
   tx: Transaction,
-) {
-  let Request { requestOwner, requestToken, edge, submitted_at, .. } =
-    request
+) -> Option<String> {
+  let Request { requestOwner, requestToken, edge, submitted_at, .. } = request
   let Transaction { extra_signatories, validity_range, .. } = tx
   expect requestToken == cageToken
   // Insert-and-read retraction (issue #79 Defect 2; #157 C9, D-RETRACT):
@@ -105,17 +116,39 @@ fn validateRetract(
   let retractable =
     edge == edgeInsertAbsent || edge == edgeInsertActive || edge == edgeWitnessTerminal
   if !retractable {
-    trace @"withdraw-insert-only"
-    False
+    Some(@"withdraw-insert-only")
   } else if !has(extra_signatories, requestOwner) {
-    trace @"retract-owner"
-    False
+    Some(@"retract-owner")
   } else {
     let stateInput = inputOrReferenceByRef(stateRef, tx)
     expect carriesStateToken(statePolicyId, cageToken, stateInput)
     let State { root: _root, tip: _tip, process_time, retract_time, .. } =
       readState(stateInput)
     expect in_phase2(validity_range, submitted_at, process_time, retract_time)
-    True
+    // The state policy is common to all registries. References are allowed;
+    // consuming any of its tokens alongside a retraction is not.
+    if list.any(
+      tx.inputs,
+      fn(input) { has(policies(input.output.value), statePolicyId) },
+    ) {
+      Some(@"retract-state-spent")
+    } else {
+      let held = lovelace_of(inputByRef(self, tx).output.value)
+      let boundRef: Data = self
+      // One sufficient owner output belongs to exactly this consumed request.
+      // Its reference binding prevents reuse within and across registries.
+      if list.any(
+        tx.outputs,
+        fn(output) {
+          output.address.payment_credential == VerificationKey(requestOwner) && output.datum == InlineDatum(
+            boundRef,
+          ) && lovelace_of(output.value) >= held
+        },
+      ) {
+        None
+      } else {
+        Some(@"deposit-returned")
+      }
+    }
   }
 }
