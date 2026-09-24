@@ -1539,10 +1539,11 @@ runCG19RejectedFloor env cage tid = do
 -- CG21 (#173 A173-EDGE/A173-REFUSALS, completed in #184)
 -- ---------------------------------------------------------
 {- | The live registration program submits two distinct active registrations,
-a duplicate-key request, a redirected delivery beside its untampered control,
+a duplicate-key request, a registration whose delivery is sent to another
+address and one paying it one lovelace short beside their untampered control,
 and a registration carrying one required signer the model does not require.
 Each request runs through the same builder and driver comparison. The receipt
-records all six steps and their chain outcomes. A two-request batch is outside
+records all seven steps and their chain outcomes. A two-request batch is outside
 this program and remains a published gap.
 -}
 runCG21 :: Env -> IO ()
@@ -1559,9 +1560,9 @@ runCG21 env = do
     (_, recipient) <- secondWallet env
     _ <- runLive env (RegistrationStory.story (Live.Context registry recipient))
     -- The generic interpreter writes one record per request. The receipt is
-    -- emitted only after all six outcomes and comparisons have completed.
+    -- emitted only after all seven outcomes and comparisons have completed.
     records <- readIORef (envLiveRecords env)
-    require "CG21 did not compare its six requests" (length records == 6)
+    require "CG21 did not compare its seven requests" (length records == 7)
     require "registration chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
@@ -1592,6 +1593,10 @@ The reason NAMES are not asserted from the node. A phase-2 failure
 carries an empty Plutus log list, so the receipt records honest `null`
 with script-hash attribution; the names live in the compiled Aiken suite
 against `state.terminalRefusal`.
+
+The same session then deletes a registration: its deposit is paid back one
+lovelace short and to another address, each refused, before the untampered
+deletion pays it.
 -}
 runCG22 :: Env -> IO ()
 runCG22 env = do
@@ -1610,7 +1615,7 @@ runCG22 env = do
     _ <- runLive env (RetirementStory.story
         (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
     records <- readIORef (envLiveRecords env)
-    require "CG22 did not compare its seven requests" (length records == 7)
+    require "CG22 did not compare its eleven requests" (length records == 11)
     require "retirement chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")

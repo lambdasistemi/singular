@@ -475,9 +475,25 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
     it "rejects accepted agreement without perturbation evidence" $
         loadLive (changeStep (setField "perturbation" Null) acceptedLive)
             >>= (`shouldSatisfy` isLeft)
-    it "rejects a claimed redirected-delivery agreement without a script hash" $
-        loadLive (changeStep (setField "tamper" ("redirect-delivery" :: String)) acceptedLive)
-            >>= (`shouldSatisfy` isLeft)
+    it "rejects a payment tamper claimed as agreement while both sides accepted it" $
+        loadLive (changeStep (setField "tamper" ("other-address" :: String)) acceptedLive)
+            >>= (`shouldSatisfy` refusedFor "payment tamper agreement does not have model and chain refusal")
+    it "accepts a payment sent elsewhere that the ledger refused and the model refused by name" $
+        loadLive (paymentTamperLive "other-address" "destination") `shouldReturn` Right 1
+    it "accepts a payment one lovelace short that the ledger refused and the model refused by name" $
+        loadLive (paymentTamperLive "short-by-one" "deposit-returned") `shouldReturn` Right 1
+    it "rejects a payment tamper agreement the model accepted" $
+        loadLive (changeStep (setField "model" (object ["outcome" .= ("accepted" :: String)]))
+            (paymentTamperLive "short-by-one" "deposit-returned"))
+            >>= (`shouldSatisfy` refusedFor "payment tamper agreement does not have model and chain refusal")
+    it "rejects a payment tamper whose model refusal names no reason" $
+        loadLive (changeStep (setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= Null]))
+            (paymentTamperLive "short-by-one" "deposit-returned"))
+            >>= (`shouldSatisfy` refusedFor "payment tamper refusal names no model reason")
+    it "rejects a payment tamper refusal attributed to no script" $
+        loadLive (changeStep (setField "chain" (setRefusalField "hashes" ([] :: [String]) (probeRefusalChain "probe-allowance")))
+            (paymentTamperLive "other-address" "destination"))
+            >>= (`shouldSatisfy` refusedFor "tamper refusal has no attributed script hashes")
     it "rejects a refused live request whose receipt omits the node reason and measured units" $
         loadLive refusedLiveWithoutDetails >>= (`shouldSatisfy` isLeft)
     it "accepts a budget refusal named by per-purpose measurements" $
@@ -552,7 +568,7 @@ field _ _ = Nothing
 refusedLiveWithoutDetails :: Receipt
 refusedLiveWithoutDetails =
     ( changeStep
-        ( setField "tamper" ("redirect-delivery" :: String)
+        ( setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= ("key-exists" :: String)])
             . setField
                 "chain"
                 ( object
@@ -560,7 +576,7 @@ refusedLiveWithoutDetails =
                     , "txid" .= ("abc123" :: String)
                     , "refusal"
                         .= object
-                            [ "trace" .= ("deposit-returned" :: String)
+                            [ "trace" .= (Nothing :: Maybe String)
                             , "hashes" .= (["abcdef"] :: [String])
                             ]
                     ]
@@ -690,3 +706,26 @@ loadLive :: Receipt -> IO (Either String Int)
 loadLive receipt = withSystemTempDirectory "conformance-live-receipt" $ \dir -> do
     BSL.writeFile (dir </> "receipt-CG21.json") (encode receipt)
     fmap length <$> loadReceipts dir
+
+{- | A payment tamper both sides refused: the ledger with its node refusal and
+script attribution, the model for the reason its judgement named.
+-}
+paymentTamperLive :: String -> String -> Receipt
+paymentTamperLive name reason =
+    changeStep
+        ( setField "tamper" name
+            . setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= reason])
+            . setField "chain" (probeRefusalChain "probe-allowance")
+        )
+        refusedLiveWithoutDetails
+
+-- | Give a chain outcome's refusal this field.
+setRefusalField :: (ToJSON a) => String -> a -> Value -> Value
+setRefusalField name value chain = case chain of
+    Object fields | Just refusal <- KM.lookup "refusal" fields ->
+        setField "refusal" (setField name value refusal) chain
+    _ -> chain
+
+-- | A receipt the loader refused, naming this reason.
+refusedFor :: String -> Either String Int -> Bool
+refusedFor reason = either (reason `isInfixOf`) (const False)

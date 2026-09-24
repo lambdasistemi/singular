@@ -132,6 +132,11 @@ def declaredUnobservable : List String :=
   ["concreteTrieHash", "outputMinimumAda", "registryAddress",
    "scriptExecutionUnits", "transactionId", "utxoReference"]
 
+/-- The declared judgements: questions the driver answers about a transaction a
+caller observed, beside the boundary it reports. `settle` judges whether the
+observed outputs pay what the scenario's exit owes, by `Singular.settle`. -/
+def declaredJudgements : List String := ["settle"]
+
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where
   declaration : String
@@ -139,13 +144,15 @@ structure SurfaceIdentity where
   operations : List String
   observations : List String
   unobservable : List String
+  judgements : List String
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 2
+  , protocolVersion := 3
   , operations := declaredOperations
   , observations := declaredObservations
-  , unobservable := declaredUnobservable }
+  , unobservable := declaredUnobservable
+  , judgements := declaredJudgements }
 
 def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
   Json.mkObj
@@ -154,7 +161,8 @@ def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
     , ("protocolVersion", toJson s.protocolVersion)
     , ("operations", toJson s.operations)
     , ("observations", toJson s.observations)
-    , ("unobservable", toJson s.unobservable) ]
+    , ("unobservable", toJson s.unobservable)
+    , ("judgements", toJson s.judgements) ]
 
 /-! ## The law premise -/
 
@@ -285,6 +293,12 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
       | .ok tx =>
         (steps, { outcome := .accepted, reason := none, premiseChecked := true
                 , observations := some (observationsJson s.config sc.request res tx) })
+
+/-- The declared judgement `settle`: whether the outputs of a transaction a
+caller observed pay what the scenario's exit owes its request, and if not, the
+reason `Singular.settle` gives. -/
+def judgeSurface (sc : Scenario) (outputs : List TxOutput) : Option String :=
+  settle (obligations sc.exit sc.request) outputs
 
 def setupStepJson (stp : SetupStep) : Json :=
   Json.mkObj

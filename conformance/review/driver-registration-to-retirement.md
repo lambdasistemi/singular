@@ -6,9 +6,9 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `4d3d3c33babaed50de04ccf63c3dd5984b035fcfbea95f7477014fd8cf681609`
-- model: `2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27`
-- surface: `Singular.Driver.runSurface`, protocol version 2, digest `13998092095361678048`
+- driver corpus payload: `c1174b20a78aab7b0627988ab59a664da253d2962195c91c5b25bc9d088f918e`
+- model: `be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052`
+- surface: `Singular.Driver.runSurface`, protocol version 3, digest `18106377236017516190`
 
 ## What the driver is
 
@@ -23,6 +23,10 @@ Declared operations: `insertAbsent`, `insertActive`, `updateActive`, `updateTerm
 Declared observations: `config`, `custody`, `held`, `leaf`, `mint`, `paid`, `root`, `state`, `tx`.
 Every accepted row reports all nine. A row reporting a subset is a per-theorem
 projection and the model check rejects it.
+
+Declared judgement: `settle`. Given the outputs of a transaction a caller
+observed, the driver answers whether they pay what the scenario's exit owes,
+with `Singular.settle`'s reason when they do not.
 
 ## The registration
 

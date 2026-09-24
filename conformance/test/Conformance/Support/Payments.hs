@@ -15,10 +15,12 @@ import Conformance.Observe.Payments (
     OwnerReading (..),
     Payee (..),
     Payment (..),
+    OutputEdit (..),
     foldPayments,
     readOwner,
+    tamperEdits,
  )
-import Conformance.Story.Live (Edge (..))
+import Conformance.Story.Live (Edge (..), Tamper (..))
 import Data.ByteString (ByteString)
 import Data.Either (isLeft)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
@@ -38,14 +40,15 @@ at key lovelace =
         , outputCarrier = False
         , outputDatum = "none"
         , outputApprovals = []
+        , outputCustody = False
         }
 
 -- | The registry's state continuation: a script output, paying nobody.
 state :: FoldOutput
-state = FoldOutput "cage" "" 1500000 False "inline" []
+state = FoldOutput "cage" "" 1500000 False "inline" [] False
 
 facts :: Edge -> FoldFacts
-facts edge = FoldFacts edge owner Nothing Nothing
+facts edge = FoldFacts edge owner Nothing
 
 spec :: Spec
 spec = describe "Reading a fold's payments off its transaction" $ do
@@ -91,9 +94,10 @@ spec = describe "Reading a fold's payments off its transaction" $ do
         foldPayments (facts InsertActive) [state, carrier, carrier]
             `shouldSatisfy` isLeft
 
-    it "locks an absent insertion's deposit in custody" $
-        foldPayments ((facts InsertAbsent){factsCustody = Just 2100000}) [state, at owner 9000000]
+    it "locks an absent insertion's deposit in custody" $ do
+        foldPayments (facts InsertAbsent) [state, custody 2100000, at owner 9000000]
             `shouldBe` Right [Payment Custody 2100000]
+        foldPayments (facts InsertAbsent) [state, at owner 9000000] `shouldSatisfy` isLeft
 
     it "states what the fold owes first, then the custody refund it pays" $ do
         let refund = at refunded 4000000
@@ -138,3 +142,78 @@ spec = describe "Reading a fold's payments off its transaction" $ do
             `shouldBe` Right (Just (OwnerReading 9000000 "none" ["approval-a"]))
         readOwner owner [state, at holder 3000000] `shouldBe` Right Nothing
         readOwner owner [deposit, change{outputDatum = "inline"}] `shouldSatisfy` isLeft
+
+    it "sends every output paying what a fold owes to another address" $ do
+        let carrier = (at holder 2000000){outputCarrier = True}
+            delivering = [state, carrier, at owner 9000000]
+            returning = [state, (at owner 2000000){outputApprovals = ["approval-a"]}, at owner 7000000]
+        paymentsAfter OtherAddress InsertActive delivering
+            `shouldBe` Right [Payment (Destination ("address-of-" <> stranger)) 2000000]
+        paymentsAfter OtherAddress DeleteActive returning
+            `shouldBe` Right [Payment (Owner owner) 0]
+        conserved OtherAddress InsertActive delivering
+        conserved OtherAddress DeleteActive returning
+
+    it "pays what a fold owes one lovelace short, the lovelace going to its change" $ do
+        let carrier = (at holder 2000000){outputCarrier = True}
+            delivering = [state, carrier, at owner 9000000]
+            returning = [state, (at owner 2000000){outputApprovals = ["approval-a"]}, at owner 7000000]
+            locking = [state, custody 2000000, at owner 9000000]
+        paymentsAfter ShortByOne InsertActive delivering
+            `shouldBe` Right [Payment (Destination (outputAddress carrier)) 1999999]
+        -- The change credits the owner too, so it leaves the owner's key.
+        paymentsAfter ShortByOne DeleteActive returning
+            `shouldBe` Right [Payment (Owner owner) 1999999]
+        paymentsAfter ShortByOne InsertAbsent locking
+            `shouldBe` Right [Payment Custody 1999999]
+        mapM_ (\(edge, outputs) -> conserved ShortByOne edge outputs)
+            [(InsertActive, delivering), (DeleteActive, returning), (InsertAbsent, locking)]
+
+    it "moves an absent insertion's custody away from the cage" $
+        paymentsAfter OtherAddress InsertAbsent [state, custody 2000000, at owner 9000000]
+            `shouldSatisfy` isLeft
+
+    it "changes no output for an extra signer" $
+        tamperEdits ExtraSigner (facts InsertActive)
+            [state, (at holder 2000000){outputCarrier = True}, at owner 9000000]
+            `shouldBe` Right []
+
+    it "refuses to tamper a payment the transaction does not make" $ do
+        tamperEdits OtherAddress (facts InsertActive) [state, at owner 9000000]
+            `shouldSatisfy` isLeft
+        tamperEdits ShortByOne (facts InsertActive) [state, at owner 9000000]
+            `shouldSatisfy` isLeft
+        -- With no change beside it, the lovelace taken has nowhere to go.
+        tamperEdits ShortByOne (facts InsertActive) [state, (at holder 2000000){outputCarrier = True}]
+            `shouldSatisfy` isLeft
+
+-- | An absent custody output at the cage.
+custody :: Integer -> FoldOutput
+custody lovelace =
+    (at "" lovelace){outputAddress = "cage", outputDatum = "inline", outputCustody = True}
+
+stranger :: ByteString
+stranger = "stranger-key"
+
+{- | The fold's outputs after a tamper's edits, a redirected output landing at
+the stranger's key, which is no cage.
+-}
+tampered :: Tamper -> Edge -> [FoldOutput] -> Either String [FoldOutput]
+tampered alteration edge outputs =
+    foldl apply outputs <$> tamperEdits alteration (facts edge) outputs
+  where
+    apply outs (Readdress i) =
+        adjust i (\o -> o{outputAddress = "address-of-" <> stranger, outputKey = stranger, outputCustody = False}) outs
+    apply outs (Relovelace i lovelace) = adjust i (\o -> o{outputLovelace = lovelace}) outs
+    adjust i f outs = [if j == i then f o else o | (j, o) <- zip [0 :: Int ..] outs]
+
+-- | What the fold pays once tampered, as the chain reads it.
+paymentsAfter :: Tamper -> Edge -> [FoldOutput] -> Either String [Payment]
+paymentsAfter alteration edge outputs =
+    tampered alteration edge outputs >>= foldPayments (facts edge)
+
+-- | A tamper moves value between outputs and never creates or destroys it.
+conserved :: Tamper -> Edge -> [FoldOutput] -> IO ()
+conserved alteration edge outputs =
+    fmap (sum . map outputLovelace) (tampered alteration edge outputs)
+        `shouldBe` Right (sum (map outputLovelace outputs))

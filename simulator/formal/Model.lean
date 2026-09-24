@@ -911,12 +911,12 @@ def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
   | .destination address => output.role == .destination && output.address == some address
   | .owner key => output.role == .owner && output.address == some key
 
-/-- The chain's reason for a recipient left unpaid: custody short or absent is
-`absent-custody`; a destination no output reaches is `destination`; a destination
+/-- The chain's reason for a recipient left unpaid: custody or a destination no
+output reaches is `absent-custody` or `destination`; custody or a destination
 reached short, or an owner short or unreached, is `deposit-returned`. -/
 def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
   match recipient with
-  | .custody => "absent-custody"
+  | .custody => if paying.isEmpty then "absent-custody" else "deposit-returned"
   | .destination _ => if paying.isEmpty then "destination" else "deposit-returned"
   | .owner _ => "deposit-returned"
 

@@ -102,10 +102,35 @@ def toScenario (j : Json) : Except String Scenario := do
     , requiresReachableState := !setup.isEmpty
     , start, setup, exit := .fold request.edge, request, lovelace }
 
-/-- Evaluate, and answer with the row the driver produces. -/
+/-- One output a caller observed, as the driver's judgement reads it: its role,
+the identity of its address and its lovelace. The judgement, `settle`, reads
+nothing else of an output, so nothing else is taken from the caller. -/
+def toOutput (j : Json) : Except String TxOutput := do
+  let role ← match (← (j.getObjVal? "role") >>= fromJson? : String) with
+    | "destination" => pure TxRole.destination
+    | "cage" => pure .cage
+    | "owner" => pure .owner
+    | other => throw s!"no judged output has the role {other}"
+  let address ← (j.getObjVal? "address") >>= fromJson?
+  let lovelace ← (j.getObjVal? "lovelace") >>= fromJson?
+  pure { role, datum := .none, address := some address, stateTokens := 0, config := none
+       , commitment := none, assets := [], lovelace }
+
+/-- Evaluate, and answer with the row the driver produces. A question carrying the
+outputs of a transaction the caller observed is also answered with the driver's
+judgement of them, `settle`'s reason or `null` when they pay what the exit owes. -/
 def answer (j : Json) : Except String Json := do
   let scenario ← toScenario j
-  pure (scenarioJson scenario)
+  let row := scenarioJson scenario
+  match j.getObjVal? "outputs" with
+  | .error _ => pure row
+  | .ok (Json.arr observed) => do
+    let outputs ← observed.toList.mapM toOutput
+    let judgement := match judgeSurface scenario outputs with
+      | none => Json.null
+      | some why => toJson why
+    pure (row.setObjVal! "settle" judgement)
+  | .ok _ => throw "outputs is not an array"
 
 end DriverTransport
 

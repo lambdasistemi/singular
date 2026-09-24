@@ -35,15 +35,18 @@ data EdgeRequest wal = EdgeRequest
     deriving stock (Eq, Show)
 
 {- | A change to the submitted transaction the model's request does not make.
-'RedirectDelivery' sends the delivered token elsewhere; the ledger must refuse
-it. 'ExtraSigner' adds one required signer the model does not require; the
-ledger accepts it, and the comparison must report the transaction's signers.
+'OtherAddress' sends the payment the exit owes to another address, and
+'ShortByOne' pays it one lovelace short; the ledger must refuse both, and the
+model must refuse them for the reason it gives. 'ExtraSigner' adds one
+required signer the model does not require; the ledger accepts it, and the
+comparison must report the transaction's signers.
 -}
-data Tamper = RedirectDelivery | ExtraSigner
+data Tamper = OtherAddress | ShortByOne | ExtraSigner
     deriving stock (Eq, Show, Enum, Bounded)
 
 tamperName :: Tamper -> String
-tamperName RedirectDelivery = "redirect-delivery"
+tamperName OtherAddress = "other-address"
+tamperName ShortByOne = "short-by-one"
 tamperName ExtraSigner = "extra-signer"
 
 type Story reg wal step obs cmp = Specification.Story (LiveI reg wal step obs cmp)
@@ -130,9 +133,13 @@ renderAction instruction rest = case instruction of
         step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
             <> "** in **" <> registry <> "**, using the " <> requestWallet request <> ".")
             (rest (requestKey request))
-    Tamper RedirectDelivery registry request ->
+    Tamper OtherAddress registry request ->
         step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
-            <> "** in **" <> registry <> "** with redirect delivery. The same request without redirection is the untampered control.")
+            <> "** in **" <> registry <> "** with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.")
+            (rest (requestKey request))
+    Tamper ShortByOne registry request ->
+        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
+            <> "** in **" <> registry <> "** with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.")
             (rest (requestKey request))
     Tamper ExtraSigner registry request ->
         step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request

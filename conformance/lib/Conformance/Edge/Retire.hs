@@ -1,4 +1,5 @@
--- | Retire a registration, then try an Absent and an unknown key.
+-- | Retire a registration, then try an Absent and an unknown key; delete a
+-- registration, paying its deposit back short and elsewhere before paying it.
 module Conformance.Edge.Retire (story) where
 
 import Conformance.Lean.Registration (insertActiveRow, modelComparison)
@@ -7,7 +8,7 @@ import Conformance.Lean.Retirement qualified as Retirement
 import Conformance.Story.Specification (clause, theorem)
 import Conformance.Story.Live
     ( Context (Context), Edge (..), EdgeRequest (..), Story
-    , compareWithModel, observe, submit
+    , Tamper (..), compareWithModel, observe, submit, tamper
     )
 
 story :: Context reg wal -> Context reg wal -> Story reg wal step obs cmp ()
@@ -26,9 +27,17 @@ story (Context registry holder) (Context otherRegistry _) = do
     checked otherRegistry (EdgeRequest InsertActive "control" holder)
     checked otherRegistry (EdgeRequest UpdateTerminal "control" holder)
     checked otherRegistry (EdgeRequest UpdateTerminal "never-registered" holder)
+
+    -- A deletion owes its owner the deposit back. Each tampered deletion is
+    -- refused and leaves the key active for the untampered one.
+    let deletion = EdgeRequest DeleteActive "deleted" holder
+    checked registry (EdgeRequest InsertActive "deleted" holder)
+    tamper ShortByOne registry deletion >>= compared
+    tamper OtherAddress registry deletion >>= compared
+    checked registry deletion
   where
-    checked registry' request = do
-        step <- submit registry' request
+    checked registry' request = submit registry' request >>= compared
+    compared step = do
         observation <- observe step
         _ <- compareWithModel step observation
         pure ()

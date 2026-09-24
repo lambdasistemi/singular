@@ -21,16 +21,16 @@ renderBook requirements receipts =
         <> "## This run\n\n"
         <> concatMap result receipts
         <> "## Register a key and receive its active token\n\n"
-        <> "A requester submits two distinct active registrations and then repeats one key. A redirected delivery is tried beside the same untampered request. Every step is compared with the executable registry model.\n\n"
+        <> "A requester submits two distinct active registrations and then repeats one key. The delivery is then sent to another address, and paid one lovelace short, beside the same untampered request. Every step is compared with the executable registry model.\n\n"
         <> renderLive (Register.story (Context "registration" "recipient wallet"))
         <> "## Retire a registration and burn its active token\n\n"
-        <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry.\n\n"
+        <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion.\n\n"
         <> renderLive (Retire.story (Context "retirement" "holder wallet") (Context "comparison" "holder wallet"))
         <> "## A sequence no chapter names\n\n"
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -46,7 +46,8 @@ renderBook requirements receipts =
             <> T.unpack (receiptBlueprint receipt) <> "`.\n\n"
             <> maybe "" (\steps -> case receiptRow receipt of
                 "CG21" -> "Registration compared " <> outcomeCounts steps <> concatMap detection steps
-                "CG22" -> "Retirement compared " <> outcomeCounts steps
+                    <> concatMap refusedPayment steps
+                "CG22" -> "Retirement compared " <> outcomeCounts steps <> concatMap refusedPayment steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
@@ -81,6 +82,19 @@ renderBook requirements receipts =
                                             , Just (String observation) <- [KM.lookup "observation" difference]
                                             , Just (String path) <- [KM.lookup "path" difference] ]
                         <> ".\n\n"
+            _ -> ""
+        _ -> ""
+    -- A tampered payment both sides refused, and the reason the model gave:
+    -- read from the step, never typed here.
+    refusedPayment value = case value of
+        Object fields -> case (KM.lookup "tamper" fields, KM.lookup "comparison" fields
+                              , KM.lookup "edge" fields, KM.lookup "model" fields, KM.lookup "chain" fields) of
+            (Just (String name), Just (String "agrees"), Just (String edge), Just (Object model), Just (Object chain))
+                | Just (String "refused") <- KM.lookup "outcome" chain
+                , Just (String reason) <- KM.lookup "reason" model
+                , Just (String txid) <- KM.lookup "txid" chain ->
+                    "The " <> T.unpack name <> " " <> T.unpack edge <> " was refused on chain (transaction `"
+                        <> T.unpack txid <> "`); the model refused it for `" <> T.unpack reason <> "`.\n\n"
             _ -> ""
         _ -> ""
     gapEvidence receipt

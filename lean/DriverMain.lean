@@ -143,7 +143,7 @@ def scenarios : List Scenario :=
 silently widened or narrowed surface changes it. -/
 def surfaceDefinition : String :=
   String.intercalate "|"
-    (declaredOperations ++ declaredObservations ++ declaredUnobservable)
+    (declaredOperations ++ declaredObservations ++ declaredUnobservable ++ declaredJudgements)
 
 def corpus : Json :=
   Json.mkObj

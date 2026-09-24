@@ -46,6 +46,7 @@ module Conformance.Receipt (
 ) where
 
 import Conformance.NodeRejection (boundedNodeReason)
+import Conformance.Story.Live (Tamper (..), tamperName)
 import Control.Exception (ErrorCall (..), throwIO)
 
 import Data.Aeson (
@@ -462,6 +463,10 @@ evaluation context prints every script and cost model.
 maxReceiptBytes :: Int
 maxReceiptBytes = 16384
 
+-- | The tampers that alter the payment an exit owes, as a step record names them.
+paymentTampers :: [Text]
+paymentTampers = map (T.pack . tamperName) [OtherAddress, ShortByOne]
+
 -- | Keep live node text readable inside each refusal step.
 maxLiveStepReasonChars :: Int
 maxLiveStepReasonChars = 300
@@ -519,13 +524,21 @@ stepsComplete path receipt steps
                 | m /= c -> failure "untampered agreement changes the outcome class"
                 | differences /= Array Vector.empty -> failure "untampered agreement reports differences"
                 | otherwise -> Right ()
-            (Just (String "redirect-delivery"), Just (String "agrees"),
-                Just (String "accepted"), Just (String "refused")) ->
+            -- A payment sent elsewhere or short is refused by both sides: the
+            -- ledger by an attributed script, the model for the reason its
+            -- judgement names.
+            (Just (String name), Just (String "agrees"),
+                Just (String "refused"), Just (String "refused"))
+                | name `elem` paymentTampers -> do
                     case at "hashes" =<< (at "refusal" =<< at "chain" step) of
                         Just (Array hashes) | not (Vector.null hashes) -> Right ()
                         _ -> failure "tamper refusal has no attributed script hashes"
-            (Just (String "redirect-delivery"), Just (String "agrees"), _, _) ->
-                failure "tamper agreement does not have model acceptance and chain refusal"
+                    case at "reason" =<< at "model" step of
+                        Just (String why) | not (T.null why) -> Right ()
+                        _ -> failure "payment tamper refusal names no model reason"
+            (Just (String name), Just (String "agrees"), _, _)
+                | name `elem` paymentTampers ->
+                    failure "payment tamper agreement does not have model and chain refusal"
             -- An extra required signer is accepted by the ledger; its agreement
             -- is the comparison reporting exactly that signer difference.
             (Just (String "extra-signer"), Just (String "agrees"),
@@ -535,7 +548,7 @@ stepsComplete path receipt steps
             (Just (String "extra-signer"), Just (String "agrees"), _, _) ->
                 failure "extra-signer agreement does not have model and chain acceptance"
             (Just Null, _, _, _) -> Right ()
-            (Just (String "redirect-delivery"), _, _, _) -> Right ()
+            (Just (String name), _, _, _) | name `elem` paymentTampers -> Right ()
             (Just (String "extra-signer"), _, _, _) -> Right ()
             _ -> failure "unknown tamper"
         case (at "compared" step, at "unobserved" step) of

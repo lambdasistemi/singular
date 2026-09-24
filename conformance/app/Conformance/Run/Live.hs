@@ -4,7 +4,7 @@ Module      : Conformance.Run.Live
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, containsStoryAsset, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaid, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
+module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaid, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
 
 import Conformance.Run.Control
 import Conformance.FoldFixture qualified as FoldFixture
@@ -60,13 +60,14 @@ import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf, sort, sortOn, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector qualified as Vector
 import Data.Word (Word8)
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (%~), (.~), (^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.Environment (lookupEnv)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -325,11 +326,17 @@ submitEdge env state cage alteration request = do
             require "booked request holds less than the on-chain processing tip" (deposit >= 0)
             modelRequest <- storyModelRequest ids cfg request deposit (Right reqOut)
             bindBookedApproval ids cfg reqOut modelRequest
-            alternate <- case alteration of
-                Nothing -> pure Nothing
-                Just Live.RedirectDelivery -> Just <$> (if wallet == genesisAddr
-                    then snd <$> secondWallet env else pure genesisAddr)
-                Just Live.ExtraSigner -> pure Nothing
+            -- A payment tamper sends what it moves to a wallet other than the
+            -- request's, whose identity is allocated here, while acting.
+            elsewhere <- case alteration of
+                Just payment | payment `elem` [Live.OtherAddress, Live.ShortByOne] -> do
+                    other <- if wallet == genesisAddr then snd <$> secondWallet env else pure genesisAddr
+                    _ <- allocateIdentity (liveWallets ids) (WalletIdentity (serialiseAddr other))
+                    modifyIORef' (liveRegistryWallets state)
+                        (Map.adjust (\known -> if other `elem` known then known else other : known) registry)
+                    pure (Just other)
+                _ -> pure Nothing
+            ownerKey <- requestOwnerKey reqOut
             witness <- storyWitness env cfg key wallet
             stateUtxo <- cageStateUtxo env cage
             (proofs, root) <- storyProofs env cage tid [named]
@@ -354,12 +361,10 @@ submitEdge env state cage alteration request = do
                 (submitTxResilient (envSubmit env) . addKeyWitness genesisSignKey)
                 initialUnits
             let spec = initialSpec{fsUnits = fixtureUnits}
-                redirect transaction = case alternate of
-                    Nothing -> transaction
-                    Just redirectTo -> transaction & bodyTxL . outputsTxBodyL %~ fmap
-                        (\out -> if containsStoryAsset cfg key out
-                            then out & addrTxOutL .~ redirectTo
-                            else out)
+                facts = Payments.FoldFacts (Live.requestEdge request) ownerKey Nothing
+                tampered transaction = either (failWith . (("tamper: " <> show alteration <> ": ") <>)) pure
+                    (maybe (Right transaction) (\t -> Payments.tamperEdits t facts
+                        (map snd (foldOutputsOf cfg transaction)) >>= editOutputs elsewhere transaction) alteration)
             template <- assembleFoldWithFee env spec
             let purposes = redeemerPurposeNames template
             require "honest fold has no redeemer purposes" (not (null purposes))
@@ -368,7 +373,7 @@ submitEdge env state cage alteration request = do
             let probePurposeUnits = Map.map
                     (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
                     probePairs
-            trial <- redirect <$> assembleFoldWithFee env spec{fsPurposeUnits = probePurposeUnits}
+            trial <- tampered =<< assembleFoldWithFee env spec{fsPurposeUnits = probePurposeUnits}
             measurements <- measurePurposeUnits env trial
             require "node evaluation did not return every redeemer purpose"
                 (sort (Map.keys measurements) == sort (redeemerPurposeNames trial))
@@ -404,8 +409,8 @@ submitEdge env state cage alteration request = do
                 <> " visible=" <> show (map txInToText (Map.keys visible)))
             require "generic fold has an input missing from the chain snapshot"
                 (all (`Map.member` visible) (Set.toList wanted))
-            let candidate = redirect unsigned
-                signed = addKeyWitness genesisSignKey candidate
+            candidate <- tampered unsigned
+            let signed = addKeyWitness genesisSignKey candidate
                 submittedBudgets = transactionPurposeUnits signed
             require "assembled fold changed its per-purpose declarations"
                 (submittedBudgets == declaredPairs)
@@ -415,11 +420,11 @@ submitEdge env state cage alteration request = do
             case result of
                 Submitted _ -> do
                     case alteration of
-                        Just Live.RedirectDelivery -> failWith
-                            ("redirect-delivery FINDING: chain accepted tampered "
+                        Just payment | payment `elem` [Live.OtherAddress, Live.ShortByOne] -> failWith
+                            (Live.tamperName payment <> " FINDING: chain accepted tampered "
                                 <> Live.edgeName (Live.requestEdge request)
                                 <> " for " <> Live.requestKey request <> " (" <> txIdHex signed <> ")")
-                        Just Live.ExtraSigner -> pure ()
+                        Just _ -> pure ()
                         Nothing -> pure ()
                     awaitTx signed
                     rowCommit env cage key edge
@@ -478,11 +483,21 @@ storyWitness env cfg key wallet = do
         _ -> failWith ("more than one active witness input for " <> show key)
 
 
-containsStoryAsset :: CageConfig -> ByteString -> TxOut ConwayEra -> Bool
-containsStoryAsset cfg key out =
-    any (\policy -> maybe False (Map.member key) (Map.lookup policy (outAssets out)))
-        (map SBS.fromShort [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg])
-
+{- | Apply a tamper's edits to a transaction's outputs: a readdressed output
+goes to @elsewhere@ with its value unchanged, a relovelaced output keeps its
+address and assets.
+-}
+editOutputs :: Maybe Addr -> ConwayTx -> [Payments.OutputEdit] -> Either String ConwayTx
+editOutputs elsewhere transaction edits = do
+    outputs <- foldl (\acc edit -> acc >>= apply edit)
+        (Right (toList (transaction ^. bodyTxL . outputsTxBodyL))) edits
+    pure (transaction & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList outputs)
+  where
+    apply (Payments.Readdress i) outputs = case elsewhere of
+        Just address -> Right (adjust i (addrTxOutL .~ address) outputs)
+        Nothing -> Left "a tamper readdresses an output with no other address"
+    apply (Payments.Relovelace i lovelace) outputs = Right (adjust i (coinTxOutL .~ Coin lovelace) outputs)
+    adjust i f outputs = [if j == i then f out else out | (j, out) <- zip [0 :: Int ..] outputs]
 
 storyModelRequest :: LiveIdentities -> CageConfig -> Live.EdgeRequest Addr -> Integer
     -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra) -> IO Value
@@ -686,8 +701,8 @@ observeCustody ids cfg out = do
 
 -- | The fold's outputs, each beside the reading settlement makes of it: its
 -- address, payment key, lovelace, whether it carries a token this fold
--- delivers (a positive active or terminal mint), its datum form and the
--- approvals it holds.
+-- delivers (a positive active or terminal mint), its datum form, the
+-- approvals it holds and whether it is an absent custody at the cage.
 foldOutputsOf :: CageConfig -> ConwayTx -> [(TxOut ConwayEra, Payments.FoldOutput)]
 foldOutputsOf cfg transaction =
     [ (out, Payments.FoldOutput
@@ -703,7 +718,11 @@ foldOutputsOf cfg transaction =
             [ hexT name
             | (name, quantity) <- Map.toList
                 (Map.findWithDefault Map.empty (SBS.fromShort (cfgApplicationPolicy cfg)) (outAssets out))
-            , quantity /= 0 ] })
+            , quantity /= 0 ]
+        , Payments.outputCustody = out ^. addrTxOutL == cageAddrFromCfg cfg (network cfg)
+            && case extractCageDatum out of
+                Just (AbsentCustody _) -> True
+                _ -> False })
     | out <- toList (transaction ^. bodyTxL . outputsTxBodyL) ]
   where
     MultiAsset minted = transaction ^. bodyTxL . mintTxBodyL
@@ -728,10 +747,6 @@ observePaid :: LiveIdentities -> [Addr] -> CageConfig -> LiveStep -> ConwayTx
 observePaid ids wallets cfg step transaction requestOut = do
     let edge = Live.requestEdge (lsRequest step)
         outputs = foldOutputsOf cfg transaction
-        locked = case [c | (out, _) <- outputs, Just (AbsentCustody _) <- [extractCageDatum out]
-                         , let Coin c = out ^. coinTxOutL] of
-            [c] -> Just c
-            _ -> Nothing
     refund <- case (edge, lsCustody step) of
         (e, Just (source, custodyOut)) | e `elem` [Live.UpdateActive, Live.DeleteAbsent] -> do
             require "custody refund did not spend its source"
@@ -742,7 +757,7 @@ observePaid ids wallets cfg step transaction requestOut = do
         _ -> pure Nothing
     owner <- requestOwnerKey requestOut
     payments <- either failWith pure $ Payments.foldPayments
-        (Payments.FoldFacts edge owner locked refund) (map snd outputs)
+        (Payments.FoldFacts edge owner refund) (map snd outputs)
     mapM (\payment -> (,) payment <$> translate payment) payments
   where
     translate (Payments.Payment payee value) = do
@@ -754,6 +769,32 @@ observePaid ids wallets cfg step transaction requestOut = do
                 observeIdentity (liveWallets ids) (WalletIdentity address)
             Payments.Owner key -> ownerIdentity ids wallets key
         pure (object ["address" .= address, "value" .= value])
+
+
+{- | The outputs of a submitted fold's transaction that pay what it owes for its
+request, in the model's vocabulary, for the driver to judge: each output
+'Payments.owedOutputs' reads as paying it, with the role the model gives that
+payee, the identity of its address and its lovelace as the ledger holds it.
+A carrier's address is looked up among the identities allocated while acting,
+the cage is the model's cage address, an owner's key names the one registry
+wallet it pays to. Nothing else of an output is read.
+-}
+settlementOutputs :: LiveIdentities -> [Addr] -> CageConfig -> LiveStep -> ConwayTx -> IO [Value]
+settlementOutputs ids wallets cfg step transaction = do
+    requestOut <- maybe (failWith "judged step has no booked request") pure (lsRequestOut step)
+    owner <- requestOwnerKey requestOut
+    let facts = Payments.FoldFacts (Live.requestEdge (lsRequest step)) owner Nothing
+        outputs = map snd (foldOutputsOf cfg transaction)
+    mapM (settlementOutput (Payments.owedPayee facts) owner . (outputs !!))
+        (Payments.owedOutputs facts outputs)
+  where
+    settlementOutput payee owner out = do
+        (role, address) <- case payee of
+            Payments.OwedCarrier -> (,) ("destination" :: T.Text)
+                <$> observeIdentity (liveWallets ids) (WalletIdentity (Payments.outputAddress out))
+            Payments.OwedCustody -> pure ("cage", 0)
+            Payments.OwedOwner -> (,) "owner" <$> ownerIdentity ids wallets owner
+        pure (object ["role" .= role, "address" .= address, "lovelace" .= Payments.outputLovelace out])
 
 
 -- | The payment key the booked request's datum names as its owner.
@@ -932,9 +973,11 @@ observedStepTx _env ids wallets step transaction config mint destination commitm
 
 
 -- | Ask the same driver for every edge. Setup is only the earlier accepted,
--- compared requests of this registry; a tamper never joins it.
-askModel :: Env -> LiveState -> LiveStep -> IO Value
-askModel _env state step = do
+-- compared requests of this registry; a tamper never joins it. Given the
+-- submitted transaction's outputs, the driver also judges whether they pay what
+-- the exit owes.
+askModel :: Env -> LiveState -> LiveStep -> Maybe [Value] -> IO Value
+askModel _env state step outputs = do
     tid <- cageTid (lsCage step)
     let registry = show tid
         ids = liveIds state
@@ -946,13 +989,14 @@ askModel _env state step = do
             [ "config" .= abstractConfig start application active absent terminal (Compare.rootOf [])
             , "trie" .= ([] :: [Value]), "custody" .= ([] :: [Value])
             , "held" .= ([] :: [Value]) ]
-        question = object
+        question = object $
             [ "id" .= String "live-edge"
             , "theorem" .= String "Singular.Driver.runSurface"
-            , "statementSha256" .= String "13998092095361678048"
+            , "statementSha256" .= String "18106377236017516190"
             , "start" .= startValue, "setup" .= setup
             , "request" .= lsModelRequest step
             , "lovelace" .= lsRequestLovelace step ]
+            <> ["outputs" .= observed | Just observed <- [outputs]]
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     let asked = case control of
             Just "wrong-fee" -> bumpEvaluationField "maxFee" question
@@ -964,9 +1008,15 @@ askModel _env state step = do
 
 compareStep :: Env -> LiveState -> LiveStep -> Value -> IO Value
 compareStep env state step observation = do
-    row <- askModel env state step
-    modelOutcome <- storyField "outcome" row
-    modelReason <- storyField "reason" row
+    row <- askModel env state step Nothing
+    lawOutcome <- storyField "outcome" row
+    -- The law accepting is not the model accepting the transaction: the
+    -- driver then judges the submitted outputs against what the exit owes.
+    judged <- case (lawOutcome, lsOutcome step) of
+        (String "accepted", StepAccepted transaction _) -> Just <$> judge transaction
+        (String "accepted", StepRefused transaction _ _ _) -> Just <$> judge transaction
+        _ -> pure Nothing
+    (modelOutcome, modelReason) <- either failWith pure (LeanOracle.modelVerdict row judged)
     let model = object ["outcome" .= modelOutcome, "reason" .= modelReason]
         (chainOutcome, chain) = case lsOutcome step of
             StepAccepted transaction _ ->
@@ -992,13 +1042,16 @@ compareStep env state step observation = do
           , not (null (srBudgetExceeded rejection)) -> pure ("disagrees", [], [], Null, [])
         (_, String "unsupported", _) -> pure ("unsupported" :: T.Text, [], [], Null, [])
         (_, _, String "unsupported") -> pure ("unsupported", [], [], Null, [])
-        (Just Live.RedirectDelivery, String "accepted", String "refused") ->
+        -- Both refuse. A tampered payment is refused this way, by the ledger
+        -- and by the model's judgement of the submitted outputs; the ledger's
+        -- reason is not observed (validators compiled without traces), and
+        -- the model's is recorded with the step.
+        (_, String "refused", String "refused") ->
             pure ("agrees", [], [], Null, [])
         -- The ledger accepts the extra signer. The same comparison every
         -- untampered step gets must then report exactly the difference the
-        -- tamper made: that detection is the tamper's agreement, as the
-        -- ledger's refusal is the redirected delivery's. Reporting none, or
-        -- another, is a disagreement.
+        -- tamper made: that detection is the tamper's agreement. Reporting
+        -- none, or another, is a disagreement.
         (Just Live.ExtraSigner, String "accepted", String "accepted") -> do
             expected <- storyField "observations" row
             let differing = case Compare.compareRegistration declared expected presented of
@@ -1017,9 +1070,7 @@ compareStep env state step observation = do
             pure ("agrees", Compare.agreementCompared agreement,
                 Compare.agreementUnobserved agreement,
                 object ["refused" .= refused, "byObservation" .= byObservation, "exempt" .= exempt], [])
-        (Nothing, expectedClass, actualClass)
-            | expectedClass == actualClass -> pure ("agrees", [], [], Null, [])
-            | otherwise -> pure ("disagrees", [], [], Null, [])
+        _ -> pure ("disagrees", [], [], Null, [])
     tid <- cageTid (lsCage step)
     let registry = show tid
     registryId <- maybe (failWith "step registry was not allocated") pure
@@ -1064,6 +1115,14 @@ compareStep env state step observation = do
             <> " at " <> Live.requestKey (lsRequest step)
             <> ": model=" <> show modelOutcome <> " chain=" <> show chainOutcome)
     pure record
+  where
+    judge transaction = do
+        let ids = liveIds state
+        tid <- cageTid (lsCage step)
+        wallets <- maybe (failWith "registry has no allocated wallets") pure
+            . Map.lookup (show tid) =<< readIORef (liveRegistryWallets state)
+        outputs <- settlementOutputs ids wallets (rcCfg (lsCage step)) step transaction
+        askModel env state step (Just outputs)
 
 
 -- | The differences a tamper the ledger accepts must make, and no other: the
@@ -1071,7 +1130,8 @@ compareStep env state step observation = do
 tamperDifferences :: Live.Tamper -> [(T.Text, [Perturbation.Step])]
 tamperDifferences alteration = case alteration of
     Live.ExtraSigner -> [("tx", [Perturbation.Field "signers"])]
-    Live.RedirectDelivery -> []
+    Live.OtherAddress -> []
+    Live.ShortByOne -> []
 
 
 -- | Every path at which a reported difference's two sides differ, down to a

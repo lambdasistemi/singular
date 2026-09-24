@@ -2605,7 +2605,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
+  "corpusSourceSha256": "a7ade430f730fdfa6f544b17c4dfb7294f8bfd31aa5e1b9206f3620ffb9f7b5d",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2734,16 +2734,16 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
-  "payloadSha256": "f48f6c540c398d1fbac357d7cdddb25de46c73e5e3b7827f82f7841135805f10",
+  "modelSha256": "be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052",
+  "payloadSha256": "f6b88111f4645fc6fec9708c9c69b62fa080863d8b6c4d462442899c402902a4",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "ef1a7b271e7b12adc21610dfa7c3fa56aba0a3c1beed289f76436daa891b75e7",
+    "lean/Main.lean": "a7ade430f730fdfa6f544b17c4dfb7294f8bfd31aa5e1b9206f3620ffb9f7b5d",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "e70182ed34d41961d8813d4d88a75caae5a8a1cb2fe3bc5156371f3655952d85",
+    "lean/Singular/Driver.lean": "8ef5f5af96afad71effc7e444da96b846c671c9f0e3f8dc7a76241df781d6a1b",
     "lean/Singular/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
-    "lean/Singular/Model.lean": "2ec6f813d3a09cfa25d10437caaadf6c13cdace0b59d19694e574d0a09207a27",
+    "lean/Singular/Model.lean": "be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052",
     "lean/Singular/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5"
   },
   "statementsSha256": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5",

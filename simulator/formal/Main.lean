@@ -708,9 +708,11 @@ def settleInsertAbsentOutputs : List TxOutput :=
 #guard settleInsertAbsentOutputs.any (·.role == .cage)
 #guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
   settleInsertAbsentOutputs == none
+-- A custody output present but short is a deposit going back, as the chain names
+-- it; no custody output at the cage is `absent-custody`.
 #guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
   (settleInsertAbsentOutputs.map fun o =>
-    if o.role == .cage then { o with lovelace := o.lovelace - 1 } else o) == some "absent-custody"
+    if o.role == .cage then { o with lovelace := o.lovelace - 1 } else o) == some "deposit-returned"
 #guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
   (settleInsertAbsentOutputs.filter (·.role != .cage)) == some "absent-custody"
 #guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
@@ -896,9 +898,31 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
   match txOfExit paidState x (exitStepRequest e k) 3 with | .ok _ => true | .error _ => false
 
 -- The driver's operations are the nine exits: the seven edges by their own
--- names, then reject and retract; the surface's protocol moved once for it.
+-- names, then reject and retract. Its one judgement is `settle`; the surface's
+-- protocol moved for each.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 2
+#guard surface.protocolVersion == 3
+#guard surface.judgements == ["settle"]
+
+/-- The scenario a caller asks the driver to judge a settle case's outputs for:
+the case's own exit and request, from the empty registry. -/
+def judgedScenario (c : SettleCase) : Scenario :=
+  { id := "judged", theoremName := "", statementSha256 := "", kind := "witness"
+  , mutates := none, requiresReachableState := false, start := s0, setup := []
+  , exit := c.exit, request := c.request, lovelace := 1 }
+
+/-- The driver's judgement of a settle case's three controls: its payment output
+as built, one lovelace short, and at another address. -/
+def SettleCase.judged (c : SettleCase) : List (Option String) :=
+  let judge := judgeSurface (judgedScenario c)
+  [ judge (c.context ++ [c.carrier])
+  , judge (c.context ++ [{ c.carrier with lovelace := c.carrier.lovelace - 1 }])
+  , judge (c.context ++ [{ c.carrier with address := c.carrier.address.map (· + 1) }]) ]
+
+-- The driver judges outputs a caller observed against what the scenario's own exit
+-- owes: a delivering and a non-delivering fold, untampered, short and misdirected.
+#guard settleInsertActive.judged == [none, some "deposit-returned", some "destination"]
+#guard settleDeleteActive.judged == [none, some "deposit-returned", some "deposit-returned"]
 
 def main : IO Unit := do
   let stdout ← IO.getStdout

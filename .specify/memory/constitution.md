@@ -1,5 +1,25 @@
 <!--
 Sync impact report
+Version: 1.7.0 -> 1.8.0 (the driver judges an observed transaction's payments)
+Amended: 2026-09-24
+Authority: issue #258 (parent #209), Amendments 12 to 14, T5.
+Changed obligations: the driver declares one judgement, `settle`: given the
+outputs of a transaction a caller observed, translated by the identity rules,
+it answers `Singular.settle` over what the scenario's exit owes. The model's
+verdict on a submitted fold is the law's, then that judgement: the law accepting
+and the outputs unpaid is a refusal for `settle`'s reason. A custody output
+present but short is `deposit-returned`, as the chain names it.
+Consumers: the driver corpus surface, `Conformance.Run.Live` (the digest pin,
+the settlement translation, the verdict), `conformance/lean/DriverTransport.lean`,
+`Conformance.Lean.Oracle`, `tools/check_model.py` and the simulator mirror.
+Checked: declared operations, observations and unobservable names unchanged; the
+surface digest and protocol version move with the judgement.
+Named limit: the chain's refusal reason is not observed; the deployed validators
+are compiled without traces (#287).
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.6.0 -> 1.7.0 (every exit's payments in paid and tx)
 Amended: 2026-09-24
 Authority: issue #258 (parent #209), Amendments 8 and 10, T4b.
@@ -276,7 +296,9 @@ Each operation is one of the nine exits a request can take, executed through
 seven edges, a reject, or a retract. A fold is `Singular.step` itself, and is
 refused `exit-edge-mismatch` when the request names another edge. An operation is
 refused when `Singular.refusal` or `Singular.exitStep` returns a reason; the
-driver reports that reason verbatim and never manufactures one.
+driver reports that reason verbatim and never manufactures one. The driver also
+declares a judgement, `settle`, answered about a transaction a caller observed
+rather than one the model built.
 
 | declaration | kind | meaning |
 |---|---|---|
@@ -295,6 +317,7 @@ driver reports that reason verbatim and never manufactures one.
 | `leaf` | realization | `Singular.trieGet` at the request's key in the produced state, spelled by `Singular.leafJson` as `null`, `absent`, `active` or `terminal`. |
 | `mint` | realization | the executed result's own `mint`: the R2 keyed delta of the edge, each entry named by the registry's pinned policy for its kind and the asset name the model derives from the key. |
 | `paid` | realization | the executed exit's own `paid` list of (address, value) payments, one definition for every exit: what `Singular.obligations` says the exit owes, each payment recorded by `Singular.paymentPaid` at the address `Singular.settle` reads for its recipient (the cage's address for custody, the named destination, the owner's key), then the custody refunds its step pays (the two fold edges that consume an absent token). A fold of `insertAbsent` pays the deposit to custody; of `insertActive`, `updateActive` and `witnessTerminal` to the named destination; of `updateTerminal`, `deleteAbsent` and `deleteActive` back to the owner; a reject pays the owner the deposit, a retract the deposit and the tip. Each value is a floor: a consumer requires the observed value to be at least the model's and compares every other field for equality. On chain a delivering fold's payment is the lovelace of the one output carrying the delivered token; a fold delivering nothing credits the owner the summed lovelace of every output at the owner's payment key carrying no delivered token; custody is the lovelace of the custody output the fold locked; a custody refund credits its refund address the summed lovelace of every output at that address carrying no delivered token. Every amount is read as the chain paid it, never selected by the amount the model expects. |
+| `settle` | realization | the driver's one judgement, `Singular.Driver.judgeSurface`: `Singular.settle` over what the scenario's exit owes (`Singular.obligations`), applied to the outputs of a transaction a caller observed — `none` when every recipient is paid its summed floor, else the chain's reason for the first unpaid recipient: `absent-custody` or `destination` when no output reaches it, `deposit-returned` when outputs reach it short and for an owner unpaid. On chain, the outputs judged are those through which the ledger settles what the fold owes, each translated to its role, the identity of its address and its lovelace as the ledger holds it: the one carrier of a delivered token as a destination output at its address, the absent custody at the cage as the cage output, each output crediting the owner's key as an owner output; nothing else of an output is read. The model's verdict on a submitted fold is the law's, then this judgement: the law accepting and the outputs unpaid is a refusal for `settle`'s reason. The ledger's own refusal reason is not observed, since the deployed validators are compiled without traces (#287). |
 | `root` | realization | `Singular.rootOf` over the produced trie — FNV-1a over the sorted (key, leaf byte) list. This is the model's own commitment function and is stated as abstract; see the unobservable rows below. |
 | `state` | realization | the complete `Singular.RegistryState` after the step, serialized by the model's own instance so the row is a replayable input rather than a picture of an output. |
 | `tx` | realization | the transaction `Singular.txOfExit` builds from the same executed exit: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. A fold's, which `Singular.txOf` names, spends the state and the request and the tokens its mint destroys, moves the state, delivers to the named destination — whose output carries the deposit when the fold delivers a token — locks custody for an absent insertion, and, for a fold delivering nothing, pays the owner one output per owner payment carrying the payment's floor, with no datum (`DatumForm.none`) and naming the request's approval asset name as its commitment, because the chain returns the approval in it. A reject's spends the registry's state and the request and returns the state unchanged; a retract's spends only the request; each pays one owner output per owner payment, at the owner's address and carrying the payment's floor, mints nothing and requires no signer. Every exit's refunds are its `paid`, and `Singular.Statements.built_transaction_settles` proves every built transaction settles what its exit owes. On chain, each observed owner output's address, lovelace (summed over the outputs crediting the owner's key), datum form and returned approval are read from those ledger outputs — the approval named through the run's binding of each booked approval to its model name, so another request's approval differs and an unbooked one is refused — and the destination output's lovelace from the carrier. Limit: the datum form reported for the state, request, destination, cage and witness outputs is written as `inline`, not read from the chain. The driver builds no transaction of its own. `signers` carries an obligation: `Singular.Statements.fold_requires_no_signer` proves it empty for every fold, and a consumer compares it with the submitted transaction's required signers, each translated to the wallet identity whose payment key it is. |
@@ -343,4 +366,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.7.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-24
+**Version**: 1.8.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-24

@@ -186,6 +186,7 @@ test-suite conformance-tests
     Conformance.Support.Fixture
     Conformance.Support.RegistrationComparison
     Conformance.Support.Payments
+    Conformance.Support.Oracle
     Conformance.Support.FixtureChild
     Conformance.Support.Binding
     Conformance.Support.Receipt

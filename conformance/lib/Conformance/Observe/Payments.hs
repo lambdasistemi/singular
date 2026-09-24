@@ -23,9 +23,14 @@ module Conformance.Observe.Payments (
     OwnerReading (..),
     readOwner,
     ownerOutputObservation,
+    OwedPayee (..),
+    owedPayee,
+    owedOutputs,
+    OutputEdit (..),
+    tamperEdits,
 ) where
 
-import Conformance.Story.Live (Edge (..))
+import Conformance.Story.Live (Edge (..), Tamper (..))
 import Data.Aeson (Value (..), object, (.=))
 import Data.ByteString (ByteString)
 import Data.List (nub)
@@ -44,6 +49,8 @@ data FoldOutput = FoldOutput
     -- ^ the datum form the output presents: @none@, @hashed@ or @inline@
     , outputApprovals :: [Text]
     -- ^ the hex names of the application-policy assets it holds
+    , outputCustody :: Bool
+    -- ^ holds an absent custody datum at the cage
     }
     deriving stock (Eq, Show)
 
@@ -52,8 +59,6 @@ data FoldFacts = FoldFacts
     { factsEdge :: Edge
     , factsOwner :: ByteString
     -- ^ the payment key hash the request names as its owner
-    , factsCustody :: Maybe Integer
-    -- ^ the lovelace of the custody output this fold locked, if it locked one
     , factsRefund :: Maybe ByteString
     -- ^ the refund address of the custody this fold spent
     }
@@ -90,25 +95,15 @@ observed — is refused rather than reported.
 foldPayments :: FoldFacts -> [FoldOutput] -> Either String [Payment]
 foldPayments facts outputs = (<>) <$> owed <*> refunds
   where
-    owed = case factsEdge facts of
-        InsertAbsent -> case factsCustody facts of
-            Just lovelace -> Right [Payment Custody lovelace]
-            Nothing -> Left "insertAbsent locked no custody output"
-        InsertActive -> delivered
-        UpdateActive -> delivered
-        WitnessTerminal -> delivered
-        UpdateTerminal -> returned
-        DeleteAbsent -> returned
-        DeleteActive -> returned
-    delivered = case filter outputCarrier outputs of
-        [carrier] -> Right [Payment (Destination (outputAddress carrier)) (outputLovelace carrier)]
-        _ -> Left "the delivered token is carried by no single output"
-    returned =
-        Right
-            [ Payment
-                (Owner (factsOwner facts))
-                (sum [outputLovelace out | out <- outputs, creditsOwner (factsOwner facts) out])
-            ]
+    owing = map (outputs !!) (owedOutputs facts outputs)
+    owed = case owedPayee facts of
+        OwedCustody -> case owing of
+            [custody] -> Right [Payment Custody (outputLovelace custody)]
+            _ -> Left "insertAbsent locked no single custody output"
+        OwedCarrier -> case owing of
+            [carrier] -> Right [Payment (Destination (outputAddress carrier)) (outputLovelace carrier)]
+            _ -> Left "the delivered token is carried by no single output"
+        OwedOwner -> Right [Payment (Owner (factsOwner facts)) (sum (map outputLovelace owing))]
     refunds = case (factsEdge facts, factsRefund facts) of
         (UpdateActive, Just refund) -> custodyRefund refund
         (DeleteAbsent, Just refund) -> custodyRefund refund
@@ -127,6 +122,67 @@ payment key and carries no token the fold delivers.
 -}
 creditsOwner :: ByteString -> FoldOutput -> Bool
 creditsOwner owner out = outputKey out == owner && not (outputCarrier out)
+
+-- | Whom a fold owes its request's payment, and so which outputs pay it.
+data OwedPayee = OwedCustody | OwedCarrier | OwedOwner
+
+-- | Whom this fold owes its request's payment: the model's rule by edge.
+owedPayee :: FoldFacts -> OwedPayee
+owedPayee facts = case factsEdge facts of
+    InsertAbsent -> OwedCustody
+    InsertActive -> OwedCarrier
+    UpdateActive -> OwedCarrier
+    WitnessTerminal -> OwedCarrier
+    UpdateTerminal -> OwedOwner
+    DeleteAbsent -> OwedOwner
+    DeleteActive -> OwedOwner
+
+{- | The positions of the outputs through which the chain settles what a fold
+owes for its request: the custody output an absent insertion locks, the
+outputs carrying a token the fold delivers, or, for a fold delivering nothing,
+every output crediting the owner's key.
+-}
+owedOutputs :: FoldFacts -> [FoldOutput] -> [Int]
+owedOutputs facts outputs = [i | (i, out) <- zip [0 ..] outputs, pays out]
+  where
+    pays = case owedPayee facts of
+        OwedCustody -> outputCustody
+        OwedCarrier -> outputCarrier
+        OwedOwner -> creditsOwner (factsOwner facts)
+
+-- | A change to one output of the fold's transaction, by position.
+data OutputEdit
+    = -- | send the output to another address, value unchanged
+      Readdress Int
+    | -- | give the output this lovelace
+      Relovelace Int Integer
+    deriving stock (Eq, Show)
+
+{- | The edits a tamper makes to the payment a fold owes, read off the fold's
+own outputs. 'OtherAddress' sends every output paying it elsewhere.
+'ShortByOne' leaves the payee credited one lovelace less than the first output
+paying it holds: that output loses one lovelace, every other output paying it
+goes elsewhere, and the lovelace taken goes to the transaction's last output,
+its change. 'ExtraSigner' changes no output.
+-}
+tamperEdits :: Tamper -> FoldFacts -> [FoldOutput] -> Either String [OutputEdit]
+tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outputs) of
+    (ExtraSigner, _) -> Right []
+    (_, []) -> Left "the fold's transaction makes no output paying what it owes"
+    (OtherAddress, owed) -> Right (map Readdress owed)
+    (ShortByOne, first : rest)
+        | change == first -> Left "the output paying what the fold owes is its last; no change can take the lovelace"
+        | outputCarrier changed || outputCustody changed || not (null (outputApprovals changed)) ->
+            Left "the fold's last output is not ada-only change"
+        | otherwise ->
+            Right
+                ( Relovelace first (outputLovelace (outputs !! first) - 1)
+                    : map Readdress rest
+                    <> [Relovelace change (outputLovelace changed + 1)]
+                )
+  where
+    change = length outputs - 1
+    changed = outputs !! change
 
 -- | The owner output as the ledger outputs crediting the owner present it.
 data OwnerReading = OwnerReading
