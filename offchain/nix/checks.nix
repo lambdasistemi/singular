@@ -70,12 +70,14 @@ in
       fourmolu --ghc-opt=-XImportQualifiedPost -m check $fmt_files
       # HLint runs on the discovered extent minus the directories carrying
       # baseline hint debt (ruling A-002 D1-a). The debt is retained, not
-      # reclassified green and not blanket-ignored; counts measured at
-      # cc6ea00: journey 104, journey/retirement 24, journey/retire-verify
-      # 19, journey/lmlc 14, journey/recovery 13, journey/verifier 9,
+      # reclassified green and not blanket-ignored. Measured per directory
+      # at cc6ea00 for the formatted sources and at intake b382604 for the
+      # two restored verifier sources: journey 104, journey/retirement 24,
+      # journey/retire-verify 19 (intake bytes), journey/lmlc 14,
+      # journey/recovery 13, journey/verifier 11 (intake bytes),
       # journey/register 9, journey/repair 7, journey/li-refusals 5,
       # journey/li01 3, naming/test 2, naming/drift 2, update-terminal 1
-      # — 212 hints, all semantic (eta-reduce, use-void, fewer-imports
+      # — 214 hints, all semantic (eta-reduce, use-void, fewer-imports
       # class), unfixable inside this ticket's no-semantic-rewrite fence.
       # Every exclusion here and the retained debt are owned by the final
       # integration child #278; a newly added directory joins HLint
