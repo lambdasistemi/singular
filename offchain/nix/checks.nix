@@ -62,7 +62,7 @@ in
       # not about formatter capability; both components stay in the Cabal
       # inventory and the component-build closure.
       fourmolu_excluded="journey/verifier journey/retire-verify"
-      fmt_files=$(printf '%s\n' $files | grep -vE "^($(printf '%s' $fourmolu_excluded | tr ' ' '|'))/")
+      fmt_files=$(printf '%s\n' $files | grep -vE "^($(echo $fourmolu_excluded | tr ' ' '|'))/")
       [ -n "$fmt_files" ] || { echo "lint: formatter extent is empty" >&2; exit 1; }
       # The GHC option only lets fourmolu parse the postpositive-qualified
       # imports of the two direct-GHC naming sources; sources without that
