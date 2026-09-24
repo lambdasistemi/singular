@@ -33,18 +33,18 @@
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423",
+    "formal/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2",
+    "formal/theorem-debt.json": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "13fa18f0a47f4fb1e0f19ee77df1b0b92841a1ad733c722332c407bec7219e16"
+    "corpus.json": "26e9a3c131e9d8b4eb48f319191b4bc65e9846aab5ebdace6c83797ea7685c0a"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 29,
+  "theorems": 33,
   "namingTheorems": 7
 }

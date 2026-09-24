@@ -4264,7 +4264,7 @@ const STORIES=[
     "terminalPolicy": 10
   },
   "modelSha256": "6bb0aacb71dc8cb4d4e91184c7a87153b5b8c63306ea6f0fe963d436485654bb",
-  "payloadSha256": "18fe9aa87a0cea13bc7a962b991e18018102ea86ac3feddf8d659f364275d1ef",
+  "payloadSha256": "0965535d802088e380b177eb6927fa96efe0b3f34b0b70d4372e33a2dac05e46",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
     "lean/Main.lean": "27ea099185f6a5ca49779b18a97c19ae0006c04d669eae09f5006f2fc7d656cd",
@@ -4273,10 +4273,10 @@ const STORIES=[
     "lean/Singular/Driver.lean": "e459877393ae955df49730ed8a08ed7b0866b01e7bd5f2a2ec34c51ebba75c3e",
     "lean/Singular/Lemmas.lean": "d39db0c50332090555db0d366ae43c83addb5ea08eb23764107795ec44af78aa",
     "lean/Singular/Model.lean": "6bb0aacb71dc8cb4d4e91184c7a87153b5b8c63306ea6f0fe963d436485654bb",
-    "lean/Singular/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423"
+    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
   },
-  "statementsSha256": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423",
-  "theoremManifestSha256": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2",
+  "statementsSha256": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
+  "theoremManifestSha256": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4866,6 +4866,30 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece"
+  },
+  {
+    "name": "Singular.Statements.exit_settles_on_lovelace_received",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "730ae3cbd6d8305333bcb7b796da58891734c34228cb02b73618026df1626e9a"
+  },
+  {
+    "name": "Singular.Statements.no_exit_strands_the_deposit",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5"
+  },
+  {
+    "name": "Singular.Statements.only_retract_owes_the_tip",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
+  },
+  {
+    "name": "Singular.Statements.obligations_read_only_the_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044"
   }
 ]
 ;const IDENTITY={
@@ -4903,19 +4927,19 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
     "formal/Singular.lean": "dcf196e368ba8f922fbcf2f0bdd0996944624667cccfaf665c36bdec25ae74e5",
-    "formal/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423",
+    "formal/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/naming-theorem-debt.json": "968246a3d0f585c5ecaebaa800564dbaa9f51ffd4fb3bad0a08af9cd4324d658",
-    "formal/theorem-debt.json": "8d1556764159a8b0a65366f8897dc00f3385256a58f61fbd4fecab1287e009b2",
+    "formal/theorem-debt.json": "c7f59df5a5c16e12fbb5436bcb784443483f91ce5aa08296c55f9099f2439429",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "13fa18f0a47f4fb1e0f19ee77df1b0b92841a1ad733c722332c407bec7219e16"
+    "corpus.json": "26e9a3c131e9d8b4eb48f319191b4bc65e9846aab5ebdace6c83797ea7685c0a"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 38,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 29,
+  "theorems": 33,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -4959,7 +4983,7 @@ const STORIES=[
   ],
   "modelSha256": "6bb0aacb71dc8cb4d4e91184c7a87153b5b8c63306ea6f0fe963d436485654bb",
   "namingStatementsSha256": "c96207b951c8566499aa564429f33962535ad0862d18dc1b7484a0a73be0504d",
-  "payloadSha256": "498c56d2f92731f8c71181d644f2ecd1265a0f214aa05f06a326c4b36fcfc67b",
+  "payloadSha256": "e58bfde6fe4016365789616ffa32bf7946777ce85a2fe5cf010faaf2b9bb6413",
   "queues": [
     {
       "actual": true,
@@ -5068,7 +5092,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423"
+    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
   },
   "spellings": [
     {
@@ -5186,7 +5210,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "4df67ab2a8e6684dbb05524aab68e8cb8dd0391298a62fbb16c247a7987a88cd",
   "modelSha256": "ac2c5ef33d34084c32c37b701e8ec9c4ab5b088cab75190e675b1f1686fb5f56",
-  "payloadSha256": "c6e146a158f1b04ab277eaf9598eaf24ee3ec36dcb6b9b7317639cdcdc7087f5",
+  "payloadSha256": "9789c6194379d2338b7907221ffafedb4bbfa488ffa370d1de5bc67c13f88807",
   "recovery": [
     {
       "detail": true,
@@ -5276,7 +5300,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "4cb7c47c993cce20b9cadc4495a8320149bd74f5cab13af1ab6670d7c8f74c98",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "ec3d212fb96f98d5d7b45c531061f11cb0bc387f20f63b68b1e765e73885442d",
-    "lean/Singular/Statements.lean": "668ce8be345928daf2043e0ebbd4ba9a8c3363fe769da53750479724370bd423"
+    "lean/Singular/Statements.lean": "275d3921990736a406a7ac24ad3a02bf35dc2da24f56821eabc5f1acf8017abe"
   },
   "steps": [
     {
