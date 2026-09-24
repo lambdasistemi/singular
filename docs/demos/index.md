@@ -8,7 +8,7 @@ For Cardano KERI identity actions, the planned source is its local follower inde
 
 | Target | Story and play | Current boundary |
 | --- | --- | --- |
-| 8 October 2026 | [Registry handoff](../first-demo.md) | [Draft PR #250](https://github.com/lambdasistemi/singular/pull/250) and its [preview](https://preview.dev.plutimus.com/lambdasistemi/singular/pr-250/docs/first-demo/) contain the preprod play plan; no connected Singular cast yet. |
+| 8 October 2026 | [Registry handoff](../first-demo.md) | The merged registry handoff page contains the preprod play plan; no connected Singular cast yet. |
 | 23 October 2026 | [Maintain and recover a name](d02-naming.md) | Preprod `kli` + `ckeri` + Singular play plan; connected naming release and mapping remain open. |
 | 30 October 2026 | [Name Your Address preprod stretch](d03-escrow.md) | Not yet playable as the connected preprod journey. |
 
