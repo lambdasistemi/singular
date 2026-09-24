@@ -93,7 +93,7 @@ in
       hlint_excluded="journey journey/li01 journey/lmlc journey/recovery journey/retirement journey/register journey/li-refusals journey/repair journey/retire-verify journey/verifier naming/test naming/drift update-terminal"
       hlint_dirs=$(printf '%s\n' $dirs | grep -vxF -f <(printf '%s\n' $hlint_excluded))
       [ -n "$hlint_dirs" ] || { echo "lint: HLint covered set is empty" >&2; exit 1; }
-      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu over $(printf '%s\n' $fmt_files | wc -l) files ($[$(printf '%s\n' $files | wc -l) - $(printf '%s\n' $fmt_files | wc -l)] files removed by A-003 exclusion); hlint over $(printf '%s\n' $hlint_dirs | wc -l) dirs ($(printf '%s\n' $hlint_excluded | wc -w) excluded, debt to #278)" >&2
+      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu over $(printf '%s\n' $fmt_files | wc -l) files ($(( $(printf '%s\n' $files | wc -l) - $(printf '%s\n' $fmt_files | wc -l) )) files removed by A-003 exclusion); hlint over $(printf '%s\n' $hlint_dirs | wc -l) dirs ($(printf '%s\n' $hlint_excluded | wc -w) excluded, debt to #278)" >&2
       hlint $hlint_dirs
     '';
   };
