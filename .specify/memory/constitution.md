@@ -1,5 +1,20 @@
 <!--
 Sync impact report
+Version: 1.4.0 -> 1.5.0 (Project 4 issue tracking)
+Amended: 2026-09-23
+Authority: user instruction 2026-09-23 that every Singular issue belongs in
+Lambda Sistemi Project 4, the Cardano KERI demo schedule.
+Added section: Issue tracking. Every Singular issue, including closed issues,
+must appear in the project; creation and reconciliation must be automatic.
+Modified principles: none; the behavioral and model obligations are unchanged.
+Synchronized: AGENTS.md and .github/PROJECT4_INTAKE.md.
+Templates: no Spec Kit templates exist; the PR template already requires
+constitution review and needs no change.
+Follow-up: enable Project 4's built-in auto-add rule for this repository with
+filter `is:issue`; this project setting has no public write API.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.3.0 -> 1.4.0 (required signers become an obligation)
 Amended: 2026-09-23
 Authority: user ruling 2026-09-23 narrowing issue #228 to the fold's required
@@ -266,6 +281,24 @@ A reviewer MUST withhold acceptance for an unresolved affected story. When a
 change exposes an existing model conflict, the conflict MUST be recorded and
 routed to the user rather than silently incorporated into the new expectations.
 
+## Issue tracking
+
+Every issue in `lambdasistemi/singular`, whether open or closed, MUST appear in
+[Lambda Sistemi Project 4](https://github.com/orgs/lambdasistemi/projects/4),
+the shared Cardano KERI and Singular project board. Its demo timeline is one
+view of that board. This includes epics, child issues, defects and work filed
+outside the current milestone. Project membership, including an
+automatically assigned default status, MUST NOT be read as a committed review
+date, delivery estimate, owner assignment or acceptance verdict.
+
+Project 4's built-in auto-add workflow MUST select `lambdasistemi/singular`
+with filter `is:issue`, without a state or label restriction. Issue creators
+MUST verify project membership after filing; if automatic intake has not yet
+run, they MUST add the issue or record the intake failure for repair. The
+milestone or project owner MUST reconcile existing and newly created issues
+against the project and add any missing items. A project view hiding a closed
+issue is not evidence that the issue is absent from the project.
+
 ## Governance
 
 This constitution records the user's 2026-09-11 instruction that implementation
@@ -279,10 +312,14 @@ suite is the product bible, written for stakeholders rather than for this
 project, and that this value is constitutional rather than the scope of the
 ticket that first applied it.
 
+The issue-tracking section records the user's 2026-09-23 instruction that all
+Singular issues belong in Lambda Sistemi Project 4 so the Cardano KERI demo
+schedule has a complete source-ticket inventory.
+
 Amendments MUST record their authority, rationale, affected principles and
 dependent guidance. Use a major version for incompatible principle changes, a
 minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.4.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-23
+**Version**: 1.5.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-23

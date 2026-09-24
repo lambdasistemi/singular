@@ -19,3 +19,10 @@ harness evidence kept to a marked appendix.
 Use [.github/pull_request_template.md](.github/pull_request_template.md) to record
 the story, exact model revision, implementation mapping and verification limits.
 The constitution defines the full rules and amendment process.
+
+Every Singular issue belongs in [Lambda Sistemi Project 4](https://github.com/orgs/lambdasistemi/projects/4).
+After creating an issue, verify its project membership and repair or report a
+failed automatic intake. Project membership does not set its schedule or prove
+acceptance; the constitution defines the reconciliation obligation. See
+[.github/PROJECT4_INTAKE.md](.github/PROJECT4_INTAKE.md) for the project rule and
+inventory check.
