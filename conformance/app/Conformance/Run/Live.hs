@@ -7,6 +7,7 @@ License     : Apache-2.0
 module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, containsStoryAsset, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaidCustody, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
 
 import Conformance.Run.Control
+import Conformance.FoldFixture qualified as FoldFixture
 import Conformance.Run.Fold
 import Conformance.Run.Book
 import Conformance.Run.Units
@@ -24,6 +25,14 @@ import Conformance.Compare.Registration qualified as Compare
 import Conformance.Compare.Perturbation qualified as Perturbation
 import Conformance.Lean.Oracle qualified as LeanOracle
 import Conformance.Story.Binding qualified as Binding
+import Conformance.PurposeUnits (
+    PurposeUnits,
+    PurposeMeasurements,
+    missingPurposeBudgets,
+    budgetRefusalPurposes,
+ )
+import Conformance.Receipt (maxLiveStepReasonChars)
+import Conformance.NodeRejection (boundedNodeReason)
 import Control.Exception (
     ErrorCall (..),
     SomeException,
@@ -65,7 +74,12 @@ import Cardano.Ledger.Address (
     serialiseAddr,
  )
 
-import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Api.PParams (ppMaxBlockExUnitsL, ppMaxTxExUnitsL)
 import Cardano.Ledger.Api.Tx.Body (
     inputsTxBodyL,
     mintTxBodyL,
@@ -87,6 +101,7 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
+    ExUnits (..),
     ConwayEra,
     PolicyID (..),
     Root (..),
@@ -149,8 +164,20 @@ import Conformance.Refusal (
 -- They cannot be constructed by a story or supplied by a JSON fixture.
 data StepOutcome
     = StepAccepted ConwayTx (Integer, Integer, Integer)
-    | StepRefused ConwayTx (Maybe T.Text) [T.Text]
-    | StepUnsupported T.Text
+    | StepRefused ConwayTx (Maybe T.Text) [T.Text] StepRejection
+    | StepUnsupported T.Text (Maybe StepRejection)
+
+data StepRejection = StepRejection
+    { srText :: T.Text
+    , srMeasured :: PurposeMeasurements
+    , srDeclared :: PurposeUnits
+    , srBudgetExceeded :: [T.Text]
+    }
+
+-- | Keep step diagnostics on one bounded line while retaining the full reason
+-- in memory for the receipt writer's tighter bound.
+maxStepLineReasonChars :: Int
+maxStepLineReasonChars = 4000
 
 
 data LiveStep = LiveStep
@@ -286,7 +313,7 @@ submitEdge env state cage alteration request = do
                         (addrKeyHashBytes genesisAddr) destination
                 modelRequest <- storyModelRequest ids cfg request cgDeposit (Left decided)
                 pure (LiveStep cage request alteration Nothing modelRequest 0 Nothing Nothing Nothing
-                    (StepUnsupported (T.pack nodeReason)))
+                    (StepUnsupported (T.pack nodeReason) Nothing))
             Nothing -> throwIO failure
         Right named@(reqIn, reqOut) -> do
             let Coin bond = reqOut ^. coinTxOutL
@@ -301,9 +328,12 @@ submitEdge env state cage alteration request = do
             witness <- storyWitness env cfg key wallet
             stateUtxo <- cageStateUtxo env cage
             (proofs, root) <- storyProofs env cage tid [named]
-            units <- declaredSpec env cage
+            pp <- Cage.queryProtocolParams (envProv env)
+            let maxUnits = pp ^. ppMaxTxExUnitsL
+                blockUnits = pp ^. ppMaxBlockExUnitsL
+                initialUnits = ExUnits 0 0
             (pot, funder) <- collateralPotWithChange env
-            let spec = (rowSpec cage tid stateUtxo [named] (map Update proofs) root units)
+            let initialSpec = (rowSpec cage tid stateUtxo [named] (map Update proofs) root initialUnits)
                     { fsCollateral = Just pot
                     -- The model requires no signer. The extra-signer tamper adds
                     -- the key this process already signs every fold with, so the
@@ -313,14 +343,48 @@ submitEdge env state cage alteration request = do
                     , fsHolderUtxos = maybe [] pure witness, fsFunder = Just funder
                     , fsOmitUnfundedBurn = Live.requestEdge request == Live.UpdateTerminal
                         && isNothing witness }
-            trial <- assembleFoldWithFee env spec
-            measured <- try @SomeException (measureUnits env trial)
+            fixtureUnits <- FoldFixture.prepare
+                (envFoldFixture env) (envProv env)
+                (\budget -> assembleFoldWithFee env initialSpec{fsUnits = budget})
+                (submitTxResilient (envSubmit env) . addKeyWitness genesisSignKey)
+                initialUnits
+            let spec = initialSpec{fsUnits = fixtureUnits}
+                redirect transaction = case alternate of
+                    Nothing -> transaction
+                    Just redirectTo -> transaction & bodyTxL . outputsTxBodyL %~ fmap
+                        (\out -> if containsStoryAsset cfg key out
+                            then out & addrTxOutL .~ redirectTo
+                            else out)
+            template <- assembleFoldWithFee env spec
+            let purposes = redeemerPurposeNames template
+            require "honest fold has no redeemer purposes" (not (null purposes))
+            probePairs <- either (failWith . T.unpack) pure
+                (protocolProbePurposeUnits maxUnits blockUnits purposes)
+            let probePurposeUnits = Map.map
+                    (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
+                    probePairs
+            trial <- redirect <$> assembleFoldWithFee env spec{fsPurposeUnits = probePurposeUnits}
+            measurements <- measurePurposeUnits env trial
+            require "node evaluation did not return every redeemer purpose"
+                (sort (Map.keys measurements) == sort (redeemerPurposeNames trial))
+            declaredPairs <- either (failWith . T.unpack) pure (declaredPurposeUnits maxUnits blockUnits measurements)
+            let declared = Map.map
+                    (\(mem, cpu) -> ExUnits (fromIntegral mem) (fromIntegral cpu))
+                    declaredPairs
+                missingDeclarations = missingPurposeBudgets
+                    (successfulPurposeUnits measurements)
+                    declaredPairs
+            require "measured script purpose has no purpose-specific declaration"
+                (null missingDeclarations)
             -- Evaluation can consume the entire short validity interval on a busy
             -- node. Assemble the same one-request shape again immediately before
             -- submission; its fresh upper bound cannot age during measurement.
             now <- currentPosixMs
             upper <- trySlots (envProv env) [now + 8_000, now + 7_500, now + 7_000]
-            unsigned <- assembleFoldWithFee env spec{fsUpper = Just upper}
+            unsigned <- assembleFoldWithFee env spec
+                { fsPurposeUnits = declared
+                , fsUpper = Just upper
+                }
             let allInputs = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
             pending <- pendingRequests env cage
             require "generic step spent another pending request"
@@ -335,13 +399,13 @@ submitEdge env state cage alteration request = do
                 <> " visible=" <> show (map txInToText (Map.keys visible)))
             require "generic fold has an input missing from the chain snapshot"
                 (all (`Map.member` visible) (Set.toList wanted))
-            let candidate = case alternate of
-                    Nothing -> unsigned
-                    Just redirectTo -> unsigned & bodyTxL . outputsTxBodyL %~ fmap
-                        (\out -> if containsStoryAsset cfg key out
-                            then out & addrTxOutL .~ redirectTo
-                            else out)
+            let candidate = redirect unsigned
                 signed = addKeyWitness genesisSignKey candidate
+                submittedBudgets = transactionPurposeUnits signed
+            require "assembled fold changed its per-purpose declarations"
+                (submittedBudgets == declaredPairs)
+            emit "step-units" ("measured=" <> compactJson (purposeMeasurementsJson measurements)
+                <> " declared=" <> compactJson (purposeDeclarationsJson measurements submittedBudgets))
             result <- submitTxResilient (envSubmit env) signed
             case result of
                 Submitted _ -> do
@@ -355,7 +419,9 @@ submitEdge env state cage alteration request = do
                     awaitTx signed
                     rowCommit env cage key edge
                     after <- readRegistryState env cage
-                    (mem, cpu) <- either (failWith . displayException) pure measured
+                    (mem, cpu) <- either (failWith . T.unpack) pure
+                        (aggregatePurposeUnits measurements)
+                    writeIORef (rcUnits cage) (mem, cpu)
                     modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, txSizeBytes signed)])
                     pure (LiveStep cage request alteration (Just reqOut) modelRequest bond
                         (Just after) witness (listToMaybe refs)
@@ -363,12 +429,22 @@ submitEdge env state cage alteration request = do
                 Rejected reason -> do
                     let explanation = T.unpack (TE.decodeUtf8Lenient reason)
                         marker = stateMarkerOf cfg
+                        diagnostic =
+                            StepRejection
+                                { srText = T.pack explanation
+                                , srMeasured = measurements
+                                , srDeclared = declaredPairs
+                                , srBudgetExceeded = budgetRefusalPurposes
+                                    (transactionPurposeHashes signed visible) (T.pack explanation)
+                                }
                     pure (LiveStep cage request alteration (Just reqOut) modelRequest bond Nothing witness
                         (listToMaybe refs)
-                        (case matchRefusal marker explanation of
-                            Right () -> StepRefused signed (storyRefusalTag explanation)
-                                (map T.pack (refusalScriptHashes explanation))
-                            Left _ -> StepUnsupported (T.pack ("unattributed node rejection: " <> explanation))))
+                        (if not (null (srBudgetExceeded diagnostic))
+                            then StepRefused signed Nothing [] diagnostic
+                            else case matchRefusal marker explanation of
+                                Right () -> StepRefused signed (storyRefusalTag explanation)
+                                    (map T.pack (refusalScriptHashes explanation)) diagnostic
+                                Left _ -> StepUnsupported (T.pack ("unattributed node rejection: " <> explanation)) (Just diagnostic)))
 
 
 -- | The certificate's destination is not an inferred post-state identity.
@@ -781,12 +857,14 @@ compareStep env state step observation = do
         (chainOutcome, chain) = case lsOutcome step of
             StepAccepted transaction _ ->
                 (String "accepted", object ["outcome" .= String "accepted", "txid" .= txIdHex transaction])
-            StepRefused transaction trace hashes ->
+            StepRefused transaction trace hashes rejection ->
                 (String "refused", object
                     [ "outcome" .= String "refused", "txid" .= txIdHex transaction
-                    , "refusal" .= object ["trace" .= trace, "hashes" .= hashes] ])
-            StepUnsupported reason ->
-                (String "unsupported", object ["outcome" .= String "unsupported", "reason" .= reason])
+                    , "refusal" .= rejectionJson trace hashes rejection ])
+            StepUnsupported reason diagnostic ->
+                (String "unsupported", object
+                    ["outcome" .= String "unsupported", "reason" .= boundedNodeReason maxLiveStepReasonChars reason
+                    , "refusal" .= fmap (rejectionJson Nothing []) diagnostic])
     declared <- do
         corpusPath <- requireEnv "CONFORMANCE_DRIVER_CORPUS"
         corpus <- eitherDecodeFileStrict corpusPath >>= either failWith pure
@@ -796,6 +874,8 @@ compareStep env state step observation = do
             Just "wrong-delivery" | chainOutcome == String "accepted" -> bumpObservedMint observation
             _ -> observation
     (comparison, compared, unobserved, perturbation, differing) <- case (lsTamper step, modelOutcome, chainOutcome) of
+        _ | StepRefused _ _ _ rejection <- lsOutcome step
+          , not (null (srBudgetExceeded rejection)) -> pure ("disagrees", [], [], Null, [])
         (_, String "unsupported", _) -> pure ("unsupported" :: T.Text, [], [], Null, [])
         (_, _, String "unsupported") -> pure ("unsupported", [], [], Null, [])
         (Just Live.RedirectDelivery, String "accepted", String "refused") ->
@@ -843,10 +923,12 @@ compareStep env state step observation = do
     modifyIORef' (envLiveRecords env) (<> [record])
     let chainDetail = case lsOutcome step of
             StepAccepted transaction _ -> " txid=" <> txIdHex transaction
-            StepRefused transaction trace hashes ->
+            StepRefused transaction trace hashes rejection ->
                 " txid=" <> txIdHex transaction <> " trace=" <> show trace
                     <> " scriptHashes=" <> show hashes
-            StepUnsupported reason -> " reason=" <> T.unpack reason
+                    <> rejectionDetail rejection
+            StepUnsupported reason diagnostic -> " reason=" <> T.unpack (oneLine maxStepLineReasonChars reason)
+                <> maybe "" rejectionDetail diagnostic
     emit "step" (Live.edgeName (Live.requestEdge (lsRequest step))
         <> " key=" <> show (Live.requestKey (lsRequest step))
         <> " tamper=" <> maybe "none" Live.tamperName (lsTamper step)
@@ -861,8 +943,8 @@ compareStep env state step observation = do
             modifyIORef' (liveTraces state)
                 (Map.insertWith (\new old -> old <> new) registry [lsModelRequest step])
         "unsupported" -> case lsOutcome step of
-            StepUnsupported reason -> emit "gap" (Live.edgeName (Live.requestEdge (lsRequest step))
-                <> " for " <> Live.requestKey (lsRequest step) <> ": " <> T.unpack reason)
+            StepUnsupported reason _ -> emit "gap" (Live.edgeName (Live.requestEdge (lsRequest step))
+                <> " for " <> Live.requestKey (lsRequest step) <> ": " <> T.unpack (oneLine maxStepLineReasonChars reason))
             _ -> failWith "unsupported comparison lacks an observed reason"
         _ -> failWith ("model and chain disagree for " <> Live.edgeName (Live.requestEdge (lsRequest step))
             <> " at " <> Live.requestKey (lsRequest step)
@@ -923,6 +1005,76 @@ differenceJson :: (T.Text, [Perturbation.Step]) -> Value
 differenceJson (name, path) =
     object ["observation" .= name, "path" .= T.pack (drop 1 (renderStepPath path))]
 
+
+rejectionJson :: Maybe T.Text -> [T.Text] -> StepRejection -> Value
+rejectionJson trace hashes rejection = object
+    [ "trace" .= trace
+    , "hashes" .= hashes
+    , "kind" .= if null (srBudgetExceeded rejection) then ("validator" :: T.Text) else "budget"
+    , "rejection" .= srText rejection
+    , "budgetPurposes" .= srBudgetExceeded rejection
+    , "overDeclaredPurposes" .= exceedsDeclaredUnits (srMeasured rejection) (srDeclared rejection)
+    , "declared" .= purposeDeclarationsJson (srMeasured rejection) (srDeclared rejection)
+    , "measured" .= purposeMeasurementsJson (srMeasured rejection)
+    ]
+
+rejectionDetail :: StepRejection -> String
+rejectionDetail rejection =
+    " refusalKind=" <> (if null (srBudgetExceeded rejection) then "validator" else "budget")
+        <> " budgetPurposes=" <> show (srBudgetExceeded rejection)
+        <> " overDeclaredPurposes=" <> show (exceedsDeclaredUnits (srMeasured rejection) (srDeclared rejection))
+        <> " nodeRejection=" <> T.unpack (oneLine maxStepLineReasonChars (srText rejection))
+        <> " declared=" <> compactJson (purposeDeclarationsJson (srMeasured rejection) (srDeclared rejection))
+        <> " measured=" <> compactJson (purposeMeasurementsJson (srMeasured rejection))
+
+purposeMeasurementsJson :: PurposeMeasurements -> Value
+purposeMeasurementsJson = Object . KM.fromList . map toPair . Map.toList
+  where
+    toPair (purpose, measured) = (Key.fromText purpose, measuredJson measured)
+
+purposeDeclarationsJson :: PurposeMeasurements -> PurposeUnits -> Value
+purposeDeclarationsJson measured = Object . KM.fromList . map toPair . Map.toList
+  where
+    toPair (purpose, (mem, cpu)) =
+        (Key.fromText purpose, object
+            [ "mem" .= mem, "cpu" .= cpu
+            , "source" .= case Map.lookup purpose measured of
+                Just (Left _) -> ("probe-allowance" :: T.Text)
+                _ -> "twice-measured"
+            ])
+
+transactionPurposeUnits :: ConwayTx -> PurposeUnits
+transactionPurposeUnits tx = case tx ^. witsTxL . rdmrsTxWitsL of
+    Redeemers purposes -> Map.fromList
+        [ (T.pack (show purpose), (fromIntegral mem, fromIntegral cpu))
+        | (purpose, (_, ExUnits mem cpu)) <- Map.toList purposes ]
+
+transactionPurposeHashes :: ConwayTx -> Map.Map TxIn (TxOut ConwayEra) -> Map.Map T.Text T.Text
+transactionPurposeHashes tx visible = Map.fromList (spending <> minting)
+  where
+    spending =
+        [ (T.pack (show (ConwaySpending (AsIx ix) :: ConwayPlutusPurpose AsIx ConwayEra)),
+           T.pack (hex (scriptHashBytes hash)))
+        | (ix, input) <- zip [0..] (Set.toAscList (tx ^. bodyTxL . inputsTxBodyL))
+        , Just out <- [Map.lookup input visible]
+        , Addr _ (ScriptHashObj hash) _ <- [out ^. addrTxOutL]
+        ]
+    MultiAsset policies = tx ^. bodyTxL . mintTxBodyL
+    minting =
+        [ (T.pack (show (ConwayMinting (AsIx ix) :: ConwayPlutusPurpose AsIx ConwayEra)),
+           T.pack (hex (scriptHashBytes (policyID policy))))
+        | (ix, policy) <- zip [0..] (Map.keys policies)
+        ]
+
+measuredJson :: Either T.Text (Integer, Integer) -> Value
+measuredJson (Left reason) = object ["error" .= boundedNodeReason maxLiveStepReasonChars reason]
+measuredJson (Right (mem, cpu)) = object ["mem" .= mem, "cpu" .= cpu]
+
+oneLine :: Int -> T.Text -> T.Text
+oneLine = boundedNodeReason
+
+compactJson :: Value -> String
+compactJson = T.unpack . TE.decodeUtf8 . BSL.toStrict . encode
 
 renderDifferences :: [Compare.Difference] -> String
 renderDifferences differences =

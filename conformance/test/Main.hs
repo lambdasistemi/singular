@@ -11,6 +11,7 @@ import Conformance.Support.Refusal qualified as Refusal
 import Conformance.Support.RegistrationComparison qualified as RegistrationComparison
 import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.Specification qualified as Specification
+import Conformance.Support.PurposeUnits qualified as PurposeUnits
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, hspec)
 
@@ -35,5 +36,6 @@ suite = do
         Fixture.spec
         RegistrationComparison.spec
         Specification.spec
+        PurposeUnits.spec
         Usage.spec
         Binding.spec

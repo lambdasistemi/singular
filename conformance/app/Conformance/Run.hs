@@ -83,6 +83,8 @@ should.
 -}
 module Conformance.Run (runForkProbe, runRows) where
 
+import Conformance.FoldFixture qualified as FoldFixture
+
 import Conformance.Run.Control
 import Conformance.Run.CgRows
 import Conformance.Run.CsRows
@@ -329,6 +331,7 @@ runSession
         failedRef <- newIORef []
         liveRecordsRef <- newIORef []
         liveMeasurementsRef <- newIORef []
+        foldFixture <- FoldFixture.newFixture
         (env, marker, bootLine) <-
             if caMode
                 then do
@@ -374,6 +377,7 @@ runSession
                             , envControl = control
                             , envBase = base
                             , envDirty = dirty
+                            , envFoldFixture = foldFixture
                             , envNode = nodeVer
                             , envBlueprint = blueprintId cfg requestBytes
                             , envReceiptsDir = receiptsDir
@@ -424,6 +428,7 @@ runSession
                                     , envControl = control
                                     , envBase = base
                                     , envDirty = dirty
+                                    , envFoldFixture = foldFixture
                                     , envNode = nodeVer
                                     , envBlueprint = blueprintId placeholderCfg requestBytes
                                     , envBlueprintPath = blueprintPath
@@ -467,6 +472,7 @@ runSession
                                     , envControl = control
                                     , envBase = base
                                     , envDirty = dirty
+                                    , envFoldFixture = foldFixture
                                     , envNode = nodeVer
                                     , envBlueprint = blueprintId cfg requestBytes
                                     , envBlueprintPath = blueprintPath

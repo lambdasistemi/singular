@@ -17,6 +17,7 @@ extra-doc-files:
   README.md
 data-files:
   rows.json
+  test/fixtures/node-refusals/*.txt
   test/fixtures/receipts/receipt-CG02.json
   test/fixtures/receipts/receipt-CG05.json
   test/fixtures/bad-accepted/receipt-CG02.json
@@ -73,6 +74,8 @@ library
     Conformance.Compare.Perturbation
     Conformance.Authenticate
     Conformance.Receipt
+    Conformance.NodeRejection
+    Conformance.PurposeUnits
     Conformance.Refusal
     Conformance.Rows
     Conformance.Story.Binding
@@ -98,16 +101,15 @@ library
     , text >=2.0 && <2.2
     , vector >=0.13 && <0.14
 
-executable conformance
-  import:           warnings
+common live-runner
   hs-source-dirs:   app
-  main-is:          Main.hs
   other-modules:
     Conformance.CS01
     Conformance.CS06
     Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run
+    Conformance.FoldFixture
     Conformance.Run.ForkProbe
     Conformance.Run.CgRows
     Conformance.Run.CsRows
@@ -160,6 +162,16 @@ executable conformance
 
   ghc-options:      -threaded -with-rtsopts=-N
 
+executable conformance
+  import: warnings, live-runner
+  hs-source-dirs: app-default
+  main-is: Main.hs
+
+executable fold-budget-regression
+  import: warnings, live-runner
+  hs-source-dirs: test/fold-budget
+  main-is: BudgetMain.hs
+
 test-suite conformance-tests
   import:           warnings
   type:             exitcode-stdio-1.0
@@ -167,6 +179,7 @@ test-suite conformance-tests
   main-is:          Main.hs
   other-modules:
     Conformance.Fixture.Receipt
+    Conformance.Fixture.NodeRejection
     Conformance.Story.Usage
     Conformance.Support.Authenticate
     Conformance.Support.Fixture
@@ -178,12 +191,17 @@ test-suite conformance-tests
     Conformance.Support.Rows
     Conformance.Support.Identity
     Conformance.Support.Specification
+    Conformance.Support.PurposeUnits
     Paths_conformance
   build-depends:
     , aeson >=2.1 && <2.3
     , base >=4.14 && <5
     , bytestring >=0.11 && <0.13
     , conformance
+    , cardano-ledger-alonzo
+    , cardano-ledger-conway
+    , ouroboros-consensus:{ouroboros-consensus, cardano}
+    , strict-sop-core
     , containers >=0.6 && <0.8
     , directory >=1.3 && <1.4
     , filepath >=1.4 && <1.6

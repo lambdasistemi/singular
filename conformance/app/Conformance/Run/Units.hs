@@ -3,9 +3,13 @@ Module      : Conformance.Run.Units
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Units (measureUnits, txSizeBytes, emitMeasure) where
+module Conformance.Run.Units (measureUnits, txSizeBytes, emitMeasure, measurePurposeUnits, successfulPurposeUnits, exceedsDeclaredUnits, declaredPurposeUnits, protocolProbePurposeUnits, aggregatePurposeUnits, redeemerPurposeNames) where
 
 import Conformance.Run.Environment
+import Conformance.PurposeUnits
+import Data.Text qualified as T
+import Cardano.Ledger.Api.Tx (witsTxL)
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 
 import Data.ByteString.Lazy qualified as BSL
 import Data.Map.Strict qualified as Map
@@ -39,17 +43,63 @@ per-script evaluation of the unsigned transaction, while its
 inputs are still unspent. Units come from the running node, never
 hardcoded.
 -}
+measurePurposeUnits :: Env -> ConwayTx -> IO PurposeMeasurements
+measurePurposeUnits env tx = do
+    evalMap <- Cage.evaluateTx (envProv env) tx
+    pure $
+        Map.fromList
+            [ ( T.pack (show purpose)
+              , either
+                    (Left . T.pack . show)
+                    (\(ExUnits mem cpu) -> Right (fromIntegral mem, fromIntegral cpu))
+                    result
+              )
+            | (purpose, result) <- Map.toList evalMap
+            ]
+
+successfulPurposeUnits :: PurposeMeasurements -> PurposeUnits
+successfulPurposeUnits = Map.mapMaybe (either (const Nothing) Just)
+
+exceedsDeclaredUnits :: PurposeMeasurements -> PurposeUnits -> [T.Text]
+exceedsDeclaredUnits measured declared =
+    overBudgetPurposes (successfulPurposeUnits measured) declared
+
+declaredPurposeUnits :: ExUnits -> ExUnits -> PurposeMeasurements -> Either T.Text PurposeUnits
+declaredPurposeUnits transactionLimit blockLimit =
+    allocatePurposeUnits (unitsPair transactionLimit) (unitsPair blockLimit)
+
+protocolProbePurposeUnits :: ExUnits -> ExUnits -> [T.Text] -> Either T.Text PurposeUnits
+protocolProbePurposeUnits transactionLimit blockLimit purposes
+    | null purposes = Left "cannot allocate protocol probe units without redeemer purposes"
+    | otherwise = Right (Map.fromList [(purpose, perPurpose) | purpose <- purposes])
+  where
+    (maxMem, maxCpu) = protocolUnitsCeiling (unitsPair transactionLimit) (unitsPair blockLimit)
+    count = toInteger (length purposes)
+    perPurpose = (maxMem `div` count, maxCpu `div` count)
+
+unitsPair :: ExUnits -> (Integer, Integer)
+unitsPair (ExUnits mem cpu) = (fromIntegral mem, fromIntegral cpu)
+
+sumPurposeUnits :: PurposeUnits -> (Integer, Integer)
+sumPurposeUnits units =
+    ( sum [mem | (mem, _) <- Map.elems units]
+    , sum [cpu | (_, cpu) <- Map.elems units]
+    )
+
+redeemerPurposeNames :: ConwayTx -> [T.Text]
+redeemerPurposeNames tx = case tx ^. witsTxL . rdmrsTxWitsL of
+    Redeemers purposes -> map (T.pack . show) (Map.keys purposes)
+
+aggregatePurposeUnits :: PurposeMeasurements -> Either T.Text (Integer, Integer)
+aggregatePurposeUnits measured = case [reason | Left reason <- Map.elems measured] of
+    reason : _ -> Left ("node evaluation failed: " <> reason)
+    [] -> Right (sumPurposeUnits (successfulPurposeUnits measured))
+
 measureUnits :: Env -> ConwayTx -> IO (Integer, Integer)
 measureUnits env tx = do
-    evalMap <- Cage.evaluateTx (envProv env) tx
-    let evalStr = Map.map (either (Left . show) Right) evalMap
-    units <- case sequence evalStr of
-        Left e ->
-            failWith ("measure: node evaluation failed: " <> e)
-        Right m -> pure (Map.elems m)
-    let mem = sum [m | ExUnits m _ <- units]
-        cpu = sum [s | ExUnits _ s <- units]
-    pure (fromIntegral mem, fromIntegral cpu)
+    measurements <- measurePurposeUnits env tx
+    either (failWith . T.unpack . ("measure: " <>)) pure
+        (aggregatePurposeUnits measurements)
 
 
 -- | Serialized size of the signed transaction that lands on chain.
