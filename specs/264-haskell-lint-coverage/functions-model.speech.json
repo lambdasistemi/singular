@@ -1,0 +1,12 @@
+{
+  "interface-boundary": [
+    {
+      "text": "No Haskell function or signature changes. The existing lint command keeps its name and exit-status contract while its source discovery expands.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "4a7bc28756b2760203b33e3c5bf9a8b61b4eed7f4e5f4893edaeff94db9206f6"
+  }
+}

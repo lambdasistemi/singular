@@ -4,6 +4,8 @@ As a registry user, I receive the same transaction and wire behavior after
 this maintenance change. No domain field, relationship, validation rule,
 state transition, or encoding is changed.
 
+## Preserved state and evidence
+
 | ID | Invariant | Severity |
 | --- | --- | --- |
 | I264-1 | Public exported module set and executable names equal the intake baseline. | ADVISORY |

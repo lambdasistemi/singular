@@ -1,0 +1,24 @@
+{
+  "requirements": [
+    {
+      "text": "The contributor should see lint cover active Haskell sources, a malformed source rejected by the real command, duplicate Cabal dependencies removed, and the same public exports and command names after the change.",
+      "pause": 400
+    }
+  ],
+  "source-inventory-at-intake": [
+    {
+      "text": "The inventory maps the library, fifteen executables, and three test suites to their Cabal source directories. Naming's direct GHC test and drift sources are considered separately. The final review will explain any source directory deliberately excluded from lint.",
+      "pause": 400
+    }
+  ],
+  "evidence-limit": [
+    {
+      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. A new CI carrier is authorized for the complete off-chain component set. Until it runs and passes on the candidate, that build coverage is still missing.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "866020aca8c22a07324f41a81abd248e6f5ab87c744524051af52cf99ad14946"
+  }
+}

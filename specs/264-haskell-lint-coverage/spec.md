@@ -11,6 +11,14 @@ definition, behavior, wire representation, transaction effect, or expected
 outcome. The repository constitution still governs any discrepancy discovered
 while doing the work.
 
+```mermaid
+flowchart LR
+    A[Active Haskell sources] -->|discovered by| B[Existing lint command]
+    C[Cabal components] -->|built by| D[New offchain CI carrier]
+    B -->|result| E[Contributor]
+    D -->|result| E
+```
+
 ## Requirements
 
 | ID | Requirement | Observable result |

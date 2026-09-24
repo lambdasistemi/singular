@@ -1,0 +1,12 @@
+{
+  "responsibilities": [
+    {
+      "text": "Cabal declares the components and their source directories. The lint app discovers active Haskell sources, the off-chain flake builds the complete component set, and the CI workflow runs that build. Existing exported modules and command names stay in place.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "7a089b365448b25311ebaa9525b2d64f313c2d0ad501ce22bcae7aef1ffbd6c5"
+  }
+}

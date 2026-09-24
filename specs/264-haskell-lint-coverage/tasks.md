@@ -3,6 +3,8 @@
 As a contributor, I can review the configuration, formatting and verification
 as distinct pieces of one maintenance change.
 
+## Work items
+
 - [ ] T264-01 Record the active component/source inventory, exclusions, public exports and command names at intake and candidate.
 - [ ] T264-02 Remove the duplicate Cabal dependency declarations without changing component interfaces.
 - [ ] T264-03 Expand the existing lint command to active source directories and prove its rejection with a malformed file in a newly included directory.

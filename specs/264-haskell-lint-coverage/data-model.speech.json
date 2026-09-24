@@ -1,0 +1,12 @@
+{
+  "preserved-state-and-evidence": [
+    {
+      "text": "This ticket changes no domain data, validation rule, state transition, or encoding. The checks watch the exported module and command names, the effect of any layout-only edits, the lint rejection control, and the affected component build. These maintenance checks do not prove transaction behavior.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "2f4e180f46f135cab49f1feb4b5931ff97e4d21d3bcccb5e37557dab83476c2d"
+  }
+}

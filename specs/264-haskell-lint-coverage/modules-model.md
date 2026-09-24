@@ -14,6 +14,8 @@ flowchart LR
     F -->|CI step| G[ci.yml]
 ```
 
+## Responsibilities
+
 | ID | Owner | Changed responsibility |
 | --- | --- | --- |
 | M264-1 | `offchain/singular-registry.cabal` | Declare each library dependency once; retain component names, source directories and exposed modules. |

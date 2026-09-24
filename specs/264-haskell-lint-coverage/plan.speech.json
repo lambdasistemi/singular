@@ -1,0 +1,12 @@
+{
+  "decisions": [
+    {
+      "text": "This maintenance slice keeps Cabal cleanup, lint discovery, and the new component build carrier together because they share the same inventory. Formatting-only source changes stay separately reviewable. The lint negative control runs the existing executable, and the CI carrier builds every declared library, executable, and test component without executing them.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "d42e5e4233d9c48f1c923fe2ac86279659aa14f2b5bd06a4892bef742c476921"
+  }
+}

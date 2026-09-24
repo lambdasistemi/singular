@@ -1,0 +1,12 @@
+{
+  "work-items": [
+    {
+      "text": "The work records the active source and interface inventory, removes duplicate dependencies, expands lint and proves a newly covered defect is rejected, reviews layout-only edits, adds the complete component build CI carrier, and records the actual command results and remaining limits.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "3404630ed13810b861292497259dfae8a574e47d2f9aa4e93b13f12b3d552883"
+  }
+}
