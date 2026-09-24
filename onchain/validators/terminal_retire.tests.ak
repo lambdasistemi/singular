@@ -1,3 +1,4 @@
+use aiken/collection/list
 use aiken/merkle_patricia_forestry as mpf
 use cardano/assets.{Value}
 use cardano/transaction.{InlineDatum, Input, Output}
@@ -45,7 +46,9 @@ use types.{Modify, StateDatum, UpdateAction}
 
 /// One `updateTerminal` request at `key`, folded from `root` to
 /// `nextRoot`, with `held` supplying the witness inputs and `extra` the
-/// outputs beyond the continuation.
+/// outputs beyond the continuation and the booker's returned deposit,
+/// which every row pays so each refusal stays one fact from its control
+/// (#253).
 fn retire(
   root: ByteArray,
   nextRoot: ByteArray,
@@ -73,7 +76,7 @@ fn retire(
         ),
       ],
       held,
-      extra,
+      list.concat(extra, [fx.paymentOutput(fx.bookerAddress, fx.deposit)]),
       mint,
     ),
   )
@@ -279,7 +282,7 @@ test delete_active_still_folds() {
         ),
       ],
       witnessHeld(),
-      [],
+      [fx.paymentOutput(fx.bookerAddress, fx.deposit)],
       theBurn(),
     ),
   )

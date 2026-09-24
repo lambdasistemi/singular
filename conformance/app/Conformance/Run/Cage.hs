@@ -3,7 +3,7 @@ Module      : Conformance.Run.Cage
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Cage (ensureRowCage, cageTid, ensureStakeKit, registerStakeCredential, cageStateUtxo, recordDatum, recordDatumHash, cageUtxos, registryContext, sessionRefUtxos, cageRefUtxos, ensureStateRef, cageUtxosOf, defaultTipCoin, publishRefScript, rowRegistryContext) where
+module Conformance.Run.Cage (ensureRowCage, cageTid, ensureStakeKit, registerStakeCredential, cageStateUtxo, recordDatum, recordDatumHash, cageUtxos, registryContext, sessionRefUtxos, cageRefUtxos, ensureStateRef, ensureStateRefWith, cageUtxosOf, defaultTipCoin, publishRefScript, rowRegistryContext) where
 
 import Conformance.Run.Wallet
 import Conformance.Run.Submit
@@ -98,7 +98,7 @@ import Singular.Registry.TxBuilder.Internal (
  )
 import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
-import Cardano.Node.Client.Submitter (SubmitResult (..))
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter)
 import PlutusCore.Data qualified as PLC
 
 import Conformance.Mirror (
@@ -454,11 +454,10 @@ scripts through.
 {- | Publish the state validator as a reference output once per session,
 before any boot (#177, A-003).
 
-The boot transaction carries the state validator INLINE unless the
-funding wallet already holds a publication of it, and that validator is
-fifteen kilobytes against a sixteen-kilobyte transaction cap. #177's
-retirement guard does not fit in what is left. Referencing the script
-returns the whole fifteen kilobytes to the budget.
+A registry boots only by reference: the boot resolves the state
+validator through a publication in the funding wallet and is refused
+`StateValidatorNotPublished` without one, because that validator is
+fifteen kilobytes against a sixteen-kilobyte transaction cap.
 
 Every cage in a session shares the same state script — only the seed
 differs — so one publication serves every boot. Idempotent by
@@ -466,10 +465,22 @@ discovery, and the funding sweep already spares outputs carrying
 reference scripts, so it publishes once and finds it thereafter.
 -}
 ensureStateRef :: Env -> IO ()
-ensureStateRef env = do
-    let cfg = envCfg env
-        wanted = cfgScriptHash cfg
-    utxos <- Cage.queryUTxOs (envProv env) genesisAddr
+ensureStateRef env =
+    ensureStateRefWith
+        (envProv env)
+        (envSubmit env)
+        (cageScriptBytes (envCfg env))
+
+{- | 'ensureStateRef' before the session's environment exists: the
+session cage boots before its 'Env' is built, and the state validator
+depends on the blueprint alone, not on the seed.
+-}
+ensureStateRefWith ::
+    Cage.Provider IO -> Submitter IO -> SBS.ShortByteString -> IO ()
+ensureStateRefWith prov submit stateBytes = do
+    let script = scriptFromBytes "state" stateBytes
+        wanted = hashScript script
+    utxos <- Cage.queryUTxOs prov genesisAddr
     let published =
             [ ()
             | (_, out) <- utxos
@@ -479,7 +490,7 @@ ensureStateRef env = do
     case published of
         (_ : _) -> pure ()
         [] -> do
-            _ <- publishRefScript env (mkCageScript cfg)
+            _ <- publishRefScriptWith prov submit script
             emit
                 "state-ref"
                 "published the state validator as a reference output; \
@@ -505,8 +516,15 @@ same outputs serve every fold the session builds, so this happens once and
 the references are carried in the environment.
 -}
 publishRefScript :: Env -> Script ConwayEra -> IO (TxIn, TxOut ConwayEra)
-publishRefScript env script = do
-    let prov = envProv env
+publishRefScript env = publishRefScriptWith (envProv env) (envSubmit env)
+
+-- | 'publishRefScript' from the provider and submitter alone.
+publishRefScriptWith ::
+    Cage.Provider IO ->
+    Submitter IO ->
+    Script ConwayEra ->
+    IO (TxIn, TxOut ConwayEra)
+publishRefScriptWith prov submit script = do
     pp <- Cage.queryProtocolParams prov
     utxos <- Cage.queryUTxOs prov genesisAddr
     fund <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
@@ -541,7 +559,7 @@ publishRefScript env script = do
                         ]
                 & feeTxBodyL .~ Coin fee
         signed = addKeyWitness genesisSignKey (mkBasicTx body)
-    result <- submitTxResilient (envSubmit env) signed
+    result <- submitTxResilient submit signed
     case result of
         Submitted _ -> awaitTx signed
         Rejected reason ->

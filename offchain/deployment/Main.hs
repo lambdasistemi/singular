@@ -413,9 +413,13 @@ doDeploy = do
             submit = nsSubmitter sess
             pp = nsPParams sess
         txs <- newIORef []
+        -- A registry boots only by reference: the state validator is
+        -- published before the boot, which resolves it from there.
+        (stateIn, _) <-
+            publishOne prov submit pp txs (scriptFromBytes "state" (cStateBytes unbound))
         (cfg, tok, bootTx, seedIn, compiled) <- bootRegistry prov submit unbound txs processTime retractTime
         registerCredentials sess prov submit compiled txs
-        refs <- publishAll prov submit pp cfg tok compiled txs
+        refs <- publishAll prov submit pp cfg tok compiled stateIn txs
         bootstrap <- reverse <$> readIORef txs
         let dep =
                 Deployment
@@ -500,7 +504,9 @@ bootRegistry ::
     IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
 bootRegistry prov submit unbound txs processTime retractTime = do
     utxos <- Cage.queryUTxOs prov funderAddr
-    seedIn <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of
+    -- Never seed from a reference publication: the boot references the
+    -- state validator's and may not also spend it.
+    seedIn <- case sortOn (Down . (^. coinTxOutL) . snd) (filter (\(_, o) -> o ^. referenceScriptTxOutL == SNothing) utxos) of
         [] -> failWith "the funding wallet has no outputs to seed from"
         ((i, _) : _) -> pure i
     let compiled = bindSeed unbound seedIn
@@ -577,12 +583,14 @@ registerCredentials sess prov submit compiled txs = do
                 _ <- submitted submit txs (name <> "-registration") tx
                 emit "credential" (name <> " stake credential registered")
 
-{- | Publish the five reference scripts every runner reads: the
-registry's state and request validators, the naming application, the
-registry-bound active token policy, and the completion-only custody script.
+{- | The five reference scripts every runner reads: the registry's state
+and request validators, the naming application, the registry-bound
+active token policy, and the completion-only custody script.
 
-One script per transaction, each spending the change of the last. That
-is slower than batching and it is the shape that works on a public
+The state validator was published before the boot, which resolved it
+from there; it is recorded at that output. The other four are published
+here, one script per transaction, each spending the change of the last.
+That is slower than batching and it is the shape that works on a public
 network without a funding pool: every step is confirmed before the next
 one needs its output.
 -}
@@ -593,20 +601,23 @@ publishAll ::
     CageConfig ->
     TokenId ->
     Compiled ->
+    -- | The state validator's publication, made before the boot.
+    TxIn ->
     IORef [Text] ->
     IO [ReferenceScript]
-publishAll prov submit pp cfg tok compiled txs =
-    mapM
-        one
-        [ ("state", mkCageScript cfg)
-        , ("request", mkRequestScript cfg tok)
-        , ("application", scriptFromBytes "naming-application" (cAppBytes compiled))
-        , ("active", scriptFromBytes "active" (cActiveBytes compiled))
-        , ("custody", scriptFromBytes "naming-custody" (cCustodyBytes compiled))
-        ]
+publishAll prov submit pp cfg tok compiled stateIn txs = do
+    state <- record ("state", mkCageScript cfg) stateIn
+    rest <-
+        mapM
+            (\p@(_, script) -> publishOne prov submit pp txs script >>= record p . fst)
+            [ ("request", mkRequestScript cfg tok)
+            , ("application", scriptFromBytes "naming-application" (cAppBytes compiled))
+            , ("active", scriptFromBytes "active" (cActiveBytes compiled))
+            , ("custody", scriptFromBytes "naming-custody" (cCustodyBytes compiled))
+            ]
+    pure (state : rest)
   where
-    one (role, script) = do
-        (txIn, _) <- publishOne prov submit pp txs script
+    record (role, script) txIn = do
         emit
             "published"
             ( T.unpack role

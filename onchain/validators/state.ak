@@ -7,7 +7,7 @@ use aiken/merkle_patricia_forestry.{MerklePatriciaForestry, empty, root}
 use aiken/merkle_patricia_forestry as mpf
 use aiken/option.{is_some}
 use cardano/address
-use cardano/address.{Address}
+use cardano/address.{Address, PaymentCredential}
 use cardano/assets
 use cardano/assets.{PolicyId, Value, from_asset, lovelace_of, quantity_of}
 use cardano/transaction.{
@@ -59,7 +59,10 @@ use types.{
 //   exactly one output, the one its request named, carrying the datum it
 //   named and at least the request's value minus the tip. An absent token
 //   lands in the cage's own custody beside the inserter's refund address;
-//   a consumed absent token pays that address back.
+//   a consumed absent token pays that address back. An edge that delivers
+//   no token (3, 4, 5) and a rejected row pay the request's deposit to
+//   `requestOwner`'s key. Every lovelace obligation of a fold is settled
+//   once per payee, on the summed lovelace of the outputs paying it (#253).
 // - **C7 the pins** — the seven non-root fields are equal before and
 //   after every fold.
 // - **C8 coverage** — every consumed request carries at least its tip.
@@ -99,16 +102,16 @@ validator state() {
       // authorizes it — the shape of the fold around it is.
       AbsentCustody { refund } -> validCustodySpend(refund, input, tx)
       StateDatum(pins) -> {
-        expect address.Script(policyId) =
-          input.output.address.payment_credential
-        expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
-        expect exactQuantity(policyId, input.output.value, cageToken, 1)
+        let (policyId, cageToken) = stateIdentity(input)
         when redeemer is {
           // Permissionless fold (issue #79, Defect 1): `Modify` requires
           // no owner — there is no registry-owner role (operator ruling
           // NOTE-028/A-003).
           Modify(actions) ->
-            validModify(pins, input, policyId, cageToken, tx, actions)
+            when validModify(pins, input, policyId, cageToken, tx, actions) is {
+              None -> True
+              Some(reason) -> traceFalse(reason)
+            }
           // Ownerless registry: termination is refused for every party.
           // The constructor stays for the wire shape.
           End -> fail
@@ -155,7 +158,9 @@ type Duty {
   /// its key and the refund address the request named.
   LockCustody { key: ByteArray, refund: ByteArray, floor: Int }
   /// A consumed absent token's custody UTxO must be spent here, and its
-  /// lovelace paid to the address that custody recorded.
+  /// lovelace paid to the address that custody recorded — summed with
+  /// every other custody refund to that address, and with every other
+  /// obligation to its payment credential (#253, `payeeFault`).
   SpendCustody { key: ByteArray }
   /// A burned active token must actually be an input; the cage does not
   /// care where it came from — the application's custody does.
@@ -174,13 +179,20 @@ type Duty {
   /// none. No separate output rule is added for the two to disagree
   /// over.
   BurnFromInput { policy: PolicyId, key: ByteArray, sole: Bool }
+  /// Lovelace owed to an owner's key (#253): the deposit of a fold that
+  /// delivers nothing (edges 3, 4 and 5) and the refund of a rejected
+  /// row. `payeeOwed` sums them per key, and each key is settled with every
+  /// other obligation to it
+  /// — custody refunds included — on the summed lovelace of the outputs
+  /// paying it (`payeeFault`): one output cannot pay two obligations.
+  ReturnDeposit { owner: VerificationKeyHash, floor: Int }
 }
 
-/// The fold's accumulator. `ok` latches false on the first refusal and
-/// every later step is skipped, so exactly one trace is emitted however
-/// many later rules the same transaction would also break.
+/// The fold's accumulator. `refusal` latches the first refusal's reason
+/// and every later step is skipped, so exactly one reason is reported
+/// however many later rules the same transaction would also break.
 type Fold {
-  ok: Bool,
+  refusal: Option<String>,
   trie: MerklePatriciaForestry,
   actions: List<RequestAction>,
   consumed: Int,
@@ -189,10 +201,9 @@ type Fold {
   refunds: List<Pair<VerificationKeyHash, Int>>,
 }
 
-/// Emit this refusal's single trace and latch the fold closed.
+/// Latch the fold closed on this refusal's reason.
 fn halt(acc: Fold, reason: String) -> Fold {
-  trace reason
-  Fold { ..acc, ok: False }
+  Fold { ..acc, refusal: Some(reason) }
 }
 
 /// The policy that mints a token of this kind, read off the pins's pins.
@@ -207,10 +218,13 @@ fn policyOfKind(pins: State, kind: Int) -> PolicyId {
 }
 
 /// The duties an admitted edge creates (#157 C6). Read off the edge and
-/// the request, never off anything the folder declares.
+/// the request, never off anything the folder declares. An edge that
+/// delivers no token (3, 4, 5) owes its deposit to the request's owner
+/// (#253); the others owe it with the token they deliver.
 fn dutiesOf(
   pins: State,
   edge: Int,
+  owner: VerificationKeyHash,
   key: ByteArray,
   destination: (ByteArray, ByteArray),
   floor: Int,
@@ -242,9 +256,12 @@ fn dutiesOf(
       },
     ]
   } else if edge == edgeUpdateTerminal {
-    [BurnFromInput { policy: pins.active_policy, key, sole: True }]
+    [
+      BurnFromInput { policy: pins.active_policy, key, sole: True },
+      ReturnDeposit { owner, floor },
+    ]
   } else if edge == edgeDeleteAbsent {
-    [SpendCustody { key }]
+    [SpendCustody { key }, ReturnDeposit { owner, floor }]
   } else if edge == edgeWitnessTerminal {
     [DeliverToken {
       policy: pins.terminal_policy,
@@ -258,7 +275,10 @@ fn dutiesOf(
     // `deleteActive` (edge 5) burns the active token the request names;
     // the cage requires it as an input, exactly as the terminal update
     // does.
-    [BurnFromInput { policy: pins.active_policy, key, sole: False }]
+    [
+      BurnFromInput { policy: pins.active_policy, key, sole: False },
+      ReturnDeposit { owner, floor },
+    ]
   }
 }
 
@@ -362,7 +382,7 @@ fn admitted(
 /// One step of the fold, over the transaction's own inputs in order.
 fn mkAction(pins: State, tokenId: TokenId, validity_range) {
   fn(input: Input, acc: Fold) -> Fold {
-    if !acc.ok {
+    if acc.refusal != None {
       acc
     } else {
       when input.output.datum is {
@@ -424,9 +444,17 @@ fn stepRequest(
             } else {
               // Refund rows (NOTE-014 item A2 as corrected by NOTE-017):
               // only REJECTED rows are owed refunds, at `input − tip`.
+              // Each is owed twice over: positionally (`refundFault`),
+              // and with every other obligation to the owner's key
+              // (`payeeFault`), so a refund output cannot also pay a
+              // deposit or a custody refund of the same payee (#253).
               Fold {
                 ..popped,
                 refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
+                duties: pushDuty(
+                  popped.duties,
+                  ReturnDeposit { owner: requestOwner, floor: held - pins.tip },
+                ),
               }
             }
           UpdateAction(proof) ->
@@ -444,13 +472,14 @@ fn stepRequest(
                 } else {
                   admitted(popped, pins, tag, request, input.output.value)
                 }
-              if !checked.ok {
+              if checked.refusal != None {
                 checked
               } else {
                 applyEdge(
                   checked,
                   pins,
                   tag,
+                  requestOwner,
                   requestKey,
                   destination,
                   held - pins.tip,
@@ -471,6 +500,7 @@ fn applyEdge(
   acc: Fold,
   pins: State,
   edge: Int,
+  owner: VerificationKeyHash,
   key: ByteArray,
   destination: (ByteArray, ByteArray),
   floor: Int,
@@ -572,7 +602,7 @@ fn applyEdge(
         ),
         duties: pushDuties(
           acc.duties,
-          dutiesOf(pins, edge, key, destination, floor),
+          dutiesOf(pins, edge, owner, key, destination, floor),
         ),
       }
   }
@@ -584,52 +614,31 @@ fn applyEdge(
 // Discharging the duties
 // ----------------------------------------------------------------------------
 
-fn dutiesSatisfied(
+fn dutiesFault(
   pins: State,
   cageAddress: Address,
   duties: List<Duty>,
   tx: Transaction,
-) -> Bool {
+) -> Option<String> {
   when duties is {
-    [] -> True
+    [] -> None
     [duty, ..rest] ->
-      if dutyOk(pins, cageAddress, duty, tx) {
-        dutiesSatisfied(pins, cageAddress, rest, tx)
-      } else {
-        False
+      when dutyFault(pins, cageAddress, duty, tx) is {
+        None -> dutiesFault(pins, cageAddress, rest, tx)
+        refusal -> refusal
       }
   }
 }
 
-fn dutyOk(
+fn dutyFault(
   pins: State,
   cageAddress: Address,
   duty: Duty,
   tx: Transaction,
-) -> Bool {
+) -> Option<String> {
   when duty is {
-    DeliverToken { policy, key, destination, floor, count, agreed } -> {
-      let carriers = carriersOf(tx.outputs, policy, key)
-      when carriers is {
-        [carrier] ->
-          if !agreed || quantity_of(carrier.value, policy, key) != count || !destinationMatches(
-            destination,
-            carrier,
-          ) {
-            traceFalse(@"destination")
-          } else if lovelace_of(carrier.value) < floor {
-            // T6 / want-ledger R4: no folder incentive exists in this
-            // version, so the deposit that rode the request returns to
-            // the requester. The folder earns the tip and nothing else.
-            // `floor` is the SUM over the requests that share this
-            // carrier, so a second deposit cannot be pocketed.
-            traceFalse(@"deposit-returned")
-          } else {
-            True
-          }
-        _ -> traceFalse(@"destination")
-      }
-    }
+    DeliverToken { policy, key, destination, floor, count, agreed } ->
+      deliveryFault(tx.outputs, policy, key, destination, floor, count, agreed)
     LockCustody { key, refund, floor } -> {
       let carriers = carriersOf(tx.outputs, pins.absent_policy, key)
       when carriers is {
@@ -638,28 +647,18 @@ fn dutyOk(
             carrier.datum,
             refund,
           ) {
-            traceFalse(@"absent-custody")
+            Some(@"absent-custody")
           } else if lovelace_of(carrier.value) < floor {
-            traceFalse(@"deposit-returned")
+            depositReturned()
           } else {
-            True
+            None
           }
-        _ -> traceFalse(@"absent-custody")
+        _ -> Some(@"absent-custody")
       }
     }
-    SpendCustody { key } ->
-      when custodyInput(cageAddress, pins.absent_policy, key, tx.inputs) is {
-        None -> traceFalse(@"refund")
-        Some((refund, owed)) ->
-          if filter(
-            tx.outputs,
-            fn(out) { paysAddress(refund, out) && lovelace_of(out.value) >= owed },
-          ) == [] {
-            traceFalse(@"refund")
-          } else {
-            True
-          }
-      }
+    // Found and settled with the fold's other custody refunds to the same
+    // address once every other duty holds (`custodyOwedOf`, #253).
+    SpendCustody { .. } -> None
     BurnFromInput { policy, key, sole } -> {
       // #177 I177-CHAIN. `sole` is the whole difference between the two
       // burning edges, and the reason each gives.
@@ -685,18 +684,284 @@ fn dutyOk(
       let carriers =
         filter(tx.inputs, fn(i) { quantity_of(i.output.value, policy, key) != 0 })
       if !sole {
-        carriers != [] || traceFalse(@"burn-from-input")
+        if carriers != [] {
+          None
+        } else {
+          Some(@"burn-from-input")
+        }
       } else {
         when carriers is {
           [source] ->
-            quantity_of(source.output.value, policy, key) == 1 || traceFalse(
-              tokenMissingRefusal(),
-            )
-          _ -> traceFalse(tokenMissingRefusal())
+            if quantity_of(source.output.value, policy, key) == 1 {
+              None
+            } else {
+              Some(tokenMissingRefusal())
+            }
+          _ -> Some(tokenMissingRefusal())
         }
       }
     }
+    // Settled per payee after every other duty and the positional
+    // refunds (`payeeFault`), so every earlier refusal keeps its reason.
+    ReturnDeposit { .. } -> None
   }
+}
+
+/// Why a minted active or terminal token's delivery fails, or `None`
+/// (#157 C6, T1, T6).
+///
+/// `deposit-returned` is T6 / want-ledger R4: no folder incentive exists
+/// in this version, so the deposit that rode the request returns with
+/// the token. The folder earns the tip and nothing else. `floor` is the
+/// SUM over the requests that share this carrier, so a second deposit
+/// cannot be pocketed.
+fn deliveryFault(
+  outputs: List<Output>,
+  policy: PolicyId,
+  key: ByteArray,
+  destination: (ByteArray, ByteArray),
+  floor: Int,
+  count: Int,
+  agreed: Bool,
+) -> Option<String> {
+  when carriersOf(outputs, policy, key) is {
+    [carrier] ->
+      if !agreed || quantity_of(carrier.value, policy, key) != count || !destinationMatches(
+        destination,
+        carrier,
+      ) {
+        Some(@"destination")
+      } else if lovelace_of(carrier.value) < floor {
+        depositReturned()
+      } else {
+        None
+      }
+    _ -> Some(@"destination")
+  }
+}
+
+/// Why a payee of this fold is not paid what the fold owes it, or `None`
+/// (#253, DM-C2). `owed` is one floor per payment credential: the
+/// deposits of the edges that deliver nothing (3, 4, 5) and the refunds
+/// of rejected rows, at the owner's key, and the custody refunds, at the
+/// payment credential of the address each custody recorded — summed.
+///
+/// A payee is paid the summed lovelace of the outputs that can settle (`settlesOf`)
+/// whose payment credential is theirs, so each output counts once and
+/// one output never pays two obligations. A short, misdirected or
+/// missing payment is `deposit-returned`: the lovelace one output owes
+/// cannot be told apart by obligation once they share a payee, and every
+/// one of them is a deposit going back — a custody refund is the
+/// inserter's own deposit, held since edge 0.
+fn payeeFault(
+  outputs: List<Output>,
+  settles: fn(Output) -> Bool,
+  owed: Pairs<PaymentCredential, Int>,
+) -> Option<String> {
+  if settled(
+    outputs,
+    settles,
+    owed,
+    fn(payee, out) { out.address.payment_credential == payee },
+  ) {
+    None
+  } else {
+    depositReturned()
+  }
+}
+
+/// The summed lovelace of the outputs `pays` selects.
+fn paidWhere(outputs: List<Output>, pays: fn(Output) -> Bool) -> Int {
+  foldl(
+    outputs,
+    0,
+    fn(out, total) {
+      if pays(out) {
+        total + lovelace_of(out.value)
+      } else {
+        total
+      }
+    },
+  )
+}
+
+/// Add `amount` to what `payee` is owed.
+fn owe(owed: Pairs<k, Int>, payee: k, amount: Int) -> Pairs<k, Int> {
+  when owed is {
+    [] -> [Pair(payee, amount)]
+    [Pair(held, floor), ..rest] ->
+      if held == payee {
+        [Pair(held, floor + amount), ..rest]
+      } else {
+        [Pair(held, floor), ..owe(rest, payee, amount)]
+      }
+  }
+}
+
+/// Is every payee paid at least what it is owed, counting the outputs
+/// `pays` assigns to it that can settle an obligation (`settles`)? The
+/// payee is matched first, so only its own outputs are checked further.
+fn settled(
+  outputs: List<Output>,
+  settles: fn(Output) -> Bool,
+  owed: Pairs<k, Int>,
+  pays: fn(k, Output) -> Bool,
+) -> Bool {
+  list.all(
+    owed,
+    fn(entry) {
+      let Pair(payee, floor) = entry
+      paidWhere(outputs, fn(out) { pays(payee, out) && settles(out) }) >= floor
+    },
+  )
+}
+
+/// Why a refund address is not paid every custody refund of the fold that
+/// names it, summed, or `None` (#253): two custodies refunding one address
+/// are not paid by one output holding the larger of them.
+fn custodyFault(
+  outputs: List<Output>,
+  settles: fn(Output) -> Bool,
+  custodyOwed: Pairs<Address, Int>,
+) -> Option<String> {
+  if settled(
+    outputs,
+    settles,
+    custodyOwed,
+    fn(refund, out) { out.address == refund },
+  ) {
+    None
+  } else {
+    refundShort()
+  }
+}
+
+/// Why the rejected rows' refunds are not paid positionally, or `None`
+/// (NOTE-014 item A2): the outputs after the state continuation, in the
+/// order the rows were consumed, each paying that row's owner key at
+/// least what is owed. Unequal crossed allocations fail here even when
+/// every credential passes and every total matches. A short, misdirected
+/// or missing refund is `deposit-returned`, as for every other payment
+/// the fold owes an owner (#253).
+fn refundFault(
+  outputs: List<Output>,
+  owners: Pairs<VerificationKeyHash, Int>,
+) -> Option<String> {
+  when owners is {
+    [] -> None
+    [Pair(owner, owed), ..rest] ->
+      when outputs is {
+        [output, ..remaining] ->
+          if output.address.payment_credential == address.VerificationKey(
+            owner,
+          ) && lovelace_of(output.value) >= owed {
+            refundFault(remaining, rest)
+          } else {
+            depositReturned()
+          }
+        [] -> depositReturned()
+      }
+  }
+}
+
+/// The floors a fold owes its payees, one per payment credential (DM-C2):
+/// each owner's deposits and reject refunds at their key, plus every
+/// custody refund to an address with that key. A credential owed custody
+/// refunds alone is left out: the per-address sums (`custodyFault`)
+/// already hold there, since outputs at distinct addresses are distinct.
+fn payeeOwed(
+  duties: List<Duty>,
+  custodyOwed: Pairs<Address, Int>,
+) -> Pairs<PaymentCredential, Int> {
+  let owners =
+    foldl(
+      duties,
+      [],
+      fn(duty, owed) {
+        when duty is {
+          ReturnDeposit { owner, floor } ->
+            owe(owed, address.VerificationKey(owner), floor)
+          _ -> owed
+        }
+      },
+    )
+  foldl(
+    custodyOwed,
+    owners,
+    fn(entry, owed) {
+      let Pair(refund, amount) = entry
+      let payee = refund.payment_credential
+      if pairs.has_key(owed, payee) {
+        owe(owed, payee, amount)
+      } else {
+        owed
+      }
+    },
+  )
+}
+
+/// The custody refunds a fold owes, summed per decoded refund address:
+/// the lovelace of every custody UTxO its `SpendCustody` duties consume.
+/// `None` when a consumed absent token's custody is not spent here, or
+/// records an address that decodes to nothing: no output can pay it.
+fn custodyOwedOf(
+  pins: State,
+  cageAddress: Address,
+  duties: List<Duty>,
+  inputs: List<Input>,
+) -> Option<Pairs<Address, Int>> {
+  foldl(
+    duties,
+    Some([]),
+    fn(duty, found) {
+      when (duty, found) is {
+        (SpendCustody { key }, Some(owed)) ->
+          when custodyInput(cageAddress, pins.absent_policy, key, inputs) is {
+            Some((refund, value)) ->
+              when lib.decodeAddress(refund) is {
+                Some(address) -> Some(owe(owed, address, value))
+                None -> None
+              }
+            None -> None
+          }
+        _ -> found
+      }
+    },
+  )
+}
+
+/// Can this output settle an obligation of the fold? Off the cage's own
+/// payment credential (the continuation and custody sit there) and
+/// carrying none of the tokens the fold delivers, which owe their own
+/// deposits. Each output counts once toward its payee.
+fn settlesOf(
+  cageCredential: PaymentCredential,
+  duties: List<Duty>,
+) -> fn(Output) -> Bool {
+  let carried = carriedOf(duties)
+  fn(out: Output) {
+    out.address.payment_credential != cageCredential && !list.any(
+      carried,
+      fn(asset) {
+        let (policy, key) = asset
+        quantity_of(out.value, policy, key) != 0
+      },
+    )
+  }
+}
+
+/// The `(policy, key)` of every token this fold delivers.
+fn carriedOf(duties: List<Duty>) -> List<(PolicyId, ByteArray)> {
+  list.foldr(
+    duties,
+    [],
+    fn(duty, carried) {
+      when duty is {
+        DeliverToken { policy, key, .. } -> [(policy, key), ..carried]
+        _ -> carried
+      }
+    },
+  )
 }
 
 /// Why the trie refuses this `updateTerminal`, or `None` when the leaf
@@ -864,32 +1129,31 @@ fn custodyRefundOf(datum: Datum) -> Option<ByteArray> {
 }
 
 // ----------------------------------------------------------------------------
-// Rejected-row refunds (unchanged)
-// ----------------------------------------------------------------------------
-
-fn sumRefunds(
-  outputs: List<Output>,
-  owners: List<Pair<VerificationKeyHash, Int>>,
-) -> Bool {
-  when owners is {
-    [] -> True
-    [Pair(owner, owed), ..rest] -> {
-      expect [output, ..remaining] = outputs
-      expect address.VerificationKey(vkh) = output.address.payment_credential
-      expect vkh == owner
-      // Per-owner no-underpayment (NOTE-014 item A2): this row's output
-      // carries at least exactly what is owed. Unequal crossed
-      // allocations fail here even when every credential passes and
-      // every total matches.
-      expect lovelace_of(output.value) >= owed
-      sumRefunds(remaining, rest)
-    }
-  }
-}
-
-// ----------------------------------------------------------------------------
 // `Modify`
 // ----------------------------------------------------------------------------
+
+/// The script and cage token of a state input: the one state token, at
+/// quantity one, under the policy of the script that holds it.
+fn stateIdentity(input: Input) -> (PolicyId, TokenId) {
+  expect address.Script(policyId) = input.output.address.payment_credential
+  expect Some(cageToken) = tokenFromPolicy(policyId, input.output.value)
+  expect exactQuantity(policyId, input.output.value, cageToken, 1)
+  (policyId, cageToken)
+}
+
+/// Why the cage refuses this `Modify` of the state `input` carrying
+/// `pins`, or `None` when it folds. The spend handler traces exactly this
+/// reason and returns False, so a test asserting it asserts the one trace
+/// the whole transaction emits — not merely that it was refused.
+pub fn modifyRefusal(
+  pins: State,
+  actions: List<RequestAction>,
+  input: Input,
+  tx: Transaction,
+) -> Option<String> {
+  let (policyId, cageToken) = stateIdentity(input)
+  validModify(pins, input, policyId, cageToken, tx, actions)
+}
 
 fn validModify(
   pins: State,
@@ -898,7 +1162,7 @@ fn validModify(
   tokenId: TokenId,
   tx: Transaction,
   actions: List<RequestAction>,
-) -> Bool {
+) -> Option<String> {
   let Transaction { outputs, inputs, validity_range, mint, .. } = tx
   expect Some(output) = head(outputs)
   expect InlineDatum(outState) = output.datum
@@ -908,25 +1172,25 @@ fn validModify(
     // address: a fold that hands the registry to another script is not a
     // fold. Checked before anything the batch says, because everything
     // after it is about a state that would not be the registry's.
-    traceFalse(@"continuation-address")
+    Some(@"continuation-address")
   } else if !exactQuantity(policyId, output.value, tokenId, 1) {
-    traceFalse(@"state-token")
+    Some(@"state-token")
   } else if lovelace_of(output.value) < lovelace_of(input.output.value) {
     // No-drain rule (NOTE-017): the state UTxO's own lovelace may not
     // fall. Processed value routes to the destinations below; ledger
     // conservation plus the rejected-row floors close the rest.
-    traceFalse(@"state-drain")
+    Some(@"state-drain")
   } else if !pinsPreserved(pins, next) {
     // C7: the seven non-root fields are registry configuration — genesis
     // sets them, every fold preserves them. A fold altering any of them
     // refuses here, before any root, delta or destination check.
-    traceFalse(@"pins-altered")
+    Some(@"pins-altered")
   } else {
     let folded =
       foldl(
         inputs,
         Fold {
-          ok: True,
+          refusal: None,
           trie: mpf.from_root(pins.root),
           actions,
           consumed: 0,
@@ -936,19 +1200,19 @@ fn validModify(
         },
         mkAction(pins, tokenId, validity_range),
       )
-    if !folded.ok {
-      False
+    if folded.refusal != None {
+      folded.refusal
     } else if folded.consumed <= 0 {
       // Exact request/action pairing (NOTE-020, A001/root 071): empty
       // processing refuses — no matching request consumed, no batch.
-      traceFalse(@"empty-fold")
+      Some(@"empty-fold")
     } else if folded.actions != [] {
       // Surplus unconsumed actions refuse: every supplied action must
       // pair with an actual matching request, and missing actions
       // already refused at `missing-action`.
-      traceFalse(@"surplus-actions")
+      Some(@"surplus-actions")
     } else if mpf.root(folded.trie) != next.root {
-      traceFalse(@"root")
+      Some(@"root")
     } else if !mintMatches(pins, folded.minted, mint) {
       // C5: the transaction's mint under the three pinned token policies
       // equals the summed C2 column exactly — asset by asset, quantity
@@ -958,17 +1222,35 @@ fn validModify(
       // The NAME of that refusal comes from `lib.mintRefusal`, the one
       // construction site, so a test asserting the reason asserts the
       // value this validator actually traces (#173 A-006).
-      expect Some(reason) = lib.mintRefusal()
-      traceFalse(reason)
-    } else if !dutiesSatisfied(pins, input.output.address, folded.duties, tx) {
-      False
+      lib.mintRefusal()
     } else {
-      when folded.refunds is {
-        [] -> True
-        _ -> {
-          expect [_, ..refundOutputs] = outputs
-          sumRefunds(refundOutputs, list.reverse(folded.refunds))
-        }
+      // `outputs` is non-empty: its head is the continuation read above.
+      expect [_, ..refundOutputs] = outputs
+      let cageAddress = input.output.address
+      when dutiesFault(pins, cageAddress, folded.duties, tx) is {
+        None ->
+          when custodyOwedOf(pins, cageAddress, folded.duties, inputs) is {
+            None -> refundShort()
+            Some(custodyOwed) -> {
+              let owed = payeeOwed(folded.duties, custodyOwed)
+              if custodyOwed == [] && owed == [] {
+                // A fold that owes no lovelace settles nothing.
+                None
+              } else {
+                let settles =
+                  settlesOf(cageAddress.payment_credential, folded.duties)
+                when custodyFault(outputs, settles, custodyOwed) is {
+                  None ->
+                    when refundFault(refundOutputs, list.reverse(folded.refunds)) is {
+                      None -> payeeFault(outputs, settles, owed)
+                      refusal -> refusal
+                    }
+                  refusal -> refusal
+                }
+              }
+            }
+          }
+        refusal -> refusal
       }
     }
   }
@@ -1208,3 +1490,13 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
 
 // #183 slice b: `insertEdgeOf` is gone with the `Operation` wire —
 // an insert names its edge in the request's own tag.
+
+/// A payment the fold owes a payee is short, misdirected or missing.
+fn depositReturned() -> Option<String> {
+  Some(@"deposit-returned")
+}
+
+/// A custody refund is not paid to the address its custody recorded.
+fn refundShort() -> Option<String> {
+  Some(@"refund")
+}

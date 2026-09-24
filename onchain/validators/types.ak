@@ -332,7 +332,25 @@ pub type Request {
   edge: Int,
   /// The deposit (in lovelace) the request rides with, over and above the tip.
   /// Must equal the input lovelace less `state.tip` at Modify time.
-  /// The fold returns it to the destination (#157 T6, want-ledger R4).
+  ///
+  /// The deposit is the requester's value, never a payment to anyone; the
+  /// tip pays the folder. Where the deposit goes, by how the request ends
+  /// (#253):
+  ///
+  /// | Exit | Tip | Deposit |
+  /// |---|---|---|
+  /// | Fold delivering a token (edges 0, 1, 2, 6) | folder | with the token, at the named destination (the cage's custody for 0) |
+  /// | Fold delivering nothing (edges 3, 4, 5) | folder | `requestOwner`'s key, at least the deposit |
+  /// | Reject | folder | `requestOwner`'s key, at least the deposit |
+  /// | Retract | returned | `requestOwner`, at least the held value (deposit + tip) |
+  ///
+  /// A shortfall or misdirection is refused `deposit-returned`. Everything
+  /// one fold owes one payee — deposits, reject refunds, and the custody
+  /// refunds that return an absence witness's deposit — is paid on the
+  /// summed lovelace of the outputs with that payee's payment credential,
+  /// token carriers aside, so one output never pays two of them; custody
+  /// refunds are also summed per exact refund address (`refund`). Value
+  /// outside these obligations (fees, the folder's tip) is unconstrained.
   deposit: Int,
   /// The POSIXTime (in milliseconds) when the request was submitted.
   /// Used for time-gated phase enforcement: Phase 1 (oracle-only),

@@ -82,7 +82,7 @@ import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Blueprint (NamingCodes)
-import Singular.Registry.Config (CageConfig (..), cfgScriptHash)
+import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     Addr,
     AssetName (..),
@@ -154,7 +154,9 @@ cage references every later fold resolves through.
 
 The state validator alone is fifteen kilobytes against a sixteen-kilobyte
 transaction cap, so the references are published once here rather than
-attached per fold ('Edges.publishCageRefs').
+attached per fold ('Edges.publishCageRefs'). The boot itself resolves
+the state validator through a publication already in the payer's
+wallet, and is refused `StateValidatorNotPublished` without one.
 -}
 bootRegistry ::
     CageConfig ->
@@ -195,20 +197,6 @@ bootRegistry cfg codes prov submit payer tm = do
             <> " wallet-coins="
             <> show [c | (_, o) <- bootWallet, let Coin c = o ^. coinTxOutL]
         )
-    -- The boot must RESOLVE the state validator through a published
-    -- reference output, never carry it. The validator is fifteen
-    -- kilobytes against a sixteen-kilobyte cap, so an inline boot
-    -- leaves the registry no room to grow: that is what the retirement
-    -- guard ran out of. These two checks came from a harness that
-    -- booted by hand; they belong to whoever boots.
-    when (Map.member (cfgScriptHash cfg) bootScripts) $
-        error
-            "bootRegistry: the boot transaction carries the state \
-            \validator INLINE; it must reference the published output"
-    when (Set.null bootRefs) $
-        error
-            "bootRegistry: the boot transaction resolves no reference \
-            \input, so the state validator was not published before it"
     signedBoot <- submit unsignedBoot
     tid <- tokenIdOfBootTx cfg signedBoot
     createTrie tm tid

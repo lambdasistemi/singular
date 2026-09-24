@@ -548,6 +548,7 @@ test-suite cage-tests
   other-modules:
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
+    Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.BurnSourceSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.FailureMatchSpec

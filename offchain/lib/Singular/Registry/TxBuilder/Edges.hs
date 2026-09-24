@@ -260,12 +260,11 @@ publishRefScript prov submit payerAddr script = do
 {- | Publish the state validator as a reference output, once, before any
 boot (#177).
 
-The boot transaction carries the state validator inline unless the
-payer's wallet already holds a publication of it, and that validator is
+A registry boots only by reference: the boot resolves the state
+validator through a publication in the payer's wallet and is refused
+`StateValidatorNotPublished` without one, because that validator is
 fifteen kilobytes against a sixteen-kilobyte transaction cap. A session
-calls this before its first boot and every boot after it references the
-script instead of carrying it, which is what leaves room for the
-retirement's guard.
+calls this before its first boot.
 
 Idempotent by discovery: a wallet that already holds the publication
 gets it back rather than a second one, so a harness that boots several

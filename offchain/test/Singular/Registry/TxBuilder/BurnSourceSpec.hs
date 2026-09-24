@@ -37,6 +37,7 @@ import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.PParams (emptyPParams)
 import Cardano.Ledger.Api.Tx.Out (
     TxOut,
+    coinTxOutL,
     datumTxOutL,
     mkBasicTxOut,
     valueTxOutL,
@@ -62,6 +63,7 @@ import Singular.Registry.TxBuilder.ConnectedFold (
     ConnectedSpend (..),
  )
 import Singular.Registry.TxBuilder.Internal (
+    addrFromKeyHashBytes,
     cageAddrFromCfg,
     computeScriptHash,
     extractCageDatum,
@@ -216,6 +218,7 @@ spec = do
     holderSelection
     burnSourceRequired
     deletionBurnSource
+    depositReturn
 
 -- ---------------------------------------------------------
 -- #178: absent custody identity comes from its sole asset
@@ -415,11 +418,12 @@ holderSelection = describe "#177 I177-BUILDER: the burn source is selected exact
         refusedWith (holding [holderOf 1 keyA 2]) retirement `shouldSatisfy` isLeft
 
     -- The retirement creates no carrier: the Lean row has the active
-    -- asset on an input and on no output at all.
+    -- asset on an input and on no output at all. Its one output is the
+    -- deposit going back to the owner (#253), carrying no asset.
     it "creates no output carrying the asset it burns" $
         case decideWith (holding [holderOf 1 keyA 1]) retirement of
             Left err -> expectationFailure err
-            Right d -> rdOutputs d `shouldBe` []
+            Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
 
 -- ---------------------------------------------------------
 -- #236: deleteActive burns the witness it holds
@@ -538,3 +542,111 @@ deletionBurnSource =
         it "does not sweep another key's holder into the deletion" $
             void (decideDeletion [boundHolder 1 keyB 1])
                 `shouldSatisfy` isLeft
+
+-- ---------------------------------------------------------
+-- #253: a fold that delivers nothing returns the deposit to its owner
+-- ---------------------------------------------------------
+
+-- | The owner `requestFor` names.
+ownerKey :: ByteString
+ownerKey = BS.replicate 28 0x5a
+
+-- | A plain payment of `lovelace` to `owner`'s key: what the cage counts.
+ownerPaid :: ByteString -> Integer -> TxOut ConwayEra
+ownerPaid owner lovelace =
+    mkBasicTxOut (addrFromKeyHashBytes Testnet owner) (MaryValue (Coin lovelace) mempty)
+
+{- | A request of `owner` at `keyA` on `edge`, holding tip plus a deposit
+of 2 ada, at its own input `i`.
+-}
+ownedRequest :: Int -> ByteString -> Edge -> (TxIn, TxOut ConwayEra)
+ownedRequest i owner edge =
+    let (_, out) = requestFor edge
+        req = case extractCageDatum out of
+            Just (RequestDatum r) -> r{requestOwner = toBuiltin owner}
+            _ -> error "BurnSourceSpec fixture: requestFor carries no request"
+     in ( case parseOutRef (T.pack (replicate 64 '4' <> "#" <> show i)) of
+            Right r -> r
+            Left e -> error ("BurnSourceSpec fixture: " <> e)
+        , out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req))
+        )
+
+{- | The burn sources are not what these rows are about: with
+`rcAllowInadmissible` the builder emits the burn without a source, so the
+deposit leg is the only output an edge 3 or 5 request creates here.
+-}
+depositsOf :: [(TxIn, TxOut ConwayEra)] -> Either String RegistryDuties
+depositsOf reqs =
+    registryDuties
+        cfg
+        emptyPParams
+        tokenState
+        witnessScripts{rcAllowInadmissible = True}
+        reqs
+        (map (const True) reqs)
+
+depositReturn :: Spec
+depositReturn =
+    describe "#253: the deposit of a fold that delivers nothing goes to its owner" $ do
+        it "pays a deletion's deposit to its owner's key" $
+            case depositsOf [ownedRequest 1 ownerKey edgeDeleteActive] of
+                Left err -> expectationFailure err
+                Right d -> rdOutputs d `shouldBe` [ownerPaid ownerKey 2000000]
+
+        -- Summed per owner: two deposits of one owner are one output, and
+        -- another owner's deposit is an output of its own.
+        it "pays one output per owner, summing that owner's deposits" $
+            case depositsOf
+                [ ownedRequest 1 ownerKey edgeUpdateTerminal
+                , ownedRequest 2 otherKey edgeDeleteActive
+                , ownedRequest 3 ownerKey edgeDeleteActive
+                ] of
+                Left err -> expectationFailure err
+                Right d ->
+                    rdOutputs d
+                        `shouldMatchList` [ownerPaid ownerKey 4000000, ownerPaid otherKey 2000000]
+
+        -- The approval a deletion carried is not burned: it goes back to
+        -- the owner in the deposit's own output, never beside it.
+        it "returns a deletion's approval inside its deposit output" $
+            case depositsOf [approved (ownedRequest 1 ownerKey edgeDeleteActive)] of
+                Left err -> expectationFailure err
+                Right d ->
+                    rdOutputs d
+                        `shouldBe` [ mkBasicTxOut
+                                        (addrFromKeyHashBytes Testnet ownerKey)
+                                        (MaryValue (Coin 2000000) approvalAsset)
+                                   ]
+
+        -- A request the fold does not process (a rejected row) owes no
+        -- deposit output here; its refund is the reject builder's.
+        it "owes nothing for a request the fold does not process" $
+            case registryDuties
+                cfg
+                emptyPParams
+                tokenState
+                witnessScripts{rcAllowInadmissible = True}
+                [ownedRequest 1 ownerKey edgeDeleteActive]
+                [False] of
+                Left err -> expectationFailure err
+                Right d -> rdOutputs d `shouldBe` []
+  where
+    otherKey = BS.replicate 28 0x6b
+
+-- | One approval under the registry's application pin.
+approvalAsset :: MultiAsset
+approvalAsset =
+    MultiAsset
+        ( Map.singleton
+            (policyIdFromPin (cfgApplicationPolicy cfg))
+            (Map.singleton (AssetName "t253-approval") 1)
+        )
+
+-- | The request carrying `approvalAsset` beside its lovelace.
+approved :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
+approved (i, out) =
+    ( i
+    , out
+        & valueTxOutL
+            .~ MaryValue (out ^. coinTxOutL) approvalAsset
+    )

@@ -180,6 +180,22 @@ fn activeHeld() -> List<Input> {
   [fx.tokenInput(0, fx.activePolicy, fx.keyA)]
 }
 
+/// Edges 3, 4 and 5 deliver no token, so the deposit goes back to the
+/// request's owner's key (#253).
+fn bookerPaid() -> List<Output> {
+  [fx.paymentOutput(fx.bookerAddress, fx.deposit)]
+}
+
+/// Edge 4 by the inserter: the custody refund to the address the custody
+/// recorded, and the request's own deposit to its owner — the same
+/// inserter, in two payments.
+fn deleteAbsentOutputs() -> List<Output> {
+  [
+    fx.paymentOutput(fx.inserterAddress, fx.deposit),
+    fx.paymentOutput(fx.inserterAddress, fx.deposit),
+  ]
+}
+
 /// Edge 4: the inserter takes their witness back.
 fn deleteAbsent(
   mint: Value,
@@ -288,19 +304,19 @@ test g2_update_absent_to_active_accepts() {
 }
 
 test g2_update_active_to_terminal_accepts() {
-  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -1), [], activeHeld())
+  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -1), bookerPaid(), activeHeld())
 }
 
 test g2_delete_absent_accepts() {
   deleteAbsent(
     fx.mintOf(fx.absentPolicy, fx.keyA, -1),
-    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+    deleteAbsentOutputs(),
     updateActiveCustody(),
   )
 }
 
 test g2_delete_active_accepts() {
-  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, -1), [], activeHeld())
+  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, -1), bookerPaid(), activeHeld())
 }
 
 test g2_read_terminal_accepts() {
@@ -327,19 +343,19 @@ test g2_update_absent_to_active_delta_off_refuses() fail {
 }
 
 test g2_update_active_to_terminal_delta_off_refuses() fail {
-  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -2), [], activeHeld())
+  updateTerminal(fx.mintOf(fx.activePolicy, fx.keyA, -2), bookerPaid(), activeHeld())
 }
 
 test g2_delete_absent_delta_off_refuses() fail {
   deleteAbsent(
     zero,
-    [fx.paymentOutput(fx.inserterAddress, fx.deposit)],
+    deleteAbsentOutputs(),
     updateActiveCustody(),
   )
 }
 
 test g2_delete_active_delta_off_refuses() fail {
-  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, 1), [], activeHeld())
+  deleteActive(fx.mintOf(fx.activePolicy, fx.keyA, 1), bookerPaid(), activeHeld())
 }
 
 test g2_read_terminal_delta_off_refuses() fail {
@@ -853,11 +869,11 @@ fn edgeOutputs(edge: Int) -> List<Output> {
   } else if edge == 2 {
     updateActiveOutputs()
   } else if edge == 4 {
-    [fx.paymentOutput(fx.inserterAddress, fx.deposit)]
+    deleteAbsentOutputs()
   } else if edge == 6 {
     readOutputs()
   } else {
-    []
+    bookerPaid()
   }
 }
 
@@ -1558,33 +1574,71 @@ test t6_destination_carrying_the_residual_accepts() {
   foldEdge(1)
 }
 
-test t6_folder_keeping_the_residual_refuses() fail {
-  foldEdgeOutputs(
-    1,
-    [
-      fx.deliveryOutput(
-        fx.activePolicy,
-        fx.keyA,
-        fx.recordAddress,
-        InlineDatum(fx.recordDatum()),
-        0,
-      ),
-    ],
+/// The booking's carrier holding `lovelace`, at the named destination.
+fn bookingCarrier(lovelace: Int) -> List<Output> {
+  [
+    fx.deliveryOutput(
+      fx.activePolicy,
+      fx.keyA,
+      fx.recordAddress,
+      InlineDatum(fx.recordDatum()),
+      lovelace,
+    ),
+  ]
+}
+
+/// The reason the cage refuses the canonical booking fold with only its
+/// outputs replaced — the one trace the spend handler emits for it.
+fn bookingRefusal(outputs: List<Output>) -> Option<String> {
+  let root = edgeRoot(1)
+  state.modifyRefusal(
+    fx.stateOf(root),
+    [UpdateAction(edgeProof(1))],
+    fx.stateInput(root),
+    fx.foldTx(
+      root,
+      edgeNextRoot(1),
+      [
+        fx.requestInput(
+          0,
+          fx.keyA,
+          1,
+          edgeOwner(1),
+          edgeDestination(1),
+          edgeApproval(1),
+          fx.requestLovelace,
+        ),
+      ],
+      edgeInputs(1),
+      outputs,
+      edgeMint(1),
+    ),
   )
 }
 
-test t6_underfunded_destination_refuses() fail {
-  foldEdgeOutputs(
+/// The fold refuses for `deposit-returned` and for nothing else, and the
+/// handler returns False rather than crashing.
+fn refusesDepositReturned(outputs: List<Output>) -> Bool {
+  bookingRefusal(outputs) == Some(@"deposit-returned") && !foldEdgeOutputs(
     1,
-    [
-      fx.deliveryOutput(
-        fx.activePolicy,
-        fx.keyA,
-        fx.recordAddress,
-        InlineDatum(fx.recordDatum()),
-        fx.deposit - 1,
-      ),
-    ],
+    outputs,
+  )
+}
+
+test t6_folder_keeping_the_residual_refuses() {
+  refusesDepositReturned(bookingCarrier(0))
+}
+
+test t6_underfunded_destination_refuses() {
+  refusesDepositReturned(bookingCarrier(fx.deposit - 1))
+}
+
+/// The control the two rows above are measured against: the carrier
+/// holding the deposit folds, with no reason to refuse.
+test t6_funded_carrier_has_no_refusal() {
+  bookingRefusal(bookingCarrier(fx.deposit)) == None && foldEdgeOutputs(
+    1,
+    bookingCarrier(fx.deposit),
   )
 }
 

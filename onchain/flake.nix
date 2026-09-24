@@ -249,7 +249,81 @@
           touch $out
         '';
 
-        scriptIdentityChecks = { inherit script-identity; };
+        # -------------------------------------------------------
+        # Reference-publication size (issue #253)
+        # -------------------------------------------------------
+
+        # Every compiled validator is published once as a reference
+        # script, and that publishing transaction must fit the ledger's
+        # maxTxSize — the devnet genesis pins mainnet's 16384. A script
+        # past it cannot be deployed at all, and nothing below the devnet
+        # rows would say so. This is the only size a validator has to
+        # fit: no transaction the product builds carries a validator
+        # inline — a registry boots by reference to the published state
+        # validator, and the boot builder refuses a wallet without that
+        # publication (`StateValidatorNotPublished`).
+        #
+        # The bound is the script's compiled bytes plus the publishing
+        # transaction's overhead (250 bytes: measured on the devnet
+        # publication that refused a 16160-byte state script at 16410
+        # bytes — one key input, the reference output, change, one key
+        # witness) plus a 256-byte margin for a heavier publisher (a base
+        # address, a few more inputs, a second witness). It is quantified
+        # over the blueprint's validators, so an added validator is
+        # checked without editing this, and a blueprint with none fails.
+        #
+        # The same checker is run on a copy of the blueprint whose state
+        # validator is padded one byte past the bound, and must refuse
+        # it: a checker that cannot fail does not guard anything.
+        publishOverhead = 250;
+        publishMargin = 256;
+
+        referencePublicationSizeCheck = pkgs.writeShellApplication {
+          name = "reference-publication-size-check";
+          runtimeInputs = [ pkgs.jq pkgs.gnugrep ];
+          text = ''
+            blueprint="$1"
+            maxTxSize="$2"
+            limit=$(( maxTxSize - ${toString publishOverhead} - ${toString publishMargin} ))
+            report="$(jq -e -r --argjson limit "$limit" '
+              (.validators | length) as $n
+              | if $n == 0 then error("the blueprint reports zero validators") else . end
+              | .validators[]
+              | (.compiledCode | length / 2) as $bytes
+              | "\(if $bytes <= $limit then "OK  " else "FAIL" end) \(.title) \($bytes) bytes (limit \($limit))"
+            ' "$blueprint")"
+            printf '%s\n' "$report"
+            if grep -q '^FAIL' <<<"$report"; then
+              exit 1
+            fi
+          '';
+        };
+
+        reference-publication-size = pkgs.runCommand "mpf-reference-publication-size-check" {
+          blueprint = plutus-blueprint;
+          genesis = ../offchain/e2e-test/genesis/shelley-genesis.json;
+          nativeBuildInputs = [ pkgs.jq ];
+        } ''
+          set -euo pipefail
+          maxTxSize="$(jq -e '.protocolParams.maxTxSize' "$genesis")"
+          ${pkgs.lib.getExe referencePublicationSizeCheck} "$blueprint" "$maxTxSize"
+          limit=$(( maxTxSize - ${toString publishOverhead} - ${toString publishMargin} ))
+          padded="$(mktemp)"
+          jq --argjson limit "$limit" '
+            .validators |= map(
+              if .title == "state.state.spend" then
+                .compiledCode += ("00" * ([$limit + 1 - (.compiledCode | length / 2), 1] | max))
+              else . end)
+          ' "$blueprint" > "$padded"
+          if ${pkgs.lib.getExe referencePublicationSizeCheck} "$padded" "$maxTxSize" 2>/dev/null; then
+            echo "FAIL: the size check accepted a state validator padded past the limit" >&2
+            exit 1
+          fi
+          echo "reference-publication-size: control refused the padded state validator"
+          touch $out
+        '';
+
+        scriptIdentityChecks = { inherit script-identity reference-publication-size; };
 
         # The Aiken dev shell, bound once so `default` and the
         # back-compat `aiken` name expose the same shell.

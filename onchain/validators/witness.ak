@@ -27,7 +27,7 @@ use types.{Modify, UpdateRedeemer}
 /// so a stale pin is a red identity check on every commit rather than
 /// a red devnet row on whichever ticket next moves a token.
 pub const registryStateHash: ByteArray =
-  #"67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20"
+  #"1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428"
 
 /// The three token policies of a registry instance (#157 N1).
 ///

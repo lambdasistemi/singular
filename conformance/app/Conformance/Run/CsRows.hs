@@ -11,6 +11,7 @@ import Conformance.Run.Wallet
 import Conformance.Run.Submit
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Cage (ensureStateRefWith)
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async, cancel)
@@ -199,6 +200,9 @@ runCSSession rows control stateBytes requestBytes namingCodes nodeVer base dirty
                     (scriptHashBytes (computeScriptHash requestBytes))
     _ <- Cage.queryProtocolParams prov
     checkFunding prov funderAddr defaultFundingFloor
+    -- Every CS row boots by reference: publish the state validator
+    -- once, before any row picks its seed.
+    ensureStateRefWith prov submit stateBytes
     mapM_ (runCSRow prov submit stateBytes requestBytes namingCodes nodeVer base dirty receiptsDir control blueprintIdStr) rows
     cancel nodeThread
     emit

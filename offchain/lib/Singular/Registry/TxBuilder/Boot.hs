@@ -9,12 +9,16 @@ Builds the minting transaction for a new cage
 token. Picks a wallet UTxO as seed for asset-name
 derivation, mints +1 token at the cage policy, and
 creates a State UTxO with empty root and configured
-default parameters.
+default parameters. The state validator is resolved
+through its published reference output; a wallet
+without one is refused 'StateValidatorNotPublished'.
 -}
 module Singular.Registry.TxBuilder.Boot (
     bootTokenImpl,
+    BootRefusal (..),
 ) where
 
+import Control.Exception (Exception (..), throwIO)
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
@@ -48,7 +52,6 @@ import Cardano.Ledger.Api.Tx.Out (coinTxOutL, datumTxOutL, mkBasicTxOut, referen
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
     rdmrsTxWitsL,
-    scriptTxWitsL,
  )
 import Cardano.Ledger.BaseTypes (Inject (inject), StrictMaybe (..))
 import Cardano.Ledger.Conway.Scripts (
@@ -95,19 +98,14 @@ lookupSeed target =
 {- | The state validator, published as a reference output at the payer's
 own address, if one is already there (#177).
 
-The boot transaction attaches the state validator INLINE, and that
-validator is fifteen kilobytes against a sixteen-kilobyte transaction
-cap: the whole registry has a few hundred bytes of room, and #177's
-retirement guard did not fit in them. Referencing the script instead of
-carrying it returns the entire fifteen kilobytes to the budget.
+A registry boots only by reference. The state validator is fifteen
+kilobytes against a sixteen-kilobyte transaction cap, so a boot that
+carried it inline would leave the registry no room to grow; no
+transaction carries it.
 
-Discovery rather than a new argument, because `bootTokenImpl` has
-twenty-five callers and every one of them boots from a wallet the
-publisher writes to. A session publishes once — `publishStateRef` — and
-every boot after it references. A wallet with no publication still boots
-with the script inline, exactly as before, so no caller is broken by
-this and none is silently changed either: the two paths differ only in
-where the ledger reads the same script from.
+Discovery rather than a new argument, because every caller of
+`bootTokenImpl` boots from a wallet the publisher writes to. A session
+publishes once — `publishStateRef` — and every boot after it references.
 -}
 lookupStateRef ::
     CageConfig ->
@@ -120,7 +118,27 @@ lookupStateRef cfg =
             SNothing -> False
         )
 
--- | Build a boot-token minting transaction.
+{- | Why a boot is refused before any transaction is built.
+
+'StateValidatorNotPublished': the payer's wallet holds no reference
+output carrying this configuration's state validator. The boot resolves
+that validator through the publication and never carries it inline, so
+the caller publishes it first (`publishStateRef`) and boots again.
+-}
+data BootRefusal = StateValidatorNotPublished
+    deriving (Eq, Show)
+
+instance Exception BootRefusal where
+    displayException StateValidatorNotPublished =
+        "StateValidatorNotPublished: the payer's wallet holds no\
+        \ reference output carrying the state validator; publish the\
+        \ state validator first (publishStateRef) and boot again"
+
+{- | Build a boot-token minting transaction.
+
+Refuses 'StateValidatorNotPublished' when the payer's wallet holds no
+publication of the state validator.
+-}
 bootTokenImpl ::
     CageConfig ->
     Provider IO ->
@@ -129,6 +147,11 @@ bootTokenImpl ::
 bootTokenImpl cfg prov addr = do
     pp <- queryProtocolParams prov
     utxos <- queryUTxOs prov addr
+    stateRef <-
+        maybe
+            (throwIO StateValidatorNotPublished)
+            pure
+            (lookupStateRef cfg utxos)
     -- The seed UTxO is carried in the mint redeemer. We MUST consume
     -- that exact UTxO -- any other input would fail the validator's
     -- `find_input(inputs, seed)` check. Locate it in the caller's
@@ -199,13 +222,7 @@ bootTokenImpl cfg prov addr = do
                 & datumTxOutL
                     .~ mkInlineDatum
                         datumData
-    let script = mkCageScript cfg
-        scriptHash = hashScript script
-        -- #177: reference the published state validator when the wallet
-        -- carries one, and fall back to the inline witness when it does
-        -- not. Fifteen kilobytes of transaction budget turn on this.
-        stateRef = lookupStateRef cfg utxos
-        redeemer = Minting seedRefOnChain
+    let redeemer = Minting seedRefOnChain
         mintPurpose =
             ConwayMinting (AsIx 0)
         redeemers =
@@ -237,14 +254,9 @@ bootTokenImpl cfg prov addr = do
                 & scriptIntegrityHashTxBodyL
                     .~ integrity
                 & referenceInputsTxBodyL
-                    .~ maybe Set.empty (Set.singleton . fst) stateRef
+                    .~ Set.singleton (fst stateRef)
         tx =
             mkBasicTx body
-                & witsTxL . scriptTxWitsL
-                    .~ maybe
-                        (Map.singleton scriptHash script)
-                        (const Map.empty)
-                        stateRef
                 & witsTxL . rdmrsTxWitsL
                     .~ redeemers
     balanced <-
@@ -291,14 +303,10 @@ payForReferenceScripts ::
     ConwayTx ->
     ConwayTx
 payForReferenceScripts pp stateBytes tx =
-    let refBytes =
-            if Set.null (tx ^. bodyTxL . referenceInputsTxBodyL)
-                then 0
-                else stateBytes
-        Coin currentFee = tx ^. bodyTxL . feeTxBodyL
-        Coin needed = estimateMinFeeTx pp tx 1 0 refBytes
+    let Coin currentFee = tx ^. bodyTxL . feeTxBodyL
+        Coin needed = estimateMinFeeTx pp tx 1 0 stateBytes
         delta = needed - currentFee
-     in if refBytes == 0 || delta <= 0
+     in if delta <= 0
             then tx
             else
                 let outs = toList (tx ^. bodyTxL . outputsTxBodyL)
