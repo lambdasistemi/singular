@@ -348,7 +348,9 @@ the refund address is named by `insertAbsent` and recorded in the custody datum
 (R-ADA); `deposit` is the value the absent token holds; `output` is where active
 and terminal tokens are routed; `approval` is the admission evidence; `claimed`
 is the mint the transaction claims for this request, summed by the fold; `tip`
-is what the request holds beyond its deposit (on chain `held − deposit`). -/
+is what the request holds beyond its deposit (on chain `held − deposit`);
+`reference` names the output reference the request sits at, the one a
+retraction's return is bound to. -/
 structure Request where
   make ::
   edge : Edge
@@ -360,13 +362,14 @@ structure Request where
   approval : Option Approval := none
   claimed : List (TokenKind × Int) := []
   tip : Nat := 0
+  reference : Nat := 0
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
-declaration order. -/
+declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -375,6 +378,7 @@ instance : ToJson Request where
     [ ("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
     , ("tip", toJson r.tip)
+    , ("reference", toJson r.reference)
     , ("output", toJson r.output)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
@@ -784,6 +788,9 @@ structure TxOutput where
   refund-only payload. This models field shape, not ledger serialization. -/
   custodyDatum : Option (List Nat) := none
   lovelace : Nat := 0
+  /-- The output reference the output's inline datum presents: a retraction's
+  return names the request it retracts by it. -/
+  reference : Option Nat := none
   deriving BEq, DecidableEq
 
 /-- Recover custody identity from one absent asset of quantity one. Neither
@@ -878,9 +885,10 @@ inductive Exit where
   deriving Repr, BEq, DecidableEq
 
 /-- Who a payment is owed to: the address a delivering fold names, the cage's
-custody, or the request's owner. -/
+custody, the request's owner, or the owner through an output bound to the
+request it retracts, by that request's `reference`. -/
 inductive Recipient where
-  | destination (address : Nat) | custody | owner (key : Nat)
+  | destination (address : Nat) | custody | owner (key : Nat) | bound (key reference : Nat)
   deriving Repr, DecidableEq
 
 /-- A payment owed: at least `atLeast` lovelace to `recipient`. -/
@@ -893,7 +901,9 @@ structure Payment where
 custody for `insertAbsent`, to the named destination for `insertActive`,
 `updateActive` and `witnessTerminal`. A fold delivering nothing and a reject owe
 the deposit back to the owner. A retract owes the owner everything the request
-held, deposit and tip; every other exit leaves the tip to the folder. -/
+held, deposit and tip; every other exit leaves the tip to the folder. A retract
+owes it through an output bound to the request by its `reference`, as the chain
+binds a retraction's return. -/
 def obligations (exit : Exit) (request : Request) : List Payment :=
   match exit with
   | .fold .insertAbsent => [{ recipient := .custody, atLeast := request.deposit }]
@@ -901,15 +911,20 @@ def obligations (exit : Exit) (request : Request) : List Payment :=
     [{ recipient := .destination (requestDestination request), atLeast := request.deposit }]
   | .fold .updateTerminal | .fold .deleteAbsent | .fold .deleteActive | .reject =>
     [{ recipient := .owner request.owner, atLeast := request.deposit }]
-  | .retract => [{ recipient := .owner request.owner, atLeast := request.deposit + request.tip }]
+  | .retract =>
+    [{ recipient := .bound request.owner request.reference, atLeast := request.deposit + request.tip }]
 
-/-- Whether an output pays a recipient, by its role and address. Each output pays
-at most one recipient, and the state continuation pays none. -/
+/-- Whether an output pays a recipient, by its role and address, and for a return
+bound to a request by the reference an inline datum presents. An output pays at
+most one of the recipients one exit owes, and the state continuation pays none. -/
 def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
   match recipient with
   | .custody => output.role == .cage && output.address == some cageAddress
   | .destination address => output.role == .destination && output.address == some address
   | .owner key => output.role == .owner && output.address == some key
+  | .bound key reference =>
+    output.role == .owner && output.address == some key && output.datum == .inline
+      && output.reference == some reference
 
 /-- The chain's reason for a recipient left unpaid: custody or a destination no
 output reaches is `absent-custody` or `destination`; custody or a destination
@@ -918,23 +933,30 @@ def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
   match recipient with
   | .custody => if paying.isEmpty then "absent-custody" else "deposit-returned"
   | .destination _ => if paying.isEmpty then "destination" else "deposit-returned"
-  | .owner _ => "deposit-returned"
+  | .owner _ | .bound _ _ => "deposit-returned"
 
 /-- What the payments owe one recipient: their floors, summed. -/
 def owedTo (recipient : Recipient) (payments : List Payment) : Nat :=
   (payments.filter (·.recipient == recipient)).foldl (· + ·.atLeast) 0
 
+/-- What the outputs paying a recipient give it: their summed lovelace, or, for a
+return bound to a request, the lovelace of the largest one. The chain settles a
+retraction by one sufficient output bound to it, never by fragments. -/
+def receivedBy (recipient : Recipient) (outputs : List TxOutput) : Nat :=
+  let paying := outputs.filter (paysRecipient recipient)
+  match recipient with
+  | .bound _ _ => paying.foldl (fun most o => max most o.lovelace) 0
+  | _ => paying.foldl (· + ·.lovelace) 0
+
 /-- Judge a transaction's outputs against the payments owed: `none` when every
-recipient is paid its summed floor, else the chain's reason for the first
-recipient, in the order the payments are owed, that is not. One exit's judgement
+recipient receives its summed floor, else the chain's reason for the first
+recipient, in the order the payments are owed, that does not. One exit's judgement
 is `settle (obligations exit request) outputs`; a batch is the concatenation of
 its exits' payments. -/
 def settle (payments : List Payment) (outputs : List TxOutput) : Option String :=
   (payments.map (·.recipient)).eraseDups.findSome? fun recipient =>
-    let owed := owedTo recipient payments
-    let paying := outputs.filter (paysRecipient recipient)
-    if owed ≤ paying.foldl (· + ·.lovelace) 0 then none
-    else some (unpaidReason recipient paying)
+    if owedTo recipient payments ≤ receivedBy recipient outputs then none
+    else some (unpaidReason recipient (outputs.filter (paysRecipient recipient)))
 
 /-- A payment as the (address, value) pair `Result.paid` carries, at the address
 `paysRecipient` reads for its recipient: the cage's for custody, the named address
@@ -943,7 +965,16 @@ def paymentPaid (payment : Payment) : Nat × Nat :=
   match payment.recipient with
   | .custody => (cageAddress, payment.atLeast)
   | .destination address => (address, payment.atLeast)
-  | .owner key => (key, payment.atLeast)
+  | .owner key | .bound key _ => (key, payment.atLeast)
+
+/-- The refusal an exit's transaction earns by what it spends, before its payments
+are judged: a retraction spending any input that holds a state token is refused
+`retract-state-spent`, as the chain refuses it. Every other exit spends the state
+it folds or returns, and is refused nothing here. -/
+def spendRefusal (exit : Exit) (inputs : List TxInput) : Option String :=
+  match exit with
+  | .retract => if inputs.any (0 < ·.stateTokens) then some "retract-state-spent" else none
+  | _ => none
 
 /-- One exit as a model step. A fold of edge `e` is exactly `step` when the
 request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
@@ -961,7 +992,9 @@ def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except 
   | .ok t => .ok { t with paid := (obligations exit request).map paymentPaid ++ t.paid }
 
 /-- One owner output per owner payment, at the owner's key, carrying the
-payment's floor, presenting its datum in `datum` and naming `commitment`. -/
+payment's floor: presenting its datum in `datum` and naming `commitment`, or, for
+a return bound to a request, an inline datum presenting that request's reference
+and returning nothing else. -/
 def ownerOutputs (datum : DatumForm) (commitment : Option Nat) (payments : List Payment) :
     List TxOutput :=
   payments.filterMap fun payment =>
@@ -970,6 +1003,10 @@ def ownerOutputs (datum : DatumForm) (commitment : Option Nat) (payments : List 
       some { role := .owner, datum := datum, address := some key, stateTokens := 0
            , config := none, commitment := commitment, assets := []
            , lovelace := payment.atLeast }
+    | .bound key reference =>
+      some { role := .owner, datum := .inline, address := some key, stateTokens := 0
+           , config := none, commitment := Option.none, assets := []
+           , lovelace := payment.atLeast, reference := some reference }
     | _ => Option.none
 
 /-- The transaction an exit builds, or the model's refusal. A fold's spends the
@@ -977,11 +1014,14 @@ registry's state and the request, and the tokens its mint destroys; it moves the
 state, delivers to the destination the request names, locks custody when its edge
 routes a token there, and pays the owner one output per owner payment: an
 output with no datum that returns the request's approval, so it names that
-approval's asset name as its commitment. A reject is
-settled inside a transaction that spends the registry's state and returns it
-unchanged, beside the request it spends; a retract is its own transaction,
-spending only the request; each pays the owner one output per owner payment and
-requires no signer. Every output that pays a recipient carries the lovelace the
+approval's asset name as its commitment. A reject is settled inside a
+transaction that spends the registry's state and returns it unchanged, beside the
+request it spends, and refunds the owner as a fold delivering nothing does, with
+no datum and the request's approval; it requires no signer. A retract is its own
+transaction, spending only the request, returning everything it held through one
+output whose inline datum is the request's own reference, and requiring the
+owner's signature, as the chain does (refusing a retract without it is admission,
+which this model does not state). Every output that pays a recipient carries the lovelace the
 exit owes it — the destination output its summed destination floor, the cage
 output the deposit — and the transaction refunds exactly what the exit pays. -/
 def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace : Nat) :
@@ -1009,11 +1049,12 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
           , refunds := t.paid }
     | .reject =>
       .ok { inputs := [stateInput, requestInput]
-          , outputs := txStateOutput t :: ownerOutputs registryDatumForm Option.none owed
+          , outputs := txStateOutput t
+              :: ownerOutputs .none (request.approval.map (·.assetName)) owed
           , mint := t.mint, signers := [], refunds := t.paid }
     | .retract =>
-      .ok { inputs := [requestInput], outputs := ownerOutputs registryDatumForm Option.none owed
-          , mint := t.mint, signers := [], refunds := t.paid }
+      .ok { inputs := [requestInput], outputs := ownerOutputs .inline Option.none owed
+          , mint := t.mint, signers := [request.owner], refunds := t.paid }
 
 /-- The transaction an admitted single-request fold builds, or the model's own
 refusal: the transaction of the fold exit the request names. -/

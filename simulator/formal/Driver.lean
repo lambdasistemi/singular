@@ -71,7 +71,8 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
     , ("assets", assetsJson c o.assets)
     , ("custodyDatum", toJson o.custodyDatum)
-    , ("lovelace", toJson o.lovelace) ]
+    , ("lovelace", toJson o.lovelace)
+    , ("reference", match o.reference with | none => Json.null | some x => toJson x) ]
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -133,9 +134,11 @@ def declaredUnobservable : List String :=
    "scriptExecutionUnits", "transactionId", "utxoReference"]
 
 /-- The declared judgements: questions the driver answers about a transaction a
-caller observed, beside the boundary it reports. `settle` judges whether the
-observed outputs pay what the scenario's exit owes, by `Singular.settle`. -/
-def declaredJudgements : List String := ["settle"]
+caller observed, beside the boundary it reports, in the order it asks them.
+`spend` judges what the observed inputs spend, by `Singular.spendRefusal`;
+`settle` whether the observed outputs pay what the scenario's exit owes, by
+`Singular.settle`. -/
+def declaredJudgements : List String := ["spend", "settle"]
 
 /-- D01: the surface identity a scenario is executed against. -/
 structure SurfaceIdentity where
@@ -148,7 +151,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 3
+  , protocolVersion := 4
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable
@@ -294,11 +297,13 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
         (steps, { outcome := .accepted, reason := none, premiseChecked := true
                 , observations := some (observationsJson s.config sc.request res tx) })
 
-/-- The declared judgement `settle`: whether the outputs of a transaction a
-caller observed pay what the scenario's exit owes its request, and if not, the
-reason `Singular.settle` gives. -/
-def judgeSurface (sc : Scenario) (outputs : List TxOutput) : Option String :=
-  settle (obligations sc.exit sc.request) outputs
+/-- The declared judgements of a transaction a caller observed, in their order:
+`spend`, the refusal `Singular.spendRefusal` gives the scenario's exit for the
+inputs it spends, then `settle`, whether its outputs pay what that exit owes its
+request and if not the reason `Singular.settle` gives. -/
+def judgeSurface (sc : Scenario) (inputs : List TxInput) (outputs : List TxOutput) :
+    Option String :=
+  (spendRefusal sc.exit inputs).orElse fun _ => settle (obligations sc.exit sc.request) outputs
 
 def setupStepJson (stp : SetupStep) : Json :=
   Json.mkObj

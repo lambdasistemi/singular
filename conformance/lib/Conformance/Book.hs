@@ -6,6 +6,7 @@ import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Aeson (Value (..))
 import Data.Aeson.KeyMap qualified as KM
+import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.Sequence qualified as Sequence
@@ -26,11 +27,14 @@ renderBook requirements receipts =
         <> "## Retire a registration and burn its active token\n\n"
         <> "The holder first registers a key in this run. Retirement must consume and burn that very token and change the key to Terminal. A never-registered key and a key recorded as Absent must be refused, each beside a successful retirement in the same registry. A deletion then owes its owner the deposit back: paid one lovelace short, and paid to another address, it must be refused beside the untampered deletion.\n\n"
         <> renderLive (Retire.story (Context "retirement" "holder wallet") (Context "comparison" "holder wallet"))
+        <> "## A request that is never folded\n\n"
+        <> "A request can leave the queue without a fold. Once it may no longer be folded, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.\n\n"
+        <> renderLive (Exit.story (Context "rejection" "holder wallet") (Context "retraction" "holder wallet"))
         <> "## A sequence no chapter names\n\n"
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. Retraction admission is not modelled until #239: the model admits the retraction of any request, while the chain refuses one of an update or a deletion with `withdraw-insert-only`, and one its owner did not sign with `retract-owner`; the live retractions above are therefore of insertions only, signed by their owner, and no run establishes those two refusals against the model. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -47,7 +51,8 @@ renderBook requirements receipts =
             <> maybe "" (\steps -> case receiptRow receipt of
                 "CG21" -> "Registration compared " <> outcomeCounts steps <> concatMap detection steps
                     <> concatMap refusedPayment steps
-                "CG22" -> "Retirement compared " <> outcomeCounts steps <> concatMap refusedPayment steps
+                "CG22" -> "Retirement, rejection and retraction compared " <> outcomeCounts steps
+                    <> concatMap refusedPayment steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
@@ -93,10 +98,15 @@ renderBook requirements receipts =
                 | Just (String "refused") <- KM.lookup "outcome" chain
                 , Just (String reason) <- KM.lookup "reason" model
                 , Just (String txid) <- KM.lookup "txid" chain ->
-                    "The " <> T.unpack name <> " " <> T.unpack edge <> " was refused on chain (transaction `"
+                    "The " <> T.unpack name <> " " <> exitOf fields edge <> " was refused on chain (transaction `"
                         <> T.unpack txid <> "`); the model refused it for `" <> T.unpack reason <> "`.\n\n"
             _ -> ""
         _ -> ""
+    -- A fold is named by its edge; a reject or a retraction by its exit and the
+    -- edge its request named.
+    exitOf fields edge = case KM.lookup "exit" fields of
+        Just (String exit) | exit `elem` ["reject", "retract"] -> T.unpack exit <> " of " <> T.unpack edge
+        _ -> T.unpack edge
     gapEvidence receipt
         | receiptRow receipt == "sequence" = maybe "" (concatMap gapReason) (receiptSteps receipt)
         | otherwise = ""

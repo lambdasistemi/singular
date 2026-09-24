@@ -580,10 +580,10 @@ does not hold. The expected payments are the rule table's; the expected reasons
 are the chain's trace names. -/
 
 /-- A request whose payment-relevant fields all differ: owner 42, refund address
-91, destination 99, deposit 55, tip 7. -/
+91, destination 99, deposit 55, tip 7, sitting at reference 31. -/
 def exitRequest (e : Edge) : Request :=
   { edge := e, key := 5, owner := 42, refundAddress := 91, output := 99
-  , deposit := 55, tip := 7 }
+  , deposit := 55, tip := 7, reference := 31 }
 
 -- The rule table, one row per exit.
 #guard obligations (.fold .insertAbsent) (exitRequest .insertAbsent) ==
@@ -603,12 +603,13 @@ def exitRequest (e : Edge) : Request :=
 #guard obligations .reject (exitRequest .insertActive) ==
   [{ recipient := .owner 42, atLeast := 55 }]
 #guard obligations .retract (exitRequest .insertActive) ==
-  [{ recipient := .owner 42, atLeast := 62 }]
--- Reject and retract owe the owner whatever edge the request named.
+  [{ recipient := .bound 42 31, atLeast := 62 }]
+-- Reject and retract owe the owner whatever edge the request named; a retract
+-- owes it through an output bound to the request's own reference.
 #guard obligations .reject (exitRequest .insertAbsent) ==
   [{ recipient := .owner 42, atLeast := 55 }]
 #guard obligations .retract (exitRequest .insertAbsent) ==
-  [{ recipient := .owner 42, atLeast := 62 }]
+  [{ recipient := .bound 42 31, atLeast := 62 }]
 
 -- The request carries its tip in its JSON, and a request that names none holds none.
 #guard match (toJson (exitRequest .insertActive)).getObjValAs? Nat "tip" with
@@ -644,7 +645,7 @@ def txOutputs (t : Except String Tx) : List TxOutput :=
   match t with | .ok tx => tx.outputs | .error _ => []
 
 def settleInsertActiveRequest : Request :=
-  { req .insertActive 8 42 99 with deposit := 55, tip := 7 }
+  { req .insertActive 8 42 99 with deposit := 55, tip := 7, reference := 31 }
 
 /-- The token-delivering fold: the model's own transaction, its destination
 output carrying the deposit. -/
@@ -672,10 +673,12 @@ def settleReject : SettleCase :=
   , context := [txStateOutput (emptyResult s0)]
   , carrier := ownerOutput 42 settleInsertActiveRequest.deposit }
 
-/-- Retract: the owner takes back everything the request held. -/
+/-- Retract: the owner takes back everything the request held, through an output
+whose inline datum is the request's own reference. -/
 def settleRetract : SettleCase :=
   { exit := .retract, request := settleInsertActiveRequest, context := []
-  , carrier := ownerOutput 42 (settleInsertActiveRequest.deposit + settleInsertActiveRequest.tip) }
+  , carrier := { ownerOutput 42 (settleInsertActiveRequest.deposit + settleInsertActiveRequest.tip)
+                 with reference := some settleInsertActiveRequest.reference } }
 
 -- The model's own transactions exist, so the controls above are not vacuous.
 #guard (txOutputs (txOf s0 settleInsertActiveRequest 1)).any (·.role == .destination)
@@ -696,7 +699,69 @@ def settleRetract : SettleCase :=
 
 -- Retract returns the tip: the deposit alone does not settle it.
 #guard settle (obligations .retract settleInsertActiveRequest)
-  [ownerOutput 42 settleInsertActiveRequest.deposit] == some "deposit-returned"
+  [{ settleRetract.carrier with lovelace := settleInsertActiveRequest.deposit }]
+    == some "deposit-returned"
+
+/-- A second request retracted beside `settleInsertActiveRequest`, at reference 32. -/
+def secondRetracted : Request :=
+  { settleInsertActiveRequest with key := 9, reference := 32 }
+
+-- A retraction's return is bound to the request it retracts, as the chain binds it:
+-- an owner output presenting another request's reference, or none, returns nothing;
+-- fragments bound to it are not summed; and one bound output cannot return two
+-- retractions, each of which needs its own.
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [{ settleRetract.carrier with reference := some 32 }] == some "deposit-returned"
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [{ settleRetract.carrier with reference := none }] == some "deposit-returned"
+-- The reference binds only as the output's inline datum: presented any other way,
+-- or by an output with no datum, it returns nothing.
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [{ settleRetract.carrier with datum := .none }] == some "deposit-returned"
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [{ settleRetract.carrier with datum := .hashed }] == some "deposit-returned"
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [{ settleRetract.carrier with lovelace := 61 }, { settleRetract.carrier with lovelace := 1 }]
+    == some "deposit-returned"
+-- A sufficient bound output settles it whatever else is bound beside it.
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [settleRetract.carrier, { settleRetract.carrier with lovelace := 1 }] == none
+#guard settle (obligations .retract settleInsertActiveRequest ++ obligations .retract secondRetracted)
+  [{ settleRetract.carrier with lovelace := 124 }] == some "deposit-returned"
+#guard settle (obligations .retract settleInsertActiveRequest ++ obligations .retract secondRetracted)
+  [settleRetract.carrier, { settleRetract.carrier with reference := some 32 }] == none
+
+-- The model's retraction returns everything the request held through one output at
+-- the owner's key whose inline datum is the request's own reference; a reject
+-- refunds the owner through an output with no datum that returns the request's
+-- approval, as a fold delivering nothing does.
+#guard settleInsertActiveRequest.approval.isSome
+#guard txOutputs (txOfExit s0 .retract settleInsertActiveRequest 1) ==
+  [{ role := .owner, datum := .inline, address := some 42, stateTokens := 0, config := none
+   , commitment := none, assets := [], lovelace := 62, reference := some 31 }]
+#guard (txOutputs (txOfExit s0 .reject settleInsertActiveRequest 1)).filter (·.role == .owner) ==
+  [{ role := .owner, datum := .none, address := some 42, stateTokens := 0, config := none
+   , commitment := settleInsertActiveRequest.approval.map (·.assetName), assets := []
+   , lovelace := 55 }]
+
+def txInputs (t : Except String Tx) : List TxInput :=
+  match t with | .ok tx => tx.inputs | .error _ => []
+
+/-- An input holding a registry state token. -/
+def stateTokenInput : TxInput :=
+  { role := .state, datum := .inline, stateTokens := 1, approvals := 0, lovelace := 0 }
+
+-- A retraction spends no input holding a state token: beside one it is refused
+-- `retract-state-spent`, before its payment is judged. The model's own retraction
+-- spends none, and no other exit is refused for what it spends: a reject spends
+-- the state it returns.
+#guard spendRefusal .retract (txInputs (txOfExit s0 .retract settleInsertActiveRequest 1)
+  ++ [stateTokenInput]) == some "retract-state-spent"
+#guard spendRefusal .retract (txInputs (txOfExit s0 .retract settleInsertActiveRequest 1)) == none
+#guard (txInputs (txOfExit s0 .reject settleInsertActiveRequest 1)).any (0 < ·.stateTokens)
+#guard spendRefusal .reject (txInputs (txOfExit s0 .reject settleInsertActiveRequest 1)) == none
+#guard [Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal, .deleteAbsent,
+    .deleteActive, .witnessTerminal].all fun e => spendRefusal (.fold e) [stateTokenInput] == none
 
 /-- The custody-delivering fold, with the model's own cage output. -/
 def settleInsertAbsentRequest : Request :=
@@ -802,25 +867,26 @@ def leavesRegistry (s : RegistryState) (paid : List (Nat × Nat)) :
     | .ok _ => false
 
 /-- The roles of a built transaction's inputs and outputs, and whether it mints
-nothing, requires no signer, refunds exactly `paid` and settles `exit`'s
+nothing, requires exactly `signers`, refunds exactly `paid` and settles `exit`'s
 obligations. -/
-def exitTxShape (exit : Exit) (r : Request) (paid : List (Nat × Nat)) :
+def exitTxShape (exit : Exit) (r : Request) (signers : List Nat) (paid : List (Nat × Nat)) :
     Except String Tx → Option (List TxRole × List TxRole)
   | .ok tx =>
-    if tx.mint.isEmpty && tx.signers.isEmpty && tx.refunds == paid
+    if tx.mint.isEmpty && tx.signers == signers && tx.refunds == paid
        && settle (obligations exit r) tx.outputs == none
     then some (tx.inputs.map (·.role), tx.outputs.map (·.role)) else none
   | .error _ => none
 
 -- A reject is settled inside a transaction that spends the state and returns it
--- unchanged; a retract is its own transaction and touches no state. Each pays the
--- owner one output carrying what it owes, and so settles its obligations.
+-- unchanged and requires no signer; a retract is its own transaction, touches no
+-- state and requires the owner's signature, as the chain does. Each pays the owner
+-- one output carrying what it owes, and so settles its obligations.
 #guard exitEdges.all fun e => exitKeys.all fun k =>
-  exitTxShape .reject (exitStepRequest e k) [(42, 55)]
+  exitTxShape .reject (exitStepRequest e k) [] [(42, 55)]
     (txOfExit exitState .reject (exitStepRequest e k) 3)
     == some ([.state, .request], [.state, .owner])
 #guard exitEdges.all fun e => exitKeys.all fun k =>
-  exitTxShape .retract (exitStepRequest e k) [(42, 62)]
+  exitTxShape .retract (exitStepRequest e k) [42] [(42, 62)]
     (txOfExit exitState .retract (exitStepRequest e k) 3)
     == some ([.request], [.owner])
 #guard exitEdges.all fun e => exitKeys.all fun k =>
@@ -898,11 +964,11 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
   match txOfExit paidState x (exitStepRequest e k) 3 with | .ok _ => true | .error _ => false
 
 -- The driver's operations are the nine exits: the seven edges by their own
--- names, then reject and retract. Its one judgement is `settle`; the surface's
--- protocol moved for each.
+-- names, then reject and retract. It judges what a transaction spends, then what
+-- it pays; the surface's protocol moved for each.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 3
-#guard surface.judgements == ["settle"]
+#guard surface.protocolVersion == 4
+#guard surface.judgements == ["spend", "settle"]
 
 /-- The scenario a caller asks the driver to judge a settle case's outputs for:
 the case's own exit and request, from the empty registry. -/
@@ -914,7 +980,7 @@ def judgedScenario (c : SettleCase) : Scenario :=
 /-- The driver's judgement of a settle case's three controls: its payment output
 as built, one lovelace short, and at another address. -/
 def SettleCase.judged (c : SettleCase) : List (Option String) :=
-  let judge := judgeSurface (judgedScenario c)
+  let judge := judgeSurface (judgedScenario c) []
   [ judge (c.context ++ [c.carrier])
   , judge (c.context ++ [{ c.carrier with lovelace := c.carrier.lovelace - 1 }])
   , judge (c.context ++ [{ c.carrier with address := c.carrier.address.map (· + 1) }]) ]
@@ -923,6 +989,28 @@ def SettleCase.judged (c : SettleCase) : List (Option String) :=
 -- owes: a delivering and a non-delivering fold, untampered, short and misdirected.
 #guard settleInsertActive.judged == [none, some "deposit-returned", some "destination"]
 #guard settleDeleteActive.judged == [none, some "deposit-returned", some "deposit-returned"]
+-- A reject's refund, as built, short and misdirected.
+#guard settleReject.judged == [none, some "deposit-returned", some "deposit-returned"]
+
+/-- The driver's judgement of a retraction's controls beside its untampered
+return: short, misdirected, bound to another request, presenting its reference
+with no datum, and spending a state token beside the request. -/
+def retractJudged : List (Option String) :=
+  let c := settleRetract
+  let judge := judgeSurface (judgedScenario c)
+  let spent := txInputs (txOfExit s0 .retract c.request 1)
+  [ judge spent [c.carrier]
+  , judge spent [{ c.carrier with lovelace := c.carrier.lovelace - 1 }]
+  , judge spent [{ c.carrier with address := c.carrier.address.map (· + 1) }]
+  , judge spent [{ c.carrier with reference := some 32 }]
+  , judge spent [{ c.carrier with datum := .none }]
+  , judge (spent ++ [stateTokenInput]) [c.carrier] ]
+
+#guard (txInputs (txOfExit s0 .retract settleRetract.request 1)).length == 1
+#guard retractJudged ==
+  [none, some "deposit-returned", some "deposit-returned", some "deposit-returned",
+   some "deposit-returned",
+   some "retract-state-spent"]
 
 def main : IO Unit := do
   let stdout ← IO.getStdout

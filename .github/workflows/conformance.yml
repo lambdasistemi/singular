@@ -112,7 +112,7 @@ jobs:
       - name: List the inventory as a packaged app without a dev shell
         working-directory: conformance
         run: nix run --quiet .#conformance -- list
-      # Read all eleven model-and-chain step records from the retirement
+      # Read all nineteen model-and-chain step records from the retirement
       # receipt. The refusals must carry state-script attribution, and
       # every accepted step must compare the declared surface and reject
       # discovered-value perturbations. The separate registry makes the
@@ -123,8 +123,25 @@ jobs:
       # the shape: onchain/validators/deposit_exits.tests.ak
       # e5_deposit_one_lovelace_short_refuses and
       # e5_deposit_diverted_to_another_address_refuses (deposit-returned).
-      # The ledger's own reason is not observed: the deployed validators are
-      # compiled without traces (#287).
+      # The same program then lets requests leave unfolded, each exit named
+      # by the step. In a registry of its own, a reject refunding the owner
+      # one lovelace short and to another key is refused by the state script
+      # and by the model for deposit-returned, the name
+      # onchain/validators/deposit_exits.tests.ak
+      # reject_refund_one_lovelace_short_refuses_by_name and
+      # reject_refund_to_another_key_refuses_by_name assert; the untampered
+      # reject is accepted by both. In another, an insertion only (the chain
+      # admits no other retraction until #239), a retraction returning one
+      # lovelace short, to another key and bound to another output reference
+      # is refused by the request script and by the model for
+      # deposit-returned, as onchain/validators/cage_retract.tests.ak
+      # retract_held_short_by_one_refuses, retract_held_wrong_owner_refuses
+      # and retract_wrong_reference_refuses assert; one spending the
+      # registry's state beside it is refused for retract-state-spent, as
+      # retract_beside_a_fold_refuses asserts; the untampered retraction,
+      # bound to the request's own output reference and signed by its owner,
+      # is accepted by both. The ledger's own reason is not observed: the
+      # deployed validators are compiled without traces (#287).
       - name: Run the dedicated CG22 retirement row as a packaged app
         run: |
           set -e
@@ -147,11 +164,12 @@ jobs:
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 11
-            and ([.steps[].edge] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal","insertActive","deleteActive","deleteActive","deleteActive"])
-            and ([.steps[].tamper] == [null,null,null,null,null,null,null,null,"short-by-one","other-address",null])
-            and ([.steps[].model.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
-            and ([.steps[].chain.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted"])
+            and (.steps | length) == 19
+            and ([.steps[].edge] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal","insertActive","deleteActive","deleteActive","deleteActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive"])
+            and ([.steps[].exit] == ["insertActive","updateTerminal","insertAbsent","updateTerminal","insertActive","updateTerminal","updateTerminal","insertActive","deleteActive","deleteActive","deleteActive","reject","reject","reject","retract","retract","retract","retract","retract"])
+            and ([.steps[].tamper] == [null,null,null,null,null,null,null,null,"short-by-one","other-address",null,"short-by-one","other-address",null,"short-by-one","other-address","other-reference","state-spent",null])
+            and ([.steps[].model.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted","refused","refused","accepted","refused","refused","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["accepted","accepted","accepted","refused","accepted","accepted","refused","accepted","refused","refused","accepted","refused","refused","accepted","refused","refused","refused","refused","accepted"])
             and all(.steps[]; .comparison == "agrees")
             and .steps[8].model.reason == "deposit-returned"
             and .steps[9].model.reason == "deposit-returned"
@@ -172,7 +190,21 @@ jobs:
             and .steps[4].registry == .steps[5].registry
             and .steps[5].registry == .steps[6].registry
             and .steps[0].registry != .steps[4].registry
-            and (.transactions | length) == 7
+            and all(.steps[11,12]; .model.reason == "deposit-returned"
+              and (.chain.refusal.hashes | index($state) != null)
+              and (.chain.refusal.scripts | index("state") != null))
+            and all(.steps[14,15,16]; .model.reason == "deposit-returned"
+              and (.chain.refusal.scripts | index("request") != null))
+            and .steps[17].model.reason == "retract-state-spent"
+            and (.steps[17].chain.refusal.scripts | index("request") != null)
+            and ([.steps[11,12,13].registry] | unique | length) == 1
+            and ([.steps[14,15,16,17,18].registry] | unique | length) == 1
+            and ([.steps[0,4,11,14].registry] | unique | length) == 4
+            and all(.steps[] | select(.exit == "retract");
+              (.edge == "insertAbsent" or .edge == "insertActive" or .edge == "witnessTerminal")
+              and (.request.reference | type) == "number")
+            and ([.steps[14,15,16,17,18].request.reference] | unique | length) == 5
+            and (.transactions | length) == 9
           ' "$f" > /dev/null || { echo 'FAIL: CG22 retirement evidence moved'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance

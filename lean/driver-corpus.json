@@ -1,7 +1,7 @@
 {
   "corpusSourceSha256": "366beeab8fd427b9e0220db98e9eb2fac05091f647e4da5e7cb81afcfa1f99e6",
-  "modelSha256": "be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052",
-  "payloadSha256": "c1174b20a78aab7b0627988ab59a664da253d2962195c91c5b25bc9d088f918e",
+  "modelSha256": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
+  "payloadSha256": "510cca967a1006ced91380e857c532370ae124672b12dbaa6b65efabd8992524",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -152,6 +152,7 @@
                 "terminalPolicy": 10
               },
               "lovelace": 0,
+              "reference": null,
               "role": "state",
               "stateToken": 1
             },
@@ -163,6 +164,7 @@
               "datum": "inline",
               "inlineConfig": null,
               "lovelace": 0,
+              "reference": null,
               "role": "destination",
               "stateToken": 0
             },
@@ -184,6 +186,7 @@
               "datum": "inline",
               "inlineConfig": null,
               "lovelace": 55,
+              "reference": null,
               "role": "cage",
               "stateToken": 0
             }
@@ -220,6 +223,7 @@
         "key": 5,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 91,
         "tip": 0
       },
@@ -401,6 +405,7 @@
                 "terminalPolicy": 10
               },
               "lovelace": 0,
+              "reference": null,
               "role": "state",
               "stateToken": 1
             },
@@ -420,6 +425,7 @@
               "datum": "inline",
               "inlineConfig": null,
               "lovelace": 55,
+              "reference": null,
               "role": "destination",
               "stateToken": 0
             }
@@ -456,6 +462,7 @@
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -641,6 +648,7 @@
                 "terminalPolicy": 10
               },
               "lovelace": 0,
+              "reference": null,
               "role": "state",
               "stateToken": 1
             },
@@ -652,6 +660,7 @@
               "datum": "inline",
               "inlineConfig": null,
               "lovelace": 0,
+              "reference": null,
               "role": "destination",
               "stateToken": 0
             },
@@ -663,6 +672,7 @@
               "datum": "none",
               "inlineConfig": null,
               "lovelace": 55,
+              "reference": null,
               "role": "owner",
               "stateToken": 0
             }
@@ -699,6 +709,7 @@
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -723,6 +734,7 @@
             "key": 42,
             "output": 555,
             "owner": 42,
+            "reference": 0,
             "refundAddress": 0,
             "tip": 0
           },
@@ -811,6 +823,7 @@
         "key": 5,
         "output": 0,
         "owner": 91,
+        "reference": 0,
         "refundAddress": 91,
         "tip": 0
       },
@@ -872,6 +885,7 @@
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -896,6 +910,7 @@
             "key": 42,
             "output": 555,
             "owner": 42,
+            "reference": 0,
             "refundAddress": 0,
             "tip": 0
           },
@@ -992,6 +1007,7 @@
         "key": 42,
         "output": 555,
         "owner": 42,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 0
       },
@@ -1157,17 +1173,19 @@
                 "terminalPolicy": 10
               },
               "lovelace": 0,
+              "reference": null,
               "role": "state",
               "stateToken": 1
             },
             {
               "address": 43,
               "assets": [],
-              "commitment": null,
+              "commitment": 2258488341,
               "custodyDatum": null,
-              "datum": "inline",
+              "datum": "none",
               "inlineConfig": null,
               "lovelace": 55,
+              "reference": null,
               "role": "owner",
               "stateToken": 0
             }
@@ -1204,6 +1222,7 @@
         "key": 42,
         "output": 556,
         "owner": 43,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 7
       },
@@ -1228,6 +1247,7 @@
             "key": 42,
             "output": 555,
             "owner": 42,
+            "reference": 0,
             "refundAddress": 0,
             "tip": 0
           },
@@ -1385,6 +1405,7 @@
               "datum": "inline",
               "inlineConfig": null,
               "lovelace": 62,
+              "reference": 0,
               "role": "owner",
               "stateToken": 0
             }
@@ -1395,7 +1416,9 @@
               "value": 62
             }
           ],
-          "signers": []
+          "signers": [
+            77
+          ]
         }
       },
       "operation": "retract",
@@ -1421,6 +1444,7 @@
         "key": 7,
         "output": 777,
         "owner": 77,
+        "reference": 0,
         "refundAddress": 0,
         "tip": 7
       },
@@ -1457,19 +1481,20 @@
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
     "lean/DriverMain.lean": "366beeab8fd427b9e0220db98e9eb2fac05091f647e4da5e7cb81afcfa1f99e6",
-    "lean/Main.lean": "a7ade430f730fdfa6f544b17c4dfb7294f8bfd31aa5e1b9206f3620ffb9f7b5d",
+    "lean/Main.lean": "561d567c03f106de018c0f70ef81ca50e15dd466ee8ad5fbaecaab419e1c9e0b",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "8ef5f5af96afad71effc7e444da96b846c671c9f0e3f8dc7a76241df781d6a1b",
-    "lean/Singular/Lemmas.lean": "a2201aabb1bda11a72f0fa8ff7e73bb3c9b542b4c517ee290fad52a0fa69e5a0",
-    "lean/Singular/Model.lean": "be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052",
-    "lean/Singular/Statements.lean": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5"
+    "lean/Singular/Driver.lean": "f7654d1916f47f070d5d5f2b8cf0574ba7fcd257828133130a6c1c49f155cf38",
+    "lean/Singular/Lemmas.lean": "a149622734c9f3938aa79d3c58499cbabccd72af544d0561b84452ba75ae3d7b",
+    "lean/Singular/Model.lean": "70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca",
+    "lean/Singular/Statements.lean": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81"
   },
-  "statementsSha256": "d6b5df2f0c3c04786953cb7a97b56ffbb4481d78a738f1e7a896e18eb6a6ead5",
+  "statementsSha256": "6c9c7c04c1338c8cad72c894f718f9f0967f351317507006cabd3eca1dbf9c81",
   "surface": {
     "declaration": "Singular.Driver.runSurface",
-    "definitionDigest": "18106377236017516190",
+    "definitionDigest": "13086894509481008378",
     "judgements": [
+      "spend",
       "settle"
     ],
     "observations": [
@@ -1494,7 +1519,7 @@
       "reject",
       "retract"
     ],
-    "protocolVersion": 3,
+    "protocolVersion": 4,
     "unobservable": [
       "concreteTrieHash",
       "outputMinimumAda",
@@ -1504,5 +1529,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "2a4caecc7241bf7f9e20f09a359dbf635449a0b88274668e7a3924acf695e442"
+  "theoremManifestSha256": "36c69bf4472caa82c53aad1ab7301f4b9c31436562d3d80ac3842f3937f442cf"
 }

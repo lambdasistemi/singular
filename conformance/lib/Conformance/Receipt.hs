@@ -46,7 +46,7 @@ module Conformance.Receipt (
 ) where
 
 import Conformance.NodeRejection (boundedNodeReason)
-import Conformance.Story.Live (Tamper (..), tamperName)
+import Conformance.Story.Live (Edge (..), Tamper (..), edgeName, tamperName)
 import Control.Exception (ErrorCall (..), throwIO)
 
 import Data.Aeson (
@@ -465,7 +465,17 @@ maxReceiptBytes = 16384
 
 -- | The tampers that alter the payment an exit owes, as a step record names them.
 paymentTampers :: [Text]
-paymentTampers = map (T.pack . tamperName) [OtherAddress, ShortByOne]
+paymentTampers = map (T.pack . tamperName) [OtherAddress, ShortByOne, OtherReference, StateSpent]
+
+-- | The tampers only a retraction has: its return bound to another request, and
+-- a state input spent beside it.
+retractionTampers :: [Text]
+retractionTampers = map (T.pack . tamperName) [OtherReference, StateSpent]
+
+-- | The requests a retraction is admitted for on chain: insertions and reads.
+-- The model states no retraction admission until #239.
+retractableEdges :: [Text]
+retractableEdges = map (T.pack . edgeName) [InsertAbsent, InsertActive, WitnessTerminal]
 
 -- | Keep live node text readable inside each refusal step.
 maxLiveStepReasonChars :: Int
@@ -489,11 +499,23 @@ stepsComplete path receipt steps
     at _ _ = Nothing
     failure reason = Left (path <> ": invalid live step: " <> reason)
     checkStep step = do
-        case (at "registry" step, at "edge" step, at "request" step) of
+        edge <- case (at "registry" step, at "edge" step, at "request" step) of
             (Just (Number _), Just (String edge), Just (Object _))
-                | edge `elem` ["insertAbsent", "insertActive", "updateActive", "updateTerminal"
-                              , "deleteAbsent", "deleteActive", "witnessTerminal"] -> Right ()
+                | edge `elem` map (T.pack . edgeName) [minBound .. maxBound] -> Right edge
             _ -> failure "missing registry, edge or model request"
+        -- A step names the exit its request left by; a receipt written before
+        -- steps carried the field records folds only.
+        exit <- case at "exit" step of
+            Nothing -> Right edge
+            Just (String name)
+                | name `elem` ["reject", "retract"] -> Right name
+                | name == edge -> Right name
+                | name `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
+                    failure "a fold exit names another edge than its request"
+            _ -> failure "unknown exit"
+        if exit == "retract" && edge `notElem` retractableEdges
+            then failure "a retraction of a request no retraction is admitted for (#239)"
+            else Right ()
         let tamper = at "tamper" step
             model = at "outcome" =<< at "model" step
             chain = at "outcome" =<< at "chain" step
@@ -524,6 +546,9 @@ stepsComplete path receipt steps
                 | m /= c -> failure "untampered agreement changes the outcome class"
                 | differences /= Array Vector.empty -> failure "untampered agreement reports differences"
                 | otherwise -> Right ()
+            (Just (String name), _, _, _)
+                | name `elem` retractionTampers, exit /= "retract" ->
+                    failure "only a retraction is bound to its request or refused for what it spends"
             -- A payment sent elsewhere or short is refused by both sides: the
             -- ledger by an attributed script, the model for the reason its
             -- judgement names.

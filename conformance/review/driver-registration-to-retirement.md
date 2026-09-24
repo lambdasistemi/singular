@@ -6,9 +6,9 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `c1174b20a78aab7b0627988ab59a664da253d2962195c91c5b25bc9d088f918e`
-- model: `be14447fabe9a09235c13a97d78a2cc8b5f2591c85a0b87cd01601d4f79f4052`
-- surface: `Singular.Driver.runSurface`, protocol version 3, digest `18106377236017516190`
+- driver corpus payload: `510cca967a1006ced91380e857c532370ae124672b12dbaa6b65efabd8992524`
+- model: `70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca`
+- surface: `Singular.Driver.runSurface`, protocol version 4, digest `13086894509481008378`
 
 ## What the driver is
 
@@ -24,8 +24,10 @@ Declared observations: `config`, `custody`, `held`, `leaf`, `mint`, `paid`, `roo
 Every accepted row reports all nine. A row reporting a subset is a per-theorem
 projection and the model check rejects it.
 
-Declared judgement: `settle`. Given the outputs of a transaction a caller
-observed, the driver answers whether they pay what the scenario's exit owes,
+Declared judgements: `spend`, then `settle`. Given the inputs and outputs of a
+transaction a caller observed, the driver answers whether the scenario's exit may
+spend those inputs, with `Singular.spendRefusal`'s reason when it may not (a
+retraction beside a state token), and whether the outputs pay what the exit owes,
 with `Singular.settle`'s reason when they do not.
 
 ## The registration

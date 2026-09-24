@@ -11,6 +11,7 @@ export const request=(edge,key,opts={})=>({
   refundAddress:opts.refundAddress??0,
   deposit:opts.deposit??0,
   tip:opts.tip??0,
+  reference:opts.reference??0,
   output:opts.output??0,
   approval:null,
   claimed:opts.claimed??[]});

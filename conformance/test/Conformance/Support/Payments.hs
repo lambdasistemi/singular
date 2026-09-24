@@ -10,19 +10,21 @@ absent insertion locks it in custody, and a spent custody is refunded in full.
 module Conformance.Support.Payments (spec) where
 
 import Conformance.Observe.Payments (
-    FoldFacts (..),
+    ExitFacts (..),
     FoldOutput (..),
     OwnerReading (..),
     Payee (..),
     Payment (..),
     OutputEdit (..),
     foldPayments,
+    readBound,
     readOwner,
     tamperEdits,
  )
-import Conformance.Story.Live (Edge (..), Tamper (..))
+import Conformance.Story.Live (Edge (..), Exit (..), Tamper (..))
 import Data.ByteString (ByteString)
 import Data.Either (isLeft)
+import Data.Text (Text)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 owner, holder, refunded :: ByteString
@@ -41,14 +43,29 @@ at key lovelace =
         , outputDatum = "none"
         , outputApprovals = []
         , outputCustody = False
+        , outputReference = Nothing
         }
 
 -- | The registry's state continuation: a script output, paying nobody.
 state :: FoldOutput
-state = FoldOutput "cage" "" 1500000 False "inline" [] False
+state = FoldOutput "cage" "" 1500000 False "inline" [] False Nothing
 
-facts :: Edge -> FoldFacts
-facts edge = FoldFacts edge owner Nothing
+facts :: Edge -> ExitFacts
+facts edge = ExitFacts Fold edge owner Nothing Nothing
+
+-- | The facts of a reject or a retraction of an insertActive request sitting at
+-- the output reference `booked`.
+exitFacts :: Exit -> ExitFacts
+exitFacts exit = ExitFacts exit InsertActive owner Nothing (Just booked)
+
+-- | The output reference the request sat at, and another one.
+booked, elsewhere :: Text
+booked = "booked#0"
+elsewhere = "other#1"
+
+-- | An output at the owner's key bound, by its inline datum, to a reference.
+boundTo :: Text -> Integer -> FoldOutput
+boundTo reference lovelace = (at owner lovelace){outputDatum = "inline", outputReference = Just reference}
 
 spec :: Spec
 spec = describe "Reading a fold's payments off its transaction" $ do
@@ -187,6 +204,84 @@ spec = describe "Reading a fold's payments off its transaction" $ do
         tamperEdits ShortByOne (facts InsertActive) [state, (at holder 2000000){outputCarrier = True}]
             `shouldSatisfy` isLeft
 
+    it "credits a reject's owner every output at the owner's key, whatever edge it named" $ do
+        -- A reject delivers no token: the refund returning the approval and
+        -- the change both sit at the owner's key.
+        let outputs =
+                [ state
+                , (at owner 2000000){outputApprovals = ["approval-a"]}
+                , at owner 7000000
+                , at holder 3000000
+                ]
+        foldPayments (exitFacts Reject) outputs
+            `shouldBe` Right [Payment (Owner owner) 9000000]
+
+    it "reads a retraction's return off the one output bound to the request it retracts" $ do
+        -- The chain credits the one output at the owner's key whose inline
+        -- datum is the retracted request's own reference; ada-only change at
+        -- the owner's key returns nothing of it, nor do fragments summed.
+        let returnOf = foldPayments (exitFacts Retract)
+        returnOf [boundTo booked 62000000, at owner 5000000]
+            `shouldBe` Right [Payment (Owner owner) 62000000]
+        returnOf [boundTo booked 61999999, boundTo booked 1, at owner 5000000]
+            `shouldBe` Right [Payment (Owner owner) 61999999]
+        returnOf [boundTo elsewhere 62000000, at owner 5000000]
+            `shouldBe` Right [Payment (Owner owner) 0]
+        returnOf [(boundTo booked 62000000){outputKey = stranger}]
+            `shouldBe` Right [Payment (Owner owner) 0]
+
+    it "reads no return from an output presenting the reference other than as its inline datum" $ do
+        let unbound = (boundTo booked 62000000){outputDatum = "none"}
+        foldPayments (exitFacts Retract) [unbound, at owner 5000000]
+            `shouldBe` Right [Payment (Owner owner) 0]
+        readBound owner booked [unbound] `shouldBe` Right Nothing
+
+    it "reads the retraction's return as the one output bound to the request presents it" $ do
+        readBound owner booked [boundTo booked 62000000, at owner 5000000]
+            `shouldBe` Right (Just (OwnerReading 62000000 "inline" []))
+        readBound owner booked [boundTo elsewhere 62000000, at owner 5000000]
+            `shouldBe` Right Nothing
+        -- Several outputs bound to the request are read as the chain reads them,
+        -- by the largest: beside a sufficient one an extra one changes nothing,
+        -- and fragments short of the floor reach the judgement as its largest.
+        readBound owner booked [boundTo booked 62000000, boundTo booked 1]
+            `shouldBe` Right (Just (OwnerReading 62000000 "inline" []))
+        readBound owner booked [boundTo booked 61999999, boundTo booked 1]
+            `shouldBe` Right (Just (OwnerReading 61999999 "inline" []))
+
+    it "tampers a reject's refund as it tampers a fold returning the deposit" $ do
+        let returning = [state, (at owner 2000000){outputApprovals = ["approval-a"]}, at owner 7000000]
+        exitPaymentsAfter ShortByOne (exitFacts Reject) returning
+            `shouldBe` Right [Payment (Owner owner) 1999999]
+        exitPaymentsAfter OtherAddress (exitFacts Reject) returning
+            `shouldBe` Right [Payment (Owner owner) 0]
+
+    it "tampers a retraction's bound return: short, elsewhere, rebound, or beside the state" $ do
+        let returning = [boundTo booked 62000000, at owner 5000000]
+            retracting = exitFacts Retract
+        tamperEdits ShortByOne retracting returning
+            `shouldBe` Right [Relovelace 0 61999999, Relovelace 1 5000001]
+        tamperEdits OtherAddress retracting returning `shouldBe` Right [Readdress 0]
+        tamperEdits OtherReference retracting returning `shouldBe` Right [Rebind 0]
+        tamperEdits StateSpent retracting returning `shouldBe` Right [SpendState]
+        exitPaymentsAfter ShortByOne retracting returning
+            `shouldBe` Right [Payment (Owner owner) 61999999]
+        exitPaymentsAfter OtherAddress retracting returning
+            `shouldBe` Right [Payment (Owner owner) 0]
+        exitPaymentsAfter OtherReference retracting returning
+            `shouldBe` Right [Payment (Owner owner) 0]
+        mapM_ (\alteration -> exitConserved alteration retracting returning)
+            [ShortByOne, OtherAddress, OtherReference, StateSpent]
+
+    it "binds and spends beside the state only for a retraction" $ do
+        let returning = [state, (at owner 2000000){outputApprovals = ["approval-a"]}, at owner 7000000]
+        mapM_
+            ( \alteration -> do
+                tamperEdits alteration (exitFacts Reject) returning `shouldSatisfy` isLeft
+                tamperEdits alteration (facts DeleteActive) returning `shouldSatisfy` isLeft
+            )
+            [OtherReference, StateSpent]
+
 -- | An absent custody output at the cage.
 custody :: Integer -> FoldOutput
 custody lovelace =
@@ -195,25 +290,35 @@ custody lovelace =
 stranger :: ByteString
 stranger = "stranger-key"
 
-{- | The fold's outputs after a tamper's edits, a redirected output landing at
-the stranger's key, which is no cage.
+{- | An exit's outputs after a tamper's edits: a redirected output lands at the
+stranger's key, a rebound one presents the other reference, and a state spend
+changes no output.
 -}
-tampered :: Tamper -> Edge -> [FoldOutput] -> Either String [FoldOutput]
-tampered alteration edge outputs =
-    foldl apply outputs <$> tamperEdits alteration (facts edge) outputs
+exitTampered :: Tamper -> ExitFacts -> [FoldOutput] -> Either String [FoldOutput]
+exitTampered alteration exitFacts' outputs =
+    foldl apply outputs <$> tamperEdits alteration exitFacts' outputs
   where
     apply outs (Readdress i) =
         adjust i (\o -> o{outputAddress = "address-of-" <> stranger, outputKey = stranger, outputCustody = False}) outs
     apply outs (Relovelace i lovelace) = adjust i (\o -> o{outputLovelace = lovelace}) outs
+    apply outs (Rebind i) = adjust i (\o -> o{outputReference = Just elsewhere}) outs
+    apply outs SpendState = outs
     adjust i f outs = [if j == i then f o else o | (j, o) <- zip [0 :: Int ..] outs]
 
 -- | What the fold pays once tampered, as the chain reads it.
 paymentsAfter :: Tamper -> Edge -> [FoldOutput] -> Either String [Payment]
-paymentsAfter alteration edge outputs =
-    tampered alteration edge outputs >>= foldPayments (facts edge)
+paymentsAfter alteration edge = exitPaymentsAfter alteration (facts edge)
+
+-- | What an exit pays once tampered, as the chain reads it.
+exitPaymentsAfter :: Tamper -> ExitFacts -> [FoldOutput] -> Either String [Payment]
+exitPaymentsAfter alteration exitFacts' outputs =
+    exitTampered alteration exitFacts' outputs >>= foldPayments exitFacts'
 
 -- | A tamper moves value between outputs and never creates or destroys it.
 conserved :: Tamper -> Edge -> [FoldOutput] -> IO ()
-conserved alteration edge outputs =
-    fmap (sum . map outputLovelace) (tampered alteration edge outputs)
+conserved alteration edge = exitConserved alteration (facts edge)
+
+exitConserved :: Tamper -> ExitFacts -> [FoldOutput] -> IO ()
+exitConserved alteration exitFacts' outputs =
+    fmap (sum . map outputLovelace) (exitTampered alteration exitFacts' outputs)
         `shouldBe` Right (sum (map outputLovelace outputs))

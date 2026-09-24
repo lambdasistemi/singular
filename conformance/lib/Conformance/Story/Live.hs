@@ -1,9 +1,10 @@
 {-# LANGUAGE GADTs #-}
 
--- | Programs over the seven model edges. Handles remain opaque to stories.
+-- | Programs over the nine exits of the model: seven folds, a reject and a
+-- retract. Handles remain opaque to stories.
 module Conformance.Story.Live (
-    Edge (..), edgeName, EdgeRequest (..), Tamper (..), tamperName,
-    LiveI (..), Story, Context (..), submit, tamper, observe,
+    Edge (..), edgeName, Exit (..), exitName, EdgeRequest (..), Tamper (..), tamperName,
+    LiveI (..), Story, Context (..), submit, tamper, reject, retract, tamperExit, observe,
     compareWithModel, renderLive, validateLive,
 ) where
 
@@ -27,6 +28,18 @@ edgeName edge = case edge of
     DeleteActive -> "deleteActive"
     WitnessTerminal -> "witnessTerminal"
 
+{- | How a request leaves the queue: folded by its own edge, rejected by a folder
+once it may no longer be folded, or retracted by its owner.
+-}
+data Exit = Fold | Reject | Retract
+    deriving stock (Eq, Show, Enum, Bounded)
+
+-- | An exit's operation name: a fold is named by the edge it folds.
+exitName :: Exit -> Edge -> String
+exitName Fold edge = edgeName edge
+exitName Reject _ = "reject"
+exitName Retract _ = "retract"
+
 data EdgeRequest wal = EdgeRequest
     { requestEdge :: Edge
     , requestKey :: String
@@ -41,29 +54,43 @@ model must refuse them for the reason it gives. 'ExtraSigner' adds one
 required signer the model does not require; the ledger accepts it, and the
 comparison must report the transaction's signers.
 -}
-data Tamper = OtherAddress | ShortByOne | ExtraSigner
+data Tamper = OtherAddress | ShortByOne | ExtraSigner | OtherReference | StateSpent
     deriving stock (Eq, Show, Enum, Bounded)
 
 tamperName :: Tamper -> String
 tamperName OtherAddress = "other-address"
 tamperName ShortByOne = "short-by-one"
 tamperName ExtraSigner = "extra-signer"
+tamperName OtherReference = "other-reference"
+tamperName StateSpent = "state-spent"
 
 type Story reg wal step obs cmp = Specification.Story (LiveI reg wal step obs cmp)
 
 data Context reg wal = Context reg wal
 
 data LiveI reg wal step obs cmp result where
-    Submit :: reg -> EdgeRequest wal -> LiveI reg wal step obs cmp step
-    Tamper :: Tamper -> reg -> EdgeRequest wal -> LiveI reg wal step obs cmp step
+    Submit :: Exit -> reg -> EdgeRequest wal -> LiveI reg wal step obs cmp step
+    Tamper :: Tamper -> Exit -> reg -> EdgeRequest wal -> LiveI reg wal step obs cmp step
     Observe :: step -> LiveI reg wal step obs cmp obs
     Compare :: step -> obs -> LiveI reg wal step obs cmp cmp
 
 submit :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
-submit registry request = action (Submit registry request)
+submit registry request = action (Submit Fold registry request)
 
 tamper :: Tamper -> reg -> EdgeRequest wal -> Story reg wal step obs cmp step
-tamper alteration registry request = action (Tamper alteration registry request)
+tamper alteration = tamperExit alteration Fold
+
+-- | A folder rejects the request once it may no longer be folded.
+reject :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
+reject registry request = action (Submit Reject registry request)
+
+-- | The request's owner retracts it.
+retract :: reg -> EdgeRequest wal -> Story reg wal step obs cmp step
+retract registry request = action (Submit Retract registry request)
+
+-- | The request leaves by this exit through a transaction changed by the tamper.
+tamperExit :: Tamper -> Exit -> reg -> EdgeRequest wal -> Story reg wal step obs cmp step
+tamperExit alteration exit registry request = action (Tamper alteration exit registry request)
 
 observe :: step -> Story reg wal step obs cmp obs
 observe = action . Observe
@@ -82,8 +109,8 @@ validateLive program = do
     walk phase body = case view body of
         Return result -> Right (phase, result)
         Action instruction :>>= rest -> case instruction of
-            Submit _ _ -> advance Ready NeedObserve "preflight step"
-            Tamper _ _ _ -> advance Ready NeedObserve "preflight step"
+            Submit {} -> advance Ready NeedObserve "preflight step"
+            Tamper {} -> advance Ready NeedObserve "preflight step"
             Observe _ -> advance NeedObserve NeedCompare "preflight observation"
             Compare _ _ -> advance NeedCompare Ready "preflight comparison"
           where
@@ -129,22 +156,11 @@ renderClauseProgram program = case view program of
 
 renderAction :: LiveI String String String String String obs -> (obs -> Story String String String String String res) -> (String, res)
 renderAction instruction rest = case instruction of
-    Submit registry request ->
-        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
-            <> "** in **" <> registry <> "**, using the " <> requestWallet request <> ".")
+    Submit exit registry request ->
+        step (subject exit registry request <> ", using the " <> requestWallet request <> ".")
             (rest (requestKey request))
-    Tamper OtherAddress registry request ->
-        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
-            <> "** in **" <> registry <> "** with the payment it owes sent to another address. The ledger and the model must both refuse it; the same request untampered is its control.")
-            (rest (requestKey request))
-    Tamper ShortByOne registry request ->
-        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
-            <> "** in **" <> registry <> "** with the payment it owes one lovelace short. The ledger and the model must both refuse it; the same request untampered is its control.")
-            (rest (requestKey request))
-    Tamper ExtraSigner registry request ->
-        step ("Submit **" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
-            <> "** in **" <> registry <> "** with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers.")
-            (rest (requestKey request))
+    Tamper alteration exit registry request ->
+        step (subject exit registry request <> altered alteration) (rest (requestKey request))
     Observe handle ->
         step ("Observe the complete registry, token, leaf and transaction boundary after **" <> handle <> "**.")
             (rest ("observations for " <> handle))
@@ -153,6 +169,18 @@ renderAction instruction rest = case instruction of
             (rest ("comparison for " <> handle))
   where
     step sentence next = prepend ("- " <> sentence <> "\n\n") (renderWithResult next)
+    named request registry = "**" <> edgeName (requestEdge request) <> "** for **" <> requestKey request
+        <> "** in **" <> registry <> "**"
+    subject Fold registry request = "Submit " <> named request registry
+    subject Reject registry request = "Reject the " <> named request registry
+        <> " once it may no longer be folded"
+    subject Retract registry request = "Retract the " <> named request registry <> " as its owner"
+    refused = " The ledger and the model must both refuse it; the same request untampered is its control."
+    altered OtherAddress = " with the payment it owes sent to another address." <> refused
+    altered ShortByOne = " with the payment it owes one lovelace short." <> refused
+    altered OtherReference = " with its return bound to another request's output reference." <> refused
+    altered StateSpent = " spending the registry's state beside it." <> refused
+    altered ExtraSigner = " with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers."
 
 prepend :: String -> (String, res) -> (String, res)
 prepend prefix (text, result) = (prefix <> text, result)

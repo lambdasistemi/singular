@@ -101,7 +101,7 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The frozen tree: 104 = 56 manifest-bound + 48 unclassified.
+    """The frozen tree: 107 = 56 manifest-bound + 51 unclassified.
 
     The registry's 35 statements include the absent-insertion transaction
     row, the statement that no fold requires a signer, the four statements
@@ -110,13 +110,14 @@ class RealTreeDiscoveryTest(unittest.TestCase):
     a retract pays exactly its obligations; naming contributes 7, lifecycle
     9 and wire encoding 5. Five helpers were added: the two spellings of the
     fold's transaction from its step and the three lemmas settling one
-    payment. The predecessor population was 97 = 54 + 43.
+    payment; three more read a retraction's bound return as its largest
+    output. The predecessor populations were 104 = 56 + 48 and 97 = 54 + 43.
     """
 
     def test_population_at_base(self):
         inv_root = REPO_ROOT
         decls = scan_tree_strict(inv_root / "lean")
-        self.assertEqual(len(decls), 104, "base population drifted; the denominator must be re-examined")
+        self.assertEqual(len(decls), 107, "base population drifted; the denominator must be re-examined")
         statements = [d for d in decls if d.source.endswith("Statements.lean")]
         self.assertEqual(len(statements), 56)
 

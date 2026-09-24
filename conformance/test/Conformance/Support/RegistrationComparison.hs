@@ -248,7 +248,7 @@ spec = describe "Comparing a registration with the model" $ do
                     }
             observedWith approvals =
                 either error (\owner -> replaceOutput index owner observations) $
-                    ownerOutputObservation (number (part "address" modelOwner)) approvalOf [] 0 (reading approvals)
+                    ownerOutputObservation (number (part "address" modelOwner)) approvalOf [] 0 Nothing (reading approvals)
             -- The run's bindings: this request's approval, and another's.
             approvalOf name = case name of
                 "requested" -> Right commitment
@@ -260,7 +260,7 @@ spec = describe "Comparing a registration with the model" $ do
         case compareRegistration declared observations (observedWith ["another"]) of
             Right _ -> error "an owner output returning another approval was accepted"
             Left differences -> map differenceObservation differences `shouldBe` ["tx"]
-        ownerOutputObservation 1 approvalOf [] 0 (reading ["unbooked"])
+        ownerOutputObservation 1 approvalOf [] 0 Nothing (reading ["unbooked"])
             `shouldSatisfy` either (const True) (const False)
 
     it "reports only an extra signer when a transaction also has floor surplus" $ do

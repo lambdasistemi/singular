@@ -18,6 +18,7 @@ import Conformance.Run.Environment
 import Conformance.Run.Observe
 
 import Conformance.Story.Live qualified as Live
+import Conformance.Edge.Exit qualified as ExitStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.Sequence qualified as SequenceStory
@@ -1597,12 +1598,23 @@ against `state.terminalRefusal`.
 The same session then deletes a registration: its deposit is paid back one
 lovelace short and to another address, each refused, before the untampered
 deletion pays it.
+
+The same program then lets requests leave unfolded, in two registries of their
+own: one whose requests become rejectable a second after their retract window
+opens, where a reject refunding the owner one lovelace short and to another
+address is refused before the untampered reject; and one whose requests stay
+retractable for thirty seconds, where the owner's return one lovelace short, to
+another address, bound to another output reference and beside a spent state
+are refused before the untampered retraction. One program keeps the registry
+and identity numbering continuous across both chapters.
 -}
 runCG22 :: Env -> IO ()
 runCG22 env = do
     either failWith pure (Live.validateLive (RetirementStory.story
         (Live.Context "retirement" "holder wallet")
-        (Live.Context "comparison" "holder wallet")))
+        (Live.Context "comparison" "holder wallet")
+        >> ExitStory.story (Live.Context "rejection" "holder wallet")
+            (Live.Context "retraction" "holder wallet")))
     writeIORef (envLiveRecords env) []
     writeIORef (envLiveMeasurements env) []
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
@@ -1611,11 +1623,14 @@ runCG22 env = do
             Just "wrong-delivery", Just "unknown-identity"])
     registry <- ensureRowCage env "story-retirement" 30_000 30_000
     comparison <- ensureRowCage env "story-unknown-key comparison" 30_000 30_000
+    rejection <- ensureRowCage env "story-rejection" 1_000 1_000
+    retraction <- ensureRowCage env "story-retraction" 1_000 30_000
     _ <- largestWalletUtxo (envProv env)
     _ <- runLive env (RetirementStory.story
-        (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr))
+        (Live.Context registry genesisAddr) (Live.Context comparison genesisAddr)
+        >> ExitStory.story (Live.Context rejection genesisAddr) (Live.Context retraction genesisAddr))
     records <- readIORef (envLiveRecords env)
-    require "CG22 did not compare its eleven requests" (length records == 11)
+    require "CG22 did not compare its nineteen requests" (length records == 19)
     require "retirement chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")

@@ -1488,10 +1488,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1506,9 +1506,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
 /-- Value an exit does not owe is unconstrained, for every exit alike.
 
 For every exit, every request and any two lists of transaction outputs: when each
-recipient the exit owes receives, through the outputs that pay it by role and
-address, at least as much lovelace from the second list as from the first, the
-second list settles whenever the first does. Adding outputs, or adding lovelace to
+recipient the exit owes receives (`receivedBy`: the summed lovelace of the outputs
+that pay it by role and address, or, for a retraction's return bound to its
+request, the largest such output) at least as much from the second list as from
+the first, the second list settles whenever the first does. Adding outputs, or adding lovelace to
 an output, therefore never turns a settled transaction into an unsettled one, and
 whether a transaction settles depends only on the lovelace reaching the recipients
 the exit owes: fees, the folder's tip and every output that pays none of them play
@@ -1516,8 +1517,7 @@ no part. -/
 theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
     (outputs more : List TxOutput)
     (received : ∀ payment ∈ obligations exit request,
-      (outputs.filter (paysRecipient payment.recipient)).foldl (· + ·.lovelace) 0 ≤
-        (more.filter (paysRecipient payment.recipient)).foldl (· + ·.lovelace) 0) :
+      receivedBy payment.recipient outputs ≤ receivedBy payment.recipient more) :
     settle (obligations exit request) outputs = none →
     settle (obligations exit request) more = none := by
   -- `settle` judges each recipient the payments name once; a recipient is judged
@@ -1546,7 +1546,6 @@ theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
   have owed := (named _ [] recipient judged).resolve_right (by simp)
   obtain ⟨payment, owedPayment, rfl⟩ := List.mem_map.mp owed
   have before := settled _ judged
-  dsimp only at before ⊢
   split at before
   · next paid => rw [if_pos (Nat.le_trans paid (received payment owedPayment))]
   · cases before
@@ -1584,14 +1583,15 @@ theorem only_retract_owes_the_tip (exit : Exit) :
 
 /-- What an exit owes is read off the request alone.
 
-For every exit and any two requests with the same owner, deposit, tip and
-destination, the exit owes the same payments. The obligations read no registry
-state, and nothing else of the request: not its edge beyond the destination it
-names, its key, its refund address, its approval or its claimed mint. -/
+For every exit and any two requests with the same owner, deposit, tip, destination
+and output reference, the exit owes the same payments. The obligations read no
+registry state, and nothing else of the request: not its edge beyond the destination
+it names, its key, its refund address, its approval or its claimed mint. -/
 theorem obligations_read_only_the_request (exit : Exit) (request other : Request)
     (sameOwner : other.owner = request.owner) (sameDeposit : other.deposit = request.deposit)
     (sameTip : other.tip = request.tip)
-    (sameDestination : requestDestination other = requestDestination request) :
+    (sameDestination : requestDestination other = requestDestination request)
+    (sameReference : other.reference = request.reference) :
     obligations exit other = obligations exit request := by
   cases exit with
   | fold edge => cases edge <;> simp [obligations, *]

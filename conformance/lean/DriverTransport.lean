@@ -23,6 +23,13 @@ open Lean Singular Singular.Driver
 
 namespace DriverTransport
 
+/-- A natural field a caller may leave out, read as 0 when absent or null. -/
+def optionalNat (j : Json) (name : String) : Except String Nat :=
+  match j.getObjVal? name with
+  | .error _ => pure 0
+  | .ok Json.null => pure 0
+  | .ok v => fromJson? v
+
 /-- The model's own decoders do not cover `Request`, which carries defaults. -/
 def toRequest (j : Json) : Except String Request := do
   let edge ← (j.getObjVal? "edge") >>= fromJson?
@@ -35,8 +42,13 @@ def toRequest (j : Json) : Except String Request := do
   -- registry's pinned application policy. Its asset name is the model's own
   -- `approvalAssetName` of the request's tuple, so the caller never has to
   -- compute a model hash and never gets to invent one.
+  -- The tip and the output reference the request sits at are optional: a caller
+  -- that names neither describes a request holding its deposit alone, at reference 0.
+  let tip ← optionalNat j "tip"
+  let reference ← optionalNat j "reference"
   let base : Request :=
-    { edge, key, owner, refundAddress, deposit, output, approval := none, claimed := [] }
+    { edge, key, owner, refundAddress, deposit, output, approval := none, claimed := [], tip
+    , reference }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none
@@ -82,8 +94,19 @@ def toState (j : Json) : Except String RegistryState := do
     | .ok h => fromJson? h
   pure { config, trie, custody, held }
 
+/-- The exit a caller names by its operation name, one of the driver's declared
+exits; a caller that names none asks for the fold of the request's own edge. -/
+def toExit (j : Json) (request : Request) : Except String Exit :=
+  match j.getObjVal? "exit" with
+  | .error _ => pure (.fold request.edge)
+  | .ok named => do
+    let name : String ← fromJson? named
+    match declaredExits.find? (exitName · == name) with
+    | some exit => pure exit
+    | none => throw s!"no declared exit is named {name}"
+
 /-- One evaluation: a starting state, a lawful setup trace, and the request, taken
-by the fold of its own edge. -/
+by the exit the caller names. -/
 def toScenario (j : Json) : Except String Scenario := do
   let start ← (j.getObjVal? "start") >>= toState
   let request ← (j.getObjVal? "request") >>= toRequest
@@ -96,14 +119,23 @@ def toScenario (j : Json) : Except String Scenario := do
   let theoremName ← (j.getObjVal? "theorem") >>= fromJson?
   let statementSha256 ← (j.getObjVal? "statementSha256") >>= fromJson?
   let id ← (j.getObjVal? "id") >>= fromJson?
+  let exit ← toExit j request
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, exit := .fold request.edge, request, lovelace }
+    , start, setup, exit, request, lovelace }
+
+/-- One input a caller observed, as the driver's judgement reads it: the state
+tokens it holds. `spend` reads nothing else of an input, so nothing else is taken
+from the caller; the other fields are the model's zeros. -/
+def toInput (j : Json) : Except String TxInput := do
+  let stateTokens ← (j.getObjVal? "stateToken") >>= fromJson?
+  pure { role := .request, datum := .none, stateTokens, approvals := 0, lovelace := 0 }
 
 /-- One output a caller observed, as the driver's judgement reads it: its role,
-the identity of its address and its lovelace. The judgement, `settle`, reads
+the identity of its address, its lovelace, the form of its datum, and the identity
+of the output reference its inline datum presents, if any. The judgement, `settle`, reads
 nothing else of an output, so nothing else is taken from the caller. -/
 def toOutput (j : Json) : Except String TxOutput := do
   let role ← match (← (j.getObjVal? "role") >>= fromJson? : String) with
@@ -113,12 +145,22 @@ def toOutput (j : Json) : Except String TxOutput := do
     | other => throw s!"no judged output has the role {other}"
   let address ← (j.getObjVal? "address") >>= fromJson?
   let lovelace ← (j.getObjVal? "lovelace") >>= fromJson?
-  pure { role, datum := .none, address := some address, stateTokens := 0, config := none
-       , commitment := none, assets := [], lovelace }
+  let datum ← match (← (j.getObjVal? "datum") >>= fromJson? : String) with
+    | "inline" => pure DatumForm.inline
+    | "hashed" => pure .hashed
+    | "none" => pure .none
+    | other => throw s!"no judged output presents the datum form {other}"
+  let reference ← match j.getObjVal? "reference" with
+    | .error _ => pure none
+    | .ok Json.null => pure none
+    | .ok r => some <$> fromJson? r
+  pure { role, datum, address := some address, stateTokens := 0, config := none
+       , commitment := none, assets := [], lovelace, reference }
 
 /-- Evaluate, and answer with the row the driver produces. A question carrying the
-outputs of a transaction the caller observed is also answered with the driver's
-judgement of them, `settle`'s reason or `null` when they pay what the exit owes. -/
+inputs and outputs of a transaction the caller observed is also answered with the
+driver's judgement of them, under `settle`: the reason `spend` or `settle` gives,
+or `null` when the transaction spends what the exit may and pays what it owes. -/
 def answer (j : Json) : Except String Json := do
   let scenario ← toScenario j
   let row := scenarioJson scenario
@@ -126,7 +168,11 @@ def answer (j : Json) : Except String Json := do
   | .error _ => pure row
   | .ok (Json.arr observed) => do
     let outputs ← observed.toList.mapM toOutput
-    let judgement := match judgeSurface scenario outputs with
+    let inputs ← match j.getObjVal? "inputs" with
+      | .error _ => throw "a judged transaction names no inputs"
+      | .ok (Json.arr spent) => spent.toList.mapM toInput
+      | .ok _ => throw "inputs is not an array"
+    let judgement := match judgeSurface scenario inputs outputs with
       | none => Json.null
       | some why => toJson why
     pure (row.setObjVal! "settle" judgement)
