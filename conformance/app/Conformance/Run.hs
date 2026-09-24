@@ -452,6 +452,11 @@ runSession
                                    \their own"
                                 )
                         else do
+                            -- The session cage boots by reference: the
+                            -- state validator is published before the
+                            -- seed is chosen, so the publication cannot
+                            -- spend the seed.
+                            ensureStateRefWith prov submit stateBytes
                             (seedTxIn, _) <- largestWalletUtxo prov
                             let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seedTxIn)
                                 marker' = case control of

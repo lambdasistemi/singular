@@ -94,7 +94,10 @@ import Singular.Registry.Types (
     ProofStep,
     RequestAction (..),
     UpdateRedeemer (..),
+    edgeDeleteAbsent,
+    edgeDeleteActive,
     edgeInsertAbsent,
+    edgeUpdateTerminal,
     edgeWitnessTerminal,
  )
 
@@ -567,11 +570,14 @@ registryDuties ::
     -}
     [Bool] ->
     Either String RegistryDuties
-registryDuties cfg pp st ctx reqUtxos processed =
+registryDuties cfg pp st ctx reqUtxos processed = do
+    perRequest <- mconcat <$> mapM one consumed
+    returns <- depositReturns
+    pure (perRequest <> returns)
+  where
     -- Unmatched requests are NOT processed: a deficit fold has more
     -- requests than actions, and the tail of it takes no edge.
-    mconcat <$> mapM one (zip reqUtxos (processed <> repeat False))
-  where
+    consumed = zip reqUtxos (processed <> repeat False)
     net = network cfg
     cageAddr = cageAddrFromCfg cfg net
     tip = stateMaxFee st
@@ -609,7 +615,10 @@ registryDuties cfg pp st ctx reqUtxos processed =
             else do
                 mints <- mintsFor edge key
                 rest <- dutiesFor edge key dest destAddr destHash floorAda
-                back <- approvalReturn req reqOut
+                back <-
+                    if returnsDeposit edge
+                        then pure mempty
+                        else approvalReturn req reqOut
                 pure (mints <> rest <> back)
     {- An approval is not burned at the fold (D-APPROVAL), so it has to
     land somewhere. It goes back to the owner who booked it, in an output
@@ -619,12 +628,7 @@ registryDuties cfg pp st ctx reqUtxos processed =
     approvalReturn :: OnChainRequest -> TxOut ConwayEra -> Either String RegistryDuties
     approvalReturn req reqOut = do
         let BuiltinByteString owner = requestOwner req
-            carried =
-                case reqOut ^. valueTxOutL of
-                    MaryValue _ (MultiAsset m) ->
-                        Map.filterWithKey
-                            (\p _ -> p == policyIdFromPin (cfgApplicationPolicy cfg))
-                            m
+            carried = approvalsOn reqOut
         if Map.null carried
             then pure mempty
             else do
@@ -638,6 +642,11 @@ registryDuties cfg pp st ctx reqUtxos processed =
                     Coin first = getMinCoinTxOut @ConwayEra pp (at 0)
                     Coin settled = getMinCoinTxOut @ConwayEra pp (at first)
                 pure mempty{rdOutputs = [at settled]}
+    approvalsOn reqOut = case reqOut ^. valueTxOutL of
+        MaryValue _ (MultiAsset m) ->
+            Map.filterWithKey
+                (\p _ -> p == policyIdFromPin (cfgApplicationPolicy cfg))
+                m
     mintsFor edge key =
         mconcat
             <$> mapM
@@ -837,6 +846,36 @@ registryDuties cfg pp st ctx reqUtxos processed =
                             <> " minimum"
                         )
     policyIdOf = policyIdFromPin
+    -- #253: an edge that delivers no token (3, 4, 5) owes the consumed
+    -- request's deposit to its owner's key. The cage sums what one fold
+    -- owes one key and counts only the outputs paying that key outside the
+    -- token carriers, so each owner's deposits go out together, in one
+    -- output. The approvals those requests carried (D-APPROVAL: not burned)
+    -- ride back in the same output, as a rejected request's refund carries
+    -- its approval; an output holding them is never ada-only, so it cannot
+    -- be mistaken for a custody refund of the same address and amount.
+    returnsDeposit edge =
+        edge `elem` [edgeUpdateTerminal, edgeDeleteAbsent, edgeDeleteActive]
+    depositReturns = do
+        outs <- mapM depositOutput (Map.toList owedByOwner)
+        pure mempty{rdOutputs = outs}
+    owedByOwner =
+        Map.fromListWith
+            (\(a, x) (b, y) -> (a + b, Map.unionWith (Map.unionWith (+)) x y))
+            [ (owner, (held - tip, approvalsOn reqOut))
+            | ((_, reqOut), True) <- consumed
+            , Just (RequestDatum req) <- [extractCageDatum reqOut]
+            , returnsDeposit (requestEdge req)
+            , let BuiltinByteString owner = requestOwner req
+                  Coin held = reqOut ^. coinTxOutL
+            ]
+    depositOutput (owner, (owed, approvals)) = do
+        let out =
+                mkBasicTxOut
+                    (addrFromKeyHashBytes net owner)
+                    (MaryValue (Coin owed) (MultiAsset approvals))
+        requireMinAda "deposit" out
+        pure out
 
 {- | Can this output fund a fold? It must hold ada and nothing else,
 because it doubles as collateral, and it must not be one of the published

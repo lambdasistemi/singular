@@ -10,6 +10,7 @@ import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.NodeSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
+import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.BurnSourceSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Test.Hspec (hspec)
@@ -18,6 +19,7 @@ main :: IO ()
 main = hspec $ do
     Singular.Registry.BlueprintParametersSpec.spec
     Singular.Registry.TxBuilder.BookEdgeSpec.spec
+    Singular.Registry.TxBuilder.BootSpec.spec
     Singular.Registry.TxBuilder.BurnSourceSpec.spec
     Singular.Registry.CandidateSpec.spec
     Singular.Registry.FailureMatchSpec.spec

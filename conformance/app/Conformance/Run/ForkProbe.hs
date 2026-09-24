@@ -9,6 +9,7 @@ import Conformance.Run.Wallet
 import Conformance.Run.Submit
 import Conformance.Run.Environment
 import Conformance.Run.Observe
+import Conformance.Run.Cage (ensureStateRefWith)
 
 import Control.Concurrent.Async (async, cancel)
 import Control.Exception (
@@ -100,6 +101,9 @@ runForkProbeSession stateBytes requestBytes namingCodes sock = do
     prov <- followedProvider nodeProv submit
     checkFunding prov funderAddr defaultFundingFloor
     tm <- mkPureTrieManager
+    -- Boots by reference: publish the state validator before the seed
+    -- is chosen, so the publication cannot spend the seed.
+    ensureStateRefWith prov submit stateBytes
     (seed, _) <- largestWalletUtxo prov
     let cfg = cageCfg stateBytes requestBytes namingCodes (txInToRef seed)
     unsignedBoot <- bootTokenImpl cfg prov genesisAddr

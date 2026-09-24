@@ -37,27 +37,27 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20",
+      "hash": "1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20",
+      "hash": "1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20",
+      "hash": "1f06886c357b5b31b43baf142cb19d0c8e5259110de1905669426428",
       "parameters": 0
     },
     {
       "title": "witness.witness.mint",
-      "hash": "4965c0f61c9dc3e521d2ca9db36390f71360c0559710eed582192a06",
+      "hash": "c817182ba1a782da172c01a2814f0798096b9a97d4399128a47c3720",
       "parameters": 2
     },
     {
       "title": "witness.witness.else",
-      "hash": "4965c0f61c9dc3e521d2ca9db36390f71360c0559710eed582192a06",
+      "hash": "c817182ba1a782da172c01a2814f0798096b9a97d4399128a47c3720",
       "parameters": 2
     }
   ]
