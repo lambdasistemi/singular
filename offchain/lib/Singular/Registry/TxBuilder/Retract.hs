@@ -16,6 +16,7 @@ module Singular.Registry.TxBuilder.Retract (
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Lens.Micro ((&), (.~), (^.))
 
@@ -36,11 +37,14 @@ import Cardano.Ledger.Api.Tx.Body (
     collateralInputsTxBodyL,
     inputsTxBodyL,
     mkBasicTxBody,
+    outputsTxBodyL,
     referenceInputsTxBodyL,
     vldtTxBodyL,
  )
 import Cardano.Ledger.Api.Tx.Out (
     coinTxOutL,
+    datumTxOutL,
+    getMinCoinTxOut,
  )
 import Cardano.Ledger.Api.Tx.Wits (
     Redeemers (..),
@@ -79,9 +83,10 @@ import Singular.Registry.Types (
 
 {- | Build a retract-request transaction.
 
-The requester spends their request UTxO
-(returning locked ADA) while referencing the
-state UTxO. Requires Phase 2 validity.
+The requester spends their request UTxO while referencing the
+state UTxO. All its lovelace is paid to the request owner's key,
+with the consumed request reference as the return's inline datum.
+Wallet funding pays fees separately. Requires Phase 2 validity.
 -}
 retractRequestImpl ::
     CageConfig ->
@@ -90,7 +95,7 @@ retractRequestImpl ::
     TokenId ->
     -- | UTxO reference of the request to retract
     TxIn ->
-    -- | Requester's address (receives refund)
+    -- | Fee payer and change address
     Addr ->
     IO ConwayTx
 retractRequestImpl = retractRequestAtTipImpl (SlotNo 0)
@@ -188,6 +193,13 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
             ValidityInterval
                 (SJust lowerSlot)
                 (SJust upperSlot)
+        boundRefund =
+            computeRefund pp (network cfg) 0 reqOut
+                & datumTxOutL .~ mkInlineDatum (toPlcData (txInToRef reqIn))
+        refund =
+            boundRefund
+                & coinTxOutL
+                    .~ max (boundRefund ^. coinTxOutL) (getMinCoinTxOut pp boundRefund)
         body :: ConwayTxBody
         body =
             mkBasicTxBody
@@ -195,6 +207,9 @@ retractRequestAtTipImpl tip cfg prov tid reqTxIn addr = do
                     .~ Set.singleton reqIn
                 & referenceInputsTxBodyL
                     .~ Set.singleton stateIn
+                & outputsTxBodyL
+                    .~ StrictSeq.singleton
+                        refund
                 & collateralInputsTxBodyL
                     .~ Set.singleton
                         (fst feeUtxo)

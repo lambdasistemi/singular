@@ -4,6 +4,10 @@ These are executable stories. The runner supplies fresh registry and wallet cont
 
 ## This run
 
+The runs below predate the current request validator. Their revision and
+blueprint bindings are retained as historical evidence; they do not verify
+the current retraction bound-return or state-input rules.
+
 Code revision: `be6a1e525c124a18f46029626c47cec615ff3589` (clean working tree).
 
 Node: `cardano-node 10.7.0 - linux-x86_64 - ghc-9.6`. Compiled validators: `state:67ef82d1e5f6a4c3fcf95ac3dcd4aeccbdb6f0e9849cc63b0286ab20 request:c404e3bf529fa8a92c9bd32ceceaa58fc48e7274d274a68ea3bfb4aa`.

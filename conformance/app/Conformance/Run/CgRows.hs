@@ -76,6 +76,7 @@ import Cardano.Ledger.Api.Tx.Body (
  )
 import Cardano.Ledger.Api.Tx.Out (
     coinTxOutL,
+    datumTxOutL,
     getMinCoinTxOut,
     mkBasicTxOut,
  )
@@ -122,10 +123,12 @@ import Singular.Registry.TxBuilder.Internal (
     extractOwnerBytes,
     mkCageScript,
     mkRequestScript,
+    mkInlineDatum,
     scriptHashBytes,
     scriptFromBytes,
     spendingIndex,
     toLedgerData,
+    toPlcData,
     trySlots,
     txInToRef,
  )
@@ -460,14 +463,14 @@ runCG07 env = do
     -- conversion horizon). The refused attempt's units come from the
     -- declared fallback: no valid fold has run in this cage.
     units <- declaredSpec env cage
-    pot <- collateralPot env
+    (pot, (funderIn, funderOut)) <- collateralPotWithChange env
     (stateIn, _) <- cageStateUtxo env cage
     pp <- Cage.queryProtocolParams prov
     nowMs0 <- currentPosixMs
     upper <- trySlots prov [nowMs0 + 2_000, nowMs0 + 1_500, nowMs0 + 1_000]
     let stateRef = txInToRef stateIn
         script = mkRequestScript cfg tid
-        inputs = Set.singleton reqIn
+        inputs = Set.fromList [reqIn, funderIn]
         ownerKh = addrWitnessKeyHash (extractOwnerBytes reqOut)
         purpose = ConwaySpending (AsIx (spendingIndex reqIn inputs))
         rdmrs =
@@ -494,13 +497,16 @@ runCG07 env = do
                 & witsTxL . rdmrsTxWitsL .~ rdmrs
         Coin estFee = estimateMinFeeTx pp draft 1 0 0
         fee = estFee + 50_000
-        refundCoin = reqVal - fee
+        refundCoin = reqVal
+        Coin funding = funderOut ^. coinTxOutL
+        changeOut = mkBasicTxOut genesisAddr (MaryValue (Coin (funding - fee)) mempty)
         -- A retracted booking is not folded, so the approval that
         -- certified its edge comes back with the deposit.
         refundOut =
             mkBasicTxOut
                 (addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut))
                 (MaryValue (Coin refundCoin) (MultiAsset (rawAssets reqOut)))
+                & datumTxOutL .~ mkInlineDatum (toPlcData (txInToRef reqIn))
         Coin minAda = getMinCoinTxOut @ConwayEra pp refundOut
     require
         "CG07 hand retract: refund under min-ADA"
@@ -508,7 +514,7 @@ runCG07 env = do
     let handTx =
             draft
                 & bodyTxL . feeTxBodyL .~ Coin fee
-                & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut]
+                & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut, changeOut]
     emit
         "row"
         ( "CG07: retract with validity inside phase 1 submitted; the \

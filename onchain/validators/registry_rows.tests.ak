@@ -1667,6 +1667,7 @@ test v1_funded_request_accepts() {
 
 fn retract(edge: Int, signer: ByteArray) -> Bool {
   let root = fx.oneLeaf(fx.keyA, fx.terminalLeaf)
+  let redeemer: Data = types.Retract(fx.stateRef)
   request.request.spend(
     fx.cagePolicy,
     fx.cageTokenName(),
@@ -1677,8 +1678,15 @@ fn retract(edge: Int, signer: ByteArray) -> Bool {
       ..transaction.placeholder,
       validity_range: fx.phase2(),
       extra_signatories: [signer],
+      redeemers: [Pair(Spend(fx.requestRef(0)), redeemer)],
+      outputs: [Output {
+        address: fx.addressOf(fx.bookerAddress),
+        value: from_lovelace(fx.requestLovelace),
+        datum: InlineDatum(fx.requestRef(0)),
+        reference_script: None,
+      }],
+      reference_inputs: [fx.stateInput(root)],
       inputs: [
-        fx.stateInput(root),
         fx.requestInput(
           0,
           fx.keyA,
