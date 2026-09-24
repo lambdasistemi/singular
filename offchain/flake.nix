@@ -70,30 +70,30 @@
         components =
           project.project.hsPkgs.singular-registry.components;
 
-        # #264 T264-05: hermetic build closure over every component the
-        # Cabal package declares — the library, every executable, and
-        # every test suite — quantified over the haskell.nix component
-        # attrsets, so a new Cabal component joins the closure without a
-        # maintained name list here. Building a test component compiles
-        # it and runs nothing. The joined manifest records the exact
-        # closure for reconciliation against the Cabal inventory (19
-        # components at intake: 1 library, 15 executables, 3 test
-        # suites).
-        componentBuild = pkgs.symlinkJoin {
-          name = "singular-registry-component-build";
-          paths =
-            [ components.library ]
-            ++ pkgs.lib.attrValues components.exes
-            ++ pkgs.lib.attrValues components.tests
-            ++ [
-              (pkgs.writeTextDir "component-build-manifest"
-                (pkgs.lib.concatStringsSep "\n" (
-                  [ "library singular-registry" ]
-                  ++ map (n: "exe " + n) (pkgs.lib.attrNames components.exes)
-                  ++ map (n: "test " + n) (pkgs.lib.attrNames components.tests)
-                ) + "\n"))
-            ];
-        };
+        # #264 T264-05 (epic answer A-005): the classified supported
+        # component carrier. Every declared Cabal component is classified in
+        # ./nix/component-inventory.nix — built here (the components the
+        # current required workflow commands and the shipped registry
+        # commands consume, plus the library and every test component), or
+        # explicitly unverified under #282. connected-verifier stays declared
+        # and exported; it is not built here and nothing claims it works.
+        # The classification's inventory gate runs inside this build and
+        # fails it on an unclassified new component, a stale row, a missing
+        # issue/reason, or an empty set; a member build failure fails the
+        # build the same way. Building a test component compiles it and runs
+        # nothing. The manifest shipped in the output records the full
+        # classification, and the green claim covers exactly the classified
+        # members — never the whole package.
+        componentBuild =
+          let
+            inventory = import ./nix/component-inventory.nix {
+              inherit pkgs components;
+            };
+          in
+          pkgs.symlinkJoin {
+            name = "singular-registry-component-build";
+            paths = inventory.memberPaths ++ [ inventory.inventoryGate ];
+          };
 
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
@@ -343,8 +343,9 @@
       in
       {
         packages = {
-          # #264 T264-05: the complete off-chain component build carrier
-          # (epic answer A-001). CI builds it with
+          # #264 T264-05: the classified supported off-chain component build
+          # carrier (epic answer A-005; classification and inventory gate in
+          # ./nix/component-inventory.nix). CI builds it with
           # `nix build --quiet .#component-build` from offchain.
           component-build = componentBuild;
           inherit test-vectors test-vectors-json;
