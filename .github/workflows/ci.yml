@@ -68,17 +68,19 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #264 (epic answers A-005 and A-008/A-009): the classified supported
-      # component build carrier. Every declared Cabal component is classified
-      # in offchain/nix/component-inventory.nix — built here, or explicitly
-      # unverified with its owning issue: recovery-rows, retirement-rows and
-      # repair-rows under #172, register-rows under #283, connected-verifier
-      # under #282. Every unverified component stays declared and exported,
-      # and no job claims it works. The carrier's inventory gate fails this
-      # job on an unclassified new component, a stale row, or an empty set;
-      # a member build failure fails it too. Green covers exactly the
-      # classified members, never the whole package — build only, nothing
-      # executes.
+      # #264 (epic answers A-005, A-008/A-009/A-010): the classified
+      # supported component build carrier. EVERY declared Cabal component is
+      # classified in offchain/nix/component-inventory.nix — built here, or
+      # explicitly unverified with its owning issue (retired NYA journeys,
+      # retained executables and their repairs). That file, and the manifest
+      # shipped in this build's output, are the single authority for the
+      # complete row set; this comment deliberately does not restate the
+      # list. Every unverified component stays declared and exported, and no
+      # job claims it works. The carrier's inventory gate fails this job on
+      # an unclassified or unrecognized new stanza, a stale row, a row
+      # without an issue/reason, or an empty set; a member build failure
+      # fails it too. Green covers exactly the classified members, never the
+      # whole package — build only, nothing executes.
       - run: nix build --quiet .#component-build
         working-directory: offchain
   model:

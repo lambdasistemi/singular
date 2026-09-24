@@ -70,22 +70,22 @@
         components =
           project.project.hsPkgs.singular-registry.components;
 
-        # #264 T264-05 (epic answers A-005 and A-008/A-009): the classified
-        # supported component carrier. Every declared Cabal component is
-        # classified in ./nix/component-inventory.nix — built here (the
-        # components the current required workflow commands and the supported
-        # shipped registry commands consume, plus the library and every test
-        # component), or explicitly unverified: recovery-rows,
-        # retirement-rows and repair-rows retained for #172, register-rows
-        # for #283, and connected-verifier for #282. Every unverified
+        # #264 T264-05 (epic answers A-005 and A-008/A-009/A-010): the
+        # classified supported component carrier. EVERY declared Cabal
+        # component is classified in ./nix/component-inventory.nix — built
+        # here (the components the current required workflow commands and
+        # the supported shipped registry commands consume, plus the library
+        # and every test component), or explicitly unverified with its
+        # owning issue. That file, and the manifest shipped in this build's
+        # output, are the single authority for the complete row set; this
+        # comment deliberately does not restate it. Every unverified
         # component stays declared and exported; nothing claims it works.
         # The classification's inventory gate runs inside this build and
-        # fails it on an unclassified new component, a stale row, a missing
-        # issue/reason, or an empty set; a member build failure fails the
-        # build the same way. Building a test component compiles it and runs
-        # nothing. The manifest shipped in the output records the full
-        # classification, and the green claim covers exactly the classified
-        # members — never the whole package.
+        # fails it on an unclassified or unrecognized new stanza, a stale
+        # row, a row without an issue/reason, or an empty set; a member
+        # build failure fails the build the same way. Building a test
+        # component compiles it and runs nothing. The green claim covers
+        # exactly the classified members — never the whole package.
         componentBuild =
           let
             inventory = import ./nix/component-inventory.nix {

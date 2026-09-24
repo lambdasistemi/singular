@@ -59,10 +59,9 @@ let
     ];
   };
 
-  # Another required CI job building a component none of the rows above
-  # covers. Empty today: every workflow-consumed and supported shipped
-  # component is in builtHere, so this class stays here to keep the schema
-  # complete, and a future entry must name the job and its command.
+  # Each entry carries its own kind and names the job and its verbatim
+  # command: a covered-elsewhere component is by definition not in builtHere,
+  # so it cannot borrow builtHere's kind lookup.
   coveredElsewhere = [ ];
 
   # Declared and exported, not built here. The seven D6 journeys are
@@ -156,11 +155,10 @@ let
       inherit name;
       detail = "";
     }) (builtHere.library ++ builtHere.exes ++ builtHere.tests)
-    ++ map (name: {
+    ++ map (row: {
       class = "covered-elsewhere";
-      kind = kindOf builtHere name;
-      inherit name;
-      detail = "";
+      inherit (row) kind name;
+      detail = "${row.job} :: ${row.command}";
     }) coveredElsewhere
     ++ map (row: {
       class = "unverified";
@@ -188,14 +186,47 @@ let
       [ "$#" -eq 2 ] || usage
       cabalFile="$1"; manifestFile="$2"
 
-      # Declared components, straight from the Cabal authority. Column-0
-      # stanza headers only; comments and indented fields never match.
+      # Declared components, straight from the Cabal authority: EVERY
+      # column-0 line is examined. Top-level package fields (name:, version:,
+      # …) are skipped by their colon; component stanza kinds (case-#
+      # insensitive) map to classification kinds — an unnamed `library` is
+      # the package library, a named `library` or `sublibrary` is a sublib,
+      # plus executable, test-suite, benchmark and foreign-library — and a
+      # non-component stanza (common, flag, source-repository, custom-setup,
+      # if, else) is skipped. Anything else fails the gate: a stanza kind
+      # this parser does not know can never silently join no class.
       declared=$(awk '
-        /^--/ { next }
-        /^library[ \t]*$/        { print "library\tsingular-registry"; next }
-        /^executable[ \t]+/      { sub(/^executable[ \t]+/, ""); print "exe\t" $1; next }
-        /^test-suite[ \t]+/      { sub(/^test-suite[ \t]+/, ""); print "test\t" $1; next }
+        /^[ \t]/ || /^$/ || /^--/ { next }
+        /^[a-zA-Z0-9-]+:/ { next }
+        {
+          keyword = tolower($1)
+          if (keyword == "library") {
+            if (NF == 1) print "library\tsingular-registry"
+            else { sub(/^[^ \t]+[ \t]+/, ""); print "sublib\t" $1 }
+          } else if (keyword == "sublibrary" || keyword == "executable" ||
+                     keyword == "test-suite" || keyword == "benchmark" ||
+                     keyword == "foreign-library") {
+            if (keyword == "sublibrary") kind = "sublib"
+            else if (keyword == "executable") kind = "exe"
+            else if (keyword == "test-suite") kind = "test"
+            else if (keyword == "benchmark") kind = "benchmark"
+            else kind = "foreign-lib"
+            sub(/^[^ \t]+[ \t]+/, "")
+            print kind "\t" $1
+          } else if (keyword == "common" || keyword == "flag" ||
+                     keyword == "source-repository" || keyword == "custom-setup" ||
+                     keyword == "if" || keyword == "else") {
+            next
+          } else {
+            print "UNRECOGNIZED-STANZA\t" $0
+          }
+        }
       ' "$cabalFile" | sort)
+      if printf '%s\n' "$declared" | grep -q "^UNRECOGNIZED-STANZA"; then
+        echo "component-inventory: unrecognized column-0 stanza header(s) in $cabalFile — extend the recognition set or classify them:" >&2
+        printf '%s\n' "$declared" | grep "^UNRECOGNIZED-STANZA" >&2
+        exit 1
+      fi
       [ -n "$declared" ] || { echo "component-inventory: no components declared in $cabalFile — refusing an empty derivation" >&2; exit 1; }
       declaredCount=$(printf '%s\n' "$declared" | wc -l)
 
@@ -218,6 +249,8 @@ let
       [ -z "$badRows" ] || { echo "component-inventory: unverified row(s) missing an issue/reason:" >&2; printf '%s\n' "$badRows" >&2; exit 1; }
       unknownClass=$(cut -f1 "$manifestFile" | grep -vxE 'built-here|covered-elsewhere|unverified' || true)
       [ -z "$unknownClass" ] || { echo "component-inventory: unknown classification class(es): $unknownClass" >&2; exit 1; }
+      unknownKind=$(cut -f2 "$manifestFile" | grep -vxE 'library|sublib|exe|test|benchmark|foreign-lib' || true)
+      [ -z "$unknownKind" ] || { echo "component-inventory: unknown component kind(s) in classification rows: $unknownKind" >&2; exit 1; }
 
       builtCount=$(printf '%s\n' "$builtHereRows" | wc -l)
       echo "component-inventory: $declaredCount declared, $builtCount built here, $((classifiedCount - builtCount)) not built by this carrier (unverified rows carry issue+reason)"
