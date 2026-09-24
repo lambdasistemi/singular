@@ -950,6 +950,55 @@ def settle (payments : List Payment) (outputs : List TxOutput) : Option String :
     if owed ≤ paying.foldl (· + ·.lovelace) 0 then none
     else some (unpaidReason recipient paying)
 
+/-- One exit as a model step. A fold of edge `e` is exactly `step` when the
+request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
+retract carries no admission: it leaves the registry state as it was, mints
+nothing, and pays the owner what the exit owes, each payment recorded as the
+(address, value) pair `Result.paid` carries, the owner's key being its address as
+`paysRecipient` reads it. -/
+def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
+  match exit with
+  | .fold e => if request.edge == e then step state request else .error "exit-edge-mismatch"
+  | .reject | .retract =>
+    .ok { state := state, mint := []
+        , paid := (obligations exit request).filterMap fun p =>
+            match p.recipient with
+            | .owner key => some (key, p.atLeast)
+            | _ => none }
+
+/-- One owner output per owner payment, at the owner's address, carrying the
+payment's floor. -/
+def ownerOutputs (paid : List (Nat × Nat)) : List TxOutput :=
+  paid.map fun p =>
+    { role := .owner, datum := registryDatumForm, address := some p.1, stateTokens := 0
+    , config := none, commitment := none, assets := [], lovelace := p.2 }
+
+/-- The transaction an exit builds. A fold's is `txOf` when the request names its
+edge, and none otherwise. A reject is settled inside a transaction that spends the
+registry's state and returns it unchanged, beside the request it spends; a retract
+is its own transaction, spending only the request. Each pays the owner one output
+per payment it owes, mints nothing and requires no signer. -/
+def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace : Nat) :
+    Except String Tx :=
+  match exit with
+  | .fold e => if request.edge == e then txOf state request lovelace else .error "exit-edge-mismatch"
+  | .reject | .retract =>
+    match exitStep state exit request with
+    | .error why => .error why
+    | .ok t =>
+      let requestInput : TxInput :=
+        { role := .request, datum := registryDatumForm
+        , stateTokens := 0, approvals := approvalsIn request, lovelace := lovelace }
+      let stateInput : TxInput :=
+        { role := .state, datum := registryDatumForm
+        , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+      let spendsState := exit == .reject
+      .ok { inputs := (if spendsState then [stateInput] else []) ++ [requestInput]
+          , outputs := (if spendsState then [txStateOutput t] else []) ++ ownerOutputs t.paid
+          , mint := t.mint
+          , signers := []
+          , refunds := t.paid }
+
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined
 in terms of the real model: they delegate to it, or execute it, never restate

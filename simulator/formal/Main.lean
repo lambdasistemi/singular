@@ -750,6 +750,89 @@ def settleInsertAbsentOutputs : List TxOutput :=
 #guard settle [{ recipient := .destination 99, atLeast := 55 }, { recipient := .owner 42, atLeast := 55 }]
   [] == some "destination"
 
+/-! ### Every exit is a model step
+
+Checked when this module elaborates. The registry below holds keys in three
+different leaves, so an exit that moved anything would show; the requests name
+every edge, the ones the law admits and the ones it refuses alike. -/
+
+def exitEdges : List Edge :=
+  [.insertAbsent, .insertActive, .updateActive, .updateTerminal,
+   .deleteAbsent, .deleteActive, .witnessTerminal]
+
+/-- Keys 3 and 4 active, key 6 absent under custody. -/
+def exitState : RegistryState := witnessed (booked (booked s0 3) 4) 6
+
+/-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
+def exitStepRequest (e : Edge) (k : Nat) : Request :=
+  { req e k 42 99 with deposit := 55, tip := 7 }
+
+/-- The keys the rows range over: active, absent, and unbound. -/
+def exitKeys : List Nat := [4, 6, 9]
+
+/-- The step leaves the registry as it was, mints nothing and pays `paid`. -/
+def leavesRegistry (s : RegistryState) (paid : List (Nat × Nat)) :
+    Except String Result → Bool
+  | .ok r => r.state == s && r.mint.isEmpty && r.paid == paid
+  | .error _ => false
+
+-- A fold of the request's own edge is exactly the edge's step.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  sameStep (exitStep exitState (.fold e) (exitStepRequest e k)) (step exitState (exitStepRequest e k))
+-- A fold of any other edge is refused, whatever the law would say of the request.
+#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
+  named == e || sameStep (exitStep exitState (.fold e) (exitStepRequest named k))
+    (.error "exit-edge-mismatch")
+-- Reject pays the owner the deposit back, and retract the deposit and the tip,
+-- for a request of any edge at any key: neither changes the registry or mints.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  leavesRegistry exitState [(42, 55)] (exitStep exitState .reject (exitStepRequest e k))
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  leavesRegistry exitState [(42, 62)] (exitStep exitState .retract (exitStepRequest e k))
+
+-- A fold's transaction is the edge's own, and a fold of another edge builds none.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  match txOfExit exitState (.fold e) (exitStepRequest e k) 3, txOf exitState (exitStepRequest e k) 3 with
+  | .ok a, .ok b => a == b
+  | .error a, .error b => a == b
+  | _, _ => false
+#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
+  named == e || match txOfExit exitState (.fold e) (exitStepRequest named k) 3 with
+    | .error why => why == "exit-edge-mismatch"
+    | .ok _ => false
+
+/-- The roles of a built transaction's inputs and outputs, and whether it mints
+nothing, requires no signer, refunds exactly `paid` and settles `exit`'s
+obligations. -/
+def exitTxShape (exit : Exit) (r : Request) (paid : List (Nat × Nat)) :
+    Except String Tx → Option (List TxRole × List TxRole)
+  | .ok tx =>
+    if tx.mint.isEmpty && tx.signers.isEmpty && tx.refunds == paid
+       && settle (obligations exit r) tx.outputs == none
+    then some (tx.inputs.map (·.role), tx.outputs.map (·.role)) else none
+  | .error _ => none
+
+-- A reject is settled inside a transaction that spends the state and returns it
+-- unchanged; a retract is its own transaction and touches no state. Each pays the
+-- owner one output carrying what it owes, and so settles its obligations.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  exitTxShape .reject (exitStepRequest e k) [(42, 55)]
+    (txOfExit exitState .reject (exitStepRequest e k) 3)
+    == some ([.state, .request], [.state, .owner])
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  exitTxShape .retract (exitStepRequest e k) [(42, 62)]
+    (txOfExit exitState .retract (exitStepRequest e k) 3)
+    == some ([.request], [.owner])
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  match txOfExit exitState .reject (exitStepRequest e k) 3 with
+  | .ok tx => tx.outputs.head?.bind (·.config) == some exitState.config
+  | .error _ => false
+
+-- The driver's operations are the nine exits: the seven edges by their own
+-- names, then reject and retract; the surface's protocol moved once for it.
+#guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
+#guard surface.protocolVersion == 2
+
 def main : IO Unit := do
   let stdout ← IO.getStdout
   for c in cases do

@@ -177,7 +177,9 @@ REFUSAL_LITERAL = re.compile(r'"([a-z]+(?:-[a-z]+)+)"')
 
 
 def model_refusal_vocabulary(root):
-    """Every refusal reason `Singular.refusal` can produce, read off the model.
+    """Every refusal reason the driver's law can produce, read off the model:
+    `Singular.refusal`'s, and `Singular.exitStep`'s for a fold of an edge the
+    request does not name.
 
     The expected value is obtained from the producer rather than typed here, so
     a reason the model cannot say — an infrastructure error dressed up as a
@@ -188,7 +190,34 @@ def model_refusal_vocabulary(root):
     body = source.split('\ndef refusal ', 1)[1].split('\n/--', 1)[0]
     vocabulary = set(REFUSAL_LITERAL.findall(body))
     assert vocabulary, 'EMPTY EXTENT: no refusal reasons discovered in Singular.refusal'
+    exit_body = source.split('\ndef exitStep ', 1)[1].split('\n/--', 1)[0]
+    exit_vocabulary = set(REFUSAL_LITERAL.findall(exit_body))
+    assert exit_vocabulary, 'EMPTY EXTENT: no refusal reasons discovered in Singular.exitStep'
+    vocabulary |= exit_vocabulary
     return vocabulary
+
+EDGE_INDUCTIVE = re.compile(r'\ninductive Edge where\n((?:  \|[^\n]*\n)+)')
+EXIT_INDUCTIVE = re.compile(r'\ninductive Exit where\n((?:  \|[^\n]*\n)+)')
+CONSTRUCTOR = re.compile(r'\| (\w+)')
+
+
+def model_exits(root):
+    """The exits a request can take, read off the model: every edge by its own
+    name (`fold e`), then every other `Exit` constructor, in declaration order.
+
+    This is the extent the driver's declared operations must equal; it is
+    obtained from `Singular.Edge` and `Singular.Exit` rather than typed here, so a
+    new exit the driver does not declare fails the check.
+    """
+    source = (root / 'lean/Singular/Model.lean').read_text(encoding='utf-8')
+    edges = CONSTRUCTOR.findall(EDGE_INDUCTIVE.search(source).group(1))
+    exits = CONSTRUCTOR.findall(EXIT_INDUCTIVE.search(source).group(1))
+    assert edges, 'EMPTY EXTENT: no constructors discovered in Singular.Edge'
+    assert 'fold' in exits, 'Singular.Exit has no fold constructor'
+    others = [e for e in exits if e != 'fold']
+    assert others, 'EMPTY EXTENT: Singular.Exit has no exit besides a fold'
+    return edges, others
+
 
 DRIVER_SCHEMA = 'singular-driver-corpus-v1'
 
@@ -210,7 +239,7 @@ def driver_surface(corpus):
     return surface
 
 
-def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary):
+def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary, exits):
     """R01-R03 over every scenario the driver executed.
 
     R01 is the one that needs saying out loud: a scenario's observations must
@@ -222,6 +251,10 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary)
     """
     surface = driver_surface(corpus)
     declared = set(surface['observations'])
+    edges, others = exits
+    assert surface['operations'] == edges + others, (
+        f'the declared operations are not the model\'s exits: declared '
+        f'{surface["operations"]}, exits {edges + others}')
     scenarios = corpus['scenarios']
     assert scenarios, 'EMPTY EXTENT: driver corpus carries no scenarios'
 
@@ -300,6 +333,13 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary)
     assert refused, 'driver corpus contains no domain refusal'
     assert {'accepted', 'refused'} <= seen_outcomes, \
         f'driver outcome classes exercised: {sorted(seen_outcomes)}'
+
+    # Every exit that is not a fold has an accepted witness: an exit declared
+    # but never executed would be a name with no evidence behind it.
+    for other in others:
+        assert any(s['kind'] == 'witness' and s['operation'] == other
+                   and s['outcome'] == 'accepted' for s in scenarios), \
+            f'no accepted witness row executes the {other} exit'
 
     # R02 — a mutant is only a mutant relative to the witness it perturbs.
     witnesses = {s['id'] for s in scenarios if s['kind'] == 'witness'}
@@ -424,12 +464,25 @@ def check_derived(corpus, leaf_bytes, deltas, transitions):
             f'{sid}: reports leaf {obs["leaf"]!r} while its own produced trie holds '
             f'{leaf!r} at key {key}')
 
+        before = s['setup'][-1]['state'] if s['setup'] else s['start']
+        before_leaf = next((e['leaf'] for e in before['trie'] if e['key'] == key), None)
+
+        # An exit that folds no edge — a reject, a retract — leaves the
+        # registry as it found it and mints nothing: the whole state the row
+        # reports must be the state the exit was taken from.
+        if s['operation'] not in {edge for edge, _ in transitions}:
+            assert obs['state'] == before, (
+                f'{sid}: {s["operation"]} folds no edge, yet the state it reports differs '
+                f'from the state it was taken from')
+            assert obs['mint'] == [] and obs['tx']['mint'] == [], \
+                f'{sid}: {s["operation"]} folds no edge, yet mints {obs["mint"]}'
+            derived += 2
+            continue
+
         # The transition itself, derived from the model's R2 table rather than
         # read back off the row: the state the law was applied to decides what
         # the leaf must now be. A row that echoes its own starting state is
         # internally consistent and fails here.
-        before = s['setup'][-1]['state'] if s['setup'] else s['start']
-        before_leaf = next((e['leaf'] for e in before['trie'] if e['key'] == key), None)
         assert (s['operation'], before_leaf) in transitions, (
             f'{sid}: accepted {s["operation"]} on a {before_leaf!r} leaf, which the R2 '
             f'table refuses')
@@ -632,7 +685,8 @@ def main():
                     'lean/Singular/Model.lean', 'lean/DriverMain.lean')
     statement_digests = {r['name']: r['statementSha256'] for r in generic_records}
     accepted, refused, total = check_driver_scenarios(
-        driver_corpus, generic_names, statement_digests, model_refusal_vocabulary(root))
+        driver_corpus, generic_names, statement_digests, model_refusal_vocabulary(root),
+        model_exits(root))
     leaf_bytes, deltas = model_constants(root)
     derived = check_derived(driver_corpus, leaf_bytes, deltas, model_transitions(root))
     check_or_compare(root / 'lean/driver-corpus.json',

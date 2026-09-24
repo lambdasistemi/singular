@@ -6,9 +6,9 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `5f63893972e779550554ea8ecca7f7dc7ef155e0d50e500d682004fa50c8c1c3`
-- model: `3d1f0b1ec8670fabbf825d78b23f1a5c5fb865aafdbbfaaabdeb614198c95b89`
-- surface: `Singular.Driver.runSurface`, protocol version 1, digest `15532557153383378181`
+- driver corpus payload: `03f69e6d80829b349b4f0227105eaa35cfa50094649835ba36f2c53d8a04ec35`
+- model: `457d0936c9928f51f4018eda7b50780a54e2cc5141a731ef1aeba6e887bb62d4`
+- surface: `Singular.Driver.runSurface`, protocol version 2, digest `13998092095361678048`
 
 ## What the driver is
 
@@ -17,7 +17,7 @@ reaches a scenario's starting state by *running* the law over a setup trace,
 checks the law premise on the state it arrived at, applies the request through
 `Singular.step`, and reports the whole declared boundary of what the law did.
 
-Declared operations: `insertAbsent`, `insertActive`, `updateActive`, `updateTerminal`, `deleteAbsent`, `deleteActive`, `witnessTerminal`.
+Declared operations: `insertAbsent`, `insertActive`, `updateActive`, `updateTerminal`, `deleteAbsent`, `deleteActive`, `witnessTerminal`, `reject`, `retract`.
 
 Declared observations: `config`, `custody`, `held`, `leaf`, `mint`, `paid`, `root`, `state`, `tx`.
 Every accepted row reports all nine. A row reporting a subset is a per-theorem

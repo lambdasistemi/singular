@@ -1,5 +1,24 @@
 <!--
 Sync impact report
+Version: 1.4.0 -> 1.5.0 (the driver's operations are the exits)
+Amended: 2026-09-24
+Authority: issue #258 (parent #209), whose ruled rule table states where every
+exit's deposit goes; reject and retract carry no admission until #239.
+Changed obligations: the driver's declared operations are the nine exits — a
+fold of each of the seven edges, still named by the edge, then `reject` and
+`retract` — executed through `Singular.exitStep`. Rows added for `reject` and
+`retract`; the `paid`, `tx` and `outputMinimumAda` rows say what a reject and a
+retract pay and build (one owner output per owner payment, carrying its floor);
+the operation-name and outcome-class identity rows name `exitName` and
+`exitStep`'s refusal. What folds pay and build is unchanged.
+Modified principles: none.
+Synchronized: `Singular.Driver.declaredOperations` and the surface's protocol
+version in the same change; tools/check_model.py reconciles the two in both
+directions, and the driver's surface digest moves with it.
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.3.0 -> 1.4.0 (required signers become an obligation)
 Amended: 2026-09-23
 Authority: user ruling 2026-09-23 narrowing issue #228 to the fold's required
@@ -217,10 +236,12 @@ establishes that every name is stated — never that a stated realization is
 true.** Whether a realization is correct is a review obligation under
 Principle III, not something a name-reconciliation can earn.
 
-Each operation is one of the seven edges, executed through `Singular.step` at
-the request the scenario carries. An operation is refused when `Singular.refusal`
-returns a reason; the driver reports that reason verbatim and never manufactures
-one.
+Each operation is one of the nine exits a request can take, executed through
+`Singular.exitStep` at the request the scenario carries: a fold of one of the
+seven edges, a reject, or a retract. A fold is `Singular.step` itself, and is
+refused `exit-edge-mismatch` when the request names another edge. An operation is
+refused when `Singular.refusal` or `Singular.exitStep` returns a reason; the
+driver reports that reason verbatim and never manufactures one.
 
 | declaration | kind | meaning |
 |---|---|---|
@@ -231,23 +252,25 @@ one.
 | `deleteAbsent` | realization | `Singular.step` with `Edge.deleteAbsent`: returns a booked absent key to `unknown`, consuming its custody entry and paying its refund. |
 | `deleteActive` | realization | `Singular.step` with `Edge.deleteActive`: returns an active key to `unknown` and releases its active holding. |
 | `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: attests an already terminal key, adding a terminal holding and changing no leaf. |
+| `reject` | realization | `Singular.exitStep` with `Exit.reject`: a folder turns the request away. It carries no admission, leaves the registry state as it was, mints nothing, and pays the owner the deposit back, as `Singular.obligations` states. |
+| `retract` | realization | `Singular.exitStep` with `Exit.retract`: the owner takes the request back. It carries no admission here — which requests are retractable, and the owner's signature, are #239's — leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, as `Singular.obligations` states. |
 | `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
 | `custody` | realization | the custody census after the step: every outstanding absent token with its refund address and value. |
 | `held` | realization | the held-token census after the step: every active and terminal holding with its key, kind and output. |
 | `leaf` | realization | `Singular.trieGet` at the request's key in the produced state, spelled by `Singular.leafJson` as `null`, `absent`, `active` or `terminal`. |
 | `mint` | realization | the executed result's own `mint`: the R2 keyed delta of the edge, each entry named by the registry's pinned policy for its kind and the asset name the model derives from the key. |
-| `paid` | realization | the executed result's own `paid` list of (address, value) payments, which is non-empty exactly for the two edges that consume an absent token. |
+| `paid` | realization | the executed result's own `paid` list of (address, value) payments. Among folds it is non-empty exactly for the two edges that consume an absent token. For a reject or a retract it is one (owner, floor) pair per owner payment `Singular.obligations` names: the deposit for a reject, the deposit and the tip for a retract. |
 | `root` | realization | `Singular.rootOf` over the produced trie — FNV-1a over the sorted (key, leaf byte) list. This is the model's own commitment function and is stated as abstract; see the unobservable rows below. |
 | `state` | realization | the complete `Singular.RegistryState` after the step, serialized by the model's own instance so the row is a replayable input rather than a picture of an output. |
-| `tx` | realization | the transaction `Singular.txOf` builds from the same executed step: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. The driver builds no transaction of its own. `signers` carries an obligation: `Singular.Statements.fold_requires_no_signer` proves it empty for every fold, and a consumer compares it with the submitted transaction's required signers, each translated to the wallet identity whose payment key it is. |
-| model declaration | identity | a scenario names an operation only through `Singular.Driver.edgeName`, which reads the model's own `ToJson Edge`, so the driver holds no second vocabulary for the seven edges. |
+| `tx` | realization | the transaction `Singular.txOfExit` builds from the same executed exit: its inputs, outputs, mint, signers and refunds, through the encoders in `Singular.Driver`. A fold's is the one `Singular.txOf` builds from the executed step. A reject's spends the registry's state and the request and returns the state unchanged; a retract's spends only the request; each pays one owner output per owner payment, at the owner's address and carrying the payment's floor, mints nothing, requires no signer and refunds what it paid. The driver builds no transaction of its own. `signers` carries an obligation: `Singular.Statements.fold_requires_no_signer` proves it empty for every fold, and a consumer compares it with the submitted transaction's required signers, each translated to the wallet identity whose payment key it is. |
+| model declaration | identity | a scenario names an operation only through `Singular.Driver.exitName`: a fold by `Singular.Driver.edgeName`, which reads the model's own `ToJson Edge`, and a reject or a retract by its `Singular.Exit` constructor, so the driver holds no second vocabulary for the exits. |
 | theorem binding | identity | a scenario carries a theorem's qualified name and the `statementSha256` that `lean/theorem-debt.json` records for it. A statement that moves makes the binding stale and fails; a name alone would not. |
 | surface digest | identity | `definitionDigest` is taken over the declared operation, observation and unobservable names together, so a silently widened or narrowed surface changes it. |
 | law premise | identity | `Singular.Driver.consistentB`, the decidable finite characterization of `Singular.Consistent` over the keys a state actually mentions. It is checked on the state reached by the setup trace *before* any accepted observation is reported. A key the state mentions nowhere satisfies every conjunct trivially, which is why the finite extent does not weaken the premise. |
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
-| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.refusal` can produce; `unsupported` is the driver failing to reach the case and is never reported as a ledger refusal. |
+| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.refusal` or `Singular.exitStep` can produce; `unsupported` is the driver failing to reach the case and is never reported as a ledger refusal. |
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and S01 introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
-| `outputMinimumAda` | unobservable | the minimum ada a ledger requires every output to carry. The model says nothing about it, so an output's `lovelace` is a logical zero rather than an amount; a consumer compares every other field of a transaction and leaves this one alone rather than reconstructing an equality the model never claimed. |
+| `outputMinimumAda` | unobservable | the minimum ada a ledger requires every output to carry. The model says nothing about it, so an output's `lovelace` is a logical zero rather than an amount — except where the model states a floor: the cage output carries the deposit, and a reject's or a retract's owner output carries the payment it owes. A consumer compares every other field of a transaction and leaves this one alone rather than reconstructing an equality the model never claimed. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
 | `scriptExecutionUnits` | unobservable | execution budget and fee measurement are ledger facts with no model counterpart. |
 | `transactionId` | unobservable | the built transaction has no identity until a ledger accepts it. |
@@ -285,4 +308,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.4.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-23
+**Version**: 1.5.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-24
