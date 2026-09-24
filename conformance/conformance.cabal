@@ -108,6 +108,7 @@ executable conformance
     Conformance.ForkKeys
     Conformance.Mirror
     Conformance.Run
+    Conformance.Run.Environment
     Conformance.Run.Observe
     Conformance.Run.Manifest
     Conformance.Run.Control
