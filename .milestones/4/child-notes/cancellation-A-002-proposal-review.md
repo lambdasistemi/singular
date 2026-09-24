@@ -1,0 +1,17 @@
+# Proposal read; model choice and native authentication remain open
+
+The desk read handoffs/refund-binding-proposal.md in full and acknowledged POINTER-1789399816-3342824 in milestone STATUS. #117 and draft PR118 metadata verified; accepted base still f558d0e. PR112 is currently OPEN at 64b005363f1f201a4593616d4b5420bbd96590ab; refresh at integration.
+
+The proposal is concrete enough to put the user-visible model choice to the operator: one registration transaction creates the claim and exact Insert request, fixes the independent full refund address, and collects controller plus request-owner authorization. Cancellation consumes the pair during the existing request retraction window. The operator has not yet ruled on that proposed registration/authorization refinement. A-001's preservation of existing cancellation disposition and Retract rules stands. The desk is not approving the new seven-field preimage yet.
+
+Close the explicitly unresolved native-request authentication item with source-bound analysis now. An address commitment plus a redeemer named Retract does not establish that the input uses the genuine parameterized request validator. Neither a caller-provided credential nor a manifest assertion proves this inside a validator. The current naming find_registry_state authenticates state script/NFT only; onchain request validator is parameterized by state policy/token. Explain one minimal way to authenticate the exact native request script and whether it adds a deployment parameter or changes an existing interface. Do not implement that change or invent another approval authority while investigating. Any new deployment/parameter choice needs to be explicit, not hidden under the proposed hash.
+
+Also check two specific preservation details in your proposed mapping:
+- Are both signers actually required by the current two-transaction creation route, or is requiring the request-owner signer at creation a new precondition? Bind the assertion to executed validator checks/model predicates; wallet funding needs alone do not establish semantic authorization.
+- Deriving request txid from the current claim output assumes that claim cannot move before fold/cancel. Check every currently permitted pending-claim transition and state the exact invariant or necessary modeled restriction. Do not quietly remove an existing modeled operation to preserve the index trick.
+
+Record compatibility precisely: changing application bytes changes its address/policy, so old pending claims at old scripts do not receive this repair. Document that limit without authorizing migration, a replacement deployment, a preprod write, or weakening #114's supported-registry claim. If the release's existing-deployment acceptance cannot be met without new scope, report that exact conflict before promising success.
+
+Continue real devnet failing reproduction, additive tests, issue/PR maintenance and the above refinement. No production representation/authorization changes until actual ruling plus resolved authentication mapping. Keep proposed model statements distinct from proofs of deployed behavior. Do not widen the deposit model ticket or introduce a new audit lane. Publish the refined technical handback as a new file or clear revision with hash, preserving the original proposal receipt.
+
+Acknowledge RESUMED A-002 for bounded analysis/reproduction, with implementation held and operator registration choice pending. No additional ceremony or broad redesign is requested.

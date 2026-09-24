@@ -1,0 +1,3 @@
+# Singular M1 session — 2026-09-24
+
+M1 singleton %1854 `singular-ms1-onchain-keri`; runtime /tmp/projects/singular/milestone-1; durable recovery /home/paolino/.orch-runtime/singular/m1-release-20260924/. Immediate owners: E199 %1903 `singular-e199-test-quality` root /home/paolino/.orch-runtime/singular/epic-199; E209 %1922 `singular-e209-epic-owner` root /home/paolino/.orch-runtime/singular/epic-209; demo-path %1960 `demo-path-d02-d19` channel /tmp/projects/singular/milestone-1/demo-path/STATUS.md. E209 children %2022 (#239), %2032 (#253), then %2038/%2039 via %2032. Demo child %2033 pending verification. %2023 and %2036 have no established parent and remain parked. M4 is a separate paused session. Re-derive identity/HEAD before work.
