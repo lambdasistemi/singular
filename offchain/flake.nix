@@ -70,13 +70,15 @@
         components =
           project.project.hsPkgs.singular-registry.components;
 
-        # #264 T264-05 (epic answer A-005): the classified supported
-        # component carrier. Every declared Cabal component is classified in
-        # ./nix/component-inventory.nix — built here (the components the
-        # current required workflow commands and the shipped registry
-        # commands consume, plus the library and every test component), or
-        # explicitly unverified under #282. connected-verifier stays declared
-        # and exported; it is not built here and nothing claims it works.
+        # #264 T264-05 (epic answers A-005 and A-008/A-009): the classified
+        # supported component carrier. Every declared Cabal component is
+        # classified in ./nix/component-inventory.nix — built here (the
+        # components the current required workflow commands and the supported
+        # shipped registry commands consume, plus the library and every test
+        # component), or explicitly unverified: recovery-rows,
+        # retirement-rows and repair-rows retained for #172, register-rows
+        # for #283, and connected-verifier for #282. Every unverified
+        # component stays declared and exported; nothing claims it works.
         # The classification's inventory gate runs inside this build and
         # fails it on an unclassified new component, a stale row, a missing
         # issue/reason, or an empty set; a member build failure fails the

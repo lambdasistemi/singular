@@ -29,9 +29,11 @@ let
   #   record-value-tests registry.yml:84  nix run .#record-value-tests
   #   cage-tests         registry.yml:414 nix run .#cage-tests
   #   e2e-tests          registry.yml:309 nix run .#cage-tests-e2e
-  # and the shipped registry commands (flake apps/packages): li01,
-  # naming-rows, recovery-rows, retirement-rows, register-rows, li-refusals,
-  # repair-rows, retirement-verify, devnet, deployment.
+  # plus the shipped registry commands that build: li01, naming-rows,
+  # li-refusals, retirement-verify (flake apps) and devnet, deployment
+  # (flake packages). The library is consumed by every component and, across
+  # the flake boundary, by the required conformance jobs (conformance/
+  # conformance.cabal depends on singular-registry).
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
@@ -41,11 +43,7 @@ let
       "update-terminal"
       "li01"
       "naming-rows"
-      "recovery-rows"
-      "retirement-rows"
-      "register-rows"
       "li-refusals"
-      "repair-rows"
       "retirement-verify"
       "devnet"
       "deployment"
@@ -58,18 +56,48 @@ let
   };
 
   # Another required CI job building a component none of the rows above
-  # covers. Empty today: every workflow-consumed and shipped component is in
-  # builtHere, so this class stays here to keep the schema complete, and a
-  # future entry must name the job and its command.
+  # covers. Empty today: every workflow-consumed and supported shipped
+  # component is in builtHere, so this class stays here to keep the schema
+  # complete, and a future entry must name the job and its command.
   coveredElsewhere = [ ];
 
-  # Declared and exported, not built here. No required workflow command or
-  # shipped-command CI step consumes it (establishment sweep at intake
-  # a59f5c0: no .github workflow references it; the release assembler builds
-  # no offchain output). It stays declared in Cabal and exported as the
-  # offchain flake app; its repair is owned by #282 and its failed
-  # full-carrier receipt is retained ticket evidence.
+  # Declared and exported, not built here. Epic rulings A-008/A-009 (r2
+  # answer A-002) fix the issue for each row; the transitive-dependency check
+  # in the ticket evidence verified no required workflow and no flake-closure
+  # target builds any of them. The local developer gate
+  # offchain/deployment-attach-check.sh does run three of these runners and
+  # is broken by them — disclosed in the inventory evidence, not a required
+  # consumer. Each row keeps its Cabal stanza and flake app; the final epic
+  # #278 still lints and formats their source.
   unverified = [
+    {
+      kind = "exe";
+      name = "recovery-rows";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey surface retained for the #172 re-cut; journey/recovery/Main.hs imports registerConsumerImpl, removed from Singular.Registry.TxBuilder.Register by 9cba521 (#157) — carrier run at f64ac08 exited 1 here first (exact receipt in ticket evidence)";
+    }
+    {
+      kind = "exe";
+      name = "retirement-rows";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey surface retained for the #172 re-cut; journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+    }
+    {
+      kind = "exe";
+      name = "repair-rows";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey surface retained for the #172 re-cut; journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+    }
+    {
+      kind = "exe";
+      name = "register-rows";
+      issue = "#283";
+      reason =
+        "not on the D6/#172 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+    }
     {
       kind = "exe";
       name = "connected-verifier";
