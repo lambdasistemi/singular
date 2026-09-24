@@ -29,11 +29,19 @@ let
   #   record-value-tests registry.yml:84  nix run .#record-value-tests
   #   cage-tests         registry.yml:414 nix run .#cage-tests
   #   e2e-tests          registry.yml:309 nix run .#cage-tests-e2e
-  # plus the shipped registry commands that build: li01, naming-rows,
-  # li-refusals, retirement-verify (flake apps) and devnet, deployment
-  # (flake packages). The library is consumed by every component and, across
-  # the flake boundary, by the required conformance jobs (conformance/
-  # conformance.cabal depends on singular-registry).
+  # plus the supported shipped packages devnet and deployment (issue #102
+  # tooling; no D6 record, flake packages). The library is consumed by every
+  # component and, across the flake boundary, by the required conformance
+  # jobs (conformance/conformance.cabal depends on singular-registry).
+  #
+  # The seven NYA journey surfaces named in the D6 retirement record
+  # (registry.yml:258-269 — li01, li-refusals, lmlc/naming-rows, recovery,
+  # retirement with its retained retire-verify exhibit, repair) are
+  # classified by CURRENT REQUIRED USE, not compile success (operator note
+  # via ticket NOTE-010/011, applying A-008): none has a live required
+  # workflow consumer or a flake-closure builder (transitive check in the
+  # ticket evidence), so all seven are retained retired journeys under #172,
+  # wherever their sources happen to compile today.
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
@@ -41,10 +49,6 @@ let
       "journey"
       "insert-active"
       "update-terminal"
-      "li01"
-      "naming-rows"
-      "li-refusals"
-      "retirement-verify"
       "devnet"
       "deployment"
     ];
@@ -61,42 +65,73 @@ let
   # complete, and a future entry must name the job and its command.
   coveredElsewhere = [ ];
 
-  # Declared and exported, not built here. Epic rulings A-008/A-009 (r2
-  # answer A-002) fix the issue for each row; the transitive-dependency check
-  # in the ticket evidence verified no required workflow and no flake-closure
-  # target builds any of them. The local developer gate
-  # offchain/deployment-attach-check.sh does run three of these runners and
-  # is broken by them — disclosed in the inventory evidence, not a required
-  # consumer. Each row keeps its Cabal stanza and flake app; the final epic
-  # #278 still lints and formats their source.
+  # Declared and exported, not built here. The seven D6 journeys are
+  # retained retired surfaces under #172 (registry.yml:258-269; re-cut owned
+  # by #172 under NYA epic #174); register-rows is NOT D6 and is owned by
+  # #283; connected-verifier is owned by #282. Every row keeps its Cabal
+  # stanza and flake app; the final epic #278 still lints and formats their
+  # source. Evidence class per row: "boundary" names an actual carrier-run
+  # component receipt; "source-level" means the single carrier exit is NOT
+  # attributed to that component. The local developer gate
+  # offchain/deployment-attach-check.sh runs three of these runners and is
+  # broken by them — disclosed in the inventory evidence, not a required
+  # consumer.
   unverified = [
     {
       kind = "exe";
       name = "recovery-rows";
       issue = "#172";
       reason =
-        "D6-retired NYA journey surface retained for the #172 re-cut; journey/recovery/Main.hs imports registerConsumerImpl, removed from Singular.Registry.TxBuilder.Register by 9cba521 (#157) — carrier run at f64ac08 exited 1 here first (exact receipt in ticket evidence)";
+        "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); boundary receipt: carrier run at f64ac08 exited 1 here first";
+    }
+    {
+      kind = "exe";
+      name = "li01";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); boundary receipt: carrier run at e69dce4 exited 1 here";
+    }
+    {
+      kind = "exe";
+      name = "li-refusals";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey (registry.yml:258-269); journey/li-refusals/Main.hs references identifiers removed by #157 (cfgRepPolicy/cfgConsumerPin class) — source-level evidence, no individual carrier receipt";
+    }
+    {
+      kind = "exe";
+      name = "naming-rows";
+      issue = "#172";
+      reason =
+        "D6-retired NYA journey (lmlc; registry.yml:258-269); source currently compiles — retired by current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
       name = "retirement-rows";
       issue = "#172";
       reason =
-        "D6-retired NYA journey surface retained for the #172 re-cut; journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+        "D6-retired NYA journey (registry.yml:258-269); journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
+    }
+    {
+      kind = "exe";
+      name = "retirement-verify";
+      issue = "#172";
+      reason =
+        "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source currently compiles — retired by current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
       name = "repair-rows";
       issue = "#172";
       reason =
-        "D6-retired NYA journey surface retained for the #172 re-cut; journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+        "D6-retired NYA journey (registry.yml:258-269); journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
       name = "register-rows";
       issue = "#283";
       reason =
-        "not on the D6/#172 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence; the f64ac08 carrier exit is not attributed to this component";
+        "not on the D6 retired list; #283 owns its migration or retirement; journey/register/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157) — source-level evidence, no individual carrier receipt";
     }
     {
       kind = "exe";
