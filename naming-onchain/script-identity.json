@@ -5,17 +5,17 @@
   "validators": [
     {
       "title": "application.application.spend",
-      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
+      "hash": "3bed6efb94204ef71b5e0ff6220909f1ab22e61c824fafa47eb1a8b3",
       "parameters": 0
     },
     {
       "title": "application.application.mint",
-      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
+      "hash": "3bed6efb94204ef71b5e0ff6220909f1ab22e61c824fafa47eb1a8b3",
       "parameters": 0
     },
     {
       "title": "application.application.else",
-      "hash": "f5e17b262fec4a907436439347a33d7d75dcab45ea4984ad94ac59b1",
+      "hash": "3bed6efb94204ef71b5e0ff6220909f1ab22e61c824fafa47eb1a8b3",
       "parameters": 0
     },
     {
@@ -30,12 +30,12 @@
     },
     {
       "title": "retirement_custody.retirement_custody.spend",
-      "hash": "7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07",
+      "hash": "2435594dca6a3e0d5946e0eb0b7f6f93052dc41a21a7410eb237891d",
       "parameters": 0
     },
     {
       "title": "retirement_custody.retirement_custody.else",
-      "hash": "7969855d26a6cbdcc34fbe708b6a7b6399e86bc41623e4c1c9edff07",
+      "hash": "2435594dca6a3e0d5946e0eb0b7f6f93052dc41a21a7410eb237891d",
       "parameters": 0
     }
   ]
