@@ -103,7 +103,7 @@ let
       name = "naming-rows";
       issue = "#172";
       reason =
-        "D6-retired NYA journey (lmlc; registry.yml:258-269); source currently compiles — retired by current-required-use criterion, unverified for current behavior; no required consumer";
+        "D6-retired NYA journey (lmlc; registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
@@ -117,7 +117,7 @@ let
       name = "retirement-verify";
       issue = "#172";
       reason =
-        "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source currently compiles — retired by current-required-use criterion, unverified for current behavior; no required consumer";
+        "D6-retired retained exhibit of the retirement journey (registry.yml:258-269); source inspection finds none of the four removed #157 identifiers in use and there is no individual build receipt either way — retired by the current-required-use criterion, unverified for current behavior; no required consumer";
     }
     {
       kind = "exe";
