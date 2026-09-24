@@ -1,0 +1,18 @@
+{
+  "preprod-play-to-record": [
+    {
+      "text": "The October target is a Cardano preprod handoff. Keripy creates and exports the signed identity event. Cardano KERI registers that identity, while a released Singular interface must supply the registry custody, booking and retirement transactions. The target is Singular version one point zero point zero; the Cardano KERI follower and a persistent Singular registry read path must establish fresh indexed state.",
+      "pause": 400
+    }
+  ],
+  "recording-gate": [
+    {
+      "text": "A cast will be attached after the released keripy, Cardano KERI and Singular commands complete on preprod and their transaction IDs and fresh readbacks are verified. The planned sequence is not a completed demo.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "first-demo.md",
+    "sha256": "8e58a2f115c389712b5d7194f7758e1150e5df9fdd55ee18b4c7f702101d2fe3"
+  }
+}
