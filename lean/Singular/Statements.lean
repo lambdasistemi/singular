@@ -1484,7 +1484,7 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
     unfold txOf at h
@@ -1497,6 +1497,100 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
   -- same request: only the signature set moved, and nothing reads it.
   · cases approval <;> rfl
   · cases approval <;> rfl
+
+/-- Value an exit does not owe is unconstrained, for every exit alike.
+
+For every exit, every request and any two lists of transaction outputs: when each
+recipient the exit owes receives, through the outputs that pay it by role and
+address, at least as much lovelace from the second list as from the first, the
+second list settles whenever the first does. Adding outputs, or adding lovelace to
+an output, therefore never turns a settled transaction into an unsettled one, and
+whether a transaction settles depends only on the lovelace reaching the recipients
+the exit owes: fees, the folder's tip and every output that pays none of them play
+no part. -/
+theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
+    (outputs more : List TxOutput)
+    (received : ∀ payment ∈ obligations exit request,
+      (outputs.filter (paysRecipient payment.recipient)).foldl (· + ·.lovelace) 0 ≤
+        (more.filter (paysRecipient payment.recipient)).foldl (· + ·.lovelace) 0) :
+    settle (obligations exit request) outputs = none →
+    settle (obligations exit request) more = none := by
+  -- `settle` judges each recipient the payments name once; a recipient is judged
+  -- on the lovelace of the outputs paying it, which `received` says only grows.
+  have named : ∀ (l acc : List Recipient) (recipient : Recipient),
+      recipient ∈ List.eraseDupsBy.loop (· == ·) l acc → recipient ∈ l ∨ recipient ∈ acc := by
+    intro l
+    induction l with
+    | nil => intro acc recipient h; exact .inr (by simpa [List.eraseDupsBy.loop] using h)
+    | cons head tail ih =>
+      intro acc recipient h
+      simp only [List.eraseDupsBy.loop] at h
+      split at h
+      · rcases ih _ _ h with h | h
+        · exact .inl (List.mem_cons_of_mem _ h)
+        · exact .inr h
+      · rcases ih _ _ h with h | h
+        · exact .inl (List.mem_cons_of_mem _ h)
+        · rcases List.mem_cons.mp h with h | h
+          · exact .inl (h ▸ List.mem_cons_self)
+          · exact .inr h
+  intro settled
+  unfold settle at settled ⊢
+  rw [List.findSome?_eq_none_iff] at settled ⊢
+  intro recipient judged
+  have owed := (named _ [] recipient judged).resolve_right (by simp)
+  obtain ⟨payment, owedPayment, rfl⟩ := List.mem_map.mp owed
+  have before := settled _ judged
+  dsimp only at before ⊢
+  split at before
+  · next paid => rw [if_pos (Nat.le_trans paid (received payment owedPayment))]
+  · cases before
+
+/-- No exit strands a deposit.
+
+For every exit and every request, some payment the exit owes is at least the
+request's deposit: however a request ends, its deposit is owed to somebody. -/
+theorem no_exit_strands_the_deposit (exit : Exit) (request : Request) :
+    ∃ payment ∈ obligations exit request, request.deposit ≤ payment.atLeast := by
+  cases exit with
+  | fold edge => cases edge <;> simp [obligations]
+  | reject => simp [obligations]
+  | retract => simp [obligations]
+
+/-- Only a retract owes the tip.
+
+For every exit: what the exit owes is the same for every request whatever tip the
+request holds exactly when the exit is not a retract. Every other exit leaves the
+tip to the folder, and a retract's obligations change with it. -/
+theorem only_retract_owes_the_tip (exit : Exit) :
+    (∀ (request : Request) (tip : Nat),
+      obligations exit { request with tip := tip } = obligations exit request) ↔
+    exit ≠ .retract := by
+  constructor
+  · intro unchanged retract
+    subst retract
+    have tipped := unchanged { edge := .insertAbsent, key := 0 } 1
+    simp [obligations] at tipped
+  · intro notRetract request tip
+    cases exit with
+    | fold edge => cases edge <;> rfl
+    | reject => rfl
+    | retract => exact absurd rfl notRetract
+
+/-- What an exit owes is read off the request alone.
+
+For every exit and any two requests with the same owner, deposit, tip and
+destination, the exit owes the same payments. The obligations read no registry
+state, and nothing else of the request: not its edge beyond the destination it
+names, its key, its refund address, its approval or its claimed mint. -/
+theorem obligations_read_only_the_request (exit : Exit) (request other : Request)
+    (sameOwner : other.owner = request.owner) (sameDeposit : other.deposit = request.deposit)
+    (sameTip : other.tip = request.tip)
+    (sameDestination : requestDestination other = requestDestination request) :
+    obligations exit other = obligations exit request := by
+  cases exit with
+  | fold edge => cases edge <;> simp [obligations, *]
+  | reject | retract => simp [obligations, *]
 
 end Statements
 end Singular

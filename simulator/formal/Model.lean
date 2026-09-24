@@ -347,8 +347,10 @@ controller (or, for the absent edges, the refund address) the request acts for;
 the refund address is named by `insertAbsent` and recorded in the custody datum
 (R-ADA); `deposit` is the value the absent token holds; `output` is where active
 and terminal tokens are routed; `approval` is the admission evidence; `claimed`
-is the mint the transaction claims for this request, summed by the fold. -/
+is the mint the transaction claims for this request, summed by the fold; `tip`
+is what the request holds beyond its deposit (on chain `held − deposit`). -/
 structure Request where
+  make ::
   edge : Edge
   key : Key
   owner : Nat := 0
@@ -357,7 +359,14 @@ structure Request where
   output : Nat := 0
   approval : Option Approval := none
   claimed : List (TokenKind × Int) := []
+  tip : Nat := 0
   deriving Repr, BEq, DecidableEq
+
+/-- A request that holds nothing beyond its deposit, given field by field in
+declaration order. -/
+@[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
+    (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
+  Request.make edge key owner refundAddress deposit output approval claimed 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -365,6 +374,7 @@ instance : ToJson Request where
   toJson r := Json.mkObj
     [ ("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
+    , ("tip", toJson r.tip)
     , ("output", toJson r.output)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
@@ -739,9 +749,10 @@ mint, the destination the tokens are routed to, and the signatures required. -/
 
 /-- The part an input or output plays in a fold transaction. `witness` is the
 UTxO a requester holds a witness token at: the place an active or terminal token
-lives between the fold that minted it and the fold that consumes it. -/
+lives between the fold that minted it and the fold that consumes it. `owner` is
+an output paying a request's owner back. -/
 inductive TxRole where
-  | state | request | destination | cage | witness
+  | state | request | destination | cage | witness | owner
   deriving Repr, BEq, DecidableEq
 
 /-- An input the fold spends: the registry's state UTxO, a request UTxO carrying
@@ -841,13 +852,16 @@ def txDestinationOutput (t : Result) (r : Request) : TxOutput :=
   , commitment := some (datumHash (destinationDatum r))
   , assets := routedPayment t r .requestOutput }
 
+/-- The address custody outputs sit at: the cage. -/
+abbrev cageAddress : Nat := 0
+
 /-- The cage output, present only when this edge routes a token to cage custody.
 `insertActive` routes none, so its transaction has exactly two outputs; the
 constructor is general so the shape is not special-cased to one edge. -/
 def txCageOutputs (t : Result) (r : Request) : List TxOutput :=
   let assets := routedPayment t r .cageCustody
   if assets.isEmpty then []
-  else [{ role := .cage, datum := registryDatumForm, address := some 0
+  else [{ role := .cage, datum := registryDatumForm, address := some cageAddress
         , stateTokens := 0, config := none, commitment := none, assets := assets
         , custodyDatum := some [r.refundAddress], lovelace := r.deposit }]
 
@@ -868,6 +882,122 @@ def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :
         , mint := t.mint
         , signers := requiredSigners r
         , refunds := t.paid }
+
+/-! ### Exits and what each one owes
+
+A request leaves the registry's queue by exactly one exit: a fold of one of the
+seven edges, a reject, or a retract. Each exit owes payments, stated per exit and
+per request, reading no state and no configuration. A payment is a floor: value
+an exit's payments do not name — fees, the folder's tip — is unconstrained. -/
+
+/-- The nine ways a request ends: seven folds, a reject, a retract. -/
+inductive Exit where
+  | fold (e : Edge) | reject | retract
+  deriving Repr, BEq, DecidableEq
+
+/-- Who a payment is owed to: the address a delivering fold names, the cage's
+custody, or the request's owner. -/
+inductive Recipient where
+  | destination (address : Nat) | custody | owner (key : Nat)
+  deriving Repr, BEq, DecidableEq
+
+/-- A payment owed: at least `atLeast` lovelace to `recipient`. -/
+structure Payment where
+  recipient : Recipient
+  atLeast : Nat
+  deriving Repr, BEq, DecidableEq
+
+/-- What an exit owes. A fold delivering a token owes the deposit with it: to cage
+custody for `insertAbsent`, to the named destination for `insertActive`,
+`updateActive` and `witnessTerminal`. A fold delivering nothing and a reject owe
+the deposit back to the owner. A retract owes the owner everything the request
+held, deposit and tip; every other exit leaves the tip to the folder. -/
+def obligations (exit : Exit) (request : Request) : List Payment :=
+  match exit with
+  | .fold .insertAbsent => [{ recipient := .custody, atLeast := request.deposit }]
+  | .fold .insertActive | .fold .updateActive | .fold .witnessTerminal =>
+    [{ recipient := .destination (requestDestination request), atLeast := request.deposit }]
+  | .fold .updateTerminal | .fold .deleteAbsent | .fold .deleteActive | .reject =>
+    [{ recipient := .owner request.owner, atLeast := request.deposit }]
+  | .retract => [{ recipient := .owner request.owner, atLeast := request.deposit + request.tip }]
+
+/-- Whether an output pays a recipient, by its role and address. Each output pays
+at most one recipient, and the state continuation pays none. -/
+def paysRecipient (recipient : Recipient) (output : TxOutput) : Bool :=
+  match recipient with
+  | .custody => output.role == .cage && output.address == some cageAddress
+  | .destination address => output.role == .destination && output.address == some address
+  | .owner key => output.role == .owner && output.address == some key
+
+/-- The chain's reason for a recipient left unpaid: custody short or absent is
+`absent-custody`; a destination no output reaches is `destination`; a destination
+reached short, or an owner short or unreached, is `deposit-returned`. -/
+def unpaidReason (recipient : Recipient) (paying : List TxOutput) : String :=
+  match recipient with
+  | .custody => "absent-custody"
+  | .destination _ => if paying.isEmpty then "destination" else "deposit-returned"
+  | .owner _ => "deposit-returned"
+
+/-- Judge a transaction's outputs against the payments owed: `none` when every
+recipient is paid its summed floor, else the chain's reason for the first
+recipient, in the order the payments are owed, that is not. One exit's judgement
+is `settle (obligations exit request) outputs`; a batch is the concatenation of
+its exits' payments. -/
+def settle (payments : List Payment) (outputs : List TxOutput) : Option String :=
+  (payments.map (·.recipient)).eraseDups.findSome? fun recipient =>
+    let owed := (payments.filter (·.recipient == recipient)).foldl (· + ·.atLeast) 0
+    let paying := outputs.filter (paysRecipient recipient)
+    if owed ≤ paying.foldl (· + ·.lovelace) 0 then none
+    else some (unpaidReason recipient paying)
+
+/-- One exit as a model step. A fold of edge `e` is exactly `step` when the
+request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
+retract carries no admission: it leaves the registry state as it was, mints
+nothing, and pays the owner what the exit owes, each payment recorded as the
+(address, value) pair `Result.paid` carries, the owner's key being its address as
+`paysRecipient` reads it. -/
+def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
+  match exit with
+  | .fold e => if request.edge == e then step state request else .error "exit-edge-mismatch"
+  | .reject | .retract =>
+    .ok { state := state, mint := []
+        , paid := (obligations exit request).filterMap fun p =>
+            match p.recipient with
+            | .owner key => some (key, p.atLeast)
+            | _ => none }
+
+/-- One owner output per owner payment, at the owner's address, carrying the
+payment's floor. -/
+def ownerOutputs (paid : List (Nat × Nat)) : List TxOutput :=
+  paid.map fun p =>
+    { role := .owner, datum := registryDatumForm, address := some p.1, stateTokens := 0
+    , config := none, commitment := none, assets := [], lovelace := p.2 }
+
+/-- The transaction an exit builds. A fold's is `txOf` when the request names its
+edge, and none otherwise. A reject is settled inside a transaction that spends the
+registry's state and returns it unchanged, beside the request it spends; a retract
+is its own transaction, spending only the request. Each pays the owner one output
+per payment it owes, mints nothing and requires no signer. -/
+def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace : Nat) :
+    Except String Tx :=
+  match exit with
+  | .fold e => if request.edge == e then txOf state request lovelace else .error "exit-edge-mismatch"
+  | .reject | .retract =>
+    match exitStep state exit request with
+    | .error why => .error why
+    | .ok t =>
+      let requestInput : TxInput :=
+        { role := .request, datum := registryDatumForm
+        , stateTokens := 0, approvals := approvalsIn request, lovelace := lovelace }
+      let stateInput : TxInput :=
+        { role := .state, datum := registryDatumForm
+        , stateTokens := registryStateTokens, approvals := 0, lovelace := 0 }
+      let spendsState := exit == .reject
+      .ok { inputs := (if spendsState then [stateInput] else []) ++ [requestInput]
+          , outputs := (if spendsState then [txStateOutput t] else []) ++ ownerOutputs t.paid
+          , mint := t.mint
+          , signers := []
+          , refunds := t.paid }
 
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined

@@ -172,5 +172,29 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece"
+  },
+  {
+    "name": "Singular.Statements.exit_settles_on_lovelace_received",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "730ae3cbd6d8305333bcb7b796da58891734c34228cb02b73618026df1626e9a"
+  },
+  {
+    "name": "Singular.Statements.no_exit_strands_the_deposit",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5"
+  },
+  {
+    "name": "Singular.Statements.only_retract_owes_the_tip",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
+  },
+  {
+    "name": "Singular.Statements.obligations_read_only_the_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044"
   }
 ]

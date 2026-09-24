@@ -82,7 +82,8 @@ def toState (j : Json) : Except String RegistryState := do
     | .ok h => fromJson? h
   pure { config, trie, custody, held }
 
-/-- One evaluation: a starting state, a lawful setup trace, and the request. -/
+/-- One evaluation: a starting state, a lawful setup trace, and the request, taken
+by the fold of its own edge. -/
 def toScenario (j : Json) : Except String Scenario := do
   let start ← (j.getObjVal? "start") >>= toState
   let request ← (j.getObjVal? "request") >>= toRequest
@@ -99,7 +100,7 @@ def toScenario (j : Json) : Except String Scenario := do
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, request, lovelace }
+    , start, setup, exit := .fold request.edge, request, lovelace }
 
 /-- Evaluate, and answer with the row the driver produces. -/
 def answer (j : Json) : Except String Json := do

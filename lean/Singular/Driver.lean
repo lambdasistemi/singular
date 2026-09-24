@@ -5,9 +5,9 @@ import Singular.Model
 One driver over the model's own law, in place of one adapter per theorem.
 
 Given a scenario it reaches the scenario's starting state by *running* the law
-over a setup trace, checks the law premise on the state it arrived at, applies
-the request through `Singular.step`, and reports the whole declared boundary of
-what the law actually did. Nothing here restates the model: every observation
+over a setup trace, checks the law premise on the state it arrived at, takes the
+scenario's exit on the request through `Singular.exitStep`, and reports the whole
+declared boundary of what the law actually did. Nothing here restates the model: every observation
 delegates to a model definition or to the transaction the model builds.
 
 Three outcomes, kept apart on purpose. `accepted` is a transition the law
@@ -49,7 +49,7 @@ def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
 def txRoleName : TxRole → String
   | .state => "state" | .request => "request"
   | .destination => "destination" | .cage => "cage"
-  | .witness => "witness"
+  | .witness => "witness" | .owner => "owner"
 
 def txInputJson (c : Config) (i : TxInput) : Json :=
   Json.mkObj
@@ -85,18 +85,28 @@ def txJson (c : Config) (tx : Tx) : Json :=
 
 /-! ## The declared surface -/
 
-/-- An operation's name is the model's own `ToJson Edge` spelling, so the driver
+/-- An edge's name is the model's own `ToJson Edge` spelling, so the driver
 cannot acquire a second vocabulary for the seven edges. -/
 def edgeName (e : Edge) : String :=
   match toJson e with
   | .str s => s
   | j => j.compress
 
-/-- The seven edges are the declared operations; the extent is the model's
-inductive, listed once here because Lean has no enumeration of it. -/
-def declaredOperations : List String :=
-  [Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal,
-   .deleteAbsent, .deleteActive, .witnessTerminal].map edgeName
+/-- An operation's name: a fold is named by its edge, so every fold keeps the
+edge's own spelling; a reject and a retract by their constructor names. -/
+def exitName : Exit → String
+  | .fold e => edgeName e
+  | .reject => "reject"
+  | .retract => "retract"
+
+/-- The nine exits are the declared operations: a fold of each of the seven
+edges, a reject and a retract. The extent is the model's inductives, listed once
+here because Lean has no enumeration of them. -/
+def declaredExits : List Exit :=
+  ([Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal,
+    .deleteAbsent, .deleteActive, .witnessTerminal].map .fold) ++ [.reject, .retract]
+
+def declaredOperations : List String := declaredExits.map exitName
 
 /-- The declared boundary observations. Every accepted scenario reports all of
 them; a row reporting a subset is a per-theorem projection and is rejected by
@@ -111,7 +121,9 @@ commitment function — and is NOT the concrete trie hash a chain would carry.
 
 `outputMinimumAda` is the second of that kind: a ledger requires every output to
 carry a minimum, and this model says nothing about it, so a transaction output's
-`lovelace` here is a logical zero rather than an amount. It is named so that a
+`lovelace` here is a logical zero rather than an amount, except where the model
+states a floor (the cage output's deposit, a reject's or a retract's owner
+output). It is named so that a
 consumer compares every other field of a transaction and leaves this one alone,
 rather than quietly reconstructing an equality the model never claimed. -/
 def declaredUnobservable : List String :=
@@ -128,7 +140,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 1
+  , protocolVersion := 2
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable }
@@ -174,7 +186,8 @@ def premiseDeclaration : String := "Singular.Driver.consistentB"
 /-! ## Scenarios and results -/
 
 /-- D02: one scenario. `setup` is a trace of requests that must each be accepted
-to reach the starting state; `start` is where that trace begins. A scenario that
+to reach the starting state; `start` is where that trace begins; `exit` is the way
+the scenario's request leaves the queue, and names its operation. A scenario that
 needs a non-initial state declares `requiresReachableState` and must supply the
 trace that produces it, so a constructed final state cannot stand in for one. -/
 structure Scenario where
@@ -186,6 +199,7 @@ structure Scenario where
   requiresReachableState : Bool
   start : RegistryState
   setup : List Request
+  exit : Exit
   request : Request
   lovelace : Nat
 
@@ -228,7 +242,7 @@ def runSetup : RegistryState → List Request → (List SetupStep × RegistrySta
 /-- The declared boundary of one accepted transition. Each field delegates: the
 leaf and root are read back off the state the law produced, the mint and the
 payments are the executed result's own, and the transaction is the one
-`Singular.txOf` built from that step. -/
+`Singular.txOfExit` built from that exit. -/
 def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json :=
   Json.mkObj
     [ ("config", toJson res.state.config)
@@ -257,12 +271,12 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
     (steps, { outcome := .unsupported, reason := some "premise-does-not-hold"
             , premiseChecked := false, observations := none })
   else
-    match step s sc.request with
+    match exitStep s sc.exit sc.request with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
               , premiseChecked := true, observations := none })
     | .ok res =>
-      match txOf s sc.request sc.lovelace with
+      match txOfExit s sc.exit sc.request sc.lovelace with
       | .error why =>
         (steps, { outcome := .unsupported, reason := some ("transaction-unbuildable: " ++ why)
                 , premiseChecked := true, observations := none })
@@ -286,7 +300,7 @@ def scenarioJson (sc : Scenario) : Json :=
     , ("statementSha256", toJson sc.statementSha256)
     , ("kind", toJson sc.kind)
     , ("mutates", match sc.mutates with | none => Json.null | some m => toJson m)
-    , ("operation", toJson (edgeName sc.request.edge))
+    , ("operation", toJson (exitName sc.exit))
     , ("requiresReachableState", toJson sc.requiresReachableState)
     , ("start", toJson sc.start)
     , ("request", toJson sc.request)

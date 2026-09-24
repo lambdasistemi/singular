@@ -835,7 +835,7 @@ askModel _env state step = do
         question = object
             [ "id" .= String "live-edge"
             , "theorem" .= String "Singular.Driver.runSurface"
-            , "statementSha256" .= String "17057847551091892576"
+            , "statementSha256" .= String "13998092095361678048"
             , "start" .= startValue, "setup" .= setup
             , "request" .= lsModelRequest step
             , "lovelace" .= lsRequestLovelace step ]

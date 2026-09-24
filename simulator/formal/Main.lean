@@ -573,6 +573,266 @@ def caseJson (c : Case) : Json :=
       | .ok r => Json.mkObj [("accepted", toJson true), ("state", toJson r.state)]
       | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)])]
 
+/-! ### Where every exit's deposit goes, and the judgement of a transaction's outputs
+
+Checked when this module elaborates: `lake build` fails on the first row that
+does not hold. The expected payments are the rule table's; the expected reasons
+are the chain's trace names. -/
+
+/-- A request whose payment-relevant fields all differ: owner 42, refund address
+91, destination 99, deposit 55, tip 7. -/
+def exitRequest (e : Edge) : Request :=
+  { edge := e, key := 5, owner := 42, refundAddress := 91, output := 99
+  , deposit := 55, tip := 7 }
+
+-- The rule table, one row per exit.
+#guard obligations (.fold .insertAbsent) (exitRequest .insertAbsent) ==
+  [{ recipient := .custody, atLeast := 55 }]
+#guard obligations (.fold .insertActive) (exitRequest .insertActive) ==
+  [{ recipient := .destination 99, atLeast := 55 }]
+#guard obligations (.fold .updateActive) (exitRequest .updateActive) ==
+  [{ recipient := .destination 99, atLeast := 55 }]
+#guard obligations (.fold .witnessTerminal) (exitRequest .witnessTerminal) ==
+  [{ recipient := .destination 99, atLeast := 55 }]
+#guard obligations (.fold .updateTerminal) (exitRequest .updateTerminal) ==
+  [{ recipient := .owner 42, atLeast := 55 }]
+#guard obligations (.fold .deleteAbsent) (exitRequest .deleteAbsent) ==
+  [{ recipient := .owner 42, atLeast := 55 }]
+#guard obligations (.fold .deleteActive) (exitRequest .deleteActive) ==
+  [{ recipient := .owner 42, atLeast := 55 }]
+#guard obligations .reject (exitRequest .insertActive) ==
+  [{ recipient := .owner 42, atLeast := 55 }]
+#guard obligations .retract (exitRequest .insertActive) ==
+  [{ recipient := .owner 42, atLeast := 62 }]
+-- Reject and retract owe the owner whatever edge the request named.
+#guard obligations .reject (exitRequest .insertAbsent) ==
+  [{ recipient := .owner 42, atLeast := 55 }]
+#guard obligations .retract (exitRequest .insertAbsent) ==
+  [{ recipient := .owner 42, atLeast := 62 }]
+
+-- The request carries its tip in its JSON, and a request that names none holds none.
+#guard match (toJson (exitRequest .insertActive)).getObjValAs? Nat "tip" with
+  | .ok 7 => true | _ => false
+#guard ({ edge := .insertActive, key := 5 } : Request).tip == 0
+
+/-- One exit's settlement: the outputs that carry none of its payment, and the
+one output that carries it. The three controls are that output as built, one
+lovelace short, and at another address. -/
+structure SettleCase where
+  exit : Exit
+  request : Request
+  context : List TxOutput
+  carrier : TxOutput
+
+def SettleCase.untampered (c : SettleCase) : Option String :=
+  settle (obligations c.exit c.request) (c.context ++ [c.carrier])
+
+def SettleCase.shortByOne (c : SettleCase) : Option String :=
+  settle (obligations c.exit c.request)
+    (c.context ++ [{ c.carrier with lovelace := c.carrier.lovelace - 1 }])
+
+def SettleCase.otherAddress (c : SettleCase) : Option String :=
+  settle (obligations c.exit c.request)
+    (c.context ++ [{ c.carrier with address := c.carrier.address.map (· + 1) }])
+
+/-- An output paying `lovelace` back to `owner`. -/
+def ownerOutput (owner lovelace : Nat) : TxOutput :=
+  { role := .owner, datum := .inline, address := some owner, stateTokens := 0
+  , config := none, commitment := none, assets := [], lovelace := lovelace }
+
+def txOutputs (t : Except String Tx) : List TxOutput :=
+  match t with | .ok tx => tx.outputs | .error _ => []
+
+def settleInsertActiveRequest : Request :=
+  { req .insertActive 8 42 99 with deposit := 55, tip := 7 }
+
+/-- The token-delivering fold: the model's own transaction, its destination
+output carrying the deposit. -/
+def settleInsertActive : SettleCase :=
+  let outs := txOutputs (txOf s0 settleInsertActiveRequest 1)
+  let dest := (outs.find? (·.role == .destination)).getD (ownerOutput 0 0)
+  { exit := .fold .insertActive, request := settleInsertActiveRequest
+  , context := outs.filter (·.role != .destination)
+  , carrier := { dest with lovelace := settleInsertActiveRequest.deposit } }
+
+def settleDeleteActiveRequest : Request :=
+  { req .deleteActive 8 42 99 with deposit := 55, tip := 7 }
+
+/-- The fold delivering nothing: the model's own transaction, plus the owner's
+refund. -/
+def settleDeleteActive : SettleCase :=
+  { exit := .fold .deleteActive, request := settleDeleteActiveRequest
+  , context := txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)
+  , carrier := ownerOutput 42 settleDeleteActiveRequest.deposit }
+
+/-- Reject: the registry continues unchanged, and the owner is refunded. -/
+def settleReject : SettleCase :=
+  { exit := .reject, request := settleInsertActiveRequest
+  , context := [txStateOutput (emptyResult s0)]
+  , carrier := ownerOutput 42 settleInsertActiveRequest.deposit }
+
+/-- Retract: the owner takes back everything the request held. -/
+def settleRetract : SettleCase :=
+  { exit := .retract, request := settleInsertActiveRequest, context := []
+  , carrier := ownerOutput 42 (settleInsertActiveRequest.deposit + settleInsertActiveRequest.tip) }
+
+-- The model's own transactions exist, so the controls above are not vacuous.
+#guard (txOutputs (txOf s0 settleInsertActiveRequest 1)).any (·.role == .destination)
+#guard !(txOutputs (txOf (booked s0 8) settleDeleteActiveRequest 1)).isEmpty
+
+#guard settleInsertActive.untampered == none
+#guard settleInsertActive.shortByOne == some "deposit-returned"
+#guard settleInsertActive.otherAddress == some "destination"
+#guard settleDeleteActive.untampered == none
+#guard settleDeleteActive.shortByOne == some "deposit-returned"
+#guard settleDeleteActive.otherAddress == some "deposit-returned"
+#guard settleReject.untampered == none
+#guard settleReject.shortByOne == some "deposit-returned"
+#guard settleReject.otherAddress == some "deposit-returned"
+#guard settleRetract.untampered == none
+#guard settleRetract.shortByOne == some "deposit-returned"
+#guard settleRetract.otherAddress == some "deposit-returned"
+
+-- Retract returns the tip: the deposit alone does not settle it.
+#guard settle (obligations .retract settleInsertActiveRequest)
+  [ownerOutput 42 settleInsertActiveRequest.deposit] == some "deposit-returned"
+
+/-- The custody-delivering fold, with the model's own cage output. -/
+def settleInsertAbsentRequest : Request :=
+  { req .insertAbsent 8 91 0 with refundAddress := 91, deposit := 55 }
+
+def settleInsertAbsentOutputs : List TxOutput :=
+  txOutputs (txOf s0 settleInsertAbsentRequest 1)
+
+#guard settleInsertAbsentOutputs.any (·.role == .cage)
+#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
+  settleInsertAbsentOutputs == none
+#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
+  (settleInsertAbsentOutputs.map fun o =>
+    if o.role == .cage then { o with lovelace := o.lovelace - 1 } else o) == some "absent-custody"
+#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
+  (settleInsertAbsentOutputs.filter (·.role != .cage)) == some "absent-custody"
+#guard settle (obligations (.fold .insertAbsent) settleInsertAbsentRequest)
+  (settleInsertAbsentOutputs.map fun o =>
+    if o.role == .cage then { o with address := o.address.map (· + 1) } else o) == some "absent-custody"
+
+-- Every recipient is paid only by an output of its role at its address: the same
+-- lovelace at another address, or under any other role, pays nothing.
+#guard [ (obligations (.fold .insertAbsent) settleInsertAbsentRequest, TxRole.cage, cageAddress, "absent-custody")
+       , (obligations (.fold .insertActive) settleInsertActiveRequest, .destination, 99, "destination")
+       , (obligations .reject settleInsertActiveRequest, .owner, 42, "deposit-returned") ].all
+    fun (owed, role, address, reason) =>
+      let paid := { ownerOutput address 1000 with role := role }
+      settle owed [paid] == none &&
+      settle owed [{ paid with address := some (address + 1) }] == some reason &&
+      [TxRole.state, .request, .destination, .cage, .witness, .owner].all fun other =>
+        other == role || settle owed [{ paid with role := other }] != none
+
+-- Two obligations to one recipient are summed: one output sized for one is refused,
+-- two such outputs settle both.
+#guard settle (obligations .reject settleInsertActiveRequest ++ obligations .reject settleInsertActiveRequest)
+  [ownerOutput 42 55] == some "deposit-returned"
+#guard settle (obligations .reject settleInsertActiveRequest ++ obligations .reject settleInsertActiveRequest)
+  [ownerOutput 42 55, ownerOutput 42 55] == none
+
+-- The state continuation pays no recipient, even at the recipient's own address.
+#guard [ (obligations (.fold .insertAbsent) settleInsertAbsentRequest, some 0, "absent-custody")
+       , (obligations (.fold .insertActive) settleInsertActiveRequest, some 99, "destination")
+       , (obligations .reject settleInsertActiveRequest, some 42, "deposit-returned") ].all
+    fun (owed, address, reason) =>
+      settle owed [{ txStateOutput (emptyResult s0) with address := address, lovelace := 1000 }] == some reason
+-- An output counts toward one recipient: a destination output does not pay the owner.
+#guard settle (obligations .reject settleInsertActiveRequest)
+  [{ ownerOutput 42 55 with role := .destination }] == some "deposit-returned"
+-- The reason is the first unpaid recipient's, in the order the payments are owed.
+#guard settle [{ recipient := .owner 42, atLeast := 55 }, { recipient := .destination 99, atLeast := 55 }]
+  [] == some "deposit-returned"
+#guard settle [{ recipient := .destination 99, atLeast := 55 }, { recipient := .owner 42, atLeast := 55 }]
+  [] == some "destination"
+
+/-! ### Every exit is a model step
+
+Checked when this module elaborates. The registry below holds keys in three
+different leaves, so an exit that moved anything would show; the requests name
+every edge, the ones the law admits and the ones it refuses alike. -/
+
+def exitEdges : List Edge :=
+  [.insertAbsent, .insertActive, .updateActive, .updateTerminal,
+   .deleteAbsent, .deleteActive, .witnessTerminal]
+
+/-- Keys 3 and 4 active, key 6 absent under custody. -/
+def exitState : RegistryState := witnessed (booked (booked s0 3) 4) 6
+
+/-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
+def exitStepRequest (e : Edge) (k : Nat) : Request :=
+  { req e k 42 99 with deposit := 55, tip := 7 }
+
+/-- The keys the rows range over: active, absent, and unbound. -/
+def exitKeys : List Nat := [4, 6, 9]
+
+/-- The step leaves the registry as it was, mints nothing and pays `paid`. -/
+def leavesRegistry (s : RegistryState) (paid : List (Nat × Nat)) :
+    Except String Result → Bool
+  | .ok r => r.state == s && r.mint.isEmpty && r.paid == paid
+  | .error _ => false
+
+-- A fold of the request's own edge is exactly the edge's step.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  sameStep (exitStep exitState (.fold e) (exitStepRequest e k)) (step exitState (exitStepRequest e k))
+-- A fold of any other edge is refused, whatever the law would say of the request.
+#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
+  named == e || sameStep (exitStep exitState (.fold e) (exitStepRequest named k))
+    (.error "exit-edge-mismatch")
+-- Reject pays the owner the deposit back, and retract the deposit and the tip,
+-- for a request of any edge at any key: neither changes the registry or mints.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  leavesRegistry exitState [(42, 55)] (exitStep exitState .reject (exitStepRequest e k))
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  leavesRegistry exitState [(42, 62)] (exitStep exitState .retract (exitStepRequest e k))
+
+-- A fold's transaction is the edge's own, and a fold of another edge builds none.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  match txOfExit exitState (.fold e) (exitStepRequest e k) 3, txOf exitState (exitStepRequest e k) 3 with
+  | .ok a, .ok b => a == b
+  | .error a, .error b => a == b
+  | _, _ => false
+#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
+  named == e || match txOfExit exitState (.fold e) (exitStepRequest named k) 3 with
+    | .error why => why == "exit-edge-mismatch"
+    | .ok _ => false
+
+/-- The roles of a built transaction's inputs and outputs, and whether it mints
+nothing, requires no signer, refunds exactly `paid` and settles `exit`'s
+obligations. -/
+def exitTxShape (exit : Exit) (r : Request) (paid : List (Nat × Nat)) :
+    Except String Tx → Option (List TxRole × List TxRole)
+  | .ok tx =>
+    if tx.mint.isEmpty && tx.signers.isEmpty && tx.refunds == paid
+       && settle (obligations exit r) tx.outputs == none
+    then some (tx.inputs.map (·.role), tx.outputs.map (·.role)) else none
+  | .error _ => none
+
+-- A reject is settled inside a transaction that spends the state and returns it
+-- unchanged; a retract is its own transaction and touches no state. Each pays the
+-- owner one output carrying what it owes, and so settles its obligations.
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  exitTxShape .reject (exitStepRequest e k) [(42, 55)]
+    (txOfExit exitState .reject (exitStepRequest e k) 3)
+    == some ([.state, .request], [.state, .owner])
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  exitTxShape .retract (exitStepRequest e k) [(42, 62)]
+    (txOfExit exitState .retract (exitStepRequest e k) 3)
+    == some ([.request], [.owner])
+#guard exitEdges.all fun e => exitKeys.all fun k =>
+  match txOfExit exitState .reject (exitStepRequest e k) 3 with
+  | .ok tx => tx.outputs.head?.bind (·.config) == some exitState.config
+  | .error _ => false
+
+-- The driver's operations are the nine exits: the seven edges by their own
+-- names, then reject and retract; the surface's protocol moved once for it.
+#guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
+#guard surface.protocolVersion == 2
+
 def main : IO Unit := do
   let stdout ← IO.getStdout
   for c in cases do

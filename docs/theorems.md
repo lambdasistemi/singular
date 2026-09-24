@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 29 declarations of the registry's own statement module are **PROVED**
+All 33 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **50** in total, each with its own
+and its wire encoding 5, for **54** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -46,6 +46,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.delete_absent_inversion` | — | `b040a97d18406c2a0be100516a5f9f5ea3f7c1bcc606a0c26eab4eb38828bce5` | PROVED |
 | `Singular.Statements.delete_active_inversion` | — | `39b91a52340027b5062725a24c38ee9cb5e568518b6c44727946556be0a903f8` | PROVED |
 | `Singular.Statements.empty_fold_error` | — | `8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06` | PROVED |
+| `Singular.Statements.exit_settles_on_lovelace_received` | Value an exit does not owe is unconstrained, for every exit alike: when each recipient the exit owes receives, by role and address, at least as much lovelace from a second list of outputs as from a first, the second settles whenever the first does — adding outputs or lovelace never unsettles a transaction, and fees and the folder's tip play no part | `730ae3cbd6d8305333bcb7b796da58891734c34228cb02b73618026df1626e9a` | PROVED |
 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | T1 — the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
 | `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
 | `Singular.Statements.fold_requires_no_signer` | T1 — no fold requires a signer: at every one of the seven edges the transaction the model builds has an empty signer list, and neither the step nor the transaction changes when the approval carries a different signature set | `7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece` | PROVED |
@@ -53,9 +54,12 @@ consequences rather than as separate arguments.
 | `Singular.Statements.insert_absent_transaction_row` | Complete absent-insertion transaction: refund-only custody, sole-asset key, deposit, root and custody effects, keyed mint, no required signers or immediate refunds | `cbe444a5bddadef89cba2f1459a597a010531e396a90be4a798fdccc5633fb46` | PROVED |
 | `Singular.Statements.insert_active_inversion` | — | `8b5794d17bf859cb01ceae53f2c487cbb22a251464c51364778234f978a9f98b` | PROVED |
 | `Singular.Statements.insert_active_transaction_row` | T1 — the transaction an admitted `insertActive` builds: the whole constructed value — two inputs, two outputs, their datums, addresses and assets, the keyed mint, no refunds, no required signer — plus universal open admission and the duplicate-key refusal | `bfb4e3174839b649a883244b97053ea52985cb3eeea1d3eb4475bb273e841737` | PROVED |
+| `Singular.Statements.no_exit_strands_the_deposit` | No exit strands a deposit: for every exit and every request, some payment the exit owes is at least the request's deposit | `d8e6d7f1148b6f328d7dcb5cbf9f32d760b0dcd4809257f2947946031353eaa5` | PROVED |
 | `Singular.Statements.no_tree_change_without_approval` | P1 — no tree change without an approval under the pinned policy; the pins never move | `a2fa6756fc4504f0ee55be8013dfb05cf94fde2ae06777cf62c25cfd5352ca1b` | PROVED |
+| `Singular.Statements.obligations_read_only_the_request` | What an exit owes is read off the request alone: for every exit, two requests with the same owner, deposit, tip and destination are owed the same payments; the obligations take no registry state as input | `85882057b050dd48bf10c0f43099a3052eb2b752b349acb23363619894f74044` | PROVED |
 | `Singular.Statements.occupancy` | O1 — a booking edge succeeds only on a key that is not taken | `f73130188c3bb9170d2a56dfaa4c965d1cd7ea93b31077d5b13f0c6b136aa876` | PROVED |
 | `Singular.Statements.occupancy_free_key_succeeds` | O1, converse — a booking edge on an untaken key succeeds | `4ee0061a9b764b5548095be259818f55f9beb79907770d850ab4c082b2bbe350` | PROVED |
+| `Singular.Statements.only_retract_owes_the_tip` | Only a retract owes the tip: for every exit, what it owes is unchanged by the tip a request holds exactly when the exit is not a retract | `df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f` | PROVED |
 | `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
 | `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
 | `Singular.Statements.terminal_attestation_permanent` | S2 — permanence: an attestation holds in every later state | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | PROVED |
