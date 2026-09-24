@@ -64,6 +64,13 @@ in
       fourmolu_excluded="journey/verifier journey/retire-verify"
       fmt_files=$(printf '%s\n' $files | grep -vE "^($(echo $fourmolu_excluded | tr ' ' '|'))/")
       [ -n "$fmt_files" ] || { echo "lint: formatter extent is empty" >&2; exit 1; }
+      # Fail closed on an inert exclusion: every configured exclusion must
+      # provably remove at least one discovered file, so a pattern that
+      # matches nothing (the F-003-1 defect) fails the command instead of
+      # silently widening the formatter extent.
+      for x in $fourmolu_excluded; do
+        printf '%s\n' $files | grep -q "^$x/" || { echo "lint: configured Fourmolu exclusion removed no discovered file: $x" >&2; exit 1; }
+      done
       # The GHC option only lets fourmolu parse the postpositive-qualified
       # imports of the two direct-GHC naming sources; sources without that
       # syntax format exactly as before (ruling A-002, configuration only).
@@ -86,7 +93,7 @@ in
       hlint_excluded="journey journey/li01 journey/lmlc journey/recovery journey/retirement journey/register journey/li-refusals journey/repair journey/retire-verify journey/verifier naming/test naming/drift update-terminal"
       hlint_dirs=$(printf '%s\n' $dirs | grep -vxF -f <(printf '%s\n' $hlint_excluded))
       [ -n "$hlint_dirs" ] || { echo "lint: HLint covered set is empty" >&2; exit 1; }
-      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu over $(printf '%s\n' $fmt_files | wc -l) files ($(printf '%s\n' $fourmolu_excluded | wc -w) dir excluded, A-003); hlint over $(printf '%s\n' $hlint_dirs | wc -l) dirs ($(printf '%s\n' $hlint_excluded | wc -w) excluded, debt to #278)" >&2
+      echo "lint inventory: $(printf '%s\n' $files | wc -l) files in $(printf '%s\n' $dirs | wc -l) dirs; fourmolu over $(printf '%s\n' $fmt_files | wc -l) files ($[$(printf '%s\n' $files | wc -l) - $(printf '%s\n' $fmt_files | wc -l)] files removed by A-003 exclusion); hlint over $(printf '%s\n' $hlint_dirs | wc -l) dirs ($(printf '%s\n' $hlint_excluded | wc -w) excluded, debt to #278)" >&2
       hlint $hlint_dirs
     '';
   };
