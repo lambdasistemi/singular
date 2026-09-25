@@ -34,7 +34,7 @@ renderBook requirements receipts =
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. Retraction admission is not modelled until #239: the model admits the retraction of any request, while the chain refuses one of an update or a deletion with `withdraw-insert-only`, and one its owner did not sign with `retract-owner`; the live retractions above are therefore of insertions only, signed by their owner, and no run establishes those two refusals against the model. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. No retraction outside phase 2 is run against the chain (#205), which will name the validator's refusal against the model's window rule. The model represents only finite validity bounds. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -54,6 +54,7 @@ renderBook requirements receipts =
                 "CG22" -> "Retirement compared " <> outcomeCounts steps <> concatMap refusedPayment steps
                 "CG23" -> "Rejection and retraction compared " <> outcomeCounts steps
                     <> concatMap refusedPayment steps
+                    <> admissionEvidence steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
@@ -108,6 +109,63 @@ renderBook requirements receipts =
     exitOf fields edge = case KM.lookup "exit" fields of
         Just (String exit) | exit `elem` ["reject", "retract"] -> T.unpack exit <> " of " <> T.unpack edge
         _ -> T.unpack edge
+    -- Publish the admission run only with both attributed refusals and their
+    -- signed insertion control. Missing evidence never becomes a run claim.
+    admissionEvidence steps = case
+        [ (unsigned, update, control)
+        | unsigned <- steps
+        , refuses ["insertAbsent", "insertActive"] (String "unsigned") "retract-owner" unsigned
+        , ownerSigned unsigned == Just False
+        , update <- steps
+        , refuses ["updateActive", "updateTerminal"] Null "withdraw-insert-only" update
+        , ownerSigned update == Just True
+        , same ["registry"] unsigned update
+        , control <- steps
+        , retraction control
+        , at ["tamper"] control == Just Null
+        , at ["model", "outcome"] control == Just (String "accepted")
+        , at ["chain", "outcome"] control == Just (String "accepted")
+        , ownerSigned control == Just True
+        , same ["registry"] unsigned control
+        , same ["request"] unsigned control
+        , same ["edge"] unsigned control
+        ] of
+            (unsigned, update, control) : _ ->
+                "The exit chapter compared both admission refusals: the unsigned insertion retraction (transaction `"
+                    <> textAt ["chain", "txid"] unsigned <> "`) was refused by the model for `"
+                    <> textAt ["model", "reason"] unsigned
+                    <> "`, and the pending update retraction (transaction `"
+                    <> textAt ["chain", "txid"] update <> "`) for `"
+                    <> textAt ["model", "reason"] update
+                    <> "`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `"
+                    <> textAt ["chain", "txid"] control <> "`.\n\n"
+            [] -> ""
+    refuses edges alteration reason step =
+        retraction step
+            && at ["edge"] step `elem` map (Just . String) edges
+            && at ["tamper"] step == Just alteration
+            && at ["model", "outcome"] step == Just (String "refused")
+            && at ["model", "reason"] step == Just (String reason)
+            && at ["chain", "outcome"] step == Just (String "refused")
+            && case (at ["requestScript"] step, at ["chain", "refusal", "hashes"] step) of
+                (Just (String script), Just (Array hashes)) -> not (T.null script) && String script `elem` hashes
+                _ -> False
+    retraction step =
+        at ["exit"] step == Just (String "retract")
+            && at ["comparison"] step == Just (String "agrees")
+            && not (null (textAt ["chain", "txid"] step))
+    ownerSigned step = case (at ["request", "owner"] step, at ["witness", "signatories"] step) of
+        (Just owner@(Number _), Just (Array signatories)) -> Just (owner `elem` signatories)
+        _ -> Nothing
+    same path left right = case at path left of
+        Just value -> at path right == Just value
+        Nothing -> False
+    textAt path step = case at path step of
+        Just (String value) -> T.unpack value
+        _ -> ""
+    at [] value = Just value
+    at (key : path) (Object fields) = KM.lookup key fields >>= at path
+    at _ _ = Nothing
     gapEvidence receipt
         | receiptRow receipt == "sequence" = maybe "" (concatMap gapReason) (receiptSteps receipt)
         | otherwise = ""

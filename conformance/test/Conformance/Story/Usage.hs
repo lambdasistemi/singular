@@ -4,10 +4,12 @@
 module Conformance.Story.Usage (spec) where
 
 import Control.Monad.Operational (ProgramViewT (Return, (:>>=)), view)
+import Data.Foldable (forM_)
 import Data.Either (isLeft)
 import Data.List (isInfixOf, isPrefixOf, tails)
 import Test.Hspec (Spec, it, shouldBe, shouldSatisfy)
 import Conformance.Book (renderBook)
+import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
 import Conformance.Edge.Sequence qualified as Sequence
@@ -27,6 +29,25 @@ spec = do
             story = Live.renderLive (Register.story (Live.Context "registration" "recipient wallet"))
         occurrences phrase story `shouldSatisfy` (>= 1)
         occurrences phrase (renderBook [] []) `shouldBe` occurrences phrase story
+    it "The book names each admission refusal and its signed control only where the exit story submits it" $ do
+        let story = Live.renderLive (Exit.story (Live.Context "rejection" "holder wallet")
+                (Live.Context "retraction" "holder wallet"))
+        forM_
+            [ "without requiring its owner's signature"
+            , "Retract the **updateTerminal** for **pending-update**"
+            , "Retract the **insertActive** for **retracted** in **retraction** as its owner, using the holder wallet."
+            ] $ \phrase -> do
+                occurrences phrase story `shouldSatisfy` (>= 1)
+                occurrences phrase (renderBook [] []) `shouldBe` occurrences phrase story
+    it "The book states retraction admission and preserves its unrun window and observation limits" $ do
+        let book = renderBook [] []
+        book `shouldSatisfy` isInfixOf "The model admits a retraction only when"
+        book `shouldSatisfy` isInfixOf "No retraction outside phase 2 is run against the chain (#205)"
+        book `shouldSatisfy` isInfixOf "The model represents only finite validity bounds"
+        book `shouldSatisfy` isInfixOf "Live refusal reason not observed"
+        book `shouldSatisfy` isInfixOf "checked against the compiled Aiken suite"
+        book `shouldSatisfy` (not . isInfixOf "Retraction admission is not modelled")
+        book `shouldSatisfy` (not . isInfixOf "no run establishes those two refusals")
     it "The retirement chapter describes registration and retirement as model edge requests" $ do
         let rendered = Live.renderLive (Retire.story
                 (Live.Context "retirement" "holder") (Live.Context "comparison" "holder"))

@@ -18,6 +18,7 @@ import Data.Foldable (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import System.FilePath ((</>))
+import System.Environment (lookupEnv)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (
     Spec,
@@ -533,11 +534,35 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
             >>= (`shouldSatisfy` refusedFor "unknown exit")
         loadLive (changeStep (setField "exit" ("insertAbsent" :: String)) acceptedLive)
             >>= (`shouldSatisfy` refusedFor "a fold exit names another edge than its request")
-    it "publishes the chapter where requests leave the queue unfolded, and the retraction admission gap" $ do
+    it "publishes the chapter where requests leave the queue unfolded, and the live retraction window gap" $ do
         let book = renderBook [] []
         book `shouldSatisfy` isInfixOf "## A request that is never folded"
-        book `shouldSatisfy` isInfixOf "withdraw-insert-only"
-        book `shouldSatisfy` isInfixOf "#239"
+        book `shouldSatisfy` isInfixOf "the pending request inserts a key or reads a terminal one"
+        book `shouldSatisfy` isInfixOf "No retraction outside phase 2 is run against the chain (#205)"
+    it "does not claim admission ran without its receipt" $
+        renderBook [] [] `shouldSatisfy` (not . isInfixOf "the chain attributes both refusals")
+    forM_ ["unsigned refusal", "update refusal", "signed control"] $ \claim ->
+        it ("publishes receipt-backed admission evidence for the " <> claim) $ do
+            receipt <- admissionBookReceipt
+            let book = renderBook [] [receipt]
+            book `shouldSatisfy` isInfixOf "The exit chapter compared both admission refusals"
+            book `shouldSatisfy` isInfixOf "`retract-owner`"
+            book `shouldSatisfy` isInfixOf "`withdraw-insert-only`"
+            book `shouldSatisfy` isInfixOf "owner-signed insertion control accepted by both"
+    it "withholds the admission run claim if any of its three steps is absent" $
+        forM_ [0 .. 2] $ \missing -> do
+            let steps = concat (receiptSteps admissionBookFixture)
+                shortened = take missing steps <> drop (missing + 1) steps
+            renderBook [] [admissionBookFixture{receiptSteps = Just shortened}]
+                `shouldSatisfy` (not . isInfixOf "The exit chapter compared both admission refusals")
+    it "withholds the admission run claim when request attribution or its signed control contradicts it" $
+        forM_
+            [ setField "requestScript" ("another-script" :: String)
+            , setField "witness" (object ["signatories" .= ([] :: [Int])])
+            , setField "comparison" ("disagrees" :: String)
+            ] $ \corrupt ->
+                renderBook [] [changeStep corrupt admissionBookFixture]
+                    `shouldSatisfy` (not . isInfixOf "The exit chapter compared both admission refusals")
     it "accepts the exit controls' receipt, a row of its own, with its compared rejects and retractions" $
         loadLive exitControlsLive `shouldReturn` Right 1
     it "rejects the exit controls' receipt when it names no step records" $
@@ -787,6 +812,31 @@ admissionRefusalLive edge alteration reason =
             . setField "chain" (setRefusalField "scripts" (["request"] :: [String]) (probeRefusalChain "probe-allowance"))
         )
         (retractTamperLive "unsigned" reason)
+
+-- | Reuse the loader fixtures to exercise rendering, without claiming a live run.
+admissionBookFixture :: Receipt
+admissionBookFixture = acceptedLive
+    { receiptRow = "CG23"
+    , receiptSteps = Just $ concatMap (concat . receiptSteps)
+        [ withWitness [] (admissionRefusalLive "insertActive" (Just "unsigned") "retract-owner")
+        , withWitness [1] (admissionRefusalLive "updateTerminal" Nothing "withdraw-insert-only")
+        , withWitness [1] (changeStep (setField "exit" ("retract" :: String)) acceptedLive)
+        ]
+    }
+  where
+    withWitness :: [Int] -> Receipt -> Receipt
+    withWitness signatories = changeStep
+        (setField "request" (object ["owner" .= (1 :: Int), "reference" .= (1 :: Int)])
+            . setField "witness" (object ["signatories" .= signatories]))
+
+-- | Optionally replay an actual receipt through the same renderer assertions.
+-- This is test input only; the packaged conformance runner has no such switch.
+admissionBookReceipt :: IO Receipt
+admissionBookReceipt = do
+    path <- lookupEnv "CONFORMANCE_BOOK_RECEIPT"
+    case path of
+        Nothing -> pure admissionBookFixture
+        Just file -> BSL.readFile file >>= either fail pure . eitherDecode
 
 {- | The exit controls as a row of their own: a reject refunding one lovelace
 short, the untampered reject, a retraction bound to another request, one
