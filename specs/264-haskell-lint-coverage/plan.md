@@ -49,23 +49,27 @@ stands for the off-chain component build.
 
 ## Coverage handoff
 
-The exact candidate matrix distinguishes discovered files, Fourmolu files,
-HLint directories and the component build closure. Epic ruling A-003 keeps two
-independent verifier files at their intake bytes and outside Fourmolu in this
-ticket. Existing HLint hints keep 13 directories outside HLint enforcement;
-the current source snapshot measures 214 retained hints, while the intake
-survey measured 218. These are visible gaps assigned to [final epic integration
-#278](https://github.com/lambdasistemi/singular/issues/278), not green lint
-evidence for those files. The final integration child must cover repository code
-beyond off-chain Haskell too.
+The `b69ecca` Gate S v11 and exact-head CI receipts measured 70 discovered
+Haskell files in 22 directories, 68 Fourmolu files after the two A-003
+independent verifier exclusions, and 57 HLint files in nine directories. The
+remaining 13 files are outside HLint enforcement under 13 configured
+debt-directory names. The 214 retained hints were measured at an earlier
+candidate snapshot, while the intake survey measured 218; neither is a
+current-head result for excluded files. These are visible gaps assigned to
+[final epic integration #278](https://github.com/lambdasistemi/singular/issues/278),
+not green lint evidence for those files. The final integration child must cover
+repository code beyond off-chain Haskell too.
 
 The initial all-component carrier included `connected-verifier` and failed on
 an intake-era import of an unexported library symbol. Later attempts directly
 failed at `recovery-rows` and `li01`. These remain RED evidence for those exact
-members. The proposed classified carrier has ten built and nine unverified
-members; it is not accepted until it builds and its exclusions and negative
-controls receive independent review. The contributor guide explains the
-commands and boundaries.
+members. The classified carrier built ten members and reports nine retained
+commands as unverified. Its 19-declaration inventory, exclusions,
+included-member failure control and exact `b69ecca` build received
+independent review; its required pushed-head component-build CI job passed.
+That establishes compilation and inventory of the included set, not execution
+of commands or build success for the nine omitted members. The contributor
+guide explains the commands and boundaries.
 
 ## A-011 release-instruction correction
 
@@ -87,3 +91,10 @@ fresh independent gate and candidate audit, then run it on the exact clean
 head. No current documentation correction is evidence that a legacy command
 builds. Conformance remains excluded, and #278 owns full-repository lint and
 format coverage.
+
+At `b69ecca`, the reviewed Gate S v11 ran the assembled archive and four
+checksum-valid negative controls GREEN. Local `release-check` remained
+HOST-BLOCKED under A-012, and that exact pushed-head CI job passed. The
+documentation-only correction now being made must receive its own exact-head
+audit, gate and CI before epic acceptance; those older receipts are not
+inherited by the new SHA.

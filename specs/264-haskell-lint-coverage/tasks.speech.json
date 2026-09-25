@@ -1,12 +1,12 @@
 {
   "work-items": [
     {
-      "text": "The work records the source and interface inventory, removes duplicate dependencies, expands lint with a negative control, reviews layout-only edits, and builds classified supported components in CI. Every Cabal declaration needs a truthful inventory row; controls reject unknown or drifted rows and failure of an included member. The operator's forward correction updates release and user instructions, checks the assembled archive's availability promise with a negative control, classifies the deployment attach script, and keeps distinct command repairs with issues 172, 282 and 283. Final epic issue 278 owns all-code lint and formatting. Independent audit, exact-head gate and pushed-head CI precede handback.",
+      "text": "The checked work records the source and interface inventory, duplicate dependency removal, broader lint discovery with a malformed-source control, separately reviewed layout changes, and the classified component build. Every Cabal declaration has a truthful row. The release and consumer instructions were forward-corrected and tested against an assembled archive with negative controls. The deployment attach script's legacy dependencies remain disclosed. The reviewed source revision passed its independent audit, seven runnable gate rows and exact-head CI. This documentation correction gets a new head and therefore requires its own gate and CI before the epic owner accepts it. Final epic issue 278 owns all-code lint and formatting; issues 172, 282 and 283 own the retained command repairs.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ad92245dc0ec672f114bab5156fd4ae6cf915c5dfa0875b8c24f67b495b24495"
+    "sha256": "138470984f4b3f226ff1a3c13a88008b385ea1edc6a8f5779f2f6f9576f40725"
   }
 }

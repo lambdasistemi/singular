@@ -87,23 +87,27 @@ carrier establishes only that set, never a package-wide build.
 
 ## Candidate boundary and epic completion
 
-The current local candidate discovers 69 tracked off-chain Haskell files in 22
-source directories: 20 Cabal source-directory values and two direct-GHC naming
-directories. Discovery is broader than enforcement. Under the epic owner's
-source ruling, Fourmolu checks 67 files and leaves the two independent verifier
-files byte-identical to intake. HLint checks 9 directories and excludes 13
-directories with 214 measured hints in the current source state; the earlier
-intake survey found 218 hints before layout and verifier restoration changed
-the measured snapshot. Neither count is a waiver or a claim that excluded
-sources pass. The exact per-directory debt and check boundaries are recorded
-beside the executable lint command and in its candidate matrix.
+At source revision `b69ecca7b7c5efb9f2106d9717d3e2bcb275b063`, Gate S v11
+and the exact pushed-head Off-chain lint CI job discovered 70 off-chain Haskell
+files in 22 source directories: 20 Cabal source-directory values and two
+direct-GHC naming directories. This documentation correction changes no source
+file or discovery rule, so the measured extent remains the source baseline for
+the next head; its own CI result must still be checked. Discovery is broader
+than enforcement. Under the epic owner's source ruling, Fourmolu checks 68
+files and leaves two independent verifier files byte-identical to intake.
+HLint checks 57 files in 9 directories; 13 files fall outside that HLint run
+under 13 configured debt-directory names. The 214-hint count belongs to an
+earlier candidate snapshot, and the intake survey found 218; neither is a
+current-head HLint result or a waiver for excluded sources. The exact
+per-directory debt and check boundaries are recorded beside the executable
+lint command and in the candidate evidence.
 
 ```mermaid
 flowchart LR
-    A[69 inventoried Haskell files] -->|67 checked| F[Fourmolu]
+    A[70 inventoried Haskell files] -->|68 checked| F[Fourmolu]
     A -->|two independent verifier files| FV[Formatter gap]
-    A -->|41 files in nine directories| H[HLint]
-    A -->|other 28 files| HV[HLint gap]
+    A -->|57 files in nine directories| H[HLint]
+    A -->|other 13 files| HV[HLint gap]
     FV -->|must close| E[Epic integration issue 278]
     HV -->|must close| E
 ```
@@ -127,10 +131,13 @@ after exact source/workflow and current dependency checks. A-009 maps
 unbuildable/unverified command. The current carrier receipt does not prove
 those other executables' own build results. All five remain declared and
 exposed. That 14/5 proposal was superseded by a 10-built/9-unverified
-classification after all seven named legacy journeys were assessed. Neither
-proposal is accepted build evidence. #278 still owns lint and formatting of
-every retained source. The final candidate must publish all 19 declarations'
-classification and demonstrate the narrower carrier and its controls.
+classification after all seven named legacy journeys were assessed. The
+classified carrier inventories all 19 declarations and its ten-member
+included set passed the exact `b69ecca` Gate S v11 and pushed-head CI job,
+with independent Opus review of the carrier and its direct negative controls.
+This is compile/inventory evidence only; none of the nine retained commands
+gains a build or journey pass. #278 still owns lint and formatting of every
+retained source.
 
 ## A-011 forward correction to current release instructions
 
@@ -157,7 +164,10 @@ carrier command depends on its three legacy row runners, that dependency stays
 RED until built. No documentation edit can establish command buildability.
 Keep #172, #282 and #283 as the distinct repairs; preserve Cabal declarations,
 apps, public names, historical tags and archives. Conformance remains outside
-this ticket. The 10/9 carrier requires a fresh audit, direct negative controls,
-an actual GREEN build, and the complete exact-head gate including both
-`release-check` and `release-artifacts` before any acceptance. #278 retains the
-separate all-code lint and formatting obligation.
+this ticket. The 10/9 carrier received direct negative controls, an actual
+GREEN build, and independent review at the `b69ecca` candidate. Its Gate S v11
+ran `release-artifacts` GREEN and recorded local `release-check` as HOST-BLOCKED
+under A-012; the exact pushed-head `release-check` CI job passed. A new
+documentation-only candidate still requires a fresh exact-head gate, audit
+and CI; no old result transfers to a new SHA. #278 retains the separate
+all-code lint and formatting obligation.

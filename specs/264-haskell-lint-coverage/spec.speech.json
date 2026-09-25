@@ -1,36 +1,36 @@
 {
   "requirements": [
     {
-      "text": "The contributor should see lint cover active Haskell sources, a malformed source rejected by the real command, duplicate Cabal dependencies removed, and the same public exports and command names after the change.",
+      "text": "The contributor's existing lint command now discovers active Haskell sources and rejects a malformed source in a newly covered directory. Duplicate Cabal dependencies were removed. Public exports and executable names remain stable. The classified carrier compiles only its supported set and names every retained command it does not verify.",
       "pause": 400
     }
   ],
   "source-inventory-at-intake": [
     {
-      "text": "The inventory maps the library, fifteen executables, and three test suites to their Cabal source directories. Naming's direct GHC test and drift sources are considered separately. The final review will explain any source directory deliberately excluded from lint.",
+      "text": "The intake inventory maps the library, fifteen executables, and three test suites to their Cabal source directories. The direct GHC naming test and drift sources join lint discovery separately. The final boundary names the two formatter exclusions and the HLint debt instead of hiding them.",
       "pause": 400
     }
   ],
   "evidence-limit": [
     {
-      "text": "The original root build gate builds documentation and model packages, while selected registry jobs build off-chain targets. The new CI carrier builds the classified components used by required workflows and currently supported commands, plus the library and tests. Its inventory must name every unbuilt declaration and reject unknown or drifted omissions. A green result is not a package-wide build claim.",
+      "text": "The root build gate never stood for all offchain Cabal components. The classified carrier inventories all nineteen declarations and compiles ten included members used by required workflows or currently supported commands, plus the library and tests. Nine retained commands remain unverified with issue owners. Its successful build does not execute a command or prove a package-wide build.",
       "pause": 400
     }
   ],
   "candidate-boundary-and-epic-completion": [
     {
-      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints. These gaps remain for final epic integration issue 278, which also owns coverage of other repository code. The first all-component build failed at connected verifier. Later direct builds failed at recovery rows and li zero one. The proposed ten built and nine unverified classification remains unapproved. Issues 172, 282 and 283 own the distinct command repairs; no other omitted command receives an inferred build result.",
+      "text": "The reviewed source revision inventories seventy Haskell files in twenty-two directories. Fourmolu checks sixty-eight files and preserves two independent verifier files at intake bytes. HLint checks fifty-seven files in nine directories; thirteen files are outside that run under thirteen configured debt-directory names. Older measurements of two hundred fourteen and two hundred eighteen hints belong to earlier snapshots, not this head. Final epic issue 278 owns those lint and format gaps and all other repository code. The classified carrier built ten members and leaves nine retained commands unverified. Direct failures at connected verifier, recovery rows and li zero one remain historical revision-bound evidence; issues 172, 282 and 283 own the distinct repairs.",
       "pause": 400
     }
   ],
   "a-011-forward-correction-to-current-release-instructions": [
     {
-      "text": "The operator ruled the current release README outdated. Current and future instructions must distinguish commands verified against the integrated Lean source from retained legacy commands that are unbuildable or unverified. Already published archives cannot be rewritten. The assembled archive checker and a checksum-valid negative control must enforce the corrected promise. The deployment attach script's command dependencies must be classified; prose cannot make them build. The later main integration changed Lean exit-payment judgements; this maintenance carrier and release check do not verify those behaviors. The full exact-head gate and independent audit remain required.",
+      "text": "The operator ruled the old release README outdated and directed a forward correction. Current and future instructions distinguish verified commands from retained legacy commands; already published archives remain unchanged. The assembled archive checker and four checksum-valid negative controls enforce the corrected availability promise. At the reviewed source revision, the archive gate passed, local release-check remained host blocked, and exact-head release-check CI passed. This documentation-only commit still needs its own exact-head audit, gate and CI before acceptance. Nothing here makes an unbuilt legacy command work or verifies the later Lean payment judgements.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "57bfaaa4c670ba041532f56f5012a7ee8488ae5621dceb75ef7af21e5e339edf"
+    "sha256": "088d3ffcf2e7ba57ceafc44835050eb673b39e88da9ab05666bb9539527d24e7"
   }
 }
