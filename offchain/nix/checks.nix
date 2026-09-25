@@ -49,12 +49,23 @@ in
       # naming/run-drift-check.sh compile naming/test and naming/drift with
       # the dev-shell GHC outside any Cabal stanza). A new Cabal component
       # or naming source is therefore linted without editing this app.
-      dirs=$(
+      # P2 (finding 024, verdict 025): the discovery step's own failure must
+      # end the run here, with a discovery-specific reason. The assignment
+      # carries awk's exit status, so a missing or unreadable Cabal file or a
+      # broken awk program can no longer be swallowed by the trailing printf
+      # of the naming dirs and resurface later as an incidental
+      # Fourmolu/HLint exclusion failure over a partial naming-only extent.
+      # Empty discovery is refused directly too: a Cabal parse miss must not
+      # degrade to the two literal naming dirs.
+      cabal_dirs=$(
         awk '/^[ \t]*hs-source-dirs:/ {
           sub(/^[ \t]*hs-source-dirs:[ \t]*/, "")
           for (i = 1; i <= NF; i++) print $i
         }' singular-registry.cabal
-        printf '%s\n' naming/test naming/drift
+      ) || { echo "lint: source discovery failed: cannot read singular-registry.cabal (awk exit $?)" >&2; exit 1; }
+      [ -n "$cabal_dirs" ] || { echo "lint: source discovery found no hs-source-dirs in singular-registry.cabal" >&2; exit 1; }
+      dirs=$(
+        printf '%s\n' "$cabal_dirs" naming/test naming/drift
       )
       # Deduplicate nested declarations (journey contains journey/li01 and
       # friends, so every file must be listed once), then fail closed: a
