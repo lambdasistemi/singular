@@ -25,12 +25,12 @@
   ],
   "a-011-forward-correction-to-current-release-instructions": [
     {
-      "text": "The operator ruled the current release README outdated. Current and future instructions must distinguish commands verified against the integrated Lean source from retained legacy commands that are unbuildable or unverified. Already published archives cannot be rewritten. The assembled archive checker and a checksum-valid negative control must enforce the corrected promise. The deployment attach script's command dependencies must be classified; prose cannot make them build. The full exact-head gate and independent audit remain required.",
+      "text": "The operator ruled the current release README outdated. Current and future instructions must distinguish commands verified against the integrated Lean source from retained legacy commands that are unbuildable or unverified. Already published archives cannot be rewritten. The assembled archive checker and a checksum-valid negative control must enforce the corrected promise. The deployment attach script's command dependencies must be classified; prose cannot make them build. The later main integration changed Lean exit-payment judgements; this maintenance carrier and release check do not verify those behaviors. The full exact-head gate and independent audit remain required.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "0a1bf8ddc2577a685c5d7a3260fa3fa5709220746e1f7a377e4afe17b25394b2"
+    "sha256": "57bfaaa4c670ba041532f56f5012a7ee8488ae5621dceb75ef7af21e5e339edf"
   }
 }

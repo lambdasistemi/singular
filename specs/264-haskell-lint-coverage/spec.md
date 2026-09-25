@@ -7,10 +7,13 @@ components consumed by current required workflows and shipped registry
 commands to build with their existing public interfaces and command names.
 
 The integrated Lean source revision for this maintenance slice is
-`6e4577d34c571507a47ca3bc7f95e99f6b71c39d`. This slice changes no Lean
-definition, behavior, wire representation, transaction effect, or expected
-outcome. The repository constitution still governs any discrepancy discovered
-while doing the work.
+`473f471ecdddfd483e833b7881217a8c1b10867e` on main
+`2ae29b00a178fe22f881228c99aacf843d5bfb73`. Main's #258 integration
+changed exit-payment and driver judgements after this ticket's first candidate;
+the carrier and release checks here do not claim to verify those behaviors.
+This slice changes no Lean definition, behavior, wire representation,
+transaction effect, or expected outcome. The repository constitution still
+governs any discrepancy discovered while doing the work.
 
 ```mermaid
 flowchart LR
