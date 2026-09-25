@@ -7,10 +7,16 @@ components consumed by current required workflows and shipped registry
 commands to build with their existing public interfaces and command names.
 
 The integrated Lean source revision for this maintenance slice is
-`473f471ecdddfd483e833b7881217a8c1b10867e` on main
-`2ae29b00a178fe22f881228c99aacf843d5bfb73`. Main's #258 integration
-changed exit-payment and driver judgements after this ticket's first candidate;
-the carrier and release checks here do not claim to verify those behaviors.
+`03fd9e0ec4777a39f40362a8025c48066b0cb597` on main
+`80eba16049be11d90564db5d8a285ace695b33a8` (constitution 1.10.0).
+Main's #258 integration changed exit-payment and driver judgements, and #239
+now admits or refuses a retraction under its request, owner and phase witness
+before judging what it spends or pays. This ticket's carrier and release checks
+do not claim to verify those retraction behaviors. The archive's verified
+bounded journey boots a registry, folds a request, applies it and reads state
+back; it makes no retraction or retained naming-journey claim. The new model's
+out-of-phase chain case remains #205 and its chain refusal reason remains
+unobserved under #287.
 This slice changes no Lean definition, behavior, wire representation,
 transaction effect, or expected outcome. The repository constitution still
 governs any discrepancy discovered while doing the work.
@@ -167,7 +173,10 @@ apps, public names, historical tags and archives. Conformance remains outside
 this ticket. The 10/9 carrier received direct negative controls, an actual
 GREEN build, and independent review at the `b69ecca` candidate. Its Gate S v11
 ran `release-artifacts` GREEN and recorded local `release-check` as HOST-BLOCKED
-under A-012; the exact pushed-head `release-check` CI job passed. A new
-documentation-only candidate still requires a fresh exact-head gate, audit
-and CI; no old result transfers to a new SHA. #278 retains the separate
-all-code lint and formatting obligation.
+under A-012; the exact pushed-head `release-check` CI job passed. The subsequent
+documentation correction at `e276bab` passed its own Opus review, Gate S v12
+and exact-head CI on the earlier main base `2ae29b0`. After main advanced to
+`80eba16` through #289, those results became historical SHA-bound evidence;
+the rebased candidate needs fresh review, gate and exact pushed-head CI before
+epic acceptance. #278 retains the separate all-code lint and formatting
+obligation.

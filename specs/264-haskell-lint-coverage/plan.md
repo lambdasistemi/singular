@@ -95,6 +95,10 @@ format coverage.
 At `b69ecca`, the reviewed Gate S v11 ran the assembled archive and four
 checksum-valid negative controls GREEN. Local `release-check` remained
 HOST-BLOCKED under A-012, and that exact pushed-head CI job passed. The
-documentation-only correction now being made must receive its own exact-head
-audit, gate and CI before epic acceptance; those older receipts are not
-inherited by the new SHA.
+documentation correction at `e276bab` passed its own audit, Gate S v12 and
+exact-head CI on main `2ae29b0`. Main has since advanced to `80eba16`, whose
+accepted Lean source is `03fd9e0` and whose constitution is 1.10.0. Its #239
+retraction admission changes no #264 tooling or bounded fold-journey claim;
+the model checker and Conformance workflow changed on main and must pass with
+this ticket's branch. The rebased candidate needs a fresh exact-head audit,
+gate and pushed-head CI; older receipts are not inherited by the new SHA.

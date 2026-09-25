@@ -21,9 +21,10 @@ as distinct pieces of one maintenance change.
 
 These checked items record the implemented and reviewed #264 slice, including
 its bounded 10-built/9-unverified carrier and the corrected contributor guide.
-The `b69ecca` Gate S v11 and pushed-head CI completed before this
-reader-facing documentation correction. Because the correction changes the
-commit SHA, its fresh exact-head documentation/candidate audit, Gate S and
-required CI results belong in the PR and ticket handback; the earlier green
-receipts are not inherited. Epic #272 still needs #278 for all-code lint and
-format coverage, and #172, #282 and #283 retain the unverified command repairs.
+The `b69ecca` Gate S v11 and pushed-head CI, followed by the `e276bab`
+documentation correction's Gate S v12 and exact-head CI, completed on the old
+main base `2ae29b0`. Main then advanced to `80eba16` with a new accepted Lean
+revision. The rebased candidate requires fresh model-bound review, Gate S and
+exact pushed-head CI before another ticket handback; the previous receipts are
+historical. Epic #272 still needs #278 for all-code lint and format coverage,
+and #172, #282 and #283 retain the unverified command repairs.

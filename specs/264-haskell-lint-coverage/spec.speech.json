@@ -25,12 +25,12 @@
   ],
   "a-011-forward-correction-to-current-release-instructions": [
     {
-      "text": "The operator ruled the old release README outdated and directed a forward correction. Current and future instructions distinguish verified commands from retained legacy commands; already published archives remain unchanged. The assembled archive checker and four checksum-valid negative controls enforce the corrected availability promise. At the reviewed source revision, the archive gate passed, local release-check remained host blocked, and exact-head release-check CI passed. This documentation-only commit still needs its own exact-head audit, gate and CI before acceptance. Nothing here makes an unbuilt legacy command work or verifies the later Lean payment judgements.",
+      "text": "The operator ruled the old release README outdated and directed a forward correction. Current and future instructions distinguish verified commands from retained legacy commands; already published archives remain unchanged. The assembled archive checker and four checksum-valid negative controls enforce the corrected availability promise. The earlier documentation correction passed its own gate and exact-head CI on the old main base. Main now binds accepted Lean source 03fd9e0 and constitution version 1.10, whose retraction admission is outside this ticket's bounded fold journey. The rebased head needs fresh audit, gate and exact-head CI. Nothing here makes an unbuilt legacy command work or verifies retraction behavior.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "088d3ffcf2e7ba57ceafc44835050eb673b39e88da9ab05666bb9539527d24e7"
+    "sha256": "4f5bc3e43ddda0ac644f17a7ca1546041aa561145464b369a07123544facf364"
   }
 }
