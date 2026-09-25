@@ -183,21 +183,55 @@ if onchain_present:
         for phrase in ("epic", "E18", "obligation", "milestone artifact"):
             assert phrase.casefold() not in release_text.casefold(), f"release text contains forbidden wording: {phrase}"
         readme_text = bundle.extractfile(members["README.md"]).read().decode()
+        # The corrected availability promise (operator ruling 2026-09-25):
+        # the archive README presents the verified connected journey as the
+        # runnable lifecycle command, discloses every retained unverified
+        # declaration as not currently buildable or verified — the seven
+        # commands earlier releases advertised, plus repair-rows and
+        # connected-verifier which it never advertised — and states that
+        # future corrections cannot rewrite already published archives.
+        # Identity and fixture documentation assertions are unchanged.
         for phrase in (
             "verify-identities.sh",
             "plutus.json",
             "script-identity.json",
-            "#journey",
-            "#li01",
-            "#li-refusals",
-            "#naming-rows",
-            "nix run .#recovery-rows",
-            "nix run .#retirement-rows",
-            "nix run .#retirement-verify --",
+            "nix run .#journey",
             "run-suite.sh",
             "SHA256SUMS",
         ):
             assert phrase in readme_text, f"artifact README does not document: {phrase}"
+        missing_legacy = [
+            f"nix run .#{name}"
+            for name in (
+                "li01",
+                "li-refusals",
+                "naming-rows",
+                "register-rows",
+                "recovery-rows",
+                "retirement-rows",
+                "retirement-verify",
+            )
+            if f"nix run .#{name}" not in readme_text
+        ]
+        assert not missing_legacy, (
+            "artifact README does not disclose retained legacy commands: "
+            + ", ".join(missing_legacy)
+        )
+        undisclosed = [
+            name
+            for name in ("repair-rows", "connected-verifier")
+            if name not in readme_text
+        ]
+        assert not undisclosed, (
+            "artifact README does not disclose retained unverified components: "
+            + ", ".join(undisclosed)
+        )
+        assert "not currently buildable or verified" in readme_text, (
+            "artifact README does not state that retained commands are not currently buildable or verified"
+        )
+        assert "already published archives are never rewritten" in readme_text, (
+            "artifact README does not state the published-archive limit"
+        )
         # The identities CI enforces, verified from the downloaded artifact itself:
         # the archive's own checker runs against the carried compiled blueprints.
         with tempfile.TemporaryDirectory() as extract_dir:

@@ -48,6 +48,18 @@ let
       # checksum manifests, release text, and identity verification run from
       # the extracted artifact — against the exact bytes to be published.
       python3 "$root/tools/check_release.py" "$root" "$out"
+      # The surface negative control, on those exact assembled bytes: the
+      # verified-command promise, the retained-command disclosure and the
+      # release-text consistency are each mutated in temporary extracted
+      # copies, both manifests recomputed and proven, and the checker must
+      # refuse each variant for its stated surface reason. The assembled
+      # archive itself is never modified. The control lives here — inside
+      # the active archive-build boundary that required CI executes
+      # (`release-artifacts`) and that the publish path reuses — so a
+      # docs-only `release-check` pass can never stand in for an on-chain
+      # surface pass, and nothing uploads or publishes without it. It calls
+      # the checker directly, never this assembler, so it cannot recurse.
+      bash "$root/tools/release_surface_control.sh" "$root" "$out"
     '';
   };
 

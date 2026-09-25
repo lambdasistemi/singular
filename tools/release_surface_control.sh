@@ -1,23 +1,39 @@
 #!/usr/bin/env bash
-# Negative control for the on-chain release surface (NOTE-103/104,
-# NOTE-043/044).
+# Negative control for the on-chain release surface.
 #
 # Given an assembled release directory (from `nix run .#release-artifacts --
-# <out-dir>`), builds two stale-surface variants and proves the release
-# checker refuses each SPECIFICALLY on the surface — never accidentally
-# at a checksum mismatch:
-#   A. missing-command: omits every `nix run .#retirement-rows` line.
-#   B. future-scope: INJECTS the old contradictory future-E17 sentence
-#      into the otherwise-current RELEASE text (all required tokens
-#      retained), tripping the explicit forbidden-stale-scope assertion.
-# Each variant rebuilds manifests in the assembler's exact
-# `HASH␣␣path` format (verified by a positive integrity proof before
-# the surface verdict), so only the intended assertion can fire.
+# <out-dir>`), builds stale-surface variants and proves the release checker
+# refuses each SPECIFICALLY on its surface — never accidentally at a checksum
+# mismatch or an earlier setup failure. The variants, against the corrected
+# availability promise (README presents the verified journey as runnable and
+# discloses every retained unverified command as not currently buildable or
+# verified, with the published-archive limit):
+#
+#   A. missing-verified-command: removes the `nix run .#journey` lines from
+#      the archived README. The checker must refuse naming that phrase.
+#   B. removed-disclosure: removes every retained-legacy/unverified
+#      disclosure line (the seven advertised commands, repair-rows and
+#      connected-verifier, the not-currently-buildable-or-verified marker,
+#      the published-archive limit). The checker must refuse naming the
+#      undisclosed retained legacy commands.
+#   C. release-text-tamper (source-consistency control): injects a stale
+#      future-scope sentence into the archived RELEASE.md. The checker's
+#      byte-comparison with the source RELEASE.md fires first, so this
+#      variant proves the release-text consistency assertion can fail; it
+#      is NOT evidence about the forbidden-stale-scope wording rule, which
+#      the equality check shadows.
+#
+# Each variant rebuilds BOTH manifests in the assembler's exact bytes —
+# the archive-internal `HASH␣␣path` SHA256SUMS (proven by recomputation
+# before the surface verdict) and the release-directory SHA256SUMS over
+# the two tarballs (also proven) — so only the intended assertion can
+# fire. The assembled archive itself is never modified: variants work on
+# extracted copies in temporary directories that are removed at the end.
 #
 # Usage: release_surface_control.sh <repo-root> <archive-dir>
-# Exit 0 iff: normal archive passes AND both variants refuse on their
-# surface reason. Needs: bash, tar, gzip, sha256sum, python3 with
-# pyyaml (e.g. inside `nix develop`).
+# Exit 0 iff: the ordinary archive passes AND every variant refuses on its
+# stated reason. Needs: bash, tar, gzip, sha256sum, python3 with pyyaml
+# (the assembler's own environment provides all of these).
 set -euo pipefail
 root="$1"; archive="$2"
 onchain_tarball="$(echo "$archive"/singular-onchain-*.tar.gz)"
@@ -43,8 +59,9 @@ lines = sorted(
 EOF
 }
 
-# Positive integrity proof: recompute and compare (must pass BEFORE
-# any surface verdict is meaningful).
+# Positive integrity proofs (must pass BEFORE any surface verdict is
+# meaningful): the archive-internal manifest against every file, and the
+# release-directory manifest against the two tarballs.
 prove_integrity() { # $1 = dir, $2 = label
   python3 - "$1" << 'EOF'
 import hashlib, sys
@@ -64,16 +81,42 @@ EOF
   echo "control: $2 internal integrity proved (manifest accepted)"
 }
 
-# Variant A: omit a required advertised command (all retirement-rows lines).
-mutate_missing_command() {
-  grep -v "nix run .#retirement-rows" "$1/README.md" > "$1/README.md.new"
+prove_release_dir_integrity() { # $1 = release dir, $2 = label
+  python3 - "$1" << 'EOF'
+import hashlib, sys
+from pathlib import Path
+release = Path(sys.argv[1])
+expect = {}
+for line in (release / "SHA256SUMS").read_text().splitlines():
+    digest, name = line.split("  ", 1)
+    expect[name] = digest
+actual = {
+    p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+    for p in release.glob("*.tar.gz")
+}
+assert expect == actual, f"release-dir integrity proof failed: {set(expect) ^ set(actual)}"
+EOF
+  echo "control: $2 release-directory checksums proved (both tarballs covered)"
+}
+
+# Variant A: remove the verified lifecycle command the README promises.
+mutate_missing_verified_command() {
+  grep -v "nix run .#journey" "$1/README.md" > "$1/README.md.new"
   mv "$1/README.md.new" "$1/README.md"
 }
 
-# Variant B: INJECT the old contradictory future-E17 sentence into the
-# otherwise-current text (all required tokens retained — absence checks
-# alone would pass; only the forbidden-scope assertion may fire).
-mutate_future_scope() {
+# Variant B: remove the retained-legacy/unverified disclosure the README
+# promises (commands, components, marker sentence, published-archive limit).
+mutate_removed_disclosure() {
+  grep -vE 'nix run \.#(li01|li-refusals|naming-rows|register-rows|recovery-rows|retirement-rows|retirement-verify)|repair-rows|connected-verifier|not currently buildable or verified|already published archives are never rewritten' \
+    "$1/README.md" > "$1/README.md.new"
+  mv "$1/README.md.new" "$1/README.md"
+}
+
+# Variant C: inject a stale future-scope sentence into the archived
+# release text (all other bytes untouched — the source byte-comparison,
+# not a checksum, is the assertion this variant exercises).
+mutate_release_text_tamper() {
   cat >> "$1/RELEASE.md" << 'EOF'
 
 Recovery and retirement belong to epic 17 as future work with their own evidence.
@@ -95,6 +138,7 @@ run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
     cp "$docs_tarball" "$vdir/"
   done
   ( cd "$vdir" && sha256sum ./*.tar.gz | sed 's|  \./|  |' > SHA256SUMS )
+  prove_release_dir_integrity "$vdir" "$name"
   local out rc=0
   out="$(python3 "$root/tools/check_release.py" "$root" "$vdir" 2>&1)" && rc=$? || rc=$?
   rm -rf "$work" "$vdir"
@@ -112,6 +156,10 @@ run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
   esac
 }
 
-run_variant "missing-command" mutate_missing_command "does not document: nix run .#retirement-rows"
-run_variant "future-scope" mutate_future_scope "stale scope"
-echo "CONTROL-PASS: ordinary archive passes; both stale-surface variants refuse specifically"
+run_variant "missing-verified-command" mutate_missing_verified_command \
+  "does not document: nix run .#journey"
+run_variant "removed-disclosure" mutate_removed_disclosure \
+  "does not disclose retained legacy commands"
+run_variant "release-text-tamper" mutate_release_text_tamper \
+  "differ from source"
+echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure and the release-text consistency each refuse specifically"
