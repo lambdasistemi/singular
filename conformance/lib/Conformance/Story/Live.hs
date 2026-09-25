@@ -53,8 +53,10 @@ data EdgeRequest wal = EdgeRequest
 model must refuse them for the reason it gives. 'ExtraSigner' adds one
 required signer the model does not require; the ledger accepts it, and the
 comparison must report the transaction's signers.
+'Unsigned' removes the owner's required signature from a retraction; its
+admission witness tells the model which signatures that transaction requires.
 -}
-data Tamper = OtherAddress | ShortByOne | ExtraSigner | OtherReference | StateSpent
+data Tamper = OtherAddress | ShortByOne | ExtraSigner | OtherReference | StateSpent | Unsigned
     deriving stock (Eq, Show, Enum, Bounded)
 
 tamperName :: Tamper -> String
@@ -63,6 +65,7 @@ tamperName ShortByOne = "short-by-one"
 tamperName ExtraSigner = "extra-signer"
 tamperName OtherReference = "other-reference"
 tamperName StateSpent = "state-spent"
+tamperName Unsigned = "unsigned"
 
 type Story reg wal step obs cmp = Specification.Story (LiveI reg wal step obs cmp)
 
@@ -180,6 +183,7 @@ renderAction instruction rest = case instruction of
     altered ShortByOne = " with the payment it owes one lovelace short." <> refused
     altered OtherReference = " with its return bound to another request's output reference." <> refused
     altered StateSpent = " spending the registry's state beside it." <> refused
+    altered Unsigned = " without requiring its owner's signature; the ledger and the model must refuse it, with the owner-signed retraction of that request as its control."
     altered ExtraSigner = " with one required signer the model does not require. The ledger accepts it; the comparison must report the difference in the transaction's signers."
 
 prepend :: String -> (String, res) -> (String, res)

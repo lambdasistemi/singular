@@ -1634,7 +1634,8 @@ where a reject refunding the owner one lovelace short and to another address is
 refused before the untampered reject; and one whose requests stay retractable
 for thirty seconds, where the owner's return one lovelace short, to another
 address, bound to another output reference and beside a spent state are
-refused before the untampered retraction.
+refused, as are a retraction of an update and one missing the owner's signature,
+before the owner-signed retraction of that same insertion request.
 
 The exits are a row of their own so that each chapter's receipt stays under
 the bound every receipt is written under.
@@ -1649,14 +1650,14 @@ runCG23 env = do
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     require "unknown exit story control"
         (control `elem` [Nothing, Just "wrong-fee", Just "wrong-timing",
-            Just "wrong-delivery", Just "unknown-identity"])
+            Just "wrong-delivery", Just "unknown-identity", Just "signed-owner"])
     rejection <- ensureRowCage env "story-rejection" 1_000 1_000
     retraction <- ensureRowCage env "story-retraction" 1_000 30_000
     _ <- largestWalletUtxo (envProv env)
     _ <- runLive env (ExitStory.story
         (Live.Context rejection genesisAddr) (Live.Context retraction genesisAddr))
     records <- readIORef (envLiveRecords env)
-    require "CG23 did not compare its eight requests" (length records == 8)
+    require "CG23 did not compare its ten requests" (length records == 10)
     require "exit chapter has a disagreement or unsupported step"
         (all (\record -> case record of
             Object fields -> KM.lookup "comparison" fields == Just (String "agrees")

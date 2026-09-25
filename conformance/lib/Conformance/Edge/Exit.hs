@@ -12,8 +12,8 @@ import Conformance.Story.Live
 requests become rejectable moments after they are booked, the retraction
 registry's stay retractable long enough to be retracted. Each tampered exit is
 refused and leaves its request pending; the untampered one is its control.
-Only an insertion is retracted: the chain admits no other retraction until
-#239 states which requests are retractable.
+An update request cannot be retracted, and an insertion cannot be retracted
+without its owner's signature; the owner-signed insertion is their control.
 -}
 story :: Context reg wal -> Context reg wal -> Story reg wal step obs cmp ()
 story (Context rejection holder) (Context retraction _) = do
@@ -26,6 +26,8 @@ story (Context rejection holder) (Context retraction _) = do
     tamperExit OtherAddress Retract retraction retracted >>= compared
     tamperExit OtherReference Retract retraction retracted >>= compared
     tamperExit StateSpent Retract retraction retracted >>= compared
+    retract retraction (EdgeRequest UpdateTerminal "pending-update" holder) >>= compared
+    tamperExit Unsigned Retract retraction retracted >>= compared
     retract retraction retracted >>= compared
   where
     compared step = do

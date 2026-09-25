@@ -473,7 +473,6 @@ retractionTampers :: [Text]
 retractionTampers = map (T.pack . tamperName) [OtherReference, StateSpent]
 
 -- | The requests a retraction is admitted for on chain: insertions and reads.
--- The model states no retraction admission until #239.
 retractableEdges :: [Text]
 retractableEdges = map (T.pack . edgeName) [InsertAbsent, InsertActive, WitnessTerminal]
 
@@ -513,9 +512,6 @@ stepsComplete path receipt steps
                 | name `elem` map (T.pack . edgeName) [minBound .. maxBound] ->
                     failure "a fold exit names another edge than its request"
             _ -> failure "unknown exit"
-        if exit == "retract" && edge `notElem` retractableEdges
-            then failure "a retraction of a request no retraction is admitted for (#239)"
-            else Right ()
         let tamper = at "tamper" step
             model = at "outcome" =<< at "model" step
             chain = at "outcome" =<< at "chain" step
@@ -525,6 +521,26 @@ stepsComplete path receipt steps
             differences = maybe (Array Vector.empty) id (at "differences" step)
             signerDifference = Array (Vector.singleton (Object (KM.fromList
                 [("observation", String "tx"), ("path", String "signers")])))
+            admissionReason
+                | exit == "retract", edge `notElem` retractableEdges = Just "withdraw-insert-only"
+                | tamper == Just (String "unsigned") = Just "retract-owner"
+                | otherwise = Nothing
+        case admissionReason of
+            Nothing -> Right ()
+            Just reason -> do
+                if exit == "retract" && model == Just (String "refused")
+                    && chain == Just (String "refused")
+                    && (at "reason" =<< at "model" step) == Just (String reason)
+                    then Right ()
+                    else failure "retraction admission refusal has the wrong exit, outcome or model reason"
+                case (at "requestScript" step, at "refusal" =<< at "chain" step) of
+                    (Just (String marker), Just refusal)
+                        | not (T.null marker)
+                        , Just (Array hashes) <- at "hashes" refusal
+                        , String marker `Vector.elem` hashes
+                        , Just (Array scripts) <- at "scripts" refusal
+                        , String "request" `Vector.elem` scripts -> Right ()
+                    _ -> failure "retraction admission refusal lacks request-script attribution"
         case (model, chain, comparison) of
             (Just (String m), Just (String c), Just (String verdict))
                 | m `elem` ["accepted", "refused", "unsupported"]
@@ -575,6 +591,7 @@ stepsComplete path receipt steps
             (Just Null, _, _, _) -> Right ()
             (Just (String name), _, _, _) | name `elem` paymentTampers -> Right ()
             (Just (String "extra-signer"), _, _, _) -> Right ()
+            (Just (String "unsigned"), _, _, _) -> Right ()
             _ -> failure "unknown tamper"
         case (at "compared" step, at "unobserved" step) of
             (Just (Array names), Just (Array _))

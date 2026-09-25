@@ -511,9 +511,23 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
             >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
         loadLive (changeStep (setField "exit" ("insertActive" :: String)) (retractTamperLive "state-spent" "retract-state-spent"))
             >>= (`shouldSatisfy` refusedFor "only a retraction is bound to its request or refused for what it spends")
-    it "rejects a retraction of a request the chain admits no retraction for until #239" $
+    it "accepts an unsigned retraction refused for its missing owner signature" $
+        loadLive (admissionRefusalLive "insertActive" (Just "unsigned") "retract-owner") `shouldReturn` Right 1
+    it "accepts an update retraction refused because only insertions and reads are retractable" $
+        loadLive (admissionRefusalLive "updateTerminal" Nothing "withdraw-insert-only") `shouldReturn` Right 1
+    it "rejects admission evidence with a changed reason, outcome or script attribution" $
+        forM_ [("insertActive", Just "unsigned", "retract-owner"), ("updateTerminal", Nothing, "withdraw-insert-only")] $ \(edge, alteration, reason) -> do
+            let receipt = admissionRefusalLive edge alteration reason
+            forM_
+                [ setField "model" (object ["outcome" .= ("refused" :: String), "reason" .= ("deposit-returned" :: String)])
+                , setField "model" (object ["outcome" .= ("accepted" :: String)])
+                , setField "chain" (object ["outcome" .= ("accepted" :: String)])
+                , setField "requestScript" ("another-validator" :: String)
+                , setField "chain" (setRefusalField "scripts" (["state"] :: [String]) (probeRefusalChain "probe-allowance"))
+                ] $ \corrupt -> loadLive (changeStep corrupt receipt) >>= (`shouldSatisfy` isLeft)
+    it "rejects an accepted retraction of a non-retractable request" $
         loadLive (changeStep (setField "edge" ("deleteActive" :: String) . setField "exit" ("retract" :: String)) acceptedLive)
-            >>= (`shouldSatisfy` refusedFor "a retraction of a request no retraction is admitted for")
+            >>= (`shouldSatisfy` refusedFor "retraction admission refusal")
     it "rejects an exit that is not one of the nine, or a fold of another edge than its request's" $ do
         loadLive (changeStep (setField "exit" ("burn" :: String)) acceptedLive)
             >>= (`shouldSatisfy` refusedFor "unknown exit")
@@ -763,6 +777,16 @@ paymentTamperLive name reason =
 retractTamperLive :: String -> String -> Receipt
 retractTamperLive name reason =
     changeStep (setField "exit" ("retract" :: String)) (paymentTamperLive name reason)
+
+admissionRefusalLive :: String -> Maybe String -> String -> Receipt
+admissionRefusalLive edge alteration reason =
+    changeStep
+        ( setField "edge" edge
+            . setField "tamper" alteration
+            . setField "requestScript" ("abcdef" :: String)
+            . setField "chain" (setRefusalField "scripts" (["request"] :: [String]) (probeRefusalChain "probe-allowance"))
+        )
+        (retractTamperLive "unsigned" reason)
 
 {- | The exit controls as a row of their own: a reject refunding one lovelace
 short, the untampered reject, a retraction bound to another request, one
