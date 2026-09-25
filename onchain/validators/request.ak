@@ -124,10 +124,11 @@ pub fn retractRefusal(
     expect carriesStateToken(statePolicyId, cageToken, stateInput)
     let State { root: _root, tip: _tip, process_time, retract_time, .. } =
       readState(stateInput)
-    expect in_phase2(validity_range, submitted_at, process_time, retract_time)
-    // The state policy is common to all registries. References are allowed;
-    // consuming any of its tokens alongside a retraction is not.
-    if list.any(
+    if !in_phase2(validity_range, submitted_at, process_time, retract_time) {
+      Some(@"not-phase2")
+    } else if list.any(
+      // The state policy is common to all registries. References are allowed;
+      // consuming any of its tokens alongside a retraction is not.
       tx.inputs,
       fn(input) { has(policies(input.output.value), statePolicyId) },
     ) {
