@@ -6,8 +6,8 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `510cca967a1006ced91380e857c532370ae124672b12dbaa6b65efabd8992524`
-- model: `70bea96b1c184cba930f1c8280633ee430af89ba8031ccf3ac03c87ec13149ca`
+- driver corpus payload: `24bd65183c6207539a840af4df8fdd634d6f63c5a2900b84818b7aa26659962e`
+- model: `ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177`
 - surface: `Singular.Driver.runSurface`, protocol version 4, digest `13086894509481008378`
 
 ## What the driver is

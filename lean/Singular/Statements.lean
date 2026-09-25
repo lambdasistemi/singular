@@ -1648,5 +1648,112 @@ theorem retract_pays_exactly_its_obligations (state : RegistryState) (request : 
       .ok { state := state, mint := [], paid := (obligations .retract request).map paymentPaid } := by
   simp [exitStep, emptyResult]
 
+/-- Which pending requests their owner can retract, and when.
+
+For every state, request and witness: the retraction is admitted exactly when the
+request inserts a key or reads a terminal one, the request's owner is among the
+transaction's signatories, and the transaction's validity interval lies inside
+phase 2 — from `submittedAt + processTime`, included, to
+`submittedAt + processTime + retractTime`, which the excluded upper bound may
+reach and not pass. -/
+theorem retract_admitted_iff (s : RegistryState) (r : Request) (w : RetractWitness) :
+    (∃ t, admittedExitStep s .retract r w = .ok t) ↔
+      (r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) ∧
+      r.owner ∈ w.signatories ∧
+      w.submittedAt + s.config.processTime ≤ w.validFrom ∧
+      w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime := by
+  have hr := retractableEdge_iff r.edge
+  have hp := inPhase2_iff s.config w
+  simp only [admittedExitStep, exitAdmission, retractAdmission, exitStep]
+  cases h1 : retractableEdge r.edge <;>
+    cases h2 : w.signatories.contains r.owner <;>
+    cases h3 : inPhase2 s.config w <;> simp_all
+
+/-- Why a retraction is refused: the first check it fails, in the request
+script's order.
+
+A request that neither inserts a key nor reads a terminal one is refused
+`withdraw-insert-only`, whoever signed and whenever; a retractable request whose
+owner did not sign is refused `retract-owner`, inside phase 2 or not; a
+retractable request its owner signed, outside phase 2, is refused
+`not-phase2`. -/
+theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : RetractWitness) :
+    (r.edge ≠ .insertAbsent → r.edge ≠ .insertActive → r.edge ≠ .witnessTerminal →
+      admittedExitStep s .retract r w = .error "withdraw-insert-only") ∧
+    ((r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) →
+      r.owner ∉ w.signatories →
+      admittedExitStep s .retract r w = .error "retract-owner") ∧
+    ((r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) →
+      r.owner ∈ w.signatories →
+      ¬ (w.submittedAt + s.config.processTime ≤ w.validFrom ∧
+        w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime) →
+      admittedExitStep s .retract r w = .error "not-phase2") := by
+  have hr := retractableEdge_iff r.edge
+  have hp := inPhase2_iff s.config w
+  refine ⟨?_, ?_, ?_⟩
+  · intro n1 n2 n3
+    have e1 : retractableEdge r.edge = false := by
+      cases h : retractableEdge r.edge
+      · rfl
+      · exact absurd (hr.mp h) (by simp [n1, n2, n3])
+    simp [admittedExitStep, exitAdmission, retractAdmission, e1]
+  · intro hR hO
+    have e1 : retractableEdge r.edge = true := hr.mpr hR
+    simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO]
+  · intro hR hO hW
+    have e1 : retractableEdge r.edge = true := hr.mpr hR
+    have e3 : inPhase2 s.config w = false := by
+      cases h : inPhase2 s.config w
+      · rfl
+      · exact absurd (hp.mp h) hW
+    simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO, e3]
+
+/-- An admitted retraction is the retract exit, and admission changes no other exit.
+
+For every state, exit, request, witness and lovelace: when the exit is not a
+retract, or it is a retract its admission lets through, the admitted step is
+exactly `exitStep` and the admitted transaction exactly `txOfExit` — what the
+retraction pays, what it leaves of the registry and who must sign its
+transaction are the retract exit's own, whatever the witness says. -/
+theorem admitted_exit_is_the_exit (s : RegistryState) (exit : Exit) (r : Request)
+    (w : RetractWitness) (lovelace : Nat)
+    (admitted : exit ≠ .retract ∨ retractAdmission s.config r w = none) :
+    admittedExitStep s exit r w = exitStep s exit r ∧
+      admittedTxOfExit s exit r w lovelace = txOfExit s exit r lovelace := by
+  have none : exitAdmission s.config exit r w = none := by
+    cases exit with
+    | retract => simpa using admitted
+    | fold e => rfl
+    | reject => rfl
+  simp [admittedExitStep, admittedTxOfExit, none]
+
+/-- Admission refuses before what a retraction spends or pays is judged.
+
+For every state, exit, request, witness and lovelace: a retraction its admission
+refuses builds no transaction and is refused with admission's reason whatever the
+transaction spends and pays — a retraction beside a state token, or paying its
+owner nothing, still names the admission check it failed. Any other exit, and a
+retraction admission lets through, is judged exactly as before: what it spends
+(`spendRefusal`), then what it pays (`settle`). -/
+theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
+    (w : RetractWitness) (lovelace : Nat) :
+    (∀ why, retractAdmission s.config r w = some why →
+      admittedTxOfExit s .retract r w lovelace = .error why ∧
+      ∀ inputs outputs, exitRefusal s.config .retract r w inputs outputs = some why) ∧
+    ((exit ≠ .retract ∨ retractAdmission s.config r w = none) →
+      ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs =
+        (spendRefusal exit inputs).orElse fun _ => settle (obligations exit r) outputs) := by
+  refine ⟨?_, ?_⟩
+  · intro why refused
+    exact ⟨by simp [admittedTxOfExit, exitAdmission, refused],
+      fun _ _ => by simp [exitRefusal, exitAdmission, refused]⟩
+  · intro admitted inputs outputs
+    have none : exitAdmission s.config exit r w = none := by
+      cases exit with
+      | retract => simpa using admitted
+      | fold e => rfl
+      | reject => rfl
+    simp [exitRefusal, none]
+
 end Statements
 end Singular

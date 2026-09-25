@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 35 declarations of the registry's own statement module are **PROVED**
+All 39 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **56** in total, each with its own
+and its wire encoding 5, for **60** in total, each with its own
 manifest and its own compiled gate.
 
 ## What the eleven promises are
@@ -41,6 +41,8 @@ consequences rather than as separate arguments.
 | --- | --- | --- | --- |
 | `Singular.Statements.absent_witness_unique` | W2 — the absent witness is unique | `968c72784fe79c81a9296e74e23df3d4afa19f99a3ed616fc73d417f3e24053a` | PROVED |
 | `Singular.Statements.active_witness_unique` | W1 — the active witness is unique | `76745382fd82c31a71125904f0c9e558e2ee4b770df5224ceaf41aac93ef3879` | PROVED |
+| `Singular.Statements.admission_refuses_first` | Retraction, before anything is paid — a retraction its admission refuses builds no transaction and is refused with admission's reason whatever it spends and pays: beside a state token, or paying its owner nothing, it still names the admission check it failed; any other exit, and an admitted retraction, is judged as before, by what it spends (`retract-state-spent`) and then what it pays | `c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7` | PROVED |
+| `Singular.Statements.admitted_exit_is_the_exit` | Retraction, once admitted — an admitted retraction is the retract exit itself: its step and its transaction are exactly the exit's, so it pays what the exit owes, leaves the registry as it was and requires the owner's signature alone; a fold or a reject is unchanged whatever the retraction witness says | `3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38` | PROVED |
 | `Singular.Statements.biconditional_supply_sync` | S3 — sync: biconditional supply is 1 iff the key is in that token's state | `7f1089607f7d6578eac69fb4b68bb4147853f29c6b6ac4067eb0db9e667f3f68` | PROVED |
 | `Singular.Statements.booked_at_most_once` | L1 — a key is booked at most once at a time; the batch is atomic; a request is spent once | `1c8b3268586a2ca2aaf930c3a45b0f8fde24c061f0ff63bf8962afbb42eb1ec2` | PROVED |
 | `Singular.Statements.built_transaction_settles` | Every transaction an exit builds pays what the exit owes: for every state, exit, request and lovelace, a transaction the model builds settles the exit's obligations — the deposit at the cage, the named destination or the owner, and a retract's tip | `b5b45e560df2c4d3050466fd00b895dd61280d5b89c834bb2612c52c9b104796` | PROVED |
@@ -63,7 +65,9 @@ consequences rather than as separate arguments.
 | `Singular.Statements.only_retract_owes_the_tip` | Only a retract owes the tip: for every exit, what it owes is unchanged by the tip a request holds exactly when the exit is not a retract | `df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f` | PROVED |
 | `Singular.Statements.readAt_true_iff` | — | `69c6c811a286c3436e0b230319f762de5c3c89e977a8a1d075859159e87d5916` | PROVED |
 | `Singular.Statements.read_changes_nothing` | — | `0a53256f91fbd4e8d4de2e8e2b9add39fc6a04ad10327d594d3f74acabdb6120` | PROVED |
+| `Singular.Statements.retract_admitted_iff` | Retraction, when — a pending request's owner can retract it exactly when it inserts a key or reads a terminal one, the owner is among the transaction's signatories, and the validity interval lies inside phase 2: from submission plus the processing time, included, to that plus the retraction time, which the excluded upper bound may reach and not pass. This is the rule the request script's phase-2 refusal is to be named against (#205) | `6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57` | PROVED |
 | `Singular.Statements.retract_pays_exactly_its_obligations` | An executed retract pays exactly what it owes: for every registry state and request, the retract leaves the state as it was, mints nothing, and pays exactly its obligations, the deposit and the tip to the owner through an output bound to the request; nothing the state holds enters its payments | `a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390` | PROVED |
+| `Singular.Statements.retract_refusal_first_failing` | Retraction, why not — a refused retraction names the first check it fails, in the request script's order: `withdraw-insert-only` for an update or delete request whoever signed and whenever, then `retract-owner` without the owner's signature inside phase 2 or not, then `not-phase2` | `506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc` | PROVED |
 | `Singular.Statements.terminal_attestation_permanent` | S2 — permanence: an attestation holds in every later state | `e133aaa076a248d60fc059e2698069b69485c9ba6f3c5a7aa4a209e224c888e2` | PROVED |
 | `Singular.Statements.terminal_attestation_sound` | S1 — soundness: no attestation of an Active, Absent or Unknown key exists | `9cd4b73c811ee93427ae8eab5a96db956d0934eb20f3558117426f5b740b12ef` | PROVED |
 | `Singular.Statements.terminal_mint_only_by_read` | S1 — provenance: a terminal token is minted only by a folded, verified read | `287bddd3ed1888a07b163f247fb4bdda6a4de049f26d815c5d52be9c82617639` | PROVED |
@@ -108,3 +112,11 @@ collision-free canonical commitments, the trie is a logical authenticated map,
 and an approval's asset name is a commitment over the tuple it scopes rather than
 a real BLAKE2b digest. The executable consumer supplies the real hashes; the
 model fixes the complete preimages.
+
+Retraction admission is stated over a finite validity interval. Its bounds are
+read off the request script's `in_phase2` and the ledger's validity interval,
+whose lower bound is included and upper bound excluded; a transaction with no
+lower or no upper bound is never in phase 2 on chain, and the model's bounds
+cannot express one. The chain refuses a retraction outside phase 2 by a failed
+expectation rather than by name, so no run yet compares `not-phase2` with the
+chain: that is #205, which names the refusal against the rule stated here.

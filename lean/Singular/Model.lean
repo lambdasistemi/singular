@@ -978,9 +978,10 @@ def spendRefusal (exit : Exit) (inputs : List TxInput) : Option String :=
 
 /-- One exit as a model step. A fold of edge `e` is exactly `step` when the
 request names `e`, and is refused `exit-edge-mismatch` otherwise. A reject or a
-retract carries no admission: it leaves the registry state as it was and mints
-nothing. Every exit pays what it owes, each payment recorded by `paymentPaid`,
-and then what its step pays: the custody refunds of `updateActive` and
+retract carries no admission here: it leaves the registry state as it was and
+mints nothing; a retraction's admission stands in front of this step, in
+`admittedExitStep`. Every exit pays what it owes, each payment recorded by
+`paymentPaid`, and then what its step pays: the custody refunds of `updateActive` and
 `deleteAbsent`. -/
 def exitStep (state : RegistryState) (exit : Exit) (request : Request) : Except String Result :=
   let executed : Except String Result :=
@@ -1021,8 +1022,8 @@ no datum and the request's approval; it requires no signer. A retract is its own
 transaction, spending only the request, returning everything it held through one
 output whose inline datum is the request's own reference, and requiring the
 owner's signature, as the chain does (refusing a retract without it is admission,
-which this model does not state). Every output that pays a recipient carries the lovelace the
-exit owes it — the destination output its summed destination floor, the cage
+`retractAdmission`, checked in front of this builder by `admittedTxOfExit`). Every
+output that pays a recipient carries the lovelace the exit owes it — the destination output its summed destination floor, the cage
 output the deposit — and the transaction refunds exactly what the exit pays. -/
 def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace : Nat) :
     Except String Tx :=
@@ -1060,6 +1061,89 @@ def txOfExit (state : RegistryState) (exit : Exit) (request : Request) (lovelace
 refusal: the transaction of the fold exit the request names. -/
 def txOf (s : RegistryState) (r : Request) (lovelace : Nat) : Except String Tx :=
   txOfExit s (.fold r.edge) r lovelace
+
+/-! ### Which pending requests their owner can retract, and when
+
+A retraction is admitted before it is judged by what it spends and pays. The
+request script admits it when three checks hold, in this order: the request
+inserts a key or reads a terminal one, the request's owner signed the
+transaction, and the transaction's validity interval lies inside the request's
+phase 2. An admitted retraction is the `retract` exit, unchanged; a refused one
+names the first check it fails and is refused before anything it spends or pays
+is looked at. -/
+
+/-- What a retraction's admission reads beyond the request: when the request was
+submitted (its datum's `submitted_at`), the retraction transaction's validity
+bounds as the request script receives them, and its signatories. Times are POSIX
+milliseconds; `validFrom` is the interval's lower bound, included, and `validTo`
+its upper bound, excluded, as the ledger hands a script a transaction's validity. -/
+structure RetractWitness where
+  submittedAt : Nat
+  validFrom : Nat
+  validTo : Nat
+  signatories : List Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- The edges whose pending request its owner can retract: the two inserts and
+the read of a terminal key. An update or a delete request cannot be taken back;
+the fold that processes it is its only way out. -/
+def retractableEdge (e : Edge) : Bool :=
+  match e with
+  | .insertAbsent | .insertActive | .witnessTerminal => true
+  | .updateActive | .updateTerminal | .deleteAbsent | .deleteActive => false
+
+/-- Phase 2 of a request: the retraction's whole validity interval lies after the
+processing time has passed since submission and before the retraction time that
+follows it has run out. The first instant allowed is
+`submittedAt + processTime`, included; the upper bound, being excluded, may reach
+`submittedAt + processTime + retractTime` and not pass it. This is the request
+script's `in_phase2` over a finite interval. -/
+def inPhase2 (c : Config) (w : RetractWitness) : Bool :=
+  decide (w.submittedAt + c.processTime ≤ w.validFrom) &&
+    decide (w.validTo ≤ w.submittedAt + c.processTime + c.retractTime)
+
+/-- Why a retraction of `r` is not admitted, in the request script's order: a
+request that neither inserts a key nor reads a terminal one is
+`withdraw-insert-only`; a retraction its owner did not sign is `retract-owner`;
+one whose validity interval is not inside phase 2 is `not-phase2`. `none`
+admits. -/
+def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option String :=
+  if !retractableEdge r.edge then some "withdraw-insert-only"
+  else if !w.signatories.contains r.owner then some "retract-owner"
+  else if !inPhase2 c w then some "not-phase2"
+  else none
+
+/-- The admission an exit is subject to: a retract's is `retractAdmission`; a
+fold and a reject have none here, and ignore the witness. -/
+def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
+  match exit with
+  | .retract => retractAdmission c r w
+  | .fold _ | .reject => none
+
+/-- One exit as a model step, admission first: refused with the admission's
+reason, otherwise exactly `exitStep`. -/
+def admittedExitStep (state : RegistryState) (exit : Exit) (request : Request)
+    (witness : RetractWitness) : Except String Result :=
+  match exitAdmission state.config exit request witness with
+  | some why => .error why
+  | none => exitStep state exit request
+
+/-- The transaction of an exit, admission first: refused with the admission's
+reason, otherwise exactly the transaction `txOfExit` builds. -/
+def admittedTxOfExit (state : RegistryState) (exit : Exit) (request : Request)
+    (witness : RetractWitness) (lovelace : Nat) : Except String Tx :=
+  match exitAdmission state.config exit request witness with
+  | some why => .error why
+  | none => txOfExit state exit request lovelace
+
+/-- The refusal an exit's transaction earns, in the request script's order:
+admission, then what it spends (`spendRefusal`), then what it pays (`settle`).
+A retraction refused admission is refused with that reason whatever it spends
+and pays. -/
+def exitRefusal (c : Config) (exit : Exit) (request : Request) (witness : RetractWitness)
+    (inputs : List TxInput) (outputs : List TxOutput) : Option String :=
+  (exitAdmission c exit request witness).orElse fun _ =>
+    (spendRefusal exit inputs).orElse fun _ => settle (obligations exit request) outputs
 
 /-! The oracle observation surface. Ten total observations under
 `Singular.Oracle` — the contract the frozen gate oracle reads. Each is defined

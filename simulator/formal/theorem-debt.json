@@ -208,5 +208,29 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390"
+  },
+  {
+    "name": "Singular.Statements.retract_admitted_iff",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+  },
+  {
+    "name": "Singular.Statements.retract_refusal_first_failing",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+  },
+  {
+    "name": "Singular.Statements.admitted_exit_is_the_exit",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38"
+  },
+  {
+    "name": "Singular.Statements.admission_refuses_first",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7"
   }
 ]
