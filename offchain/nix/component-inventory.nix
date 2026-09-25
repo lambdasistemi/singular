@@ -41,7 +41,12 @@ let
   # via ticket NOTE-010/011, applying A-008): none has a live required
   # workflow consumer or a flake-closure builder (transitive check in the
   # ticket evidence), so all seven are retained retired journeys under #172,
-  # wherever their sources happen to compile today.
+  # wherever their sources happen to compile today. Under the
+  # 2026-09-25 release-instruction correction, the archive README and
+  # consumer guides disclose all nine rows the same way to readers: only
+  # the verified journey is presented as runnable; every row here is
+  # named as retained, not currently buildable or verified, with its
+  # owning issue.
   builtHere = {
     library = [ "singular-registry" ];
     exes = [
@@ -73,8 +78,10 @@ let
   # component receipt; "source-level" means the single carrier exit is NOT
   # attributed to that component. The local developer gate
   # offchain/deployment-attach-check.sh runs three of these runners and is
-  # broken by them — disclosed in the inventory evidence, not a required
-  # consumer.
+  # broken by them — classified 2026-09-25: no active required workflow,
+  # carrier command or flake-closure builder consumes it or them, so its
+  # guide (offchain/LIFECYCLE.md) discloses it as a currently unrunnable
+  # local gate and its bytes are unchanged; not a required consumer.
   unverified = [
     {
       kind = "exe";
