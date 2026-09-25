@@ -618,6 +618,7 @@ test-suite e2e-tests
     , mts:mpf-write
     , ouroboros-network
     , process
+    , plutus-tx
     , temporary
     , text
 
