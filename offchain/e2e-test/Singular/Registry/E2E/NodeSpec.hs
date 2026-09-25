@@ -26,7 +26,7 @@ Four claims, each with the control that shows the check can fail:
   address's UTxO set (control: the confirmed output is then read back
   from the node).
 -}
-module Singular.Registry.E2E.NodeSpec (spec) where
+module Singular.Registry.E2E.NodeSpec (spec, walletSpec) where
 
 import Control.Exception (ErrorCall (..), try)
 import Data.ByteString.Base16 qualified as B16
@@ -83,53 +83,9 @@ import Singular.Registry.Node (
  )
 import Singular.Registry.Provider qualified as Cage
 
-{- | A signing key file in the @cardano-cli@ text-envelope form — the
-file a joiner produces with @cardano-cli address key-gen@.
--}
-withSkeyFile :: SignKeyDSIGN Ed25519DSIGN -> (FilePath -> IO a) -> IO a
-withSkeyFile sk k = do
-    tmp <- getTemporaryDirectory
-    (path, h) <- openTempFile tmp "joiner.skey"
-    hPutStr h envelope
-    hClose h
-    r <- k path
-    removeFile path
-    pure r
-  where
-    envelope =
-        "{\"type\":\"PaymentSigningKeyShelley_ed25519\",\
-        \\"description\":\"Payment Signing Key\",\"cborHex\":\"5820"
-            <> BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN sk))
-            <> "\"}"
-
--- | Spawn a devnet and hand its socket over as if it were a joiner's.
-withDevnetSocket :: (FilePath -> IO ()) -> IO ()
-withDevnetSocket k = do
-    gDir <- genesisDir
-    withCardanoNode gDir (\sock _startMs -> k sock)
-
--- | Every output the wallet holds, paid back to it in one output.
-selfPayment :: Wallet -> [(TxIn, TxOut ConwayEra)] -> ConwayTx
-selfPayment wallet held =
-    addKeyWitness (walletSignKey wallet) (mkBasicTx body)
-  where
-    fee = Coin 1_000_000
-    value = foldMap ((^. valueTxOutL) . snd) held
-    body =
-        mkBasicTxBody
-            & inputsTxBodyL .~ Set.fromList (map fst held)
-            & outputsTxBodyL
-                .~ StrictSeq.singleton
-                    (mkBasicTxOut (walletAddr wallet) (value <-> inject fee))
-            & feeTxBodyL .~ fee
-
--- | A key with no history on any chain, and therefore no funds.
-unfundedKey :: SignKeyDSIGN Ed25519DSIGN
-unfundedKey = mkSignKey "e2e-unfunded-joiner-key-00000001"
-
 spec :: Spec
 spec = aroundAll withDevnetSocket $
-    describe "external-node mode" $ do
+    describe "Connecting through a supplied node socket" $ do
         it
             "opens a session over a supplied socket, magic and key file, \
             \and queries live protocol parameters"
@@ -213,18 +169,66 @@ spec = aroundAll withDevnetSocket $
                         msg `shouldSatisfy` isInfixOf "faucet"
                         msg `shouldSatisfy` isInfixOf "100000000 lovelace"
 
-        it
-            "derives the address from the key file alone, envelope or \
-            \bare hex"
-            $ \_sock -> withSkeyFile genesisSignKey $ \skey -> do
-                fromEnvelope <- loadWallet 42 skey
-                tmp <- getTemporaryDirectory
-                (barePath, h) <- openTempFile tmp "joiner-bare.skey"
-                hPutStr
-                    h
-                    (BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey)))
-                hClose h
-                fromHex <- loadWallet 42 barePath
-                removeFile barePath
-                bech32Address (walletAddr fromHex)
-                    `shouldBe` bech32Address (walletAddr fromEnvelope)
+-- | Wallet decoding checks use local files and never connect to a node.
+walletSpec :: Spec
+walletSpec = describe "Loading a wallet from its signing key" $ do
+    it
+        "derives the address from the key file alone, envelope or \
+        \bare hex"
+        $ withSkeyFile genesisSignKey
+        $ \skey -> do
+            fromEnvelope <- loadWallet 42 skey
+            tmp <- getTemporaryDirectory
+            (barePath, h) <- openTempFile tmp "joiner-bare.skey"
+            hPutStr
+                h
+                (BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN genesisSignKey)))
+            hClose h
+            fromHex <- loadWallet 42 barePath
+            removeFile barePath
+            bech32Address (walletAddr fromHex)
+                `shouldBe` bech32Address (walletAddr fromEnvelope)
+
+{- | A signing key file in the @cardano-cli@ text-envelope form — the
+file a joiner produces with @cardano-cli address key-gen@.
+-}
+withSkeyFile :: SignKeyDSIGN Ed25519DSIGN -> (FilePath -> IO a) -> IO a
+withSkeyFile sk k = do
+    tmp <- getTemporaryDirectory
+    (path, h) <- openTempFile tmp "joiner.skey"
+    hPutStr h envelope
+    hClose h
+    r <- k path
+    removeFile path
+    pure r
+  where
+    envelope =
+        "{\"type\":\"PaymentSigningKeyShelley_ed25519\",\
+        \\"description\":\"Payment Signing Key\",\"cborHex\":\"5820"
+            <> BC.unpack (B16.encode (rawSerialiseSignKeyDSIGN sk))
+            <> "\"}"
+
+-- | Spawn a devnet and hand its socket over as if it were a joiner's.
+withDevnetSocket :: (FilePath -> IO ()) -> IO ()
+withDevnetSocket k = do
+    gDir <- genesisDir
+    withCardanoNode gDir (\sock _startMs -> k sock)
+
+-- | Every output the wallet holds, paid back to it in one output.
+selfPayment :: Wallet -> [(TxIn, TxOut ConwayEra)] -> ConwayTx
+selfPayment wallet held =
+    addKeyWitness (walletSignKey wallet) (mkBasicTx body)
+  where
+    fee = Coin 1_000_000
+    value = foldMap ((^. valueTxOutL) . snd) held
+    body =
+        mkBasicTxBody
+            & inputsTxBodyL .~ Set.fromList (map fst held)
+            & outputsTxBodyL
+                .~ StrictSeq.singleton
+                    (mkBasicTxOut (walletAddr wallet) (value <-> inject fee))
+            & feeTxBodyL .~ fee
+
+-- | A key with no history on any chain, and therefore no funds.
+unfundedKey :: SignKeyDSIGN Ed25519DSIGN
+unfundedKey = mkSignKey "e2e-unfunded-joiner-key-00000001"

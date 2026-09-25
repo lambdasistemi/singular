@@ -32,21 +32,19 @@ import Control.Exception (SomeException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (isInfixOf)
-import System.Environment (lookupEnv)
 import Test.Hspec (
     Spec,
     describe,
     expectationFailure,
     it,
-    runIO,
     shouldBe,
     shouldNotBe,
  )
 
 import Cardano.Node.Client.E2E.Setup (genesisAddr)
 import Singular.Registry.Blueprint (
+    Blueprint,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Driver (
@@ -66,30 +64,16 @@ import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
 
 import Singular.Registry.E2E.CageSpec (submitWithGenesis, withE2E)
 
-driverKeyA, driverKeyB, seededKey, afterSeededKey :: ByteString
-driverKeyA = "t190-driver-a"
-driverKeyB = "t190-driver-b"
-seededKey = "t190-seeded"
-afterSeededKey = "t190-after-seeded"
-
-spec :: Spec
-spec = describe "#190 the boot-and-fold driver" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing -> it "skipped (REGISTRY_BLUEPRINT not set)" (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err -> it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            driverSpec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure "state or request script not found"
+spec :: Blueprint -> Spec
+spec bp = describe "Keeping the local registry in step with the chain" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
+        (Just stateBytes, Just requestBytes) ->
+            driverSpec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure "state or request script not found"
 
 driverSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 driverSpec stateBytes requestBytes = do
@@ -194,3 +178,9 @@ driverSpec stateBytes requestBytes = do
                                        \Got: "
                                     <> msg
                                 )
+
+driverKeyA, driverKeyB, seededKey, afterSeededKey :: ByteString
+driverKeyA = "t190-driver-a"
+driverKeyB = "t190-driver-b"
+seededKey = "t190-seeded"
+afterSeededKey = "t190-after-seeded"

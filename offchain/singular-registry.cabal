@@ -590,6 +590,8 @@ test-suite e2e-tests
   main-is:          main.hs
   other-modules:
     Singular.Registry.E2E.CageSpec
+    Singular.Registry.E2E.Config
+    Singular.Registry.E2E.ConfigSpec
     Singular.Registry.E2E.DriverSpec
     Singular.Registry.E2E.Fork81Spec
     Singular.Registry.E2E.NodeSpec
@@ -615,6 +617,9 @@ test-suite e2e-tests
     , microlens
     , mts:mpf-write
     , ouroboros-network
+    , process
+    , plutus-tx
+    , temporary
     , text
 
   ghc-options:      -threaded -with-rtsopts=-N

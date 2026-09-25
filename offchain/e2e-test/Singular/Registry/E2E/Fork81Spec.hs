@@ -20,7 +20,6 @@ import Control.Exception (ErrorCall, fromException, try)
 import Control.Monad (void)
 import Data.ByteString (ByteString)
 import Data.IORef (newIORef, readIORef)
-import System.Environment (lookupEnv)
 import Test.Hspec
 
 import Cardano.Ledger.BaseTypes (Network (Testnet))
@@ -31,8 +30,8 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Singular.Registry.Blueprint (
+    Blueprint,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
@@ -101,59 +100,24 @@ import Singular.Registry.Trie (
  )
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
-codecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
-codecs =
-    MPFStandaloneCodecs
-        { mpfKeyCodec = hexKeyPrism
-        , mpfValueCodec = isoMPFHash
-        , mpfNodeCodec = isoMPFHash
-        }
-
-identityKV :: FromHexKV HexKey MPFHash MPFHash
-identityKV =
-    FromHexKV
-        { fromHexK = id
-        , fromHexV = id
-        , hexTreePrefix = const []
-        }
-
-hashPath :: ByteString -> HexKey
-hashPath = byteStringToHexKey . renderMPFHash . mkMPFHash
-
-spec :: Spec
-spec = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing ->
-            it
-                "skipped (REGISTRY_BLUEPRINT not set)"
-                (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err ->
-                    it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            fork81Spec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure
-                                    "state or request script not found in blueprint"
-
--- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
-hex :: ByteString -> String
-hex = T.unpack . TE.decodeUtf8 . Base16.encode
+spec :: Blueprint -> Spec
+spec bp = describe "Inserting an absent key through a single trie fork" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
+        (Just stateBytes, Just requestBytes) ->
+            fork81Spec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure
+                    "state or request script not found in blueprint"
 
 fork81Spec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     Spec
 fork81Spec stateBytes requestBytes = do
-    it "accepts the real absence insertion of C and reads it back" $
+    it "when a key is absent, inserts it through the fork and reads it back" $
         withE2E stateBytes requestBytes $
             \cfg prov submit tm -> do
                 codes <- loadRegistryCodesFromEnv
@@ -207,7 +171,7 @@ fork81Spec stateBytes requestBytes = do
                     Just p ->
                         renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
-    it "refuses a second insert of the now-present key (occupied-key)" $
+    it "when the key is already present, refuses a second insertion" $
         withE2E stateBytes requestBytes $
             \cfg prov submit tm -> do
                 codes <- loadRegistryCodesFromEnv
@@ -260,3 +224,26 @@ fork81Spec stateBytes requestBytes = do
                             Nothing ->
                                 expectationFailure
                                     ("unexpected exception: " <> show e)
+
+codecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
+codecs =
+    MPFStandaloneCodecs
+        { mpfKeyCodec = hexKeyPrism
+        , mpfValueCodec = isoMPFHash
+        , mpfNodeCodec = isoMPFHash
+        }
+
+identityKV :: FromHexKV HexKey MPFHash MPFHash
+identityKV =
+    FromHexKV
+        { fromHexK = id
+        , fromHexV = id
+        , hexTreePrefix = const []
+        }
+
+hashPath :: ByteString -> HexKey
+hashPath = byteStringToHexKey . renderMPFHash . mkMPFHash
+
+-- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
+hex :: ByteString -> String
+hex = T.unpack . TE.decodeUtf8 . Base16.encode
