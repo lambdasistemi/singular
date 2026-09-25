@@ -7,7 +7,7 @@
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Discovery finds seventy Haskell files; sixty-eight format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. Directories without hint debt flow to HLint: nine directories with fifty-seven files, while the thirteen files of the thirteen configured debt directories stay outside that run. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
+      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Discovery finds seventy Haskell files; sixty-eight format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. HLint runs on fifty-seven files within nine selected directories. Thirteen discovered files do not enter that HLint run because thirteen directory-name exclusions are configured. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
       "pause": 400
     },
     {
@@ -23,6 +23,6 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "510ae599fcc596beb62a327592e7e521fdcb7b3e23a6fc660727f4ac5b6888f1"
+    "sha256": "04e34d7c3a8950f629ccb7471b8d760a8270edc75fea36b850e03dc49a198aae"
   }
 }
