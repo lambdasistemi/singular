@@ -4,7 +4,7 @@ Module      : Conformance.Run.Live
 Description : Split out of Conformance.Run (#263); see that module's header
 License     : Apache-2.0
 -}
-module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, submitEdge, storyReferences, storyWitness, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaid, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
+module Conformance.Run.Live (StepOutcome (..), LiveStep (..), LiveState (..), runLive, runLiveWithRequests, submitEdge, storyReferences, storyWitness, storyModelRequest, observeStep, observeAcceptedStep, classifyLeaves, observeCustody, observePaid, observeSigner, observeStepMint, observedStepTx, askModel, compareStep, tamperDifferences, reportedDifferences, differingPaths, renderStepPath, differenceJson, renderDifferences, WalletIdentity (..), PolicyIdentity (..), KeyIdentity (..), LiveIdentities (..), newLiveIdentities, allocateIdentity, observeIdentity, prepareRegistrationIdentities, observePins, abstractConfig, bumpEvaluationField, bumpObservedMint, hexT, cg21PolicyBytes, readRegistryState, storyProofs, storyRefusalTag, storyDelivery, storyApprovalOn, cg21RequestFacts) where
 
 import Conformance.Run.Control
 import Conformance.FoldFixture qualified as FoldFixture
@@ -42,7 +42,7 @@ import Control.Exception (
     try,
  )
 import Control.Concurrent (threadDelay)
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KM
 import Data.Aeson (
@@ -228,13 +228,20 @@ data LiveState = LiveState
     , liveRegistryKeys :: IORef (Map.Map String [ByteString])
     , liveRegistryWallets :: IORef (Map.Map String [Addr])
     , liveRegistryIds :: IORef (Map.Map String Integer)
-    , liveUnsignedRequests :: IORef (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
+    , livePendingRequests :: IORef (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
     }
 
 
 -- | Interpret shared story instructions against the running node and builders.
 runLive :: Env -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
-runLive env program = do
+runLive env = runLiveWithRequests env []
+
+-- | Book a cohort before running its exits, retaining each request under its
+-- registry, key, edge and owner. Timing stories need both requests pending
+-- before the first window opens; ordinary stories still book as they act.
+runLiveWithRequests :: Env -> [(RowCage, Live.EdgeRequest Addr)]
+    -> Live.Story RowCage Addr LiveStep Value Value res -> IO res
+runLiveWithRequests env prepared program = do
     identities <- newLiveIdentities
     pending <- newIORef 0
     starts <- newIORef Map.empty
@@ -242,8 +249,14 @@ runLive env program = do
     keys <- newIORef Map.empty
     wallets <- newIORef Map.empty
     registryIds <- newIORef Map.empty
-    unsignedRequests <- newIORef Map.empty
-    result <- go (LiveState identities pending starts traces keys wallets registryIds unsignedRequests) program
+    pendingRequestsRef <- newIORef Map.empty
+    forM_ prepared $ \(cage, request) -> do
+        tid <- cageTid cage
+        named <- bookStoryRequest env cage request
+        let pendingKey = (show tid, Live.requestKey request,
+                fromEnum (Live.requestEdge request), serialiseAddr (Live.requestWallet request))
+        modifyIORef' pendingRequestsRef (Map.insert pendingKey named)
+    result <- go (LiveState identities pending starts traces keys wallets registryIds pendingRequestsRef) program
     remaining <- readIORef pending
     require "live story submitted a request without comparing it" (remaining == 0)
     pure result
@@ -288,8 +301,26 @@ runLive env program = do
             pure result
 
 
--- | One story instruction books a request, or retries the request left by an
--- unsigned retraction so its owner-signed control spends the same request.
+-- | The same booking path for a prepared cohort and a single story action.
+bookStoryRequest :: Env -> RowCage -> Live.EdgeRequest Addr -> IO (TxIn, TxOut ConwayEra)
+bookStoryRequest env cage request = do
+    let key = TE.encodeUtf8 (T.pack (Live.requestKey request))
+        edge = fromIntegral (fromEnum (Live.requestEdge request))
+        cfg = rcCfg cage
+    tid <- cageTid cage
+    refs <- storyReferences env cage key edge
+    bookEdge env cfg tid genesisAddr genesisSignKey key edge (storyDestination request) refs
+        (defaultTipCoin cfg + cgDeposit)
+
+-- | The destination the edge books and the approval decision reads.
+storyDestination :: Live.EdgeRequest Addr -> (ByteString, ByteString)
+storyDestination request = case Live.requestEdge request of
+    Live.UpdateTerminal -> (BS.empty, BS.empty)
+    Live.DeleteActive -> (BS.empty, BS.empty)
+    _ -> (serialiseAddr (Live.requestWallet request), BS.empty)
+
+-- | One story instruction books a request, or retries the request left by a
+-- refused retraction so its owner-signed control spends the same request.
 -- All later work keeps its outref, so a refused request left at the script
 -- cannot leak into a fold. The
 -- request then leaves by the instruction's exit: folded by its own edge,
@@ -325,20 +356,12 @@ submitEdge env state cage exit alteration request = do
         (Map.alter (\known -> Just (foldr (\address addresses ->
             if address `elem` addresses then addresses else address : addresses)
             (fromMaybe [] known) [wallet, genesisAddr])) registry)
-    let destination = case Live.requestEdge request of
-            Live.InsertAbsent -> (serialiseAddr wallet, BS.empty)
-            Live.InsertActive -> (serialiseAddr wallet, BS.empty)
-            Live.UpdateActive -> (serialiseAddr wallet, BS.empty)
-            Live.DeleteAbsent -> (serialiseAddr wallet, BS.empty)
-            Live.WitnessTerminal -> (serialiseAddr wallet, BS.empty)
-            _ -> (BS.empty, BS.empty)
     refs <- storyReferences env cage key edge
     let pendingKey = (registry, Live.requestKey request, fromEnum (Live.requestEdge request), serialiseAddr wallet)
-    retained <- Map.lookup pendingKey <$> readIORef (liveUnsignedRequests state)
+    retained <- Map.lookup pendingKey <$> readIORef (livePendingRequests state)
     booking <- case (exit, retained) of
         (Live.Retract, Just named) -> pure (Right named)
-        _ -> try @ErrorCall (bookEdge env cfg tid genesisAddr genesisSignKey key edge destination refs
-            (defaultTipCoin cfg + cgDeposit))
+        _ -> try @ErrorCall (bookStoryRequest env cage request)
     case booking of
         Left failure -> case stripPrefix
             ("conformance: bookEdge refused (edge " <> show edge <> ", key " <> show key <> "): ")
@@ -346,15 +369,15 @@ submitEdge env state cage exit alteration request = do
             Just nodeReason -> do
                 let (_, _, codes) = envCodes env
                     decided = RegistryEdges.bookingApproval codes edge key
-                        (addrKeyHashBytes genesisAddr) destination
+                        (addrKeyHashBytes genesisAddr) (storyDestination request)
                 modelRequest <- storyModelRequest ids cfg exit request cgDeposit (stateMaxFee before)
                     Nothing (Left decided)
                 pure (LiveStep cage request exit alteration Nothing Nothing modelRequest Nothing 0 Nothing Nothing
                     Nothing [] (StepUnsupported Nothing (T.pack nodeReason) Nothing))
             Nothing -> throwIO failure
         Right named@(reqIn, reqOut) -> do
-            when (alteration == Just Live.Unsigned) $
-                modifyIORef' (liveUnsignedRequests state) (Map.insert pendingKey named)
+            when (alteration `elem` map Just [Live.Unsigned, Live.BeforePhase2]) $
+                modifyIORef' (livePendingRequests state) (Map.insert pendingKey named)
             let Coin bond = reqOut ^. coinTxOutL
                 deposit = bond - stateMaxFee before
             require "booked request holds less than the on-chain processing tip" (deposit >= 0)
@@ -381,6 +404,9 @@ submitEdge env state cage exit alteration request = do
                     case alteration of
                         Just Live.Unsigned | exit == Live.Retract -> Right []
                         Just Live.Unsigned -> Left "only a retraction can omit its owner's signature"
+                        Just timing | timing `elem` [Live.BeforePhase2, Live.AfterPhase2] ->
+                            if exit == Live.Retract then Right []
+                            else Left "only a retraction has a phase-2 validity interval"
                         _ -> maybe (Right []) (\t -> Payments.tamperEdits t facts
                             (map snd (foldOutputsOf cfg transaction))) alteration
             -- The exit's transaction, assembled with the given per-purpose units
@@ -445,13 +471,13 @@ submitEdge env state cage exit alteration request = do
                 <> " declared=" <> compactJson (purposeDeclarationsJson measurements submittedBudgets))
             result <- submitTxResilient (envSubmit env) signed
             -- What the model's admission reads of a retraction is read off the
-            -- retraction as built, once it has been submitted inside its window.
+            -- retraction as built, after it has been submitted.
             retraction <- if exit == Live.Retract
                 then Just <$> retractionWitness env state cage reqOut signed
                 else pure Nothing
             case result of
                 Submitted _ -> do
-                    modifyIORef' (liveUnsignedRequests state) (Map.delete pendingKey)
+                    modifyIORef' (livePendingRequests state) (Map.delete pendingKey)
                     case alteration of
                         Just payment | payment /= Live.ExtraSigner -> failWith
                             (Live.tamperName payment <> " FINDING: chain accepted tampered "
@@ -563,8 +589,17 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
         prov = envProv env
         (_, submittedAt) = requestDatumOf reqOut
     before <- readRegistryState env cage
-    -- Phase 2 opens once the request's processing window has passed.
-    sleepUntil (submittedAt + stateProcessTime before + 500)
+    let phase2Start = submittedAt + stateProcessTime before
+        phase2End = phase2Start + stateRetractTime before
+    case alteration of
+        Just Live.BeforePhase2 -> pure ()
+        Just Live.AfterPhase2 -> do
+            sleepUntil (phase2End + 500)
+            -- The earlier accepted control returned its approval in the fee
+            -- payer's change. Separate those tokens from the ADA funding
+            -- before carving the next collateral pot.
+            consolidateFunding env
+        _ -> sleepUntil (phase2Start + 500)
     pot <- collateralPot env
     honest <- buildRetraction env cage tid (reqIn, reqOut) before
     owner <- requestOwnerKey reqOut
@@ -579,9 +614,24 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                        , SJust script <- [out ^. referenceScriptTxOutL]
                        , hashScript script == cfgScriptHash cfg ]
         build units = do
-            edits <- editsOf honest
+            -- Refresh the outside-window interval immediately before each
+            -- evaluation/submission. Both bounds are finite and include now.
+            timed <- case alteration of
+                Just Live.BeforePhase2 -> do
+                    now <- currentPosixMs
+                    require "before-phase-2 request missed its processing window" (now < phase2Start)
+                    lower <- Cage.posixMsToSlot prov submittedAt
+                    upper <- Cage.posixMsToSlot prov phase2Start
+                    pure (honest & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper))
+                Just Live.AfterPhase2 -> do
+                    lower <- Cage.posixMsCeilSlot prov phase2End
+                    now <- currentPosixMs
+                    upper <- Cage.posixMsToSlot prov (now + 10_000)
+                    pure (honest & bodyTxL . vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust upper))
+                _ -> pure honest
+            edits <- editsOf timed
             edited <- either (failWith . (("tamper: " <> show alteration <> ": ") <>)) pure $ do
-                outputsEdited <- editOutputs elsewhere other honest (filter (/= Payments.SpendState) edits)
+                outputsEdited <- editOutputs elsewhere other timed (filter (/= Payments.SpendState) edits)
                 if Payments.SpendState `elem` edits
                     then spendStateBeside stateUtxo stateScripts reqIn outputsEdited
                     else Right outputsEdited
@@ -1326,6 +1376,16 @@ askModel _env state step judged = do
     let asked = case control of
             Just "wrong-fee" -> bumpEvaluationField "maxFee" question
             Just "wrong-timing" -> bumpEvaluationField "processTime" question
+            Just "inside-phase-2" | lsTamper step `elem` map Just [Live.BeforePhase2, Live.AfterPhase2] ->
+                case (question, lsRetraction step) of
+                    (Object fields, Just (Object witness))
+                        | Just (Number submitted) <- KM.lookup "submittedAt" witness ->
+                            let lower = submitted + fromInteger (stateProcessTime start)
+                                upper = lower + fromInteger (stateRetractTime start)
+                             in Object (KM.insert "witness" (Object
+                                    (KM.insert "validFrom" (Number lower)
+                                    (KM.insert "validTo" (Number upper) witness))) fields)
+                    _ -> question
             Just "signed-owner" | lsTamper step == Just Live.Unsigned ->
                 case (question, lsModelRequest step) of
                     (Object fields, Object request)
@@ -1425,7 +1485,7 @@ compareStep env state step observation = do
             <> ["witness" .= witness | Just witness <- [lsRetraction step]]
             <> [ "requestScript" .= requestMarkerOf stepCfg stepTid
                | lsExit step == Live.Retract
-               , lsTamper step == Just Live.Unsigned || Live.requestEdge (lsRequest step)
+               , lsTamper step `elem` map Just [Live.Unsigned, Live.BeforePhase2, Live.AfterPhase2] || Live.requestEdge (lsRequest step)
                    `notElem` [Live.InsertAbsent, Live.InsertActive, Live.WitnessTerminal] ]
     modifyIORef' (envLiveRecords env) (<> [record])
     let chainDetail = case lsOutcome step of
@@ -1481,6 +1541,8 @@ tamperDifferences alteration = case alteration of
     Live.OtherReference -> []
     Live.StateSpent -> []
     Live.Unsigned -> []
+    Live.BeforePhase2 -> []
+    Live.AfterPhase2 -> []
 
 
 -- | Every path at which a reported difference's two sides differ, down to a

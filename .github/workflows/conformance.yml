@@ -76,8 +76,8 @@ jobs:
       # occupied key — executed against a real devnet, each with its
       # executing negative control and its measurements against the
       # devnet's Conway protocol maxima. Issue #70 then extends the
-      # same session with its active rows: three attributed refusals
-      # (CG07/CG09/CG10) and the held rows CG11/CG12/CG19. CG13, CG17
+      # same session with its active rows: two attributed refusals
+      # (CG09/CG10) and the held rows CG11/CG12/CG19. CG13, CG17
       # and CG20 are NOT run: retired superseded history per E18
       # (NOTE-046, CG16 template) — the owner-pinning transfer, the
       # custody sweep and the removed-signer regression tested an
@@ -90,7 +90,7 @@ jobs:
       # row must never read as a pass). Per the A-001 ruling this step
       # never treats that exit — or any error label — as success: the
       # expected-debt assertion below reads the session's ACTUAL
-      # results and demands exactly the eleven rows, exactly the
+      # results and demands exactly the ten rows, exactly the
       # expected verdict per row (receipts), no divergence, and a
       # non-zero exit accounted for by exactly the held rows CG11
       # CG12 CG19 and nothing else. A GREEN STEP IS NOT A FULFILLED
@@ -183,8 +183,7 @@ jobs:
       # the name onchain/validators/deposit_exits.tests.ak
       # reject_refund_one_lovelace_short_refuses_by_name and
       # reject_refund_to_another_key_refuses_by_name assert; the untampered
-      # reject is accepted by both. In another, an insertion only (the chain
-      # admits no other retraction until #239), a retraction returning one
+      # reject is accepted by both. In another registry, a retraction returning one
       # lovelace short, to another key and bound to another output reference
       # is refused by the request script and by the model for
       # deposit-returned, as onchain/validators/cage_retract.tests.ak
@@ -193,7 +192,10 @@ jobs:
       # registry's state beside it is refused for retract-state-spent, as
       # retract_beside_a_fold_refuses asserts; the untampered retraction,
       # bound to the request's own output reference and signed by its owner,
-      # is accepted by both. The ledger's own reason is not observed: the
+      # is accepted by both. An unsigned insertion and an update retraction
+      # are also refused at admission, compared with the model. Timing refusals
+      # run in the separate finite-window chapter below.
+      # The ledger's own reason is not observed: the
       # deployed validators are compiled without traces (#287).
       - name: Run the dedicated CG23 exit row as a packaged app
         run: |
@@ -254,6 +256,49 @@ jobs:
             and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
+      # The timing refusals are compared in their own finite-window story.
+      # The exit chapter above compares the other retraction admission refusals.
+      - name: Run the retraction window as a packaged app
+        run: |
+          set -e
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$(mktemp -d "$RUNNER_TEMP/cg07-receipts.XXXXXX")"
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG07 --receipts-dir "$receipts"
+          head_sha="$(git rev-parse HEAD)"
+          f="$receipts/receipt-CG07.json"
+          test -f "$f" || { echo 'FAIL: missing retraction window receipt'; exit 1; }
+          test "$(wc -c < "$f")" -le 14745 || { echo 'FAIL: retraction window receipt exceeds its margin'; exit 1; }
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -e --arg base "$head_sha" '
+            def txid: type == "string" and test("^[0-9a-f]{64}$");
+            .row == "CG07" and .verdict == "agrees-with-model"
+            and .base == $base and .dirty == false
+            and (.steps | length) == 3
+            and ([.steps[].edge] == ["insertActive","insertActive","insertActive"])
+            and ([.steps[].exit] == ["retract","retract","retract"])
+            and ([.steps[].tamper] == ["before-phase-2",null,"after-phase-2"])
+            and ([.steps[].model.outcome] == ["refused","accepted","refused"])
+            and ([.steps[].chain.outcome] == ["refused","accepted","refused"])
+            and all(.steps[]; .comparison == "agrees" and (.chain.txid | txid))
+            and all(.steps[0,2]; .requestScript as $request |
+              .model.reason == "not-phase2"
+              and ($request | type == "string" and test("^[0-9a-f]{56}$"))
+              and (.chain.refusal.hashes | index($request) != null)
+              and (.chain.refusal.scripts | index("request") != null))
+            and all(.steps[]; .request.owner as $owner |
+              (.witness.signatories | index($owner) != null)
+              and (.witness.validFrom | type) == "number"
+              and (.witness.validTo | type) == "number"
+              and .witness.validFrom < .witness.validTo)
+            and ([.steps[].registry] | unique | length) == 1
+            and .steps[0].request == .steps[1].request
+            and .steps[0].request.owner == .steps[2].request.owner
+            and .steps[0].request.reference != .steps[2].request.reference
+            and (.steps[1].compared | length) == 9
+            and .steps[1].perturbation.refused > 0
+            and .transactions == [.steps[1].chain.txid]
+          ' "$f" > /dev/null || { echo 'FAIL: retraction window evidence moved'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell
         working-directory: conformance
         run: |
@@ -265,7 +310,7 @@ jobs:
           export CONFORMANCE_RECEIPTS
           printf 'CONFORMANCE_RECEIPTS=%s\n' "$CONFORMANCE_RECEIPTS" >> "$GITHUB_ENV"
           set +e
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$CONFORMANCE_RECEIPTS" 2>&1 | tee /tmp/generic-rows.log
           run_rc=${PIPESTATUS[0]}
           set -e
           echo "generic session exit: $run_rc (expected: exactly 1, the handled session-debt exit)"
@@ -278,12 +323,12 @@ jobs:
           #    exit 1 is the intended result ONLY together with the
           #    complete terminal evidence asserted below.
           [ "$run_rc" -eq 1 ] || { echo "FAIL: session exit $run_rc is not the known session-debt exit 1 — a build/setup/crash exit is an unexamined failure, not expected debt"; exit 1; }
-          # 2. complete session evidence: all 11 rows executed...
-          grep -q 'complete: 11/11 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 11 rows (mid-run failure or crash)'; exit 1; }
+          # 2. complete session evidence: all 10 rows executed...
+          grep -q 'complete: 10/10 rows ok' /tmp/generic-rows.log || { echo 'FAIL: the session did not complete all 10 rows (mid-run failure or crash)'; exit 1; }
           #    ...and the terminal failure is the held-rows debt report
           grep -q 'ROWS THE RUN CANNOT REPORT AS PASSING' /tmp/generic-rows.log || { echo 'FAIL: the terminal failure is not the held-rows debt report'; exit 1; }
-          # 3. exactly the eleven rows plus the session CL01, no extras
-          printf '%s\n' CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01 | sort > /tmp/expected-rows.txt
+          # 3. exactly the ten rows plus the session CL01, no extras
+          printf '%s\n' CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 CL01 | sort > /tmp/expected-rows.txt
           nix run --quiet nixpkgs#jq -- -r '.row' "${CONFORMANCE_RECEIPTS}"/receipt-*.json | sort > /tmp/receipt-rows.txt
           #    Compared with bash builtins, not diff: this step runs a packaged
           #    app without a dev shell, and an absent diff previously reported
@@ -299,12 +344,12 @@ jobs:
           #    bound to this candidate on a clean tree (dirty:false)
           expect_verdict() {
             case "$1" in
-              CG02|CG03|CG04|CG05|CG07|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
+              CG02|CG03|CG04|CG05|CG09|CG10|CG21|CL01) printf 'agrees-with-model' ;;
               CG11|CG12|CG19) printf 'held-q002' ;;
               *) printf 'UNKNOWN-ROW' ;;
             esac
           }
-          for row in CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
+          for row in CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 CL01; do
             f="${CONFORMANCE_RECEIPTS}/receipt-$row.json"
             test -f "$f" || { echo "FAIL: missing receipt for $row"; exit 1; }
             v="$(nix run --quiet nixpkgs#jq -- -r '.verdict' "$f")"
@@ -443,7 +488,7 @@ jobs:
             and any(.steps[]; .tamper == null and .model.outcome == "accepted"
                     and .chain.outcome == "accepted" and .request == $tampered)
           ' "$e" > /dev/null || { echo 'FAIL: CG21 step evidence missing or incomplete'; exit 1; }
-          echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
+          echo 'GREEN = expected-debt assertion held: 10 rows executed on a clean candidate-bound tree; the registration steps, duplicate refusal and the tampered-payment controls are recorded, with held debt exactly CG11 CG12 CG19.'
           echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'
       # Issue #69: canonical identity authentication. CA02 asserts
       # the ledger's acceptance of a rival registry from a second

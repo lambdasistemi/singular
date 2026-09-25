@@ -199,6 +199,8 @@ output.
 -}
 tamperEdits :: Tamper -> ExitFacts -> [FoldOutput] -> Either String [OutputEdit]
 tamperEdits alteration facts outputs = case (alteration, owedOutputs facts outputs) of
+    (BeforePhase2, _) -> Left "a retraction's validity interval is not a payment edit"
+    (AfterPhase2, _) -> Left "a retraction's validity interval is not a payment edit"
     (ExtraSigner, _) -> Right []
     (OtherReference, owed) | retraction, not (null owed) -> Right (map Rebind owed)
     (StateSpent, _ : _) | retraction -> Right [SpendState]

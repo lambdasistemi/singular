@@ -287,15 +287,15 @@ one-commit rewrite cannot produce, and it is what stands behind the
 side-by-side table above.
 ### The issue-70 generic rows
 
-The issue-#70 slice extends the generic session with eleven rows over
-the same devnet shape: nine executed with receipts, two superseded
-with could-not-execute history. Refusals are hand-built phase-1-valid
-transactions attributed to the script that failed; every row carries a
-deliberately wrong variant the same run requires to fail.
+The table preserves the eleven requirements and their historical observations.
+The current generic session runs ten rows, followed by its session receipt;
+the retraction-window requirement now runs separately as a three-step story
+compared with the model. The remaining bespoke refusal rows attribute the
+refusal to the script that failed and retain their accepting controls.
 
 | row | outcome | evidence |
 |---|---|---|
-| CG07 retract inside the phase-2 window | **refuse** | node refuses in phase 2, attributed to the request script (`146332de…`, `CekError`); the same retract made phase-2-valid is accepted in-run (control) |
+| Retract outside phase 2 | **refuse before and after; accept inside** | The dedicated story submits three owner-signed retractions with finite validity bounds. Both outside-window attempts must be refused by the request script and by the model for `not-phase2`; the same first request retracted inside its window is accepted by both. The second request is booked alongside the first in the same registry, with the same owner and edge, and shares its accepting control. The receipt records each comparison. |
 | CG09 stale request | **refuse** | node refuses in phase 2, attributed to the state script (`ce7615f6…`); the same request rejected by the library in phase 3 is accepted in-run (control) |
 | CG10 fold with stale proofs | **refuse** | stale proofs against a superseded root refused, attributed to the state script; the same shape folded against the live root is accepted in-run (control) — the refusal is the staleness, not the shape |
 | CG11 empty fold | accept — **held-q002** | the chain accepts a fold carrying no actions (tx `b670c28e…`); with one live request waiting, empty actions are refused in-run (control) — the acceptance is specific to the empty fold |
@@ -306,7 +306,16 @@ deliberately wrong variant the same run requires to fail.
 | CG20 permissionless fold | accept | after the #79 repair the fold with NO owner signer is accepted (tx `4142f7d6…`, mem 717070 / cpu 231585673 / size 11442); the same fold WITH the owner signer is accepted in-run (control) — see F-002 below |
 | CG14 / CG15 stake_script hook | **could-not-execute — superseded** | the pinned staking credential cannot register: `MissingScriptWitnessesUTXOW` without the witness, cert-purpose `CekError` with it — the staking validator has only a withdraw handler. Superseded inherited-hook expectations, not pending work (below) |
 
+The retraction story gives the registry thirty seconds for processing and thirty
+more for retraction. Its waits follow the submission times read from the booked
+requests and those registry durations. The model reads the witness from each
+built transaction; the ledger refusal is attributed by the applied request
+script hash, without claiming an observable live refusal name. Open validity
+intervals remain a named gap: the model represents finite bounds only, while
+the Aiken tests establish the open-interval `not-phase2` refusal.
+
 **Three dispositions, never to be mistaken for one another.**
+
 **Held** (`held-q002`; CG11, CG12, CG19): executed, with the consumer
 requirements still unmet. CG11 recorded a conflict with the pre-revision
 Singular model; rejecting empty batches is now approved. CG12's
@@ -631,8 +640,11 @@ nix run ./conformance#conformance -- list
 blueprint="$(nix build --quiet --no-link --print-out-paths ./onchain#plutus-blueprint)"
 receipts="$(mktemp -d /tmp/singular-conformance.XXXXXX)"
 
+# The finite retraction window has its own three-step model-compared receipt.
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG07 --receipts-dir "$receipts/retraction-window"
+
 # Expected exit 1: exact held set CG11, CG12, CG19; no failed rows.
-REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG07 CG09 CG10 CG11 CG12 CG19 --receipts-dir "$receipts/generic"
+REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CG02 CG03 CG04 CG05 CG09 CG10 CG11 CG12 CG19 CG21 --receipts-dir "$receipts/generic"
 
 # Expected exit 0 after all five identity rows and their controls.
 REGISTRY_BLUEPRINT="$blueprint" nix run ./conformance#conformance -- run CA01 CA02 CA03 CA04 CA05 --receipts-dir "$receipts/identity"
@@ -685,6 +697,6 @@ unapplied request script hash `8970c286…` (re-pinned from
 imported-validator repair; `onchain/REPAIR.patch` records the change,
 `PROVENANCE.md` the authority). The issue-#70 rows were executed
 against blueprint `state:ce7615f6ba4de80dfa9b9c6aef680666472ba4ed7e640ff55aad7c6e
-request:8970c286…`; the pre-#79 executions (CG20's refusal, the first
-CG07/CG09/CG10 refusals) are history at the earlier hashes. Environments other than
+request:8970c286…`; the pre-#79 executions (CG20's refusal,
+the former bespoke retraction and the stale-request/proof refusals) are history at the earlier hashes. Environments other than
 this devnet shape are explicitly not covered.

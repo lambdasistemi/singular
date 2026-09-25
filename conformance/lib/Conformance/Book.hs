@@ -9,6 +9,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Conformance.Edge.Exit qualified as Exit
 import Conformance.Edge.Register qualified as Register
 import Conformance.Edge.Retire qualified as Retire
+import Conformance.Edge.RetractionWindow qualified as RetractionWindow
 import Conformance.Edge.Sequence qualified as Sequence
 import Conformance.Story.Live (Context (..), renderLive)
 import Conformance.Rows (Row (..), RowState (..))
@@ -30,11 +31,14 @@ renderBook requirements receipts =
         <> "## A request that is never folded\n\n"
         <> "A request can leave the queue without a fold. Once it may no longer be folded, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request.\n\n"
         <> renderLive (Exit.story (Context "rejection" "holder wallet") (Context "retraction" "holder wallet"))
+        <> "## Retract only inside phase 2\n\n"
+        <> "Two insertion requests from the same owner are booked in one registry before either exits. The first is retracted before phase 2, then inside it; the second is retracted after its window closes. Both outside-window retractions must be refused, and the in-window retraction must be accepted. The second request shares the first's accepting control: once its own window is over it cannot have an in-window retry. The registry allows thirty seconds for processing and thirty more for retraction; waits follow each request's recorded submission time.\n\n"
+        <> renderLive (RetractionWindow.story (Context "retraction window" "owner wallet"))
         <> "## A sequence no chapter names\n\n"
         <> "This program uses the same live interpreter for each listed request. Each step records its own model and chain outcome; any unsupported result carries the reason observed at the booking or fold boundary.\n\n"
         <> renderLive (Sequence.story (Context "sequence" "holder wallet"))
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. No retraction outside phase 2 is run against the chain (#205), which will name the validator's refusal against the model's window rule. The model represents only finite validity bounds. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The two-request batch allocation has no driver comparison: the driver evaluates one request per transaction, leaving Singular.Statements.fold_batch_claimed_mint_by_kind_key without this executable consumer. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The Absent retirement probe reaches the state script only after omitting an unfunded burn: the builder cannot fund burning a token that does not exist. Its refusal does not establish how a transaction with that burn would behave. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. Live refusal reason not observed: the deployed validators are compiled without traces; the same-reason claim is checked against the compiled Aiken suite. Tracked by #287. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
         <> concatMap requirement requirements
@@ -55,6 +59,8 @@ renderBook requirements receipts =
                 "CG23" -> "Rejection and retraction compared " <> outcomeCounts steps
                     <> concatMap refusedPayment steps
                     <> admissionEvidence steps
+                "CG07" -> "Retraction window compared " <> outcomeCounts steps
+                    <> windowEvidence steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)
     requirement row = "### " <> T.unpack (rowRequirement row) <> "\n\nExpected: "
@@ -140,6 +146,27 @@ renderBook requirements receipts =
                     <> "`; the chain attributes both refusals to the request validator. The owner-signed insertion control accepted by both is transaction `"
                     <> textAt ["chain", "txid"] control <> "`.\n\n"
             [] -> ""
+    windowEvidence steps = case steps of
+        [before, control, after]
+            | refuses ["insertActive"] (String "before-phase-2") "not-phase2" before
+            , refuses ["insertActive"] (String "after-phase-2") "not-phase2" after
+            , all ((== Just True) . ownerSigned) steps
+            , all (same ["registry"] before) [control, after]
+            , same ["request"] before control
+            , same ["request", "owner"] before after
+            , same ["edge"] before after
+            , at ["request", "reference"] before /= at ["request", "reference"] after
+            , retraction control
+            , at ["tamper"] control == Just Null
+            , at ["model", "outcome"] control == Just (String "accepted")
+            , at ["chain", "outcome"] control == Just (String "accepted") ->
+                "The window chapter compared both finite timing refusals: transaction `"
+                    <> textAt ["chain", "txid"] before <> "` before phase 2 and transaction `"
+                    <> textAt ["chain", "txid"] after <> "` after phase 2. The model refused both for `"
+                    <> textAt ["model", "reason"] before
+                    <> "`; the chain attributes both refusals to the request validator. Their owner-signed in-window control accepted by both is transaction `"
+                    <> textAt ["chain", "txid"] control <> "`.\n\n"
+        _ -> ""
     refuses edges alteration reason step =
         retraction step
             && at ["edge"] step `elem` map (Just . String) edges

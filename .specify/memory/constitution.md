@@ -1,5 +1,26 @@
 <!--
 Sync impact report
+Version: 1.10.0 -> 1.10.1 (the retract row stops denying the two exercised out-of-window cases)
+Amended: 2026-09-26
+Authority: issue #205 repair (parent #199), operator ruling A-004-constitution, T3.
+Changed obligations: none. The `retract` translation row retires its named limit: the
+chain runs an owner-signed retraction of an insertion whose finite validity interval
+starts before phase 2, and one whose finite interval ends after it; the request script
+refuses both and the model answers `not-phase2` (conformance receipt CG07). The chain's
+refusal reason remains unobserved (#287), and the model states only finite validity
+bounds, an open interval being outside them — a named non-goal whose `not-phase2`
+refusal the Aiken validator tests name; no live or model comparison of an open
+interval is claimed. The finite live cases establish the request script's refusal and
+the model's named reason separately. The historical 1.10.0 entry keeps its wording.
+Consumers: none beyond this file; the declared surface is unchanged and
+`tools/check_model.py` R04 reconciles the table against it green.
+Checked: declared operations, observations, unobservable names and judgements
+unchanged; the surface digest and protocol version unchanged.
+Named limit: none new.
+Templates: no template change required.
+Deferred placeholders: none.
+
+Sync impact report
 Version: 1.9.0 -> 1.10.0 (the driver admits a retraction before it pays it)
 Amended: 2026-09-25
 Authority: issue #239 (parent #209), T2.
@@ -361,7 +382,7 @@ model built, after a retraction's admission has been answered.
 | `deleteActive` | realization | `Singular.step` with `Edge.deleteActive`: returns an active key to `unknown` and releases its active holding. |
 | `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: attests an already terminal key, adding a terminal holding and changing no leaf. |
 | `reject` | realization | `Singular.exitStep` with `Exit.reject`: a folder turns the request away. It carries no admission, leaves the registry state as it was, mints nothing, and pays the owner the deposit back, as `Singular.obligations` states. |
-| `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the scenario's witness (`Singular.RetractWitness`: the request's submission time, the transaction's validity bounds, lower included and upper excluded, and its signatories). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. No retraction outside phase 2 is run against the chain (#205). |
+| `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the scenario's witness (`Singular.RetractWitness`: the request's submission time, the transaction's validity bounds, lower included and upper excluded, and its signatories). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. The chain runs an owner-signed retraction of an insertion whose finite validity interval starts before phase 2, and one whose finite interval ends after it; the request script refuses both and the model answers `not-phase2` (the CG07 conformance receipt carries both). The chain's refusal reason is not observed (#287); the two finite live cases establish the request script's refusal and the model's named reason separately. The model states only finite validity bounds; an open interval is outside them — a named non-goal whose `not-phase2` refusal the Aiken validator tests name; no live or model comparison of an open interval is claimed. |
 | `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
 | `custody` | realization | the custody census after the step: every outstanding absent token with its refund address and value. |
 | `held` | realization | the held-token census after the step: every active and terminal holding with its key, kind and output. |
@@ -418,4 +439,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.10.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-25
+**Version**: 1.10.1 | **Ratified**: 2026-09-11 | **Last amended**: 2026-09-26

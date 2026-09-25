@@ -19,6 +19,7 @@ import Conformance.Run.Observe
 
 import Conformance.Story.Live qualified as Live
 import Conformance.Edge.Exit qualified as ExitStory
+import Conformance.Edge.RetractionWindow qualified as WindowStory
 import Conformance.Edge.Register qualified as RegistrationStory
 import Conformance.Edge.Retire qualified as RetirementStory
 import Conformance.Edge.Sequence qualified as SequenceStory
@@ -42,12 +43,10 @@ import Data.ByteString.Short qualified as SBS
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Sequence.Strict qualified as StrictSeq
-import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((^.))
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 
@@ -55,45 +54,14 @@ import Cardano.Ledger.Address (
     AccountAddress (..),
     AccountId (..),
  )
-import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 
-import Cardano.Ledger.Api.Tx (
-    bodyTxL,
-    estimateMinFeeTx,
-    mkBasicTx,
-    mkBasicTxBody,
-    witsTxL,
- )
-import Cardano.Ledger.Api.Tx.Body (
-    ValidityInterval (..),
-    collateralInputsTxBodyL,
-    feeTxBodyL,
-    inputsTxBodyL,
-    outputsTxBodyL,
-    referenceInputsTxBodyL,
-    reqSignerHashesTxBodyL,
-    scriptIntegrityHashTxBodyL,
-    vldtTxBodyL,
- )
 import Cardano.Ledger.Api.Tx.Out (
     coinTxOutL,
-    datumTxOutL,
-    getMinCoinTxOut,
-    mkBasicTxOut,
- )
-import Cardano.Ledger.Api.Tx.Wits (
-    Redeemers (..),
-    rdmrsTxWitsL,
-    scriptTxWitsL,
  )
 import Cardano.Ledger.BaseTypes (
     Network (..),
-    StrictMaybe (..),
  )
-import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
-import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import MPF.Hashes (MPFHash)
 import MPF.Proof.Insertion (MPFProof (..))
 
@@ -106,7 +74,6 @@ import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
     AssetName (..),
     Coin (..),
-    ConwayEra,
     ExUnits (..),
     Root (..),
     TokenId (..),
@@ -116,20 +83,12 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Boot (bootTokenImpl)
 import Singular.Registry.TxBuilder.Internal (
     leafAbsent,
-    addrFromKeyHashBytes,
-    addrWitnessKeyHash,
-    computeScriptIntegrity,
     currentPosixMs,
     extractCageDatum,
     extractOwnerBytes,
     mkCageScript,
-    mkRequestScript,
-    mkInlineDatum,
     scriptHashBytes,
     scriptFromBytes,
-    spendingIndex,
-    toLedgerData,
-    toPlcData,
     trySlots,
     txInToRef,
  )
@@ -147,7 +106,6 @@ import Singular.Registry.Types (
     OnChainRoot (..),
     OnChainTokenState (..),
     RequestAction (Update),
-    UpdateRedeemer (..),
  )
 import Singular.Registry.Types qualified as CageTypes
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
@@ -444,100 +402,29 @@ sleepUntilMs _env targetMs = do
         threadDelay (fromIntegral remaining * 1000)
 
 
-{- | CG07: Retract outside phase 2 (R9_retract_needs_phase2). The
-request owner's retract, validity declared inside phase 1, is
-refused by the request script; the same retract re-declared inside
-phase 2 is accepted (the control that proves the refusal
-discriminates). Both verdicts are the node's on submitted
-transactions.
--}
+-- | Retractions before, inside and after phase 2, in a registry of their own.
+-- Both requests are booked before any exit. Thirty seconds of processing leave
+-- time to submit the first refusal; thirty more admit its accepting control.
 runCG07 :: Env -> IO ()
 runCG07 env = do
-    cage <- ensureRowCage env "cg07" 30_000 60_000
-    let cfg = rcCfg cage
-        prov = envProv env
-    tid <- cageTid cage
-    (reqIn, reqOut) <- rowRequestInsert env cage "cg07-key" "cg07-value"
-    let (_, submittedAt) = requestDatumOf reqOut
-    -- A hand-built phase-2 retract plays the control (the library
-    -- builder converts the phase-2 end 60s ahead, past this devnet's
-    -- conversion horizon). The refused attempt's units come from the
-    -- declared fallback: no valid fold has run in this cage.
-    units <- declaredSpec env cage
-    (pot, (funderIn, funderOut)) <- collateralPotWithChange env
-    (stateIn, _) <- cageStateUtxo env cage
-    pp <- Cage.queryProtocolParams prov
-    nowMs0 <- currentPosixMs
-    upper <- trySlots prov [nowMs0 + 2_000, nowMs0 + 1_500, nowMs0 + 1_000]
-    let stateRef = txInToRef stateIn
-        script = mkRequestScript cfg tid
-        inputs = Set.fromList [reqIn, funderIn]
-        ownerKh = addrWitnessKeyHash (extractOwnerBytes reqOut)
-        purpose = ConwaySpending (AsIx (spendingIndex reqIn inputs))
-        rdmrs =
-            Redeemers
-                ( Map.singleton
-                    purpose
-                    (toLedgerData (Retract stateRef), units)
-                )
-        integrity = computeScriptIntegrity pp rdmrs
-    let Coin reqVal = reqOut ^. coinTxOutL
-        draft =
-            mkBasicTx
-                ( mkBasicTxBody
-                    & inputsTxBodyL .~ inputs
-                    & referenceInputsTxBodyL .~ Set.singleton stateIn
-                    & collateralInputsTxBodyL .~ Set.singleton pot
-                    & reqSignerHashesTxBodyL .~ Set.singleton ownerKh
-                    & vldtTxBodyL
-                        .~ ValidityInterval SNothing (SJust upper)
-                    & scriptIntegrityHashTxBodyL .~ integrity
-                )
-                & witsTxL . scriptTxWitsL
-                    .~ Map.singleton (hashScript script) script
-                & witsTxL . rdmrsTxWitsL .~ rdmrs
-        Coin estFee = estimateMinFeeTx pp draft 1 0 0
-        fee = estFee + 50_000
-        refundCoin = reqVal
-        Coin funding = funderOut ^. coinTxOutL
-        changeOut = mkBasicTxOut genesisAddr (MaryValue (Coin (funding - fee)) mempty)
-        -- A retracted booking is not folded, so the approval that
-        -- certified its edge comes back with the deposit.
-        refundOut =
-            mkBasicTxOut
-                (addrFromKeyHashBytes (network cfg) (extractOwnerBytes reqOut))
-                (MaryValue (Coin refundCoin) (MultiAsset (rawAssets reqOut)))
-                & datumTxOutL .~ mkInlineDatum (toPlcData (txInToRef reqIn))
-        Coin minAda = getMinCoinTxOut @ConwayEra pp refundOut
-    require
-        "CG07 hand retract: refund under min-ADA"
-        (refundCoin >= minAda)
-    let handTx =
-            draft
-                & bodyTxL . feeTxBodyL .~ Coin fee
-                & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList [refundOut, changeOut]
-    emit
-        "row"
-        ( "CG07: retract with validity inside phase 1 submitted; the \
-           \request script must refuse (R9_retract_needs_phase2)"
-        )
-    submitExpectRefused env "CG07" AgreesWithModel (requestMarkerOf cfg tid) handTx
-    -- Control: the same request retracted with validity INSIDE phase
-    -- 2, built only once the boundary is near so every slot
-    -- conversion stays inside the interpreter's horizon.
-    sleepUntilMs env (submittedAt + 30_000 + 500)
-    lower <- Cage.posixMsCeilSlot prov (submittedAt + 30_000)
-    nowMs1 <- currentPosixMs
-    upperCtrl <- trySlots prov [nowMs1 + 2_000, nowMs1 + 1_500, nowMs1 + 1_000]
-    let ctrlTx =
-            handTx
-                & bodyTxL . vldtTxBodyL
-                    .~ ValidityInterval (SJust lower) (SJust upperCtrl)
-    _ <- submitExpectAccepted env (addKeyWitness genesisSignKey ctrlTx)
-    emit
-        "control"
-        "CG07 control: the same retract, validity in phase 2, is \
-         \accepted — the refusal discriminates"
+    either failWith pure (Live.validateLive (WindowStory.story
+        (Live.Context "retraction window" "owner wallet")))
+    writeIORef (envLiveRecords env) []
+    writeIORef (envLiveMeasurements env) []
+    control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
+    require "unknown retraction window story control"
+        (control `elem` [Nothing, Just "inside-phase-2"])
+    cage <- ensureRowCage env "story-retraction-window" 30_000 30_000
+    let (first, second) = WindowStory.requests genesisAddr
+    _ <- runLiveWithRequests env [(cage, first), (cage, second)]
+        (WindowStory.story (Live.Context cage genesisAddr))
+    records <- readIORef (envLiveRecords env)
+    require "retraction window did not compare its three steps" (length records == 3)
+    require "retraction window has a disagreement or unsupported step"
+        (all (\record -> case record of
+            Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+            _ -> False) records)
+    writeStoryReceipt env "CG07" records
 
 
 {- | CG09: @Rejected@ when not rejectable (R9_reject_needs_rejectable).

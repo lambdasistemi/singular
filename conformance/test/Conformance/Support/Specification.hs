@@ -37,6 +37,10 @@ arithmetic = bindTheorem (mkBoundObligation "example.arithmetic" "example-digest
 
 spec :: Spec
 spec = describe "Appendix — reusable theorem and clause execution" $ do
+    it "Names both finite alterations of the retraction window" $ do
+        let names = map Live.tamperName [minBound .. maxBound]
+        filter (`elem` ["before-phase-2", "after-phase-2"]) names
+            `shouldBe` ["before-phase-2", "after-phase-2"]
     forM_ [minBound .. maxBound :: Live.Tamper] $ \alteration ->
         it ("validates and renders the complete instruction sequence for " <> Live.tamperName alteration) $ do
             let program = do
