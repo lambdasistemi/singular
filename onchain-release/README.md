@@ -158,12 +158,12 @@ surfaces: not currently buildable or verified against this release's
 source, and none is exercised by the release pipeline. The table below
 binds each to its status and its owning issue. None of the nine has
 passing build evidence at this source. Three carry direct build
-failures on record from earlier revisions: `li01` at e69dce4 and
-`recovery-rows` at f64ac08, both before the current integration, and
-`connected-verifier` in a full-carrier build at c4a22d1 — the removed
-identifiers it expects are still absent from the current library, a
-source-level lead rather than a build result. The rest carry no passing
-build evidence either — unverified rather than proven broken — and for
+failures on record from earlier, pre-integration revisions of the
+project — `li01`, `recovery-rows` and `connected-verifier` — and their
+sources in this archive still name identifiers the carried library no
+longer exports, a source-level lead you can check against the bytes
+shipped here, not a build result. The rest carry no passing build
+evidence either — unverified rather than proven broken — and for
 `retirement-verify` buildability is simply untested. Their re-cut
 against the current registry mode is
 owned by [#172](https://github.com/lambdasistemi/singular/issues/172)
@@ -174,15 +174,15 @@ a documented name here as a working command:
 
 | retained command | availability in this archive | repair |
 | --- | --- | --- |
-| `nix run .#li01` | unavailable: no passing build evidence at this source; direct build RED on record at e69dce4 (pre-rebase source) | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#li01` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/li01/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `nix run .#li-refusals` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `nix run .#naming-rows` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `nix run .#register-rows` | unavailable: unverified, source imports removed identifiers | [#283](https://github.com/lambdasistemi/singular/issues/283) |
-| `nix run .#recovery-rows` | unavailable: no passing build evidence at this source; direct build RED on record at f64ac08 (pre-rebase source) | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#recovery-rows` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source under `offchain/journey/recovery/` still names removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `nix run .#retirement-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `nix run .#retirement-verify` | unavailable: unverified, buildability untested | [#172](https://github.com/lambdasistemi/singular/issues/172) |
 | `repair-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
-| `connected-verifier` | unavailable: no passing build evidence at this source; full-carrier build RED on record at c4a22d1 (pre-rebase source); the removed identifiers it expects are still absent from the library (source lead) | [#282](https://github.com/lambdasistemi/singular/issues/282) |
+| `connected-verifier` | unavailable: no passing build evidence; direct build failures on record from earlier project revisions; its carried source still names removed library identifiers | [#282](https://github.com/lambdasistemi/singular/issues/282) |
 
 Two of the rows — `repair-rows` and `connected-verifier` — were never
 advertised as commands in this archive or its predecessors; they are

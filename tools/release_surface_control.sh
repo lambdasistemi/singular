@@ -120,7 +120,7 @@ mutate_removed_disclosure() {
 # Variant B2: flip exactly one row's unavailable status (the li01 row) to a
 # claimed verified-and-available status; table, issues and manifests stay valid.
 mutate_status_flip() {
-  sed -i '/nix run \.#li01/s/unavailable: no passing build evidence at this source/available: verified under the current source/' "$1/README.md"
+  sed -i '/nix run \.#li01/s/unavailable: no passing build evidence/available: verified under the current source/' "$1/README.md"
 }
 
 # Variant C: inject a stale future-scope sentence into the archived

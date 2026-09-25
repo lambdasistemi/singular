@@ -88,14 +88,14 @@ let
       name = "recovery-rows";
       issue = "#172";
       reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); boundary receipt: carrier run at f64ac08 exited 1 here first";
+        "D6-retired NYA journey (registry.yml:258-269); journey/recovery/Main.hs imports registerConsumerImpl, removed by 9cba521 (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
     }
     {
       kind = "exe";
       name = "li01";
       issue = "#172";
       reason =
-        "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); boundary receipt: carrier run at e69dce4 exited 1 here";
+        "D6-retired NYA journey (registry.yml:258-269); journey/li01/Main.hs sets removed CageConfig fields cfgRepPolicy/cfgConsumerPin (#157); direct carrier-build RED on record at an earlier pre-rebase revision (exact receipt retained in ticket evidence)";
     }
     {
       kind = "exe";
@@ -144,7 +144,7 @@ let
       name = "connected-verifier";
       issue = "#282";
       reason =
-        "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); full-carrier build RED on record at c4a22d1, pre-rebase source; no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
+        "imports the removed stateRepPolicyBytes accessor and expects the removed representative-policy blueprint (both still absent from the library at this head — source-level lead, not a build); direct build failures on record from earlier pre-rebase revisions (exact receipts retained in ticket evidence); no passing build evidence at this head; repair owned by #282, no required workflow consumes it";
     }
   ];
 
