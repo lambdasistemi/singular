@@ -64,14 +64,8 @@ import Singular.Registry.Types (OnChainRoot (..), edgeInsertAbsent)
 
 import Singular.Registry.E2E.CageSpec (submitWithGenesis, withE2E)
 
-driverKeyA, driverKeyB, seededKey, afterSeededKey :: ByteString
-driverKeyA = "t190-driver-a"
-driverKeyB = "t190-driver-b"
-seededKey = "t190-seeded"
-afterSeededKey = "t190-after-seeded"
-
 spec :: Blueprint -> Spec
-spec bp = describe "#190 the boot-and-fold driver" $ do
+spec bp = describe "Keeping the local registry in step with the chain" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
@@ -184,3 +178,9 @@ driverSpec stateBytes requestBytes = do
                                        \Got: "
                                     <> msg
                                 )
+
+driverKeyA, driverKeyB, seededKey, afterSeededKey :: ByteString
+driverKeyA = "t190-driver-a"
+driverKeyB = "t190-driver-b"
+seededKey = "t190-seeded"
+afterSeededKey = "t190-after-seeded"

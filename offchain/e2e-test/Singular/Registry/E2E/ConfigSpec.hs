@@ -18,7 +18,7 @@ import Text.Read (readMaybe)
 
 -- | Configuration refusals observed at the executable boundary.
 spec :: Spec
-spec = describe "Appendix: E2E configuration checks" $ do
+spec = describe "Appendix: harness configuration checks (subprocesses, no devnet)" $ do
     it "refuses a missing REGISTRY_BLUEPRINT before any scenario passes" $
         checkConfiguration "missing" Nothing "not set"
     it "refuses an unreadable REGISTRY_BLUEPRINT before any scenario passes" $

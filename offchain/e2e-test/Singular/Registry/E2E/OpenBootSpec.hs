@@ -72,11 +72,8 @@ import Singular.Registry.Types (
 
 import Singular.Registry.E2E.CageSpec (withBootedCage)
 
-hex :: ByteString -> String
-hex = T.unpack . TE.decodeUtf8 . Base16.encode
-
 spec :: Blueprint -> Spec
-spec bp = describe "#173 A173-BOOT — the open registry boots from its own blueprint" $ do
+spec bp = describe "Booting the open registry" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          , extractCompiledCode "open.open" bp
@@ -153,3 +150,6 @@ openBootSpec stateBytes requestBytes openBytes witnessBytes = do
                     _ ->
                         expectationFailure
                             "A173-BOOT: the state UTxO carries no eight-field state datum"
+
+hex :: ByteString -> String
+hex = T.unpack . TE.decodeUtf8 . Base16.encode

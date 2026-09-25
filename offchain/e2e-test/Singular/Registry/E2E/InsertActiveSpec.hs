@@ -80,36 +80,8 @@ import Singular.Registry.E2E.CageSpec (
     withE2E,
  )
 
-activeKey, refusalKey, controlKey :: ByteString
-activeKey = "t173-insert-active"
-refusalKey = "t173-insert-active-dup"
-controlKey = "t173-insert-active-control"
-
-{- | The destination the open story names: the requester's own wallet,
-with no datum. `Edges.edgeDestinationOf` would route an `insertActive`
-to the APPLICATION's script address instead — right for naming, wrong
-here, because `open.ak` has no spending arm and the token would be
-locked forever.
--}
-walletDestination :: (ByteString, ByteString)
-walletDestination = (serialiseAddr genesisAddr, "")
-
-{- | A destination that is NOT the funding wallet: a bare enterprise
-address (header kind 6 plus a 28-byte payment hash), which
-`lib.decodeAddress` accepts.
-
-The refusal cage delivers EVERY token here. This harness has one wallet
-and the folder pays fees from it, so an active token sitting there gets
-swept into the next fold as a fee input and the cage refuses a movement
-no consumed request entails — correctly, and for a reason that has
-nothing to do with occupancy. Keeping the refusal cage's tokens out of
-the fee wallet is what makes its refusal attributable.
--}
-elsewhereDestination :: (ByteString, ByteString)
-elsewhereDestination = (BS.pack (0x60 : replicate 28 0xab), "")
-
 spec :: Blueprint -> Spec
-spec bp = describe "#173 insertActive on the open registry" $ do
+spec bp = describe "Inserting an active key" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
@@ -122,7 +94,7 @@ spec bp = describe "#173 insertActive on the open registry" $ do
 insertActiveSpec ::
     SBS.ShortByteString -> SBS.ShortByteString -> Spec
 insertActiveSpec stateBytes requestBytes = do
-    it "folds one insertActive and places exactly one active token at the named wallet" $
+    it "when a fresh key is inserted, delivers exactly one active token to the named wallet" $
         withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             reg <-
@@ -140,7 +112,7 @@ insertActiveSpec stateBytes requestBytes = do
             held <- activeHeldAt prov cfg activeKey
             held `shouldBe` (1 :: Integer)
 
-    it "refuses a second insertActive on the same key, with a fresh key accepted in the same cage" $
+    it "when a key is already active, refuses reinsertion while accepting a fresh key" $
         withE2E stateBytes requestBytes $ \cfg prov submit tm -> do
             codes <- loadRegistryCodesFromEnv
             reg <-
@@ -236,3 +208,31 @@ activeHeldAt prov cfg key = do
             , (AssetName n, q) <- Map.toList names
             , SBS.fromShort n == key
             ]
+
+activeKey, refusalKey, controlKey :: ByteString
+activeKey = "t173-insert-active"
+refusalKey = "t173-insert-active-dup"
+controlKey = "t173-insert-active-control"
+
+{- | The destination the open story names: the requester's own wallet,
+with no datum. `Edges.edgeDestinationOf` would route an `insertActive`
+to the APPLICATION's script address instead — right for naming, wrong
+here, because `open.ak` has no spending arm and the token would be
+locked forever.
+-}
+walletDestination :: (ByteString, ByteString)
+walletDestination = (serialiseAddr genesisAddr, "")
+
+{- | A destination that is NOT the funding wallet: a bare enterprise
+address (header kind 6 plus a 28-byte payment hash), which
+`lib.decodeAddress` accepts.
+
+The refusal cage delivers EVERY token here. This harness has one wallet
+and the folder pays fees from it, so an active token sitting there gets
+swept into the next fold as a fee input and the cage refuses a movement
+no consumed request entails — correctly, and for a reason that has
+nothing to do with occupancy. Keeping the refusal cage's tokens out of
+the fee wallet is what makes its refusal attributable.
+-}
+elsewhereDestination :: (ByteString, ByteString)
+elsewhereDestination = (BS.pack (0x60 : replicate 28 0xab), "")

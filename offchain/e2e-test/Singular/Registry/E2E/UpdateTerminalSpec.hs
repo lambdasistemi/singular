@@ -105,36 +105,8 @@ import Singular.Registry.E2E.CageSpec (
     withBootedCage,
  )
 
--- | The key the connected story books and then retires.
-storyKey :: ByteString
-storyKey = "t177-update-terminal"
-
--- | A key nothing ever inserted: the trie does not bind it at all.
-unknownKey :: ByteString
-unknownKey = "t177-update-terminal-unknown"
-
--- | A key witnessed ABSENT and never booked.
-absentKey :: ByteString
-absentKey = "t177-update-terminal-absent"
-
-{- | The destination the open story names: the requester's own wallet.
-`Edges.edgeDestinationOf` would route to the APPLICATION's script
-address, which is right for naming and wrong here — `open.ak` is a
-minting policy with no spending arm, so a token routed there is locked
-forever and could never be retired.
--}
-walletDestination :: (ByteString, ByteString)
-walletDestination = (serialiseAddr genesisAddr, "")
-
-{- | A retirement delivers nothing, so it names nothing. The approval
-still binds this pair, and the cage recomputes it from the request, so it
-has to be the same on both sides — it is simply empty.
--}
-retireDestination :: (ByteString, ByteString)
-retireDestination = (BS.empty, BS.empty)
-
 spec :: Blueprint -> Spec
-spec bp = describe "#177 updateTerminal on the open registry" $ do
+spec bp = describe "Retiring an active key" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
@@ -146,7 +118,7 @@ spec bp = describe "#177 updateTerminal on the open registry" $ do
 
 updateTerminalSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 updateTerminalSpec stateBytes requestBytes = do
-    it "retires the active token it inserted: quantity 1 -> 0, keyed -1 burn, Terminal leaf" $
+    it "when an active key is retired, burns its token and records a Terminal leaf" $
         withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
@@ -190,7 +162,7 @@ updateTerminalSpec stateBytes requestBytes = do
             chainRoot <- committedRoot prov cfg tokenId
             chainRoot `shouldBe` unRoot mirrorRoot
 
-    it "refuses updateTerminal on a key the trie does not bind, with an accepting control" $
+    it "refuses updateTerminal for an unknown key while accepting an active key" $
         withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
@@ -225,7 +197,7 @@ updateTerminalSpec stateBytes requestBytes = do
                         \the trie does not bind — reported, not relabelled"
                 Left _ -> pure ()
 
-    it "refuses updateTerminal on a key witnessed Absent, with an accepting control" $
+    it "refuses updateTerminal for an Absent key while accepting an active key" $
         withBootedCage id stateBytes requestBytes $ \cfg prov submit tm reg -> do
             let tokenId = Driver.registryTokenId reg
             refs <- publishCageRefs cfg prov submit tokenId
@@ -394,3 +366,31 @@ committedRoot prov cfg tokenId = do
             Just (StateDatum s) -> pure (unOnChainRoot (stateRoot s))
             _ -> fail "the state UTxO carries no state datum"
         Nothing -> fail "no state UTxO carrying the registry policy token"
+
+-- | The key the connected story books and then retires.
+storyKey :: ByteString
+storyKey = "t177-update-terminal"
+
+-- | A key nothing ever inserted: the trie does not bind it at all.
+unknownKey :: ByteString
+unknownKey = "t177-update-terminal-unknown"
+
+-- | A key witnessed ABSENT and never booked.
+absentKey :: ByteString
+absentKey = "t177-update-terminal-absent"
+
+{- | The destination the open story names: the requester's own wallet.
+`Edges.edgeDestinationOf` would route to the APPLICATION's script
+address, which is right for naming and wrong here — `open.ak` is a
+minting policy with no spending arm, so a token routed there is locked
+forever and could never be retired.
+-}
+walletDestination :: (ByteString, ByteString)
+walletDestination = (serialiseAddr genesisAddr, "")
+
+{- | A retirement delivers nothing, so it names nothing. The approval
+still binds this pair, and the cage recomputes it from the request, so it
+has to be the same on both sides — it is simply empty.
+-}
+retireDestination :: (ByteString, ByteString)
+retireDestination = (BS.empty, BS.empty)

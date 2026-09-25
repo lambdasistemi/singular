@@ -100,27 +100,8 @@ import Singular.Registry.Trie (
  )
 import Singular.Registry.Trie.Pure (mkPureTrieFromRef)
 
-codecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
-codecs =
-    MPFStandaloneCodecs
-        { mpfKeyCodec = hexKeyPrism
-        , mpfValueCodec = isoMPFHash
-        , mpfNodeCodec = isoMPFHash
-        }
-
-identityKV :: FromHexKV HexKey MPFHash MPFHash
-identityKV =
-    FromHexKV
-        { fromHexK = id
-        , fromHexV = id
-        , hexTreePrefix = const []
-        }
-
-hashPath :: ByteString -> HexKey
-hashPath = byteStringToHexKey . renderMPFHash . mkMPFHash
-
 spec :: Blueprint -> Spec
-spec bp = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
+spec bp = describe "Inserting an absent key through a single trie fork" $ do
     case ( extractCompiledCode "state.state" bp
          , extractCompiledCode "request.request" bp
          ) of
@@ -131,16 +112,12 @@ spec bp = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
                 expectationFailure
                     "state or request script not found in blueprint"
 
--- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
-hex :: ByteString -> String
-hex = T.unpack . TE.decodeUtf8 . Base16.encode
-
 fork81Spec ::
     SBS.ShortByteString ->
     SBS.ShortByteString ->
     Spec
 fork81Spec stateBytes requestBytes = do
-    it "accepts the real absence insertion of C and reads it back" $
+    it "when a key is absent, inserts it through the fork and reads it back" $
         withE2E stateBytes requestBytes $
             \cfg prov submit tm -> do
                 codes <- loadRegistryCodesFromEnv
@@ -194,7 +171,7 @@ fork81Spec stateBytes requestBytes = do
                     Just p ->
                         renderMPFHash (foldMPFProof mpfHashing p) `shouldBe` chainRoot
 
-    it "refuses a second insert of the now-present key (occupied-key)" $
+    it "when the key is already present, refuses a second insertion" $
         withE2E stateBytes requestBytes $
             \cfg prov submit tm -> do
                 codes <- loadRegistryCodesFromEnv
@@ -247,3 +224,26 @@ fork81Spec stateBytes requestBytes = do
                             Nothing ->
                                 expectationFailure
                                     ("unexpected exception: " <> show e)
+
+codecs :: MPFStandaloneCodecs HexKey MPFHash MPFHash
+codecs =
+    MPFStandaloneCodecs
+        { mpfKeyCodec = hexKeyPrism
+        , mpfValueCodec = isoMPFHash
+        , mpfNodeCodec = isoMPFHash
+        }
+
+identityKV :: FromHexKV HexKey MPFHash MPFHash
+identityKV =
+    FromHexKV
+        { fromHexK = id
+        , fromHexV = id
+        , hexTreePrefix = const []
+        }
+
+hashPath :: ByteString -> HexKey
+hashPath = byteStringToHexKey . renderMPFHash . mkMPFHash
+
+-- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
+hex :: ByteString -> String
+hex = T.unpack . TE.decodeUtf8 . Base16.encode

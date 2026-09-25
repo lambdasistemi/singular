@@ -150,7 +150,7 @@ import Singular.Registry.Types (
 Receives the blueprint resolved by the E2E entrypoint.
 -}
 spec :: Blueprint -> Spec
-spec bp = describe "Cage E2E" $ do
+spec bp = describe "Request processing, retraction and rejection" $ do
     case ( extractCompiledCode
             "state.state"
             bp
