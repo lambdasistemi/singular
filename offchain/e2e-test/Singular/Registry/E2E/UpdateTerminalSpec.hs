@@ -50,7 +50,6 @@ import Control.Monad (when)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.Map.Strict qualified as Map
-import System.Environment (lookupEnv)
 import Test.Hspec
 
 import Cardano.Ledger.Address (serialiseAddr)
@@ -69,9 +68,9 @@ import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 
 import Singular.Registry.Blueprint (
+    Blueprint,
     NamingCodes,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
@@ -134,24 +133,16 @@ has to be the same on both sides — it is simply empty.
 retireDestination :: (ByteString, ByteString)
 retireDestination = (BS.empty, BS.empty)
 
-spec :: Spec
-spec = describe "#177 updateTerminal on the open registry" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing -> it "skipped (REGISTRY_BLUEPRINT not set)" (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err -> it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            updateTerminalSpec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure "state or request script not found"
+spec :: Blueprint -> Spec
+spec bp = describe "#177 updateTerminal on the open registry" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
+        (Just stateBytes, Just requestBytes) ->
+            updateTerminalSpec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure "state or request script not found"
 
 updateTerminalSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 updateTerminalSpec stateBytes requestBytes = do

@@ -20,7 +20,6 @@ import Control.Exception (ErrorCall, fromException, try)
 import Control.Monad (void)
 import Data.ByteString (ByteString)
 import Data.IORef (newIORef, readIORef)
-import System.Environment (lookupEnv)
 import Test.Hspec
 
 import Cardano.Ledger.BaseTypes (Network (Testnet))
@@ -31,8 +30,8 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Singular.Registry.Blueprint (
+    Blueprint,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
@@ -120,29 +119,17 @@ identityKV =
 hashPath :: ByteString -> HexKey
 hashPath = byteStringToHexKey . renderMPFHash . mkMPFHash
 
-spec :: Spec
-spec = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing ->
-            it
-                "skipped (REGISTRY_BLUEPRINT not set)"
-                (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err ->
-                    it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            fork81Spec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure
-                                    "state or request script not found in blueprint"
+spec :: Blueprint -> Spec
+spec bp = describe "Fork #81 acceptance (lone-Fork absence insertion)" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
+        (Just stateBytes, Just requestBytes) ->
+            fork81Spec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure
+                    "state or request script not found in blueprint"
 
 -- | Hex rendering for derived-identity comparison (NOTE-018 bind 1).
 hex :: ByteString -> String

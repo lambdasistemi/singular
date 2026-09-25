@@ -23,13 +23,11 @@ import Control.Concurrent.Async (async, cancel)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Lens.Micro ((^.))
-import System.Environment (lookupEnv)
 import Test.Hspec (
     Spec,
     describe,
     expectationFailure,
     it,
-    runIO,
     shouldSatisfy,
  )
 
@@ -68,9 +66,9 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Ouroboros.Network.Magic (NetworkMagic (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (
+    Blueprint,
     NamingCodes,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (
@@ -113,46 +111,27 @@ import Singular.Registry.TxBuilder.Update (
 import Singular.Registry.Types (Edge, OnChainTxOutRef, edgeInsertAbsent, edgeInsertActive)
 
 {- | Full cage protocol E2E test spec.
-Skips when @REGISTRY_BLUEPRINT@ is not set.
+Receives the blueprint resolved by the E2E entrypoint.
 -}
-spec :: Spec
-spec = describe "Cage E2E" $ do
-    mPath <-
-        runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing ->
-            it
-                "skipped (REGISTRY_BLUEPRINT \
-                \not set)"
-                (pure () :: IO ())
-        Just path -> do
-            ebp <-
-                runIO $ loadBlueprint path
-            case ebp of
-                Left err ->
-                    it
-                        ( "blueprint error: "
-                            <> err
-                        )
-                        (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode
-                            "state.state"
-                            bp
-                         , extractCompiledCode
-                            "request.request"
-                            bp
-                         , extractCompiledCode
-                            "staking.staking"
-                            bp
-                         ) of
-                        (Just stateBytes, Just requestBytes, _) ->
-                            cageFlowSpec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure
-                                    "state or request script not \
-                                    \found in blueprint"
+spec :: Blueprint -> Spec
+spec bp = describe "Cage E2E" $ do
+    case ( extractCompiledCode
+            "state.state"
+            bp
+         , extractCompiledCode
+            "request.request"
+            bp
+         , extractCompiledCode
+            "staking.staking"
+            bp
+         ) of
+        (Just stateBytes, Just requestBytes, _) ->
+            cageFlowSpec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure
+                    "state or request script not \
+                    \found in blueprint"
 
 -- ---------------------------------------------------------
 -- Test implementation

@@ -49,7 +49,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
-import System.Environment (lookupEnv)
 import Test.Hspec
 
 import Cardano.Ledger.Address (serialiseAddr)
@@ -60,8 +59,8 @@ import Lens.Micro ((^.))
 
 import Cardano.Ledger.Core (valueTxOutL)
 import Singular.Registry.Blueprint (
+    Blueprint,
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
@@ -109,24 +108,16 @@ the fee wallet is what makes its refusal attributable.
 elsewhereDestination :: (ByteString, ByteString)
 elsewhereDestination = (BS.pack (0x60 : replicate 28 0xab), "")
 
-spec :: Spec
-spec = describe "#173 insertActive on the open registry" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing -> it "skipped (REGISTRY_BLUEPRINT not set)" (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err -> it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes) ->
-                            insertActiveSpec stateBytes requestBytes
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure "state or request script not found"
+spec :: Blueprint -> Spec
+spec bp = describe "#173 insertActive on the open registry" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         ) of
+        (Just stateBytes, Just requestBytes) ->
+            insertActiveSpec stateBytes requestBytes
+        _ ->
+            it "no compiled code" $
+                expectationFailure "state or request script not found"
 
 insertActiveSpec ::
     SBS.ShortByteString -> SBS.ShortByteString -> Spec

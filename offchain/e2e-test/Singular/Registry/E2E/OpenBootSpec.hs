@@ -48,9 +48,9 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 
 import Singular.Registry.Blueprint (
+    Blueprint,
     NamingCodes (..),
     extractCompiledCode,
-    loadBlueprint,
     loadRegistryCodesFromEnv,
  )
 import Singular.Registry.Config (CageConfig (..))
@@ -75,37 +75,28 @@ import Singular.Registry.E2E.CageSpec (withBootedCage)
 hex :: ByteString -> String
 hex = T.unpack . TE.decodeUtf8 . Base16.encode
 
-spec :: Spec
-spec = describe "#173 A173-BOOT — the open registry boots from its own blueprint" $ do
-    mPath <- runIO $ lookupEnv "REGISTRY_BLUEPRINT"
-    case mPath of
-        Nothing ->
-            it "skipped (REGISTRY_BLUEPRINT not set)" (pure () :: IO ())
-        Just path -> do
-            ebp <- runIO $ loadBlueprint path
-            case ebp of
-                Left err -> it ("blueprint error: " <> err) (expectationFailure err)
-                Right bp ->
-                    case ( extractCompiledCode "state.state" bp
-                         , extractCompiledCode "request.request" bp
-                         , extractCompiledCode "open.open" bp
-                         , extractCompiledCode "witness.witness" bp
-                         ) of
-                        (Just stateBytes, Just requestBytes, Just openBytes, Just witnessBytes) ->
-                            openBootSpec stateBytes requestBytes openBytes witnessBytes
-                        (_, _, Nothing, _) ->
-                            it "the registry blueprint carries open.open" $
-                                expectationFailure
-                                    "A173-BOOT: no open.open in REGISTRY_BLUEPRINT — \
-                                    \the open application is not in the registry partition"
-                        (_, _, _, Nothing) ->
-                            it "the registry blueprint carries witness.witness" $
-                                expectationFailure
-                                    "A173-BOOT: no witness.witness in REGISTRY_BLUEPRINT — \
-                                    \the three witness policies have not moved here (I2)"
-                        _ ->
-                            it "no compiled code" $
-                                expectationFailure "state or request script not found in blueprint"
+spec :: Blueprint -> Spec
+spec bp = describe "#173 A173-BOOT — the open registry boots from its own blueprint" $ do
+    case ( extractCompiledCode "state.state" bp
+         , extractCompiledCode "request.request" bp
+         , extractCompiledCode "open.open" bp
+         , extractCompiledCode "witness.witness" bp
+         ) of
+        (Just stateBytes, Just requestBytes, Just openBytes, Just witnessBytes) ->
+            openBootSpec stateBytes requestBytes openBytes witnessBytes
+        (_, _, Nothing, _) ->
+            it "the registry blueprint carries open.open" $
+                expectationFailure
+                    "A173-BOOT: no open.open in REGISTRY_BLUEPRINT — \
+                    \the open application is not in the registry partition"
+        (_, _, _, Nothing) ->
+            it "the registry blueprint carries witness.witness" $
+                expectationFailure
+                    "A173-BOOT: no witness.witness in REGISTRY_BLUEPRINT — \
+                    \the three witness policies have not moved here (I2)"
+        _ ->
+            it "no compiled code" $
+                expectationFailure "state or request script not found in blueprint"
 
 openBootSpec ::
     SBS.ShortByteString ->
