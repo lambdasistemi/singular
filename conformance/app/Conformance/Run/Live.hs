@@ -78,8 +78,8 @@ import Cardano.Ledger.Address (
     serialiseAddr,
  )
 
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
-import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL, mkBasicTx)
+import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL, scriptTxWitsL)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Credential (Credential (..))
@@ -90,15 +90,20 @@ import Cardano.Ledger.Api.Tx.Body (
     outputsTxBodyL,
     referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
+    vldtTxBodyL,
+    ValidityInterval (..),
+    mkBasicTxBody,
+    collateralInputsTxBodyL,
  )
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx.Out (
     addrTxOutL,
     coinTxOutL,
     datumTxOutL,
+    getMinCoinTxOut,
     referenceScriptTxOutL,
  )
-import Cardano.Ledger.BaseTypes (StrictMaybe (SJust))
+import Cardano.Ledger.BaseTypes (SlotNo (..), StrictMaybe (SJust))
 import Cardano.Ledger.Core (KeyHash, hashScript)
 import Cardano.Ledger.Plutus.Data (Data (..), binaryDataToData)
 import Cardano.Ledger.Hashes (KeyHash (..))
@@ -106,6 +111,7 @@ import Cardano.Ledger.Keys (KeyRole (..))
 import Cardano.Ledger.Mary.Value (MultiAsset (..))
 import Cardano.Ledger.TxIn (TxIn (..), txInToText)
 import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger (
@@ -145,8 +151,10 @@ import Singular.Registry.TxBuilder.Internal (
     toPlcData,
     trySlots,
     txInToRef,
+    computeRefund,
+    mkRequestScript,
+    placeholderExUnits,
  )
-import Singular.Registry.TxBuilder.Retract (retractRequestImpl)
 import Singular.Registry.Types (
     CageDatum (..),
     Edge,
@@ -160,7 +168,7 @@ import Singular.Registry.Types (
     OnChainTxOutRef (..),
     ProofStep (..),
     RequestAction (Update),
-    UpdateRedeemer (Modify),
+    UpdateRedeemer (Modify, Retract),
  )
 import Singular.Registry.Types qualified as Types
 import Cardano.Node.Client.E2E.Setup (addKeyWitness)
@@ -200,6 +208,8 @@ data LiveStep = LiveStep
     -- ^ the output reference the booked request sat at
     , lsRequestOut :: Maybe (TxOut ConwayEra)
     , lsModelRequest :: Value
+    , lsRetraction :: Maybe Value
+    -- ^ what the model's admission reads of a retraction, from the retraction as built
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
@@ -218,6 +228,7 @@ data LiveState = LiveState
     , liveRegistryKeys :: IORef (Map.Map String [ByteString])
     , liveRegistryWallets :: IORef (Map.Map String [Addr])
     , liveRegistryIds :: IORef (Map.Map String Integer)
+    , liveUnsignedRequests :: IORef (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
     }
 
 
@@ -231,7 +242,8 @@ runLive env program = do
     keys <- newIORef Map.empty
     wallets <- newIORef Map.empty
     registryIds <- newIORef Map.empty
-    result <- go (LiveState identities pending starts traces keys wallets registryIds) program
+    unsignedRequests <- newIORef Map.empty
+    result <- go (LiveState identities pending starts traces keys wallets registryIds unsignedRequests) program
     remaining <- readIORef pending
     require "live story submitted a request without comparing it" (remaining == 0)
     pure result
@@ -276,8 +288,10 @@ runLive env program = do
             pure result
 
 
--- | One story instruction books exactly one request. All later work keeps its
--- outref, so a refused request left at the script cannot leak into a fold. The
+-- | One story instruction books a request, or retries the request left by an
+-- unsigned retraction so its owner-signed control spends the same request.
+-- All later work keeps its outref, so a refused request left at the script
+-- cannot leak into a fold. The
 -- request then leaves by the instruction's exit: folded by its own edge,
 -- rejected once it may no longer be folded, or retracted by its owner.
 submitEdge :: Env -> LiveState -> RowCage -> Live.Exit -> Maybe Live.Tamper -> Live.EdgeRequest Addr -> IO LiveStep
@@ -319,8 +333,12 @@ submitEdge env state cage exit alteration request = do
             Live.WitnessTerminal -> (serialiseAddr wallet, BS.empty)
             _ -> (BS.empty, BS.empty)
     refs <- storyReferences env cage key edge
-    booking <- try @ErrorCall (bookEdge env cfg tid genesisAddr genesisSignKey key edge destination refs
-        (defaultTipCoin cfg + cgDeposit))
+    let pendingKey = (registry, Live.requestKey request, fromEnum (Live.requestEdge request), serialiseAddr wallet)
+    retained <- Map.lookup pendingKey <$> readIORef (liveUnsignedRequests state)
+    booking <- case (exit, retained) of
+        (Live.Retract, Just named) -> pure (Right named)
+        _ -> try @ErrorCall (bookEdge env cfg tid genesisAddr genesisSignKey key edge destination refs
+            (defaultTipCoin cfg + cgDeposit))
     case booking of
         Left failure -> case stripPrefix
             ("conformance: bookEdge refused (edge " <> show edge <> ", key " <> show key <> "): ")
@@ -331,10 +349,12 @@ submitEdge env state cage exit alteration request = do
                         (addrKeyHashBytes genesisAddr) destination
                 modelRequest <- storyModelRequest ids cfg exit request cgDeposit (stateMaxFee before)
                     Nothing (Left decided)
-                pure (LiveStep cage request exit alteration Nothing Nothing modelRequest 0 Nothing Nothing
+                pure (LiveStep cage request exit alteration Nothing Nothing modelRequest Nothing 0 Nothing Nothing
                     Nothing [] (StepUnsupported Nothing (T.pack nodeReason) Nothing))
             Nothing -> throwIO failure
         Right named@(reqIn, reqOut) -> do
+            when (alteration == Just Live.Unsigned) $
+                modifyIORef' (liveUnsignedRequests state) (Map.insert pendingKey named)
             let Coin bond = reqOut ^. coinTxOutL
                 deposit = bond - stateMaxFee before
             require "booked request holds less than the on-chain processing tip" (deposit >= 0)
@@ -357,9 +377,12 @@ submitEdge env state cage exit alteration request = do
             ownerKey <- requestOwnerKey reqOut
             let facts = Payments.ExitFacts exit (Live.requestEdge request) ownerKey Nothing
                     (Just (txInReference reqIn))
-                editsOf transaction = either (failWith . (("tamper: " <> show alteration <> ": ") <>)) pure
-                    (maybe (Right []) (\t -> Payments.tamperEdits t facts
-                        (map snd (foldOutputsOf cfg transaction))) alteration)
+                editsOf transaction = either (failWith . (("tamper: " <> show alteration <> ": ") <>)) pure $
+                    case alteration of
+                        Just Live.Unsigned | exit == Live.Retract -> Right []
+                        Just Live.Unsigned -> Left "only a retraction can omit its owner's signature"
+                        _ -> maybe (Right []) (\t -> Payments.tamperEdits t facts
+                            (map snd (foldOutputsOf cfg transaction))) alteration
             -- The exit's transaction, assembled with the given per-purpose units
             -- (none: the builder's own) and tampered; its collateral; and the
             -- active witness a fold spends.
@@ -421,8 +444,14 @@ submitEdge env state cage exit alteration request = do
             emit "step-units" ("measured=" <> compactJson (purposeMeasurementsJson measurements)
                 <> " declared=" <> compactJson (purposeDeclarationsJson measurements submittedBudgets))
             result <- submitTxResilient (envSubmit env) signed
+            -- What the model's admission reads of a retraction is read off the
+            -- retraction as built, once it has been submitted inside its window.
+            retraction <- if exit == Live.Retract
+                then Just <$> retractionWitness env state cage reqOut signed
+                else pure Nothing
             case result of
                 Submitted _ -> do
+                    modifyIORef' (liveUnsignedRequests state) (Map.delete pendingKey)
                     case alteration of
                         Just payment | payment /= Live.ExtraSigner -> failWith
                             (Live.tamperName payment <> " FINDING: chain accepted tampered "
@@ -437,7 +466,7 @@ submitEdge env state cage exit alteration request = do
                         (aggregatePurposeUnits measurements)
                     writeIORef (rcUnits cage) (mem, cpu)
                     modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, txSizeBytes signed)])
-                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest bond
+                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest retraction bond
                         (Just after) witness (custodyOf refs) spent
                         (StepAccepted signed (mem, cpu, txSizeBytes signed)))
                 Rejected reason -> do
@@ -453,7 +482,7 @@ submitEdge env state cage exit alteration request = do
                                 , srBudgetExceeded = budgetRefusalPurposes
                                     (transactionPurposeHashes signed visible) (T.pack explanation)
                                 }
-                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest bond
+                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest retraction bond
                         Nothing witness (custodyOf refs) spent
                         (refusedOutcome marker signed diagnostic))
   where
@@ -517,8 +546,8 @@ foldingBuilder env cage tid exit alteration request named before elsewhere edits
     pure (build, pot, witness)
 
 
-{- | A retraction of the booked request by its owner, through the offchain
-builder once the request is retractable: the request is spent alone, its
+{- | A retraction of the booked request by its owner, assembled before its
+scripts are evaluated: the request is spent alone, its
 return bound to it by an inline datum, the owner signing. A tamper edits that
 transaction; spending the registry's state beside the request moves the state
 from a reference input to an input, continued unchanged, with the state
@@ -537,7 +566,8 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
     -- Phase 2 opens once the request's processing window has passed.
     sleepUntil (submittedAt + stateProcessTime before + 500)
     pot <- collateralPot env
-    honest <- retractRequestImpl cfg prov tid reqIn genesisAddr
+    honest <- buildRetraction env cage tid (reqIn, reqOut) before
+    owner <- requestOwnerKey reqOut
     -- The other request a rebound return names is the collateral pot's own
     -- output reference, named here while acting.
     other <- if alteration == Just Live.OtherReference
@@ -555,11 +585,54 @@ retractionBuilder env ids cage tid (reqIn, reqOut) elsewhere alteration editsOf 
                 if Payments.SpendState `elem` edits
                     then spendStateBeside stateUtxo stateScripts reqIn outputsEdited
                     else Right outputsEdited
-            either failWith pure (declareRetraction pp units pot
+            declared <- either failWith pure (declareRetraction pp units pot
                 (sum (map (refScriptSize . snd) stateScripts)) genesisAddr edited)
+            -- Removing the signer after declaring the fee changes no output:
+            -- the original fee also covers the smaller unsigned transaction.
+            pure $ if alteration == Just Live.Unsigned
+                then declared & bodyTxL . reqSignerHashesTxBodyL .~ Set.delete
+                    (addrWitnessKeyHash owner)
+                    (declared ^. bodyTxL . reqSignerHashesTxBodyL)
+                else declared
     require "the cage publishes no reference output carrying its state validator"
         (not (null stateScripts) || alteration /= Just Live.StateSpent)
     pure (build, pot, Nothing)
+
+-- | Assemble the ordinary retraction before evaluation, so an inadmissible
+-- request reaches the same node evaluation and submission as every other step.
+buildRetraction :: Env -> RowCage -> TokenId -> (TxIn, TxOut ConwayEra) -> OnChainTokenState -> IO ConwayTx
+buildRetraction env cage tid named@(reqIn, reqOut) before = do
+    let cfg = rcCfg cage
+        prov = envProv env
+        (_, submittedAt) = requestDatumOf reqOut
+    state <- cageStateUtxo env cage
+    wallet <- Cage.queryUTxOs prov genesisAddr
+    funder <- case sortOn (negate . outCoin . snd) wallet of
+        first : _ -> pure first
+        [] -> failWith "retraction fee payer has no indexed outputs"
+    owner <- requestOwnerKey reqOut
+    pp <- Cage.queryProtocolParams prov
+    lower <- Cage.posixMsCeilSlot prov (submittedAt + stateProcessTime before)
+    SlotNo upper <- Cage.posixMsToSlot prov (submittedAt + stateProcessTime before + stateRetractTime before)
+    let inputs = Set.fromList [reqIn, fst funder]
+        script = mkRequestScript cfg tid
+        boundRefund = computeRefund pp (network cfg) 0 reqOut
+            & datumTxOutL .~ mkInlineDatum (toPlcData (txInToRef reqIn))
+        refund = boundRefund & coinTxOutL .~ max (boundRefund ^. coinTxOutL) (getMinCoinTxOut pp boundRefund)
+        redeemers = Redeemers (Map.singleton
+            (ConwaySpending (AsIx (spendingIndex reqIn inputs)))
+            (toLedgerData (Retract (txInToRef (fst state))), placeholderExUnits))
+        body = mkBasicTxBody
+            & inputsTxBodyL .~ Set.singleton reqIn
+            & referenceInputsTxBodyL .~ Set.singleton (fst state)
+            & outputsTxBodyL .~ StrictSeq.singleton refund
+            & collateralInputsTxBodyL .~ Set.singleton (fst funder)
+            & reqSignerHashesTxBodyL .~ Set.singleton (addrWitnessKeyHash owner)
+            & vldtTxBodyL .~ ValidityInterval (SJust lower) (SJust (SlotNo (upper - 1)))
+        transaction = mkBasicTx body
+            & witsTxL . scriptTxWitsL .~ Map.singleton (hashScript script) script
+            & witsTxL . rdmrsTxWitsL .~ redeemers
+    either (failWith . show) (pure . balancedTx) (balanceTx pp [funder, named] [] genesisAddr transaction)
 
 
 {- | Spend the registry's state beside a retraction: the state moves from the
@@ -585,6 +658,56 @@ spendStateBeside (stateIn, stateOut) stateScripts reqIn transaction = do
         & bodyTxL . referenceInputsTxBodyL .~ references
         & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList (stateOut : toList (transaction ^. bodyTxL . outputsTxBodyL))
         & witsTxL . rdmrsTxWitsL .~ redeemers)
+
+
+{- | What the model's admission reads of a retraction, from the retraction as
+built: the @submitted_at@ of the request's own datum; the transaction's validity
+bounds, each bounding slot at the POSIX time it starts, as the ledger hands them
+to the request script (the lower one included, the upper one excluded); and its
+required signers, each the wallet identity whose payment key it is. Nothing is
+read back from an observation.
+-}
+retractionWitness :: Env -> LiveState -> RowCage -> TxOut ConwayEra -> ConwayTx -> IO Value
+retractionWitness env state cage requestOut transaction = do
+    tid <- cageTid cage
+    wallets <- maybe (failWith "registry has no allocated wallets") pure
+        . Map.lookup (show tid) =<< readIORef (liveRegistryWallets state)
+    signatories <- mapM (observeSigner (liveIds state) wallets)
+        (toList (transaction ^. bodyTxL . reqSignerHashesTxBodyL))
+    (validFrom, validTo) <- case transaction ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) ->
+            (,) <$> slotStartMs (envProv env) lower <*> slotStartMs (envProv env) upper
+        _ -> failWith "a retraction is built without both validity bounds"
+    let (_, submittedAt) = requestDatumOf requestOut
+    pure (object [ "submittedAt" .= submittedAt, "validFrom" .= validFrom
+                 , "validTo" .= validTo, "signatories" .= signatories ])
+
+
+{- | The POSIX time, in milliseconds, at which a slot starts: the least time the
+node's era history places in that slot (@posixMsToSlot@ is its floor), found by
+bracketing the current time and halving.
+-}
+slotStartMs :: Cage.Provider IO -> SlotNo -> IO Integer
+slotStartMs prov slot = do
+    now <- currentPosixMs
+    lower <- before now 1000
+    upper <- from now 1000
+    search lower upper
+  where
+    inOrAfter ms = (>= slot) <$> Cage.posixMsToSlot prov ms
+    before ms step = do
+        reached <- inOrAfter ms
+        if reached then before (ms - step) (step * 2) else pure ms
+    from ms step = do
+        reached <- inOrAfter ms
+        if reached then pure ms else from (ms + step) (step * 2)
+    -- The slot has not started at @lower@ and has at @upper@.
+    search lower upper
+        | upper - lower <= 1 = pure upper
+        | otherwise = do
+            let middle = (lower + upper) `div` 2
+            reached <- inOrAfter middle
+            if reached then search lower middle else search middle upper
 
 
 -- | Wait for a phase boundary.
@@ -1174,7 +1297,8 @@ observedStepTx _env ids wallets step transaction config mint destination commitm
 -- compared folds of this registry; a tamper never joins it, nor a reject or a
 -- retraction, which the model says leave the registry as it was. Given the
 -- submitted transaction's inputs and outputs, the driver also judges whether it
--- spends what the exit may and pays what the exit owes.
+-- spends what the exit may and pays what the exit owes. A retraction is asked
+-- under the witness read off it as built, so the model admits it first.
 askModel :: Env -> LiveState -> LiveStep -> Maybe ([Value], [Value]) -> IO Value
 askModel _env state step judged = do
     tid <- cageTid (lsCage step)
@@ -1196,11 +1320,19 @@ askModel _env state step judged = do
             , "exit" .= Live.exitName (lsExit step) (Live.requestEdge (lsRequest step))
             , "request" .= lsModelRequest step
             , "lovelace" .= lsRequestLovelace step ]
+            <> [ "witness" .= witness | Just witness <- [lsRetraction step] ]
             <> concat [ ["inputs" .= inputs, "outputs" .= outputs] | Just (inputs, outputs) <- [judged] ]
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     let asked = case control of
             Just "wrong-fee" -> bumpEvaluationField "maxFee" question
             Just "wrong-timing" -> bumpEvaluationField "processTime" question
+            Just "signed-owner" | lsTamper step == Just Live.Unsigned ->
+                case (question, lsModelRequest step) of
+                    (Object fields, Object request)
+                        | Just owner <- KM.lookup "owner" request
+                        , Just (Object witness) <- KM.lookup "witness" fields ->
+                            Object (KM.insert "witness" (Object (KM.insert "signatories" (toJSON [owner]) witness)) fields)
+                    _ -> question
             _ -> question
     evaluator <- requireEnv "CONFORMANCE_MODEL_EVALUATOR"
     LeanOracle.expectedObservation evaluator [] asked >>= either failWith pure
@@ -1279,7 +1411,7 @@ compareStep env state step observation = do
     let registry = show tid
     registryId <- maybe (failWith "step registry was not allocated") pure
         . Map.lookup registry =<< readIORef (liveRegistryIds state)
-    let record = object
+    let record = object $
             [ "registry" .= registryId
             , "edge" .= Live.edgeName (Live.requestEdge (lsRequest step))
             , "exit" .= exitNamed
@@ -1290,6 +1422,11 @@ compareStep env state step observation = do
             , "compared" .= compared, "unobserved" .= unobserved
             , "perturbation" .= perturbation
             , "differences" .= map differenceJson differing ]
+            <> ["witness" .= witness | Just witness <- [lsRetraction step]]
+            <> [ "requestScript" .= requestMarkerOf stepCfg stepTid
+               | lsExit step == Live.Retract
+               , lsTamper step == Just Live.Unsigned || Live.requestEdge (lsRequest step)
+                   `notElem` [Live.InsertAbsent, Live.InsertActive, Live.WitnessTerminal] ]
     modifyIORef' (envLiveRecords env) (<> [record])
     let chainDetail = case lsOutcome step of
             StepAccepted transaction _ -> " txid=" <> txIdHex transaction
@@ -1343,6 +1480,7 @@ tamperDifferences alteration = case alteration of
     Live.ShortByOne -> []
     Live.OtherReference -> []
     Live.StateSpent -> []
+    Live.Unsigned -> []
 
 
 -- | Every path at which a reported difference's two sides differ, down to a

@@ -4,7 +4,10 @@
 module Conformance.Support.Specification (spec) where
 
 import Control.Monad.Operational (Program, ProgramViewT (Return, (:>>=)), view)
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Control.Monad (forM_)
+import Data.List (isInfixOf)
+import Conformance.Story.Live qualified as Live
 import Conformance.Story.Binding (mkBoundObligation)
 import Conformance.Story.Specification
     ( Clause (..)
@@ -34,6 +37,19 @@ arithmetic = bindTheorem (mkBoundObligation "example.arithmetic" "example-digest
 
 spec :: Spec
 spec = describe "Appendix — reusable theorem and clause execution" $ do
+    forM_ [minBound .. maxBound :: Live.Tamper] $ \alteration ->
+        it ("validates and renders the complete instruction sequence for " <> Live.tamperName alteration) $ do
+            let program = do
+                    step <- Live.tamperExit alteration Live.Retract "registry"
+                        (Live.EdgeRequest Live.InsertActive "request" "owner")
+                    observation <- Live.observe step
+                    _ <- Live.compareWithModel step observation
+                    pure ()
+                rendered = Live.renderLive program
+            Live.validateLive program `shouldBe` Right ()
+            rendered `shouldSatisfy` isInfixOf "Retract"
+            rendered `shouldSatisfy` isInfixOf "Observe"
+            rendered `shouldSatisfy` isInfixOf "Compare"
     it "Checks each clause and passes its observed result to the next action" $
         execute (theorem arithmetic $ do
             first <- clause "One becomes two" (arithmeticCheck 2) (action (Increment 1))

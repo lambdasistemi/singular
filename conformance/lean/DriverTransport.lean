@@ -16,7 +16,8 @@ rather than against one fixed configuration.
 
 The entry point is deliberately edge-agnostic: it takes a starting state, a
 setup trace and a request, so a connected retirement is the same call with a
-setup trace rather than a second adapter.
+setup trace rather than a second adapter. A retraction also carries the witness
+its admission reads, so the model admits it before it pays it.
 -/
 
 open Lean Singular Singular.Driver
@@ -105,8 +106,19 @@ def toExit (j : Json) (request : Request) : Except String Exit :=
     | some exit => pure exit
     | none => throw s!"no declared exit is named {name}"
 
+/-- What a retraction's admission reads beyond the request, as the caller
+established it: the request's submission time, the transaction's validity bounds
+and its signatories (`Singular.RetractWitness`). A retraction question must carry
+it, and no other question may: every other exit's admission reads none. -/
+def toWitness (j : Json) (exit : Exit) : Except String (Option RetractWitness) :=
+  match j.getObjVal? "witness", exit with
+  | .error _, .retract => throw "a retraction question carries no witness"
+  | .error _, _ => pure none
+  | .ok w, .retract => some <$> fromJson? w
+  | .ok _, _ => throw "only a retraction question carries a witness"
+
 /-- One evaluation: a starting state, a lawful setup trace, and the request, taken
-by the exit the caller names. -/
+by the exit the caller names; a retraction under the witness it carries. -/
 def toScenario (j : Json) : Except String Scenario := do
   let start ← (j.getObjVal? "start") >>= toState
   let request ← (j.getObjVal? "request") >>= toRequest
@@ -120,11 +132,12 @@ def toScenario (j : Json) : Except String Scenario := do
   let statementSha256 ← (j.getObjVal? "statementSha256") >>= fromJson?
   let id ← (j.getObjVal? "id") >>= fromJson?
   let exit ← toExit j request
+  let witness ← toWitness j exit
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, exit, request, lovelace }
+    , start, setup, exit, request, lovelace, witness }
 
 /-- One input a caller observed, as the driver's judgement reads it: the state
 tokens it holds. `spend` reads nothing else of an input, so nothing else is taken

@@ -205,6 +205,7 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-CG23.json"
           test -f "$f" || { echo 'FAIL: missing CG23 receipt'; exit 1; }
+          test "$(wc -c < "$f")" -le 14745 || { echo "FAIL: CG23 receipt exceeds its margin"; exit 1; }
           state_hash="$(nix run --quiet nixpkgs#jq -- -er '.validators[] | select(.title == "state.state.spend" and ((.parameters // []) | length) == 0) | .hash' "$blueprint")"
           # jq expands its own --arg variables inside this program.
           # shellcheck disable=SC2016
@@ -217,12 +218,12 @@ jobs:
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 8
-            and ([.steps[].edge] == ["insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive"])
-            and ([.steps[].exit] == ["reject","reject","reject","retract","retract","retract","retract","retract"])
-            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address","other-reference","state-spent",null])
-            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","accepted"])
-            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","accepted"])
+            and (.steps | length) == 10
+            and ([.steps[].edge] == ["insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","insertActive","updateTerminal","insertActive","insertActive"])
+            and ([.steps[].exit] == ["reject","reject","reject","retract","retract","retract","retract","retract","retract","retract"])
+            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address","other-reference","state-spent",null,"unsigned",null])
+            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","refused","refused","refused","refused","accepted"])
             and all(.steps[]; .comparison == "agrees")
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
             and all(.steps[] | select(.model.outcome == "refused");
@@ -235,12 +236,22 @@ jobs:
             and .steps[6].model.reason == "retract-state-spent"
             and (.steps[6].chain.refusal.scripts | index("request") != null)
             and ([.steps[0,1,2].registry] | unique | length) == 1
-            and ([.steps[3,4,5,6,7].registry] | unique | length) == 1
+            and ([.steps[3,4,5,6,7,8,9].registry] | unique | length) == 1
             and .steps[0].registry != .steps[3].registry
             and all(.steps[] | select(.exit == "retract");
-              (.edge == "insertAbsent" or .edge == "insertActive" or .edge == "witnessTerminal")
-              and (.request.reference | type) == "number")
-            and ([.steps[3,4,5,6,7].request.reference] | unique | length) == 5
+              (.request.reference | type) == "number")
+            and ([.steps[3,4,5,6,7,8,9].request.reference] | unique | length) == 6
+            and .steps[7].model.reason == "withdraw-insert-only"
+            and .steps[8].model.reason == "retract-owner"
+            and all(.steps[7,8]; .requestScript as $request |
+              .chain.outcome == "refused"
+              and ($request | type == "string" and test("^[0-9a-f]{56}$"))
+              and (.chain.refusal.hashes | index($request) != null)
+              and (.chain.refusal.scripts | index("request") != null))
+            and .steps[8].request == .steps[9].request
+            and (.steps[8].witness | del(.signatories)) == (.steps[9].witness | del(.signatories))
+            and .steps[8].witness.signatories == []
+            and (.steps[9] | .request.owner as $owner | .witness.signatories | index($owner) != null)
             and (.transactions | length) == 2
           ' "$f" > /dev/null || { echo 'FAIL: CG23 exit evidence moved'; exit 1; }
       - name: Run the generic rows as a packaged app without a dev shell

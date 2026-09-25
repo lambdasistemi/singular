@@ -6,7 +6,8 @@ One driver over the model's own law, in place of one adapter per theorem.
 
 Given a scenario it reaches the scenario's starting state by *running* the law
 over a setup trace, checks the law premise on the state it arrived at, takes the
-scenario's exit on the request through `Singular.exitStep`, and reports the whole
+scenario's exit on the request through `Singular.admittedExitStep` — a
+retraction's admission, then `Singular.exitStep` — and reports the whole
 declared boundary of what the law actually did. Nothing here restates the model: every observation
 delegates to a model definition or to the transaction the model builds.
 
@@ -202,7 +203,9 @@ def premiseDeclaration : String := "Singular.Driver.consistentB"
 to reach the starting state; `start` is where that trace begins; `exit` is the way
 the scenario's request leaves the queue, and names its operation. A scenario that
 needs a non-initial state declares `requiresReachableState` and must supply the
-trace that produces it, so a constructed final state cannot stand in for one. -/
+trace that produces it, so a constructed final state cannot stand in for one.
+`witness` is what a retraction's admission reads beyond the request
+(`Singular.RetractWitness`); only a retraction reads it (`admissionWitness`). -/
 structure Scenario where
   id : String
   theoremName : String
@@ -215,6 +218,7 @@ structure Scenario where
   exit : Exit
   request : Request
   lovelace : Nat
+  witness : Option RetractWitness := none
 
 /-- One executed setup step and the state it produced. -/
 structure SetupStep where
@@ -255,7 +259,7 @@ def runSetup : RegistryState → List Request → (List SetupStep × RegistrySta
 /-- The declared boundary of one accepted transition. Each field delegates: the
 leaf and root are read back off the state the law produced, the mint and the
 payments are the executed result's own, and the transaction is the one
-`Singular.txOfExit` built from that exit. -/
+`Singular.admittedTxOfExit` built from that exit. -/
 def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json :=
   Json.mkObj
     [ ("config", toJson res.state.config)
@@ -269,12 +273,30 @@ def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json 
     , ("state", toJson res.state)
     , ("tx", txJson c tx) ]
 
+/-- The witness a scenario's exit is admitted under. A retraction is admitted
+under the scenario's own, and a retraction that carries none has nothing to be
+admitted under. A fold and a reject have no admission (`Singular.exitAdmission`
+reads no witness for them), so they are taken under an empty one they ignore. -/
+def admissionWitness (sc : Scenario) : Option RetractWitness :=
+  match sc.exit with
+  | .retract => sc.witness
+  | .fold _ | .reject =>
+    some { submittedAt := 0, validFrom := 0, validTo := 0, signatories := [] }
+
 /-- F01 `runSurface`: execute one scenario against the model's law.
 
 The order is the requirement: reach the state by running the law, check the
 premise on the state reached, and only then apply the request and observe. An
 observation that preceded its premise would be an observation of a state the
-model does not admit. -/
+model does not admit.
+
+The exit is taken through admission: `Singular.admittedExitStep` and
+`Singular.admittedTxOfExit`, so a retraction is accepted only when
+`Singular.retractAdmission` admits it under its witness, and is otherwise refused
+with the admission's reason; a fold and a reject are exactly `Singular.exitStep`
+and `Singular.txOfExit`. A retraction with no witness is `unsupported`: the case
+was not described, and reading it as the owner's absent signature would dress a
+missing input up as the model's refusal. -/
 def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
   let (steps, s, reached) := runSetup sc.start sc.setup
   if !reached then
@@ -284,12 +306,17 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
     (steps, { outcome := .unsupported, reason := some "premise-does-not-hold"
             , premiseChecked := false, observations := none })
   else
-    match exitStep s sc.exit sc.request with
+    match admissionWitness sc with
+    | none =>
+      (steps, { outcome := .unsupported, reason := some "retraction-without-witness"
+              , premiseChecked := true, observations := none })
+    | some witness =>
+    match admittedExitStep s sc.exit sc.request witness with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
               , premiseChecked := true, observations := none })
     | .ok res =>
-      match txOfExit s sc.exit sc.request sc.lovelace with
+      match admittedTxOfExit s sc.exit sc.request witness sc.lovelace with
       | .error why =>
         (steps, { outcome := .unsupported, reason := some ("transaction-unbuildable: " ++ why)
                 , premiseChecked := true, observations := none })
@@ -300,7 +327,9 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
 /-- The declared judgements of a transaction a caller observed, in their order:
 `spend`, the refusal `Singular.spendRefusal` gives the scenario's exit for the
 inputs it spends, then `settle`, whether its outputs pay what that exit owes its
-request and if not the reason `Singular.settle` gives. -/
+request and if not the reason `Singular.settle` gives. A retraction's admission is
+not judged here: `runSurface` answers it first, refusing with its reason, so the
+row and these judgements, read in that order, are `Singular.exitRefusal`. -/
 def judgeSurface (sc : Scenario) (inputs : List TxInput) (outputs : List TxOutput) :
     Option String :=
   (spendRefusal sc.exit inputs).orElse fun _ => settle (obligations sc.exit sc.request) outputs
@@ -312,10 +341,11 @@ def setupStepJson (stp : SetupStep) : Json :=
     , ("reason", match stp.reason with | none => Json.null | some why => toJson why)
     , ("state", toJson stp.state) ]
 
-/-- One executed scenario, serialized as the corpus row the checker reads. -/
+/-- One executed scenario, serialized as the corpus row the checker reads. A
+row carries its scenario's witness when it has one. -/
 def scenarioJson (sc : Scenario) : Json :=
   let (steps, result) := runSurface sc
-  Json.mkObj
+  Json.mkObj <|
     [ ("id", toJson sc.id)
     , ("theorem", toJson sc.theoremName)
     , ("statementSha256", toJson sc.statementSha256)
@@ -325,8 +355,10 @@ def scenarioJson (sc : Scenario) : Json :=
     , ("requiresReachableState", toJson sc.requiresReachableState)
     , ("start", toJson sc.start)
     , ("request", toJson sc.request)
-    , ("lovelace", toJson sc.lovelace)
-    , ("setup", Json.arr ((steps.map setupStepJson).toArray))
+    , ("lovelace", toJson sc.lovelace) ]
+    ++ (match sc.witness with | none => [] | some w => [("witness", toJson w)])
+    ++
+    [ ("setup", Json.arr ((steps.map setupStepJson).toArray))
     , ("outcome", toJson (outcomeName result.outcome))
     , ("reason", match result.reason with | none => Json.null | some why => toJson why)
     , ("premise", Json.mkObj

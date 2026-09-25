@@ -1087,4 +1087,20 @@ theorem settle_one (p : Payment) (outputs : List TxOutput)
   subst named
   simp [owedTo, Nat.le_trans enough (lovelace_le_receivedBy _ outputs o h pays)]
 
+/-! ### Retraction admission: the checks, read as propositions -/
+
+/-- The retractable edges are the two inserts and the read. -/
+theorem retractableEdge_iff (e : Edge) :
+    retractableEdge e = true ↔
+      (e = .insertAbsent ∨ e = .insertActive ∨ e = .witnessTerminal) := by
+  cases e <;> simp [retractableEdge]
+
+/-- The phase-2 check is its two bounds: the lower one included, the upper one
+reached and not passed. -/
+theorem inPhase2_iff (c : Config) (w : RetractWitness) :
+    inPhase2 c w = true ↔
+      (w.submittedAt + c.processTime ≤ w.validFrom ∧
+        w.validTo ≤ w.submittedAt + c.processTime + c.retractTime) := by
+  simp [inPhase2]
+
 end Singular

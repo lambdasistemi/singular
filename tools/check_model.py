@@ -173,7 +173,7 @@ def unreachable_modules(root):
 # are detected rather than reported as conformance.
 # ---------------------------------------------------------------------------
 
-REFUSAL_LITERAL = re.compile(r'"([a-z]+(?:-[a-z]+)+)"')
+REFUSAL_LITERAL = re.compile(r'"([a-z][a-z0-9]*(?:-[a-z0-9]+)+)"')
 
 
 def model_refusal_vocabulary(root):
@@ -195,6 +195,80 @@ def model_refusal_vocabulary(root):
     assert exit_vocabulary, 'EMPTY EXTENT: no refusal reasons discovered in Singular.exitStep'
     vocabulary |= exit_vocabulary
     return vocabulary
+
+def model_retraction(root):
+    """What a retraction may be refused for, and which retractions are admitted,
+    read off the model.
+
+    Its refusal vocabulary is admission's, `Singular.retractAdmission`'s reasons,
+    and the retract exit's own: what `Singular.spendRefusal` gives it for what it
+    spends and what `Singular.unpaidReason` gives the return bound to its request.
+    The reason admission gives a non-retractable request is the one on its
+    `retractableEdge` line, the reason it gives a retraction its owner did not
+    sign the one on its `signatories` line; the retractable edges are the
+    `=> true` arm of `Singular.retractableEdge`. Nothing here is typed from the
+    model's words.
+    """
+    source = (root / 'lean/Singular/Model.lean').read_text(encoding='utf-8')
+    body = source.split('\ndef retractAdmission ', 1)[1].split('\n/--', 1)[0]
+    admission = REFUSAL_LITERAL.findall(body)
+    assert admission, 'EMPTY EXTENT: no admission reasons discovered in Singular.retractAdmission'
+
+    def reason_on(keyword):
+        found = [r for line in body.splitlines() if keyword in line
+                 for r in REFUSAL_LITERAL.findall(line)]
+        assert len(found) == 1, \
+            f'Singular.retractAdmission names {found} on its {keyword} line, not one reason'
+        return found[0]
+
+    spend = source.split('\ndef spendRefusal ', 1)[1].split('\n/--', 1)[0]
+    unpaid = source.split('\ndef unpaidReason ', 1)[1].split('\n/--', 1)[0]
+    exit_reasons = set(REFUSAL_LITERAL.findall(spend)) | {
+        r for line in unpaid.splitlines() if '.bound' in line for r in REFUSAL_LITERAL.findall(line)}
+    assert exit_reasons, 'EMPTY EXTENT: no reasons discovered for the retract exit'
+    table = source.split('\ndef retractableEdge ', 1)[1].split('\n/--', 1)[0]
+    retractable = {edge for line in table.splitlines() if line.rstrip().endswith('=> true')
+                   for edge in re.findall(r'\.(\w+)', line)}
+    assert retractable, 'EMPTY EXTENT: Singular.retractableEdge admits no edge'
+    return {'admission': set(admission), 'vocabulary': set(admission) | exit_reasons,
+            'edge': reason_on('retractableEdge'), 'owner': reason_on('signatories'),
+            'retractable': retractable}
+
+
+RETRACT_WITNESS_FIELDS = {'submittedAt', 'validFrom', 'validTo', 'signatories'}
+
+
+def check_retraction(s, retraction):
+    """A retraction row is admitted by the model before anything else: it carries
+    the witness admission read, and its outcome is the one admission gives it — a
+    request whose edge is not retractable refused for that, then one its owner did
+    not sign refused for that, and an accepted retraction only of a retractable
+    request its owner signed. The window is the third check; its bounds are the
+    model's theorem and Main rows, and here only its reason's vocabulary.
+    """
+    sid = s['id']
+    if s['outcome'] == 'unsupported':
+        return
+    witness = s.get('witness')
+    assert isinstance(witness, dict) and set(witness) == RETRACT_WITNESS_FIELDS, \
+        f'{sid}: a retraction row carries no witness for its admission: {witness!r}'
+    edge, owner = s['request']['edge'], s['request']['owner']
+    if edge not in retraction['retractable']:
+        expected = retraction['edge']
+    elif owner not in witness['signatories']:
+        expected = retraction['owner']
+    else:
+        expected = None
+    if expected is not None:
+        assert s['outcome'] == 'refused' and s['reason'] == expected, (
+            f'{sid}: a retraction of a {edge!r} request signed by {witness["signatories"]} '
+            f'for owner {owner} is {s["outcome"]} ({s["reason"]!r}); Singular.retractAdmission '
+            f'refuses it {expected!r} (retractable: {sorted(retraction["retractable"])})')
+    elif s['outcome'] == 'refused':
+        assert s['reason'] in retraction['admission'] - {retraction['edge'], retraction['owner']}, (
+            f'{sid}: a retraction its owner signed of a retractable request is refused '
+            f'{s["reason"]!r}, which admission gives for neither')
+
 
 EDGE_INDUCTIVE = re.compile(r'\ninductive Edge where\n((?:  \|[^\n]*\n)+)')
 EXIT_INDUCTIVE = re.compile(r'\ninductive Exit where\n((?:  \|[^\n]*\n)+)')
@@ -240,7 +314,8 @@ def driver_surface(corpus):
     return surface
 
 
-def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary, exits):
+def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary, exits,
+                           retraction):
     """R01-R03 over every scenario the driver executed.
 
     R01 is the one that needs saying out loud: a scenario's observations must
@@ -309,9 +384,11 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary,
             refused += 1
             # R03 — a refusal is the model's, with the model's own words.
             assert s['reason'], f'{sid}: refused with no reason'
-            assert s['reason'] in vocabulary, (
-                f'{sid}: refusal reason {s["reason"]!r} is not one the model can produce; '
-                f'a transport or process failure is an execution failure, never a ledger refusal')
+            allowed = retraction['vocabulary'] if s['operation'] == 'retract' else vocabulary
+            assert s['reason'] in allowed, (
+                f'{sid}: refusal reason {s["reason"]!r} is not one the model can produce for '
+                f'{s["operation"]}; a transport or process failure is an execution failure, '
+                f'never a ledger refusal')
             assert s['observations'] is None, \
                 f'{sid}: refused rows observe nothing — there was no transition to observe'
             # A refusal is the LAW saying no, which means the law ran, which
@@ -329,6 +406,12 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary,
             assert s['reason'], f'{sid}: unsupported rows must name what is unsupported'
             assert s['observations'] is None, f'{sid}: unsupported rows observe nothing'
 
+        # A retraction is admitted before it is paid; no other exit reads a witness.
+        if s['operation'] == 'retract':
+            check_retraction(s, retraction)
+        else:
+            assert 'witness' not in s, f'{sid}: a {s["operation"]} row carries a retraction witness'
+
     # Each class must actually occur, or the classification is untested.
     assert accepted, 'driver corpus contains no accepted transition'
     assert refused, 'driver corpus contains no domain refusal'
@@ -341,6 +424,14 @@ def check_driver_scenarios(corpus, generic_names, statement_digests, vocabulary,
         assert any(s['kind'] == 'witness' and s['operation'] == other
                    and s['outcome'] == 'accepted' for s in scenarios), \
             f'no accepted witness row executes the {other} exit'
+
+    # Every reason admission gives is exhibited by a refused retraction, so no
+    # admission check is declared without a row that runs it.
+    exhibited = {s['reason'] for s in scenarios
+                 if s['operation'] == 'retract' and s['outcome'] == 'refused'}
+    assert retraction['admission'] <= exhibited, (
+        f'admission reasons the model states but no refused retraction exhibits: '
+        f'{sorted(retraction["admission"] - exhibited)}')
 
     # R02 — a mutant is only a mutant relative to the witness it perturbs.
     witnesses = {s['id'] for s in scenarios if s['kind'] == 'witness'}
@@ -687,7 +778,7 @@ def main():
     statement_digests = {r['name']: r['statementSha256'] for r in generic_records}
     accepted, refused, total = check_driver_scenarios(
         driver_corpus, generic_names, statement_digests, model_refusal_vocabulary(root),
-        model_exits(root))
+        model_exits(root), model_retraction(root))
     leaf_bytes, deltas = model_constants(root)
     derived = check_derived(driver_corpus, leaf_bytes, deltas, model_transitions(root))
     check_or_compare(root / 'lean/driver-corpus.json',
