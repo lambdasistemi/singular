@@ -6,7 +6,7 @@ you compared. This is that story, and every value below is read out of
 `lean/driver-corpus.json` — the corpus the driver produced by executing the
 model — rather than typed here.
 
-- driver corpus payload: `24bd65183c6207539a840af4df8fdd634d6f63c5a2900b84818b7aa26659962e`
+- driver corpus payload: `ef2445d2722ab048815d1293fd6a5bbfe9c8baacf3a348c2fcec2416132bcde7`
 - model: `ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177`
 - surface: `Singular.Driver.runSurface`, protocol version 4, digest `13086894509481008378`
 
@@ -15,8 +15,9 @@ model — rather than typed here.
 One executable over the model's own law, not one adapter per theorem. It
 reaches a scenario's starting state by *running* the law over a setup trace,
 checks the law premise on the state it arrived at, takes the scenario's exit on
-the request through `Singular.exitStep`, and reports the whole declared boundary
-of what the law did.
+the request through `Singular.admittedExitStep` — a retraction's admission, then
+`Singular.exitStep` — and reports the whole declared boundary of what the law
+did.
 
 Declared operations: `insertAbsent`, `insertActive`, `updateActive`, `updateTerminal`, `deleteAbsent`, `deleteActive`, `witnessTerminal`, `reject`, `retract`.
 

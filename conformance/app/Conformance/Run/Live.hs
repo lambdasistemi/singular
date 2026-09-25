@@ -90,6 +90,8 @@ import Cardano.Ledger.Api.Tx.Body (
     outputsTxBodyL,
     referenceInputsTxBodyL,
     reqSignerHashesTxBodyL,
+    vldtTxBodyL,
+    ValidityInterval (..),
  )
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx.Out (
@@ -98,7 +100,7 @@ import Cardano.Ledger.Api.Tx.Out (
     datumTxOutL,
     referenceScriptTxOutL,
  )
-import Cardano.Ledger.BaseTypes (StrictMaybe (SJust))
+import Cardano.Ledger.BaseTypes (SlotNo, StrictMaybe (SJust))
 import Cardano.Ledger.Core (KeyHash, hashScript)
 import Cardano.Ledger.Plutus.Data (Data (..), binaryDataToData)
 import Cardano.Ledger.Hashes (KeyHash (..))
@@ -200,6 +202,8 @@ data LiveStep = LiveStep
     -- ^ the output reference the booked request sat at
     , lsRequestOut :: Maybe (TxOut ConwayEra)
     , lsModelRequest :: Value
+    , lsRetraction :: Maybe Value
+    -- ^ what the model's admission reads of a retraction, from the retraction as built
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
@@ -331,7 +335,7 @@ submitEdge env state cage exit alteration request = do
                         (addrKeyHashBytes genesisAddr) destination
                 modelRequest <- storyModelRequest ids cfg exit request cgDeposit (stateMaxFee before)
                     Nothing (Left decided)
-                pure (LiveStep cage request exit alteration Nothing Nothing modelRequest 0 Nothing Nothing
+                pure (LiveStep cage request exit alteration Nothing Nothing modelRequest Nothing 0 Nothing Nothing
                     Nothing [] (StepUnsupported Nothing (T.pack nodeReason) Nothing))
             Nothing -> throwIO failure
         Right named@(reqIn, reqOut) -> do
@@ -421,6 +425,11 @@ submitEdge env state cage exit alteration request = do
             emit "step-units" ("measured=" <> compactJson (purposeMeasurementsJson measurements)
                 <> " declared=" <> compactJson (purposeDeclarationsJson measurements submittedBudgets))
             result <- submitTxResilient (envSubmit env) signed
+            -- What the model's admission reads of a retraction is read off the
+            -- retraction as built, once it has been submitted inside its window.
+            retraction <- if exit == Live.Retract
+                then Just <$> retractionWitness env state cage reqOut signed
+                else pure Nothing
             case result of
                 Submitted _ -> do
                     case alteration of
@@ -437,7 +446,7 @@ submitEdge env state cage exit alteration request = do
                         (aggregatePurposeUnits measurements)
                     writeIORef (rcUnits cage) (mem, cpu)
                     modifyIORef' (envLiveMeasurements env) (<> [(mem, cpu, txSizeBytes signed)])
-                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest bond
+                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest retraction bond
                         (Just after) witness (custodyOf refs) spent
                         (StepAccepted signed (mem, cpu, txSizeBytes signed)))
                 Rejected reason -> do
@@ -453,7 +462,7 @@ submitEdge env state cage exit alteration request = do
                                 , srBudgetExceeded = budgetRefusalPurposes
                                     (transactionPurposeHashes signed visible) (T.pack explanation)
                                 }
-                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest bond
+                    pure (LiveStep cage request exit alteration (Just reqIn) (Just reqOut) modelRequest retraction bond
                         Nothing witness (custodyOf refs) spent
                         (refusedOutcome marker signed diagnostic))
   where
@@ -585,6 +594,56 @@ spendStateBeside (stateIn, stateOut) stateScripts reqIn transaction = do
         & bodyTxL . referenceInputsTxBodyL .~ references
         & bodyTxL . outputsTxBodyL .~ StrictSeq.fromList (stateOut : toList (transaction ^. bodyTxL . outputsTxBodyL))
         & witsTxL . rdmrsTxWitsL .~ redeemers)
+
+
+{- | What the model's admission reads of a retraction, from the retraction as
+built: the @submitted_at@ of the request's own datum; the transaction's validity
+bounds, each bounding slot at the POSIX time it starts, as the ledger hands them
+to the request script (the lower one included, the upper one excluded); and its
+required signers, each the wallet identity whose payment key it is. Nothing is
+read back from an observation.
+-}
+retractionWitness :: Env -> LiveState -> RowCage -> TxOut ConwayEra -> ConwayTx -> IO Value
+retractionWitness env state cage requestOut transaction = do
+    tid <- cageTid cage
+    wallets <- maybe (failWith "registry has no allocated wallets") pure
+        . Map.lookup (show tid) =<< readIORef (liveRegistryWallets state)
+    signatories <- mapM (observeSigner (liveIds state) wallets)
+        (toList (transaction ^. bodyTxL . reqSignerHashesTxBodyL))
+    (validFrom, validTo) <- case transaction ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) ->
+            (,) <$> slotStartMs (envProv env) lower <*> slotStartMs (envProv env) upper
+        _ -> failWith "a retraction is built without both validity bounds"
+    let (_, submittedAt) = requestDatumOf requestOut
+    pure (object [ "submittedAt" .= submittedAt, "validFrom" .= validFrom
+                 , "validTo" .= validTo, "signatories" .= signatories ])
+
+
+{- | The POSIX time, in milliseconds, at which a slot starts: the least time the
+node's era history places in that slot (@posixMsToSlot@ is its floor), found by
+bracketing the current time and halving.
+-}
+slotStartMs :: Cage.Provider IO -> SlotNo -> IO Integer
+slotStartMs prov slot = do
+    now <- currentPosixMs
+    lower <- before now 1000
+    upper <- from now 1000
+    search lower upper
+  where
+    inOrAfter ms = (>= slot) <$> Cage.posixMsToSlot prov ms
+    before ms step = do
+        reached <- inOrAfter ms
+        if reached then before (ms - step) (step * 2) else pure ms
+    from ms step = do
+        reached <- inOrAfter ms
+        if reached then pure ms else from (ms + step) (step * 2)
+    -- The slot has not started at @lower@ and has at @upper@.
+    search lower upper
+        | upper - lower <= 1 = pure upper
+        | otherwise = do
+            let middle = (lower + upper) `div` 2
+            reached <- inOrAfter middle
+            if reached then search lower middle else search middle upper
 
 
 -- | Wait for a phase boundary.
@@ -1174,7 +1233,8 @@ observedStepTx _env ids wallets step transaction config mint destination commitm
 -- compared folds of this registry; a tamper never joins it, nor a reject or a
 -- retraction, which the model says leave the registry as it was. Given the
 -- submitted transaction's inputs and outputs, the driver also judges whether it
--- spends what the exit may and pays what the exit owes.
+-- spends what the exit may and pays what the exit owes. A retraction is asked
+-- under the witness read off it as built, so the model admits it first.
 askModel :: Env -> LiveState -> LiveStep -> Maybe ([Value], [Value]) -> IO Value
 askModel _env state step judged = do
     tid <- cageTid (lsCage step)
@@ -1196,6 +1256,7 @@ askModel _env state step judged = do
             , "exit" .= Live.exitName (lsExit step) (Live.requestEdge (lsRequest step))
             , "request" .= lsModelRequest step
             , "lovelace" .= lsRequestLovelace step ]
+            <> [ "witness" .= witness | Just witness <- [lsRetraction step] ]
             <> concat [ ["inputs" .= inputs, "outputs" .= outputs] | Just (inputs, outputs) <- [judged] ]
     control <- lookupEnv "CONFORMANCE_STORY_CONTROL"
     let asked = case control of

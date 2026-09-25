@@ -8,6 +8,12 @@ lifecycle the registry implements today, each bound to the theorem it is about,
 with the mutant beside each witness, and the two exits that fold nothing: a
 reject of a registration the law refuses, and a retract.
 
+A retraction is admitted before it is paid, so every retraction row carries the
+witness its admission reads, under a registry whose processing and retraction
+times make phase 2 a real interval. Beside the retraction of a pending
+registration stand one refused retraction for each reason admission gives, each
+the admitted one with one field changed.
+
 Retirement is reached by registering first. Its setup trace is a real
 `insertActive` run through the law, not a state typed into this file with the
 key already active: a constructed starting state would make the retirement row
@@ -33,6 +39,12 @@ def cfg0 : Config :=
 
 /-- The empty registry: no leaves, no custody, no held tokens. -/
 def s0 : RegistryState := { config := cfg0, trie := [], custody := [], held := [] }
+
+/-- The empty registry with a processing time of 1000 ms and a retraction time of
+500 ms after it: a request submitted at `t` can be retracted from `t + 1000`,
+included, until `t + 1500`. -/
+def sTimed : RegistryState :=
+  { s0 with config := { cfg0 with processTime := 1000, retractTime := 500 } }
 
 /-- A request carrying the approval scoped exactly to itself, so an accepted row
 is accepted for the authorization the model requires and not for a missing
@@ -74,6 +86,12 @@ def noExitStrandsTheDepositDigest : String :=
 def onlyRetractOwesTheTip : String := "Singular.Statements.only_retract_owes_the_tip"
 def onlyRetractOwesTheTipDigest : String :=
   "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
+def retractAdmittedIff : String := "Singular.Statements.retract_admitted_iff"
+def retractAdmittedIffDigest : String :=
+  "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
+def retractRefusalFirstFailingDigest : String :=
+  "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
 
 /-- The active registration this corpus retires: key 42, owner 42, routed to
 output 555 with deposit 55, which goes there with the token. One request, reused
@@ -92,6 +110,16 @@ def registerTaken : Request := { request .insertActive 42 43 556 0 55 with tip :
 /-- A registration of key 7 by owner 77 with deposit 55 and tip 7, retracted by
 its owner: everything it held, deposit and tip, goes back. -/
 def registerRetracted : Request := { request .insertActive 7 77 777 0 55 with tip := 7 }
+
+/-- The retraction of a request submitted at 10000 by its owner 77 and a second
+party 3, valid over the whole of phase 2 under `sTimed`: from 11000, included, to
+11500, which the excluded upper bound reaches. -/
+def retractionWitness : RetractWitness :=
+  { submittedAt := 10000, validFrom := 11000, validTo := 11500, signatories := [3, 77] }
+
+/-- An update of key 7 by owner 77: pending like the registration, and not one its
+owner can take back. -/
+def updateRetracted : Request := { request .updateActive 7 77 777 0 55 with tip := 7 }
 
 def scenarios : List Scenario :=
   [ { id := "DR01-register-absent"
@@ -135,8 +163,36 @@ def scenarios : List Scenario :=
   , { id := "DR08-retract-registration"
     , theoremName := onlyRetractOwesTheTip, statementSha256 := onlyRetractOwesTheTipDigest
     , kind := "witness", mutates := none, requiresReachableState := false
-    , start := s0, setup := []
-    , exit := .retract, request := registerRetracted, lovelace := lovelace }
+    , start := sTimed, setup := []
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with signatories := [77] } }
+  , { id := "DR09-retract-pending"
+    , theoremName := retractAdmittedIff, statementSha256 := retractAdmittedIffDigest
+    , kind := "witness", mutates := none, requiresReachableState := true
+    , start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some retractionWitness }
+  , { id := "DR10-retract-update-request"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := updateRetracted, lovelace := lovelace
+    , witness := some retractionWitness }
+  , { id := "DR11-retract-unsigned-by-owner"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with signatories := [3] } }
+  , { id := "DR12-retract-before-phase2"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with validFrom := 10999 } }
   ]
 
 /-- The digest the surface carries is over the declared names themselves, so a
