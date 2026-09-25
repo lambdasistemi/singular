@@ -25,7 +25,21 @@ in
   cage-test-vectors = components.exes.cage-test-vectors;
   lint = pkgs.writeShellApplication {
     name = "lint";
-    runtimeInputs = shell.nativeBuildInputs;
+    # Strict runtime closure for every external tool the text execs. The
+    # wrapper prepends these and then falls through to the host PATH, so a
+    # missing tool passes on a dev host that happens to supply it and fails
+    # on a clean CI runner — the exact-head Off-chain lint RED at e3b052e
+    # (awk: command not found, then the fail-closed exclusion check
+    # reporting an empty discovered extent). shell.nativeBuildInputs
+    # already carries fourmolu and hlint; coreutils (sort/tr/wc), gawk,
+    # gnugrep and findutils (find) close the rest, the same explicit
+    # closure the component-inventory checker uses.
+    runtimeInputs = shell.nativeBuildInputs ++ [
+      pkgs.coreutils
+      pkgs.gawk
+      pkgs.gnugrep
+      pkgs.findutils
+    ];
     excludeShellChecks = [ "SC2046" "SC2086" ];
     text = ''
       cd "${../. + "/"}"
