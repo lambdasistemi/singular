@@ -41,6 +41,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup (
     computeRefund,
 ) where
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Alonzo.PParams (
     LangDepView,
     getLanguageView,
