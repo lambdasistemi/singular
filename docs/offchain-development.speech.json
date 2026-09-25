@@ -1,13 +1,13 @@
 {
   "run-the-checks": [
     {
-      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and components required by current workflows and supported commands without executing them. An included member failure fails the carrier; its green result is not a package-wide build.",
+      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and components required by current workflows and supported commands without executing them. Its final measured inventory classifies all nineteen Cabal declarations: ten are compiled here and nine retained commands stay unverified under their owning issues. An included member failure fails the carrier; its green result is not a package-wide build.",
       "pause": 400
     }
   ],
   "where-the-source-list-comes-from": [
     {
-      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Sixty-seven eligible files flow to Fourmolu; two preserved verifier files remain a formatter gap. Hint clean directories flow to HLint. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
+      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Discovery finds seventy Haskell files; sixty-eight format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. Directories without hint debt flow to HLint: nine directories with fifty-seven files, while the thirteen files of the thirteen configured debt directories stay outside that run. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
       "pause": 400
     },
     {
@@ -23,6 +23,6 @@
   ],
   "_source": {
     "file": "offchain-development.md",
-    "sha256": "9b14b5afb38cbf4aed89a98b9b1a5a49ec328831a9bc17e6f3b2574a3a607a22"
+    "sha256": "510ae599fcc596beb62a327592e7e521fdcb7b3e23a6fc660727f4ac5b6888f1"
   }
 }

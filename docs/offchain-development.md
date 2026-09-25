@@ -12,7 +12,7 @@ nix build --quiet .#build-gate
 (cd offchain && nix build --quiet .#component-build)
 ```
 
-The root build gate covers the root flake's model, site and other declared build checks. It does not build every off-chain Cabal component. The off-chain lint app runs Fourmolu and HLint on its stated source extents. The component build carrier compiles the library, its test components, and supported components used by current required workflows and shipped registry commands. It runs no executables or tests. Its inventory lists every Cabal declaration and explains which are built here, covered by another required job, or unbuildable or unverified. A failing included member makes the carrier fail; a green result does not mean that every Cabal component builds.
+The root build gate covers the root flake's model, site and other declared build checks. It does not build every off-chain Cabal component. The off-chain lint app runs Fourmolu and HLint on its stated source extents. The component build carrier compiles the library, its test components, and supported components used by current required workflows and shipped registry commands. It runs no executables or tests. Its inventory lists every Cabal declaration and explains which are built here, covered by another required job, or unbuildable or unverified. The final measured inventory classifies all 19 Cabal declarations: the carrier compiles 10 of them here and reports the other 9 retained commands unverified under their owning issues. A failing included member makes the carrier fail; a green result does not mean that every Cabal component builds.
 
 ## Where the source list comes from
 
@@ -20,7 +20,7 @@ The root build gate covers the root flake's model, site and other declared build
 flowchart LR
     C[singular-registry.cabal] -->|declares source directories| D[lint discovery]
     N[naming run scripts] -->|add direct GHC sources| D
-    D -->|67 eligible Haskell files| F[Fourmolu boundary]
+    D -->|68 format-eligible files of 70 discovered| F[Fourmolu boundary]
     D -->|two preserved verifier files| X[Formatter gap]
     D -->|hint clean directories| H[HLint boundary]
     C -->|all declarations| I[component inventory]
@@ -31,7 +31,7 @@ flowchart LR
     B -->|compile result| CI
 ```
 
-`offchain/nix/checks.nix` reads every `hs-source-dirs` declaration in `offchain/singular-registry.cabal` at lint run time and adds `naming/test` and `naming/drift`, whose scripts compile them directly with GHC. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; check the resulting lint output rather than assuming a filename search proves coverage. The malformed-source control for this maintenance change places invalid Haskell in a newly included tracked directory, runs the actual lint app, and restores the file byte for byte.
+`offchain/nix/checks.nix` reads every `hs-source-dirs` declaration in `offchain/singular-registry.cabal` at lint run time and adds `naming/test` and `naming/drift`, whose scripts compile them directly with GHC. It deduplicates nested directories and fails if discovery finds no sources or a declared directory is absent. The current measured extent, also printed by every lint run's inventory line, is 70 discovered Haskell files in 22 source directories: Fourmolu covers 68 of them after the two verifier exclusions, HLint covers the other 9 directories with 57 files, and the 13 files of the 13 configured debt directories stay outside that run. Adding a Cabal component or direct-GHC naming source must also update the declaration or script that makes it discoverable; check the resulting lint output rather than assuming a filename search proves coverage. The malformed-source control for this maintenance change places invalid Haskell in a newly included tracked directory, runs the actual lint app, and restores the file byte for byte.
 
 `offchain/flake.nix` derives a supported build set from the current workflow and currently supported command closure. Its inventory must account for every Cabal library, executable, and test suite, and the gate must fail when a new declaration has no classification or an omitted classification drifts. Its component manifest can be compared with the Cabal stanzas. The flake's command is the same command used by the off-chain component CI job.
 
