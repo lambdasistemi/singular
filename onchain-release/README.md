@@ -4,25 +4,27 @@ You are an integrator who received a tagged release and wants to run
 what this release verifiably carries: the bounded registry journey —
 boot a registry, fold a request, apply it and read the state back —
 plus the identity and contract-fixture checks, all re-derived from the
-artifact itself. You need none of the repository to do it. Everything
-below runs from this directory alone. The only external requirement is
+artifact itself. You need none of the repository to do it. Sections 1–4
+run from this directory alone; section 5 documents retained commands
+that are history, not runnable instructions. The only external
+requirement is
 [Nix](https://nixos.org) for the runnable parts (the identity
 verification also runs without it, with just `jq`).
 
 The archive also carries the naming-lifecycle row runners of earlier
 releases (claim, recovery, retirement and their independent reader).
 They are retained legacy commands: kept so the archive stays faithful
-to its history, but **not currently buildable or verified** against
-this release's source — see [the retained legacy commands](#5-the-retained-legacy-commands)
+to its history, but not currently buildable and verified against this
+release's source — see [the retained legacy commands](#5-the-retained-legacy-commands)
 before relying on any name documented here. Release instructions are
 corrected forward: a future correction changes the current source and
 the archives built from it; already published archives are never rewritten, so an
 older archive can still carry the previous instructions that presented
 every row runner as runnable.
 
-A zero exit is each run's claim: every runner exits non-zero on any
-mismatch, and the independent reader re-derives every binding from
-retained transaction bytes rather than trusting the runner's word.
+A zero exit is the verified journey's claim: it exits non-zero on any
+mismatch, and the identity and fixture checks re-derive every binding
+from retained bytes rather than trusting anyone's word.
 
 ## The naming lifecycle the retained rows exercise
 
@@ -110,16 +112,18 @@ apply, read back, with the pinned and applied script identities. It
 covers the registry protocol, not the naming lifecycle of the retained
 rows below.
 
-Every runner in this archive boots a real devnet node (spawned locally,
+The journey boots a real devnet node (spawned locally,
 node-to-client) and executes against it, unless you point it at a node
 of your own: pass `--node-socket PATH --network-magic N --wallet-skey
 FILE` (or the `SINGULAR_NODE_SOCKET`, `SINGULAR_NETWORK_MAGIC` and
 `SINGULAR_WALLET_SKEY` environment variables) and the same runner
 connects to your node and funds itself from your own signing key
 instead. The devnet stays the default; all three settings are required
-together. [Run against your own preprod node](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
-is the end-to-end runbook for that: release download, node and wallet
-setup, the funding diagnostic and each journey.
+together. This two-way reachability is exercised by the release
+pipeline, and the
+[onboarding runbook](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
+is the end-to-end runbook for it: release download, node and wallet
+setup, the funding diagnostic and the journey.
 
 Build the two compiled blueprints from this archive's own flakes, then run
 the journey from `offchain/` (it reads the pinned identity manifests from
@@ -149,20 +153,46 @@ default evidence directory).
 
 The archive also carries the row runners and the independent reader of
 the earlier naming design. They stay declared and shipped so the
-archive remains faithful to its history, but they are not currently
-buildable or verified against this release's source: component builds
-of the current source fail outright for `li01` and `recovery-rows`, the
-other five carry no passing build evidence either, and the release
-pipeline exercises none of them. Their re-cut against the current
-registry mode is owned by
-[#172](https://github.com/lambdasistemi/singular/issues/172) — and by
-[#283](https://github.com/lambdasistemi/singular/issues/283) for
-`register-rows`. These seven are the commands earlier release
-instructions advertised; do not rely on them, and do not read a
-documented name here as a working command:
+archive remains faithful to its history. All nine are retained legacy
+surfaces: not currently buildable or verified against this release's
+source, and none is exercised by the release pipeline. The table below
+binds each to its status and its owning issue, and separates the
+confirmed build failures from the merely unverified: `li01` and
+`recovery-rows` failed direct component builds on the current source,
+and `connected-verifier` imports identifiers the source removed, while
+the rest carry no passing build evidence — unverified rather than
+proven broken — and for `retirement-verify` buildability is simply
+untested. Their re-cut against the current registry mode is
+owned by [#172](https://github.com/lambdasistemi/singular/issues/172)
+— and by [#283](https://github.com/lambdasistemi/singular/issues/283)
+for `register-rows`. Seven of these are the commands earlier release
+instructions advertised; do not rely on any row below, and do not read
+a documented name here as a working command:
+
+| retained command | availability in this archive | repair |
+| --- | --- | --- |
+| `nix run .#li01` | unavailable: direct component build fails | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#li-refusals` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#naming-rows` | unavailable: unverified, no passing build evidence | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#register-rows` | unavailable: unverified, source imports removed identifiers | [#283](https://github.com/lambdasistemi/singular/issues/283) |
+| `nix run .#recovery-rows` | unavailable: direct component build fails | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#retirement-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `nix run .#retirement-verify` | unavailable: unverified, buildability untested | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `repair-rows` | unavailable: unverified, source imports removed identifiers | [#172](https://github.com/lambdasistemi/singular/issues/172) |
+| `connected-verifier` | unavailable: build fails on identifiers the source removed | [#282](https://github.com/lambdasistemi/singular/issues/282) |
+
+Two of the rows — `repair-rows` and `connected-verifier` — were never
+advertised as commands in this archive or its predecessors; they are
+declared executables of the shipped source, listed here so the
+availability statement covers every retained declaration. What the
+retained rows exercised, when they were current: the initialization,
+refusal, maintenance, register, recovery and retirement rows, and the
+permanent-retirement journey with controller and quorum retires,
+recovery-then-retire on both routes, permissionless completion into
+Over, and their attributed refusals:
 
 ```sh
-# the retained legacy commands — not currently buildable or verified
+# the retained legacy commands — see the availability table above
 # LI01 — the canonical initialization row
 nix run .#li01
 
@@ -178,37 +208,25 @@ nix run .#register-rows
 # recovery rows (rotation preserves the representative; refusals attributed)
 nix run .#recovery-rows
 
-# the permanent-retirement journey: controller and quorum retires,
-# recovery-then-retire both routes, the over name recovered first then
-# retired through its recovered controller, mismatched-pair and burn-only
-# refusals, permissionless completion into Over, withdrawal/reuse/
-# replay refusals, occupied-key fold refusal with fresh-key control
+# the permanent-retirement journey (see the retirement rows above)
 nix run .#retirement-rows
 
-# control modes (each exits non-zero by design after firing its probes):
+# control modes (each exited non-zero by design after firing its probes):
 RETIREMENT_CONTROL=valid nix run .#retirement-rows
 RETIREMENT_CONTROL=wrong-reason nix run .#retirement-rows
 ```
 
-Two further retained executables were never advertised as commands in
-this archive but stay declared and shipped: `repair-rows`
-([#172](https://github.com/lambdasistemi/singular/issues/172)) and the
-connected evidence verifier `connected-verifier`
-([#282](https://github.com/lambdasistemi/singular/issues/282)). They are
-likewise not currently buildable or verified against this release's
-source, and their repairs carry the same issue ownership.
-
-The independent reader of that design, `retirement-verify`, replays a
-retirement exhibit from retained transaction bytes plus the run log
-alone — re-deriving the creation control hash, the applied
+The independent reader of that design, `retirement-verify`, was built
+to replay a retirement exhibit from retained transaction bytes plus the
+run log alone — re-deriving the creation control hash, the applied
 representative policy, the registry-bound name, the custody triple, the
 burn, the registry transition, the co-created request pairing and the
 permissionless authorization, trusting no runner narration, no setup
-constant and no key. It prints one `VERIFIED` line per retirement, one
-`VERIFIED-COMPLETE` per permissionless completion it closes (or
-`COMPLETION-ABSENT` where custody correctly remains intact), and fails
-loudly on the first mismatch. It shares the retained commands' status:
-not currently buildable or verified against this release's source.
+constant and no key. As designed it printed one `VERIFIED` line per
+retirement, one `VERIFIED-COMPLETE` per permissionless completion it
+closed (or `COMPLETION-ABSENT` where custody correctly remained
+intact), and failed loudly on the first mismatch. Its availability is
+the row it holds in the table above.
 
 ```sh
 nix run .#retirement-verify -- --evidence-dir <exhibit-dir> \
@@ -218,8 +236,9 @@ nix run .#retirement-verify -- --evidence-dir <exhibit-dir> \
 
 ## 6. Ordinary-user completion (what permissionless means)
 
-Completion needs no controller or quorum approval: the spending
-transaction carries empty required signers. It does carry exactly
+In the retained design, completion needs no controller or quorum
+approval: the spending transaction carries empty required signers. It
+does carry exactly
 one witness — the fresh fee-input owner's key, outside every route
 — because ledger conservation needs the fee paid from somewhere and
 a spent fee input needs its owner's witness. That witness is fee
@@ -230,7 +249,8 @@ operator-free is exact.
 
 ## 7. How refusals are attributed
 
-Some refusals surface before submission, when the builder locally
+In the retained rows, some refusals surface before submission, when
+the builder locally
 evaluates the transaction (the occupied-key fold, the mismatched
 pair): the failure names the refusing script's hash in the
 evaluation error at the exact spending purpose. Others surface on
