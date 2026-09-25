@@ -29,7 +29,7 @@
   ],
   "reproduce-it-yourself": [
     {
-      "text": "Two commands replay the whole record from your own machine: deployment verify against the manifest in this repository, and an attached register run with your own spelling. Alice is already Active here, so a rerun asking for her is refused by design; the mirror file must travel with the manifest, and a run whose mirror disagrees with the chain stops and says so.",
+      "text": "The two commands that produced this record can still be pointed at the deployment: deployment verify against the manifest in this repository, and an attached register run with your own spelling. Two availability facts to read this with: the deployment tool builds from the current source but no required workflow exercises it on every candidate, so the verifier output here is a historical run, and register rows is a retained legacy command not currently buildable or verified, its repair owned by issue two eighty-three, so the attached claim is this record's history until that repair lands. Alice is already Active here, so a rerun asking for her is refused by design; the mirror file must travel with the manifest, and a run whose mirror disagrees with the chain stops and says so.",
       "pause": 400
     }
   ],

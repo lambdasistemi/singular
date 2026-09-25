@@ -12,7 +12,12 @@ node.
    download that too to check every listed file.
 2. Run `sha256sum --check SHA256SUMS`, extract the on-chain archive, then run
    `bash verify-identities.sh` inside it to check the compiled validators.
-3. For a local devnet, follow `README.md` in the archive. The runners use Nix.
+3. For a local devnet, follow `README.md` in the archive. The runners use
+   Nix. That README separates the commands verified against this release's
+   source — the bounded registry journey and the identity and fixture
+   checks — from the retained legacy row commands, which are not currently
+   buildable or verified and must not be relied on. Release instructions
+   are corrected forward; already published archives are never rewritten.
 4. To use your own node and wallet, follow the
    [onboarding runbook](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/).
 5. For the shared registry on preprod, follow `docs/preprod.md` once that

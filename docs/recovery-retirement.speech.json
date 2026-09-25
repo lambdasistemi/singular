@@ -2,7 +2,7 @@
   "how-retirement-ends-a-name": [
     {
       "pause": 400,
-      "text": "Ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, because a thief holding the everyday key and the holder are indistinguishable to the chain. The recovery route is the same proof recovery itself uses: reveal the preimage of the stored commitment and sign with that address's payment key. Run the ending rows against a real devnet node with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker, and both must fail after executing rows."
+      "text": "Ending a name needs the committed recovery key or the retirement quorum, never the current control key alone, because a thief holding the everyday key and the holder are indistinguishable to the chain. The recovery route is the same proof recovery itself uses: reveal the preimage of the stored commitment and sign with that address's payment key. The retirement row runner carries the same retained-legacy status: declared and shipped, not currently buildable or verified against the released source, re-cut owned by issue one seventy-two. When it was current, it ran the ending rows on a real devnet node with a private shallow temporary directory and the blueprint built from that commit. Two failure controls shipped alongside: one made a refused row valid, the other matched refusals against an impossible marker, and both failed after executing rows."
     }
   ],
   "limits-and-next-steps": [
@@ -26,7 +26,7 @@
   "what-you-can-do": [
     {
       "pause": 400,
-      "text": "Run the eleven recovery rows on a real devnet with the packaged runner, using a private shallow temporary directory and the blueprint built from this commit. Two failure controls ship alongside: one makes a refused row valid, the other matches refusals against an impossible marker. Both must fail after executing rows."
+      "text": "The recovery row runner is a retained legacy command of the current release: it stays declared and shipped, but it is not currently buildable or verified against the released source, and its re-cut is owned by issue one seventy-two. The usage is kept so the page stays faithful to what these rows did, not as a claim you can run it today. When it was current, it ran the eleven recovery rows on a real devnet with a private shallow temporary directory and the blueprint built from that commit. Two failure controls shipped alongside: one made a refused row valid, the other matched refusals against an impossible marker, and both failed after executing rows."
     }
   ],
   "who-this-is-for": [

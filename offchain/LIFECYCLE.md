@@ -5,6 +5,16 @@ without first funding the large devnet refusal fixtures. This implements the
 operator's 2026-09-14 A-004 ruling; Lean revision
 `bbd81f2f86c07a9963e9a6aa35c1a8457d7ba38e` and validators are unchanged.
 
+**Availability (2026-09-25):** the three naming runners this page describes
+— `register-rows`, `recovery-rows` and `retirement-rows` — are retained
+legacy commands of the current release. They stay declared and exported,
+but they are not currently buildable or verified against the released
+source: their re-cut against the current registry mode is owned by
+[#172](https://github.com/lambdasistemi/singular/issues/172) and, for
+`register-rows`, [#283](https://github.com/lambdasistemi/singular/issues/283).
+The page below documents the design and its history; its commands are not
+runnable instructions until those repairs land.
+
 The three naming runners select the positive lifecycle automatically on an
 external public test network. They require `--deployment`; register claims
 `--spelling` (default `alice`), recovery claims `rc-main` and maintains its
@@ -38,6 +48,14 @@ this path on a devnet, checks duplicate preflight and unchanged deployment
 counts, and retains the fresh-bootstrap counter control. Without the flag it
 runs the existing full suites. `cabal test cage-tests` includes aggregate memory
 and steps overflow controls with an accepted exact-boundary case.
+
+That attach-check script is a local developer gate, not a required CI
+workflow, and nothing in the component build carrier or any active
+workflow consumes it or its three row runners. Because the runners it
+attaches (`register-rows`, `recovery-rows`, `retirement-rows`) are the
+retained legacy commands named above, the script cannot currently run to
+completion; its bytes and behaviour are unchanged, and this note is its
+disclosed limitation.
 
 Release 0.6.0 predates this runner repair. Its deployment verifier remains
 usable; public lifecycle runs require the repaired source until the next release.

@@ -65,15 +65,15 @@
   ],
   "step-4-run-a-journey": [
     {
-      "text": "Start with the canonical initialization runner, the shortest run that touches the chain, passing the socket, the magic and the key file.",
+      "text": "Run the one lifecycle command the current release ships verified: the bounded registry journey, passing the socket, the magic and the key file. The release pipeline runs it on a real devnet on every candidate and asserts what it observes on chain.",
       "pause": 400
     },
     {
-      "text": "The naming journey the demo is about is three more runners in order: register rows, recovery rows, retirement rows.",
+      "text": "It boots a registry on your chain, folds a request, applies it and reads the resulting state back, funded from your wallet.",
       "pause": 400
     },
     {
-      "text": "Together they claim a name, fold it with its real representative, rotate its control through the committed next controller, retire it into completion-only custody, and complete the retirement permissionlessly so the name reads Over and can never be claimed again.",
+      "text": "The naming lifecycle runners an older release walked through here are retained legacy commands today: not currently buildable or verified against the released source, so the full naming lifecycle run waits on their re-cut in issues one seventy-two and two eighty-three.",
       "pause": 500
     }
   ],
@@ -161,7 +161,7 @@
       "pause": 450
     },
     {
-      "text": "The commands shown deploy once with your node and wallet, writing the manifest, and then run a journey against it with the deployment flag.",
+      "text": "The commands shown deploy once with your node and wallet, writing the manifest, and then run a journey against it with the deployment flag. One availability note: the deployment tool builds from the current source but no required workflow exercises it today, and the attached claim command names register rows, a retained legacy command not currently buildable or verified, so treat this walkthrough as documentation of the design until its repair lands.",
       "pause": 400
     },
     {

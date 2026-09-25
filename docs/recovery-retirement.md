@@ -62,7 +62,14 @@ to itself.
 
 ## What you can do
 
-Run the eleven recovery rows against a real devnet node from `offchain/`:
+The recovery row runner is a retained legacy command of the current
+release: it stays declared and shipped, but it is not currently buildable
+or verified against the released source, and its re-cut against the
+current registry mode is owned by
+[#172](https://github.com/lambdasistemi/singular/issues/172). Its usage
+is kept below so the page stays faithful to what these rows did — not as
+a claim you can run it today. When it was current, it ran the eleven
+recovery rows against a real devnet node from `offchain/`:
 
 ```sh
 cd offchain
@@ -72,7 +79,7 @@ TMPDIR=/tmp/s62-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#recovery-
 
 The private shallow `TMPDIR` keeps the devnet node database away from other work on the same host and keeps its socket inside the address length limit. The blueprint comes from the checked-out commit at run time; no store path is baked in and no dev shell is used.
 
-Two failure controls ship with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:
+Two failure controls shipped with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:
 
 ```sh
 TMPDIR=/tmp/s62-devnet NAMING_BLUEPRINT="$blueprint" RECOVERY_CONTROL=valid nix run --quiet .#recovery-rows
@@ -120,7 +127,13 @@ could end a name, the thief could end it and recovery would arrive too late.
 The recovery route is the same proof recovery itself uses: reveal the preimage
 of the stored commitment, and sign with that address's payment key.
 
-Run the ending rows against a real devnet node from `offchain/`:
+Run the ending rows against a real devnet node from `offchain/` — the
+same retained-legacy status applies here as above: the retirement row
+runner stays declared and shipped, is not currently buildable or verified
+against the released source, and its re-cut is owned by
+[#172](https://github.com/lambdasistemi/singular/issues/172). The usage
+is kept so the ending route stays documented, not as a claim you can run
+it today:
 
 ```sh
 cd offchain
@@ -130,7 +143,7 @@ TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" nix run --quiet .#retiremen
 
 The private shallow `TMPDIR` keeps the devnet node database away from other work on the same host and keeps its socket inside the address length limit. The blueprint comes from the checked-out commit at run time; no store path is baked in and no dev shell is used.
 
-Two failure controls ship with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:
+Two failure controls shipped with the same runner. Making a refused row actually valid must fail the run, and matching refusals against an impossible marker must fail naming what came back:
 
 ```sh
 TMPDIR=/tmp/s66-devnet NAMING_BLUEPRINT="$blueprint" RETIREMENT_CONTROL=valid nix run --quiet .#retirement-rows

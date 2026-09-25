@@ -153,7 +153,7 @@ jq -n --arg p "$policy_id" --arg n "$asset_name" \
 
 From the release archive (or this repository), with your own node socket
 and wallet as [the onboarding page](consumer-onboarding.md) describes,
-replay the verifier and one attached claim against this deployment:
+you can point the two tools that produced this record at the deployment:
 
 ```sh
 nix run .#deployment -- verify \
@@ -166,6 +166,17 @@ nix run .#register-rows -- \
   --wallet-skey ./joiner.skey \
   --deployment docs/preprod.json --spelling <your-name>
 ```
+
+Two availability facts to read this reproduction with. The `deployment`
+tool builds from the current source, but no required workflow exercises
+it on every candidate — the verifier output above is a historical run of
+2026-09-15 against release `main-c27c3dd8…`, and the manifest's own
+claims are what you would re-check. The attached claim command names
+`register-rows`, a retained legacy command that is not currently
+buildable or verified against the released source, with its repair owned
+by [#283](https://github.com/lambdasistemi/singular/issues/283); until
+that repair lands the attached claim is this record's history, not a
+runnable instruction.
 
 `verify` re-runs the fourteen checks above against whatever node you
 point it at. The attached run folds your own spelling instead of alice —
