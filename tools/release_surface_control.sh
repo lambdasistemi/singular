@@ -11,11 +11,15 @@
 #
 #   A. missing-verified-command: removes the `nix run .#journey` lines from
 #      the archived README. The checker must refuse naming that phrase.
-#   B. removed-disclosure: removes every retained-legacy/unverified
-#      disclosure line (the seven advertised commands, repair-rows and
-#      connected-verifier, the not-currently-buildable-or-verified marker,
-#      the published-archive limit). The checker must refuse naming the
-#      undisclosed retained legacy commands.
+#   B. removed-disclosure: removes the whole retained-command availability
+#      table and the disclosure sentences (the seven advertised commands,
+#      repair-rows, connected-verifier, the not-currently-buildable-or-
+#      verified marker, the published-archive limit). The checker must
+#      refuse naming the undisclosed retained legacy commands.
+#   B2. status-flip: flips ONE retained row's unavailable status (li01) to
+#      a claimed verified-and-available status, leaving the table and both
+#      manifests otherwise valid. The checker must refuse that row for
+#      contradicting the retained status.
 #   C. release-text-tamper (source-consistency control): injects a stale
 #      future-scope sentence into the archived RELEASE.md. The checker's
 #      byte-comparison with the source RELEASE.md fires first, so this
@@ -105,12 +109,18 @@ mutate_missing_verified_command() {
   mv "$1/README.md.new" "$1/README.md"
 }
 
-# Variant B: remove the retained-legacy/unverified disclosure the README
-# promises (commands, components, marker sentence, published-archive limit).
+# Variant B: remove the retained-command availability disclosure the README
+# promises (the table, its header, the marker sentence, the limit sentence).
 mutate_removed_disclosure() {
-  grep -vE 'nix run \.#(li01|li-refusals|naming-rows|register-rows|recovery-rows|retirement-rows|retirement-verify)|repair-rows|connected-verifier|not currently buildable or verified|already published archives are never rewritten' \
+  grep -vE 'nix run \.#(li01|li-refusals|naming-rows|register-rows|recovery-rows|retirement-rows|retirement-verify)|repair-rows|connected-verifier|not currently buildable or verified|already published archives are never rewritten|retained command \|' \
     "$1/README.md" > "$1/README.md.new"
   mv "$1/README.md.new" "$1/README.md"
+}
+
+# Variant B2: flip exactly one row's unavailable status (the li01 row) to a
+# claimed verified-and-available status; table, issues and manifests stay valid.
+mutate_status_flip() {
+  sed -i '/nix run \.#li01/s/unavailable: direct component build fails/available: verified under the current source/' "$1/README.md"
 }
 
 # Variant C: inject a stale future-scope sentence into the archived
@@ -160,6 +170,8 @@ run_variant "missing-verified-command" mutate_missing_verified_command \
   "does not document: nix run .#journey"
 run_variant "removed-disclosure" mutate_removed_disclosure \
   "does not disclose retained legacy commands"
+run_variant "status-flip" mutate_status_flip \
+  "contradicts the retained status"
 run_variant "release-text-tamper" mutate_release_text_tamper \
   "differ from source"
-echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure and the release-text consistency each refuse specifically"
+echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure, the per-row retained status and the release-text consistency each refuse specifically"
