@@ -524,8 +524,15 @@ liveStepChecks = describe "Checking compared requests in live receipts" $ do
         book `shouldSatisfy` isInfixOf "## A request that is never folded"
         book `shouldSatisfy` isInfixOf "withdraw-insert-only"
         book `shouldSatisfy` isInfixOf "#239"
+    it "accepts the exit controls' receipt, a row of its own, with its compared rejects and retractions" $
+        loadLive exitControlsLive `shouldReturn` Right 1
+    it "rejects the exit controls' receipt when it names no step records" $
+        loadLive exitControlsLive{receiptSteps = Nothing} >>= (`shouldSatisfy` refusedFor "names no live steps")
+    it "publishes the exit controls' comparison under their own row, apart from the retirement's" $ do
+        renderBook [] [exitControlsLive] `shouldSatisfy` isInfixOf "Rejection and retraction compared"
+        renderBook [] [acceptedLive{receiptRow = "CG22"}] `shouldSatisfy` isInfixOf "Retirement compared"
     it "publishes a refused retraction with the exit and the reason the model gave" $
-        renderBook [] [(retractTamperLive "other-reference" "deposit-returned"){receiptRow = "CG22"}]
+        renderBook [] [(retractTamperLive "other-reference" "deposit-returned"){receiptRow = "CG23"}]
             `shouldSatisfy` isInfixOf "The other-reference retract of insertActive was refused on chain"
     it "rejects a refused live request whose receipt omits the node reason and measured units" $
         loadLive refusedLiveWithoutDetails >>= (`shouldSatisfy` isLeft)
@@ -756,6 +763,31 @@ paymentTamperLive name reason =
 retractTamperLive :: String -> String -> Receipt
 retractTamperLive name reason =
     changeStep (setField "exit" ("retract" :: String)) (paymentTamperLive name reason)
+
+{- | The exit controls as a row of their own: a reject refunding one lovelace
+short, the untampered reject, a retraction bound to another request, one
+beside a spent state, and the untampered retraction.
+-}
+exitControlsLive :: Receipt
+exitControlsLive =
+    acceptedLive
+        { receiptRow = "CG23"
+        , receiptTransactions = ["abc123", "def456"]
+        , receiptSteps =
+            Just $
+                concatMap
+                    (concat . receiptSteps)
+                    [ changeStep (setField "exit" ("reject" :: String)) (paymentTamperLive "short-by-one" "deposit-returned")
+                    , changeStep (setField "exit" ("reject" :: String)) acceptedLive
+                    , retractTamperLive "other-reference" "deposit-returned"
+                    , retractTamperLive "state-spent" "retract-state-spent"
+                    , changeStep
+                        ( setField "exit" ("retract" :: String)
+                            . setField "chain" (object ["outcome" .= ("accepted" :: String), "txid" .= ("def456" :: String)])
+                        )
+                        acceptedLive
+                    ]
+        }
 
 -- | Give a chain outcome's refusal this field.
 setRefusalField :: (ToJSON a) => String -> a -> Value -> Value

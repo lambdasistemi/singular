@@ -7,6 +7,7 @@ import Conformance.Support.Fixture qualified as Fixture
 import Conformance.Support.FixtureChild (childModeVariable, holdScopedDirectories)
 import Conformance.Support.Identity qualified as Identity
 import Conformance.Support.Receipt qualified as Receipt
+import Conformance.Support.ReceiptBound qualified as ReceiptBound
 import Conformance.Support.Refusal qualified as Refusal
 import Conformance.Support.Retraction qualified as Retraction
 import Conformance.Support.Step qualified as Step
@@ -34,6 +35,7 @@ suite :: Spec
 suite = do
     describe "Appendix — how we check the evidence" $ do
         Receipt.spec
+        ReceiptBound.spec
         Refusal.spec
         Rows.spec
         Identity.spec

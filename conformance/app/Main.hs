@@ -80,20 +80,20 @@ usage = do
         "env:   CONFORMANCE_CONTROL=wrong-reason|false-claim (run control)"
     exitFailure
 
--- | Execute both chapters and the unnamed sequence first. A book cannot be generated from fixtures or
+-- | Execute every live chapter and the unnamed sequence first. A book cannot be generated from fixtures or
 -- an old receipt directory supplied in place of an actual run.
 runBook :: FilePath -> Maybe FilePath -> IO ()
 runBook dir output = do
-    runGuarded ["CG21", "CG22", "sequence"] dir
+    runGuarded ["CG21", "CG22", "CG23", "sequence"] dir
     receipts <- loadReceipts dir >>= either fail pure
-    let chapters = filter (\r -> receiptRow r `elem` ["CG21", "CG22", "sequence"]) receipts
-    if length chapters /= 3 || any ((/= AgreesWithModel) . receiptVerdict) chapters
-        then fail "the running book requires both live chapters and the unnamed sequence"
+    let chapters = filter (\r -> receiptRow r `elem` ["CG21", "CG22", "CG23", "sequence"]) receipts
+    if length chapters /= 4 || any ((/= AgreesWithModel) . receiptVerdict) chapters
+        then fail "the running book requires every live chapter and the unnamed sequence"
         else do
             path <- getDataFileName "rows.json"
             rows <- loadRows path >>= either fail pure
             case output of
-                Nothing -> putStrLn "Both live chapters and the unnamed sequence passed."
+                Nothing -> putStrLn "Every live chapter and the unnamed sequence passed."
                 Just target -> writeFile target (renderBook rows chapters)
             putStrLn ("Live run receipts: " <> dir)
 

@@ -51,7 +51,8 @@ renderBook requirements receipts =
             <> maybe "" (\steps -> case receiptRow receipt of
                 "CG21" -> "Registration compared " <> outcomeCounts steps <> concatMap detection steps
                     <> concatMap refusedPayment steps
-                "CG22" -> "Retirement, rejection and retraction compared " <> outcomeCounts steps
+                "CG22" -> "Retirement compared " <> outcomeCounts steps <> concatMap refusedPayment steps
+                "CG23" -> "Rejection and retraction compared " <> outcomeCounts steps
                     <> concatMap refusedPayment steps
                 "sequence" -> "Unnamed sequence compared " <> outcomeCounts steps
                 _ -> "") (receiptSteps receipt)

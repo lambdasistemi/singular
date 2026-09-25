@@ -778,9 +778,11 @@ loadReceipts dir = do
     checkEdge path r = case (receiptRow r, receiptSteps r) of
         ("CG21", Just steps) -> stepsComplete path r steps
         ("CG22", Just steps) -> stepsComplete path r steps
+        ("CG23", Just steps) -> stepsComplete path r steps
         ("sequence", Just steps) -> stepsComplete path r steps
         ("CG21", Nothing) -> Left (path <> ": registration names no live steps")
         ("CG22", Nothing) -> Left (path <> ": retirement names no live steps")
+        ("CG23", Nothing) -> Left (path <> ": exit chapter names no live steps")
         ("sequence", Nothing) -> Left (path <> ": sequence names no live steps")
         (_, Nothing) -> Right r
         (_, Just _) -> Left (path <> ": only live stories carry steps")

@@ -7,7 +7,7 @@
   ],
   "the-denominator": [
     {
-      "text": "The inventory file carries forty-two rows with forty-one owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
+      "text": "The inventory file carries forty-five rows with forty-four owned. Row CK zero six — bonds, poison, the juvenility window and the signature threshold — is recorded as out of scope: it belongs to cardano-keri's checkpoint machine, and is never claimed here.",
       "pause": 400
     },
     {
@@ -119,7 +119,7 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "aeddf090503c9777609705477082876ac724a06cf7780fc5df93e56e741ab484"
+    "sha256": "bad77e51d1c0673c03f1db60db44687f2171b518af539e7ff85ac9700a008c57"
   },
   "historical-execution-reports": [
     {

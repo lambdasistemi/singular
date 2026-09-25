@@ -162,7 +162,7 @@ runRows rawRows receiptsDir = do
     control <- readControl
     emit "control" (show control)
     let caRequested = any (`elem` caRows) rows
-        cgRequested = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> sequenceRows)) rows
+        cgRequested = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)) rows
     -- Armed controls must never pass vacuously: each mode belongs to
     -- one session, and a session it cannot fire in is refused here.
     when (caRequested && control == WrongReason) $
@@ -191,10 +191,10 @@ runRows rawRows receiptsDir = do
     createDirectoryIfMissing True receiptsDir
     let localRows = [r | r <- rows, r `elem` ["CS01", "CS06"]]
         devnetRows = [r | r <- rows, r `notElem` ["CS01", "CS06"]]
-        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> sequenceRows)]
+        cgDevnet = [r | r <- devnetRows, r `elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)]
         caDevnet = [r | r <- devnetRows, r `elem` caRows]
         csDevnet = [r | r <- devnetRows, r `elem` csRows]
-        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> sequenceRows)]
+        unpartitioned = [r | r <- devnetRows, r `notElem` (caRows <> cgRows <> csRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)]
     unless (null unpartitioned) $
         failWith
             ("rows in no partition: " <> unwords unpartitioned)
@@ -268,7 +268,7 @@ validateRows raw = do
         failWith ("run cannot execute rows: " <> unwords bad)
     let requested = [r | r <- canonicalRows, r `elem` raw]
         hasCa = any (`elem` caRows) requested
-        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> sequenceRows)) requested
+        hasCg = any (`elem` (cgRows <> issue70Rows <> issue173Rows <> issue177Rows <> issue258Rows <> sequenceRows)) requested
     when (hasCa && hasCg) $
         failWith
             ( "CA and CG rows run as separate sessions, one devnet \
@@ -579,5 +579,6 @@ runRowIn env marker row = case row of
     "CG19" -> runCG19 env
     "CG21" -> runCG21 env
     "CG22" -> runCG22 env
+    "CG23" -> runCG23 env
     "sequence" -> runSequence env
     _ -> failWith ("run cannot execute row: " <> row)

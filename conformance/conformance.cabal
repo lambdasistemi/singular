@@ -18,6 +18,7 @@ extra-doc-files:
 data-files:
   rows.json
   test/fixtures/node-refusals/*.txt
+  test/fixtures/live-steps/overflowed-retirement.txt
   test/fixtures/receipts/receipt-CG02.json
   test/fixtures/receipts/receipt-CG05.json
   test/fixtures/bad-accepted/receipt-CG02.json
@@ -197,6 +198,7 @@ test-suite conformance-tests
     Conformance.Support.FixtureChild
     Conformance.Support.Binding
     Conformance.Support.Receipt
+    Conformance.Support.ReceiptBound
     Conformance.Support.Refusal
     Conformance.Support.Rows
     Conformance.Support.Identity

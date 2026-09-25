@@ -370,6 +370,15 @@
       "requirement": "On a real devnet, `insertActive` then `updateTerminal` at one key: the active witness the insert delivered is the exact input the retirement burns, exactly one `(activePolicy, key)` is destroyed, no output carries it afterwards, and the committed trie leaf becomes Terminal. `updateTerminal` on an Unknown key and on an Absent key are refused with their own named reasons, each against an accepting control.",
       "source": "Singular.Statements.update_terminal_transaction_row and Singular.Statements.update_terminal_inversion (Lean 871c5df); issue #177; A-002",
       "state": "uncovered"
+    },
+    {
+      "expected": "refuse a reject refunding the owner one lovelace short and to another key, `deposit-returned`, beside the accepted untampered reject; refuse a retraction returning one lovelace short, to another key and bound to another output reference, `deposit-returned`, and one spending the registry state beside it, `retract-state-spent`, beside the accepted untampered retraction",
+      "group": "CG",
+      "id": "CG23",
+      "note": "#258. The reject and retract controls run in a row of their own, apart from CG22, so that each receipt is written under the 16384-byte bound. Rejection and retraction each run in a registry of their own: the rejection registry makes its requests rejectable a second after their retract window opens, the retraction registry keeps them retractable for thirty seconds. Only an insertion is retracted: the chain admits no other retraction until #239 states which requests are retractable. The ledger surfaces no Plutus trace, so each refusal is attributed by script hash (the state script for a reject, the request script for a retraction) and the model reason is the name the compiled Aiken suite asserts: onchain/validators/deposit_exits.tests.ak reject_refund_one_lovelace_short_refuses_by_name and reject_refund_to_another_key_refuses_by_name; onchain/validators/cage_retract.tests.ak retract_held_short_by_one_refuses, retract_held_wrong_owner_refuses, retract_wrong_reference_refuses and retract_beside_a_fold_refuses.",
+      "requirement": "On a real devnet, a request that is never folded leaves the queue by a reject or a retract. A reject once the request may no longer be folded must refund its owner the deposit; a retract by its owner must return everything the request held, through an output whose inline datum is the retracted request's own output reference. Each refund or return one lovelace short or to another key, a return bound to another request, and a retract spending the registry state beside it are refused by the chain and by the model, each beside the untampered exit of the same request, which both accept.",
+      "source": "Singular.Statements.exit_settles_on_lovelace_received and Singular.Statements.no_exit_strands_the_deposit; issue #258",
+      "state": "uncovered"
     }
   ]
 }
