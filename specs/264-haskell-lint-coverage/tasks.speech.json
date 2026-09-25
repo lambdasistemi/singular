@@ -1,12 +1,12 @@
 {
   "work-items": [
     {
-      "text": "The work records the active source and interface inventory, removes duplicate dependencies, expands lint and proves a newly covered defect is rejected, reviews layout-only edits, adds a classified supported component build CI carrier, and records actual command results and limits. The inventory must account for every Cabal declaration, reject unknown additions and drifted omissions, and distinguish unverified issue 172, 282 and 283 commands. Controls must show that an included member can make the carrier fail. It also maps lint and format gaps to epic integration issue 278 and documents contributor commands and source discovery.",
+      "text": "The work records the source and interface inventory, removes duplicate dependencies, expands lint with a negative control, reviews layout-only edits, and builds classified supported components in CI. Every Cabal declaration needs a truthful inventory row; controls reject unknown or drifted rows and failure of an included member. The operator's forward correction updates release and user instructions, checks the assembled archive's availability promise with a negative control, classifies the deployment attach script, and keeps distinct command repairs with issues 172, 282 and 283. Final epic issue 278 owns all-code lint and formatting. Independent audit, exact-head gate and pushed-head CI precede handback.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "d15cdebbb07771a4764d2f76fd31a4b8604ea19621d13f2b037e89f0a9afe695"
+    "sha256": "ad92245dc0ec672f114bab5156fd4ae6cf915c5dfa0875b8c24f67b495b24495"
   }
 }

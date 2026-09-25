@@ -19,12 +19,18 @@
   ],
   "candidate-boundary-and-epic-completion": [
     {
-      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files must keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints in the current source state. Earlier intake measurement found 218 hints. These are separate extents and excluded sources do not count as passing. Final epic integration issue 278 must close these gaps and cover all other repository code before the epic claims complete lint and formatting. The first all-component build exposed a pre-existing connected verifier failure, owned by issue 282. A later carrier directly failed at recovery rows. Retired journeys are unverified under issue 172; register rows is separately unverified under issue 283. All five remain declared, and the later run proves no direct build result for the other omitted commands.",
+      "text": "The current candidate inventories 69 Haskell files. Fourmolu checks 67 because two independent verifier files keep their intake bytes. HLint checks 41 files in nine directories; thirteen directories carry 214 measured hints. These gaps remain for final epic integration issue 278, which also owns coverage of other repository code. The first all-component build failed at connected verifier. Later direct builds failed at recovery rows and li zero one. The proposed ten built and nine unverified classification remains unapproved. Issues 172, 282 and 283 own the distinct command repairs; no other omitted command receives an inferred build result.",
+      "pause": 400
+    }
+  ],
+  "a-011-forward-correction-to-current-release-instructions": [
+    {
+      "text": "The operator ruled the current release README outdated. Current and future instructions must distinguish commands verified against the integrated Lean source from retained legacy commands that are unbuildable or unverified. Already published archives cannot be rewritten. The assembled archive checker and a checksum-valid negative control must enforce the corrected promise. The deployment attach script's command dependencies must be classified; prose cannot make them build. The full exact-head gate and independent audit remain required.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "79e2139fb57877744d7110efc4ab0420ed1956b89b403bbd25464161bfb84c0b"
+    "sha256": "0a1bf8ddc2577a685c5d7a3260fa3fa5709220746e1f7a377e4afe17b25394b2"
   }
 }

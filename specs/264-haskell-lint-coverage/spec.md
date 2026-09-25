@@ -6,8 +6,8 @@ included directory fails the command I already run. I want the supported
 components consumed by current required workflows and shipped registry
 commands to build with their existing public interfaces and command names.
 
-The accepted Lean revision for this maintenance slice is
-`0b9b461205d4ef5a67bb41fba56d88b2a3a0ded1`. This slice changes no Lean
+The integrated Lean source revision for this maintenance slice is
+`6e4577d34c571507a47ca3bc7f95e99f6b71c39d`. This slice changes no Lean
 definition, behavior, wire representation, transaction effect, or expected
 outcome. The repository constitution still governs any discrepancy discovered
 while doing the work.
@@ -123,7 +123,38 @@ after exact source/workflow and current dependency checks. A-009 maps
 [#283](https://github.com/lambdasistemi/singular/issues/283) as a separate
 unbuildable/unverified command. The current carrier receipt does not prove
 those other executables' own build results. All five remain declared and
-exposed. The proposed inventory has 14 included and five unverified members,
-subject to actual command closure. #278 still owns lint and formatting of
+exposed. That 14/5 proposal was superseded by a 10-built/9-unverified
+classification after all seven named legacy journeys were assessed. Neither
+proposal is accepted build evidence. #278 still owns lint and formatting of
 every retained source. The final candidate must publish all 19 declarations'
 classification and demonstrate the narrower carrier and its controls.
+
+## A-011 forward correction to current release instructions
+
+As a person reading the current on-chain archive instructions, I need to know
+which commands have been built and verified against the integrated Lean source
+before I attempt a registry lifecycle journey. The old README presents seven
+retained legacy commands as runnable today. Direct component-build attempts
+failed at `recovery-rows` and `li01`; the other legacy commands have no direct
+passing build evidence in this ticket. The operator ruled on 2026-09-25 that
+the current release README is outdated and directed a forward correction of
+release/user instructions and checker. The ruling changes the current source
+and future archives; it cannot rewrite already published archives. The old
+instructions, failed receipts and component names remain historical facts.
+
+The release archive and current consumer guides must distinguish commands
+verified under the integrated Lean source from retained commands that are
+unbuildable or unverified. `tools/check_release.py` must assert that corrected
+availability on the actual assembled on-chain archive. An executable negative
+control must falsify the new availability promise, re-establish checksum
+integrity, and fail specifically at the release surface; the active PR archive
+build must execute that control. `offchain/deployment-attach-check.sh` must be
+classified as a possible consumer: if any active required workflow or supported
+carrier command depends on its three legacy row runners, that dependency stays
+RED until built. No documentation edit can establish command buildability.
+Keep #172, #282 and #283 as the distinct repairs; preserve Cabal declarations,
+apps, public names, historical tags and archives. Conformance remains outside
+this ticket. The 10/9 carrier requires a fresh audit, direct negative controls,
+an actual GREEN build, and the complete exact-head gate including both
+`release-check` and `release-artifacts` before any acceptance. #278 retains the
+separate all-code lint and formatting obligation.

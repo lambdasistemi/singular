@@ -1,18 +1,24 @@
 {
   "decisions": [
     {
-      "text": "This maintenance slice keeps Cabal cleanup, lint discovery, and the new component build carrier together because they share the same inventory. Formatting-only source changes stay separately reviewable. The lint negative control runs the existing executable, and the CI carrier builds every declared library, executable, and test component without executing them.",
+      "text": "This maintenance slice keeps Cabal cleanup, lint discovery, and the classified component build carrier together because they share the same inventory. Formatting-only source changes stay separately reviewable. The lint negative control runs the existing executable. The carrier builds the supported set derived from current workflow and command dependencies, and names every unverified declaration. It does not execute the commands.",
       "pause": 400
     }
   ],
   "coverage-handoff": [
     {
-      "text": "The candidate matrix reports inventory, formatter, HLint and component build extents independently. Two verifier files remain outside Fourmolu under this ticket's source fence. Thirteen directories have retained HLint hints. Final epic integration issue 278 owns closure of those gaps and coverage of code beyond offchain Haskell. The complete component build found an existing connected verifier compile failure, which remains a red acceptance row until the epic rules on it. The contributor guide explains the commands and current boundaries.",
+      "text": "The candidate matrix reports inventory, formatter, HLint and component build extents independently. Two verifier files remain outside Fourmolu and thirteen directories have retained HLint hints. Epic issue 278 owns full code coverage. Direct component builds failed at connected verifier, recovery rows and li zero one. The proposed ten built and nine unverified classification is pending fresh controls, a real build and independent review. The contributor guide explains these limits.",
+      "pause": 400
+    }
+  ],
+  "a-011-release-instruction-correction": [
+    {
+      "text": "The operator directed a forward correction of the current release and consumer instructions. The archive checker must assert which commands are verified and which legacy commands remain unbuildable or unverified. A checksum-valid negative control must fail at that surface through the active archive build. Existing published archives and historic failed receipts remain unchanged. Fresh review and the full exact-head gate precede ticket handback.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "e83559a9371c9c7a97e52b95b576724fde62c6511b7db53cb5d692904f7c3244"
+    "sha256": "e74771d34d0bb1183f301890b0a37313cf0fbfe302dfd6d6b96f573002bacad6"
   }
 }

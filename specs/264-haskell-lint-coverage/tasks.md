@@ -14,3 +14,7 @@ as distinct pieces of one maintenance change.
 - [ ] T264-07 Publish the separate formatter, HLint, inventory and component-build extents; map every retained lint and format gap to final epic integration #278.
 - [ ] T264-08 Document contributor commands, source/component discovery and current check boundaries in the site navigation with speech coverage.
 - [ ] T264-09 Demonstrate that the inventory rejects an unknown component and that failure of a selected included component makes the carrier red; restore every control mutation byte-for-byte.
+- [ ] T264-10 Forward-correct current release and consumer instructions under operator A-011; distinguish verified commands from retained legacy commands and state that already published archives are unchanged.
+- [ ] T264-11 Enforce the corrected availability with `check_release.py` on the assembled on-chain archive; execute a checksum-valid negative control through the active archive build boundary.
+- [ ] T264-12 Classify `deployment-attach-check.sh` against required workflows and the carrier closure; preserve any required RED dependency and all #172/#282/#283 repair ownership.
+- [ ] T264-13 Obtain a fresh independent gate and exact-candidate audit, then run the complete exact-head gate and observe pushed-head CI before ticket handback.
