@@ -1,7 +1,7 @@
 {
-  "corpusSourceSha256": "fca863d65693dda23c6faef2336401eb0e8a0e53b9387b76ac2c171061f54af9",
+  "corpusSourceSha256": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
   "modelSha256": "ed1f2ce494ed2eb5db69adde52fe937c3a9587e11d39fef7a469bf374f4f6177",
-  "payloadSha256": "ef2445d2722ab048815d1293fd6a5bbfe9c8baacf3a348c2fcec2416132bcde7",
+  "payloadSha256": "9c778fb469a27715c112129c4b31067d979149d2b7a26f771c9d8ab699ca09ff",
   "scenarios": [
     {
       "id": "DR01-register-absent",
@@ -2124,11 +2124,142 @@
         "validFrom": 10999,
         "validTo": 11500
       }
+    },
+    {
+      "id": "DR13-retract-after-phase2",
+      "kind": "mutant",
+      "lovelace": 5,
+      "mutates": "DR09-retract-pending",
+      "observations": null,
+      "operation": "retract",
+      "outcome": "refused",
+      "premise": {
+        "checked": true,
+        "declaration": "Singular.Driver.consistentB"
+      },
+      "reason": "not-phase2",
+      "request": {
+        "approval": {
+          "assetName": 1676503303,
+          "destination": 777,
+          "edge": "insertActive",
+          "key": 7,
+          "owner": 77,
+          "policy": 7,
+          "signatures": []
+        },
+        "claimed": [],
+        "deposit": 55,
+        "edge": "insertActive",
+        "key": 7,
+        "output": 777,
+        "owner": 77,
+        "reference": 0,
+        "refundAddress": 0,
+        "tip": 7
+      },
+      "requiresReachableState": true,
+      "setup": [
+        {
+          "accepted": true,
+          "reason": null,
+          "request": {
+            "approval": {
+              "assetName": 1604014105,
+              "destination": 555,
+              "edge": "insertActive",
+              "key": 42,
+              "owner": 42,
+              "policy": 7,
+              "signatures": []
+            },
+            "claimed": [],
+            "deposit": 55,
+            "edge": "insertActive",
+            "key": 42,
+            "output": 555,
+            "owner": 42,
+            "reference": 0,
+            "refundAddress": 0,
+            "tip": 0
+          },
+          "state": {
+            "config": {
+              "absentPolicy": 9,
+              "activePolicy": 8,
+              "applicationPolicy": 7,
+              "maxFee": 0,
+              "processTime": 1000,
+              "retractTime": 500,
+              "root": [
+                26,
+                122,
+                121,
+                111,
+                253,
+                168,
+                231,
+                64
+              ],
+              "terminalPolicy": 10
+            },
+            "custody": [],
+            "held": [
+              {
+                "key": 42,
+                "kind": "active",
+                "output": 555
+              }
+            ],
+            "trie": [
+              {
+                "key": 42,
+                "leaf": "active"
+              }
+            ]
+          }
+        }
+      ],
+      "start": {
+        "config": {
+          "absentPolicy": 9,
+          "activePolicy": 8,
+          "applicationPolicy": 7,
+          "maxFee": 0,
+          "processTime": 1000,
+          "retractTime": 500,
+          "root": [
+            203,
+            242,
+            156,
+            228,
+            132,
+            34,
+            35,
+            37
+          ],
+          "terminalPolicy": 10
+        },
+        "custody": [],
+        "held": [],
+        "trie": []
+      },
+      "statementSha256": "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc",
+      "theorem": "Singular.Statements.retract_refusal_first_failing",
+      "witness": {
+        "signatories": [
+          3,
+          77
+        ],
+        "submittedAt": 10000,
+        "validFrom": 11000,
+        "validTo": 11501
+      }
     }
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "fca863d65693dda23c6faef2336401eb0e8a0e53b9387b76ac2c171061f54af9",
+    "lean/DriverMain.lean": "9dbe166ab1e1b1bd704f623c94e5a397d1516e242f38e6de85884a60ad6553ea",
     "lean/Main.lean": "b55b058b687731b51fb620dc0ee42177cec9be86713a6906065a8ef735f3eedd",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",

@@ -193,6 +193,16 @@ def scenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validFrom := 10999 } }
+    -- DR09's retraction, valid until 11501: one past phase 2's excluded upper
+    -- bound, submission 10000 plus processing 1000 plus retraction 500, so the
+    -- model refuses it as outside phase 2.
+  , { id := "DR13-retract-after-phase2"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with validTo := 11501 } }
   ]
 
 /-- The digest the surface carries is over the declared names themselves, so a
