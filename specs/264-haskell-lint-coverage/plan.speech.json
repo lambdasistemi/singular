@@ -1,0 +1,24 @@
+{
+  "decisions": [
+    {
+      "text": "The maintenance slice kept Cabal cleanup, lint discovery, and the classified component carrier together because they share one inventory. Formatting-only source changes remained separately reviewable. The lint negative control exercised the existing command. The carrier inventories all declarations and compiles the supported set without running the retained commands.",
+      "pause": 400
+    }
+  ],
+  "coverage-handoff": [
+    {
+      "text": "The reviewed source revision measured seventy discovered Haskell files in twenty-two directories, sixty-eight files in Fourmolu after two preserved verifier exclusions, and fifty-seven files in nine HLint directories. Thirteen other files remain outside HLint. Older hint counts are historical snapshots. Final epic issue 278 owns full code coverage, including code beyond offchain Haskell. The carrier's ten included members built and passed required CI, while nine retained commands remain unverified with distinct repair issues. Historic direct build failures do not become current-head results.",
+      "pause": 400
+    }
+  ],
+  "a-011-release-instruction-correction": [
+    {
+      "text": "The operator directed a forward correction of current release and consumer instructions. The assembled archive checker and four checksum-valid negative controls enforce the available versus retained command promise. Existing published archives and historic failed receipts remain unchanged. The earlier documentation correction passed audit, gate and exact-head CI on the old main base. Main now binds Lean source 03fd9e0 and constitution version 1.10; its new retraction admission changes no bounded fold-journey claim here. The rebased head needs its own audit, gate and pushed-head CI before epic acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "4aa95e6e89b494fd9e80ffa032a98c6a803ebc9c85f090e82e6371b7303d7ed1"
+  }
+}

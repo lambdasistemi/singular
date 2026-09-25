@@ -183,21 +183,87 @@ if onchain_present:
         for phrase in ("epic", "E18", "obligation", "milestone artifact"):
             assert phrase.casefold() not in release_text.casefold(), f"release text contains forbidden wording: {phrase}"
         readme_text = bundle.extractfile(members["README.md"]).read().decode()
+        # The corrected availability promise (operator ruling 2026-09-25):
+        # the archive README presents the verified connected journey as the
+        # runnable lifecycle command, and binds EVERY retained declaration
+        # to its unavailable status and owning issue in one bounded
+        # availability table — the seven commands earlier releases
+        # advertised plus repair-rows and connected-verifier which it never
+        # advertised — and states that future corrections cannot rewrite
+        # already published archives. Each row is checked as a unit
+        # (name, unavailable status, issue together); duplicates, rows
+        # lacking their status or issue, and rows claiming availability are
+        # all refusals. Identity and fixture assertions are unchanged.
         for phrase in (
             "verify-identities.sh",
             "plutus.json",
             "script-identity.json",
-            "#journey",
-            "#li01",
-            "#li-refusals",
-            "#naming-rows",
-            "nix run .#recovery-rows",
-            "nix run .#retirement-rows",
-            "nix run .#retirement-verify --",
+            "nix run .#journey",
             "run-suite.sh",
             "SHA256SUMS",
         ):
             assert phrase in readme_text, f"artifact README does not document: {phrase}"
+        retained = (
+            ("nix run .#li01", "#172"),
+            ("nix run .#li-refusals", "#172"),
+            ("nix run .#naming-rows", "#172"),
+            ("nix run .#register-rows", "#283"),
+            ("nix run .#recovery-rows", "#172"),
+            ("nix run .#retirement-rows", "#172"),
+            ("nix run .#retirement-verify", "#172"),
+            ("repair-rows", "#172"),
+            ("connected-verifier", "#282"),
+        )
+        lines = readme_text.splitlines()
+        table_start = next(
+            (i for i, l in enumerate(lines) if "retained command" in l and l.lstrip().startswith("|")),
+            None,
+        )
+        rows = []
+        if table_start is not None:
+            for line in lines[table_start + 1 :]:
+                if not line.lstrip().startswith("|"):
+                    break
+                if set(line) <= set("|-: "):
+                    continue
+                rows.append(line)
+        missing, duplicated, unbound, contradictory = [], [], [], []
+        for name, issue in retained:
+            matching = [row for row in rows if name in row]
+            if not matching:
+                missing.append(name)
+                continue
+            if len(matching) > 1:
+                duplicated.append(name)
+                continue
+            row = matching[0]
+            if re.search(r"(?<!un)available", row):
+                contradictory.append(name)
+                continue
+            if "unavailable" not in row or issue not in row:
+                unbound.append(name)
+        assert not missing, (
+            "artifact README does not disclose retained legacy commands: "
+            + ", ".join(missing)
+        )
+        assert not duplicated, (
+            "artifact README has more than one availability row for: "
+            + ", ".join(duplicated)
+        )
+        assert not contradictory, (
+            "artifact README availability row contradicts the retained status for: "
+            + ", ".join(contradictory)
+        )
+        assert not unbound, (
+            "artifact README availability row lacks its unavailable status or owning issue for: "
+            + ", ".join(unbound)
+        )
+        assert "not currently buildable or verified" in readme_text, (
+            "artifact README does not state that retained commands are not currently buildable or verified"
+        )
+        assert "already published archives are never rewritten" in readme_text, (
+            "artifact README does not state the published-archive limit"
+        )
         # The identities CI enforces, verified from the downloaded artifact itself:
         # the archive's own checker runs against the carried compiled blueprints.
         with tempfile.TemporaryDirectory() as extract_dir:

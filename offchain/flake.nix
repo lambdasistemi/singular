@@ -70,6 +70,33 @@
         components =
           project.project.hsPkgs.singular-registry.components;
 
+        # #264 T264-05 (epic answers A-005 and A-008/A-009/A-010): the
+        # classified supported component carrier. EVERY declared Cabal
+        # component is classified in ./nix/component-inventory.nix — built
+        # here (the components the current required workflow commands and
+        # the supported shipped registry commands consume, plus the library
+        # and every test component), or explicitly unverified with its
+        # owning issue. That file, and the manifest shipped in this build's
+        # output, are the single authority for the complete row set; this
+        # comment deliberately does not restate it. Every unverified
+        # component stays declared and exported; nothing claims it works.
+        # The classification's inventory gate runs inside this build and
+        # fails it on an unclassified or unrecognized new stanza, a stale
+        # row, a row without an issue/reason, or an empty set; a member
+        # build failure fails the build the same way. Building a test
+        # component compiles it and runs nothing. The green claim covers
+        # exactly the classified members — never the whole package.
+        componentBuild =
+          let
+            inventory = import ./nix/component-inventory.nix {
+              inherit pkgs components;
+            };
+          in
+          pkgs.symlinkJoin {
+            name = "singular-registry-component-build";
+            paths = inventory.memberPaths ++ [ inventory.inventoryGate ];
+          };
+
         cardanoNode =
           cardano-node.packages.${system}.cardano-node;
 
@@ -318,6 +345,11 @@
       in
       {
         packages = {
+          # #264 T264-05: the classified supported off-chain component build
+          # carrier (epic answer A-005; classification and inventory gate in
+          # ./nix/component-inventory.nix). CI builds it with
+          # `nix build --quiet .#component-build` from offchain.
+          component-build = componentBuild;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`

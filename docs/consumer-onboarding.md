@@ -122,31 +122,36 @@ which is what a Plutus transaction spends as collateral.
 
 Build the two compiled blueprints from the archive's own flakes and export
 them the way the [release archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
-describes, then run each runner from the archive's `offchain/` directory.
-
-Start with the canonical initialization, the shortest run that touches the
-chain:
+describes, then run the one lifecycle command the current release ships
+verified: the bounded registry journey. The release pipeline runs it on a
+real devnet on every candidate and asserts what it observes on chain, and
+the same binary takes the three external settings to run against your node
+instead:
 
 ```sh
 cd offchain
-nix run .#li01 -- \
+nix run .#journey -- \
   --node-socket /run/cardano-node/node.socket \
   --network-magic 1 \
   --wallet-skey ./joiner.skey
 ```
 
-The naming journey the demo is about is three more runners, in this order:
+It boots a registry on your chain, folds a request, applies it and reads
+the resulting state back — the registry protocol, end to end, funded from
+your wallet.
 
-```sh
-nix run .#register-rows   -- --node-socket … --network-magic 1 --wallet-skey ./joiner.skey
-nix run .#recovery-rows   -- --node-socket … --network-magic 1 --wallet-skey ./joiner.skey
-nix run .#retirement-rows -- --node-socket … --network-magic 1 --wallet-skey ./joiner.skey
-```
-
-Together they claim a name, fold it with its real representative, rotate its
-control through the committed next controller, retire it into completion-only
-custody, and complete the retirement permissionlessly so the name reads Over
-and can never be claimed again.
+The naming-lifecycle runners an older release walked through here — the
+canonical initialization row and the register, recovery and retirement
+trios that claim a name, rotate its control and end it in Over — are
+retained legacy commands today: they stay declared in the archive, but
+they are not currently buildable or verified against the released source,
+so this runbook cannot carry you through the full naming lifecycle until
+their re-cut lands in
+[#172](https://github.com/lambdasistemi/singular/issues/172) and
+[#283](https://github.com/lambdasistemi/singular/issues/283). The
+[recovery and retirement guide](recovery-retirement.md) keeps their
+behaviour documented, and the [preprod record](preprod.md) shows the
+lifecycle as it was executed on chain when those commands were current.
 
 ## What a run looks like
 
@@ -256,6 +261,17 @@ nix run .#deployment -- deploy \
 nix run .#register-rows -- --node-socket … --network-magic 1 \
   --wallet-skey ./joiner.skey --deployment ./preprod.json
 ```
+
+An availability note before you rely on this section: the `deployment`
+tool itself builds from the current source, but no required workflow
+exercises it today — what it does on your chain is documented here and
+was exercised when the preprod record below was made, not on every
+candidate. The attached claim command shown names `register-rows`, which
+is a retained legacy command: not currently buildable or verified against
+the released source, repair owned by
+[#283](https://github.com/lambdasistemi/singular/issues/283). Until that
+repair lands, treat the attached-claim walkthrough as documentation of
+the design rather than a runnable runbook.
 
 The register runner claims the exact UTF-8 spelling supplied with
 `--spelling`, defaulting to `alice`. It never appends a run suffix. On an

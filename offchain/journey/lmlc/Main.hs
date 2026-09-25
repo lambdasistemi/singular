@@ -61,15 +61,16 @@ Hermetic run (D-011), from @offchain/@:
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
-import Control.Exception
-    ( ErrorCall (..)
-    , SomeException
-    , displayException
-    , throwIO
-    , try
-    )
+import Control.Exception (
+    ErrorCall (..),
+    SomeException,
+    displayException,
+    throwIO,
+    try,
+ )
 import Control.Monad (unless, when)
 import Crypto.Hash (Blake2b_256, Digest, hash)
+import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.Bits (complement)
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
@@ -78,15 +79,14 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.Aeson (FromJSON (..), eitherDecode', withObject, (.:))
 import Data.List (intercalate, isInfixOf, sortBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import Data.Ord (Down (..), comparing)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
-import Data.Sequence.Strict qualified as StrictSeq
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import System.Environment (lookupEnv)
@@ -131,6 +131,25 @@ import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..), PolicyID (..)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxId (..))
 
+import Cardano.Node.Client.E2E.Setup (
+    Ed25519DSIGN,
+    SignKeyDSIGN,
+    addKeyWitness,
+    enterpriseAddr,
+    keyHashFromSignKey,
+    mkSignKey,
+ )
+import Cardano.Node.Client.Ledger (ConwayTx)
+import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
+import Naming.Datum
+import Naming.Wire (
+    Address (..),
+    WireData (..),
+    addressBytes,
+    canonicalAddress,
+    decodeAddress,
+    serialiseWireData,
+ )
 import Singular.Registry.Blueprint (extractCompiledCode, loadBlueprint)
 import Singular.Registry.Ledger (
     AssetName (..),
@@ -158,25 +177,6 @@ import Singular.Registry.TxBuilder.Internal (
     scriptHashBytes,
     spendingIndex,
  )
-import Cardano.Node.Client.E2E.Setup (
-    Ed25519DSIGN,
-    SignKeyDSIGN,
-    addKeyWitness,
-    enterpriseAddr,
-    keyHashFromSignKey,
-    mkSignKey,
- )
-import Cardano.Node.Client.Ledger (ConwayTx)
-import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
-import Naming.Datum
-import Naming.Wire
-    ( Address (..)
-    , WireData (..)
-    , addressBytes
-    , canonicalAddress
-    , decodeAddress
-    , serialiseWireData
-    )
 
 -- ---------------------------------------------------------
 -- Run modes
@@ -185,14 +185,17 @@ import Naming.Wire
 data Mode
     = -- | the ten rows.
       MainRun
-    | -- | LC01 as the correspondence record describes it, against
-      -- whatever blueprint NAMING_BLUEPRINT names.
+    | {- | LC01 as the correspondence record describes it, against
+      whatever blueprint NAMING_BLUEPRINT names.
+      -}
       Probe
-    | -- | LM02's transaction made actually valid: it must succeed,
-      -- and the refusal guard must then fail the run (exit 1).
+    | {- | LM02's transaction made actually valid: it must succeed,
+      and the refusal guard must then fail the run (exit 1).
+      -}
       ControlValid
-    | -- | every refusal matched against a marker that cannot occur:
-      -- the matcher must fail the run naming what came back.
+    | {- | every refusal matched against a marker that cannot occur:
+      the matcher must fail the run naming what came back.
+      -}
       ControlWrongReason
     deriving (Eq, Show)
 
@@ -209,9 +212,10 @@ readMode =
                         failWith ("unknown LMLC_CONTROL value " <> other)
                 _ -> pure MainRun
 
--- | The marker the wrong-reason control matches refusals against: by
--- construction no node reason can contain it, so a matched reason can
--- never close a row and the control must fail.
+{- | The marker the wrong-reason control matches refusals against: by
+construction no node reason can contain it, so a matched reason can
+never close a row and the control must fail.
+-}
 wrongReasonMarker :: String
 wrongReasonMarker =
     "wrong-reason-control marker that no node reason can ever contain"
@@ -220,26 +224,29 @@ wrongReasonMarker =
 -- Ledger-shape constants
 -- ---------------------------------------------------------
 
--- | Flat fee for hand-balanced transactions. Generously above the
--- devnet's minimum (~0.2 ada for a small tx) and above the fee the
--- declared max execution units price in (~8.8 ada).
+{- | Flat fee for hand-balanced transactions. Generously above the
+devnet's minimum (~0.2 ada for a small tx) and above the fee the
+declared max execution units price in (~8.8 ada).
+-}
 flatFee :: Integer
 flatFee = 10_000_000
 
--- | maxTxExUnits from the checked-in devnet genesis
--- (e2e-test/genesis/alonzo-genesis.json). Declared units must be <=
--- this; refusal transactions declare exactly it so an oversized real
--- cost can never reject the tx before its validator refuses.
--- | Declared units for hand-balanced transactions. Generous enough
--- that a full datum decode plus the row's guard (~100M steps, ~1.5M
--- mem measured on chain) runs to completion, small enough that a
--- runaway evaluation hits the wall in seconds instead of minutes.
+{- | maxTxExUnits from the checked-in devnet genesis
+(e2e-test/genesis/alonzo-genesis.json). Declared units must be <=
+this; refusal transactions declare exactly it so an oversized real
+cost can never reject the tx before its validator refuses.
+| Declared units for hand-balanced transactions. Generous enough
+that a full datum decode plus the row's guard (~100M steps, ~1.5M
+mem measured on chain) runs to completion, small enough that a
+runaway evaluation hits the wall in seconds instead of minutes.
+-}
 maxUnits :: ExUnits
 maxUnits = ExUnits 3_000_000 200_000_000
 
--- | Lovelace a claim carries. Generously above the flat fee so LC01's
--- refund check is real: owed = claim - fee stays positive and the
--- refund output must pay it.
+{- | Lovelace a claim carries. Generously above the flat fee so LC01's
+refund check is real: owed = claim - fee stays positive and the
+refund output must pay it.
+-}
 claimCoin :: Integer
 claimCoin = 25_000_000
 
@@ -572,8 +579,8 @@ rowLM01 env claimIn = do
     snap <- mustSnap env claimIn
     current <- chainDatumOf env snap "LM01"
     let destCodec = envDestCodec env
-        maintained = current {paymentDestination = SomeDestination destCodec}
-    tx <- maintainTx env snap (Just (\d -> d {paymentDestination = SomeDestination destCodec})) True
+        maintained = current{paymentDestination = SomeDestination destCodec}
+    tx <- maintainTx env snap (Just (\d -> d{paymentDestination = SomeDestination destCodec})) True
     let signed = addKeyWitness genesisSignKey tx
     unless
         ( Set.singleton (addrWitnessKeyHash (envCtrlHash env))
@@ -594,7 +601,7 @@ rowLM01 env claimIn = do
                   ]
                 , [ "nextControlCommitment changed"
                   | nextControlCommitment decoded
-                      /= nextControlCommitment current
+                        /= nextControlCommitment current
                   ]
                 , [ "retirementQuorum changed"
                   | retirementQuorum decoded /= retirementQuorum current
@@ -643,10 +650,38 @@ rowLM01 env claimIn = do
 tamperedCommitment :: ByteString
 tamperedCommitment =
     BS.pack
-        [ 0x15, 0x61, 0xc1, 0x5b, 0x49, 0x80, 0x85, 0x7f
-        , 0xb0, 0x6e, 0x4a, 0xb3, 0x5c, 0xc9, 0xbc, 0xec
-        , 0xaf, 0x09, 0x0b, 0x0a, 0xa8, 0xbd, 0xef, 0x19
-        , 0xf6, 0x33, 0x15, 0x65, 0xa3, 0x33, 0x20, 0x4f
+        [ 0x15
+        , 0x61
+        , 0xc1
+        , 0x5b
+        , 0x49
+        , 0x80
+        , 0x85
+        , 0x7f
+        , 0xb0
+        , 0x6e
+        , 0x4a
+        , 0xb3
+        , 0x5c
+        , 0xc9
+        , 0xbc
+        , 0xec
+        , 0xaf
+        , 0x09
+        , 0x0b
+        , 0x0a
+        , 0xa8
+        , 0xbd
+        , 0xef
+        , 0x19
+        , 0xf6
+        , 0x33
+        , 0x15
+        , 0x65
+        , 0xa3
+        , 0x33
+        , 0x20
+        , 0x4f
         ]
 
 rowLM02 :: Mode -> Env -> Snap -> IO ()
@@ -692,7 +727,7 @@ rowLM03 env a1 = do
         maintainTx
             env
             a1
-            (Just (\d -> d {nextControlCommitment = tamperedCommitment}))
+            (Just (\d -> d{nextControlCommitment = tamperedCommitment}))
             True
     expectRefused
         MainRun
@@ -1086,10 +1121,11 @@ expectRefused mode env rowName modelReason guard tx = do
 -- max declared units, integrity sealed once)
 -- ---------------------------------------------------------
 
--- | The maintenance transaction: spend the claim with a Maintain
--- redeemer, continue the record at the application validator with
--- @contDatum@, pay the flat fee from the funding input. When
--- @demandsController@, the body demands the controller's signature.
+{- | The maintenance transaction: spend the claim with a Maintain
+redeemer, continue the record at the application validator with
+@contDatum@, pay the flat fee from the funding input. When
+@demandsController@, the body demands the controller's signature.
+-}
 maintainTx ::
     Env ->
     Snap ->
@@ -1135,10 +1171,11 @@ maintainTx env snap overrideM demanded = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | The cancellation transaction: spend the claim with a Cancel
--- redeemer presenting @presented@, pay a refund output to
--- @refundAddr@ carrying @refundCoin@, mint @mint@ (with @mintRdmr@
--- when minting or burning under the policy).
+{- | The cancellation transaction: spend the claim with a Cancel
+redeemer presenting @presented@, pay a refund output to
+@refundAddr@ carrying @refundCoin@, mint @mint@ (with @mintRdmr@
+when minting or burning under the policy).
+-}
 cancelBody ::
     Env ->
     Snap ->
@@ -1186,9 +1223,10 @@ cancelBody env snap presented refundAddr refundCoin mint mintRdmr = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | The real fold: spend the claim with a Fold redeemer, continue the
--- record at the application validator with the same datum, burn the
--- approval exactly once.
+{- | The real fold: spend the claim with a Fold redeemer, continue the
+record at the application validator with the same datum, burn the
+approval exactly once.
+-}
 foldBody :: Env -> Snap -> NamingDatum -> IO ConwayTx
 foldBody env snap current = do
     (fund, collateral) <- takeFundCollateral env
@@ -1203,9 +1241,10 @@ foldBody env snap current = do
                         )
                     ,
                         ( ConwayMinting (AsIx 0)
-                        , ( Data (withdrawApprovalRedeemer env (envFoldRefundBytes env))
-                          , maxUnits
-                          )
+                        ,
+                            ( Data (withdrawApprovalRedeemer env (envFoldRefundBytes env))
+                            , maxUnits
+                            )
                         )
                     ]
         integrity = computeScriptIntegrity (envPp env) redeemers
@@ -1229,14 +1268,16 @@ foldBody env snap current = do
   where
     coinOf (_, o) = let Coin c = o ^. coinTxOutL in c
 
--- | Mint redeemer @WithdrawApproval { controller, destination }@ —
--- this run's controller binding @destination@.
+{- | Mint redeemer @WithdrawApproval { controller, destination }@ —
+this run's controller binding @destination@.
+-}
 withdrawApprovalRedeemer :: Env -> ByteString -> PLC.Data
 withdrawApprovalRedeemer env destination =
     PLC.Constr 0 [PLC.B (envCtrlHash env), PLC.B destination]
 
--- | An output at the application validator carrying @tokens@ and the
--- inline naming datum, sized at least min-ADA plus margin.
+{- | An output at the application validator carrying @tokens@ and the
+inline naming datum, sized at least min-ADA plus margin.
+-}
 scriptOut ::
     PParams ConwayEra ->
     Addr ->
@@ -1280,9 +1321,10 @@ changeOut inCoin fee outs =
 -- Setup transactions
 -- ---------------------------------------------------------
 
--- | Setup 1: mint the withdraw approval (the refund recorded at
--- request time, controller-signed) and create claimLC (with the
--- approval) and claimLM (without one).
+{- | Setup 1: mint the withdraw approval (the refund recorded at
+request time, controller-signed) and create claimLC (with the
+approval) and claimLM (without one).
+-}
 setupTwoClaims ::
     Env ->
     NamingDatum ->
@@ -1340,9 +1382,10 @@ setupTwoClaims env datumLC datumLM = do
             (cin : _) -> pure cin
             [] -> failWith ("setup: could not distinguish " <> label)
 
--- | Setup 2: a second approval and claimFold — the claim the LC04
--- proof folds for real. One approval per transaction: the mint
--- purpose mints exactly one.
+{- | Setup 2: a second approval and claimFold — the claim the LC04
+proof folds for real. One approval per transaction: the mint
+purpose mints exactly one.
+-}
 setupFoldClaim ::
     Env ->
     NamingDatum ->
@@ -1530,8 +1573,9 @@ datumDataOf out = case out ^. datumTxOutL of
     Datum bd -> let Data d = binaryDataToData bd in Just d
     _ -> Nothing
 
--- | On-chain Plutus data as the codec's wire value: exactly the shapes
--- the contract serialises.
+{- | On-chain Plutus data as the codec's wire value: exactly the shapes
+the contract serialises.
+-}
 wireOf :: PLC.Data -> Maybe WireData
 wireOf (PLC.Constr i fs)
     | i >= 0 && i <= 6 = Constr (fromIntegral i) <$> traverse wireOf fs
@@ -1560,9 +1604,9 @@ assertChainBytes snap expected label =
                         ( label
                             <> ": the on-chain bytes are not the codec encoding: \
                                \chain=0x"
-                                <> hex chainBytes
-                                <> " codec=0x"
-                                <> hex codecBytes
+                            <> hex chainBytes
+                            <> " codec=0x"
+                            <> hex codecBytes
                         )
         _ ->
             failWith
@@ -1681,8 +1725,9 @@ instance FromJSON ManifestPin where
     parseJSON = withObject "ManifestPin" $ \o ->
         ManifestPin <$> o .: "title" <*> o .: "hash"
 
--- | Fail the run unless every manifest pin under
--- @application.application@ equals the hash this run loaded.
+{- | Fail the run unless every manifest pin under
+@application.application@ equals the hash this run loaded.
+-}
 checkPinnedApplication :: String -> IO ()
 checkPinnedApplication appHex = do
     path <-
@@ -1740,6 +1785,6 @@ nextControlCommitmentOf bs =
             ( "singular/naming/next-control/v1"
                 <> BS.singleton 0x00
                 <> bs
-            )
-            :: Digest Blake2b_256
+            ) ::
+            Digest Blake2b_256
         )

@@ -50,6 +50,39 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: (cd offchain && nix run --quiet .#lint)
+  offchain-component-build:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Off-chain component build
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #264 (epic answers A-005, A-008/A-009/A-010): the classified
+      # supported component build carrier. EVERY declared Cabal component is
+      # classified in offchain/nix/component-inventory.nix — built here, or
+      # explicitly unverified with its owning issue (retired NYA journeys,
+      # retained executables and their repairs). That file, and the manifest
+      # shipped in this build's output, are the single authority for the
+      # complete row set; this comment deliberately does not restate the
+      # list. Every unverified component stays declared and exported, and no
+      # job claims it works. The carrier's inventory gate fails this job on
+      # an unclassified or unrecognized new stanza, a stale row, a row
+      # without an issue/reason, or an empty set; a member build failure
+      # fails it too. Green covers exactly the classified members, never the
+      # whole package — build only, nothing executes.
+      - run: nix build --quiet .#component-build
+        working-directory: offchain
   model:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -223,8 +256,13 @@ jobs:
       # on-chain archive is assembled by the packaging tools, and the full
       # release check — archive members, checksum manifests, release text,
       # and the pinned identities verified from the extracted artifact —
-      # runs against the assembled bytes. The same assembler runs inside the
-      # publish job before anything is uploaded.
+      # runs against the assembled bytes. The release surface negative
+      # control then proves, on the same bytes, that the corrected
+      # availability promise (verified journey documented, retained
+      # commands disclosed as not currently buildable or verified) can
+      # fail specifically at this boundary. The same assembler — control
+      # included — runs inside the publish job before anything is
+      # uploaded; the docs-only release-check job does not carry it.
       - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'

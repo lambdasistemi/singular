@@ -1,0 +1,28 @@
+{
+  "run-the-checks": [
+    {
+      "text": "From the repository root, run the root build gate. From offchain, run the lint app and classified component build. The root gate does not compile every offchain Cabal component. The component carrier compiles the library, tests, and components required by current workflows and supported commands without executing them. Its final measured inventory classifies all nineteen Cabal declarations: ten are compiled here and nine retained commands stay unverified under their owning issues. An included member failure fails the carrier; its green result is not a package-wide build.",
+      "pause": 400
+    }
+  ],
+  "where-the-source-list-comes-from": [
+    {
+      "text": "The Cabal file declares source directories for lint discovery and components for build classification. Two naming sources compiled directly by scripts join lint discovery. Discovery finds seventy Haskell files; sixty-eight format-eligible files of those reach Fourmolu, and two preserved verifier files remain a formatter gap. HLint runs on fifty-seven files within nine selected directories. Thirteen discovered files do not enter that HLint run because thirteen directory-name exclusions are configured. The component inventory accounts for every library, executable, and test declaration; supported members flow to the carrier and unverified members carry an issue and reason. Each result reaches CI with its own extent.",
+      "pause": 400
+    },
+    {
+      "text": "Lint discovery deduplicates nested directories and fails closed on missing declarations or empty source sets. A maintenance control put malformed Haskell in a newly covered tracked directory, ran the actual lint app, and restored the file byte for byte.",
+      "pause": 400
+    }
+  ],
+  "current-boundaries": [
+    {
+      "text": "The inventory, formatting, HLint and component build extents are separate. This ticket leaves the two independent verifier sources unchanged, so they remain in the source inventory but outside the formatter. Connected verifier stays declared and unverified under issue 282; its recorded build failures belong to earlier revisions of the project and its source still names identifiers the current library no longer exports. Retained journeys are unverified under issue 172 after source and workflow checks. Register rows is outside that journey retirement record and separately unverified under issue 283. The earlier carrier directly failed at recovery rows; it did not build each other omitted command. Under the release instruction correction, the archive readme and consumer guides present only the verified journey and checks as runnable and disclose all nine unverified declarations as retained; the local attach check script is a disclosed, currently unrunnable local gate. HLint omits named directories with existing hint debt. Epic integration issue 278 must close every temporary lint and format gap and cover code beyond offchain Haskell before the epic can claim complete coverage.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "offchain-development.md",
+    "sha256": "04e34d7c3a8950f629ccb7471b8d760a8270edc75fea36b850e03dc49a198aae"
+  }
+}

@@ -78,15 +78,12 @@ import System.IO (hPutStrLn, stderr)
 import Cardano.Crypto.Hash.Class (hashToBytes)
 import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
-import Cardano.Ledger.Api.Tx.Body (referenceInputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
-import Cardano.Ledger.Binary (serialize)
-import Cardano.Ledger.Core (eraProtVerHigh)
-import Data.Set qualified as Set
-import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Ledger.Api.Tx.Body (mintTxBodyL, referenceInputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out (TxOut, referenceScriptTxOutL)
+import Cardano.Ledger.Api.Tx.Wits (scriptTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (SNothing))
-import Cardano.Ledger.Core (valueTxOutL)
+import Cardano.Ledger.Binary (serialize)
+import Cardano.Ledger.Core (eraProtVerHigh, valueTxOutL)
 import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
 import Cardano.Ledger.TxIn (TxId (..), TxIn, txInToText)
@@ -95,6 +92,7 @@ import Cardano.Node.Client.Submitter (SubmitResult (..), Submitter (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
+import Data.Set qualified as Set
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
 
@@ -121,9 +119,9 @@ import Singular.Registry.TxBuilder.Internal (
     cagePolicyIdFromCfg,
     computeScriptHash,
     extractCageDatum,
-    scriptFromBytes,
     findStateUtxo,
     policyIdFromPin,
+    scriptFromBytes,
     scriptHashBytes,
     txInToRef,
     walkEdge,
@@ -135,18 +133,17 @@ import Singular.Registry.TxBuilder.Update (
 import Singular.Registry.Types (
     CageDatum (..),
     Edge,
-    edgeInsertAbsent,
-    edgeInsertActive,
-    edgeUpdateTerminal,
     OnChainRoot (..),
     OnChainTokenState (..),
     OnChainTxOutRef,
+    edgeInsertAbsent,
+    edgeInsertActive,
+    edgeUpdateTerminal,
  )
 
 -- ---------------------------------------------------------
 -- The story's fixed inputs
 -- ---------------------------------------------------------
-
 
 {- | One booted registry: its config, its token, the reference outputs
 its folds resolve through, and the boot transaction itself.
